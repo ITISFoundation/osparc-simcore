@@ -16,6 +16,7 @@ import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
+from models_library.progress_bar import ProgressReport
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
@@ -50,9 +51,7 @@ async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
         endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
     ) as s_3:
         bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        s3_objects = []
-        async for s3_object in bucket.objects.all():
-            s3_objects.append(s3_object)  # noqa: PERF402
+        s3_objects = [_ async for _ in bucket.objects.all()]
         await asyncio.gather(*[o.delete() for o in s3_objects])
 
 
@@ -82,7 +81,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),  # noqa: B008
+    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -126,6 +125,7 @@ async def _upload_local_dir_to_s3(
     source_dir: Path,
     *,
     check_progress: bool = False,
+    faker: Faker,
 ) -> None:
     # NOTE: progress is enforced only when uploading and only when using
     # total file sizes that are quite big, otherwise the test will fail
@@ -133,14 +133,16 @@ async def _upload_local_dir_to_s3(
     # Since using moto to mock the S3 api, downloading is way to fast.
     # Progress behaves as expected with CEPH and AWS S3 backends.
 
-    progress_entries: list[float] = []
+    progress_entries: list[ProgressReport] = []
 
-    async def _report_progress_upload(progress_value: float) -> None:
-        print(">>>|", progress_value, "| ⏫")
-        progress_entries.append(progress_value)
+    async def _report_progress_upload(report: ProgressReport) -> None:
+        print(">>>|", report, "| ⏫")
+        progress_entries.append(report)
 
     async with ProgressBarData(
-        num_steps=1, progress_report_cb=_report_progress_upload
+        num_steps=1,
+        progress_report_cb=_report_progress_upload,
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_local_to_s3(
             r_clone_settings,
@@ -159,12 +161,15 @@ async def _download_from_s3_to_local_dir(
     r_clone_settings: RCloneSettings,
     s3_directory_link: AnyUrl,
     destination_dir: Path,
+    faker: Faker,
 ) -> None:
-    async def _report_progress_download(progress_value: float) -> None:
-        print(">>>|", progress_value, "| ⏬")
+    async def _report_progress_download(report: ProgressReport) -> None:
+        print(">>>|", report, "| ⏬")
 
     async with ProgressBarData(
-        num_steps=1, progress_report_cb=_report_progress_download
+        num_steps=1,
+        progress_report_cb=_report_progress_download,
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_s3_to_local(
             r_clone_settings,
@@ -252,11 +257,12 @@ async def test_local_to_remote_to_local(
     file_size: ByteSize,
     check_progress: bool,
     cleanup_bucket_after_test: None,
+    faker: Faker,
 ) -> None:
     await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
     # get s3 reference link
-    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
     s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # run the test
@@ -265,9 +271,10 @@ async def test_local_to_remote_to_local(
         s3_directory_link,
         dir_locally_created_files,
         check_progress=check_progress,
+        faker=faker,
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -350,6 +357,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     dir_downloaded_files_2: Path,
     changes_callable: Callable[[Path, set[str]], None],
     cleanup_bucket_after_test: None,
+    faker: Faker,
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
@@ -359,15 +367,15 @@ async def test_overwrite_an_existing_file_and_sync_again(
     assert len(generated_file_names) > 0
 
     # get s3 reference link
-    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
     s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # sync local to remote and check
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files
+        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -383,10 +391,10 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
     # upload and check new local and new remote are in sync
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files
+        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_2
+        r_clone_settings, s3_directory_link, dir_downloaded_files_2, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_2

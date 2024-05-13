@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
@@ -6,6 +5,7 @@ from math import ceil
 from typing import Callable, NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
+from models_library.utils.json_serialization import json_dumps
 
 
 class RateLimitSetup(NamedTuple):
@@ -61,7 +61,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
                         "Content-Type": "application/json",
                         "Retry-After": f"{retry_after_sec}",
                     },
-                    text=json.dumps(
+                    text=json_dumps(
                         {
                             "error": {
                                 "logs": [{"message": "API rate limit exceeded."}],

@@ -146,6 +146,7 @@ async def cancel_one_time_payment(
         state_message=payment_cancelled.message,
         invoice_url=None,
         stripe_invoice_id=None,
+        invoice_pdf_url=None,
     )
 
 
@@ -165,6 +166,7 @@ async def acknowledge_one_time_payment(
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
+        invoice_pdf_url=ack.invoice_pdf,
     )
 
 
@@ -207,7 +209,7 @@ async def on_payment_completed(
 
     await notifier.notify_payment_completed(
         user_id=transaction.user_id,
-        payment=to_payments_api_model(transaction),
+        payment=transaction,
         exclude=exclude,
     )
 
@@ -290,11 +292,15 @@ async def pay_with_payment_method(  # noqa: PLR0913
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
+        invoice_pdf_url=ack.invoice_pdf,
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
     await on_payment_completed(
-        transaction, rut, notifier=notifier, exclude={WebSocketProvider.get_name()}
+        transaction,
+        rut,
+        notifier=notifier,
+        exclude={WebSocketProvider.get_name()},
     )
 
     return to_payments_api_model(transaction)

@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from typing import Any, Final, Literal
 
 import aiodocker
@@ -52,9 +53,14 @@ class DockerImageManifestsV2(BaseModel):
     layers: list[DockerLayerSizeV2]
 
     class Config:
+        keep_untouched = (cached_property,)
         frozen = True
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
+
+    @cached_property
+    def layers_total_size(self) -> ByteSize:
+        return parse_obj_as(ByteSize, sum(layer.size for layer in self.layers))
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -139,7 +145,7 @@ async def pull_image(
     Arguments:
         image -- the docker image to pull
         registry_settings -- registry settings
-        progress_bar -- the current progress bar, subprogress bar will be created accordingly if image_information is passed.
+        progress_bar -- the current progress bar
         log_cb -- a callback function to send logs to
         image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
     """
@@ -151,7 +157,6 @@ async def pull_image(
         }
     image_short_name = image.split("/")[-1]
     layer_id_to_size = {}
-    sub_progress = None
     async with AsyncExitStack() as exit_stack:
         # NOTE: docker pulls an image layer by layer
         # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
@@ -161,12 +166,6 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
-            image_layers_total_size = (
-                sum(layer.size for layer in image_information.layers) * 3
-            )
-            sub_progress = await exit_stack.enter_async_context(
-                progress_bar.sub_progress(image_layers_total_size)
-            )
         else:
             _logger.warning(
                 "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
@@ -175,6 +174,7 @@ async def pull_image(
 
         client = await exit_stack.enter_async_context(aiodocker.Docker())
 
+        reported_progress = 0.0
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
@@ -187,9 +187,6 @@ async def pull_image(
                         "pulling fs layer",
                         "waiting",
                         "digest: ",
-                        "status: downloaded newer image for ",
-                        "status: image is up to date for ",
-                        "already exists",
                     ]
                 ):
                     # nothing to do here
@@ -198,26 +195,42 @@ async def pull_image(
                     assert parsed_progress.id  # nosec
                     assert parsed_progress.progress_detail  # nosec
                     assert parsed_progress.progress_detail.current  # nosec
-                    layer_id_to_size[
-                        parsed_progress.id
-                    ].downloaded = parsed_progress.progress_detail.current
+
+                    layer_id_to_size.setdefault(
+                        parsed_progress.id,
+                        _PulledStatus(parsed_progress.progress_detail.total or 0),
+                    ).downloaded = parsed_progress.progress_detail.current
                 case "verifying checksum" | "download complete":
                     assert parsed_progress.id  # nosec
-                    layer_id_to_size[parsed_progress.id].downloaded = layer_id_to_size[
-                        parsed_progress.id
-                    ].size
+                    layer_id_to_size.setdefault(
+                        parsed_progress.id, _PulledStatus(0)
+                    ).downloaded = layer_id_to_size.setdefault(
+                        parsed_progress.id, _PulledStatus(0)
+                    ).size
                 case "extracting":
                     assert parsed_progress.id  # nosec
                     assert parsed_progress.progress_detail  # nosec
                     assert parsed_progress.progress_detail.current  # nosec
-                    layer_id_to_size[
-                        parsed_progress.id
-                    ].extracted = parsed_progress.progress_detail.current
+                    layer_id_to_size.setdefault(
+                        parsed_progress.id,
+                        _PulledStatus(parsed_progress.progress_detail.total or 0),
+                    ).extracted = parsed_progress.progress_detail.current
                 case "pull complete":
                     assert parsed_progress.id  # nosec
-                    layer_id_to_size[parsed_progress.id].extracted = layer_id_to_size[
-                        parsed_progress.id
-                    ].size
+                    layer_id_to_size.setdefault(
+                        parsed_progress.id, _PulledStatus(0)
+                    ).extracted = layer_id_to_size[parsed_progress.id].size
+                case progress_status if any(
+                    msg in progress_status
+                    for msg in [
+                        "status: downloaded newer image for ",
+                        "status: image is up to date for ",
+                        "already exists",
+                    ]
+                ):
+                    for layer_pull_status in layer_id_to_size.values():
+                        layer_pull_status.downloaded = layer_pull_status.size
+                        layer_pull_status.extracted = layer_pull_status.size
                 case _:
                     _logger.warning(
                         "unknown pull state: %s. Please check", f"{parsed_progress=}"
@@ -230,11 +243,11 @@ async def pull_image(
             total_extracted_size = sum(
                 layer.extracted for layer in layer_id_to_size.values()
             )
-            if sub_progress is not None:
-                assert isinstance(sub_progress, ProgressBarData)
-                await sub_progress.set_(
-                    total_downloaded_size + 2 * total_extracted_size
-                )
+            total_progress = (total_downloaded_size + total_extracted_size) / 2.0
+            progress_to_report = total_progress - reported_progress
+            await progress_bar.update(progress_to_report)
+            reported_progress = total_progress
+
             await log_cb(
                 f"pulling {image_short_name}: {pull_progress}...",
                 logging.DEBUG,

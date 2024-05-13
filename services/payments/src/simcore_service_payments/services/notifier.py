@@ -2,16 +2,14 @@ import contextlib
 import logging
 
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
+from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 from .notifier_email import EmailProvider
 from .notifier_ws import WebSocketProvider
@@ -37,7 +35,7 @@ class NotifierService(SingletonInAppStateMixin):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
         *,
         exclude: set | None = None,
     ):
@@ -50,7 +48,10 @@ class NotifierService(SingletonInAppStateMixin):
 
         for provider in providers:
             self._run_in_background(
-                provider.notify_payment_completed(user_id=user_id, payment=payment),
+                provider.notify_payment_completed(
+                    user_id=user_id,
+                    payment=payment,
+                ),
                 f"{provider.get_name()}_u_{user_id}_p_{payment.payment_id}",
             )
 
@@ -88,7 +89,9 @@ def setup_notifier(app: FastAPI):
         if email_settings := app_settings.PAYMENTS_EMAIL:
             providers.append(
                 EmailProvider(
-                    email_settings, users_repo=PaymentsUsersRepo(get_engine(app))
+                    email_settings,
+                    users_repo=PaymentsUsersRepo(get_engine(app)),
+                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
                 )
             )
 

@@ -68,7 +68,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
   statics: {
     NODE_WIDTH: 180,
-    NODE_HEIGHT: 80
+    NODE_HEIGHT: 80,
+    FILE_NODE_WIDTH: 120,
   },
 
   events: {
@@ -238,8 +239,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
-        node.attachVisibilityHandlerToStopButton(stopButton);
-        node.attachExecuteHandlerToStopButton(stopButton);
+        node.attachHandlersToStopButton(stopButton);
         this._optionsMenu.addAt(stopButton, 1);
       }
 
@@ -269,7 +269,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
-      this._markerBtn.addListener("execute", () => this.getNode().toggleMarker());
+      this._markerBtn.addListener("execute", () => node.toggleMarker());
 
       const marker = this.getChildControl("marker");
       const updateMarker = () => {
@@ -282,6 +282,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
+        converter: running => !running
+      });
 
       const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
@@ -371,7 +375,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoFileUI: function() {
-      const width = 120;
+      const width = this.self().FILE_NODE_WIDTH;
       this.__setNodeUIWidth(width);
 
       const chipContainer = this.getChildControl("chips");
@@ -486,6 +490,24 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __setProbeValue: function(label) {
+      const replaceByLinkLabel = val => {
+        const download = true;
+        const locationId = val.store;
+        const fileId = val.path;
+        osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+          .then(presignedLinkData => {
+            if ("resp" in presignedLinkData && presignedLinkData.resp) {
+              const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+              const linkLabel = new osparc.ui.basic.LinkLabel(filename, presignedLinkData.resp.link).set({
+                font: "link-label-12"
+              });
+              const chipContainer = this.getChildControl("chips");
+              chipContainer.remove(label);
+              chipContainer.add(linkLabel);
+            }
+          });
+      }
+
       const link = this.getNode().getLink("in_1");
       if (link && "nodeUuid" in link) {
         const inputNodeId = link["nodeUuid"];
@@ -496,8 +518,16 @@ qx.Class.define("osparc.workbench.NodeUI", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey]) {
                 const val = outputs[portKey]["value"];
-                if (Array.isArray(val)) {
+                if (this.getNode().getMetaData()["key"].includes("probe/array")) {
                   return "[" + val.join(",") + "]";
+                } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
+                  const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+                  label.set({
+                    font: "text-12",
+                    rich: true
+                  });
+                  replaceByLinkLabel(val);
+                  return filename;
                 }
                 return String(val);
               }

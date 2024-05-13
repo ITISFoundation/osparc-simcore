@@ -92,10 +92,10 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
               .then(serviceData => {
                 if (serviceData) {
                   serviceData["resourceType"] = "service";
-                  const moreOpts = new osparc.dashboard.ResourceMoreOptions(serviceData).set({
+                  const resourceDetails = new osparc.dashboard.ResourceDetails(serviceData).set({
                     showOpenButton: false
                   });
-                  osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                 }
               });
           });
@@ -128,12 +128,8 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           orgServices.forEach(orgService => {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
             orgServiceCopy["orgId"] = gid;
-            if (osparc.data.model.Node.isDynamic(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
-            } else if (osparc.data.model.Node.isComputational(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
-            } else {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
+            if (orgServiceCopy["thumbnail"] === null) {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_ICON;
             }
             servicesModel.append(qx.data.marshal.Json.createModel(orgServiceCopy));
           });

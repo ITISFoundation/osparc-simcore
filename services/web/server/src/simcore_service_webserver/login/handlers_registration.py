@@ -24,10 +24,10 @@ from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
 from . import _auth_api
-from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
+from ._2fa_api import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import (
-    CODE_2FA_CODE_REQUIRED,
+    CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
@@ -316,7 +316,7 @@ class RegisterPhoneBody(InputSchema):
 
 
 class _PageParams(BaseModel):
-    retry_2fa_after: PositiveInt | None = None
+    expiration_2fa: PositiveInt | None = None
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
@@ -372,7 +372,7 @@ async def register_phone(request: web.Request):
         await send_sms_code(
             phone_number=registration.phone,
             code=code,
-            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=get_user_name_from_email(registration.email),
@@ -381,9 +381,9 @@ async def register_phone(request: web.Request):
         return envelope_response(
             # RegisterPhoneNextPage
             data={
-                "name": CODE_2FA_CODE_REQUIRED,
+                "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 "message": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(registration.phone)

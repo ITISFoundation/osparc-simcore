@@ -56,11 +56,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
-    STUDY_ICON: osparc.product.Utils.getProductThumbUrl(),
-    TEMPLATE_ICON: osparc.product.Utils.getProductThumbUrl(),
-    SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
-    COMP_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
-    DYNAMIC_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    PRODUCT_ICON: osparc.product.Utils.getProductThumbUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -302,7 +298,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyResourceData: function(resourceData) {
-      let defaultThumbnail = "";
       let uuid = null;
       let owner = "";
       let defaultHits = null;
@@ -311,25 +306,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "study":
           uuid = resourceData.uuid ? resourceData.uuid : uuid;
           owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          defaultThumbnail = this.self().STUDY_ICON;
           workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "template":
           uuid = resourceData.uuid ? resourceData.uuid : uuid;
           owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          defaultThumbnail = this.self().TEMPLATE_ICON;
           workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : uuid;
           owner = resourceData.owner ? resourceData.owner : owner;
-          defaultThumbnail = this.self().SERVICE_ICON;
-          if (osparc.data.model.Node.isComputational(resourceData)) {
-            defaultThumbnail = this.self().COMP_SERVICE_ICON;
-          }
-          if (osparc.data.model.Node.isDynamic(resourceData)) {
-            defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
-          }
           defaultHits = 0;
           break;
       }
@@ -342,7 +328,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
-        icon: resourceData.thumbnail || defaultThumbnail,
+        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
@@ -694,25 +680,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __openMoreOptions: function() {
       const resourceData = this.getResourceData();
-      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       [
         "updateStudy",
         "updateTemplate",
         "updateService"
       ].forEach(ev => {
-        moreOpts.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
+        resourceDetails.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
-      moreOpts.addListener("publishTemplate", e => {
+      resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openStudy", e => {
+      resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
-        this._startStudyById(studyId, openCB, null);
+        const isStudyCreation = false;
+        this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
-      return moreOpts;
+      return resourceDetails;
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {

@@ -25,6 +25,7 @@ _EXAMPLE_AFTER_INIT = {
     "comment": "This is a test comment.",
     "invoice_url": None,
     "stripe_invoice_id": None,
+    "invoice_pdf_url": None,
     "initiated_at": "2023-09-27T10:00:00",
     "state": PaymentTransactionState.PENDING,
 }
@@ -41,6 +42,7 @@ class PaymentsTransactionsDB(BaseModel):
     comment: str | None
     invoice_url: HttpUrl | None
     stripe_invoice_id: StripeInvoiceID | None
+    invoice_pdf_url: HttpUrl | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
@@ -55,6 +57,8 @@ class PaymentsTransactionsDB(BaseModel):
                 {
                     **_EXAMPLE_AFTER_INIT,
                     "invoice_url": "https://my-fake-pdf-link.com",
+                    "stripe_invoice_id": "12345",
+                    "invoice_pdf_url": "https://my-fake-pdf-link.com",
                     "completed_at": "2023-09-27T10:00:10",
                     "state": "SUCCESS",
                     "state_message": "Payment completed successfully",

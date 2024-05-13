@@ -28,6 +28,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
@@ -43,7 +44,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -243,7 +243,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
     name="update_node_outputs",
 )
 @login_required
-@permission_required("project.node.create")
+@permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
@@ -262,7 +262,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
-    raise web.HTTPAccepted()
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(
@@ -416,7 +416,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     name="replace_node_resources",
 )
 @login_required
-@permission_required("project.node.create")
+@permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)

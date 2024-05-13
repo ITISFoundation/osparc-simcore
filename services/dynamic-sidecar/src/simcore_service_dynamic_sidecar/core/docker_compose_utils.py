@@ -10,12 +10,14 @@ import logging
 from typing import Final
 
 from fastapi import FastAPI
+from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.fastapi.docker_utils import pull_images
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.basic_types import LogLevel
 
-from .docker_utils import get_docker_service_images, pull_images
+from .docker_utils import get_docker_service_images
 from .rabbitmq import post_progress_message, post_sidecar_log_message
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command
@@ -101,9 +103,9 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     registry_settings = app_settings.REGISTRY_SETTINGS
     list_of_images = get_docker_service_images(compose_spec_yaml)
 
-    async def _progress_cb(progress_value: float) -> None:
+    async def _progress_cb(report: ProgressReport) -> None:
         await post_progress_message(
-            app, ProgressType.SERVICE_IMAGES_PULLING, progress_value
+            app, ProgressType.SERVICE_IMAGES_PULLING, report=report
         )
 
     async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:

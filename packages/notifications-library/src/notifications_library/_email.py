@@ -4,7 +4,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
-from pathlib import Path
 from typing import cast
 
 from aiosmtplib import SMTP
@@ -20,12 +19,15 @@ def compose_email(
     content_text: str,
     content_html: str | None = None,
     reply_to: Address | None = None,
+    bcc: Address | None = None,
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
+    if bcc:
+        msg["Bcc"] = bcc
 
     msg["Subject"] = subject
 
@@ -35,9 +37,11 @@ def compose_email(
     return msg
 
 
-def _guess_file_type(file_path: Path) -> tuple[str, str]:
-    assert file_path.is_file()
-    mimetype, _encoding = mimetypes.guess_type(file_path)
+def _guess_file_type(file_name: str) -> tuple[str, str]:
+    """
+    Guess the MIME type based on the file name extension.
+    """
+    mimetype, _encoding = mimetypes.guess_type(file_name)
     if mimetype:
         maintype, subtype = mimetype.split("/", maxsplit=1)
     else:
@@ -45,12 +49,15 @@ def _guess_file_type(file_path: Path) -> tuple[str, str]:
     return maintype, subtype
 
 
-def add_attachments(msg: EmailMessage, file_paths: list[Path]):
-    for attachment_path in file_paths:
-        maintype, subtype = _guess_file_type(attachment_path)
+def add_attachments(msg: EmailMessage, attachments: list[tuple[bytes, str]]):
+    for file_data, file_name in attachments:
+        # Use the filename to guess the file type
+        maintype, subtype = _guess_file_type(file_name)
+
+        # Add the attachment
         msg.add_attachment(
-            attachment_path.read_bytes(),
-            filename=attachment_path.name,
+            file_data,
+            filename=file_name,
             maintype=maintype,
             subtype=subtype,
         )

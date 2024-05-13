@@ -184,16 +184,18 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createDisableServiceAutoStart: function(study) {
+      // the wording is now opposite to the value of the property
+      // Autostart services to true by default
+      const devObj = study.getDev();
       const cb = new qx.ui.form.CheckBox().set({
-        label: qx.locale.Manager.tr("Disable Services Auto Start"),
+        value: "disableServiceAutoStart" in devObj ? !devObj["disableServiceAutoStart"] : true,
+        label: qx.locale.Manager.tr("Autostart services"),
         toolTipText: qx.locale.Manager.tr("This will help opening and closing studies faster"),
         iconPosition: "right"
       });
-      const devObj = study.getDev();
-      cb.setValue(("disableServiceAutoStart" in devObj) ? devObj["disableServiceAutoStart"] : false);
       cb.addListener("changeValue", e => {
         const newVal = e.getData();
-        devObj["disableServiceAutoStart"] = newVal;
+        devObj["disableServiceAutoStart"] = !newVal;
         study.updateStudy({
           dev: devObj
         });
@@ -303,8 +305,8 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnFlex(0, 1);
       grid2.setColumnFlex(0, 1);
 
-      const box = this._createSectionBox(qx.locale.Manager.tr("Details"));
-      const box2 = this._createSectionBox(qx.locale.Manager.tr("Meta details"));
+      const box = this.__createSectionBox(qx.locale.Manager.tr("Details"));
+      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
 
       let row = 0;
       let row2 = 0;
@@ -378,7 +380,7 @@ qx.Class.define("osparc.info.StudyUtils", {
      * Common layout of section's box
      * @param {page section's name} sectionName
      */
-    _createSectionBox: function(sectionName) {
+    __createSectionBox: function(sectionName) {
       const box = new qx.ui.groupbox.GroupBox(sectionName);
       box.getChildControl("legend").set({
         font: "text-14"

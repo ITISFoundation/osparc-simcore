@@ -143,7 +143,7 @@ class Product(BaseModel):
                     },
                     # defaults from sqlalchemy table
                     **{
-                        c.name: c.server_default.arg
+                        str(c.name): c.server_default.arg
                         for c in products.columns
                         if c.server_default and isinstance(c.server_default.arg, str)
                     },
@@ -232,14 +232,14 @@ class Product(BaseModel):
         # keys will be named as e.g. displayName, supportEmail, ...
         return self.dict(
             include={
-                "display_name",
-                "support_email",
-                "vendor",
-                "issues",
-                "manuals",
-                "support",
-                "is_payment_enabled",
-                "is_dynamic_services_telemetry_enabled",
+                "display_name": True,
+                "support_email": True,
+                "vendor": True,
+                "issues": True,
+                "manuals": True,
+                "support": True,
+                "is_payment_enabled": True,
+                "is_dynamic_services_telemetry_enabled": True,
             },
             exclude_none=True,
             exclude_unset=True,

@@ -44,6 +44,7 @@ from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
+from .users.settings import UsersSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -211,6 +212,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
         auto_default_from_env=True, description="rabbitmq plugin"
     )
+    WEBSERVER_USERS: UsersSettings | None = Field(
+        auto_default_from_env=True, description="users plugin"
+    )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
@@ -225,9 +229,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
-    WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
     WEBSERVER_WALLETS: bool = True
+    WEBSERVER_PROFILING: bool = False
 
     #
     WEBSERVER_SECURITY: bool = Field(
@@ -381,7 +385,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
-                "WEBSERVER_LOGIN": {"LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"},
+                "WEBSERVER_LOGIN": {
+                    "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
+                    "LOGIN_2FA_REQUIRED",
+                },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
             exclude_none=True,

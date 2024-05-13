@@ -114,6 +114,33 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
+    __linkExists: function(url) {
+      return new Promise((resolve, reject) => {
+        const reqSvg = new XMLHttpRequest();
+        reqSvg.open("GET", url, true);
+        reqSvg.onreadystatechange = () => {
+          if (reqSvg.readyState === 4) {
+            if (reqSvg.status === 404) {
+              reject();
+            } else {
+              resolve();
+            }
+          }
+        };
+        reqSvg.send();
+      });
+    },
+
+    getFaviconUrl: function() {
+      const pngUrl = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
+      const fallbackIcon = "/resource/osparc/favicon-"+this.getProductName()+".png";
+      return new Promise(resolve => {
+        this.__linkExists(pngUrl)
+          .then(() => resolve(pngUrl))
+          .catch(() => resolve(fallbackIcon))
+      });
+    },
+
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -157,23 +184,20 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
-    getWorkbenchUIPreviewPath: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
-      return darkImage ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
+    // All products except oSPARC
+    hasIdlingTrackerEnabled: function() {
+      const product = this.getProductName();
+      return product !== "osparc";
     },
 
+    // All products except oSPARC
     showLicenseExtra: function() {
-      if (this.isProduct("osparc")) {
-        return false;
-      }
-      return true;
+      const product = this.getProductName();
+      return product !== "osparc";
     },
 
-    showStudyPreview: function(studyData) {
-      const uiMode = osparc.data.model.Study.getUiMode(studyData);
-      if (uiMode && uiMode === "app") {
+    showStudyPreview: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;
@@ -205,7 +229,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showDisableServiceAutoStart: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite")) {
         return false;
       }
       return true;

@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final, Literal, NamedTuple
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -20,12 +20,18 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+)
 from models_library.users import UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
     Extra,
+    Field,
     parse_obj_as,
     root_validator,
     validate_arguments,
@@ -151,6 +157,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
 
 
 class FilesMetadataQueryParams(StorageQueryParamsBase):
+    project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
 
@@ -200,9 +207,20 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
-    startswith: str = ""
+    startswith: str | None = None
     sha256_checksum: SHA256Str | None = None
-    access_right: Literal["read", "write"] = "read"
+    kind: Literal["owned"]
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        ge=1,
+        le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        description="Page size limit",
+    )
+    offset: int = Field(default=0, ge=0, description="Page offset")
+
+    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
 
 
 class LocationPathParams(BaseModel):
@@ -245,6 +263,11 @@ class CopyAsSoftLinkParams(BaseModel):
         if v is not None:
             return urllib.parse.unquote(f"{v}")
         return v
+
+
+class UserOrProjectFilter(NamedTuple):
+    user_id: UserID | None
+    project_ids: list[ProjectID]
 
 
 __all__ = (

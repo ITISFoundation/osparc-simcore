@@ -1,4 +1,4 @@
-from ..utils.serialization import json_dumps, json_loads
+from models_library.utils.json_serialization import json_dumps, json_loads
 
 
 class BaseConfig:

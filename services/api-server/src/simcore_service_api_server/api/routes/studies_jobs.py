@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
@@ -35,6 +36,7 @@ from ...services.study_job_models_converters import (
     get_project_and_file_inputs_from_job_inputs,
 )
 from ...services.webserver import AuthSession
+from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 
@@ -79,11 +81,24 @@ async def create_study_job(
     study_id: StudyID,
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ) -> Job:
     project = await webserver_api.clone_project(project_id=study_id, hidden=True)
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
     )
+    job.url = url_for(
+        "get_study_job",
+        study_id=study_id,
+        job_id=job.id,
+    )
+    job.runner_url = url_for("get_study", study_id=study_id)
+    job.outputs_url = url_for(
+        "get_study_job_outputs",
+        study_id=study_id,
+        job_id=job.id,
+    )
+
     project = await webserver_api.update_project(
         project_id=job.id, update_params=ProjectUpdate(name=job.name)
     )

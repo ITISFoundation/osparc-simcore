@@ -9,8 +9,8 @@ from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
 # pylint: disable=unused-argument

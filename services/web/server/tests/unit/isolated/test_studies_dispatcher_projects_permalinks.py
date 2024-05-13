@@ -55,7 +55,6 @@ def app_environment(
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_TAGS": "1",
             "WEBSERVER_TRACING": "null",
-            "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
             #

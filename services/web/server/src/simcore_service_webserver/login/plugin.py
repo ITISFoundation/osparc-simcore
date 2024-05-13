@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 
 import asyncpg
@@ -24,9 +23,9 @@ from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (
+    _2fa_handlers,
     _auth_handlers,
     _registration_handlers,
-    handlers_2fa,
     handlers_change,
     handlers_confirmation,
     handlers_registration,
@@ -118,17 +117,6 @@ async def _resolve_login_settings_per_product(app: web.Application):
     # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
 
-    log.info(
-        "Captured products login settings:\n%s",
-        json.dumps(
-            {
-                product_name: login_settings.dict()
-                for product_name, login_settings in login_settings_per_product.items()
-            },
-            indent=1,
-        ),
-    )
-
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}
     for product_name, settings in login_settings_per_product.items():
@@ -162,7 +150,7 @@ def setup_login(app: web.Application):
     app.router.add_routes(handlers_registration.routes)
     app.router.add_routes(_registration_handlers.routes)
     app.router.add_routes(handlers_change.routes)
-    app.router.add_routes(handlers_2fa.routes)
+    app.router.add_routes(_2fa_handlers.routes)
 
     _setup_login_options(app)
     setup_login_storage(app)

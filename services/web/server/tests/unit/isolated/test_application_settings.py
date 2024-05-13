@@ -7,10 +7,10 @@ import os
 
 import pytest
 from aiohttp import web
+from models_library.utils.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
-from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -225,6 +225,10 @@ def test_settings_to_client_statics_plugins(
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
+    )
+    assert (
+        statics["webserverLogin"]["LOGIN_2FA_REQUIRED"]
+        == settings.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
     )
     assert (
         statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")

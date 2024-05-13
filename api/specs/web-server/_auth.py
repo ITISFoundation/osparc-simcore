@@ -17,13 +17,13 @@ from models_library.api_schemas_webserver.auth import (
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.login._2fa_handlers import Resend2faBody
 from simcore_service_webserver.login._auth_handlers import (
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
     LogoutBody,
 )
-from simcore_service_webserver.login.handlers_2fa import Resend2faBody
 from simcore_service_webserver.login.handlers_change import (
     ChangeEmailBody,
     ChangePasswordBody,
@@ -313,3 +313,13 @@ async def create_api_key(_body: ApiKeyCreate):
 )
 async def delete_api_key(_body: ApiKeyCreate):
     """deletes API key by name"""
+
+
+@router.get(
+    "/auth/captcha",
+    operation_id="request_captcha",
+    status_code=status.HTTP_200_OK,
+    responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
+)
+async def request_captcha():
+    ...

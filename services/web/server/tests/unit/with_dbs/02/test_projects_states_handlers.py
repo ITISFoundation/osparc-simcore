@@ -20,6 +20,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
@@ -33,6 +34,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.services_enums import ServiceState
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -247,6 +249,7 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
         {"read": True, "write": False, "delete": False},
         {"read": False, "write": False, "delete": False},
     ],
+    ids=str,
 )
 async def test_share_project(
     client: TestClient,
@@ -312,9 +315,9 @@ async def test_share_project(
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
-            expected_status_code=expected.no_content
-            if share_rights["delete"]
-            else expected.forbidden,
+            expected_status_code=(
+                expected.no_content if share_rights["delete"] else expected.forbidden
+            ),
         )
 
 
@@ -525,30 +528,36 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     max_amount_of_auto_started_dyn_services: int,
     faker: Faker,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     assert client.app
-    num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
-        min_value=3, max_value=250
-    )
+    num_of_dyn_services = max_amount_of_auto_started_dyn_services
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
-    for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
-            for service_id in range(num_service_already_running)
-        ]
-
-        url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-        resp = await client.post(f"{url}", json=client_session_id_factory())
-        await assert_status(resp, expected.ok)
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(project["uuid"])
+    num_service_already_running = faker.pyint(
+        min_value=1, max_value=num_of_dyn_services - 1
+    )
+    assert num_service_already_running < num_of_dyn_services
+    _ = [
+        await create_dynamic_service_mock(
+            user_id=logged_user["id"],
+            project_id=project["uuid"],
+            service_uuid=all_service_uuids[service_id],
         )
-        mocked_notifications_plugin["subscribe"].reset_mock()
-        assert mocked_director_v2_api[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].call_count == (num_of_dyn_services - num_service_already_running)
-        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
+        for service_id in range(num_service_already_running)
+    ]
+
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected.ok)
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(
+        client.app, ProjectID(project["uuid"])
+    )
+    mocked_notifications_plugin["subscribe"].reset_mock()
+    assert mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].call_count == (num_of_dyn_services - num_service_already_running)
+    mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -604,6 +613,8 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     mock_catalog_api: dict[str, mock.Mock],
     max_amount_of_auto_started_dyn_services: int,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
+    faker: Faker,
 ):
     assert client.app
 
@@ -611,21 +622,29 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         max_amount_of_auto_started_dyn_services + 1
     )
     all_service_uuids = list(project["workbench"])
-    for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
-            for service_id in range(num_service_already_running)
-        ]
-        url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-        resp = await client.post(f"{url}", json=client_session_id_factory())
-        await assert_status(resp, expected.ok)
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(project["uuid"])
+    num_service_already_running = faker.pyint(
+        min_value=0, max_value=max_amount_of_auto_started_dyn_services
+    )
+    assert num_service_already_running <= max_amount_of_auto_started_dyn_services
+    _ = [
+        await create_dynamic_service_mock(
+            user_id=logged_user["id"],
+            project_id=project["uuid"],
+            service_uuid=all_service_uuids[service_id],
         )
-        mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        for service_id in range(num_service_already_running)
+    ]
+
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected.ok)
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(
+        client.app, ProjectID(project["uuid"])
+    )
+    mocked_notifications_plugin["subscribe"].reset_mock()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -642,6 +661,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     max_amount_of_auto_started_dyn_services: int,
     faker: Faker,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     assert client.app
     assert max_amount_of_auto_started_dyn_services == 0, "setting not disabled!"
@@ -652,21 +672,27 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     num_of_dyn_services = 7
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
-    for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
-            for service_id in range(num_service_already_running)
-        ]
-        url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-        resp = await client.post(f"{url}", json=client_session_id_factory())
-        await assert_status(resp, expected.ok)
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(project["uuid"])
+    num_service_already_running = faker.pyint(
+        min_value=0, max_value=num_of_dyn_services
+    )
+    assert num_service_already_running <= num_of_dyn_services
+    _ = [
+        await create_dynamic_service_mock(
+            user_id=logged_user["id"],
+            project_id=project["uuid"],
+            service_uuid=all_service_uuids[service_id],
         )
-        mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_called()
+        for service_id in range(num_service_already_running)
+    ]
+
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected.ok)
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(
+        client.app, ProjectID(project["uuid"])
+    )
+    mocked_notifications_plugin["subscribe"].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].assert_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -755,35 +781,35 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client: TestClient,
-    logged_user,
-    user_project,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
     client_session_id_factory: Callable,
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
-    fake_services,
+    fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     mock_dynamic_scheduler_rabbitmq: None,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:close
-    fake_dynamic_services = fake_services(number_services=5)
+    fake_dynamic_services = await fake_services(number_services=5)
     assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
+    assert client.app
     # open project
     client_id = client_session_id_factory()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
 
     if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
-            client.server.app, logged_user["id"], user_project["uuid"]
+            client.app, logged_user["id"], user_project["uuid"]
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
     else:
@@ -791,7 +817,7 @@ async def test_close_project(
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.no_content)
 
     if resp.status == status.HTTP_204_NO_CONTENT:
@@ -803,7 +829,7 @@ async def test_close_project(
 
         calls = [
             call(
-                client.server.app,
+                client.app,
                 user_id=logged_user["id"],
                 project_id=user_project["uuid"],
             ),
@@ -814,11 +840,11 @@ async def test_close_project(
 
         calls = [
             call(
-                app=client.server.app,
-                node_id=service["service_uuid"],
+                app=client.app,
+                node_id=service.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
-                progress=mock_progress_bar.sub_progress(1),
+                progress=mock.ANY,
             )
             for service in fake_dynamic_services
         ]
@@ -858,14 +884,14 @@ async def test_get_active_project(
     except SocketConnectionError:
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
-
+    assert client.app
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
         .url_for()
         .with_query(client_session_id=client_id1)
     )
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         assert not data
@@ -875,10 +901,10 @@ async def test_get_active_project(
     open_project_url = client.app.router["open_project"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.post(open_project_url, json=client_id1)
+    resp = await client.post(f"{open_project_url}", json=client_id1)
     await assert_status(resp, expected)
 
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
@@ -909,7 +935,7 @@ async def test_get_active_project(
         .url_for()
         .with_query(client_session_id=client_id2)
     )
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         assert not data
@@ -945,6 +971,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     mock_catalog_api: dict[str, mock.Mock],
     mocker,
     faker: Faker,
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects._crud_handlers.projects_api.storage_api.delete_data_folders_of_project_node",
@@ -957,13 +984,13 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
-    node_id = None
+    dynamic_node_id = None
     if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_called_once()
         assert "node_id" in data
-        node_id = data["node_id"]
+        dynamic_node_id = data["node_id"]
     else:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
@@ -978,24 +1005,28 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     }
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
-    node_id_2 = None
+    computational_node_id = None
     if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
         assert "node_id" in data
-        node_id_2 = data["node_id"]
+        computational_node_id = data["node_id"]
     else:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
 
     # get the node state
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-        {"service_uuid": node_id, "service_state": "running"}
-    ]
+    _created_dynamic_service_mock = await create_dynamic_service_mock(
+        user_id=logged_user["id"],
+        project_id=user_project["uuid"],
+        service_uuid=dynamic_node_id,
+        service_state=ServiceState.RUNNING,
+    )
+    assert dynamic_node_id
     url = client.app.router["get_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
+        project_id=user_project["uuid"], node_id=dynamic_node_id
     )
 
     node_sample = deepcopy(NodeGet.Config.schema_extra["example"])
@@ -1014,10 +1045,9 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = []
-
+    assert computational_node_id
     url = client.app.router["get_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id_2
+        project_id=user_project["uuid"], node_id=computational_node_id
     )
     mocked_director_v2_api[
         "dynamic_scheduler.api.get_dynamic_service"
@@ -1034,14 +1064,12 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-        {**node_sample, "service_uuid": node_id}
-    ]
     url = client.app.router["delete_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id
+        project_id=user_project["uuid"], node_id=dynamic_node_id
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
+    await asyncio.sleep(5)
     if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_director_v2_api[
             "dynamic_scheduler.api.stop_dynamic_service"
@@ -1056,9 +1084,8 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     # delete the NOT dynamic node
     mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
-    # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
-        project_id=user_project["uuid"], node_id=node_id_2
+        project_id=user_project["uuid"], node_id=computational_node_id
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
@@ -1358,9 +1385,11 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
-                expected.locked
-                if user_role != UserRole.GUEST
-                else status.HTTP_423_LOCKED,
+                (
+                    expected.locked
+                    if user_role != UserRole.GUEST
+                    else status.HTTP_423_LOCKED
+                ),
             ],
         )
         for c in clients

@@ -46,7 +46,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           break;
         case "user-center":
           control = new qx.ui.menu.Button(this.tr("My Account"));
-          control.addListener("execute", () => osparc.desktop.credits.MyAccountWindow.openWindow(), this);
+          control.addListener("execute", () => osparc.desktop.account.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
         case "admin-center":

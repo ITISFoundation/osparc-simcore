@@ -154,6 +154,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it",
     )
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+    DIRECTOR_V2_PROFILING: bool = False
 
     DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
 
@@ -211,6 +212,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True,
         description="resource usage tracker service client's plugin",
+    )
+
+    DIRECTOR_V2_PUBLIC_API_BASE_URL: AnyHttpUrl = Field(
+        ...,
+        description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
     )
 
     @validator("LOG_LEVEL", pre=True)

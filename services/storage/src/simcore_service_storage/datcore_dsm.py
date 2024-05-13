@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from aiohttp import web
 from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
@@ -51,7 +52,12 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def list_files(
-        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
+        self,
+        user_id: UserID,
+        *,
+        expand_dirs: bool,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_datasets_files_metadatas(

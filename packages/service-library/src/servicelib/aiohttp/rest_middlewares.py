@@ -11,6 +11,7 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from models_library.utils.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
@@ -104,7 +105,7 @@ def error_middleware_factory(
                     payload = json.loads(err.text)
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
-                        err.text = json.dumps(payload)
+                        err.text = json_dumps(payload)
                 except Exception as other_error:  # pylint: disable=broad-except
                     _process_and_raise_unexpected_error(request, other_error)
             raise err

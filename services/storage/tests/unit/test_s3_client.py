@@ -30,7 +30,6 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
@@ -46,13 +45,7 @@ from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
-
-@pytest.fixture
-def mock_config(
-    mocked_s3_server_envs: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # NOTE: override services/storage/tests/conftest.py::mock_config
-    monkeypatch.setenv("STORAGE_POSTGRES", "null")
+pytest_simcore_core_services_selection = ["postgres"]
 
 
 async def test_storage_storage_s3_client_creation(
@@ -94,14 +87,14 @@ async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket = faker.pystr()
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
     assert response["Buckets"][0]["Name"] == bucket
     # now we create the bucket again, it should silently work even if it exists already
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
@@ -114,7 +107,7 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket_name = faker.pystr()
-    await storage_s3_client.create_bucket(bucket_name)
+    await storage_s3_client.create_bucket(bucket_name, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [

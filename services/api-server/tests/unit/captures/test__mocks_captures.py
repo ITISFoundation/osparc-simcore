@@ -15,11 +15,11 @@ import jsonref
 import pytest
 import respx
 from pydantic import parse_file_as
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from simcore_service_api_server.utils.http_calls_capture_processing import (
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_openapi import _determine_path
+from pytest_simcore.helpers.httpx_calls_capture_parameters import (
     CapturedParameter,
     PathDescription,
-    _determine_path,
 )
 
 try:
@@ -30,7 +30,6 @@ try:
     )
 
     OPENAPI_CORE_INSTALLED = True
-
 
 except ImportError:
     Spec: TypeAlias = Any

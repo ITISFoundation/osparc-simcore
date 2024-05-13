@@ -1,5 +1,7 @@
 from typing import Final
 
+from aiohttp import web
+from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -9,6 +11,8 @@ from models_library.user_preferences import (
     PreferenceName,
 )
 from pydantic import Field, NonNegativeInt
+
+from .settings import UsersSettings, get_plugin_settings
 
 _MINUTE: Final[NonNegativeInt] = 60
 
@@ -95,6 +99,11 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
     value: int = 5  # in gigabytes
 
 
+class TwoFAFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "twoFAPreference"
+    value: TwoFactorAuthentificationMethod = TwoFactorAuthentificationMethod.SMS
+
+
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
     value: list[int] | None = None
@@ -118,6 +127,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     JobConcurrencyLimitFrontendUserPreference,
     AllowMetricsCollectionFrontendUserPreference,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+    TwoFAFrontendUserPreference,
     BillingCenterUsageColumnOrderFrontendUserPreference,
 ]
 
@@ -136,3 +146,17 @@ def get_preference_name(preference_identifier: PreferenceIdentifier) -> Preferen
 
 def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIdentifier:
     return _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING[preference_name]
+
+
+def overwrite_user_preferences_defaults(app: web.Application) -> None:
+    settings: UsersSettings = get_plugin_settings(app)
+
+    search_map: dict[str, type[FrontendUserPreference]] = {
+        x.__name__: x for x in ALL_FRONTEND_PREFERENCES
+    }
+
+    for (
+        preference_class,
+        value,
+    ) in settings.USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES.items():
+        search_map[preference_class].update_preference_default_value(value)

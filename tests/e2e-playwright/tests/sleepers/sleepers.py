@@ -21,6 +21,7 @@ from pytest_simcore.logging_utils import ContextMessages, log_context, test_logg
 from pytest_simcore.playwright_utils import (
     MINUTE,
     RunningState,
+    ServiceType,
     SocketIOEvent,
     retrieve_project_state_from_decoded_message,
     wait_for_pipeline_state,
@@ -74,23 +75,16 @@ def _get_file_names(page: Page) -> list[str]:
 def test_sleepers(
     page: Page,
     log_in_and_out: WebSocket,
-    create_new_project_and_delete: Callable[..., None],
+    create_project_from_service_dashboard: Callable[
+        [ServiceType, str, str | None], str
+    ],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
-    product_billable: bool,
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
-    # open service tab and filter for sleeper
-    page.get_by_test_id("servicesTabBtn").click()
-    _textbox = page.get_by_test_id("searchBarFilter-textField-service")
-    _textbox.fill("sleeper")
-    _textbox.press("Enter")
-    page.get_by_test_id(
-        "studyBrowserListItem_simcore/services/comp/itis/sleeper"
-    ).click()
-
-    project_uuid = create_new_project_and_delete(auto_delete=True)
-    print("project uuid: ", project_uuid)
+    project_uuid = create_project_from_service_dashboard(
+        ServiceType.COMPUTATIONAL, "sleeper", "itis"
+    )
 
     # we are now in the workbench
     with log_context(
@@ -220,11 +214,10 @@ def test_sleepers(
     ) as ctx:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
             sleeper.click()
-            page.get_by_test_id("outputsTabButton").click()
             # waiting for this response is not enough, the frontend needs some time to show the files
             # therefore _get_file_names is wrapped with tenacity
             with page.expect_response(re.compile(r"files/metadata")):
-                page.get_by_test_id("nodeOutputFilesBtn").click()
+                page.get_by_test_id("nodeFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
             msg = f"--- found {output_file_names_found=} in sleeper {index} service outputs."

@@ -14,7 +14,7 @@ from faker import Faker
 from models_library.users import GroupID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
 
 pytest_plugins = [
@@ -56,17 +56,8 @@ def secret_key() -> str:
 
 
 def pytest_addoption(parser: pytest.Parser):
-    group = parser.getgroup(
-        "external_environment",
-        description="Replaces mocked services with real ones by passing actual environs and connecting directly to external services",
-    )
-    group.addoption(
-        "--external-envfile",
-        action="store",
-        type=Path,
-        default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
-    )
+    group = parser.getgroup("simcore")
+
     group.addoption(
         "--external-email",
         action="store",
@@ -77,23 +68,11 @@ def pytest_addoption(parser: pytest.Parser):
 
 
 @pytest.fixture(scope="session")
-def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
-    """
-    If a file under test folder prefixed with `.env-secret` is present,
-    then this fixture captures it.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    if envfile := request.config.getoption("--external-envfile"):
-        assert isinstance(envfile, Path)
-        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
-        envs = load_dotenv(envfile)
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-
-    return envs
+def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
+    if external_environment:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
+        assert "PAYMENTS_GATEWAY_URL" in external_environment
+    return external_environment
 
 
 @pytest.fixture

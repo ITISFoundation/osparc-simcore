@@ -225,7 +225,7 @@ qx.Class.define("osparc.share.Collaborators", {
       });
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
-        collaboratorsManager.addListener("addEditors", e => {
+        collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this._addEditors(e.getData(), cb);
         }, this);

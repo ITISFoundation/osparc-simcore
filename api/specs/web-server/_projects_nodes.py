@@ -108,6 +108,7 @@ def restart_node(project_id: str, node_id: str):  # noqa: ARG001
 @router.patch(
     "/projects/{project_id}/nodes/{node_id}/outputs",
     response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def update_node_outputs(
     project_id: str, node_id: str, _new: NodeOutputs

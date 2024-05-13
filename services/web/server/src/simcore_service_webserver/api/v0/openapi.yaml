@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.2
+  version: 0.40.3
 servers:
 - url: ''
   description: webserver
@@ -472,6 +472,19 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
+  /v0/auth/captcha:
+    get:
+      tags:
+      - auth
+      summary: Request Captcha
+      operationId: request_captcha
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+            image/png: {}
   /v0/catalog/services:
     get:
       tags:
@@ -2638,11 +2651,8 @@ paths:
               $ref: '#/components/schemas/NodeOutputs'
         required: true
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
   /v0/projects/{project_id}/nodes/{node_id}/resources:
     get:
       tags:
@@ -4959,11 +4969,15 @@ components:
       title: AccountRequestInfo
       required:
       - form
+      - captcha
       type: object
       properties:
         form:
           title: Form
           type: object
+        captcha:
+          title: Captcha
+          type: string
       example:
         form:
           firstName: James
@@ -4980,6 +4994,7 @@ components:
           hear: Search_Engine
           privacyPolicy: true
           eula: true
+        captcha: A12B34
     Activity:
       title: Activity
       required:
@@ -5606,8 +5621,8 @@ components:
         message:
           title: Message
           type: string
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -7515,8 +7530,6 @@ components:
       title: LoginNextPage
       required:
       - name
-      - code
-      - reason
       type: object
       properties:
         name:
@@ -7525,14 +7538,6 @@ components:
           description: Code name to the front-end page. Ideally a PageStr
         parameters:
           $ref: '#/components/schemas/CodePageParams'
-        code:
-          title: Code
-          type: string
-          deprecated: true
-        reason:
-          title: Reason
-          type: string
-          deprecated: true
       description: 'This is the body of a 2XX response to pass the front-end
 
         what kind of page shall be display next and some information about it
@@ -10745,6 +10750,7 @@ components:
       - title
       - text
       - date
+      - product
       - id
       - read
       type: object
@@ -10769,6 +10775,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
         id:
           title: Id
           type: string
@@ -10784,6 +10797,7 @@ components:
       - title
       - text
       - date
+      - product
       type: object
       properties:
         user_id:
@@ -10806,6 +10820,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
@@ -11234,8 +11255,8 @@ components:
       title: _PageParams
       type: object
       properties:
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0

@@ -114,6 +114,9 @@ def _log_expected_operation(
     logger.log(log_level, formatted_message)
 
 
+_DISABLE_RCLONE_MULTI_THREADED: Final[int] = 1
+
+
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
     dyv_volume: dict,
@@ -189,6 +192,8 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         f"{source_dir}",
         f"dst:{s3_path}",
         "--verbose",
+        "--multi-thread-streams",
+        f"{_DISABLE_RCLONE_MULTI_THREADED}",
     ]
 
     str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)

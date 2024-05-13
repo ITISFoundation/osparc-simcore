@@ -17,6 +17,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -24,7 +25,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ._meta import API_VTAG
@@ -67,6 +67,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
         user_id=query_params.user_id,
         expand_dirs=query_params.expand_dirs,
         uuid_filter=query_params.uuid_filter,
+        project_id=query_params.project_id,
     )
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
@@ -93,15 +94,18 @@ async def get_file_metadata(request: web.Request) -> web.Response:
             file_id=path_params.file_id,
         )
     except FileMetaDataNotFoundError:
-        # NOTE: This is what happens Larry... data must be an empty {} or else some old
-        # dynamic services will FAIL (sic)
-        # TODO: once all legacy services are gone, remove the try except, it will default to 404
+        # NOTE: LEGACY compatibility
+        # This is what happens Larry... data must be an empty {} or else some old dynamic services will FAIL (sic)
+        # Cannot remove until we retire all legacy services
+        # https://github.com/ITISFoundation/osparc-simcore/issues/5676
+        # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
+
         return web.json_response(
-            {"error": "No result found", "data": None}, dumps=json_dumps
+            {"error": "No result found", "data": {}}, dumps=json_dumps
         )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
-        # LEGACY compatiblity with API v0.1.0
+        # NOTE: LEGACY compatiblity with API v0.1.0
         # SEE models used in sdk in:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_type.py#L34

@@ -79,11 +79,6 @@ qx.Class.define("osparc.Application", {
           e.returnValue = "";
         }
       });
-      if (qx.core.Environment.get("dev.enableFakeSrv")) {
-        console.debug("Fake server enabled");
-        osparc.dev.fake.srv.restapi.User;
-        osparc.dev.fake.srv.restapi.Authentication;
-      }
 
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
@@ -218,7 +213,9 @@ qx.Class.define("osparc.Application", {
         link.rel = "icon";
         document.getElementsByTagName("head")[0].appendChild(link);
       }
-      link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
+      link.href = "";
+      osparc.product.Utils.getFaviconUrl()
+        .then(url => link.href = url);
     },
 
     __startupChecks: function() {
@@ -274,11 +271,6 @@ qx.Class.define("osparc.Application", {
 
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-
-      if (qx.core.Environment.get("dev.disableLogin")) {
-        console.warn("Login page was disabled", "Starting main application ...");
-        isLogged = true;
-      }
 
       if (isLogged) {
         this.__loadMainPage();

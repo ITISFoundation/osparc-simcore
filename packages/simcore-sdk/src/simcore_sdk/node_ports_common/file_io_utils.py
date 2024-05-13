@@ -139,7 +139,7 @@ class ProgressData:
 
 @runtime_checkable
 class LogRedirectCB(Protocol):
-    async def __call__(self, logs: str) -> None:
+    async def __call__(self, log: str) -> None:
         ...
 
 
@@ -204,15 +204,20 @@ async def download_link_to_file(
                             **(
                                 _TQDM_FILE_OPTIONS
                                 | {
-                                    "miniters": _compute_tqdm_miniters(file_size)
-                                    if file_size
-                                    else 1
+                                    "miniters": (
+                                        _compute_tqdm_miniters(file_size)
+                                        if file_size
+                                        else 1
+                                    )
                                 }
                             ),
                         )
                     )
                     sub_progress = await stack.enter_async_context(
-                        progress_bar.sub_progress(steps=file_size or 1)
+                        progress_bar.sub_progress(
+                            steps=file_size or 1,
+                            description=f"downloading {file_path.name}",
+                        )
                     )
 
                     await _file_chunk_writer(
@@ -394,7 +399,9 @@ async def upload_file_to_presigned_links(
             )
         )
         sub_progress = await stack.enter_async_context(
-            progress_bar.sub_progress(steps=file_size)
+            progress_bar.sub_progress(
+                steps=file_size, description=f"uploading {file_name}"
+            )
         )
 
         indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))

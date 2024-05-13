@@ -17,7 +17,7 @@ from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
-from .diagnostics.plugin import setup_diagnostics
+from .diagnostics.plugin import setup_diagnostics, setup_profiling_middleware
 from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
@@ -107,6 +107,7 @@ def create_application() -> web.Application:
     setup_notifications(app)
     setup_socketio(app)
     setup_db_listener(app)
+    setup_profiling_middleware(app)
 
     # login
     setup_email(app)

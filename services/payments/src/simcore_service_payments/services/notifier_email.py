@@ -1,24 +1,33 @@
 import logging
 import mimetypes
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
+from email.mime.application import MIMEApplication
 from pathlib import Path
 from typing import Final, cast
 
+import httpx
 from aiosmtplib import SMTP
 from attr import dataclass
 from jinja2 import DictLoader, Environment, select_autoescape
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    retry_if_result,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from ..db.payment_users_repo import PaymentsUsersRepo
+from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
@@ -114,6 +123,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
+    bcc_email: EmailStr | None = None
 
 
 @dataclass
@@ -121,6 +131,39 @@ class _PaymentData:
     price_dollars: str
     osparc_credits: str
     invoice_url: str
+    invoice_pdf_url: str
+
+
+invoice_file_name_pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
+
+
+def retry_if_status_code(response):
+    return response.status_code in (
+        429,
+        500,
+        502,
+        503,
+        504,
+    )  # Retry for these common transient errors
+
+
+exception_retry_condition = retry_if_exception_type(
+    (httpx.ConnectError, httpx.ReadTimeout)
+)
+result_retry_condition = retry_if_result(retry_if_status_code)
+
+
+@retry(
+    retry=exception_retry_condition | result_retry_condition,
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    stop=stop_after_attempt(5),
+    retry_error_callback=lambda _: None,  # Return None if all retries fail
+)
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response | None:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        _response = await client.get(invoice_pdf)
+        _response.raise_for_status()
+    return _response
 
 
 async def _create_user_email(
@@ -148,12 +191,27 @@ async def _create_user_email(
     )
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
+    if product.bcc_email:
+        msg["Bcc"] = product.bcc_email
+
     # Body
     text_template = env.get_template("notify_payments.txt")
     msg.set_content(text_template.render(data))
 
     html_template = env.get_template("notify_payments.html")
     msg.add_alternative(html_template.render(data), subtype="html")
+
+    # Invoice attachment (It is important that attachment is added after body)
+    if pdf_response := await _get_invoice_pdf(payment.invoice_pdf_url):
+        match = invoice_file_name_pattern.search(
+            pdf_response.headers["content-disposition"]
+        )
+        _file_name = match.group("filename")
+
+        attachment = MIMEApplication(pdf_response.content, Name=_file_name)
+        attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
+        msg.attach(attachment)
+
     return msg
 
 
@@ -205,17 +263,24 @@ async def _create_email_session(
 
 
 class EmailProvider(NotificationProvider):
-    def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
+    def __init__(
+        self,
+        settings: SMTPSettings,
+        users_repo: PaymentsUsersRepo,
+        bcc_email: EmailStr | None = None,
+    ):
         self._users_repo = users_repo
         self._settings = settings
-
+        self._bcc_email = bcc_email
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
             autoescape=select_autoescape(["html", "xml"]),
         )
 
     async def _create_successful_payments_message(
-        self, user_id: UserID, payment: PaymentTransaction
+        self,
+        user_id: UserID,
+        payment: PaymentsTransactionsDB,
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
@@ -232,12 +297,14 @@ class EmailProvider(NotificationProvider):
                 price_dollars=f"{payment.price_dollars:.2f}",
                 osparc_credits=f"{payment.osparc_credits:.2f}",
                 invoice_url=payment.invoice_url,
+                invoice_pdf_url=payment.invoice_pdf_url,
             ),
             product=_ProductData(
                 product_name=data.product_name,
                 display_name=data.display_name,
                 vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
+                bcc_email=self._bcc_email,
             ),
         )
 
@@ -246,11 +313,12 @@ class EmailProvider(NotificationProvider):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
     ):
         # NOTE: we only have an email for successful payments
         if payment.state == "SUCCESS":
             msg = await self._create_successful_payments_message(user_id, payment)
+
             async with _create_email_session(self._settings) as smtp:
                 await smtp.send_message(msg)
         else:

@@ -12,6 +12,7 @@
 
    Authors:
      * Odei Maiz (odeimaiz)
+     * Julian Querido (jsaq007)
 
 ************************************************************************ */
 
@@ -38,51 +39,69 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   properties: {
-    defaultProgress: {
+    overallProgress: {
       check: "Number",
-      init: null,
+      init: 0,
       nullable: false,
-      apply: "__applyDefaultProgress"
+      apply: "__applyOverallProgress"
     },
 
     clusterUpScaling: {
-      check: "Number",
-      init: 0,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applyClusterUpScaling"
     },
 
     sidecarPulling: {
-      check: "Number",
-      init: 0,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applySidecarPulling"
     },
 
     outputsPulling: {
-      check: "Number",
-      init: 0,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applyOutputsPulling"
     },
 
     statePulling: {
-      check: "Number",
-      init: 0,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applyStatePulling"
     },
 
     imagesPulling: {
-      check: "Number",
-      init: null,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applyImagesPulling"
     },
 
     inputsPulling: {
-      check: "Number",
-      init: 0,
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
       nullable: false,
       apply: "__applyInputsPulling"
     }
@@ -91,13 +110,18 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   statics: {
     NODE_INDEX: {
       LABEL: 0,
-      HALO: 1,
+      CALC: 1,
+      HALO: 2,
     },
-    createTitleAtom: function(label) {
+
+    createTaskLayout: function(label) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
-      }));
-      const lbl = this.__label = new qx.ui.basic.Label(label);
+      })).set({
+        padding: [2, 10]
+      });
+
+      const lbl = new qx.ui.basic.Label(label);
       lbl.set({
         textColor: "text",
         allowGrowX: true,
@@ -107,7 +131,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         flex: 1
       });
 
-      const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+      const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignY: "middle",
         alignX: "center",
       })).set({
@@ -116,18 +140,24 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         allowGrowY: false,
         allowGrowX: false,
       });
-      const icon = this.__ICON = new qx.ui.basic.Image(
-        "@FontAwesome5Solid/check/14"
-      ).set({
-        visibility: "excluded"
+      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/check/10").set({
+        visibility: "excluded",
+        textColor: "success"
       });
       iconContainer.add(icon);
       const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar");
       osparc.service.StatusUI.getStatusHalo(iconContainer, progressColor, 0);
       layout.addAt(iconContainer, this.NODE_INDEX.HALO);
-      layout.set({
-        padding: [2, 10]
-      })
+
+      const progressState = new qx.ui.basic.Label();
+      progressState.set({
+        value: qx.locale.Manager.tr("Waiting ..."),
+        textColor: "text",
+        allowGrowX: true,
+        allowShrinkX: true
+      });
+      layout.addAt(progressState, this.NODE_INDEX.CALC);
+
       return layout;
     },
 
@@ -142,7 +172,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       return progressBar;
     },
 
-    updateProgressLabel: function(atom, value) {
+    updateProgressLabel: function(atom, {value, progressLabel}) {
       if ([null, undefined].includes(value)) {
         return;
       }
@@ -150,17 +180,12 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (atom) {
         const halo = atom.getChildren()[this.NODE_INDEX.HALO];
         const icon = halo.getChildren()[0];
-        if (value === 1) {
-          icon.set({
-            visibility: "visible"
-          });
-        } else {
-          icon.set({
-            visibility: "excluded"
-          });
-        }
+        icon.setVisibility(value === 1 ? "visible" : "excluded");
         const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar")
         osparc.service.StatusUI.getStatusHalo(halo, progressColor, value * 100);
+
+        const label = atom.getChildren()[this.NODE_INDEX.CALC];
+        label.setValue(progressLabel);
       }
     },
 
@@ -180,42 +205,60 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
   members: {
     __mainLoadingPage: null,
-    __sequenceLoadingPage: null,
-    __defaultProgressBar: null,
-    __clusterUpScalingTitle: null,
-    __pullingSidecarTitle: null,
-    __pullingOutputsTitle: null,
-    __pullingStateTitle: null,
-    __pullingImagesTitle: null,
-    __pullingInputsTitle: null,
+    __overallProgressBar: null,
+    __clusterUpScalingLayout: null,
+    __pullingSidecarLayout: null,
+    __pullingOutputsLayout: null,
+    __pullingStateLayout: null,
+    __pullingImagesLayout: null,
+    __pullingInputsLayout: null,
     __disclaimerText: null,
+
+    getDefaultStartValues: function() {
+      return {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      }
+    },
+
+    getDefaultEndValues: function() {
+      return {
+        progressLabel: "100%",
+        value: 1
+      }
+    },
 
     getWidgetForLoadingPage: function() {
       return this.__mainLoadingPage;
     },
 
     resetSequence: function() {
-      this.setDefaultProgress(0);
-      this.setClusterUpScaling(0);
-      this.setSidecarPulling(0);
-      this.setOutputsPulling(0);
-      this.setStatePulling(0);
-      this.setImagesPulling(0);
-      this.setInputsPulling(0);
+      const defaultVals = this.getDefaultStartValues();
+      this.setOverallProgress(0);
+      this.setClusterUpScaling(defaultVals);
+      this.setSidecarPulling(defaultVals);
+      this.setOutputsPulling(defaultVals);
+      this.setStatePulling(defaultVals);
+      this.setImagesPulling(defaultVals);
+      this.setInputsPulling(defaultVals);
     },
 
-    addProgressMessage: function(progressType, progress) {
-      const defaultProgress = this.getClusterUpScaling() +
-        this.getSidecarPulling() +
-        this.getOutputsPulling() +
-        this.getStatePulling() +
-        this.getImagesPulling() +
-        this.getInputsPulling();
-      if (progress) {
-        const val = defaultProgress
-        this.setDefaultProgress(val)
+    getProgress: function(report) {
+      if (report.unit) {
+        return {
+          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1, false)}`,
+          value: report["actual_value"] / report["total"]
+        }
       }
+      const percentage = parseFloat((report["actual_value"] / report["total"] * 100).toFixed(2))
+      return {
+        progressLabel: `${percentage}%`,
+        value: report["actual_value"] / report["total"]
+      }
+    },
 
+    addProgressMessage: function(progressType, progressReport) {
+      const progress = this.getProgress(progressReport);
       switch (progressType) {
         case "CLUSTER_UP_SCALING":
           this.setClusterUpScaling(progress);
@@ -243,21 +286,23 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
 
       const sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
-        backgroundColor: "window-popup-background"
+        backgroundColor: "window-popup-background",
+        paddingBottom: 8
       });
 
-      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING...")).set({
+      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING ...")).set({
         font: "text-12",
         alignX: "center",
         alignY: "middle",
         margin: 10
       });
-      const defaultPBar = this.__defaultProgressBar = this.self().createProgressBar(6);
+      const nTasks = 6;
+      const overallPBar = this.__overallProgressBar = this.self().createProgressBar(nTasks);
       sequenceLoadingPage.add(progressTitle);
-      sequenceLoadingPage.add(defaultPBar);
+      sequenceLoadingPage.add(overallPBar);
 
-      const defaultProgressSubtitle = this.__disclaimerText = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes..."),
+      const disclaimerText = this.__disclaimerText = new qx.ui.basic.Atom().set({
+        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes ..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
@@ -265,30 +310,30 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         textColor: "info",
         alignX: "center"
       });
-      const icon = defaultProgressSubtitle.getChildControl("icon");
+      const icon = disclaimerText.getChildControl("icon");
       icon.set({
         textColor: "info"
       })
-      defaultProgressSubtitle.exclude();
+      disclaimerText.exclude();
 
 
-      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
-      sequenceLoadingPage.add(scalingTitle);
+      const scalingLayout = this.__clusterUpScalingLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Increasing system capacity ..."));
+      sequenceLoadingPage.add(scalingLayout);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your input data..."));
-      sequenceLoadingPage.add(pullingInputsTitle);
+      const pullingSidecarLayout = this.__pullingSidecarLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Setting up key components ..."));
+      sequenceLoadingPage.add(pullingSidecarLayout);
 
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
-      sequenceLoadingPage.add(pullingSidecarTitle);
+      const pullingOutputsLayout = this.__pullingOutputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your output data ..."));
+      sequenceLoadingPage.add(pullingOutputsLayout);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your output data..."));
-      sequenceLoadingPage.add(pullingOutputsTitle);
+      const pullingStateLayout = this.__pullingStateLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your work ..."));
+      sequenceLoadingPage.add(pullingStateLayout);
 
-      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
-      sequenceLoadingPage.add(pullingStateTitle);
+      const pullingImagesLayout = this.__pullingImagesLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Installing software ..."));
+      sequenceLoadingPage.add(pullingImagesLayout);
 
-      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Installing software..."));
-      sequenceLoadingPage.add(pullingImagesTitle);
+      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data ..."));
+      sequenceLoadingPage.add(pullingInputsLayout);
 
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
@@ -298,7 +343,17 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       });
     },
 
-    __applyDefaultProgress: function(value) {
+    __computeOverallProgress: function() {
+      const overallProgress = this.getClusterUpScaling().value +
+      this.getSidecarPulling().value +
+      this.getOutputsPulling().value +
+      this.getStatePulling().value +
+      this.getImagesPulling().value +
+      this.getInputsPulling().value;
+      this.setOverallProgress(overallProgress)
+    },
+
+    __applyOverallProgress: function(value) {
       if (value > 0 && value < 6) {
         setTimeout(() => {
           this.__disclaimerText.show();
@@ -307,56 +362,63 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         this.__disclaimerText.exclude();
       }
 
-      this.self().progressReceived(this.__defaultProgressBar, value);
+      this.self().progressReceived(this.__overallProgressBar, value);
     },
 
     __applyClusterUpScaling: function(value) {
-      this.self().updateProgressLabel(this.__clusterUpScalingTitle, value);
+      this.self().updateProgressLabel(this.__clusterUpScalingLayout, value);
+
+      this.__computeOverallProgress();
     },
 
     __applySidecarPulling: function(value) {
-      if (value === 1) {
-        this.setClusterUpScaling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setClusterUpScaling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingSidecarTitle, value);
+      this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
+
+      this.__computeOverallProgress();
     },
 
     __applyOutputsPulling: function(value) {
-      if (this.getSidecarPulling() < 1) {
-        this.setSidecarPulling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingOutputsTitle, value);
+      this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
+
+      this.__computeOverallProgress();
     },
 
     __applyStatePulling: function(value) {
-      if (this.getSidecarPulling() < 1) {
-        this.setSidecarPulling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingStateTitle, value);
+      this.self().updateProgressLabel(this.__pullingStateLayout, value);
+
+      this.__computeOverallProgress();
     },
 
     __applyImagesPulling: function(value) {
-      if (this.getSidecarPulling() < 1) {
-        this.setSidecarPulling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingImagesTitle, value);
+      this.self().updateProgressLabel(this.__pullingImagesLayout, value);
+
+      this.__computeOverallProgress();
     },
 
     __applyInputsPulling: function(value) {
-      if (this.getSidecarPulling() < 1) {
-        this.setSidecarPulling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingInputsTitle, value);
+      this.self().updateProgressLabel(this.__pullingInputsLayout, value);
+
+      this.__computeOverallProgress();
     }
   }
 });

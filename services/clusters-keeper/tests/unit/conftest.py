@@ -209,10 +209,12 @@ def enabled_rabbitmq(
 
 
 @pytest.fixture
-async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+async def initialized_app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
-    async with LifespanManager(app, shutdown_timeout=20):
+    async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
         yield app
 
 
@@ -253,8 +255,10 @@ def clusters_keeper_docker_compose_file(installed_package_dir: Path) -> Path:
 
 @pytest.fixture
 def clusters_keeper_docker_compose() -> dict[str, Any]:
-    data = importlib.resources.read_text(
-        simcore_service_clusters_keeper.data, "docker-compose.yml"
+    data = (
+        importlib.resources.files(simcore_service_clusters_keeper.data)
+        .joinpath("docker-compose.yml")
+        .read_text()
     )
     assert data
     return yaml.safe_load(data)

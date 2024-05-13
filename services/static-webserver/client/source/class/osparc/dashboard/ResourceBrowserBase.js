@@ -285,8 +285,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupOptions.add(tagByGroup);
         if (
           osparc.product.Utils.isProduct("s4l") ||
-          osparc.product.Utils.isProduct("s4llite") ||
-          osparc.product.Utils.isProduct("s4lacad")
+          osparc.product.Utils.isProduct("s4lacad") ||
+          osparc.product.Utils.isProduct("s4llite")
         ) {
           tagByGroup.execute();
         }
@@ -401,9 +401,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       openButton.openResource = true;
       openButton.addListener("execute", () => {
         switch (resourceData["resourceType"]) {
-          case "study":
-            this._startStudyById(resourceData["uuid"]);
+          case "study": {
+            const isStudyCreation = false;
+            this._startStudyById(resourceData["uuid"], null, null, isStudyCreation);
             break;
+          }
           case "template":
             this._createStudyFromTemplate(resourceData);
             break;
@@ -416,31 +418,32 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _openDetailsView: function(resourceData) {
-      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
-      moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
-      moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
-      moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
-      moreOpts.addListener("publishTemplate", e => {
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+      resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openStudy", e => {
+      resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
-        this._startStudyById(studyId, openCB, null);
+        const isStudyCreation = false;
+        this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
-      moreOpts.addListener("openTemplate", e => {
+      resourceDetails.addListener("openTemplate", e => {
         win.close();
         const templateData = e.getData();
         this._createStudyFromTemplate(templateData);
       });
-      moreOpts.addListener("openService", e => {
+      resourceDetails.addListener("openService", e => {
         win.close();
         const openServiceData = e.getData();
         this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
       });
-      return moreOpts;
+      return resourceDetails;
     },
 
     _getShareMenuButton: function(card) {

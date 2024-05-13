@@ -17,12 +17,12 @@
 
 
 qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/cogs/24";
-    const title = this.tr("General Settings");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__addCreditsIndicatorSettings();
     this.__addLowDiskSpaceSetting();
@@ -31,33 +31,12 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     this.__addS4LUserPrivacySettings();
   },
 
-  statics: {
-    patchPreference: function(preferenceId, preferenceField, newValue) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-
-      const oldValue = preferencesSettings.get(preferenceId);
-      if (newValue === oldValue) {
-        return;
-      }
-
-      preferenceField.setEnabled(false);
-      osparc.Preferences.patchPreference(preferenceId, newValue)
-        .then(() => preferencesSettings.set(preferenceId, newValue))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-          preferenceField.setValue(oldValue);
-        })
-        .finally(() => preferenceField.setEnabled(true));
-    }
-  },
-
   members: {
     __addCreditsIndicatorSettings: function() {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
         // layout
-        const box = this._createSectionBox(this.tr("Credits Indicator"));
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Credits Indicator"));
 
         const form = new qx.ui.form.Form();
 
@@ -84,7 +63,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         walletIndicatorVisibilitySB.addListener("changeValue", e => {
           const selectable = e.getData();
-          this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
+          osparc.Preferences.patchPreferenceField("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
         });
         form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
@@ -95,21 +74,21 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
           allowGrowX: false
         });
         preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
-        creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+        creditsWarningThresholdField.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
         form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
         box.add(new qx.ui.form.renderer.Single(form));
 
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addInactivitySetting: function() {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-        const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
         box.add(label);
 
         const form = new qx.ui.form.Form();
@@ -123,17 +102,17 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
           converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
         });
-        inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
+        inactivitySpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
         form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
 
         box.add(new qx.ui.form.renderer.Single(form));
 
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addJobConcurrencySetting: function() {
-      const box = this._createSectionBox(this.tr("Job Concurrency"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -144,17 +123,17 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
-      jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
+      jobConcurrencySpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
-      this.add(box);
+      this._add(box);
     },
 
     __addLowDiskSpaceSetting: function() {
       const preferences = osparc.Preferences.getInstance();
       if (preferences.getLowDiskSpaceThreshold()) {
-        const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
-        const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Low Disk Space Threshold"));
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
         box.add(label);
         const form = new qx.ui.form.Form();
         const diskUsageSpinner = new qx.ui.form.Spinner().set({
@@ -166,28 +145,28 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
-        diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
+        diskUsageSpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
         form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
         box.add(new qx.ui.form.renderer.Single(form));
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addS4LUserPrivacySettings: function() {
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
-        const box = this._createSectionBox("Privacy Settings");
+        const box = osparc.ui.window.TabbedView.createSectionBox("Privacy Settings");
 
-        const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
         box.add(label);
 
         const preferencesSettings = osparc.Preferences.getInstance();
 
         const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
         preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
-        cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+        cbAllowMetricsCollection.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
         box.add(cbAllowMetricsCollection);
 
-        this.add(box);
+        this._add(box);
       }
     }
   }

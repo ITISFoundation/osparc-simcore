@@ -39,6 +39,11 @@ qx.Class.define("osparc.auth.LoginPage", {
     "done": "qx.event.type.Data"
   },
 
+  statics: {
+    LOGO_WIDTH: 300,
+    LOGO_HEIGHT: 90
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -60,18 +65,29 @@ qx.Class.define("osparc.auth.LoginPage", {
             flex: 1
           });
           break;
-        case "logo-w-platform":
+        case "logo-w-platform": {
           control = new osparc.ui.basic.LogoWPlatform();
-          control.setSize({
-            width: 300,
-            height: 90
-          });
+          const productLogoPath = osparc.product.Utils.getLogoPath();
+          if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
+            // png images don't scale keeping the aspect ratio
+            const height = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().LOGO_WIDTH)
+            control.setSize({
+              width: this.self().LOGO_WIDTH,
+              height
+            });
+          } else {
+            control.setSize({
+              width: this.self().LOGO_WIDTH,
+              height: this.self().LOGO_HEIGHT
+            });
+          }
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
           break;
+        }
         case "science-text-image":
           control = new qx.ui.basic.Image("osparc/Sim4Life_science_Subline.svg").set({
-            width: 300,
+            width: this.self().LOGO_WIDTH,
             height: 24,
             scale: true,
             alignX: "center",
@@ -265,23 +281,30 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       login.addListener("to2FAValidationCode", e => {
-        const msg = e.getData();
-        const startIdx = msg.indexOf("+");
+        const data = e.getData();
         login2FAValidationCode.set({
-          userEmail: login.getEmail(),
-          userPhoneNumber: msg.substring(startIdx, msg.length)
+          userEmail: data.userEmail,
+          smsEnabled: true,
+          message: data.message
         });
+        if (data.nextStep === "SMS_CODE_REQUIRED") {
+          login2FAValidationCode.restartSMSButton(data.retryAfter);
+        } else if (data.nextStep === "EMAIL_CODE_REQUIRED") {
+          login2FAValidationCode.restartEmailButton(data.retryAfter);
+        }
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();
       }, this);
 
       verifyPhoneNumber.addListener("skipPhoneRegistration", e => {
+        const data = e.getData();
         login2FAValidationCode.set({
-          userEmail: e.getData(),
-          userPhoneNumber: null
+          userEmail: data.userEmail,
+          smsEnabled: false,
+          message: data.message
         });
+        login2FAValidationCode.restartEmailButton(data.retryAfter);
         pages.setSelection([login2FAValidationCode]);
-        login.resetValues();
       }, this);
 
       login2FAValidationCode.addListener("done", msg => {

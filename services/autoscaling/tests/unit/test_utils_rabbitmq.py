@@ -12,6 +12,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
+from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -188,8 +189,8 @@ async def test_post_task_progress_message(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,
-                    progress=progress_value,
                     progress_type=ProgressType.CLUSTER_UP_SCALING,
+                    report=ProgressReport(actual_value=progress_value, total=1),
                 )
                 .json()
                 .encode()

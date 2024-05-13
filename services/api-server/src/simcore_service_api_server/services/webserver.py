@@ -1,4 +1,4 @@
-# pylint: disable=R0904
+# pylint: disable=too-many-public-methods
 
 import logging
 import urllib.parse
@@ -101,6 +101,10 @@ class WebserverApi(BaseServiceClientApi):
     """
 
 
+class LongRunningTasksClient(BaseServiceClientApi):
+    "Client for requesting status and results of long running tasks"
+
+
 @dataclass
 class AuthSession:
     """
@@ -114,19 +118,28 @@ class AuthSession:
     """
 
     _api: WebserverApi
+    _long_running_task_client: LongRunningTasksClient
     vtag: str
     session_cookies: dict | None = None
 
     @classmethod
     def create(
-        cls, app: FastAPI, session_cookies: dict, product_header: dict[str, str]
+        cls,
+        app: FastAPI,
+        session_cookies: dict,
+        product_header: dict[str, str],
     ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
         api.client.headers = product_header
+        long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
+        assert long_running_tasks_client  # nosec
+        assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
+        long_running_tasks_client.client.headers = product_header
         return cls(
             _api=api,
+            _long_running_task_client=long_running_tasks_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
@@ -137,8 +150,17 @@ class AuthSession:
     def client(self):
         return self._api.client
 
+    @property
+    def long_running_task_client(self):
+        return self._long_running_task_client.client
+
     async def _page_projects(
-        self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
+        self,
+        *,
+        limit: int,
+        offset: int,
+        show_hidden: bool,
+        search: str | None = None,
     ):
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
@@ -152,7 +174,7 @@ class AuthSession:
             {
                 status.HTTP_404_NOT_FOUND: (
                     status.HTTP_404_NOT_FOUND,
-                    lambda kwargs: "Could not list jobs",
+                    lambda _: "Could not list jobs",
                 )
             },
         ):
@@ -172,9 +194,8 @@ class AuthSession:
             return Page[ProjectGet].parse_raw(resp.text)
 
     async def _wait_for_long_running_task_results(self, data: TaskGet):
-        # NOTE: /v0 is already included in the http client base_url
-        status_url = data.status_href.lstrip(f"/{self.vtag}")
-        result_url = data.result_href.lstrip(f"/{self.vtag}")
+        status_url = data.status_href
+        result_url = data.result_href
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
@@ -184,8 +205,8 @@ class AuthSession:
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
-                get_response = await self.client.get(
-                    status_url, cookies=self.session_cookies
+                get_response = await self.long_running_task_client.get(
+                    url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
                 task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
@@ -194,7 +215,7 @@ class AuthSession:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
 
-        result_response = await self.client.get(
+        result_response = await self.long_running_task_client.get(
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
@@ -513,7 +534,9 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        return Envelope[WalletGet].parse_raw(response.text).data
+        data = Envelope[WalletGet].parse_raw(response.text).data
+        assert data is not None  # nosec
+        return data
 
     # PRODUCTS -------------------------------------------------
 
@@ -525,7 +548,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[GetCreditPrice].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data.usd_per_credit
 
     # SERVICES -------------------------------------------------
@@ -552,14 +575,19 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
-    if not settings:
-        settings = WebServerSettings.create_from_envs()
-
-    assert settings is not None  # nosec
+def setup(app: FastAPI, settings: WebServerSettings) -> None:
 
     setup_client_instance(
-        app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
+        app,
+        WebserverApi,
+        api_baseurl=settings.api_base_url,
+        service_name="webserver",
+    )
+    setup_client_instance(
+        app,
+        LongRunningTasksClient,
+        api_baseurl="",
+        service_name="long_running_tasks_client",
     )
 
     def _on_startup() -> None:

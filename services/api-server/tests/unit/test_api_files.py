@@ -26,6 +26,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.basic_types import SHA256Str
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import Page
@@ -34,7 +35,6 @@ from simcore_service_api_server.models.schemas.files import (
     ClientFileUploadData,
     File,
 )
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
 _FAKER = Faker()
@@ -196,10 +196,6 @@ async def test_delete_file(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-        request_query: dict[str, str] = dict(
-            pair.split("=") for pair in request.url.query.decode("utf8").split("&")
-        )
-        assert request_query.get("access_right") == "write"
         assert isinstance(capture.response_body, dict)
         response: dict[str, Any] = capture.response_body
         return response
@@ -347,3 +343,11 @@ async def test_search_file(
         assert file.sha256_checksum == SHA256Str(query["sha256_checksum"])
     if "file_id" in query:
         assert file.id == UUID(query["file_id"])
+
+
+async def test_download_file_openapi_specs(openapi_dev_specs: dict[str, Any]):
+    """Test that openapi-specs for download file entrypoint specifies a binary file is returned in case of return status 200"""
+    file_download_responses: dict[str, Any] = openapi_dev_specs["paths"][
+        f"/{API_VTAG}/files/{{file_id}}/content"
+    ]["get"]["responses"]
+    assert "application/octet-stream" in file_download_responses["200"]["content"]

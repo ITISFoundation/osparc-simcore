@@ -1,8 +1,10 @@
+import asyncio
 import logging
+from typing import Final
 
 import httpx
 from models_library.docker import DockerGenericTag
-from pydantic import ValidationError, parse_obj_as
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -11,10 +13,13 @@ from ..docker_utils import (
     DOCKER_HUB_HOST,
     DockerImageManifestsV2,
     DockerImageMultiArchManifestsV2,
+    LogCB,
     get_image_complete_url,
     get_image_name_and_tag,
+    pull_image,
 )
 from ..logging_utils import log_catch
+from ..progress_bar import AsyncReportCB, ProgressBarData
 
 _logger = logging.getLogger(__name__)
 
@@ -92,3 +97,50 @@ async def retrieve_image_layer_information(
             except ValidationError:
                 return parse_obj_as(DockerImageManifestsV2, json_response)
     return None
+
+
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "200MiB")
+
+
+async def pull_images(
+    images: set[DockerGenericTag],
+    registry_settings: RegistrySettings,
+    progress_cb: AsyncReportCB,
+    log_cb: LogCB,
+) -> None:
+    images_layer_information = await asyncio.gather(
+        *[
+            retrieve_image_layer_information(image, registry_settings)
+            for image in images
+        ]
+    )
+    images_total_size = sum(
+        i.layers_total_size if i else _DEFAULT_MIN_IMAGE_SIZE
+        for i in images_layer_information
+    )
+
+    async with ProgressBarData(
+        num_steps=images_total_size,
+        progress_report_cb=progress_cb,
+        progress_unit="Byte",
+        description=f"pulling {len(images)} images",
+    ) as pbar:
+
+        await asyncio.gather(
+            *[
+                pull_image(
+                    image,
+                    registry_settings,
+                    pbar,
+                    log_cb,
+                    (
+                        image_layer_info
+                        if isinstance(image_layer_info, DockerImageManifestsV2)
+                        else None
+                    ),
+                )
+                for image, image_layer_info in zip(
+                    images, images_layer_information, strict=True
+                )
+            ]
+        )

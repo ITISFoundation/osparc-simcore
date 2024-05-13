@@ -60,7 +60,13 @@ MSG_USER_DISABLED: Final[
     str
 ] = "This account was disabled and cannot be registered. Please contact support for further details: {support_email}"
 
-MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
+MSG_WRONG_2FA_CODE__INVALID: Final[
+    str
+] = "Invalid code. Please provide valid code or generate new code."
+MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = "Expired code. Please generate new code."
+MSG_WRONG_CAPTCHA__INVALID: Final[
+    str
+] = "The CAPTCHA code entered was incorrect. Please try again."
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 MSG_WEAK_PASSWORD: Final[
     str
@@ -72,9 +78,10 @@ MSG_INVITATIONS_CONTACT_SUFFIX: Final[
 
 # Login Accepted Response Codes:
 #  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
-#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
+#  - The frontend uses them also to determine what page/form has to display to the user for next step
 CODE_PHONE_NUMBER_REQUIRED: Final[str] = "PHONE_NUMBER_REQUIRED"
-CODE_2FA_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
+CODE_2FA_SMS_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
+CODE_2FA_EMAIL_CODE_REQUIRED: Final[str] = "EMAIL_CODE_REQUIRED"
 
 
 # App keys for login plugin
@@ -89,3 +96,5 @@ MAX_2FA_CODE_RESEND: Final[int] = 5
 
 # maximum number of trials to validate the passcode
 MAX_2FA_CODE_TRIALS: Final[int] = 5
+
+CAPTCHA_SESSION_KEY: Final[str] = "captcha"

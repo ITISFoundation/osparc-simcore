@@ -61,20 +61,22 @@ class MixinServiceSettings:
             AttributeError
 
         """
-        if req == URLPart.EXCLUDE:
-            return None
+        result: str | None = None
+        match req:
+            case URLPart.EXCLUDE:
+                result = None
 
-        if req == URLPart.REQUIRED:
-            # raises AttributeError upon failure
-            required_value: str = getattr(self, key)
-            return required_value
+            case URLPart.REQUIRED:
+                # raises AttributeError upon failure
+                required_value: str = getattr(self, key)
+                result = required_value
 
-        if req == URLPart.OPTIONAL:
-            # returns default upon failure
-            optional_value: str | None = getattr(self, key, default)
-            return optional_value
+            case URLPart.OPTIONAL:
+                # returns default upon failure
+                optional_value: str | None = getattr(self, key, default)
+                result = optional_value
 
-        return None
+        return result
 
     def _compose_url(
         self,

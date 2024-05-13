@@ -17,13 +17,13 @@ from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.aiohttp import status
-from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
