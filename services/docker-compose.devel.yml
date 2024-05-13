@@ -108,6 +108,7 @@ services:
       - ../packages:/devel/packages
     environment: &webserver_environment_devel
       <<: *common-environment
+      DEBUG: 1 # NOTE: gunicorn expects an int not a boolean
       WEBSERVER_LOGLEVEL: ${WEBSERVER_LOGLEVEL}
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
@@ -137,8 +138,7 @@ services:
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
-      LOGLEVEL: DEBUG
-      SC_BOOT_MODE: debug
+      <<: *common-environment
       SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3000"
