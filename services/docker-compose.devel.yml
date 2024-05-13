@@ -15,6 +15,7 @@ services:
     environment:
       <<: *common-environment
       API_SERVER_PROFILING : ${API_SERVER_PROFILING}
+      API_SERVER_LOGLEVEL: DEBUG
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
@@ -31,6 +32,7 @@ services:
   invitations:
     environment:
       <<: *common-environment
+      INVITATIONS_LOGLEVEL: DEBUG
     volumes:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
@@ -38,6 +40,7 @@ services:
   payments:
     environment:
       <<: *common-environment
+      PAYMENTS_LOGLEVEL: DEBUG
     volumes:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
@@ -46,6 +49,7 @@ services:
     environment:
       <<: *common-environment
       DYNAMIC_SCHEDULER_PROFILING : ${DYNAMIC_SCHEDULER_PROFILING}
+      DYNAMIC_SCHEDULER_LOGLEVEL: DEBUG
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
@@ -57,7 +61,7 @@ services:
       <<: *common-environment
       CATALOG_PROFILING : ${CATALOG_PROFILING}
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
-
+      CATALOG_LOGLEVEL: DEBUG
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
@@ -65,6 +69,7 @@ services:
   clusters-keeper:
     environment:
       <<: *common-environment
+      CLUSTERS_KEEPER_LOGLEVEL: DEBUG
     volumes:
       - ./clusters-keeper:/devel/services/clusters-keeper
       - ../packages:/devel/packages
@@ -72,6 +77,7 @@ services:
   datcore-adapter:
     environment:
       <<: *common-environment
+      DATCORE_ADAPTER_LOGLEVEL: DEBUG
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
@@ -90,6 +96,7 @@ services:
       <<: *common-environment
       DIRECTOR_V2_PROFILING : ${DIRECTOR_V2_PROFILING}
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
+      DIRECTOR_V2_LOGLEVEL: DEBUG
 
     volumes:
       - ./director-v2:/devel/services/director-v2
@@ -109,7 +116,7 @@ services:
     environment: &webserver_environment_devel
       <<: *common-environment
       DEBUG: 1 # NOTE: gunicorn expects an int not a boolean
-      WEBSERVER_LOGLEVEL: ${WEBSERVER_LOGLEVEL}
+      WEBSERVER_LOGLEVEL: DEBUG
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
 
@@ -159,6 +166,7 @@ services:
   resource-usage-tracker:
     environment:
       <<: *common-environment
+      RESOURCE_USAGE_TRACKER_LOGLEVEL: DEBUG
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages
@@ -170,11 +178,12 @@ services:
     environment:
       <<: *common-environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
+      STORAGE_LOGLEVEL: DEBUG
 
   agent:
     environment:
       <<: *common-environment
-
+      AGENT_LOGLEVEL: DEBUG
     volumes:
       - ./agent:/devel/services/agent
       - ../packages:/devel/packages
