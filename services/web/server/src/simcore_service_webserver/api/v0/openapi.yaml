@@ -2326,9 +2326,8 @@ paths:
     patch:
       tags:
       - projects
-      summary: Update Project
-      description: Partial update of a project resource
-      operationId: update_project
+      summary: Patch Project
+      operationId: patch_project
       parameters:
       - required: true
         schema:
@@ -2341,15 +2340,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProjectUpdate'
+              $ref: '#/components/schemas/ProjectPatch'
         required: true
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGet_'
   /v0/projects/{project_id}:clone:
     post:
       tags:
@@ -2514,6 +2509,35 @@ paths:
           type: string
         name: node_id
         in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+      - projects
+      - nodes
+      summary: Patch Project Node
+      operationId: patch_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+        name: node_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodePatch'
+        required: true
       responses:
         '204':
           description: Successful Response
@@ -2938,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -7867,6 +7891,34 @@ components:
         outputs:
           title: Outputs
           type: object
+    NodePatch:
+      title: NodePatch
+      type: object
+      properties:
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        label:
+          title: Label
+          type: string
+        inputs:
+          title: Inputs
+          type: object
+        inputNodes:
+          title: Inputnodes
+          type: array
+          items:
+            type: string
+            format: uuid
+        progress:
+          title: Progress
+          maximum: 100.0
+          minimum: 0.0
+          type: number
+        bootOptions:
+          title: Bootoptions
+          type: object
     NodeRetrieve:
       title: NodeRetrieve
       type: object
@@ -9102,6 +9154,44 @@ components:
         label:
           title: Label
           type: string
+    ProjectPatch:
+      title: ProjectPatch
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 50
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          maxLength: 50
+          minLength: 1
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 0
+          type: string
+          format: uri
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+        dev:
+          title: Dev
+          type: object
+        ui:
+          $ref: '#/components/schemas/StudyUI'
+        quality:
+          title: Quality
+          type: object
     ProjectPermalink:
       title: ProjectPermalink
       required:
@@ -9226,45 +9316,6 @@ components:
       - user
       type: string
       description: An enumeration.
-    ProjectUpdate:
-      title: ProjectUpdate
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          maxLength: 2083
-          minLength: 0
-          type: string
-          format: uri
-        workbench:
-          title: Workbench
-          type: object
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
-        tags:
-          title: Tags
-          type: array
-          items:
-            type: integer
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-        ui:
-          $ref: '#/components/schemas/StudyUI'
-        quality:
-          title: Quality
-          type: object
     ProjectsCommentsAPI:
       title: ProjectsCommentsAPI
       required:
@@ -10750,7 +10801,6 @@ components:
       - title
       - text
       - date
-      - product
       - id
       - read
       type: object
@@ -10782,6 +10832,7 @@ components:
             - UNDEFINED
             type: string
           - type: string
+          default: UNDEFINED
         id:
           title: Id
           type: string
@@ -10797,7 +10848,6 @@ components:
       - title
       - text
       - date
-      - product
       type: object
       properties:
         user_id:
@@ -10827,6 +10877,7 @@ components:
             - UNDEFINED
             type: string
           - type: string
+          default: UNDEFINED
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
