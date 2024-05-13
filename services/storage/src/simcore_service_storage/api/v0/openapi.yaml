@@ -8,7 +8,7 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-  version: 0.3.0
+  version: 0.4.0
 servers:
 - url: /
   description: 'Default server: requests directed to serving url'

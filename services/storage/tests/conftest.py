@@ -398,6 +398,7 @@ def upload_file(
         file_id: SimcoreS3FileID | None = None,
         wait_for_completion: bool = True,
         sha256_checksum: SHA256Str | None = None,
+        project_id: ProjectID = project_id,
     ) -> tuple[Path, SimcoreS3FileID]:
         assert client.app
         # create a file

@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.BootOptionsView", {
       if (node.hasBootModes()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
@@ -35,12 +37,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
       this._add(new qx.ui.basic.Label(this.tr("Boot Options")).set({
         font: "text-14"
       }));
-
-      const instructionsMsg = this.tr("Please Stop the Service and then change the Boot Mode");
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
 
       const node = this.getNode();
 
@@ -54,16 +50,20 @@ qx.Class.define("osparc.node.BootOptionsView", {
         converter: interactive => interactive === "idle"
       });
       bootModeSB.addListener("changeSelection", e => {
-        buttonsLayout.setEnabled(false);
-        const newBootModeId = e.getData()[0].bootModeId;
-        node.setBootOptions({
-          "boot_mode": newBootModeId
-        });
-        setTimeout(() => {
-          buttonsLayout.setEnabled(true);
-          node.requestStartNode();
-          this.fireEvent("bootModeChanged");
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        const selection = e.getData();
+        if (selection.length) {
+          buttonsLayout.setEnabled(false);
+          const newBootModeId = selection[0].bootModeId;
+          node.setBootOptions({
+            "boot_mode": newBootModeId
+          });
+          node.fireEvent("updateStudyDocument");
+          setTimeout(() => {
+            buttonsLayout.setEnabled(true);
+            node.requestStartNode();
+            this.fireEvent("bootModeChanged");
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        }
       }, this);
       buttonsLayout.add(bootModeSB);
 

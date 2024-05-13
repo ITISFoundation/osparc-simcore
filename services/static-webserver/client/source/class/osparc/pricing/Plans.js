@@ -58,8 +58,11 @@ qx.Class.define("osparc.pricing.Plans", {
             spacing: 3
           });
           control.addListener("changeSelection", e => {
-            const ppSelected = e.getData()[0];
-            this.fireDataEvent("pricingPlanSelected", ppSelected);
+            const selection = e.getData();
+            if (selection.length) {
+              const ppSelected = selection[0];
+              this.fireDataEvent("pricingPlanSelected", ppSelected);
+            }
           }, this);
           this.getChildControl("pricing-plans-container").add(control);
           break;

@@ -14,8 +14,9 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
+from random import choice
 from time import perf_counter
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 import pytest
@@ -36,6 +37,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -1334,13 +1336,15 @@ async def test_upload_file_is_directory_and_remove_content(
 
 @pytest.mark.parametrize("files_in_dir", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
-    directory_with_files: Callable[..., AbstractAsyncContextManager[FileUploadSchema]],
+    create_directory_with_files: Callable[
+        ..., AbstractAsyncContextManager[FileUploadSchema]
+    ],
     client: TestClient,
     location_id: LocationID,
     user_id: UserID,
     files_in_dir: int,
 ):
-    async with directory_with_files(
+    async with create_directory_with_files(
         dir_name="some-random",
         file_size_in_dir=parse_obj_as(ByteSize, "1"),
         subdir_count=1,
@@ -1351,3 +1355,61 @@ async def test_listing_more_than_1000_objects_in_bucket(
         )
         # for now no more than 1000 objects will be returned
         assert len(list_of_files) == 1000
+
+
+@pytest.mark.parametrize("uuid_filter", [True, False])
+async def test_listing_with_project_id_filter(
+    client: TestClient,
+    location_id: LocationID,
+    user_id: UserID,
+    faker: Faker,
+    random_project_with_files: Callable[
+        [int, tuple[ByteSize, ...]],
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
+    ],
+    uuid_filter: bool,
+):
+    project, src_projects_list = await random_project_with_files(
+        num_nodes=1,
+        file_sizes=(ByteSize(1),),
+        file_checksums=(SHA256Str(faker.sha256()),),
+    )
+    _, _ = await random_project_with_files(
+        num_nodes=1,
+        file_sizes=(ByteSize(1),),
+        file_checksums=(SHA256Str(faker.sha256()),),
+    )
+    assert len(src_projects_list.keys()) > 0
+    node_id = list(src_projects_list.keys())[0]
+    project_files_in_db = set(src_projects_list[node_id])
+    assert len(project_files_in_db) > 0
+    project_id = project["uuid"]
+    project_file_name = Path(choice(list(project_files_in_db))).name
+
+    assert client.app
+    query = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "uuid_filter": project_file_name if uuid_filter else None,
+    }
+
+    url = (
+        client.app.router["get_files_metadata"]
+        .url_for(location_id=f"{location_id}")
+        .with_query(**{k: v for k, v in query.items() if v is not None})
+    )
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+
+    list_of_files = parse_obj_as(list[FileMetaDataGet], data)
+
+    if uuid_filter:
+        assert len(list_of_files) == 1
+        assert project_file_name == list_of_files[0].file_name
+    else:
+        assert project_files_in_db == {file.file_uuid for file in list_of_files}

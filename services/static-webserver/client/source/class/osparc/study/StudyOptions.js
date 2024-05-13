@@ -236,7 +236,9 @@ qx.Class.define("osparc.study.StudyOptions", {
       };
       walletSelector.addListener("changeSelection", e => {
         const selection = e.getData();
-        selectWallet(selection[0].walletId);
+        if (selection.length) {
+          selectWallet(selection[0].walletId);
+        }
       });
       const preferredWallet = store.getPreferredWallet();
       if (wallets.find(wallet => wallet.getWalletId() === parseInt(this.__projectWalletId))) {

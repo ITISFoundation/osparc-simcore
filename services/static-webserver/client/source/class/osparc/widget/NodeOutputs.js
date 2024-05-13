@@ -55,14 +55,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       ports
     });
 
-    const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
-      allowGrowX: false,
-      allowGrowY: false
-    });
-    osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-    outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
-    this._add(outputFilesBtn);
-
     node.addListener("changeOutputs", () => this.__populateGrid(), this);
   },
 

@@ -245,9 +245,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           });
 
           // then listen to changes
-          versionsBox.addListener("changeSelection", () => {
-            const selection = versionsBox.getSelection();
-            if (selection && selection.length) {
+          versionsBox.addListener("changeSelection", e => {
+            const selection = e.getData();
+            if (selection.length) {
               const serviceVersion = selection[0].getLabel();
               if (serviceVersion !== this.__resourceData["version"]) {
                 const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);

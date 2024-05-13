@@ -1,0 +1,78 @@
+{
+  "tis": {
+    "linkedResource": "templates",
+    "resources": [{
+      "expectedTemplateLabel": "TI Planning Tool",
+      "title": "Classic TI",
+      "description": "Start new Classic TI planning",
+      "newStudyLabel": "Classic TI",
+      "category": "precomputed",
+      "idToWidget": "newTIPlanButton"
+    }, {
+      "expectedTemplateLabel": "mcTI Planning Tool",
+      "title": "Multichannel TI",
+      "description": "Start new Multichannel TI planning",
+      "newStudyLabel": "Multichannel TI",
+      "category": "precomputed",
+      "idToWidget": "newMTIPlanButton"
+    }, {
+      "expectedTemplateLabel": "pmTI Planning Tool",
+      "title": "Phase-Modulation TI",
+      "description": "Start new Phase-Modulation TI planning",
+      "newStudyLabel": "Phase-Modulation TI",
+      "category": "precomputed",
+      "idToWidget": "newPMTIPlanButton"
+    }, {
+      "expectedTemplateLabel": "personalized TI Planning Tool",
+      "title": "Personalized Classic TI",
+      "description": "Start new Personalized Classic TI planning",
+      "newStudyLabel": "Personalized Classic TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewTIPlanButton"
+    }, {
+      "expectedTemplateLabel": "personalized mcTI Planning Tool",
+      "title": "Personalized MC TI",
+      "description": "Start new Personalized Multichannel TI planning",
+      "newStudyLabel": "Personalized Multichannel TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewMTIPlanButton"
+    }, {
+      "expectedTemplateLabel": "personalized pmTI Planning Tool",
+      "title": "Personalized PM TI",
+      "description": "Start new Personalized Phase-Modulation TI planning",
+      "newStudyLabel": "Personalized Phase-Modulation TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewPMTIPlanButton"
+    }]
+  },
+  "s4l": {
+    "linkedResource": "services",
+    "resources": [{
+      "expectedKey": "simcore/services/dynamic/sim4life-8-0-0-dy",
+      "title": "Start Sim4Life",
+      "description": "New Sim4Life project",
+      "newStudyLabel": "New S4L project",
+      "idToWidget": "startS4LButton"
+    }]
+  },
+  "s4lacad": {
+    "linkedResource": "services",
+    "resources": [{
+      "expectedKey": "simcore/services/dynamic/sim4life-8-0-0-dy",
+      "title": "Start Sim4Life",
+      "description": "New Sim4Life project",
+      "newStudyLabel": "New S4L project",
+      "idToWidget": "startS4LButton"
+    }]
+  },
+  "s4llite": {
+    "linkedResource": "services",
+    "resources": [{
+      "expectedKey": "simcore/services/dynamic/sim4life-lite",
+      "title": "Start <i>S4L<sup>lite</sup></i>",
+      "description": "New project",
+      "newStudyLabel": "New project",
+      "idToWidget": "startS4LButton"
+    }]
+  }
+}

@@ -58,6 +58,16 @@ qx.Class.define("osparc.widget.NodeOptions", {
       const sections = [];
       let showStartStopButton = false;
 
+      // Tier Selection
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const tierSelectionView = new osparc.node.TierSelectionView(node);
+        sections.push(tierSelectionView);
+
+        if (node.isDynamic()) {
+          showStartStopButton = true;
+        }
+      }
+
       // Life Cycle
       if (
         node.isDynamic() &&
@@ -66,6 +76,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
         const lifeCycleView = new osparc.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.fireEvent("versionChanged"));
         sections.push(lifeCycleView);
+
         showStartStopButton = true;
       }
 
@@ -74,6 +85,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
         const bootOptionsView = new osparc.node.BootOptionsView(node);
         node.addListener("bootModeChanged", () => this.fireEvent("bootModeChanged"));
         sections.push(bootOptionsView);
+
         showStartStopButton = true;
       }
 
@@ -85,6 +97,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
         const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);
         node.addListener("limitsChanged", () => this.fireEvent("limitsChanged"));
         sections.push(updateResourceLimitsView);
+
         showStartStopButton |= node.isDynamic();
       }
 

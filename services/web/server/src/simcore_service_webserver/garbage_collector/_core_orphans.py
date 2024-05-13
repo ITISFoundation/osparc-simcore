@@ -1,15 +1,12 @@
-import contextlib
 import logging
-from typing import Any
+from typing import Final
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
-    ServiceWaitingForManualInterventionError,
-    ServiceWasNotFoundError,
-)
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
@@ -17,8 +14,8 @@ from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..projects.db import ProjectDBAPI
 from ..projects.projects_api import (
-    get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
+    list_node_ids_in_project,
 )
 from ..resource_manager.registry import RedisResourceRegistry
 from ..users.api import get_user_role
@@ -26,155 +23,104 @@ from ..users.exceptions import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
 
+_MAX_CONCURRENT_CALLS: Final[int] = 2
 
-@log_decorator(_logger, log_traceback=True)
-async def _remove_single_service_if_orphan(
-    app: web.Application,
-    dynamic_service: dict[str, Any],
-    currently_opened_projects_node_ids: dict[str, str],
+
+async def _remove_service(
+    app: web.Application, node_id: NodeID, service: DynamicServiceGet
 ) -> None:
-    """ "orphan" is a service who is not present in the DB or not part of a currently opened project"""
+    save_service_state = True
+    if not await is_node_id_present_in_any_project_workbench(app, node_id):
+        # this is a loner service that is not part of any project
+        save_service_state = False
+    else:
+        try:
+            if await get_user_role(app, service.user_id) <= UserRole.GUEST:
+                save_service_state = False
+            else:
+                save_service_state = await ProjectDBAPI.get_from_app_context(
+                    app
+                ).has_permission(service.user_id, f"{service.project_id}", "write")
+        except (UserNotFoundError, ValueError):
+            save_service_state = False
 
-    service_host = dynamic_service["service_host"]
-    service_uuid = dynamic_service["service_uuid"]
-
-    # if not present in DB or not part of currently opened projects, can be removed
-    # if the node does not exist in any project in the db
-    # they can be safely remove it without saving any state
-    if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
-        _logger.info(
-            "Will remove orphaned service without saving state since "
-            "this service is not part of any project %s",
-            f"{service_host=}",
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
+    ):
+        await dynamic_scheduler_api.stop_dynamic_service(
+            app,
+            node_id=node_id,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            save_state=save_service_state,
         )
-        try:
-            await dynamic_scheduler_api.stop_dynamic_service(
-                app,
-                node_id=service_uuid,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=False,
-            )
-        except (
-            RPCServerError,
-            ServiceWaitingForManualInterventionError,
-            ServiceWasNotFoundError,
-        ) as err:
-            _logger.warning("Error while stopping service: %s", err)
-        return
 
-    # if the node is not present in any of the currently opened project it shall be closed
-    if service_uuid not in currently_opened_projects_node_ids:
-        if service_state := dynamic_service.get("service_state") in [
-            "pulling",
-            "starting",
-        ]:
-            # Services returned in running_interactive_services
-            # might be still pulling its image and when stop_service is
-            # called, will cancel the pull operation as well.
-            # This enforces next run to start again by pulling the image
-            # which is costly and sometimes the cause of timeout and
-            # service malfunction.
-            # For that reason, we prefer here to allow the image to
-            # be completely pulled and stop it instead at the next gc round
-            #
-            # This should eventually be responsibility of the director, but
-            # the functionality is in the old service which is frozen.
-            #
-            # a service state might be one of [pending, pulling, starting, running, complete, failed]
-            _logger.warning(
-                "Skipping %s since service state is %s",
-                f"{service_host=}",
-                service_state,
-            )
-            return
 
-        _logger.info("Will remove service %s", service_host)
-        try:
-            # let's be conservative here.
-            # 1. opened project disappeared from redis?
-            # 2. something bad happened when closing a project?
-
-            user_id = int(dynamic_service.get("user_id", -1))
-
-            user_role: UserRole | None = None
-            try:
-                user_role = await get_user_role(app, user_id)
-            except (UserNotFoundError, ValueError):
-                user_role = None
-
-            project_uuid = dynamic_service["project_id"]
-
-            save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
-                user_id, project_uuid, "write"
-            )
-            if user_role is None or user_role <= UserRole.GUEST:
-                save_state = False
-            # -------------------------------------------
-
-            with contextlib.suppress(ServiceWaitingForManualInterventionError):
-                await dynamic_scheduler_api.stop_dynamic_service(
-                    app,
-                    node_id=service_uuid,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    save_state=save_state,
-                )
-
-        except (RPCServerError, ServiceWasNotFoundError) as err:
-            _logger.warning("Error while stopping service: %s", err)
+async def _list_opened_project_ids(registry: RedisResourceRegistry) -> list[ProjectID]:
+    opened_projects: list[ProjectID] = []
+    all_session_alive, _ = await registry.get_all_resource_keys()
+    for alive_session in all_session_alive:
+        resources = await registry.get_resources(alive_session)
+        if "project_id" in resources:
+            opened_projects.append(ProjectID(resources["project_id"]))
+    return opened_projects
 
 
 async def remove_orphaned_services(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    """Removes orphan services: which are no longer tracked in the database
-
-    Multiple deployments can be active at the same time on the same cluster.
-    This will also check the current SWARM_STACK_NAME label of the service which
-    must be matching its own. The director service spawns dynamic services
-    which have this new label and it also filters by this label.
+    """Removes orphan services: orphan services are dynamic services running in the cluster
+    that are not known to the webserver (i.e. which service UUID is not part of any node inside opened projects).
 
     """
-    _logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids: dict[str, str] = {}
-    all_session_alive, _ = await registry.get_all_resource_keys()
-    for alive_session in all_session_alive:
-        resources = await registry.get_resources(alive_session)
-        if "project_id" not in resources:
-            continue
+    # NOTE: First get the runnning services in the system before checking what should be opened
+    # otherwise if some time goes it could very well be that there are new projects opened
+    # in between and the GC would remove services that actually should be running.
 
-        project_uuid = resources["project_id"]
-        node_ids: set[str] = await get_workbench_node_ids_from_project_uuid(
-            app, project_uuid
+    with log_catch(_logger, reraise=False):
+        running_services = await director_v2_api.list_dynamic_services(app)
+        if not running_services:
+            # nothing to do
+            return
+        _logger.debug(
+            "Actual running dynamic services: %s",
+            [(x.node_uuid, x.host) for x in running_services],
         )
-        for node_id in node_ids:
-            currently_opened_projects_node_ids[node_id] = project_uuid
+        running_services_by_id: dict[NodeID, DynamicServiceGet] = {
+            service.node_uuid: service for service in running_services
+        }
 
-    running_dynamic_services: list[dict[str, Any]] = []
-    try:
-        running_dynamic_services = await director_v2_api.list_dynamic_services(app)
-    except director_v2_api.DirectorServiceError:
-        _logger.debug("Could not fetch list_dynamic_services")
-
-    _logger.info(
-        "Observing running services (this does not mean I am removing them) %s",
-        [
-            (x.get("service_uuid", ""), x.get("service_host", ""))
-            for x in running_dynamic_services
-        ],
-    )
-
-    # if there are multiple dynamic services to stop,
-    # this ensures they are being stopped in parallel
-    # when the user is timed out and the GC needs to close
-    # a big study with logs of heavy projects, this will
-    # ensure it gets done in parallel
-    tasks = [
-        _remove_single_service_if_orphan(
-            app, service, currently_opened_projects_node_ids
+        known_opened_project_ids = await _list_opened_project_ids(registry)
+        potentially_running_service_ids: list[
+            set[NodeID] | BaseException
+        ] = await logged_gather(
+            *(list_node_ids_in_project(app, _) for _ in known_opened_project_ids),
+            log=_logger,
+            max_concurrency=_MAX_CONCURRENT_CALLS,
+            reraise=False,
         )
-        for service in running_dynamic_services
-    ]
-    await logged_gather(*tasks, reraise=False)
+        potentially_running_service_ids_set: set[NodeID] = set().union(
+            *(_ for _ in potentially_running_service_ids if isinstance(_, set))
+        )
+        _logger.debug(
+            "Allowed service UUIDs from known opened projects: %s",
+            potentially_running_service_ids_set,
+        )
 
-    _logger.debug("Finished orphaned services removal")
+        # compute the difference to find the orphaned services
+        orphaned_running_service_ids = (
+            set(running_services_by_id) - potentially_running_service_ids_set
+        )
+        _logger.debug("Found orphaned services: %s", orphaned_running_service_ids)
+        # NOTE: no need to not reraise here, since we catch everything above
+        # and logged_gather first runs everything
+        await logged_gather(
+            *(
+                _remove_service(app, node_id, running_services_by_id[node_id])
+                for node_id in orphaned_running_service_ids
+            ),
+            log=_logger,
+            max_concurrency=_MAX_CONCURRENT_CALLS,
+        )

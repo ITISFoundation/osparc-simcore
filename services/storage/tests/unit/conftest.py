@@ -179,13 +179,13 @@ async def delete_directory(
 
 
 @pytest.fixture
-async def directory_with_files(
+async def create_directory_with_files(
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
     populate_directory: Callable[..., Awaitable[None]],
     delete_directory: Callable[..., Awaitable[None]],
 ) -> Callable[..., AbstractAsyncContextManager[FileUploadSchema]]:
     @asynccontextmanager
-    async def _context_manager(
+    async def _create_context(
         dir_name: str, file_size_in_dir: ByteSize, subdir_count: int, file_count: int
     ) -> AsyncIterator[FileUploadSchema]:
         directory_file_upload: FileUploadSchema = await create_empty_directory(
@@ -203,7 +203,7 @@ async def directory_with_files(
 
         await delete_directory(directory_file_upload=directory_file_upload)
 
-    return _context_manager
+    return _create_context
 
 
 @pytest.fixture

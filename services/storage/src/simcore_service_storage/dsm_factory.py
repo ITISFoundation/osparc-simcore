@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from aiohttp import web
 from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
@@ -50,9 +51,14 @@ class BaseDataManager(ABC):
 
     @abstractmethod
     async def list_files(
-        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
+        self,
+        user_id: UserID,
+        *,
+        expand_dirs: bool,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
-        """returns all the file meta data a user has access to (uuid_filter may be used)"""
+        """returns all the file meta data a user has access to (uuid_filter and or project_id may be used)"""
         # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod

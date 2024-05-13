@@ -65,6 +65,7 @@ from .models import (
     FileMetaDataAtDB,
     UploadID,
     UploadLinks,
+    UserOrProjectFilter,
 )
 from .s3 import get_s3_client
 from .s3_client import S3MetaData, StorageS3Client
@@ -126,15 +127,23 @@ class SimcoreS3DataManager(BaseDataManager):
             user_id,
             expand_dirs=expand_dirs,
             uuid_filter=ensure_ends_with(dataset_id, "/"),
+            project_id=None,
         )
         return data
 
     async def list_files(  # noqa C901
-        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
+        self,
+        user_id: UserID,
+        *,
+        expand_dirs: bool,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
         """
         expand_dirs `False`: returns one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
+        project_id: If passed, only list files associated with that project_id
+        uuid_filter: If passed, only list files whose 'object_name' match (ilike) the passed string
 
         NOTE: expand_dirs will be replaced by pagination in the future
         currently only {EXPAND_DIR_MAX_ITEM_COUNT} items will be returned
@@ -143,14 +152,28 @@ class SimcoreS3DataManager(BaseDataManager):
 
         data: list[FileMetaData] = []
         accessible_projects_ids = []
+        uid = UserID | None
         async with self.engine.acquire() as conn, conn.begin():
-            accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            if project_id is not None:
+                project_access_rights = await get_project_access_rights(
+                    conn=conn, user_id=user_id, project_id=project_id
+                )
+                if not project_access_rights.read:
+                    raise ProjectAccessRightError(
+                        access_right="read", project_id=project_id
+                    )
+                accessible_projects_ids = [project_id]
+                uid = None
+            else:
+                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+                uid = user_id
             file_and_directory_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
-                user_id=user_id,
-                project_ids=accessible_projects_ids,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=uid, project_ids=accessible_projects_ids
+                ),
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
                 only_files=False,
@@ -710,51 +733,29 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
-    async def search_read_access_files(
-        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
-    ):
-        async with self.engine.acquire() as conn:
-            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
-        return await self._search_files(
-            user_id=user_id,
-            project_ids=can_read_projects_ids,
-            file_id_prefix=file_id_prefix,
-            sha256_checksum=sha256_checksum,
-        )
-
     async def search_owned_files(
-        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
-    ):
-        return await self._search_files(
-            user_id=user_id,
-            project_ids=[],
-            file_id_prefix=file_id_prefix,
-            sha256_checksum=sha256_checksum,
-        )
-
-    async def _search_files(
         self,
         *,
         user_id: UserID,
-        project_ids: list[ProjectID],
-        file_id_prefix: str,
-        sha256_checksum: SHA256Str | None,
+        file_id_prefix: str | None,
+        sha256_checksum: SHA256Str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[FileMetaData]:
-        # NOTE: this entrypoint is solely used by api-server. It is the exact
-        # same as list_files but does not rename the found files with project
-        # name/node name which filters out this files
-        # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
             file_metadatas: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
-                user_id=user_id,
-                project_ids=project_ids,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=[]
+                ),
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
                 sha256_checksum=sha256_checksum,
+                limit=limit,
+                offset=offset,
             )
             resolved_fmds = []
             for fmd in file_metadatas:
