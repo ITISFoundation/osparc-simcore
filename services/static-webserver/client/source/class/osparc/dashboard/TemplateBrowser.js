@@ -374,10 +374,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         // remove collaborator
         osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch("templates", "put", params);
+        operationPromise = osparc.data.Resources.fetch("studies", "put", params);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch("templates", "delete", params, studyData.uuid);
+        operationPromise = osparc.data.Resources.fetch("studies", "delete", params, studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))

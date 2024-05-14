@@ -144,9 +144,8 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      const newClassifiers = this.__classifiersTree.getCheckedClassifierIDs();
       const patchData = {
-        "classifiers": newClassifiers
+        "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
       };
       if (osparc.utils.Resources.isStudy(this._serializedData) || osparc.utils.Resources.isTemplate(this._serializedData)) {
         const params = {
@@ -159,7 +158,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
           .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
-            this.__resourceData["classifiers"] = newClassifiers;
+            this.__resourceData["classifiers"] = patchData["classifiers"];
             this.fireDataEvent("updateClassifiers", this.__resourceData);
           })
           .catch(err => {
