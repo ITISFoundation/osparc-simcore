@@ -30,7 +30,7 @@ openapi_modules = [
         "_nih_sparc_redirections",
         "_nih_sparc",
         "_products",
-        "_project_nodes_pricing_unit",
+        "_projects_nodes_pricing_unit",
         "_projects_comments",
         "_projects_crud",
         "_projects_metadata",
