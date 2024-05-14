@@ -26,3 +26,11 @@ async def test_is_unhealthy(test_client: TestClient) -> None:
     response = await test_client.get("/health")
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, response
     assert response.json() == {"detail": ApplicationHealth(is_healthy=False).dict()}
+
+
+async def test_is_unhealthy_via_rabbitmq(test_client: TestClient) -> None:
+    # pylint: disable=protected-access
+    test_client.application.state.rabbitmq_client._healthy_state = False  # noqa: SLF001
+    response = await test_client.get("/health")
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, response
+    assert response.json() == {"detail": "RabbitMQ client is in a bad state!"}
