@@ -75,8 +75,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             const msg = qx.locale.Manager.tr("Study not found");
             throw new Error(msg);
           }
-          const pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
-          this.loadStudy(studyData, pageContext);
+          this.loadStudy(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -85,7 +84,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         });
     },
 
-    loadStudy: function(studyData, pageContext) {
+    loadStudy: function(studyData) {
       let locked = false;
       let lockedBy = false;
       if ("state" in studyData && "locked" in studyData["state"]) {

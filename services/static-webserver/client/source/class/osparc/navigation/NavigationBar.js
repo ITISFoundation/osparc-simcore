@@ -65,8 +65,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     study: {
       check: "osparc.data.model.Study",
       nullable: true,
+      init: null,
       event: "changeStudy",
-      apply: "_applyStudy"
+      apply: "__applyStudy"
     }
   },
 
@@ -97,7 +98,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           .then(notifications => {
             osparc.notification.Notifications.getInstance().addNotifications(notifications);
             this.__buildLayout();
-            this.__applyPageContext("studyOff");
             osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
             resolve();
           })
@@ -119,10 +119,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         this.getChildControl("logo-powered");
       }
 
-      this.getChildControl("dashboard-button");
+      const dashboardBtn = this.getChildControl("dashboard-button");
+      this.bind("study", dashboardBtn, "visibility", {
+        converter: s => s ? "visible" : "excluded"
+      });
+
+      const studyTitleOptions = this.getChildControl("study-title-options");
+      this.bind("study", studyTitleOptions, "visibility", {
+        converter: s => s ? "visible" : "excluded"
+      });
 
       // center-items
-      this.getChildControl("read-only-info");
+      const readOnlyIcon = this.getChildControl("read-only-info");
+      this.bind("study", readOnlyIcon, "visibility", {
+        converter: s => s ? "visible" : "excluded"
+      });
 
       // right-items
       this.getChildControl("tasks-button");
@@ -332,36 +343,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     addDashboardTabButtons: function(tabButtons) {
       this.__tabButtons = tabButtons;
       this.getChildControl("center-items").add(tabButtons);
+      this.bind("study", this.__tabButtons, "visibility", {
+        converter: s => s ? "excluded" : "visible"
+      });
+      this.__tabButtons
       this.__navBarResized();
     },
 
-    _applyStudy: function(study) {
+    __applyStudy: function(study) {
       if (study) {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
         this.getChildControl("study-title-options").setStudy(study);
-      }
-      this.__applyPageContext(study ? "studyOn" : "studyOff");
-    },
-
-    __applyPageContext: function(newCtxt) {
-      switch (newCtxt) {
-        case "studyOff":
-          this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("study-title-options").exclude();
-          this.getChildControl("read-only-info").exclude();
-          if (this.__tabButtons) {
-            this.__tabButtons.show();
-          }
-          break;
-        case "studyOn":
-          this.getChildControl("dashboard-button").show();
-          this.getChildControl("study-title-options").show();
-          if (this.__tabButtons) {
-            this.__tabButtons.exclude();
-          }
-          break;
       }
     },
 
