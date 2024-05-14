@@ -21,8 +21,8 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
     ProjectGet,
     ProjectListItem,
+    ProjectPatch,
     ProjectReplace,
-    ProjectUpdate,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -97,10 +97,11 @@ async def replace_project(project_id: ProjectID, _replace: ProjectReplace):
 
 @router.patch(
     "/projects/{project_id}",
-    response_model=Envelope[ProjectGet],
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_project(project_id: ProjectID, update: ProjectUpdate):
-    """Partial update of a project resource"""
+async def patch_project(project_id: ProjectID, _new: ProjectPatch):
+    ...
 
 
 @router.delete(

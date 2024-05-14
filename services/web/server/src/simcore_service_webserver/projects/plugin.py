@@ -15,7 +15,7 @@ from . import (
     _metadata_handlers,
     _nodes_handlers,
     _ports_handlers,
-    _project_nodes_pricing_unit_handlers,
+    _projects_nodes_pricing_unit_handlers,
     _states_handlers,
     _tags_handlers,
     _wallets_handlers,
@@ -54,6 +54,6 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_nodes_handlers.routes)
     app.router.add_routes(_tags_handlers.routes)
     app.router.add_routes(_wallets_handlers.routes)
-    app.router.add_routes(_project_nodes_pricing_unit_handlers.routes)
+    app.router.add_routes(_projects_nodes_pricing_unit_handlers.routes)
 
     return True
