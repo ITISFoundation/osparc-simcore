@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       slideshowView.addListener(signalName, () => this.fireEvent(signalName));
     });
 
-    workbenchView.addListener("slidesEdit", () => this.editSlides(), this);
+    workbenchView.addListener("slidesEdit", () => this.__editSlides(), this);
     workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
     slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
 
@@ -292,8 +292,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    editSlides: function() {
-      if (this.getPageContext() !== "workbench") {
+    __editSlides: function() {
+      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) {
         return;
       }
 
