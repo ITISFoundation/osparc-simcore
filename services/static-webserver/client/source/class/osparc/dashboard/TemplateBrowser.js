@@ -364,20 +364,24 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
 
-      const params = {
-        url: {
-          "studyId": studyData.uuid
-        }
-      };
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
-        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
-        params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch("studies", "put", params);
+        delete arCopy[myGid];
+        const patchData = {
+          "access_rights": arCopy
+        };
+        const params = {
+          url: {
+            "studyId": studyData["uuid"]
+          },
+          data: patchData
+        };
+        operationPromise = osparc.data.Resources.fetch("studies", "patch", params);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch("studies", "delete", params, studyData.uuid);
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))

@@ -1221,15 +1221,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
-        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
+        delete arCopy[myGid];
+        const patchData = {
+          "access_rights": arCopy
+        };
         const params = {
           url: {
-            "studyId": studyData.uuid
-          }
+            "studyId": studyData["uuid"]
+          },
+          data: patchData
         };
-        params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch("studies", "put", params);
+        operationPromise = osparc.data.Resources.fetch("studies", "patch", params);
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
@@ -1240,9 +1244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
-        .finally(() => {
-          this.resetSelection();
-        });
+        .finally(() => this.resetSelection());
     },
 
     __doDeleteStudies: function(studiesData) {
