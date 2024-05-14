@@ -138,6 +138,7 @@ async def list_service_runs(
 async def export_service_runs(
     s3_client: SimcoreS3API,
     bucket_name: str,
+    s3_region: str,
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
@@ -160,6 +161,7 @@ async def export_service_runs(
         product_name=product_name,
         s3_bucket_name=s3_bucket_name,
         s3_key=s3_object_key,
+        s3_region=s3_region,
         user_id=user_id if access_all_wallet_usage is False else None,
         wallet_id=wallet_id,
         started_from=started_from,

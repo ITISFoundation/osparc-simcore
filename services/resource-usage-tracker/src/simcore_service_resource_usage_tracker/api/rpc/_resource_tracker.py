@@ -84,6 +84,7 @@ async def export_service_runs(
     return await service_runs.export_service_runs(
         s3_client=get_s3_client(app),
         bucket_name=f"{s3_settings.S3_BUCKET_NAME}",
+        s3_region=s3_settings.S3_REGION,
         user_id=user_id,
         product_name=product_name,
         resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
