@@ -130,10 +130,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       // center-items
-      const readOnlyIcon = this.getChildControl("read-only-info");
-      this.bind("study", readOnlyIcon, "visibility", {
-        converter: s => s ? "visible" : "excluded"
-      });
+      this.getChildControl("read-only-info");
 
       // right-items
       this.getChildControl("tasks-button");
@@ -351,11 +348,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __applyStudy: function(study) {
+      const readOnlyInfo = this.getChildControl("read-only-info")
       if (study) {
-        study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
+        this.getChildControl("study-title-options").setStudy(study);
+        study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getChildControl("study-title-options").setStudy(study);
+      } else {
+        readOnlyInfo.exclude();
       }
     },
 
