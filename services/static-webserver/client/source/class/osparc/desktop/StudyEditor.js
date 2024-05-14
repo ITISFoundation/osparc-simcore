@@ -103,12 +103,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      init: null,
       nullable: true,
-      apply: "_applyStudy"
+      apply: "_applyStudy",
+      event: "changeStudy"
     },
 
     pageContext: {
       check: ["workbench", "guided", "app"],
+      init: null,
       nullable: false,
       event: "changePageContext",
       apply: "_applyPageContext"
