@@ -8,7 +8,11 @@ from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
-from pydantic import BaseModel
+from models_library.utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    none_to_empty_str_pre_validator,
+)
+from pydantic import BaseModel, validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -34,7 +38,7 @@ class ProjectDB(BaseModel):
     type: ProjectType
     uuid: ProjectID
     name: str
-    description: str | None
+    description: str
     thumbnail: HttpUrlWithCustomMinLength | None
     prj_owner: UserID
     creation_date: datetime
@@ -49,6 +53,14 @@ class ProjectDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+    # validators
+    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
+    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+        none_to_empty_str_pre_validator
+    )
 
 
 assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
