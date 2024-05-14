@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
@@ -205,6 +206,14 @@ async def test_create_study_job(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
+        if capture.method == "PATCH":
+            request_content = json.loads(request.content.decode())
+            assert isinstance(request_content, dict)
+            name = request_content.get("name")
+            assert name is not None
+            project_id = path_params.get("project_id")
+            assert project_id is not None
+            assert project_id in name
         return capture.response_body
 
     respx_mock_from_capture(

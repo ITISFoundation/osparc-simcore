@@ -1,11 +1,10 @@
 import logging
 from collections.abc import Callable
-from os import name
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse
-from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
@@ -101,7 +100,7 @@ async def create_study_job(
     )
 
     await webserver_api.patch_project(
-        project_id=job.id, patch_params=ProjectPatch(name=name)
+        project_id=job.id, patch_params=ProjectPatch(name=ProjectName(job.name))
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
