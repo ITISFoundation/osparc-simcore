@@ -134,33 +134,29 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __nodesSlidesTree: null,
 
     setStudyData: function(studyData) {
-      return new Promise((resolve, reject) => {
-        if (this.__settingStudy) {
-          resolve();
-          return;
+      if (this.__settingStudy) {
+        return;
+      }
+      this.__settingStudy = true;
+
+      this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
+
+      // Before starting a study, make sure the latest version is fetched
+      const params = {
+        url: {
+          "studyId": studyData.uuid
         }
-        this.__settingStudy = true;
-
-        this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
-
-        // Before starting a study, make sure the latest version is fetched
-        const params = {
-          url: {
-            "studyId": studyData.uuid
-          }
-        };
-        const promises = [
-          osparc.data.Resources.getOne("studies", params),
-          osparc.store.Store.getInstance().getAllServices()
-        ];
-        Promise.all(promises)
-          .then(values => {
-            studyData = values[0];
-            const study = new osparc.data.model.Study(studyData);
-            this.setStudy(study);
-            resolve();
-          });
-      });
+      };
+      const promises = [
+        osparc.data.Resources.getOne("studies", params),
+        osparc.store.Store.getInstance().getAllServices()
+      ];
+      Promise.all(promises)
+        .then(values => {
+          studyData = values[0];
+          const study = new osparc.data.model.Study(studyData);
+          this.setStudy(study);
+        });
     },
 
     _applyStudy: function(study) {
