@@ -210,20 +210,13 @@ async def test_create_study_job(
     respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         _capture_file,
-        [_default_side_effect] * 7,
+        [_default_side_effect] * 5,
     )
 
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
-        json={
-            "values": {
-                "input_file": {
-                    "filename": "input.txt",
-                    "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                },
-            }
-        },
+        json={"values": {}},
     )
     assert response.status_code == 200
 
