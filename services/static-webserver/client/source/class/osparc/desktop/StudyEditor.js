@@ -38,9 +38,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       slideshowView.addListener(signalName, () => this.fireEvent(signalName));
     });
 
-    workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
-    workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
-    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+    workbenchView.addListener("slidesEdit", () => this.editSlides(), this);
+    workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
+    slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
 
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
@@ -93,9 +93,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "userIdled": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data",
     "startIteration": "qx.event.type.Data"
   },
