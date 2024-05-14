@@ -281,7 +281,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       osparc.desktop.MainPageHandler.getInstance().showDashboard();
       this.__navBar.show();
       this.__navBar.setStudy(null);
-      this.__navBar.setPageContext("dashboard");
       this.__dashboard.getStudyBrowser().resetSelection();
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
@@ -423,23 +422,14 @@ qx.Class.define("osparc.desktop.MainPage", {
         studyEditor.editSlides();
       }, this);
       studyEditor.addListener("slidesAppStart", () => {
-        this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
         studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
       }, this);
       studyEditor.addListener("slidesStop", () => {
-        this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
         this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
       }, this);
       studyEditor.addListener("changeStudy", e => {
         const study = e.getData();
         this.__navBar.setStudy(study);
-        if (study === null) {
-          this.__navBar.setPageContext("workbench");
-        }
-      });
-      studyEditor.addListener("changePageContext", e => {
-        const pageContext = e.getData();
-        this.__navBar.setPageContext(pageContext);
       });
       return studyEditor;
     }

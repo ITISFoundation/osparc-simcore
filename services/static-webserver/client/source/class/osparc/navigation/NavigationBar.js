@@ -67,12 +67,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       nullable: true,
       event: "changeStudy",
       apply: "_applyStudy"
-    },
-
-    pageContext: {
-      check: ["dashboard", "workbench", "guided", "app"],
-      nullable: false,
-      apply: "_applyPageContext"
     }
   },
 
@@ -103,7 +97,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           .then(notifications => {
             osparc.notification.Notifications.getInstance().addNotifications(notifications);
             this.__buildLayout();
-            this.setPageContext("dashboard");
+            this.__applyPageContext("studyOff");
             osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
             resolve();
           })
@@ -305,28 +299,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return control || this.base(arguments, id);
     },
 
-    _applyPageContext: function(newCtxt) {
-      switch (newCtxt) {
-        case "dashboard":
-          this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("study-title-options").exclude();
-          this.getChildControl("read-only-info").exclude();
-          if (this.__tabButtons) {
-            this.__tabButtons.show();
-          }
-          break;
-        case "workbench":
-        case "guided":
-        case "app":
-          this.getChildControl("dashboard-button").show();
-          this.getChildControl("study-title-options").show();
-          if (this.__tabButtons) {
-            this.__tabButtons.exclude();
-          }
-          break;
-      }
-    },
-
     __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "top-right"
@@ -369,6 +341,27 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           converter: value => value ? "visible" : "excluded"
         });
         this.getChildControl("study-title-options").setStudy(study);
+      }
+      this.__applyPageContext(study ? "studyOn" : "studyOff");
+    },
+
+    __applyPageContext: function(newCtxt) {
+      switch (newCtxt) {
+        case "studyOff":
+          this.getChildControl("dashboard-button").exclude();
+          this.getChildControl("study-title-options").exclude();
+          this.getChildControl("read-only-info").exclude();
+          if (this.__tabButtons) {
+            this.__tabButtons.show();
+          }
+          break;
+        case "studyOn":
+          this.getChildControl("dashboard-button").show();
+          this.getChildControl("study-title-options").show();
+          if (this.__tabButtons) {
+            this.__tabButtons.exclude();
+          }
+          break;
       }
     },
 
