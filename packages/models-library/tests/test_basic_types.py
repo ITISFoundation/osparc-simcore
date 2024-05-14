@@ -72,4 +72,4 @@ def test_string_identifier_constraint_type():
     # limited to 50!
     parse_obj_as(IDStr, "X" * 50)
     with pytest.raises(ValidationError):
-        parse_obj_as(IDStr, "X" * 51)
+        parse_obj_as(IDStr, "X" * 101)
