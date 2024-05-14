@@ -120,10 +120,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __openTapped: function() {
       if (this.__resourceData["resourceType"] !== "study") {
-        // Nothing to pre-check
+        // Template or Service, nothing to pre-check
         this.__openResource();
         return;
       }
+
       this.__openButton.setFetching(true);
       const params = {
         url: {
