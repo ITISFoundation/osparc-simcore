@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
     NodeOutputs,
+    NodePatch,
     NodeRetrieve,
     NodeRetrieved,
     ServiceResourcesDict,
@@ -112,6 +113,17 @@ def restart_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def update_node_outputs(
     project_id: str, node_id: str, _new: NodeOutputs
+):  # noqa: ARG001
+    ...
+
+
+@router.patch(
+    "/projects/{project_id}/nodes/{node_id}",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def patch_project_node(
+    project_id: ProjectID, node_id: str, _new: NodePatch
 ):  # noqa: ARG001
     ...
 
