@@ -18,13 +18,13 @@
 qx.Class.define("osparc.metadata.ClassifiersEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData) {
+  construct: function(resourceData) {
     this.base(arguments);
 
-    if (osparc.utils.Resources.isService(studyData)) {
-      this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
+    if (osparc.utils.Resources.isService(resourceData)) {
+      this.__resourceData = osparc.utils.Utils.deepCloneObject(resourceData);
     } else {
-      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+      this.__resourceData = osparc.data.model.Study.deepCloneStudyObject(resourceData);
     }
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -37,7 +37,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
   },
 
   members: {
-    __studyData: null,
+    __resourceData: null,
     __classifiersTree: null,
 
     _createChildControlImpl: function(id) {
@@ -89,17 +89,17 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
         flex: 1
       });
 
-      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add Classifier"));
-      addRRIDClassfierBtn.addListener("execute", () => {
-        this.__addRRIDClassfier(textField.getValue(), addRRIDClassfierBtn);
+      const addRRIDClassifierBtn = new osparc.ui.form.FetchButton(this.tr("Add Classifier"));
+      addRRIDClassifierBtn.addListener("execute", () => {
+        this.__addRRIDClassifier(textField.getValue(), addRRIDClassifierBtn);
       }, this);
-      rridLayout.add(addRRIDClassfierBtn);
+      rridLayout.add(addRRIDClassifierBtn);
 
       return rridLayout;
     },
 
     __createClassifiersTree: function() {
-      const studyData = this.__studyData;
+      const studyData = this.__resourceData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       const classifiersTree = this.__classifiersTree = new osparc.filter.ClassifiersFilter("classifiersEditor", "searchBarFilter", classifiers);
       osparc.store.Store.getInstance().addListener("changeClassifiers", e => {
@@ -120,7 +120,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
       return buttons;
     },
 
-    __addRRIDClassfier: function(rrid, btn) {
+    __addRRIDClassifier: function(rrid, btn) {
       rrid = rrid.replace("RRID:", "");
       const params = {
         url: {
@@ -144,19 +144,23 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
+      const newClassifiers = this.__classifiersTree.getCheckedClassifierIDs();
+      const patchData = {
+        "classifiers": newClassifiers
+      };
       if (osparc.utils.Resources.isStudy(this._serializedData) || osparc.utils.Resources.isTemplate(this._serializedData)) {
-        this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
         const params = {
           url: {
-            "studyId": this.__studyData["uuid"]
+            "studyId": this.__resourceData["uuid"]
           },
-          data: this.__studyData
+          data: patchData
         };
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(updatedStudy => {
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
-            this.fireDataEvent("updateClassifiers", updatedStudy);
+            this.__resourceData["classifiers"] = newClassifiers;
+            this.fireDataEvent("updateClassifiers", this.__resourceData);
           })
           .catch(err => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
@@ -165,12 +169,10 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
-            this.__studyData["key"],
-            this.__studyData["version"]
+            this.__resourceData["key"],
+            this.__resourceData["version"]
           ),
-          data: {
-            "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
-          }
+          data: patchData
         };
         osparc.data.Resources.fetch("services", "patch", params)
           .then(updatedService => {
