@@ -99,6 +99,8 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         }`;
         throw new Error(msg);
       }
+      this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
+      this.showLoadingPage();
       const store = osparc.store.Store.getInstance();
       store.getInaccessibleServices(studyData)
         .then(inaccessibleServices => {
@@ -112,7 +114,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
-          return;
+          throw new Error(err);
         });
     }
   }
