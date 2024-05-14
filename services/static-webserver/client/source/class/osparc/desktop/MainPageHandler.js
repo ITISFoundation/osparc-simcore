@@ -19,10 +19,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
   extend: qx.core.Object,
   type: "singleton",
 
-  events: {
-    "syncStudyEditor": "qx.event.type.Data"
-  },
-
   members: {
     __stack: null,
     __loadingPage: null,
@@ -112,8 +108,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             throw new Error(msg);
           }
           this.showStudyEditor();
-          this.__studyEditor.setStudyData(studyData)
-            .then(() => this.fireDataEvent("syncStudyEditor", pageContext));
+          this.__studyEditor.setStudyData(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");

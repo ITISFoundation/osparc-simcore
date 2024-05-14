@@ -204,8 +204,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyEditor = this.__studyEditor = this.__getStudyEditor();
       mainPageHandler.addStudyEditor(studyEditor);
 
-      mainPageHandler.addListener("syncStudyEditor", e => this.__syncStudyEditor(e.getData()));
-
       return mainStack;
     },
 
@@ -403,14 +401,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       osparc.data.Resources.fetch("studies", "close", params);
     },
 
-    __syncStudyEditor: function(pageContext = "workbench") {
-      const studyEditor = this.__studyEditor;
-      const study = studyEditor.getStudy();
-      this.__navBar.setStudy(study);
-      this.__navBar.setPageContext(pageContext);
-      studyEditor.setPageContext(pageContext);
-    },
-
     __getStudyEditor: function() {
       if (this.__studyEditor) {
         return this.__studyEditor;
@@ -440,6 +430,17 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
         this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
       }, this);
+      studyEditor.addListener("changeStudy", e => {
+        const study = e.getData();
+        this.__navBar.setStudy(study);
+        if (study === null) {
+          this.__navBar.setPageContext("workbench");
+        }
+      });
+      studyEditor.addListener("changePageContext", e => {
+        const pageContext = e.getData();
+        this.__navBar.setPageContext(pageContext);
+      });
       return studyEditor;
     }
   }
