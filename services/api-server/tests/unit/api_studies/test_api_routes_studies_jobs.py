@@ -207,6 +207,7 @@ async def test_create_study_job(
         capture: HttpApiCallCaptureModel,
     ) -> Any:
         if capture.method == "PATCH":
+            _default_side_effect.patch_called = True
             request_content = json.loads(request.content.decode())
             assert isinstance(request_content, dict)
             name = request_content.get("name")
@@ -215,6 +216,8 @@ async def test_create_study_job(
             assert project_id is not None
             assert project_id in name
         return capture.response_body
+
+    _default_side_effect.patch_called = False
 
     respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
@@ -228,6 +231,7 @@ async def test_create_study_job(
         json={"values": {}},
     )
     assert response.status_code == 200
+    assert _default_side_effect.patch_called
 
 
 async def test_get_study_job_outputs(
