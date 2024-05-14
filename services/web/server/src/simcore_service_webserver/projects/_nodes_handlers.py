@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
     NodeOutputs,
+    NodePatch,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
@@ -72,6 +73,7 @@ from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
+    ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -97,6 +99,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -192,6 +196,29 @@ async def get_node(request: web.Request) -> web.Response:
         if isinstance(service_data, DynamicServiceGet)
         else service_data.dict()
     )
+
+
+@routes.patch(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="patch_project_node"
+)
+@login_required
+@permission_required("project.node.update")
+@_handle_project_nodes_exceptions
+async def patch_project_node(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
+    node_patch = await parse_request_body_as(NodePatch, request)
+
+    await projects_api.patch_project_node(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        node_patch=node_patch,
+    )
+
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
