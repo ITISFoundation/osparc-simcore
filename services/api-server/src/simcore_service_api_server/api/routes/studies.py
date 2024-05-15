@@ -10,7 +10,6 @@ from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -36,7 +35,6 @@ def _create_study_from_project(project: ProjectGet) -> Study:
 @router.get(
     "",
     response_model=Page[Study],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_studies(
     page_params: Annotated[PaginationParams, Depends()],
@@ -44,7 +42,7 @@ async def list_studies(
 ):
     """
 
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    New in *version 0.5.0*
     """
     projects_page = await webserver_api.get_projects_page(
         limit=page_params.limit, offset=page_params.offset
@@ -65,7 +63,6 @@ async def list_studies(
     "/{study_id:uuid}",
     response_model=Study,
     responses={**_COMMON_ERROR_RESPONSES},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(
     study_id: StudyID,
@@ -73,7 +70,7 @@ async def get_study(
 ):
     """
 
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    New in *version 0.5.0*
     """
     project: ProjectGet = await webserver_api.get_project(project_id=study_id)
     return _create_study_from_project(project)
@@ -84,7 +81,6 @@ async def get_study(
     response_model=Study,
     status_code=status.HTTP_201_CREATED,
     responses={**_COMMON_ERROR_RESPONSES},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def clone_study(
     study_id: StudyID,
@@ -100,7 +96,6 @@ async def clone_study(
     "/{study_id:uuid}/ports",
     response_model=OnePage[StudyPort],
     responses={**_COMMON_ERROR_RESPONSES},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(
     study_id: StudyID,
@@ -108,7 +103,7 @@ async def list_study_ports(
 ):
     """Lists metadata on ports of a given study
 
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    New in *version 0.5.0*
     """
     project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
         project_id=study_id

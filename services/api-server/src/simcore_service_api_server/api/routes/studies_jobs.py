@@ -75,7 +75,6 @@ async def list_study_jobs(
 @router.post(
     "/{study_id:uuid}/jobs",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(
     study_id: StudyID,
@@ -156,7 +155,6 @@ async def get_study_job(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_study_job(
     study_id: StudyID,
@@ -172,7 +170,6 @@ async def delete_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def start_study_job(
     request: Request,
@@ -204,7 +201,6 @@ async def start_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def stop_study_job(
     study_id: StudyID,
@@ -222,7 +218,6 @@ async def stop_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def inspect_study_job(
     study_id: StudyID,
@@ -241,7 +236,6 @@ async def inspect_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job_outputs(
     study_id: StudyID,
