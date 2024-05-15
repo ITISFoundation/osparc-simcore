@@ -104,7 +104,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "maxLength": 50,
+              "maxLength": 100,
               "minLength": 1,
               "title": "Payment Id"
             },
@@ -162,7 +162,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "maxLength": 50,
+              "maxLength": 100,
               "minLength": 1,
               "title": "Payment Method Id"
             },
@@ -222,7 +222,7 @@
           },
           "provider_payment_id": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "Provider Payment Id",
             "description": "Payment ID from the provider (e.g. stripe payment ID)"
@@ -245,14 +245,14 @@
           },
           "stripe_invoice_id": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "Stripe Invoice Id",
             "description": "Stripe invoice ID"
           },
           "stripe_customer_id": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "Stripe Customer Id",
             "description": "Stripe customer ID"
@@ -401,7 +401,7 @@
           },
           "payment_method_id": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "Payment Method Id"
           }
