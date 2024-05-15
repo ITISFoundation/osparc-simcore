@@ -23,7 +23,7 @@ from .retry_policies import RedisRetryPolicyUponInitialization
 from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+_DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 
 
 _logger = logging.getLogger(__name__)

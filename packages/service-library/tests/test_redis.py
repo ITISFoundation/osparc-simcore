@@ -282,7 +282,15 @@ async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
     await client.shutdown()
 
 
+@pytest.fixture
+def mock_default_socket_timeout(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", datetime.timedelta(seconds=0.25)
+    )
+
+
 async def test_regression_fails_if_on_redis_service_outage(
+    mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
 ):
