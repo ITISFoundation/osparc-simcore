@@ -85,6 +85,16 @@ async def _analyze_current_cluster(
         docker_nodes, existing_ec2_instances
     )
 
+    # analyse pending ec2s, check if they are pending since too long
+    instance_max_time_to_start = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
+    now = datetime.datetime.now(datetime.timezone.utc)
+    possibly_broken_ec2s = []
+    for instance in pending_ec2s:
+        if (now - instance.launch_time) > instance_max_time_to_start:
+            possibly_broken_ec2s.append(instance)
+
     # analyse attached ec2s
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
