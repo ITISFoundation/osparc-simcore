@@ -343,7 +343,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.bind("study", this.__tabButtons, "visibility", {
         converter: s => s ? "excluded" : "visible"
       });
-      this.__tabButtons
       this.__navBarResized();
     },
 
