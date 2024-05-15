@@ -62,7 +62,6 @@ class RedisClientSDK:
             ],
             socket_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
-            retry_on_timeout=True,
             encoding="utf-8",
             decode_responses=True,
         )
