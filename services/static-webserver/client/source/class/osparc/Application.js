@@ -377,7 +377,9 @@ qx.Class.define("osparc.Application", {
 
     __loadNodeViewerPage: async function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
+      const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
+      this.__mainPage = mainPage;
+      this.__loadView(mainPage);
     },
 
     __loadView: function(view, opts, clearUrl=true) {
