@@ -43,6 +43,7 @@ from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATU
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -132,6 +133,7 @@ async def list_files(
 @router.get(
     "/page",
     response_model=Page[File],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_files_page(
