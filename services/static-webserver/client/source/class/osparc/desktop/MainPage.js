@@ -87,7 +87,6 @@ qx.Class.define("osparc.desktop.MainPage", {
   members: {
     __navBar: null,
     __dashboard: null,
-    __dashboardLayout: null,
     __loadingPage: null,
     __studyEditor: null,
 
@@ -195,7 +194,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
       mainPageHandler.setStack(mainStack);
 
-      const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
+      const dashboardLayout = this.__createDashboardLayout();
       mainPageHandler.addDashboard(dashboardLayout);
 
       const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
@@ -207,7 +206,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       return mainStack;
     },
 
-    __createDashboardStack: function() {
+    __createDashboardLayout: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const tabsBar = dashboard.getChildControl("bar");
       tabsBar.set({
