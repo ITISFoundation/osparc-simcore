@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse
-from models_library.api_schemas_webserver.projects import ProjectUpdate
+from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
@@ -75,7 +75,6 @@ async def list_study_jobs(
 @router.post(
     "/{study_id:uuid}/jobs",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(
     study_id: StudyID,
@@ -99,8 +98,8 @@ async def create_study_job(
         job_id=job.id,
     )
 
-    project = await webserver_api.update_project(
-        project_id=job.id, update_params=ProjectUpdate(name=job.name)
+    await webserver_api.patch_project(
+        project_id=job.id, patch_params=ProjectPatch(name=ProjectName(job.name))
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
@@ -156,7 +155,6 @@ async def get_study_job(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_study_job(
     study_id: StudyID,
@@ -172,7 +170,6 @@ async def delete_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def start_study_job(
     request: Request,
@@ -204,7 +201,6 @@ async def start_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def stop_study_job(
     study_id: StudyID,
@@ -222,7 +218,6 @@ async def stop_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def inspect_study_job(
     study_id: StudyID,
@@ -241,7 +236,6 @@ async def inspect_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job_outputs(
     study_id: StudyID,
