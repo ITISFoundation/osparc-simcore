@@ -40,6 +40,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
   },
 
   members: {
+    __stack: null,
     _loadingPage: null,
     _mainLayout: null,
 
@@ -50,8 +51,12 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
       this.__stack.setSelection([this._loadingPage]);
     },
 
-    _hideLoadingPage: function() {
+    _showMainLayout: function() {
       this.__stack.setSelection([this._mainLayout]);
+    },
+
+    _hideLoadingPage: function() {
+      this._showMainLayout();
     },
 
     _addToMainLayout: function(widget, props = {}) {
