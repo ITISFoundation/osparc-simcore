@@ -70,6 +70,6 @@ def test_string_identifier_constraint_type():
     assert parse_obj_as(IDStr, "   123 trim spaces   ") == "123 trim spaces"
 
     # limited to 50!
-    parse_obj_as(IDStr, "X" * 50)
+    parse_obj_as(IDStr, "X" * 100)
     with pytest.raises(ValidationError):
         parse_obj_as(IDStr, "X" * 101)
