@@ -21,8 +21,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
     viewsStack.add(workbenchView);
@@ -80,7 +78,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     startStopButtons.addListener("stopPipeline", () => this.__stopPipeline(), this);
 
 
-    this._add(viewsStack, {
+    this._addToMainLayout(viewsStack, {
       flex: 1
     });
 
@@ -444,11 +442,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
       this.getStudyLogger().debug(null, "Updating pipeline");
-    },
-
-    // overridden
-    _showMainLayout: function(show) {
-      this.__viewsStack.setVisibility(show ? "visible" : "excluded");
     },
 
     nodeSelected: function(nodeId) {
