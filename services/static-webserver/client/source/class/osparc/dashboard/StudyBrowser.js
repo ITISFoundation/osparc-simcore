@@ -957,11 +957,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       renameButton.addListener("execute", () => {
         const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
-          const newLabel = e.getData()["newLabel"];
-          const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-          studyDataCopy.name = newLabel;
-          this.__updateStudy(studyDataCopy);
           renamer.close();
+          const newLabel = e.getData()["newLabel"];
+          this.__updateName(studyData, newLabel);
         }, this);
         renamer.center();
         renamer.open();
@@ -979,27 +977,53 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
         thumbnailEditor.addListener("updateThumbnail", e => {
           win.close();
-          const validUrl = e.getData();
-          const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-          studyDataCopy["thumbnail"] = validUrl;
-          this.__updateStudy(studyDataCopy);
+          const newUrl = e.getData();
+          this.__updateThumbnail(studyData, newUrl);
         }, this);
         thumbnailEditor.addListener("cancel", () => win.close());
       }, this);
       return thumbButton;
     },
 
-    __updateStudy: function(studyData) {
+    __updateName: function(studyData, name) {
+      const patchData = {
+        "name": name
+      };
       const params = {
         url: {
           "studyId": studyData["uuid"]
         },
-        data: studyData
+        data: patchData
       };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedStudyData => this._updateStudyData(updatedStudyData))
+      osparc.data.Resources.fetch("studies", "patch", params)
+        .then(() => {
+          studyData["name"] = patchData["name"];
+          this._updateStudyData(studyData);
+        })
         .catch(err => {
-          const msg = this.tr("Something went wrong updating the Service");
+          const msg = this.tr("Something went wrong Renaming");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
+          console.error(err);
+        });
+    },
+
+    __updateThumbnail: function(studyData, url) {
+      const patchData = {
+        "thumbnail": url
+      };
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: patchData
+      };
+      osparc.data.Resources.fetch("studies", "patch", params)
+        .then(() => {
+          studyData["thumbnail"] = patchData["thumbnail"];
+          this._updateStudyData(studyData);
+        })
+        .catch(err => {
+          const msg = this.tr("Something went wrong updating the Thumbnail");
           osparc.FlashMessenger.logAs(msg, "ERROR");
           console.error(err);
         });
