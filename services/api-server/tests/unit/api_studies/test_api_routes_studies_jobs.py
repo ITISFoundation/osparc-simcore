@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
@@ -205,27 +206,32 @@ async def test_create_study_job(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
+        if capture.method == "PATCH":
+            _default_side_effect.patch_called = True
+            request_content = json.loads(request.content.decode())
+            assert isinstance(request_content, dict)
+            name = request_content.get("name")
+            assert name is not None
+            project_id = path_params.get("project_id")
+            assert project_id is not None
+            assert project_id in name
         return capture.response_body
+
+    _default_side_effect.patch_called = False
 
     respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         _capture_file,
-        [_default_side_effect] * 7,
+        [_default_side_effect] * 5,
     )
 
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
-        json={
-            "values": {
-                "input_file": {
-                    "filename": "input.txt",
-                    "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                },
-            }
-        },
+        json={"values": {}},
     )
     assert response.status_code == 200
+    assert _default_side_effect.patch_called
 
 
 async def test_get_study_job_outputs(

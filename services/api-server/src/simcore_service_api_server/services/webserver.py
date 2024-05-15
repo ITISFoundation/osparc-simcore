@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.product import GetCreditPrice
 from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
     ProjectGet,
-    ProjectUpdate,
+    ProjectPatch,
 )
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -39,7 +39,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
-from models_library.projects import Project, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -355,26 +355,13 @@ class AuthSession:
         return data
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def update_project(
-        self, *, project_id: UUID, update_params: ProjectUpdate
-    ) -> ProjectGet:
-        response = await self.client.get(
-            f"/projects/{project_id}", cookies=self.session_cookies
-        )
-        response.raise_for_status()
-        project: Project | None = Envelope[Project].parse_raw(response.text).data
-        assert project is not None  # nosec
-        response = await self.client.put(
+    async def patch_project(self, *, project_id: UUID, patch_params: ProjectPatch):
+        response = await self.client.patch(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
-            json=jsonable_encoder(
-                project.copy(update=update_params.dict(exclude_none=True))
-            ),
+            json=jsonable_encoder(patch_params, exclude_unset=True),
         )
         response.raise_for_status()
-        data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-        return data
 
     @_exception_mapper(
         {
