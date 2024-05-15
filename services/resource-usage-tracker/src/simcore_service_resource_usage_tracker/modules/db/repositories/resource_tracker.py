@@ -306,6 +306,7 @@ class ResourceTrackerRepository(
         product_name: ProductName,
         s3_bucket_name: S3BucketName,
         s3_key: str,
+        s3_region: str,
         *,
         user_id: UserID | None,
         wallet_id: WalletID | None,
@@ -379,7 +380,7 @@ class ResourceTrackerRepository(
                 sa.DDL(
                     f"""
                 SELECT * from aws_s3.query_export_to_s3('{compiled_query}',
-                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
+                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', '{s3_region}'), 'format csv, HEADER true');
                 """  # noqa: S608
                 )
             )
