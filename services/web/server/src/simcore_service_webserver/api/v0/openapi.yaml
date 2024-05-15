@@ -1828,7 +1828,7 @@ paths:
         schema:
           title: Product Name
           anyOf:
-          - maxLength: 50
+          - maxLength: 100
             minLength: 1
             type: string
           - enum:
@@ -1855,7 +1855,7 @@ paths:
         schema:
           title: Product Name
           anyOf:
-          - maxLength: 50
+          - maxLength: 100
             minLength: 1
             type: string
           - enum:
@@ -1866,7 +1866,7 @@ paths:
       - required: true
         schema:
           title: Template Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: template_id
@@ -2962,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4592,7 +4592,7 @@ paths:
       - required: true
         schema:
           title: Payment Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_id
@@ -4621,7 +4621,7 @@ paths:
       - required: true
         schema:
           title: Payment Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_id
@@ -4669,7 +4669,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_method_id
@@ -4718,7 +4718,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_method_id
@@ -4747,7 +4747,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_method_id
@@ -4773,7 +4773,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         name: payment_method_id
@@ -7200,7 +7200,7 @@ components:
       properties:
         id:
           title: Id
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         content:
@@ -7231,7 +7231,7 @@ components:
           default: false
         paymentMethodId:
           title: Paymentmethodid
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
           description: Payment method in the wallet used to perform the auto-recharge
@@ -8241,7 +8241,7 @@ components:
       properties:
         idr:
           title: Idr
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         walletId:
@@ -8288,7 +8288,7 @@ components:
           minimum: 0
         paymentMethodId:
           title: Paymentmethodid
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         paymentMethodFormUrl:
@@ -8311,7 +8311,7 @@ components:
       properties:
         paymentId:
           title: Paymentid
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         priceDollars:
@@ -9160,12 +9160,12 @@ components:
       properties:
         name:
           title: Name
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         description:
           title: Description
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         thumbnail:
@@ -9471,7 +9471,7 @@ components:
           type: boolean
         paymentMethodId:
           title: Paymentmethodid
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         topUpAmountInUsd:
@@ -11147,7 +11147,7 @@ components:
       properties:
         paymentId:
           title: Paymentid
-          maxLength: 50
+          maxLength: 100
           minLength: 1
           type: string
         paymentFormUrl:
