@@ -39,7 +39,7 @@ class TaskSchedule(BaseModel):
         ..., description="represents the execution step of the task"
     )
 
-    remaining_retries: NonNegativeInt = Field(
+    execution_attempts: NonNegativeInt = Field(
         ...,
         description="remaining attempts to run the code, only retries if this is > 0",
     )

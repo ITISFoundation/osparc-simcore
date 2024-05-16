@@ -246,7 +246,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         task_schedule = TaskSchedule(
             timeout=await subclass.get_timeout(full_start_context),
-            remaining_retries=await subclass.get_retries(full_start_context),
+            execution_attempts=await subclass.get_retries(full_start_context) + 1,
             class_unique_reference=class_unique_reference,
             user_start_context=user_start_context,
             state=TaskState.SCHEDULED,
@@ -325,7 +325,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.SUBMIT_TASK
         )
-        task_schedule.remaining_retries -= 1
+        task_schedule.execution_attempts -= 1
         task_schedule.state = TaskState.WORKER
         await self._memory_manager.save(task_uid, task_schedule)
 
@@ -403,7 +403,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             task_schedule.result, (TaskResultError, TaskResultCancelledError)
         )
 
-        if task_schedule.remaining_retries > 0 and not isinstance(
+        if task_schedule.execution_attempts > 0 and not isinstance(
             task_schedule.result, TaskResultCancelledError
         ):
             _logger.debug("Schedule retry attempt for task_uid '%s'", task_uid)
