@@ -2,11 +2,9 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
-import contextlib
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 
-import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -133,39 +131,17 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
     await post_message(initialized_app, message=rabbit_message)
 
 
-@contextlib.asynccontextmanager
-async def paused_container(
-    async_docker_client: aiodocker.Docker, container_name: str
-) -> AsyncIterator[None]:
-    containers = await async_docker_client.containers.list(
-        filters={"name": [container_name]}
-    )
-    await asyncio.gather(*(c.pause() for c in containers))
-    # refresh
-    container_attrs = await asyncio.gather(*(c.show() for c in containers))
-    for container_status in container_attrs:
-        assert container_status["State"]["Status"] == "paused"
-
-    yield
-
-    await asyncio.gather(*(c.unpause() for c in containers))
-    # refresh
-    container_attrs = await asyncio.gather(*(c.show() for c in containers))
-    for container_status in container_attrs:
-        assert container_status["State"]["Status"] == "running"
-
-
 async def test_post_message_when_rabbit_disconnected_does_not_raise(
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_log_message: LoggerRabbitMessage,
-    async_docker_client: aiodocker.Docker,
 ):
     # NOTE: if the connection is not initialized before pausing the container, then
     # this test hangs forever!!! This needs investigations!
     await post_message(initialized_app, message=rabbit_log_message)
-    async with paused_container(async_docker_client, "rabbit"):
+    async with paused_container("rabbit"):
         # now posting should not raise out
         await post_message(initialized_app, message=rabbit_log_message)
