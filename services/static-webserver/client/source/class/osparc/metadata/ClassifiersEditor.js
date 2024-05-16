@@ -144,21 +144,12 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      const patchData = {
-        "classifiers": this.__classifiersTree.getCheckedClassifierIDs()
-      };
+      const newClassifiers = this.__classifiersTree.getCheckedClassifierIDs();
       if (osparc.utils.Resources.isStudy(this._serializedData) || osparc.utils.Resources.isTemplate(this._serializedData)) {
-        const params = {
-          url: {
-            "studyId": this.__resourceData["uuid"]
-          },
-          data: patchData
-        };
-        osparc.data.Resources.fetch("studies", "patch", params)
+        osparc.info.StudyUtils.patchStudy(this.__resourceData, "classifiers", newClassifiers)
           .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
-            this.__resourceData["classifiers"] = patchData["classifiers"];
             this.fireDataEvent("updateClassifiers", this.__resourceData);
           })
           .catch(err => {
@@ -171,7 +162,9 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
             this.__resourceData["key"],
             this.__resourceData["version"]
           ),
-          data: patchData
+          data: {
+            "classifiers": newClassifiers
+          }
         };
         osparc.data.Resources.fetch("services", "patch", params)
           .then(updatedService => {
