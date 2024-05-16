@@ -86,14 +86,23 @@ async def _analyze_current_cluster(
     )
 
     # analyse pending ec2s, check if they are pending since too long
-    instance_max_time_to_start = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
-    )
-    now = datetime.datetime.now(datetime.timezone.utc)
-    possibly_broken_ec2s = []
-    for instance in pending_ec2s:
-        if (now - instance.launch_time) > instance_max_time_to_start:
-            possibly_broken_ec2s.append(instance)
+    now = arrow.utcnow().datetime
+    broken_ec2s = [
+        instance
+        for instance in pending_ec2s
+        if (now - instance.launch_time)
+        > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    ]
+    if broken_ec2s:
+        _logger.error(
+            "Detected broken EC2 instances that never joined the cluster after %s: %s",
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+            f"{[_.id for _ in broken_ec2s]}",
+        )
+    # remove the broken ec2s from the pending ones
+    pending_ec2s = [
+        instance for instance in pending_ec2s if instance not in broken_ec2s
+    ]
 
     # analyse attached ec2s
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
@@ -123,6 +132,7 @@ async def _analyze_current_cluster(
         drained_nodes=drained_nodes,
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
+        broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
@@ -134,6 +144,7 @@ async def _analyze_current_cluster(
             "drained_nodes": "available_resources",
             "reserve_drained_nodes": True,
             "pending_ec2s": "ec2_instance",
+            "broken_ec2s": "ec2_instance",
         },
     )
     _logger.info(
