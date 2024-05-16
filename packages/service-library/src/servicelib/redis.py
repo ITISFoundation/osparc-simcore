@@ -23,7 +23,7 @@ from .retry_policies import RedisRetryPolicyUponInitialization
 from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_DEFAULT_CONNECTION_TIMEOUT_S: Final[NonNegativeFloat] = 5
+_DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 
 
 _logger = logging.getLogger(__name__)
@@ -60,9 +60,8 @@ class RedisClientSDK:
                 redis.exceptions.ConnectionError,
                 redis.exceptions.TimeoutError,
             ],
-            socket_timeout=_DEFAULT_CONNECTION_TIMEOUT_S,
-            socket_connect_timeout=_DEFAULT_CONNECTION_TIMEOUT_S,
-            retry_on_timeout=True,
+            socket_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
+            socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
             decode_responses=True,
         )
