@@ -369,7 +369,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        operationPromise = osparc.info.StudyUtils.patchStudy(studyData, "access_rights", arCopy);
+        operationPromise = osparc.info.StudyUtils.patchStudy(studyData, "accessRights", arCopy);
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);

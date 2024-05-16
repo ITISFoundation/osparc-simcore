@@ -142,19 +142,13 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return;
       }
 
+      const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {
-        this._serializedDataCopy["accessRights"][gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        newAccessRights[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
-      const params = {
-        url: {
-          "studyId": this._serializedDataCopy["uuid"]
-        },
-        data: this._serializedDataCopy
-      };
-      // OM TODO
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", newAccessRights)
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();

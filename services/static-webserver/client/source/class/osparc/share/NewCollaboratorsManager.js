@@ -128,7 +128,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let existingCollabs = [];
       if (this.__resourceData) {
         if (this.__resourceData["accessRights"]) {
-          // study/template/wallet
+          // study/template/service/wallet
           if (this.__resourceData["resourceType"] === "wallet") {
             // array of objects
             existingCollabs = this.__resourceData["accessRights"].map(collab => collab["gid"]);
@@ -136,10 +136,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             // object
             existingCollabs = Object.keys(this.__resourceData["accessRights"]);
           }
-        } else if (this.__resourceData["access_rights"]) {
-          // service
-          // object
-          existingCollabs = Object.keys(this.__resourceData["access_rights"]);
         }
       }
 
