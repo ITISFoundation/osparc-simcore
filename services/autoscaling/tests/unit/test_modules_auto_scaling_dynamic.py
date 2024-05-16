@@ -11,7 +11,7 @@ import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any
 from unittest import mock
 
 import aiodocker
@@ -35,7 +35,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
@@ -86,15 +86,6 @@ def mock_start_aws_instance(
 def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
         "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
-    )
-
-
-@pytest.fixture
-def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
-        autospec=True,
-        return_value=None,
     )
 
 
@@ -363,7 +354,6 @@ async def _assert_ec2_instances(
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
     all_instances = await ec2_client.describe_instances()
-    internal_dns_names = []
     assert len(all_instances["Reservations"]) == num_reservations
     for reservation in all_instances["Reservations"]:
         assert "Instances" in reservation
@@ -392,7 +382,6 @@ async def _assert_ec2_instances(
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
             assert instance_private_dns_name.endswith(".ec2.internal")
-            internal_dns_names.append(instance_private_dns_name)
             assert "State" in instance
             state = instance["State"]
             assert "Name" in state
@@ -884,24 +873,6 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
-_SHORT_EC2_INSTANCES_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=10
-)
-
-
-@pytest.fixture
-def with_short_ec2_instances_max_start_time(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {
-            "EC2_INSTANCES_MAX_START_TIME": f"{_SHORT_EC2_INSTANCES_MAX_START_TIME}",
-        },
-    )
-
-
 @pytest.mark.parametrize(
     "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
     [
@@ -913,7 +884,7 @@ def with_short_ec2_instances_max_start_time(
         ),
     ],
 )
-async def test_long_pending_ec2_is_detected_as_defect(
+async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
@@ -931,11 +902,12 @@ async def test_long_pending_ec2_is_detected_as_defect(
     mock_find_node_with_name_returns_none: mock.Mock,
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
+    short_ec2_instance_max_start_time: datetime.timedelta,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
-        == _SHORT_EC2_INSTANCES_MAX_START_TIME
+        short_ec2_instance_max_start_time
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()

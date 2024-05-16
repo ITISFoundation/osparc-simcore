@@ -7,7 +7,7 @@ import dataclasses
 import datetime
 import json
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final, cast
@@ -843,3 +843,31 @@ def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
     num_machines_in_buffer = 5
     monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
     return num_machines_in_buffer
+
+
+@pytest.fixture
+def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
+        autospec=True,
+        return_value=None,
+    )
+
+
+@pytest.fixture(scope="session")
+def short_ec2_instance_max_start_time() -> datetime.timedelta:
+    return datetime.timedelta(seconds=10)
+
+
+@pytest.fixture
+def with_short_ec2_instances_max_start_time(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    short_ec2_instance_max_start_time: datetime.timedelta,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_MAX_START_TIME": f"{short_ec2_instance_max_start_time}",
+        },
+    )
