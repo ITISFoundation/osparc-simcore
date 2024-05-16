@@ -284,23 +284,23 @@ async def test_workflow_with_process_running_deferred_manager_outages(
         )
 
         # pylint:disable=unnecessary-comprehension
-        manager_tasks_list: list[tuple[int, ...]] = [  # noqa: C416
+        sequence_ids_list: list[tuple[int, ...]] = [  # noqa: C416
             x
             for x in partition_gen(
                 range(deferred_tasks_to_start),
                 slice_size=int(deferred_tasks_to_start / remote_processes) + 1,
             )
         ]
-        assert sum(len(x) for x in manager_tasks_list) == deferred_tasks_to_start
+        assert sum(len(x) for x in sequence_ids_list) == deferred_tasks_to_start
 
         # start all in parallel divided among workers
         await asyncio.gather(
             *[
                 manager.start_deferred_task(0.1, i)
-                for manager, tasks_to_run in zip(
-                    managers, manager_tasks_list, strict=True
+                for manager, sequence_ids in zip(
+                    managers, sequence_ids_list, strict=True
                 )
-                for i in tasks_to_run
+                for i in sequence_ids
             ]
         )
         # makes sure tasks have been scheduled
