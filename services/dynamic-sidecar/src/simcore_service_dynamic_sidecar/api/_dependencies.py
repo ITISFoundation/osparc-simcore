@@ -6,7 +6,9 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
+from servicelib.rabbitmq import RabbitMQClient
 
+from ..core import rabbitmq
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
@@ -76,3 +78,9 @@ def get_user_services_metrics(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> UserServicesMetrics:
     return app_state.user_service_metrics  # type: ignore
+
+
+def get_rabbitmq_client(
+    app: Annotated[FastAPI, Depends(get_application)]
+) -> RabbitMQClient:
+    return rabbitmq.get_rabbitmq_client(app)
