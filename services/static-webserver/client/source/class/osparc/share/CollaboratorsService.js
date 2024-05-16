@@ -71,10 +71,6 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       };
     },
 
-    removeCollaborator: function(serializedData, gid) {
-      return delete serializedData["accessRights"][gid];
-    },
-
     getEveryoneObj: function() {
       return {
         "gid": 1,
@@ -126,7 +122,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       if (item) {
         item.setEnabled(false);
       }
-      const success = this.self().removeCollaborator(this._serializedDataCopy, collaborator["gid"]);
+
+      const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
       if (!success) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         if (item) {
