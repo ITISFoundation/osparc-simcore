@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
@@ -145,7 +146,7 @@ async def _commands_handler(
 
 class AsyncTCPServer:
     def __init__(
-        self, host: str = "127.0.0.1", port: int = 3562, read_chunk_size: int = 10000
+        self, port: int, host: str = "127.0.0.1", read_chunk_size: int = 10000
     ) -> None:
         self.host = host
         self.port = port
@@ -189,4 +190,4 @@ class AsyncTCPServer:
 
 
 if __name__ == "__main__":
-    asyncio.run(AsyncTCPServer().run())
+    asyncio.run(AsyncTCPServer(port=int(os.environ.get("LISTEN_PORT", "3562"))).run())

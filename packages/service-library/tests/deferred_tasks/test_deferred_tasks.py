@@ -10,7 +10,7 @@ import sys
 from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager
 from pathlib import Path
-from typing import Any, Awaitable, Protocol
+from typing import Any, Awaitable, Final, Protocol
 
 import psutil
 import pytest
@@ -35,10 +35,13 @@ pytest_simcore_ops_services_selection = [
     "redis-commander",
 ]
 
+DEFAULT_LISTEN_PORT: Final[int] = 3562
+
 
 class _RemoteProcess:
-    def __init__(self, shell_command):
+    def __init__(self, shell_command, port: int):
         self.shell_command = shell_command
+        self.port = port
         self.process = None
         self.pid: int | None = None
 
@@ -46,7 +49,9 @@ class _RemoteProcess:
         assert self.process is None
         assert self.pid is None
 
-        self.process = await asyncio.create_subprocess_shell(self.shell_command)
+        self.process = await asyncio.create_subprocess_shell(
+            self.shell_command, env={"LISTEN_PORT": f"{self.port}"}
+        )
         self.pid = self.process.pid
 
     async def stop(self, *, graceful: bool = False):
@@ -76,7 +81,7 @@ async def redis_client(redis_service: RedisSettings) -> AsyncIterator[RedisClien
 @pytest.fixture
 async def get_remote_process(
     redis_client: RedisClientSDK,
-) -> AsyncIterable[Callable[[], Awaitable[_RemoteProcess]]]:
+) -> AsyncIterable[Callable[[int], Awaitable[_RemoteProcess]]]:
     python_interpreter = sys.executable
     current_module_path = (
         Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -86,8 +91,10 @@ async def get_remote_process(
 
     started_processes: list[_RemoteProcess] = []
 
-    async def _() -> _RemoteProcess:
-        process = _RemoteProcess(shell_command=f"{python_interpreter} {app_to_start}")
+    async def _(port: int) -> _RemoteProcess:
+        process = _RemoteProcess(
+            shell_command=f"{python_interpreter} {app_to_start}", port=port
+        )
         started_processes.append(process)
         return process
 
@@ -103,7 +110,7 @@ async def _tcp_command(
     payload: dict[str, Any],
     *,
     host: str = "127.0.0.1",
-    port: int = 3562,
+    port: int,
     read_chunk_size: int = 10000,
     timeout: NonNegativeFloat = 1,
 ) -> Any:
@@ -170,6 +177,7 @@ class _RemoteProcessLifecycleManager:
                 "redis": self.redis_service.json(**_get_serialization_options()),
                 "max-workers": self.max_workers,
             },
+            port=self.remote_process.port,
         )
         assert response is None
 
@@ -180,17 +188,21 @@ class _RemoteProcessLifecycleManager:
         self, sleep_duration: float, sequence_id: int
     ) -> None:
         response = await _tcp_command(
-            "start", {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
+            "start",
+            {"sleep_duration": sleep_duration, "sequence_id": sequence_id},
+            port=self.remote_process.port,
         )
         assert response is None
 
     async def get_results(self) -> list[str]:
-        response = await _tcp_command("get-results", {})
+        response = await _tcp_command("get-results", {}, port=self.remote_process.port)
         assert isinstance(response, list)
         return response
 
     async def get_scheduled(self) -> list[str]:
-        response = await _tcp_command("get-scheduled", {})
+        response = await _tcp_command(
+            "get-scheduled", {}, port=self.remote_process.port
+        )
         assert isinstance(response, list)
         return response
 
@@ -244,7 +256,7 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
     ],
 )
 async def test_workflow_with_process_running_deferred_manager_outages(
-    get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
+    get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     max_workers: int,
@@ -252,7 +264,10 @@ async def test_workflow_with_process_running_deferred_manager_outages(
     start_stop_cycles: NonNegativeInt,
 ):
     async with _RemoteProcessLifecycleManager(
-        await get_remote_process(), rabbit_service, redis_service, max_workers
+        await get_remote_process(DEFAULT_LISTEN_PORT),
+        rabbit_service,
+        redis_service,
+        max_workers,
     ) as manager:
 
         # start all in parallel
@@ -362,7 +377,7 @@ async def test_workflow_with_third_party_services_outages(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
-    get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
+    get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     max_workers: int,
@@ -372,7 +387,10 @@ async def test_workflow_with_third_party_services_outages(
     service_manager = ServiceManager(redis_client, rabbit_client, paused_container)
 
     async with _RemoteProcessLifecycleManager(
-        await get_remote_process(), rabbit_service, redis_service, max_workers
+        await get_remote_process(DEFAULT_LISTEN_PORT),
+        rabbit_service,
+        redis_service,
+        max_workers,
     ) as manager:
 
         # start all in parallel
