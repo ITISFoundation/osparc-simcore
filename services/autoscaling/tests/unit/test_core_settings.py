@@ -175,11 +175,7 @@ def test_invalid_instance_names(
         monkeypatch,
         {
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                {
-                    faker.pystr(): {
-                        "ami_id": faker.pystr(),
-                    }
-                }
+                {faker.pystr(): {"ami_id": faker.pystr(), "pre_pull_images": []}}
             )
         },
     )

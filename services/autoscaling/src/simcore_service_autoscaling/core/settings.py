@@ -127,11 +127,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        if all(parse_obj_as(InstanceTypeType, key) for key in value):
-            return value
-
-        msg = "Invalid instance type name"
-        raise ValueError(msg)
+        parse_obj_as(list[InstanceTypeType], list(value))
+        return value
 
 
 class NodesMonitoringSettings(BaseCustomSettings):
