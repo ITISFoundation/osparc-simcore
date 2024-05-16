@@ -64,9 +64,11 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     )
     # BUFFER is not exposed since we set it to 0
     WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        default=datetime.timedelta(minutes=1),
+        description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
     WORKERS_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
