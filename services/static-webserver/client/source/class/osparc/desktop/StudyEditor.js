@@ -21,8 +21,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
     viewsStack.add(workbenchView);
@@ -38,9 +36,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       slideshowView.addListener(signalName, () => this.fireEvent(signalName));
     });
 
-    workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
-    workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
-    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+    workbenchView.addListener("slidesEdit", () => this.__editSlides(), this);
+    workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
+    slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
 
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
@@ -80,7 +78,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     startStopButtons.addListener("stopPipeline", () => this.__stopPipeline(), this);
 
 
-    this._add(viewsStack, {
+    this._addToMainLayout(viewsStack, {
       flex: 1
     });
 
@@ -93,9 +91,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "userIdled": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data",
     "startIteration": "qx.event.type.Data"
   },
@@ -103,12 +98,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      init: null,
       nullable: true,
-      apply: "_applyStudy"
+      apply: "_applyStudy",
+      event: "changeStudy"
     },
 
     pageContext: {
       check: ["workbench", "guided", "app"],
+      init: null,
       nullable: false,
       event: "changePageContext",
       apply: "_applyPageContext"
@@ -134,33 +132,29 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __nodesSlidesTree: null,
 
     setStudyData: function(studyData) {
-      return new Promise((resolve, reject) => {
-        if (this.__settingStudy) {
-          resolve();
-          return;
+      if (this.__settingStudy) {
+        return;
+      }
+      this.__settingStudy = true;
+
+      this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
+
+      // Before starting a study, make sure the latest version is fetched
+      const params = {
+        url: {
+          "studyId": studyData.uuid
         }
-        this.__settingStudy = true;
-
-        this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
-
-        // Before starting a study, make sure the latest version is fetched
-        const params = {
-          url: {
-            "studyId": studyData.uuid
-          }
-        };
-        const promises = [
-          osparc.data.Resources.getOne("studies", params),
-          osparc.store.Store.getInstance().getAllServices()
-        ];
-        Promise.all(promises)
-          .then(values => {
-            studyData = values[0];
-            const study = new osparc.data.model.Study(studyData);
-            this.setStudy(study);
-            resolve();
-          });
-      });
+      };
+      const promises = [
+        osparc.data.Resources.getOne("studies", params),
+        osparc.store.Store.getInstance().getAllServices()
+      ];
+      Promise.all(promises)
+        .then(values => {
+          studyData = values[0];
+          const study = new osparc.data.model.Study(studyData);
+          this.setStudy(study);
+        });
     },
 
     _applyStudy: function(study) {
@@ -292,8 +286,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    editSlides: function() {
-      if (this.getPageContext() !== "workbench") {
+    __editSlides: function() {
+      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) {
         return;
       }
 
@@ -448,11 +442,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
       this.getStudyLogger().debug(null, "Updating pipeline");
-    },
-
-    // overridden
-    _showMainLayout: function(show) {
-      this.__viewsStack.setVisibility(show ? "visible" : "excluded");
     },
 
     nodeSelected: function(nodeId) {
