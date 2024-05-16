@@ -95,7 +95,10 @@ async def _analyze_current_cluster(
     ]
     if broken_ec2s:
         _logger.error(
-            "Detected broken EC2 instances that never joined the cluster after %s: %s",
+            "Detected broken EC2 instances that never joined the cluster after %s: %s\n"
+            "TIP: if this happens very often the time to start an EC2 might have increased or "
+            "something might be wrong with the used AMI and/or boot script in which case this"
+            " would happen all the time. Please check",
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
             f"{[_.id for _ in broken_ec2s]}",
         )

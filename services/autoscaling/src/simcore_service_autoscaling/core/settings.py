@@ -75,8 +75,10 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
     EC2_INSTANCES_NAME_PREFIX: str = Field(
         default="autoscaling",
