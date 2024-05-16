@@ -55,6 +55,7 @@ from ...core.errors import (
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
+    WalletNotEnoughCreditsError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
@@ -318,7 +319,7 @@ async def create_computation(  # noqa: PLR0913
             user_id=computation.user_id,
             product_name=computation.product_name,
             rut_client=rut_client,
-            is_wallet=bool(computation.wallet_info),
+            wallet_info=computation.wallet_info,
             rabbitmq_rpc_client=rpc_client,
         )
 
@@ -393,6 +394,10 @@ async def create_computation(  # noqa: PLR0913
         ) from e
     except ConfigurationError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
+    except WalletNotEnoughCreditsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{e}"
+        ) from e
 
 
 @router.get(

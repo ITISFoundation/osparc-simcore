@@ -10,6 +10,7 @@ import json
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
+from decimal import Decimal
 from pathlib import Path
 from random import choice
 from typing import Any
@@ -384,7 +385,11 @@ async def test_create_computation(
 
 @pytest.fixture
 def wallet_info(faker: Faker) -> WalletInfo:
-    return WalletInfo(wallet_id=faker.pyint(), wallet_name=faker.name())
+    return WalletInfo(
+        wallet_id=faker.pyint(),
+        wallet_name=faker.name(),
+        wallet_credit_amount=Decimal(10),
+    )
 
 
 @pytest.fixture

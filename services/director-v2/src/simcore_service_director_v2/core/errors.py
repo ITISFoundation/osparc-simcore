@@ -20,6 +20,8 @@ translate into something like
 """
 
 
+from decimal import Decimal
+
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -112,6 +114,13 @@ class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorError):
 
 class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorError):
     msg_template = "Computational task {node_id} not found"
+
+
+class WalletNotEnoughCreditsError(DirectorError):
+    """Project not found error"""
+
+    def __init__(self, wallet_name: str, wallet_credit_amount: Decimal):
+        super().__init__(f"Wallet '{wallet_name}' has {wallet_credit_amount} credits.")
 
 
 #
