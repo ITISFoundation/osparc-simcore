@@ -344,6 +344,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
+    _getCard: function(uuid) {
+      const cards = this._resourcesContainer.getCards();
+      const found = cards.filter(c => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(c) && c.getUuid() === uuid);
+      return found;
+    },
+
     _removeResourceCards: function() {
       const cards = this._resourcesContainer.getCards();
       for (let i=cards.length-1; i>=0; i--) {
