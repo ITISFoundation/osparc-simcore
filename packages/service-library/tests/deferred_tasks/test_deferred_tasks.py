@@ -7,6 +7,7 @@ import json
 import random
 import sys
 from collections.abc import AsyncIterable, AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -273,29 +274,6 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
         yield docker_client
 
 
-@contextlib.asynccontextmanager
-async def paused_container(
-    async_docker_client: aiodocker.Docker, container_name: str
-) -> AsyncIterator[None]:
-    containers = await async_docker_client.containers.list(
-        filters={"name": [f"{container_name}."]}
-    )
-    await asyncio.gather(*(c.pause() for c in containers))
-    # refresh
-    container_attrs = await asyncio.gather(*(c.show() for c in containers))
-    for container_status in container_attrs:
-        assert container_status["State"]["Status"] == "paused"
-
-    yield
-
-    await asyncio.gather(*(c.unpause() for c in containers))
-    # refresh
-    container_attrs = await asyncio.gather(*(c.show() for c in containers))
-    for container_status in container_attrs:
-        assert container_status["State"]["Status"] == "running"
-    # NOTE: container takes some time to start
-
-
 @pytest.fixture
 async def rabbit_client(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -314,17 +292,19 @@ class ServiceManager:
         async_docker_client: aiodocker.Docker,
         redis_client: RedisClientSDK,
         rabbit_client: RabbitMQClient,
+        paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     ) -> None:
         self.async_docker_client = async_docker_client
         self.redis_client = redis_client
         self.rabbit_client = rabbit_client
+        self.paused_container = paused_container
 
     @contextlib.asynccontextmanager
     async def _pause_container(
         self, container_name: str, client: ClientWithPingProtocol
     ) -> AsyncIterator[None]:
 
-        async with paused_container(self.async_docker_client, container_name):
+        async with self.paused_container(container_name):
             async for attempt in AsyncRetrying(
                 wait=wait_fixed(0.1),
                 stop=stop_after_delay(10),
@@ -368,6 +348,7 @@ class ServiceManager:
     ],
 )
 async def test_workflow_with_third_party_services_outages(
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     async_docker_client: aiodocker.Docker,
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
@@ -378,7 +359,9 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-    service_manager = ServiceManager(async_docker_client, redis_client, rabbit_client)
+    service_manager = ServiceManager(
+        async_docker_client, redis_client, rabbit_client, paused_container
+    )
 
     async with _RemoteProcessLifecycleManager(
         remote_process, rabbit_service, redis_service, max_workers
