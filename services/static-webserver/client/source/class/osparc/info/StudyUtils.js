@@ -391,5 +391,25 @@ qx.Class.define("osparc.info.StudyUtils", {
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
     },
+
+    patchStudy: function(studyData, fieldKey, value) {
+      const patchData = {
+        fieldKey: value
+      };
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: patchData
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            studyData[fieldKey] = value;
+            resolve(studyData);
+          })
+          .catch(err => reject(err));
+      });
+    }
   }
 });

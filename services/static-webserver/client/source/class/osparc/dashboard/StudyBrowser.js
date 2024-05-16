@@ -986,20 +986,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      const patchData = {
-        "name": name
-      };
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        },
-        data: patchData
-      };
-      osparc.data.Resources.fetch("studies", "patch", params)
-        .then(() => {
-          studyData["name"] = patchData["name"];
-          this._updateStudyData(studyData);
-        })
+      osparc.info.StudyUtils.patchStudy(studyData, "name", name)
+        .then(updateStudyData => this._updateStudyData(updateStudyData))
         .catch(err => {
           const msg = this.tr("Something went wrong Renaming");
           osparc.FlashMessenger.logAs(msg, "ERROR");
