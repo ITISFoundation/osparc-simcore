@@ -89,7 +89,16 @@ def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
-def mock_find_node_with_name(
+def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
+        autospec=True,
+        return_value=None,
+    )
+
+
+@pytest.fixture
+def mock_find_node_with_name_returns_fake_node(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
@@ -233,7 +242,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     aws_allowed_ec2_instance_type_names_env: list[str],
     mock_rabbitmq_post_message: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
-    mock_find_node_with_name: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
     ec2_client: EC2Client,
@@ -436,7 +445,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_find_node_with_name: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_docker_set_node_availability: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mocker: MockerFixture,
@@ -450,7 +459,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    # create a task that needs more power
+    # create a service
     docker_service = await create_service(
         task_template | create_task_reservations(4, docker_service_ram),
         service_monitored_labels,
@@ -479,7 +488,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_find_node_with_name.assert_not_called()
+    mock_find_node_with_name_returns_fake_node.assert_not_called()
     mock_docker_tag_node.assert_not_called()
     mock_docker_set_node_availability.assert_not_called()
     mock_compute_node_used_resources.assert_not_called()
@@ -517,8 +526,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     }
 
     # the node is tagged and made active right away since we still have the pending task
-    mock_find_node_with_name.assert_called_once()
-    mock_find_node_with_name.reset_mock()
+    mock_find_node_with_name_returns_fake_node.assert_called_once()
+    mock_find_node_with_name_returns_fake_node.reset_mock()
 
     assert mock_docker_tag_node.call_count == 2
     assert fake_node.Spec
@@ -635,7 +644,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_compute_node_used_resources.assert_called()
     assert mock_compute_node_used_resources.call_count == num_useless_calls * 2
     mock_compute_node_used_resources.reset_mock()
-    mock_find_node_with_name.assert_not_called()
+    mock_find_node_with_name_returns_fake_node.assert_not_called()
     mock_docker_tag_node.assert_not_called()
     mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
@@ -812,7 +821,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_find_node_with_name: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_docker_set_node_availability: mock.Mock,
 ):
     # we have nothing running now
@@ -858,7 +867,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_find_node_with_name.assert_not_called()
+    mock_find_node_with_name_returns_fake_node.assert_not_called()
     mock_docker_tag_node.assert_not_called()
     mock_docker_set_node_availability.assert_not_called()
     # check rabbit messages were sent
@@ -871,8 +880,99 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
-async def test_long_pending_ec2_is_detected_as_defect():
-    ...
+@pytest.mark.parametrize(
+    "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
+    [
+        pytest.param(
+            None,
+            parse_obj_as(ByteSize, "128Gib"),
+            "r5n.4xlarge",
+            id="No explicit instance defined",
+        ),
+    ],
+)
+async def test_long_pending_ec2_is_detected_as_defect(
+    minimal_configuration: None,
+    service_monitored_labels: dict[DockerLabelKey, str],
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    ec2_client: EC2Client,
+    docker_service_imposed_ec2_type: InstanceTypeType | None,
+    docker_service_ram: ByteSize,
+    expected_ec2_type: InstanceTypeType,
+    mock_find_node_with_name_returns_none: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+    # create a service
+    docker_service = await create_service(
+        task_template | create_task_reservations(4, docker_service_ram),
+        service_monitored_labels,
+        "pending",
+        (
+            [
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ docker_service_imposed_ec2_type}"
+            ]
+            if docker_service_imposed_ec2_type
+            else []
+        ),
+    )
+    # this should trigger a scaling up as we have no nodes
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+
+    # check the instance was started and we have exactly 1
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+    # as the new node is already running, but is not yet connected, hence not tagged and drained
+    mock_find_node_with_name_returns_none.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=0,
+        instances_pending=1,
+    )
+    mock_rabbitmq_post_message.reset_mock()
+
+    # 2. running again the autoscaler, the node did not join
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    # there should be no scaling up, since there is already a pending instance
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+    mock_find_node_with_name_returns_none.assert_called_once()
+    mock_docker_tag_node.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=0,
+        instances_pending=1,
+    )
+    mock_rabbitmq_post_message.reset_mock()
 
 
 async def test__deactivate_empty_nodes(
