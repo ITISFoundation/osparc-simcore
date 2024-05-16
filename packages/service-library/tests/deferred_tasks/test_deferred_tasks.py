@@ -3,6 +3,7 @@
 
 import asyncio
 import contextlib
+import datetime
 import json
 import random
 import sys
@@ -15,6 +16,8 @@ import psutil
 import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt, SecretStr
 from pydantic.json import pydantic_encoder
+from pytest_mock import MockerFixture
+from servicelib import redis as servicelib_redis
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
@@ -329,6 +332,13 @@ class ServiceManager:
             yield
 
 
+@pytest.fixture
+def mock_default_socket_timeout(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", datetime.timedelta(seconds=0.25)
+    )
+
+
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize(
@@ -339,6 +349,7 @@ class ServiceManager:
     ],
 )
 async def test_workflow_with_third_party_services_outages(
+    mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
