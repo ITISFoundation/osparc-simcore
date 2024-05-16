@@ -32,7 +32,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     */
   construct: function(serviceData) {
     this._resourceType = "service";
-    const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
+    const serviceDataCopy = osparc.utils.Utils.deepCloneObject(serviceData);
 
     if (serviceData.resourceType === "service") {
       osparc.data.Roles.createServicesRolesResourceInfo();
@@ -40,7 +40,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
     const initCollabs = this.self().getEveryoneObj();
 
-    this.base(arguments, serializedData, [initCollabs]);
+    this.base(arguments, serviceDataCopy, [initCollabs]);
   },
 
   events: {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
   members: {
     _canIWrite: function() {
-      return osparc.service.Utils.canIWrite(this._serializedData["accessRights"]);
+      return osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
     },
 
     _addEditors: function(gids, cb) {
@@ -97,14 +97,14 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
       gids.forEach(gid => {
-        this._serializedData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+        this._serializedDataCopy["accessRights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this._serializedData["key"],
-          this._serializedData["version"]
+          this._serializedDataCopy["key"],
+          this._serializedDataCopy["version"]
         ),
-        data: this._serializedData
+        data: this._serializedDataCopy
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
@@ -126,7 +126,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       if (item) {
         item.setEnabled(false);
       }
-      const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
+      const success = this.self().removeCollaborator(this._serializedDataCopy, collaborator["gid"]);
       if (!success) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         if (item) {
@@ -136,10 +136,10 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this._serializedData["key"],
-          this._serializedData["version"]
+          this._serializedDataCopy["key"],
+          this._serializedDataCopy["version"]
         ),
-        data: this._serializedData
+        data: this._serializedDataCopy
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
@@ -160,13 +160,13 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
     __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedData["accessRights"][collboratorGId] = newAccessRights;
+      this._serializedDataCopy["accessRights"][collboratorGId] = newAccessRights;
       const params = {
         url: osparc.data.Resources.getServiceUrl(
-          this._serializedData["key"],
-          this._serializedData["version"]
+          this._serializedDataCopy["key"],
+          this._serializedDataCopy["version"]
         ),
-        data: this._serializedData
+        data: this._serializedDataCopy
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {

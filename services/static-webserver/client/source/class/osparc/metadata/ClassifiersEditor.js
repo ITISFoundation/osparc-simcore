@@ -145,7 +145,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
       saveBtn.setFetching(true);
 
       const newClassifiers = this.__classifiersTree.getCheckedClassifierIDs();
-      if (osparc.utils.Resources.isStudy(this._serializedData) || osparc.utils.Resources.isTemplate(this._serializedData)) {
+      if (osparc.utils.Resources.isStudy(this.__resourceData) || osparc.utils.Resources.isTemplate(this.__resourceData)) {
         osparc.info.StudyUtils.patchStudy(this.__resourceData, "classifiers", newClassifiers)
           .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
