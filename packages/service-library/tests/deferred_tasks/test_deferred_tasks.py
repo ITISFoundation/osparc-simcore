@@ -259,7 +259,7 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("start_stop_cycles", [0, 10])
-async def test_workflow_with_process_running_deferred_manager_outages(
+async def test_workflow_with_outages_in_process_running_deferred_manager(
     get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
@@ -317,6 +317,7 @@ async def test_workflow_with_process_running_deferred_manager_outages(
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
+            # pick a random manager to stop and resume
             manager = random.choice(managers)  # noqa: S311
             await manager.stop()
             await _sleep_in_interval(0.2, 0.4)
