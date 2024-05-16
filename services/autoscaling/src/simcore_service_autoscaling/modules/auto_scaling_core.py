@@ -85,6 +85,28 @@ async def _analyze_current_cluster(
         docker_nodes, existing_ec2_instances
     )
 
+    # analyse pending ec2s, check if they are pending since too long
+    now = arrow.utcnow().datetime
+    broken_ec2s = [
+        instance
+        for instance in pending_ec2s
+        if (now - instance.launch_time)
+        > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    ]
+    if broken_ec2s:
+        _logger.error(
+            "Detected broken EC2 instances that never joined the cluster after %s: %s\n"
+            "TIP: if this happens very often the time to start an EC2 might have increased or "
+            "something might be wrong with the used AMI and/or boot script in which case this"
+            " would happen all the time. Please check",
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+            f"{[_.id for _ in broken_ec2s]}",
+        )
+    # remove the broken ec2s from the pending ones
+    pending_ec2s = [
+        instance for instance in pending_ec2s if instance not in broken_ec2s
+    ]
+
     # analyse attached ec2s
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
@@ -113,6 +135,7 @@ async def _analyze_current_cluster(
         drained_nodes=drained_nodes,
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
+        broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
@@ -124,6 +147,7 @@ async def _analyze_current_cluster(
             "drained_nodes": "available_resources",
             "reserve_drained_nodes": True,
             "pending_ec2s": "ec2_instance",
+            "broken_ec2s": "ec2_instance",
         },
     )
     _logger.info(
@@ -150,6 +174,25 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     if removeable_nodes:
         await utils_docker.remove_nodes(get_docker_client(app), nodes=removeable_nodes)
     return dataclasses.replace(cluster, disconnected_nodes=[])
+
+
+async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
+    broken_instances = [i.ec2_instance for i in cluster.broken_ec2s]
+    if broken_instances:
+        with log_context(
+            _logger, logging.WARNING, msg="terminate broken EC2 instances"
+        ):
+            await get_ec2_client(app).terminate_instances(broken_instances)
+            if has_instrumentation(app):
+                instrumentation = get_instrumentation(app)
+                for i in cluster.broken_ec2s:
+                    instrumentation.instance_terminated(i.ec2_instance.type)
+
+    return dataclasses.replace(
+        cluster,
+        broken_ec2s=[],
+        terminated_instances=cluster.terminated_instances + broken_instances,
+    )
 
 
 async def _try_attach_pending_ec2s(
@@ -976,6 +1019,7 @@ async def auto_scale_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
     cluster = await _cleanup_disconnected_nodes(app, cluster)
+    cluster = await _terminate_broken_ec2s(app, cluster)
     cluster = await _try_attach_pending_ec2s(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
