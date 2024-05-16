@@ -162,3 +162,26 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
     ] == next(
         iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
     ).pre_pull_images
+
+
+def test_invalid_instance_names(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # passing an invalid image tag name will fail
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    faker.pystr(): {
+                        "ami_id": faker.pystr(),
+                    }
+                }
+            )
+        },
+    )
+    with pytest.raises(ValidationError):
+        ApplicationSettings.create_from_envs()
