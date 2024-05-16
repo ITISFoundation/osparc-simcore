@@ -637,10 +637,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __attachSocketEventHandlers: function() {
-      // Listen to socket
+      // Listen to socket events
+      this.listenToLogger();
+      this.listenToProgress();
+      this.listenToNodeUpdated();
+      this.listenToNodeProgress();
+      this.listenToNoMoreCreditsEvents();
+      this.listenToEvent();
+    },
+
+    listenToLogger: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      // callback for incoming logs
       if (!socket.slotExists("logger")) {
         socket.on("logger", data => {
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
@@ -655,8 +663,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       }
       socket.emit("logger");
+    },
 
-      // callback for incoming progress
+    listenToProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
       const slotName2 = "progress";
       if (!socket.slotExists(slotName2)) {
         socket.on(slotName2, jsonString => {
@@ -673,32 +684,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             node.getStatus().setProgress(progress);
           } else if (osparc.data.Permissions.getInstance().isTester()) {
             console.log("Ignored ws 'progress' msg", data);
-          }
-        }, this);
-      }
-
-      this.listenToNodeUpdated();
-
-      this.listenToNodeProgress();
-
-      this.listenToNoMoreCreditsEvents();
-
-      // callback for events
-      if (!socket.slotExists("event")) {
-        socket.on("event", data => {
-          const { action, "node_id": nodeId } = data
-          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-            // Filtering out logs from other studies
-            return;
-          }
-          if (action == "RELOAD_IFRAME") {
-            // TODO: maybe reload iframe in the future
-            // for now a message is displayed to the user
-            const workbench = this.getStudy().getWorkbench();
-            const node = workbench.getNode(nodeId);
-            const label = node.getLabel();
-            const text = `New inputs for service ${label}. Please reload to refresh service.`;
-            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
           }
         }, this);
       }
@@ -749,6 +734,30 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const walletName = usedWallet.getName();
           const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
           osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
+        }, this);
+      }
+    },
+
+    listenToEvent: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for events
+      if (!socket.slotExists("event")) {
+        socket.on("event", data => {
+          const { action, "node_id": nodeId } = data
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
+            // for now a message is displayed to the user
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            const label = node.getLabel();
+            const text = `New inputs for service ${label}. Please reload to refresh service.`;
+            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+          }
         }, this);
       }
     },
