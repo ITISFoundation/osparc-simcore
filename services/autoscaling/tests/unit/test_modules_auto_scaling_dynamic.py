@@ -11,7 +11,7 @@ import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import aiodocker
@@ -35,7 +35,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
@@ -884,6 +884,24 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
+_SHORT_EC2_INSTANCES_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=10
+)
+
+
+@pytest.fixture
+def with_short_ec2_instances_max_start_time(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_MAX_START_TIME": f"{_SHORT_EC2_INSTANCES_MAX_START_TIME}",
+        },
+    )
+
+
 @pytest.mark.parametrize(
     "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
     [
@@ -896,6 +914,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     ],
 )
 async def test_long_pending_ec2_is_detected_as_defect(
+    with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
@@ -913,6 +932,11 @@ async def test_long_pending_ec2_is_detected_as_defect(
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        == _SHORT_EC2_INSTANCES_MAX_START_TIME
+    )
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -961,9 +985,15 @@ async def test_long_pending_ec2_is_detected_as_defect(
     original_instance_launch_time: datetime.datetime = deepcopy(
         instances[0]["LaunchTime"]
     )
-    await asyncio.sleep(
-        3
-    )  # NOTE: we wait here in order to be sure the launch time stays fixed
+    await asyncio.sleep(1)  # NOTE: we wait here since AWS does not keep microseconds
+    now = arrow.utcnow().datetime
+
+    assert now > original_instance_launch_time
+    assert now < (
+        original_instance_launch_time
+        + app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
+
     # 2. running again several times the autoscaler, the node does not join
     for i in range(7):
         await auto_scale_cluster(
@@ -990,6 +1020,33 @@ async def test_long_pending_ec2_is_detected_as_defect(
         assert instances
         assert "LaunchTime" in instances[0]
         assert instances[0]["LaunchTime"] == original_instance_launch_time
+
+    # 3. wait for the instance max start time and try again, shall terminate the instance
+    now = arrow.utcnow().datetime
+    sleep_time = (
+        original_instance_launch_time
+        + app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        - now
+    ).total_seconds() + 1
+    print(
+        f"--> waiting now for {sleep_time}s for the pending EC2 to be deemed as unworthy"
+    )
+    await asyncio.sleep(sleep_time)
+    now = arrow.utcnow().datetime
+    assert now > (
+        original_instance_launch_time
+        + app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    instances = await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type=expected_ec2_type,
+        instance_state="terminated",
+    )
 
 
 async def test__deactivate_empty_nodes(
