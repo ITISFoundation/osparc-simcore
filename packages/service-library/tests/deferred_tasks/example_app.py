@@ -190,4 +190,6 @@ class AsyncTCPServer:
 
 
 if __name__ == "__main__":
-    asyncio.run(AsyncTCPServer(port=int(os.environ.get("LISTEN_PORT", "3562"))).run())
+    listen_port: int = int(os.environ.get("LISTEN_PORT", -1))
+    assert listen_port != -1
+    asyncio.run(AsyncTCPServer(port=listen_port).run())
