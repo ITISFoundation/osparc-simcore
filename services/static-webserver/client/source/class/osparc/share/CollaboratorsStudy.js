@@ -219,16 +219,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         }
       }
 
-      const params = {
-        url: {
-          "studyId": this._serializedDataCopy["uuid"]
-        },
-        data: this._serializedDataCopy
-      };
-      // OM TODO
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
@@ -246,16 +239,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      const params = {
-        url: {
-          "studyId": this._serializedDataCopy["uuid"]
-        },
-        data: this._serializedDataCopy
-      };
-      // OM TODO
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
