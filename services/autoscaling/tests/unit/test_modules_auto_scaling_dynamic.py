@@ -1037,15 +1037,28 @@ async def test_long_pending_ec2_is_detected_as_defect(
         original_instance_launch_time
         + app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
+    # scaling now will terminate the broken ec2 that did not connect, and directly create a replacement
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    instances = await _assert_ec2_instances(
-        ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="terminated",
+    # we have therefore 2 reservations, first instance is terminated and a second one started
+    all_instances = await ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 2
+    assert "Instances" in all_instances["Reservations"][0]
+    assert len(all_instances["Reservations"][0]["Instances"]) == 1
+    assert "State" in all_instances["Reservations"][0]["Instances"][0]
+    assert "Name" in all_instances["Reservations"][0]["Instances"][0]["State"]
+    assert (
+        all_instances["Reservations"][0]["Instances"][0]["State"]["Name"]
+        == "terminated"
+    )
+
+    assert "Instances" in all_instances["Reservations"][1]
+    assert len(all_instances["Reservations"][1]["Instances"]) == 1
+    assert "State" in all_instances["Reservations"][1]["Instances"][0]
+    assert "Name" in all_instances["Reservations"][1]["Instances"][0]["State"]
+    assert (
+        all_instances["Reservations"][1]["Instances"][0]["State"]["Name"] == "running"
     )
 
 

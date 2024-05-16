@@ -173,6 +173,25 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
+async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
+    broken_instances = [i.ec2_instance for i in cluster.broken_ec2s]
+    if broken_instances:
+        with log_context(
+            _logger, logging.WARNING, msg="terminate broken EC2 instances"
+        ):
+            await get_ec2_client(app).terminate_instances(broken_instances)
+            if has_instrumentation(app):
+                instrumentation = get_instrumentation(app)
+                for i in cluster.broken_ec2s:
+                    instrumentation.instance_terminated(i.ec2_instance.type)
+
+    return dataclasses.replace(
+        cluster,
+        broken_ec2s=[],
+        terminated_instances=cluster.terminated_instances + broken_instances,
+    )
+
+
 async def _try_attach_pending_ec2s(
     app: FastAPI,
     cluster: Cluster,
@@ -997,6 +1016,7 @@ async def auto_scale_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
     cluster = await _cleanup_disconnected_nodes(app, cluster)
+    cluster = await _terminate_broken_ec2s(app, cluster)
     cluster = await _try_attach_pending_ec2s(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
