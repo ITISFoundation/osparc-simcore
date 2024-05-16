@@ -100,7 +100,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       check: "osparc.data.model.Study",
       init: null,
       nullable: true,
-      apply: "_applyStudy",
+      apply: "__applyStudy",
       event: "changeStudy"
     },
 
@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       init: null,
       nullable: false,
       event: "changePageContext",
-      apply: "_applyPageContext"
+      apply: "__applyPageContext"
     }
   },
 
@@ -157,7 +157,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    _applyStudy: function(study) {
+    __applyStudy: function(study) {
       this.__settingStudy = false;
 
       this._showLoadingPage(this.tr("Opening ") + (study.getName() || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
@@ -453,7 +453,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return this.__workbenchView.getLogger();
     },
 
-    _applyPageContext: function(newCtxt) {
+    __applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
