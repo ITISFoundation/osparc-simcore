@@ -206,7 +206,7 @@ def _assert_rabbit_autoscaling_message_sent(
     assert mock_rabbitmq_post_message.call_args == mock.call(app, expected_message)
 
 
-async def test_cluster_scaling_from_labelled_services_with_no_services_does_nothing(
+async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -224,7 +224,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     )
 
 
-async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
+async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     mock_machines_buffer: int,
@@ -310,7 +310,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
     )
 
 
-async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
+async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts_nothing(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
@@ -869,6 +869,10 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
+
+
+async def test_long_pending_ec2_is_detected_as_defect():
+    ...
 
 
 async def test__deactivate_empty_nodes(
