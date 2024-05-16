@@ -33,7 +33,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
 
   statics: {
     NAME: "socket.io",
-    VERSION: "4.7.5",
+    VERSION: "4.5.4",
     URL: "https://github.com/socketio/socket.io"
   },
 

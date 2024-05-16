@@ -19,10 +19,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
   extend: qx.core.Object,
   type: "singleton",
 
-  events: {
-    "syncStudyEditor": "qx.event.type.Data"
-  },
-
   members: {
     __stack: null,
     __loadingPage: null,
@@ -79,8 +75,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             const msg = qx.locale.Manager.tr("Study not found");
             throw new Error(msg);
           }
-          const pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
-          this.loadStudy(studyData, pageContext);
+          this.loadStudy(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -89,7 +84,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         });
     },
 
-    loadStudy: function(studyData, pageContext) {
+    loadStudy: function(studyData) {
       let locked = false;
       let lockedBy = false;
       if ("state" in studyData && "locked" in studyData["state"]) {
@@ -104,6 +99,8 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         }`;
         throw new Error(msg);
       }
+      this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
+      this.showLoadingPage();
       const store = osparc.store.Store.getInstance();
       store.getInaccessibleServices(studyData)
         .then(inaccessibleServices => {
@@ -112,13 +109,12 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             throw new Error(msg);
           }
           this.showStudyEditor();
-          this.__studyEditor.setStudyData(studyData)
-            .then(() => this.fireDataEvent("syncStudyEditor", pageContext));
+          this.__studyEditor.setStudyData(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
-          return;
+          throw new Error(err);
         });
     }
   }
