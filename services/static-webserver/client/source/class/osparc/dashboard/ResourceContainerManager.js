@@ -92,6 +92,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __resourcesList: null,
     __flatList: null,
     __groupedContainers: null,
+    __cards: null,
 
     addNonResourceCard: function(card) {
       if (card instanceof qx.ui.form.ToggleButton) {
@@ -251,7 +252,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this._add(this.__flatList);
       }
 
-      let cards = [];
+      let cards = this.__cards = [];
       this.__resourcesList.forEach(resourceData => {
         Array.prototype.push.apply(cards, this.__resourceToCards(resourceData));
       });
