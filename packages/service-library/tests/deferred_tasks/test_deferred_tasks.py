@@ -11,7 +11,6 @@ from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 from typing import Any, Protocol
 
-import aiodocker
 import psutil
 import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt, SecretStr
@@ -269,12 +268,6 @@ async def test_workflow_with_process_running_deferred_manager_outages(
 
 
 @pytest.fixture
-async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
-
-
-@pytest.fixture
 async def rabbit_client(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> RabbitMQClient:
@@ -289,12 +282,10 @@ class ClientWithPingProtocol(Protocol):
 class ServiceManager:
     def __init__(
         self,
-        async_docker_client: aiodocker.Docker,
         redis_client: RedisClientSDK,
         rabbit_client: RabbitMQClient,
         paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     ) -> None:
-        self.async_docker_client = async_docker_client
         self.redis_client = redis_client
         self.rabbit_client = rabbit_client
         self.paused_container = paused_container
@@ -349,7 +340,6 @@ class ServiceManager:
 )
 async def test_workflow_with_third_party_services_outages(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
-    async_docker_client: aiodocker.Docker,
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
     remote_process: _RemoteProcess,
@@ -359,9 +349,7 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-    service_manager = ServiceManager(
-        async_docker_client, redis_client, rabbit_client, paused_container
-    )
+    service_manager = ServiceManager(redis_client, rabbit_client, paused_container)
 
     async with _RemoteProcessLifecycleManager(
         remote_process, rabbit_service, redis_service, max_workers
