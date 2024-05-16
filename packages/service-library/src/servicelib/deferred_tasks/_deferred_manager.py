@@ -150,7 +150,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         """
         for subclass in BaseDeferredHandler.SUBCLASSES:
             class_unique_reference: ClassUniqueReference = (
-                subclass.get_class_unique_reference()
+                subclass._get_class_unique_reference()  # pylint:disable=protected-access # noqa: SLF001
             )
 
             if not isinstance(subclass.start_deferred, _PatchStartDeferred):
@@ -181,7 +181,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     def un_patch_base_deferred_handlers(cls) -> None:
         for subclass in BaseDeferredHandler.SUBCLASSES:
             class_unique_reference: ClassUniqueReference = (
-                subclass.get_class_unique_reference()
+                subclass._get_class_unique_reference()  # pylint:disable=protected-access # noqa: SLF001
             )
 
             if isinstance(subclass.start_deferred, _PatchStartDeferred):

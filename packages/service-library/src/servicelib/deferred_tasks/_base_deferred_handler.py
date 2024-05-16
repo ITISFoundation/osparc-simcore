@@ -25,10 +25,8 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         BaseDeferredHandler.SUBCLASSES.append(cls)
 
     @classmethod
-    def get_class_unique_reference(cls) -> ClassUniqueReference:
+    def _get_class_unique_reference(cls) -> ClassUniqueReference:
         """
-        Used internally.
-
         returns: a unique reference for this class (module and name)
         """
         return f"{cls.__module__}.{cls.__name__}"
