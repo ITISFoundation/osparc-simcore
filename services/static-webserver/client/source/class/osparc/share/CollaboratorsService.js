@@ -158,9 +158,9 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         });
     },
 
-    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
+    __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedDataCopy["accessRights"][collboratorGId] = newAccessRights;
+      this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
       const params = {
         url: osparc.data.Resources.getServiceUrl(
           this._serializedDataCopy["key"],
