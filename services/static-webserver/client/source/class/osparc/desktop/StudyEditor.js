@@ -206,24 +206,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             });
 
           const pageContext = study.getUi().getMode();
-          switch (pageContext) {
-            case "guided":
-            case "app":
-              this.__slideshowView.startSlides();
-              break;
-            default:
-              this.__workbenchView.openFirstNode();
-              break;
-          }
-          // the property might not be yet initialized
-          if (this.isPropertyInitialized("pageContext")) {
-            this.bind("pageContext", study.getUi(), "mode");
-          } else {
-            this.addListener("changePageContext", e => {
-              const pageCxt = e.getData();
-              study.getUi().setMode(pageCxt);
-            });
-          }
+          this.setPageContext(pageContext);
+          this.addListener("changePageContext", e => {
+            const pageCxt = e.getData();
+            study.getUi().setMode(pageCxt);
+          });
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
