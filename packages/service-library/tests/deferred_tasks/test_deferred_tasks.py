@@ -4,13 +4,14 @@
 import asyncio
 import contextlib
 import datetime
+import itertools
 import json
 import random
 import sys
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from pathlib import Path
-from typing import Any, Awaitable, Final, Protocol
+from typing import Any, Final, Protocol
 
 import psutil
 import pytest
@@ -208,7 +209,7 @@ class _RemoteProcessLifecycleManager:
 
 
 async def _assert_has_entries(
-    manager: _RemoteProcessLifecycleManager,
+    managers: list[_RemoteProcessLifecycleManager],
     list_name: str,
     *,
     count: NonNegativeInt,
@@ -222,13 +223,19 @@ async def _assert_has_entries(
     ):
         with attempt:
             if list_name == "get-results":
-                results = await manager.get_results()
+                gathered_results: list[list[str]] = await asyncio.gather(
+                    *[manager.get_results() for manager in managers]
+                )
+                results: list[str] = list(itertools.chain(*gathered_results))
                 # enure sequence numbers appear at least once
                 # since results handler can be retries since they are interrupted
                 assert len(results) >= count
                 assert set(results) == {f"{x}" for x in range(count)}
             if list_name == "get-scheduled":
-                scheduled = await manager.get_scheduled()
+                gathered_results: list[list[str]] = await asyncio.gather(
+                    *[manager.get_scheduled() for manager in managers]
+                )
+                scheduled: list[str] = list(itertools.chain(*gathered_results))
                 assert len(scheduled) == count
                 # ensure all entries are unique
                 assert len(scheduled) == len(set(scheduled))
@@ -279,7 +286,7 @@ async def test_workflow_with_process_running_deferred_manager_outages(
         )
         # makes sure tasks have been scheduled
         await _assert_has_entries(
-            manager, "get-scheduled", count=deferred_tasks_to_start
+            [manager], "get-scheduled", count=deferred_tasks_to_start
         )
 
         # if this fails all scheduled tasks have already finished
@@ -291,7 +298,9 @@ async def test_workflow_with_process_running_deferred_manager_outages(
             await _sleep_in_interval(0.2, 0.4)
             await manager.start()
 
-        await _assert_has_entries(manager, "get-results", count=deferred_tasks_to_start)
+        await _assert_has_entries(
+            [manager], "get-results", count=deferred_tasks_to_start
+        )
 
 
 @pytest.fixture
@@ -402,7 +411,7 @@ async def test_workflow_with_third_party_services_outages(
         )
         # makes sure tasks have been scheduled
         await _assert_has_entries(
-            manager, "get-scheduled", count=deferred_tasks_to_start
+            [manager], "get-scheduled", count=deferred_tasks_to_start
         )
 
         # if this fails all scheduled tasks have already finished
@@ -424,4 +433,6 @@ async def test_workflow_with_third_party_services_outages(
                     await _sleep_in_interval(0.2, 0.4)
                 print("[redis]: resumed")
 
-        await _assert_has_entries(manager, "get-results", count=deferred_tasks_to_start)
+        await _assert_has_entries(
+            [manager], "get-results", count=deferred_tasks_to_start
+        )
