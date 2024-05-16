@@ -406,7 +406,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
             studyData[fieldKey] = value;
-            resolve(studyData);
+            resolve();
           })
           .catch(err => reject(err));
       });

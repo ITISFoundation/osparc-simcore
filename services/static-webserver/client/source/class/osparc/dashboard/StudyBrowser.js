@@ -987,7 +987,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __updateName: function(studyData, name) {
       osparc.info.StudyUtils.patchStudy(studyData, "name", name)
-        .then(updateStudyData => this._updateStudyData(updateStudyData))
+        .then(() => this._updateStudyData(studyData))
         .catch(err => {
           const msg = this.tr("Something went wrong Renaming");
           osparc.FlashMessenger.logAs(msg, "ERROR");
@@ -997,7 +997,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __updateThumbnail: function(studyData, url) {
       osparc.info.StudyUtils.patchStudy(studyData, "thumbnail", url)
-        .then(updateStudyData => this._updateStudyData(updateStudyData))
+        .then(() => this._updateStudyData(studyData))
         .catch(err => {
           const msg = this.tr("Something went wrong updating the Thumbnail");
           osparc.FlashMessenger.logAs(msg, "ERROR");

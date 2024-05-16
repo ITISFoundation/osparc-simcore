@@ -445,12 +445,13 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     },
 
     __save: function(btn) {
+      const newQuality = {
+        "enabled": this.__copyQualityData["enabled"],
+        "tsr_current": this.__copyQualityData["tsr_current"],
+        "tsr_target": this.__copyQualityData["tsr_target"]
+      };
       const patchData = {
-        "quality" : {
-          "enabled": this.__copyQualityData["enabled"],
-          "tsr_current": this.__copyQualityData["tsr_current"],
-          "tsr_target": this.__copyQualityData["tsr_target"]
-        }
+        "quality": newQuality
       };
       if (this.__validate(this.__schema, patchData["quality"])) {
         btn.setFetching(true);
@@ -471,19 +472,10 @@ qx.Class.define("osparc.metadata.QualityEditor", {
               console.error(err);
               osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
-            .finally(() => {
-              btn.setFetching(false);
-            });
+            .finally(() => btn.setFetching(false));
         } else {
-          const params = {
-            url: {
-              "studyId": this.__resourceData["uuid"]
-            },
-            data: patchData
-          };
-          osparc.data.Resources.fetch("studies", "patch", params)
+          osparc.info.StudyUtils.patchStudy(this.__resourceData, "classifiers", newQuality)
             .then(() => {
-              this.__resourceData["quality"] = patchData["quality"];
               this.__initResourceData(this.__resourceData);
               this.fireDataEvent("updateQuality", this.__resourceData);
             })
