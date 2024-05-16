@@ -393,16 +393,16 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     patchStudy: function(studyData, fieldKey, value) {
-      const patchData = {
-        fieldKey: value
-      };
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        },
-        data: patchData
-      };
       return new Promise((resolve, reject) => {
+        const patchData = {
+          fieldKey: value
+        };
+        const params = {
+          url: {
+            "studyId": studyData["uuid"]
+          },
+          data: patchData
+        };
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
             studyData[fieldKey] = value;
