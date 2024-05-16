@@ -880,7 +880,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._reloadCards();
+      this._updateCard(studyData);
     },
 
     __removeFromStudyList: function(studyId) {

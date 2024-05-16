@@ -344,10 +344,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    _getCard: function(uuid) {
+    _updateCard: function(resourceData) {
       const cards = this._resourcesContainer.getCards();
-      const found = cards.filter(c => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(c) && c.getUuid() === uuid);
-      return found;
+      const found = cards.filter(c => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(c) && c.getUuid() === resourceData["uuid"]);
+      found.forEach(f => {
+        // since we are passing and object, the property change won't be triggered. call it explicitly
+        f.resetResourceData();
+        f.setResourceData(resourceData);
+      });
     },
 
     _removeResourceCards: function() {
