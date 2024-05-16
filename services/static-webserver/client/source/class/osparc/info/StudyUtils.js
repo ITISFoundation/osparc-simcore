@@ -405,6 +405,8 @@ qx.Class.define("osparc.info.StudyUtils", {
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
             studyData[fieldKey] = value;
+            // A bit hacky, but it's not sent back to the backend
+            studyData["lastChangeDate"] = new Date().toISOString();
             resolve();
           })
           .catch(err => reject(err));

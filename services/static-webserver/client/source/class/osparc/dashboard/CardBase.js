@@ -298,24 +298,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyResourceData: function(resourceData) {
-      this.set({
-        resourceType: resourceData.resourceType
-      });
+      if (resourceData["resourceType"]) {
+        this.set({
+          resourceType: resourceData.resourceType
+        });
 
-      let model = null;
-      switch (resourceData["resourceType"]) {
-        case "study":
-        case "template":
-          model = new osparc.data.model.Study(resourceData);
-          model["resourceType"] = resourceData["resourceType"];
-          break;
-        case "service":
-          model = new osparc.data.model.Service(resourceData);
-          model["resourceType"] = resourceData["resourceType"];
-          break;
+        let model = null;
+        switch (resourceData["resourceType"]) {
+          case "study":
+          case "template":
+            model = new osparc.data.model.Study(resourceData);
+            model["resourceType"] = resourceData["resourceType"];
+            break;
+          case "service":
+            model = new osparc.data.model.Service(resourceData);
+            model["resourceType"] = resourceData["resourceType"];
+            break;
+        }
+        if (model) {
+          this.__bindModelToCard(model);
+        }
       }
-
-      this.__bindModelToCard(model);
     },
 
     getResourceModel: function() {
