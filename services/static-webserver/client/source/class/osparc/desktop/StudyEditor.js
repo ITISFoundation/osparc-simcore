@@ -205,7 +205,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             });
 
-          const pageContext = this.isPropertyInitialized("pageContext") ? this.getPageContext() : null;
+          const pageContext = study.getUi().getMode();
           switch (pageContext) {
             case "guided":
             case "app":
