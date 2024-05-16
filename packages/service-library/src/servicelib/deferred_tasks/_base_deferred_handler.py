@@ -34,17 +34,17 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
     @classmethod
     async def get_retries(cls, start_context: FullStartContext) -> NonNegativeInt:
         """
-        returns: the amount of retries in case of error (default: 1)
+        returns: the amount of retries in case of error (default: 0)
 
-        If ``run_deferred`` raises an error other than `asyncio.CancelledError`` and this
-        value is > 1 code will be retried.
+        This is used only when ``run_deferred`` raises an error other than `asyncio.CancelledError`` and this
+        value is > 0. The code inside ``run_deferred`` will be retried.
 
         NOTE: if the process running the ``run_deferred`` code dies, it automatically gets
         retried when the process is restarted or by another copy of the service.
         """
 
         _ = start_context
-        return 1
+        return 0
 
     @classmethod
     @abstractmethod
@@ -61,7 +61,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         the data passed to run_deferred.
 
         Inside ``**kwargs`` the ``globals_for_start_context`` are also injected in addition
-        to any user provided fields when invoked form the subclass.
+        to any user provided fields when invoked from the subclass.
 
         hast to returns: a context context object used during ``run_deferred`` and
             to process the result inside ``deferred_result``
@@ -91,8 +91,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         cls, error: TaskResultError, start_context: FullStartContext
     ) -> None:
         """
-        NOTE: by design this doe nothing.
-        Can be overwritten by the user to react to an error. In most cases this is not required.
+        NOTE: by design the default action is to do nothing
         """
 
     @classmethod
