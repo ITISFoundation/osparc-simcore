@@ -9,7 +9,7 @@ import json
 import random
 import sys
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack
 from pathlib import Path
 from typing import Any, Final, Protocol
 
@@ -21,6 +21,7 @@ from pytest_mock import MockerFixture
 from servicelib import redis as servicelib_redis
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
+from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
@@ -214,6 +215,7 @@ async def _assert_has_entries(
     *,
     count: NonNegativeInt,
     timeout: float = 10,
+    all_managers_have_some_entries: bool = False,
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.01),
@@ -226,6 +228,9 @@ async def _assert_has_entries(
                 gathered_results: list[list[str]] = await asyncio.gather(
                     *[manager.get_results() for manager in managers]
                 )
+                if all_managers_have_some_entries:
+                    for entry in gathered_results:
+                        assert len(entry) > 0
                 results: list[str] = list(itertools.chain(*gathered_results))
                 # enure sequence numbers appear at least once
                 # since results handler can be retries since they are interrupted
@@ -235,6 +240,9 @@ async def _assert_has_entries(
                 gathered_results: list[list[str]] = await asyncio.gather(
                     *[manager.get_scheduled() for manager in managers]
                 )
+                if all_managers_have_some_entries:
+                    for entry in gathered_results:
+                        assert len(entry) > 0
                 scheduled: list[str] = list(itertools.chain(*gathered_results))
                 assert len(scheduled) == count
                 # ensure all entries are unique
@@ -247,59 +255,78 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
     await asyncio.sleep(radom_wait)
 
 
+@pytest.mark.parametrize("remote_processes", [1, 10])
 @pytest.mark.parametrize("max_workers", [10])
-@pytest.mark.parametrize(
-    "deferred_tasks_to_start",
-    [
-        1,
-        100,
-    ],
-)
-@pytest.mark.parametrize(
-    "start_stop_cycles",
-    [
-        0,
-        10,
-    ],
-)
+@pytest.mark.parametrize("deferred_tasks_to_start", [100])
+@pytest.mark.parametrize("start_stop_cycles", [0, 10])
 async def test_workflow_with_process_running_deferred_manager_outages(
     get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    remote_processes: int,
     max_workers: int,
     deferred_tasks_to_start: NonNegativeInt,
     start_stop_cycles: NonNegativeInt,
 ):
-    async with _RemoteProcessLifecycleManager(
-        await get_remote_process(DEFAULT_LISTEN_PORT),
-        rabbit_service,
-        redis_service,
-        max_workers,
-    ) as manager:
+    async with AsyncExitStack() as exit_stack:
+        managers: list[_RemoteProcessLifecycleManager] = await asyncio.gather(
+            *[
+                exit_stack.enter_async_context(
+                    _RemoteProcessLifecycleManager(
+                        await get_remote_process(DEFAULT_LISTEN_PORT + i),
+                        rabbit_service,
+                        redis_service,
+                        max_workers,
+                    )
+                )
+                for i in range(remote_processes)
+            ]
+        )
 
-        # start all in parallel
+        # pylint:disable=unnecessary-comprehension
+        manager_tasks_list: list[tuple[int, ...]] = [  # noqa: C416
+            x
+            for x in partition_gen(
+                range(deferred_tasks_to_start),
+                slice_size=int(deferred_tasks_to_start / remote_processes) + 1,
+            )
+        ]
+        assert sum(len(x) for x in manager_tasks_list) == deferred_tasks_to_start
+
+        # start all in parallel divided among workers
         await asyncio.gather(
             *[
                 manager.start_deferred_task(0.1, i)
-                for i in range(deferred_tasks_to_start)
+                for manager, tasks_to_run in zip(
+                    managers, manager_tasks_list, strict=True
+                )
+                for i in tasks_to_run
             ]
         )
         # makes sure tasks have been scheduled
         await _assert_has_entries(
-            [manager], "get-scheduled", count=deferred_tasks_to_start
+            managers, "get-scheduled", count=deferred_tasks_to_start
         )
 
         # if this fails all scheduled tasks have already finished
-        assert len(await manager.get_results()) < deferred_tasks_to_start
+        gathered_results: list[list[str]] = await asyncio.gather(
+            *[manager.get_results() for manager in managers]
+        )
+        results: list[str] = list(itertools.chain(*gathered_results))
+        assert len(results) < deferred_tasks_to_start
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
+            manager = random.choice(managers)  # noqa: S311
             await manager.stop()
             await _sleep_in_interval(0.2, 0.4)
             await manager.start()
 
         await _assert_has_entries(
-            [manager], "get-results", count=deferred_tasks_to_start
+            managers,
+            "get-results",
+            count=deferred_tasks_to_start,
+            all_managers_have_some_entries=True,
         )
 
 

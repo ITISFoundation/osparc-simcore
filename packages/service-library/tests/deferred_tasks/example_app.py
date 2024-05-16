@@ -59,13 +59,14 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 
 
 class InMemoryLists:
-    def __init__(self, redis_settings: RedisSettings) -> None:
+    def __init__(self, redis_settings: RedisSettings, port: int) -> None:
         self.redis_sdk = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
         )
+        self.port = port
 
     def _get_queue_name(self, queue_name: str) -> str:
-        return f"in_memory_lists::{queue_name}"
+        return f"in_memory_lists::{queue_name}.{self.port}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
         await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
@@ -108,14 +109,14 @@ class Context:
 
 
 async def _commands_handler(
-    context: Context, command: str, payload: dict[str, Any]
+    context: Context, command: str, payload: dict[str, Any], port: int
 ) -> Any:
     """Handles all commands send by remote party"""
     if command == "init-context":
         context.redis_settings = RedisSettings.parse_raw(payload["redis"])
         context.rabbit_settings = RabbitSettings.parse_raw(payload["rabbit"])
         # using the same db as the deferred tasks with different keys
-        context.in_memory_lists = InMemoryLists(context.redis_settings)
+        context.in_memory_lists = InMemoryLists(context.redis_settings, port)
 
         context.example_app = ExampleApp(
             context.rabbit_settings,
@@ -161,7 +162,7 @@ class AsyncTCPServer:
         unique_request_id = uuid4()
         _logger.info("[%s] request:  %s", unique_request_id, command)
         response = await _commands_handler(
-            self._context, command["command"], command["payload"]
+            self._context, command["command"], command["payload"], self.port
         )
         _logger.info("[%s] response: %s", unique_request_id, response)
         return response
