@@ -158,7 +158,7 @@ class Node(BaseModel):
     )
     inputs_required: list[InputID] = Field(
         default_factory=list,
-        description="Input IDs required",
+        description="Defines inputs that are required in order to run the service",
         alias="inputsRequired",
     )
     inputs_units: dict[InputID, UnitStr] | None = Field(
