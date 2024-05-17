@@ -1,9 +1,12 @@
 from decimal import Decimal
 from typing import Any, ClassVar
 
+from models_library.resource_tracker import (
+    PricingPlanId,
+    PricingUnitCostId,
+    PricingUnitId,
+)
 from pydantic import BaseModel
-
-from .resource_tracker import PricingPlanId, PricingUnitCostId, PricingUnitId
 
 
 class PricingInfo(BaseModel):

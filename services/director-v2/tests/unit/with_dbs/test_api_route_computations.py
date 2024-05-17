@@ -403,7 +403,7 @@ def wallet_info(faker: Faker) -> WalletInfo:
     return WalletInfo(
         wallet_id=faker.pyint(),
         wallet_name=faker.name(),
-        wallet_credit_amount=Decimal(10),
+        wallet_credit_amount=Decimal(faker.pyint(min_value=12, max_value=129312)),
     )
 
 

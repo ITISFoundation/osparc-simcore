@@ -159,7 +159,6 @@ async def open_project(request: web.Request) -> web.Response:
 
         return envelope_json_response(project)
 
-    # MD: this might be causing troubles?
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again

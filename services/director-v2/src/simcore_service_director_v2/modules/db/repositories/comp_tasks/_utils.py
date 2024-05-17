@@ -11,7 +11,6 @@ from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
     ServiceExtras,
 )
-from models_library.director_v2 import PricingInfo
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
@@ -54,6 +53,7 @@ from .....core.errors import (
     WalletNotEnoughCreditsError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from .....models.pricing import PricingInfo
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.comp_scheduler import COMPLETED_STATES
 from .....utils.computations import to_node_class
