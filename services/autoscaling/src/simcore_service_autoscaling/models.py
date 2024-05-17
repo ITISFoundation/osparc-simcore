@@ -72,6 +72,11 @@ class Cluster:
             "description": "This is an EC2 instance that is not yet associated to a docker node"
         }
     )
+    broken_ec2s: list[NonAssociatedInstance] = field(
+        metadata={
+            "description": "This is an existing EC2 instance that never properly joined the cluster and is deemed as broken and will be terminated"
+        }
+    )
     disconnected_nodes: list[Node] = field(
         metadata={
             "description": "This is a docker node which is not backed by a running EC2 instance"
@@ -94,6 +99,7 @@ class Cluster:
             + len(self.drained_nodes)
             + len(self.reserve_drained_nodes)
             + len(self.pending_ec2s)
+            + len(self.broken_ec2s)
         )
 
 
