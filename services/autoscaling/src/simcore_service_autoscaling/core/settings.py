@@ -118,7 +118,9 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
     @classmethod
-    def ensure_draining_delay_time_is_in_range(cls, value) -> datetime.timedelta:
+    def ensure_draining_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
         if value < datetime.timedelta(seconds=10):
             value = datetime.timedelta(seconds=10)
         elif value > datetime.timedelta(minutes=1):
@@ -127,7 +129,9 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def ensure_termination_delay_time_is_in_range(cls, value) -> datetime.timedelta:
+    def ensure_termination_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
         if value < datetime.timedelta(minutes=0):
             value = datetime.timedelta(minutes=0)
         elif value > datetime.timedelta(minutes=59):

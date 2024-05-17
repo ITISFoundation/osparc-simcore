@@ -640,7 +640,10 @@ async def get_node_empty_since(node: Node) -> datetime.datetime | None:
     assert node.Spec.Labels  # nosec
     if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
         return None
-    return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
+    return cast(
+        datetime.datetime,
+        arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
 
 
 async def attach_node(
