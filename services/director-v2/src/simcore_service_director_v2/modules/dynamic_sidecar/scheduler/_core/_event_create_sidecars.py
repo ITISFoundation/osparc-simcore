@@ -20,7 +20,6 @@ from models_library.services import RunID
 from models_library.utils.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from tenacity import AsyncRetrying, TryAgain, stop_after_delay, wait_exponential
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -38,7 +37,6 @@ from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ...api_client import get_dynamic_sidecar_service_health
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
@@ -103,22 +101,6 @@ async def _create_proxy_service(
     )
 
     await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
-
-
-async def _wait_for_sidecar_http_api(
-    app: FastAPI,
-    scheduler_data: SchedulerData,
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-) -> None:
-    async for attempt in AsyncRetrying(
-        wait=wait_exponential(multiplier=2, min=1, max=20),
-        stop=stop_after_delay(
-            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
-        ),
-    ):
-        with attempt:
-            if not await get_dynamic_sidecar_service_health(app, scheduler_data):
-                raise TryAgain
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -286,9 +268,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        await _wait_for_sidecar_http_api(
-            app, scheduler_data, dynamic_services_scheduler_settings
-        )
         scheduler_data.dynamic_sidecar.docker_node_id = (
             await get_dynamic_sidecar_placement(
                 dynamic_sidecar_id, dynamic_services_scheduler_settings
