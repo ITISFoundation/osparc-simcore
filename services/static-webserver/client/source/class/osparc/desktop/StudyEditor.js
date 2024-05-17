@@ -266,15 +266,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (!socket.slotExists("logger")) {
         socket.on("logger", data => {
-          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-            // Filtering out logs from other studies
-            return;
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            const nodeId = data["node_id"];
+            const messages = data.messages;
+            const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
+            const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
+
+            if (this.__workbenchView) {
+              this.__workbenchView.logsToLogger(nodeId, messages, logLevel);
+            }
           }
-          const nodeId = data["node_id"];
-          const messages = data.messages;
-          const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
-          const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
-          this.__logsToLogger(nodeId, messages, logLevel);
         }, this);
       }
       socket.emit("logger");
@@ -287,18 +292,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists(slotName2)) {
         socket.on(slotName2, jsonString => {
           const data = JSON.parse(jsonString);
-          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-            // Filtering out logs from other studies
-            return;
-          }
-          const nodeId = data["node_id"];
-          const progress = Number.parseFloat(data["progress"]).toFixed(4);
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node) {
-            node.getStatus().setProgress(progress);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'progress' msg", data);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            const nodeId = data["node_id"];
+            const progress = Number.parseFloat(data["progress"]).toFixed(4);
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            if (node) {
+              node.getStatus().setProgress(progress);
+            } else if (osparc.data.Permissions.getInstance().isTester()) {
+              console.log("Ignored ws 'progress' msg", data);
+            }
           }
         }, this);
       }
@@ -360,18 +367,20 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists("event")) {
         socket.on("event", data => {
           const { action, "node_id": nodeId } = data
-          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
-            // Filtering out logs from other studies
-            return;
-          }
-          if (action == "RELOAD_IFRAME") {
-            // TODO: maybe reload iframe in the future
-            // for now a message is displayed to the user
-            const workbench = this.getStudy().getWorkbench();
-            const node = workbench.getNode(nodeId);
-            const label = node.getLabel();
-            const text = `New inputs for service ${label}. Please reload to refresh service.`;
-            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            if (action == "RELOAD_IFRAME") {
+              // TODO: maybe reload iframe in the future
+              // for now a message is displayed to the user
+              const workbench = this.getStudy().getWorkbench();
+              const node = workbench.getNode(nodeId);
+              const label = node.getLabel();
+              const text = `New inputs for service ${label}. Please reload to refresh service.`;
+              osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+            }
           }
         }, this);
       }

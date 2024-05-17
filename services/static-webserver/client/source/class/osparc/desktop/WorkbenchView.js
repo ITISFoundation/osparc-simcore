@@ -592,7 +592,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = data.nodeId;
         const msg = data.msg;
         const logLevel = ("level" in data) ? data["level"] : "INFO";
-        this.__logsToLogger(nodeId, [msg], logLevel);
+        this.logsToLogger(nodeId, [msg], logLevel);
       }, this);
 
       workbench.addListener("fileRequested", () => {
@@ -605,7 +605,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUIConnected = true;
     },
 
-    __logsToLogger: function(nodeId, logs, logLevel) {
+    logsToLogger: function(nodeId, logs, logLevel) {
       // the node logger is mainly used in App Mode
       const nodeLogger = this.__getNodeLogger(nodeId);
       switch (logLevel) {
