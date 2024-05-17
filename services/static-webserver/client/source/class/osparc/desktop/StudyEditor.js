@@ -174,6 +174,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
 
+          this.__attachSocketEventHandlers();
+
           study.initStudy();
 
           if (osparc.product.Utils.hasIdlingTrackerEnabled()) {
@@ -247,6 +249,132 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => this._hideLoadingPage());
 
       this.__updatingStudy = 0;
+    },
+
+    __attachSocketEventHandlers: function() {
+      // Listen to socket events
+      this.__listenToLogger();
+      this.__listenToProgress();
+      this.__listenToNodeUpdated();
+      this.__listenToNodeProgress();
+      this.__listenToNoMoreCreditsEvents();
+      this.__listenToEvent();
+    },
+
+    __listenToLogger: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", data => {
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          const nodeId = data["node_id"];
+          const messages = data.messages;
+          const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
+          const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
+          this.__logsToLogger(nodeId, messages, logLevel);
+        }, this);
+      }
+      socket.emit("logger");
+    },
+
+    __listenToProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName2 = "progress";
+      if (!socket.slotExists(slotName2)) {
+        socket.on(slotName2, jsonString => {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          const nodeId = data["node_id"];
+          const progress = Number.parseFloat(data["progress"]).toFixed(4);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            node.getStatus().setProgress(progress);
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", data);
+          }
+        }, this);
+      }
+    },
+
+    __listenToNodeUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeUpdated")) {
+        socket.on("nodeUpdated", data => {
+          this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    __listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeProgress")) {
+        socket.on("nodeProgress", data => {
+          this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
+    },
+
+    __listenToNoMoreCreditsEvents: function() {
+      const slotName = "serviceNoMoreCredits";
+      const flashMessageDisplayDuration = 10000;
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const ttlMap = new osparc.data.TTLMap(flashMessageDisplayDuration);
+      const store = osparc.store.Store.getInstance();
+
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, noMoreCredits => {
+          // stop service
+          const nodeId = noMoreCredits["node_id"];
+          const workbench = this.getStudy().getWorkbench();
+          workbench.getNode(nodeId).requestStopNode();
+
+          // display flash message if not showing
+          const walletId = noMoreCredits["wallet_id"];
+          if (ttlMap.hasRecentEntry(walletId)) {
+            return;
+          }
+          ttlMap.addOrUpdateEntry(walletId);
+          const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
+          const walletName = usedWallet.getName();
+          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
+          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
+        }, this);
+      }
+    },
+
+    __listenToEvent: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for events
+      if (!socket.slotExists("event")) {
+        socket.on("event", data => {
+          const { action, "node_id": nodeId } = data
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
+            // Filtering out logs from other studies
+            return;
+          }
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
+            // for now a message is displayed to the user
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            const label = node.getLabel();
+            const text = `New inputs for service ${label}. Please reload to refresh service.`;
+            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+          }
+        }, this);
+      }
     },
 
     __reloadSnapshotsAndIterations: function() {
@@ -519,8 +647,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.fireDataEvent("startIteration", studyId);
       });
       win.addListener("close", () => {
-        iterations.unlistenToNodeUpdates();
-        this.__workbenchView.listenToNodeUpdated();
+        iterations.unlistenToNodeUpdated();
+        this.__listenToNodeUpdated();
       }, this);
     },
 
