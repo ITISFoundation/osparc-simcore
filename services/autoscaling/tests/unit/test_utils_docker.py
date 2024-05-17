@@ -34,6 +34,7 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -48,6 +49,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_node_used_resources,
     compute_tasks_needed_resources,
     find_node_with_name,
+    get_docker_login_on_start_bash_command,
     get_docker_pull_images_crontab,
     get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
@@ -55,6 +57,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_monitored_nodes,
     get_new_node_docker_tags,
     get_node_empty_since,
+    get_node_last_readyness_update,
     get_node_total_resources,
     get_task_instance_restriction,
     get_worker_nodes,
@@ -326,12 +329,12 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     diff = DeepDiff(
         pending_tasks[0],
         service_tasks[0],
-        exclude_paths={
+        exclude_paths=[
             "UpdatedAt",
             "Version",
             "root['Status']['Err']",
             "root['Status']['Timestamp']",
-        },
+        ],
     )
     assert not diff, f"{diff}"
 
@@ -394,12 +397,12 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     diff = DeepDiff(
         pending_tasks[0],
         service_tasks[0],
-        exclude_paths={
+        exclude_paths=[
             "UpdatedAt",
             "Version",
             "root['Status']['Err']",
             "root['Status']['Timestamp']",
-        },
+        ],
     )
     assert not diff, f"{diff}"
 
@@ -715,7 +718,7 @@ async def test_compute_node_used_resources_with_service(
 
     # 3. if we look for services with some other label, they should then become invisible again
     node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node, service_labels=[faker.pystr()]
+        autoscaling_docker, host_node, service_labels=[DockerLabelKey(faker.pystr())]
     )
     assert node_used_resources == Resources(cpus=0, ram=ByteSize(0))
     # 4. if we look for services with 1 correct label, they should then become visible again
@@ -858,6 +861,17 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
+
+
+def test_get_docker_login_on_start_bash_command():
+    registry_settings = RegistrySettings(
+        **RegistrySettings.Config.schema_extra["examples"][0]
+    )
+    returned_command = get_docker_login_on_start_bash_command(registry_settings)
+    assert (
+        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | docker login --username {registry_settings.REGISTRY_USER} --password-stdin {registry_settings.resolved_registry_url}'
+        == returned_command
+    )
 
 
 async def test_try_get_node_with_name(
@@ -1144,6 +1158,8 @@ async def test_set_node_osparc_ready(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
+    host_node_last_readyness_update = get_node_last_readyness_update(host_node)
+    assert host_node_last_readyness_update
     # set the node to drain
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=False
@@ -1151,6 +1167,9 @@ async def test_set_node_osparc_ready(
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # the node is also not osparc ready
     assert not is_node_osparc_ready(updated_node)
+    # the node readyness label was not updated here
+    updated_last_readyness = get_node_last_readyness_update(updated_node)
+    assert updated_last_readyness == host_node_last_readyness_update
 
     # this implicitely make the node active as well
     updated_node = await set_node_osparc_ready(
@@ -1158,12 +1177,15 @@ async def test_set_node_osparc_ready(
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
+    updated_last_readyness = get_node_last_readyness_update(updated_node)
+    assert updated_last_readyness > host_node_last_readyness_update
     # make it not osparc ready
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    assert get_node_last_readyness_update(updated_node) > updated_last_readyness
 
 
 async def test_set_node_found_empty(
