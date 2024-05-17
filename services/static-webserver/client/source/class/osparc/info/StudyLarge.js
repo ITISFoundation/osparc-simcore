@@ -31,10 +31,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     } else if (study instanceof Object) {
       const studyModel = new osparc.data.model.Study(study);
       this.setStudy(studyModel);
-
-      if ("resourceType" in study) {
-        this.__isTemplate = study["resourceType"] === "template";
-      }
+    }
+    if ("resourceType" in study) {
+      this.__isTemplate = study["resourceType"] === "template";
     }
 
     if (openOptions !== undefined) {
