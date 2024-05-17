@@ -16,6 +16,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
+from decimal import Decimal
 from pprint import pformat
 from typing import Any, Final
 from uuid import UUID, uuid4
@@ -535,12 +536,10 @@ async def _start_dynamic_service(
                     product_name=product_name,
                 )
             )
-            if wallet.available_credits <= ZERO_CREDITS:
-                raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
-                )
             wallet_info = WalletInfo(
-                wallet_id=project_wallet_id, wallet_name=wallet.name
+                wallet_id=project_wallet_id,
+                wallet_name=wallet.name,
+                wallet_credit_amount=wallet.available_credits,
             )
 
             # Deal with Pricing plan/unit
@@ -549,17 +548,12 @@ async def _start_dynamic_service(
             )
             if output:
                 pricing_plan_id, pricing_unit_id = output
-                pricing_unit_get = await rut_api.get_pricing_plan_unit(
-                    request.app, product_name, pricing_plan_id, pricing_unit_id
-                )
-                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-                aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
             else:
                 (
                     pricing_plan_id,
                     pricing_unit_id,
-                    pricing_unit_cost_id,
-                    aws_ec2_instances,
+                    _,
+                    _,
                 ) = await _get_default_pricing_and_hardware_info(
                     request.app,
                     product_name,
@@ -573,6 +567,21 @@ async def _start_dynamic_service(
                     node_uuid,
                     pricing_plan_id,
                     pricing_unit_id,
+                )
+
+            # Check for zero credits (if pricing unit is greater than 0).
+            pricing_unit_get = await rut_api.get_pricing_plan_unit(
+                request.app, product_name, pricing_plan_id, pricing_unit_id
+            )
+            pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+            aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
+
+            if (
+                pricing_unit_get.current_cost_per_unit > Decimal(0)
+                and wallet.available_credits <= ZERO_CREDITS
+            ):
+                raise WalletNotEnoughCreditsError(
+                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
                 )
 
             pricing_info = PricingInfo(

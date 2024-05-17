@@ -18,10 +18,17 @@ class WalletStatus(StrAutoEnum):
 class WalletInfo(BaseModel):
     wallet_id: WalletID
     wallet_name: str
+    wallet_credit_amount: Decimal
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [{"wallet_id": 1, "wallet_name": "My Wallet"}]
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "wallet_name": "My Wallet",
+                    "wallet_credit_amount": Decimal(10),
+                }
+            ]
         }
 
 
