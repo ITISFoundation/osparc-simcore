@@ -156,6 +156,11 @@ class Node(BaseModel):
     inputs: InputsDict | None = Field(
         default_factory=dict, description="values of input properties"
     )
+    inputs_required: list[InputID] = Field(
+        default_factory=list,
+        description="Defines inputs that are required in order to run the service",
+        alias="inputsRequired",
+    )
     inputs_units: dict[InputID, UnitStr] | None = Field(
         default=None,
         description="Overrides default unit (if any) defined in the service for each port",
