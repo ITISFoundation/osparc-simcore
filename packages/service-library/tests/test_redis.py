@@ -6,7 +6,8 @@
 
 import asyncio
 import datetime
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import Final
 
 import pytest
@@ -279,3 +280,24 @@ async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
     # cleanup
     await client.redis.flushall()
     await client.shutdown()
+
+
+@pytest.fixture
+def mock_default_socket_timeout(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", datetime.timedelta(seconds=0.25)
+    )
+
+
+async def test_regression_fails_if_on_redis_service_outage(
+    mock_default_socket_timeout: None,
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    redis_client_sdk: RedisClientSDK,
+):
+    assert await redis_client_sdk.ping() is True
+
+    async with paused_container("redis"):
+        # no connection available any longer should not hang but timeout
+        assert await redis_client_sdk.ping() is False
+
+    assert await redis_client_sdk.ping() is True
