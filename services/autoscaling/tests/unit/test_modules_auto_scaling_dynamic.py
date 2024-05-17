@@ -778,7 +778,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         - datetime.timedelta(seconds=1)
     ).isoformat()
     if with_labelize_drain_nodes:
-        # first making sure the node is drained, then terminate it after a delay
+        # first making sure the node is drained, then terminate it after a delay to let it drain
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=auto_scaling_mode
         )
