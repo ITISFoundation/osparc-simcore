@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       this.__settingStudy = true;
 
-      this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
+      this._showLoadingPage(this.tr("Starting") + " " + studyData.name);
 
       // Before starting a study, make sure the latest version is fetched
       const params = {
