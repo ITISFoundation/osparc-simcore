@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import Any
 
 import aiodocker
+import arrow
 import pytest
 from aws_library.ec2.models import EC2InstanceData, Resources
 from deepdiff import DeepDiff
@@ -36,6 +37,7 @@ from servicelib.docker_utils import to_datetime
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
     Node,
@@ -52,16 +54,20 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     get_new_node_docker_tags,
+    get_node_empty_since,
     get_node_total_resources,
+    get_task_instance_restriction,
     get_worker_nodes,
     is_node_osparc_ready,
     is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     set_node_availability,
+    set_node_found_empty,
     set_node_osparc_ready,
     tag_node,
 )
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @pytest.fixture
@@ -563,6 +569,61 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
     )
 
 
+@pytest.mark.parametrize(
+    "placement_constraints, expected_instance_type",
+    [
+        (None, None),
+        (["blahblah==true", "notsoblahblah!=true"], None),
+        (["blahblah==true", "notsoblahblah!=true", "node.labels.blahblah==true"], None),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}==true",
+            ],
+            None,
+        ),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}==t3.medium",
+            ],
+            "t3.medium",
+        ),
+    ],
+)
+async def test_get_task_instance_restriction(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str] | None, str, list[str] | None],
+        Awaitable[Service],
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    faker: Faker,
+    placement_constraints: list[str] | None,
+    expected_instance_type: InstanceTypeType | None,
+):
+    # this one has no instance restriction
+    service = await create_service(
+        task_template,
+        None,
+        "pending" if placement_constraints else "running",
+        placement_constraints,
+    )
+    assert service.Spec
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(filters={"service": service.Spec.Name}),
+    )
+    instance_type_or_none = await get_task_instance_restriction(
+        autoscaling_docker, service_tasks[0]
+    )
+    assert instance_type_or_none == expected_instance_type
+
+
 async def test_compute_tasks_needed_resources(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -595,6 +656,7 @@ async def test_compute_tasks_needed_resources(
     )
     all_tasks = service_tasks
     for s in services:
+        assert s.Spec
         service_tasks = parse_obj_as(
             list[Task],
             await autoscaling_docker.tasks.list(filters={"service": s.Spec.Name}),
@@ -1102,6 +1164,48 @@ async def test_set_node_osparc_ready(
     )
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+
+
+async def test_set_node_found_empty(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    assert host_node.Spec
+    assert host_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in host_node.Spec.Labels
+
+    # the date is in the future as nothing was done
+    node_empty_since = await get_node_empty_since(host_node)
+    assert node_empty_since > arrow.utcnow().datetime
+
+    # now we set it to empty
+    updated_node = await set_node_found_empty(autoscaling_docker, host_node, empty=True)
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY in updated_node.Spec.Labels
+
+    # we can get that empty date back
+    node_empty_since = await get_node_empty_since(updated_node)
+    assert node_empty_since < arrow.utcnow().datetime
+
+    # now we remove the empty label
+    updated_node = await set_node_found_empty(
+        autoscaling_docker, host_node, empty=False
+    )
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.Spec.Labels
+
+    # we can get the date again in the future
+    node_empty_since = await get_node_empty_since(updated_node)
+    assert node_empty_since > arrow.utcnow().datetime
 
 
 async def test_attach_node(

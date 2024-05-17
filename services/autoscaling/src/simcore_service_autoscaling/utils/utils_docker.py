@@ -72,7 +72,7 @@ _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
 
 
 _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, f"io.simcore.osparc-node-found-empty"
+    DockerLabelKey, "io.simcore.osparc-node-found-empty"
 )
 
 
@@ -634,9 +634,23 @@ async def set_node_found_empty(
     )
 
 
+def _now_in_a_future_far_away() -> datetime.datetime:
+    return arrow.now().shift(years=100).datetime
+
+
 async def get_node_empty_since(node: Node) -> datetime.datetime:
+    """returns the last time when the node was found empty or a date in the future (100years) if it was not empty
+
+    Arguments:
+        node -- the node to check
+
+    Returns:
+        datetime when the node was marked as empty or a date 100 years in the future
+    """
     assert node.Spec  # nosec
     assert node.Spec.Labels  # nosec
+    if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
+        return _now_in_a_future_far_away()
     return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 
