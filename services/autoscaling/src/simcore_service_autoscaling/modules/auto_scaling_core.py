@@ -751,38 +751,61 @@ async def _scale_up_cluster(
     return cluster
 
 
-async def _is_instance_ready_to_deactivate(
-    app_settings: ApplicationSettings, instance: AssociatedInstance
-) -> bool:
+async def _find_drainable_nodes(
+    app: FastAPI, cluster: Cluster
+) -> list[AssociatedInstance]:
+    app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if instance.available_resources == instance.ec2_instance.resources:
-        empty_since = await utils_docker.get_node_empty_since(instance.node)
-        now = arrow.utcnow().datetime
-        elapsed_time_since_empty = now - empty_since
-        return (
+
+    if not cluster.active_nodes:
+        # there is nothing to drain here
+        return []
+
+    # get the corresponding ec2 instance data
+    drainable_nodes: list[AssociatedInstance] = []
+
+    for instance in cluster.active_nodes:
+        if instance.has_assigned_tasks():
+            await utils_docker.set_node_found_empty(
+                get_docker_client(app), instance.node, empty=False
+            )
+            continue
+        node_last_empty = await utils_docker.get_node_empty_since(instance.node)
+        if not node_last_empty:
+            await utils_docker.set_node_found_empty(
+                get_docker_client(app), instance.node, empty=True
+            )
+            continue
+        elapsed_time_since_empty = arrow.utcnow().datetime - node_last_empty
+        _logger.debug("%s", f"{node_last_empty=}, {elapsed_time_since_empty=}")
+        if (
             elapsed_time_since_empty
             > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+        ):
+            drainable_nodes.append(instance)
+        else:
+            _logger.info(
+                "%s has still %ss before being drainable",
+                f"{instance.ec2_instance.id=}",
+                f"{(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING - elapsed_time_since_empty).total_seconds():.0f}",
+            )
+
+    if drainable_nodes:
+        _logger.info(
+            "the following nodes were found to be drainable: '%s'",
+            f"{[instance.node.Description.Hostname for instance in drainable_nodes if instance.node.Description]}",
         )
-    return False
+    return drainable_nodes
 
 
 async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
-    active_empty_instances: list[AssociatedInstance] = []
-    active_non_empty_instances: list[AssociatedInstance] = []
-    for instance in cluster.active_nodes:
-        if await _is_instance_ready_to_deactivate(app_settings, instance):
-            active_empty_instances.append(instance)
-        else:
-            active_non_empty_instances.append(instance)
+    active_empty_instances = await _find_drainable_nodes(app, cluster)
 
     if not active_empty_instances:
         return cluster
-    _logger.info(
-        "following nodes will be drained: '%s'",
-        f"{[instance.node.Description.Hostname for instance in active_empty_instances if instance.node.Description]}",
-    )
+
     # drain this empty nodes
     updated_nodes: list[Node] = await asyncio.gather(
         *(
@@ -797,7 +820,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     )
     if updated_nodes:
         _logger.info(
-            "following nodes set to drain: '%s'",
+            "following nodes were set to drain: '%s'",
             f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
         )
     newly_drained_instances = [
@@ -806,7 +829,9 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     ]
     return dataclasses.replace(
         cluster,
-        active_nodes=active_non_empty_instances,
+        active_nodes=[
+            n for n in cluster.active_nodes if n not in active_empty_instances
+        ],
         drained_nodes=cluster.drained_nodes + newly_drained_instances,
     )
 
