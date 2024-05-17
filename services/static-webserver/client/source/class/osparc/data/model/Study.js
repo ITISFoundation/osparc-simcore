@@ -553,6 +553,24 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
+    serializeStudyData: function() {
+      let studyData = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (key === "workbench") {
+          studyData[key] = this.getWorkbench().serialize();
+          return;
+        }
+        if (key === "ui") {
+          studyData[key] = this.getUi().serialize();
+          return;
+        }
+        const value = this.get(key);
+        studyData[key] = value;
+      });
+      return studyData;
+    },
+
     serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
@@ -589,12 +607,15 @@ qx.Class.define("osparc.data.model.Study", {
         };
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const setter = "set" + upKey;
+            this[setter](value);
+            // A bit hacky, but it's not sent back to the backend
             this.set({
-              fieldKey: value,
-              // A bit hacky, but it's not sent back to the backend
-              "lastChangeDate": new Date().toISOString()
+              lastChangeDate: new Date()
             });
-            resolve();
+            const studyData = this.serializeStudyData();
+            resolve(studyData);
           })
           .catch(err => reject(err));
       });

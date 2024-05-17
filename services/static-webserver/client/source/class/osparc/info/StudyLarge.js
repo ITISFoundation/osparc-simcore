@@ -329,7 +329,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __patchStudy: function(fieldKey, value) {
       this.getStudy().patchStudy(fieldKey, value)
         .then(studyData => {
-          // OM TODO
+          studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
