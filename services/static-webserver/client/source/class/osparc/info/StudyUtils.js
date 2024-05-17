@@ -392,7 +392,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return box;
     },
 
-    patchStudy: function(studyData, fieldKey, value) {
+    patchStudyData: function(studyData, fieldKey, value) {
       return new Promise((resolve, reject) => {
         const patchData = {};
         patchData[fieldKey] = value;

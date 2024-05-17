@@ -244,7 +244,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
+        this.__patchStudy({
           "name": newLabel
         });
       }, this);
@@ -308,7 +308,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__updateStudy({
+        this.__patchStudy({
           "thumbnail": validUrl
         });
       }, this);
@@ -323,7 +323,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
+        this.__patchStudy({
           "description": newDescription
         });
       }, this);
@@ -332,7 +332,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }, this);
     },
 
-    __updateStudy: function(params) {
+    __patchStudy: function(params) {
       this.getStudy().updateStudy(params)
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);

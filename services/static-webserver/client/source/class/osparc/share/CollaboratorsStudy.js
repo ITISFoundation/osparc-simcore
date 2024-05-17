@@ -142,7 +142,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       gids.forEach(gid => {
         newAccessRights[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
-      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", newAccessRights)
+      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
@@ -219,7 +219,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         }
       }
 
-      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -239,7 +239,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.info.StudyUtils.patchStudy(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);

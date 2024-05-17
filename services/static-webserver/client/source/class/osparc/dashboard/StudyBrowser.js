@@ -986,7 +986,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudy(studyData, "name", name)
+      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           const msg = this.tr("Something went wrong Renaming");
@@ -996,7 +996,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateThumbnail: function(studyData, url) {
-      osparc.info.StudyUtils.patchStudy(studyData, "thumbnail", url)
+      osparc.info.StudyUtils.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           const msg = this.tr("Something went wrong updating the Thumbnail");
@@ -1224,7 +1224,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        operationPromise = osparc.info.StudyUtils.patchStudy(studyData, "accessRights", arCopy);
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);

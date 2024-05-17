@@ -316,7 +316,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __updateName: function(studyData, name) {
-      return osparc.info.StudyUtils.patchStudy(studyData, "name", name)
+      return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
         .catch(err => {
           const msg = this.tr("Something went wrong Renaming");
           osparc.FlashMessenger.logAs(msg, "ERROR");
