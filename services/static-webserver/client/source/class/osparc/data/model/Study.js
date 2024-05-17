@@ -577,6 +577,29 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
+    patchStudy: function(fieldKey, value) {
+      return new Promise((resolve, reject) => {
+        const patchData = {};
+        patchData[fieldKey] = value;
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: patchData
+        };
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            this.set({
+              fieldKey: value,
+              // A bit hacky, but it's not sent back to the backend
+              "lastChangeDate": new Date().toISOString()
+            });
+            resolve();
+          })
+          .catch(err => reject(err));
+      });
+    },
+
     updateStudy: function(params, run = false) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", {

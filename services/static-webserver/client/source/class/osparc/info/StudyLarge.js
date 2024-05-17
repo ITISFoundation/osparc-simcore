@@ -244,9 +244,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__patchStudy({
-          "name": newLabel
-        });
+        this.__patchStudy("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -308,9 +306,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__patchStudy({
-          "thumbnail": validUrl
-        });
+        this.__patchStudy("thumbnail", validUrl);
       }, this);
       thumbnailEditor.addListener("cancel", () => win.close());
     },
@@ -323,18 +319,17 @@ qx.Class.define("osparc.info.StudyLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__patchStudy({
-          "description": newDescription
-        });
+        this.__patchStudy("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __patchStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __patchStudy: function(fieldKey, value) {
+      this.getStudy().patchStudy(fieldKey, value)
         .then(studyData => {
+          // OM TODO
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
