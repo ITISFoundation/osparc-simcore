@@ -118,6 +118,18 @@ async def test_patch_project_node(
         data=json.dumps(_patch_inputs),
     )
     await assert_status(resp, expected)
+    # inputs required
+    _patch_inputs_required = {
+        "inputsRequired": [
+            "input_1",
+            "input_3",
+        ]
+    }
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_inputs_required),
+    )
+    await assert_status(resp, expected)
     # input nodes
     _patch_input_nodes = {
         "inputNodes": [
@@ -148,5 +160,6 @@ async def test_patch_project_node(
     assert _tested_node["progress"] == None
     assert _tested_node["version"] == _patch_version["version"]
     assert _tested_node["inputs"] == _patch_inputs["inputs"]
+    assert _tested_node["inputsRequired"] == _patch_inputs_required["inputsRequired"]
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
