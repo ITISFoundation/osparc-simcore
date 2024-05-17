@@ -245,7 +245,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study) {
         this.__initViews();
         this.__connectEvents();
-        this.__attachSocketEventHandlers();
 
         study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
