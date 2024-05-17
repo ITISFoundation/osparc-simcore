@@ -634,23 +634,12 @@ async def set_node_found_empty(
     )
 
 
-def _now_in_a_future_far_away() -> datetime.datetime:
-    return arrow.now().shift(years=100).datetime
-
-
-async def get_node_empty_since(node: Node) -> datetime.datetime:
-    """returns the last time when the node was found empty or a date in the future (100years) if it was not empty
-
-    Arguments:
-        node -- the node to check
-
-    Returns:
-        datetime when the node was marked as empty or a date 100 years in the future
-    """
+async def get_node_empty_since(node: Node) -> datetime.datetime | None:
+    """returns the last time when the node was found empty or None if it was not empty"""
     assert node.Spec  # nosec
     assert node.Spec.Labels  # nosec
     if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
-        return _now_in_a_future_far_away()
+        return None
     return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 

@@ -1205,7 +1205,7 @@ async def test_set_node_found_empty(
 
     # the date is in the future as nothing was done
     node_empty_since = await get_node_empty_since(host_node)
-    assert node_empty_since > arrow.utcnow().datetime
+    assert node_empty_since is None
 
     # now we set it to empty
     updated_node = await set_node_found_empty(autoscaling_docker, host_node, empty=True)
@@ -1215,6 +1215,7 @@ async def test_set_node_found_empty(
 
     # we can get that empty date back
     node_empty_since = await get_node_empty_since(updated_node)
+    assert node_empty_since is not None
     assert node_empty_since < arrow.utcnow().datetime
 
     # now we remove the empty label
@@ -1227,7 +1228,7 @@ async def test_set_node_found_empty(
 
     # we can get the date again in the future
     node_empty_since = await get_node_empty_since(updated_node)
-    assert node_empty_since > arrow.utcnow().datetime
+    assert node_empty_since is None
 
 
 async def test_attach_node(
