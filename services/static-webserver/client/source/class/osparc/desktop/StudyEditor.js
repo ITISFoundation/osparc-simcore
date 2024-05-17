@@ -221,6 +221,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const pageCxt = e.getData();
             study.getUi().setMode(pageCxt);
           });
+          this.setPageContext(pageContext);
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
