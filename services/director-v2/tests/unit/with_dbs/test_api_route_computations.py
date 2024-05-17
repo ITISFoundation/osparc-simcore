@@ -297,7 +297,12 @@ def mocked_resource_usage_tracker_service_fcts(
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                PricingUnitGet.Config.schema_extra["examples"][0], by_alias=True
+                (
+                    default_pricing_plan.pricing_units[0]
+                    if default_pricing_plan.pricing_units
+                    else PricingUnitGet.Config.schema_extra["examples"][0]
+                ),
+                by_alias=True,
             ),
         )
 
@@ -564,7 +569,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
     minimal_configuration: None,
@@ -602,7 +607,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,

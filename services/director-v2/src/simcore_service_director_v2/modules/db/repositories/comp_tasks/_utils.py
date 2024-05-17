@@ -443,6 +443,8 @@ async def generate_tasks_list_from_project(
             modified=arrow.utcnow().datetime,
             pricing_info=pricing_info.dict(exclude={"pricing_unit_cost"})
             if pricing_info
+            else pricing_info
+            if pricing_info
             else None,
             hardware_info=hardware_info,
         )
