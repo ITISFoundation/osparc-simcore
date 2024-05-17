@@ -78,6 +78,7 @@ from ._db_utils import (
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
@@ -442,6 +443,25 @@ class ProjectDBAPI(BaseProjectDB):
             return (
                 convert_to_schema_names(project, user_email),
                 project_type,
+            )
+
+    async def check_project_node_has_all_required_inputs(
+        self, user_id: UserID, project_uuid: NodeID
+    ) -> None:
+        project_dict, _ = await self.get_project(user_id, f"{project_uuid}")
+        workbench = project_dict["workbench"]
+        required_inputs = workbench["required_inputs"]
+        inputs = workbench["inputs"]
+        inputs_set = set(inputs.keys())
+
+        missing_required_inputs = [
+            required_input
+            for required_input in required_inputs
+            if required_input not in inputs_set
+        ]
+        if missing_required_inputs:
+            raise ProjectNodeRequiredInputsNotSetError(
+                missing_required_inputs=missing_required_inputs
             )
 
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface

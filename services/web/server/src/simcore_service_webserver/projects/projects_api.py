@@ -463,6 +463,8 @@ async def _start_dynamic_service(
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
+    await db.check_project_node_has_all_required_inputs(user_id, project_uuid)
+
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
     if user_role > UserRole.GUEST:

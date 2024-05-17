@@ -74,6 +74,7 @@ from .exceptions import (
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectInvalidRightsError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -318,6 +319,12 @@ async def start_node(request: web.Request) -> web.Response:
         raise web.HTTPConflict(reason=f"{exc}") from exc
     except ClustersKeeperNotAvailableError as exc:
         raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+    except ProjectNodeRequiredInputsNotSetError as exc:
+        raise web.HTTPConflict(
+            reason=f"{exc}",
+            text=f"{exc}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from exc
 
 
 async def _stop_dynamic_service_task(
