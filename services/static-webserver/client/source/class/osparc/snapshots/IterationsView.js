@@ -294,7 +294,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
       }
     },
 
-    unlistenToNodeUpdates: function() {
+    unlistenToNodeUpdated: function() {
       osparc.wrapper.WebSocket.getInstance().removeSlot("nodeUpdated");
     }
   }
