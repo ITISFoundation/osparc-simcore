@@ -176,18 +176,13 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# disabled healthcheck as director-v2 is already taking care of it
-# in oder to have similar performance a more aggressive healethcek
-# would be required.
-# removing the healthchek would not cause any issues at this point
-# NOTE: When adding a healthcheck
-# - remove UpdateHealth - no longer required
-# - remove WaitForSidecarAPI  - no longer required
-# - After `get_dynamic_sidecar_placement` inside CreateSidecars call
-#   (the sidecar's API will be up and running; guaranteed by the docker engine healthck).
-#   Add the following line `scheduler_data.dynamic_sidecar.is_ready = True`
-#   The healthcheck guarantees that the API is available
-HEALTHCHECK NONE
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=30s \
+  --start-interval=1s \
+  --retries=5 \
+  CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
 
