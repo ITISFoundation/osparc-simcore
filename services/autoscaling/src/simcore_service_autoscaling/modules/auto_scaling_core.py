@@ -751,13 +751,28 @@ async def _scale_up_cluster(
     return cluster
 
 
+async def _is_instance_ready_to_deactivate(
+    app_settings: ApplicationSettings, instance: AssociatedInstance
+) -> bool:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    if instance.available_resources == instance.ec2_instance.resources:
+        empty_since = await utils_docker.get_node_empty_since(instance.node)
+        now = arrow.utcnow().datetime
+        elapsed_time_since_empty = now - empty_since
+        return (
+            elapsed_time_since_empty
+            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+        )
+    return False
+
+
 async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
     for instance in cluster.active_nodes:
-        if instance.available_resources == instance.ec2_instance.resources:
+        if await _is_instance_ready_to_deactivate(app_settings, instance):
             active_empty_instances.append(instance)
         else:
             active_non_empty_instances.append(instance)
@@ -814,7 +829,7 @@ async def _find_terminateable_instances(
         elapsed_time_since_drained = (
             datetime.datetime.now(datetime.timezone.utc) - node_last_updated
         )
-        _logger.warning("%s", f"{node_last_updated=}, {elapsed_time_since_drained=}")
+        _logger.debug("%s", f"{node_last_updated=}, {elapsed_time_since_drained=}")
         if (
             elapsed_time_since_drained
             > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
