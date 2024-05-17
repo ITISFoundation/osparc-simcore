@@ -71,6 +71,11 @@ _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
 ]
 
 
+_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, f"io.simcore.osparc-node-found-empty"
+)
+
+
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
@@ -607,6 +612,32 @@ def get_node_last_readyness_update(node: Node) -> datetime.datetime:
         datetime.datetime,
         arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
     )  # mypy
+
+
+async def set_node_found_empty(
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    empty: bool,
+) -> Node:
+    assert node.Spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    if empty:
+        new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+    else:
+        new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=bool(node.Spec.Availability is Availability.active),
+    )
+
+
+async def get_node_empty_since(node: Node) -> datetime.datetime:
+    assert node.Spec  # nosec
+    assert node.Spec.Labels  # nosec
+    return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 
 async def attach_node(
