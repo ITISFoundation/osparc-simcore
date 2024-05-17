@@ -34,6 +34,9 @@ class _BaseInstance(_TaskAssignmentMixin):
         if self.available_resources == Resources.create_as_empty():
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
+    def has_assigned_tasks(self) -> bool:
+        return bool(self.available_resources < self.ec2_instance.resources)
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssociatedInstance(_BaseInstance):
