@@ -31,7 +31,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   construct: function() {
     this.base(arguments);
 
-    this._showLoadingPage(this.tr("Starting..."));
+    this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getInstance().getDisplayName());
 
     this.addListener("appear", () => this._moreResourcesRequired());
   },
@@ -373,7 +373,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
-      this._showLoadingPage(this.tr("Starting ") + osparc.product.Utils.getStudyAlias());
+      this._showLoadingPage(this.tr("Starting") + " " + osparc.product.Utils.getStudyAlias());
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
