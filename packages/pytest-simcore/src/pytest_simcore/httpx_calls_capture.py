@@ -145,7 +145,9 @@ def backend_env_vars_overrides(
     services_mock_enabled: bool,
     osparc_simcore_root_dir: Path,
 ) -> EnvVarsDict:
-    """If spying, returns the correct HOST and PORTS to real back-end"""
+    """If --spy_httpx_calls_enabled=true, then it returns the env vars (i.e. host and port) pointing to the **REAL** back-end services
+    , otherwise it returns an empty dict
+    """
     overrides = {}
     if not services_mock_enabled:
         try:
@@ -154,7 +156,7 @@ def backend_env_vars_overrides(
             )
         except FileNotFoundError as err:
             pytest.fail(
-                f"Cannot run spy-mode without deploying osparc-simcore locally\n. TIP: `make prod-up`\n{err}"
+                f"Cannot run --spy_httpx_calls_enabled=true without deploying osparc-simcore locally\n. TIP: run `make prod-up`\n{err}"
             )
 
         for name in get_args(ServiceHostNames):
