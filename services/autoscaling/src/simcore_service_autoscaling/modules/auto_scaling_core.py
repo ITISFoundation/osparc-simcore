@@ -126,7 +126,7 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
-    drained_nodes, reserve_drained_nodes = sort_drained_nodes(
+    drained_nodes, reserve_drained_nodes, terminating_nodes = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     cluster = Cluster(
@@ -136,6 +136,7 @@ async def _analyze_current_cluster(
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
+        terminating_nodes=terminating_nodes,
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
@@ -148,6 +149,7 @@ async def _analyze_current_cluster(
             "reserve_drained_nodes": True,
             "pending_ec2s": "ec2_instance",
             "broken_ec2s": "ec2_instance",
+            "terminating_nodes": "ec2_instance",
         },
     )
     _logger.info(
@@ -239,7 +241,7 @@ async def _try_attach_pending_ec2s(
     all_drained_nodes = (
         cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
     )
-    drained_nodes, reserve_drained_nodes = sort_drained_nodes(
+    drained_nodes, reserve_drained_nodes, _ = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     return dataclasses.replace(
