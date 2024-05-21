@@ -39,6 +39,7 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
+    _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
     Node,
@@ -58,6 +59,8 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_new_node_docker_tags,
     get_node_empty_since,
     get_node_last_readyness_update,
+    get_node_last_updated_timestamp,
+    get_node_termination_started_since,
     get_node_total_resources,
     get_task_instance_restriction,
     get_worker_nodes,
@@ -66,15 +69,12 @@ from simcore_service_autoscaling.utils.utils_docker import (
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     set_node_availability,
+    set_node_begin_termination_process,
     set_node_found_empty,
     set_node_osparc_ready,
     tag_node,
 )
 from types_aiobotocore_ec2.literals import InstanceTypeType
-
-from services.autoscaling.src.simcore_service_autoscaling.utils.utils_docker import (
-    get_node_last_updated_timestamp,
-)
 
 
 @pytest.fixture
@@ -1220,7 +1220,7 @@ async def test_set_node_found_empty(
     assert host_node.Spec.Labels
     assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in host_node.Spec.Labels
 
-    # the date is in the future as nothing was done
+    # the date does not exist as nothing was done
     node_empty_since = await get_node_empty_since(host_node)
     assert node_empty_since is None
 
@@ -1243,9 +1243,41 @@ async def test_set_node_found_empty(
     assert updated_node.Spec.Labels
     assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.Spec.Labels
 
-    # we can get the date again in the future
+    # we can't get a date anymore
     node_empty_since = await get_node_empty_since(updated_node)
     assert node_empty_since is None
+
+
+async def test_set_node_begin_termination_process(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    assert host_node.Spec
+    assert host_node.Spec.Labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in host_node.Spec.Labels
+
+    # the termination was not started, therefore no date
+    assert get_node_termination_started_since(host_node) is None
+
+    updated_node = await set_node_begin_termination_process(
+        autoscaling_docker, host_node
+    )
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in updated_node.Spec.Labels
+
+    await asyncio.sleep(1)
+
+    returned_termination_started_at = get_node_termination_started_since(updated_node)
+    assert returned_termination_started_at is not None
+    assert arrow.utcnow().datetime > returned_termination_started_at
 
 
 async def test_attach_node(
