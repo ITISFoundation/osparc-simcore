@@ -742,9 +742,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # we artifically set the node to drain
-    fake_attached_node.Spec.Availability = (
-        Availability.active if with_drain_nodes_labelled else Availability.drain
-    )
+    if not with_drain_nodes_labelled:
+        fake_attached_node.Spec.Availability = Availability.drain
     fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
     fake_attached_node.Spec.Labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
@@ -797,6 +796,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
             available=False,
         )
         mock_docker_tag_node.reset_mock()
+        # set the fake node to drain
+        fake_attached_node.Spec.Availability = Availability.drain
 
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_called_once_with(
