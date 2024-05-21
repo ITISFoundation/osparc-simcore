@@ -100,6 +100,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
+    EC2_INSTANCES_TIME_BEFORE_DRAINING: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=20),
+        description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, is automatically capped)"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
         description="Time after which an EC2 instance may be terminated (0<=T<=59 minutes, is automatically capped)"
@@ -111,9 +116,22 @@ class EC2InstancesSettings(BaseCustomSettings):
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
 
+    @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
+    @classmethod
+    def ensure_draining_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
+        if value < datetime.timedelta(seconds=10):
+            value = datetime.timedelta(seconds=10)
+        elif value > datetime.timedelta(minutes=1):
+            value = datetime.timedelta(minutes=1)
+        return value
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def ensure_time_is_in_range(cls, value):
+    def ensure_termination_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
         if value < datetime.timedelta(minutes=0):
             value = datetime.timedelta(minutes=0)
         elif value > datetime.timedelta(minutes=59):

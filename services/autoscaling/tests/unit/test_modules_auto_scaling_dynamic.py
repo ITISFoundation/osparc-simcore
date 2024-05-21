@@ -40,7 +40,6 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _activate_drained_nodes,
-    _deactivate_empty_nodes,
     _find_terminateable_instances,
     _try_scale_down_cluster,
     auto_scale_cluster,
@@ -53,6 +52,7 @@ from simcore_service_autoscaling.modules.docker import (
     get_docker_client,
 )
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
@@ -669,6 +669,32 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         instance_type=expected_ec2_type,
         instance_state="running",
     )
+    # the node shall be waiting before draining
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_called_once_with(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_attached_node.Spec.Labels
+        | {
+            _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=True,
+    )
+    mock_docker_tag_node.reset_mock()
+
+    # now update the fake node to have the required label as expected
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    fake_attached_node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
+        arrow.utcnow()
+        .shift(
+            seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING.total_seconds()
+            - 1
+        )
+        .datetime.isoformat()
+    )
+
+    # now it will drain
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mock_docker_set_node_availability.assert_not_called()
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
@@ -1032,150 +1058,6 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     assert (
         all_instances["Reservations"][1]["Instances"][0]["State"]["Name"] == "running"
     )
-
-
-async def test__deactivate_empty_nodes(
-    minimal_configuration: None,
-    initialized_app: FastAPI,
-    cluster: Callable[..., Cluster],
-    host_node: Node,
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_docker_set_node_availability: mock.Mock,
-    mock_docker_tag_node: mock.Mock,
-    with_drain_nodes_labelled: bool,
-):
-    # since we have no service running, we expect the passed node to be set to drain
-    active_cluster = cluster(
-        active_nodes=[
-            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
-        ]
-    )
-    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
-    assert not updated_cluster.active_nodes
-    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_docker_set_node_availability.assert_not_called()
-    assert host_node.Spec
-    assert host_node.Spec.Labels
-    mock_docker_tag_node.assert_called_once_with(
-        mock.ANY,
-        host_node,
-        tags=host_node.Spec.Labels
-        | {
-            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
-            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
-        },
-        available=with_drain_nodes_labelled,
-    )
-
-
-async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missing_labels(
-    minimal_configuration: None,
-    initialized_app: FastAPI,
-    cluster: Callable[..., Cluster],
-    host_node: Node,
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_docker_set_node_availability: mock.Mock,
-    mock_docker_tag_node: mock.Mock,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
-    host_cpu_count: int,
-    with_drain_nodes_labelled: bool,
-):
-    # create a service that runs without task labels
-    task_template_that_runs = task_template | create_task_reservations(
-        int(host_cpu_count / 2 + 1), 0
-    )
-    await create_service(
-        task_template_that_runs,
-        {},
-        "running",
-    )
-    active_cluster = cluster(
-        active_nodes=[
-            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
-        ]
-    )
-    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
-    assert not updated_cluster.active_nodes
-    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_docker_set_node_availability.assert_not_called()
-    assert host_node.Spec
-    assert host_node.Spec.Labels
-    mock_docker_tag_node.assert_called_once_with(
-        mock.ANY,
-        host_node,
-        tags=host_node.Spec.Labels
-        | {
-            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
-            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
-        },
-        available=with_drain_nodes_labelled,
-    )
-
-
-async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with_correct_labels(
-    minimal_configuration: None,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-    cluster: Callable[..., Cluster],
-    host_node: Node,
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_docker_set_node_availability: mock.Mock,
-    mock_docker_tag_node: mock.Mock,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
-    service_monitored_labels: dict[DockerLabelKey, str],
-    host_cpu_count: int,
-):
-    # create a service that runs without task labels
-    task_template_that_runs = task_template | create_task_reservations(
-        int(host_cpu_count / 2 + 1), 0
-    )
-    assert app_settings.AUTOSCALING_NODES_MONITORING
-    await create_service(
-        task_template_that_runs,
-        service_monitored_labels,
-        "running",
-    )
-
-    # since we have no service running, we expect the passed node to be set to drain
-    assert host_node.Description
-    assert host_node.Description.Resources
-    assert host_node.Description.Resources.NanoCPUs
-    host_node_resources = Resources.parse_obj(
-        {
-            "ram": host_node.Description.Resources.MemoryBytes,
-            "cpus": host_node.Description.Resources.NanoCPUs / 10**9,
-        }
-    )
-    fake_ec2_instance = fake_ec2_instance_data(resources=host_node_resources)
-    fake_associated_instance = AssociatedInstance(
-        node=host_node, ec2_instance=fake_ec2_instance
-    )
-    node_used_resources = await DynamicAutoscaling().compute_node_used_resources(
-        initialized_app, fake_associated_instance
-    )
-    assert node_used_resources
-
-    active_cluster = cluster(
-        active_nodes=[
-            AssociatedInstance(
-                node=host_node,
-                ec2_instance=fake_ec2_instance,
-                available_resources=host_node_resources - node_used_resources,
-            )
-        ]
-    )
-    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
-    assert updated_cluster == active_cluster
-    mock_docker_set_node_availability.assert_not_called()
-    mock_docker_tag_node.assert_not_called()
 
 
 async def test__find_terminateable_nodes_with_no_hosts(
