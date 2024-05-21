@@ -1,11 +1,13 @@
 import datetime
 import logging
+from typing import Final, Iterable
 
 import arrow
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import AWSTagKey, EC2InstanceData
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import parse_obj_as
 
 from ..core.settings import get_application_settings
 from ..modules.clusters import (
@@ -29,8 +31,34 @@ def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime
     return launch_time
 
 
+_USER_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "user_id")
+_WALLET_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "wallet_id")
+
+
+async def _get_all_associated_worker_instances(
+    app: FastAPI,
+    primary_instances: Iterable[EC2InstanceData],
+):
+    worker_instances = []
+    for instance in primary_instances:
+        assert "user_id" in instance.tags  # nosec
+        user_id = UserID(instance.tags[_USER_ID_TAG_KEY])
+        assert "wallet_id" in instance.tags  # nosec
+        # NOTE: wallet_id can be None
+        wallet_id = (
+            WalletID(instance.tags[_WALLET_ID_TAG_KEY])
+            if instance.tags[_WALLET_ID_TAG_KEY] != "None"
+            else None
+        )
+
+        worker_instances.extend(
+            await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id)
+        )
+    return worker_instances
+
+
 async def _find_terminateable_instances(
-    app: FastAPI, instances: list[EC2InstanceData]
+    app: FastAPI, instances: Iterable[EC2InstanceData]
 ) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
@@ -58,28 +86,17 @@ async def _find_terminateable_instances(
             terminateable_instances.append(instance)
 
     # get all terminateable instances associated worker instances
-    worker_instances = []
-    for instance in terminateable_instances:
-        assert "user_id" in instance.tags  # nosec
-        user_id = UserID(instance.tags["user_id"])
-        assert "wallet_id" in instance.tags  # nosec
-        # NOTE: wallet_id can be None
-        wallet_id = (
-            WalletID(instance.tags["wallet_id"])
-            if instance.tags["wallet_id"] != "None"
-            else None
-        )
-
-        worker_instances.extend(
-            await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id)
-        )
+    worker_instances = await _get_all_associated_worker_instances(
+        app, terminateable_instances
+    )
 
     return terminateable_instances + worker_instances
 
 
 async def check_clusters(app: FastAPI) -> None:
-
     instances = await get_all_clusters(app)
+
+    # analyse connected clusters (e.g. normal function)
     connected_intances = [
         instance
         for instance in instances
@@ -99,4 +116,15 @@ async def check_clusters(app: FastAPI) -> None:
     if terminateable_instances := await _find_terminateable_instances(
         app, connected_intances
     ):
+        await delete_clusters(app, instances=terminateable_instances)
+
+    # analyse disconnected instances (currently starting or broken)
+    disconnected_instances = set(instances) - set(connected_intances)
+    if terminateable_instances := await _find_terminateable_instances(
+        app, disconnected_instances
+    ):
+        _logger.error(
+            "The following clusters'primary EC2 were found as unresponsive and will be terminated: '%s",
+            f"{[i.id for i in terminateable_instances]}",
+        )
         await delete_clusters(app, instances=terminateable_instances)
