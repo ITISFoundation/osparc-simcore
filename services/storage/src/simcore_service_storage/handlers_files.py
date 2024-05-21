@@ -18,7 +18,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyHttpUrl, AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -278,7 +278,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         ),
     )
     request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
-    complete_task_state_url = request.url.join(
+    ip_addr, port = request.transport.get_extra_info(
+        "sockname"
+    )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+    route = (
         request.app.router["is_completed_upload_file"]
         .url_for(
             location_id=f"{path_params.location_id}",
@@ -286,6 +289,9 @@ async def complete_upload_file(request: web.Request) -> web.Response:
             future_id=task.get_name(),
         )
         .with_query(user_id=query_params.user_id)
+    )
+    complete_task_state_url = AnyHttpUrl(
+        url=f"http://{ip_addr}:{port}{route}", scheme="http"
     )
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
