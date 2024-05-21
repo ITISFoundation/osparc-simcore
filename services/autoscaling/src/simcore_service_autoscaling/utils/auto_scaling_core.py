@@ -159,24 +159,34 @@ def get_machine_buffer_type(
 
 DrainedNodes = list[AssociatedInstance]
 BufferDrainedNodes = list[AssociatedInstance]
+TerminatingNodes = list[AssociatedInstance]
 
 
 def sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
     available_ec2_types: list[EC2InstanceType],
-) -> tuple[DrainedNodes, BufferDrainedNodes]:
+) -> tuple[DrainedNodes, BufferDrainedNodes, TerminatingNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    # first sort out the drained nodes that started termination
+    terminating_nodes = [
+        n
+        for n in all_drained_nodes
+        if utils_docker.get_node_termination_started_since(n.node) is not None
+    ]
+    remaining_drained_nodes = [
+        n for n in all_drained_nodes if n not in terminating_nodes
+    ]
     # we need to keep in reserve only the drained nodes of the right type
     machine_buffer_type = get_machine_buffer_type(available_ec2_types)
     # NOTE: we keep only in buffer the drained nodes with the right EC2 type, AND the right amount
     buffer_drained_nodes = [
         node
-        for node in all_drained_nodes
+        for node in remaining_drained_nodes
         if node.ec2_instance.type == machine_buffer_type.name
     ][: app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER]
     # all the others are "normal" drained nodes and may be terminated at some point
     other_drained_nodes = [
-        node for node in all_drained_nodes if node not in buffer_drained_nodes
+        node for node in remaining_drained_nodes if node not in buffer_drained_nodes
     ]
-    return (other_drained_nodes, buffer_drained_nodes)
+    return (other_drained_nodes, buffer_drained_nodes, terminating_nodes)

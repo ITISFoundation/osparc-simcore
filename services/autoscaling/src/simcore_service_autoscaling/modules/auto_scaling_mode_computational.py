@@ -172,7 +172,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
-        # now check if dask-scheduler is available
+        # now check if dask-scheduler/dask-worker is available and running
         return await dask.is_worker_connected(
             _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
         )
