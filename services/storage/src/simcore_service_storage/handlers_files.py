@@ -18,7 +18,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyHttpUrl, AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -290,13 +290,11 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_task_state_url = AnyHttpUrl(
-        url=f"http://{ip_addr}:{port}{route}", scheme="http"
+    complete_task_state_url = AnyUrl(
+        url=f"{request.url.scheme}://{ip_addr}:{port}{route}", scheme=request.url.scheme
     )
     response = FileUploadCompleteResponse(
-        links=FileUploadCompleteLinks(
-            state=parse_obj_as(AnyUrl, f"{complete_task_state_url}")
-        )
+        links=FileUploadCompleteLinks(state=complete_task_state_url)
     )
     return web.json_response(
         status=status.HTTP_202_ACCEPTED,
