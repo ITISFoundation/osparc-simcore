@@ -59,7 +59,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_new_node_docker_tags,
     get_node_empty_since,
     get_node_last_readyness_update,
-    get_node_last_updated_timestamp,
     get_node_termination_started_since,
     get_node_total_resources,
     get_task_instance_restriction,
@@ -1190,19 +1189,6 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert get_node_last_readyness_update(updated_node) > updated_last_readyness
-
-
-def test_get_node_last_updated_timestamp(
-    disabled_rabbitmq: None,
-    disabled_ec2: None,
-    mocked_redis_server: None,
-    enabled_dynamic_mode: EnvVarsDict,
-    disable_dynamic_service_background_task: None,
-    app_settings: ApplicationSettings,
-    host_node: Node,
-):
-    node_last_updated_time = get_node_last_updated_timestamp(host_node)
-    assert node_last_updated_time == arrow.get(host_node.UpdatedAt).datetime
 
 
 async def test_set_node_found_empty(
