@@ -123,6 +123,7 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectLockError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInvalidError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
@@ -455,6 +456,7 @@ async def _start_dynamic_service(
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
+    graceful_start: bool = False,
 ) -> None:
     if not _is_node_dynamic(service_key):
         return
@@ -463,7 +465,19 @@ async def _start_dynamic_service(
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
-    await db.check_project_node_has_all_required_inputs(user_id, project_uuid)
+    try:
+        await db.check_project_node_has_all_required_inputs(
+            user_id, project_uuid, node_uuid
+        )
+    except ProjectNodeRequiredInputsNotSetError as e:
+        if graceful_start:
+            log.info(
+                "Did not start '%s' because of missing required inputs: %s",
+                node_uuid,
+                e,
+            )
+            return
+        raise
 
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
@@ -1457,6 +1471,7 @@ async def run_project_dynamic_services(
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
+                graceful_start=True,
             )
             for service_uuid, is_deprecated in zip(
                 services_to_start_uuids, deprecated_services, strict=True

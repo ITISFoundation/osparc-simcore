@@ -120,10 +120,7 @@ class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
 
 
 class ProjectNodeRequiredInputsNotSetError(BaseProjectError):
-    msg_template = (
-        "The following 'missing_required_inputs={missing_required_inputs}' must be set. "
-        "Please set them and try to start the service again."
-    )
+    ...
 
 
 class DefaultPricingUnitNotFoundError(BaseProjectError):
