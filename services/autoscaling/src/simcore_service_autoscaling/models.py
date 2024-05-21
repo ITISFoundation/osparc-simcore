@@ -85,6 +85,11 @@ class Cluster:
             "description": "This is a docker node which is not backed by a running EC2 instance"
         }
     )
+    terminateable_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
+        }
+    )
     terminated_instances: list[EC2InstanceData]
 
     def can_scale_down(self) -> bool:
@@ -93,6 +98,7 @@ class Cluster:
             or self.pending_nodes
             or self.drained_nodes
             or self.pending_ec2s
+            or self.terminateable_nodes
         )
 
     def total_number_of_machines(self) -> int:
@@ -103,6 +109,7 @@ class Cluster:
             + len(self.reserve_drained_nodes)
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
+            + len(self.terminateable_nodes)
         )
 
 
