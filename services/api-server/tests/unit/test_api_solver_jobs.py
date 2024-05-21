@@ -188,7 +188,7 @@ async def test_get_solver_job_pricing_unit(
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     else:
-        pytest.fail()
+        pytest.fail(reason=f"Unknown {capture_file=}")
 
 
 @pytest.mark.parametrize(
@@ -252,7 +252,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
-    respx_mocks = create_respx_mock_from_capture(
+    create_respx_mock_from_capture(
         respx_mocks=[
             mocked_webserver_service_api_base,
             mocked_directorv2_service_api_base,

@@ -13,10 +13,10 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 def test_mocked_webserver_service_api(
     app: FastAPI,
     mocked_webserver_service_api_base: MockRouter,
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ):
-    if not services_mock_enabled:
-        pytest.skip(f"{services_mock_enabled=}")
+    if not services_mocks_enabled:
+        pytest.skip(f"{services_mocks_enabled=}")
 
     #
     # This test intends to help building the urls in mocked_webserver_service_api

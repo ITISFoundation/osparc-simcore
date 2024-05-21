@@ -96,7 +96,7 @@ def spy_httpx_calls_capture_path(
 
 
 @pytest.fixture(scope="session")
-def services_mock_enabled(spy_httpx_calls_enabled: bool) -> bool:
+def services_mocks_enabled(spy_httpx_calls_enabled: bool) -> bool:
     """Flag to indicate when to enable/disable service mocks when httpx calls are disabled/enabled"""
     return not spy_httpx_calls_enabled
 
@@ -142,14 +142,14 @@ def create_httpx_async_client_spy_if_enabled(
 
 @pytest.fixture
 def backend_env_vars_overrides(
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
     osparc_simcore_root_dir: Path,
 ) -> EnvVarsDict:
     """If --spy_httpx_calls_enabled=true, then it returns the env vars (i.e. host and port) pointing to the **REAL** back-end services
     , otherwise it returns an empty dict
     """
     overrides = {}
-    if not services_mock_enabled:
+    if not services_mocks_enabled:
         try:
             content = yaml.safe_load(
                 (osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text()
@@ -194,7 +194,7 @@ class _CaptureSideEffect:
 
 @pytest.fixture
 def create_respx_mock_from_capture(
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ) -> CreateRespxMockCallback:
     """Creates a respx.MockRouter from httpx calls captures in capture_path **ONLY**
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
@@ -210,7 +210,7 @@ def create_respx_mock_from_capture(
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
 
-        if services_mock_enabled:
+        if services_mocks_enabled:
             captures: list[HttpApiCallCaptureModel] = parse_obj_as(
                 list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
             )
@@ -223,7 +223,7 @@ def create_respx_mock_from_capture(
                 assert (
                     router._bases
                 ), "the base_url must be set before the fixture is extended"
-                router._assert_all_mocked = not spy_httpx_calls_enabled
+                router._assert_all_mocked = services_mocks_enabled
 
             def _get_correct_mock_router_for_capture(
                 respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel

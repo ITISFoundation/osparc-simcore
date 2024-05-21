@@ -243,7 +243,7 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 def mocked_directorv2_service_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
@@ -254,13 +254,13 @@ def mocked_directorv2_service_api_base(
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_DIRECTOR_V2.base_url
-        if services_mock_enabled
+        if services_mocks_enabled
         else None,
         assert_all_called=False,
-        assert_all_mocked=services_mock_enabled,
+        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
 
-        if services_mock_enabled:
+        if services_mocks_enabled:
             assert openapi
             assert (
                 openapi["paths"]["/"]["get"]["operationId"]
@@ -279,7 +279,7 @@ def mocked_directorv2_service_api_base(
 def mocked_webserver_service_api_base(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
@@ -295,12 +295,12 @@ def mocked_webserver_service_api_base(
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_WEBSERVER.base_url
-        if services_mock_enabled
+        if services_mocks_enabled
         else None,
         assert_all_called=False,
-        assert_all_mocked=services_mock_enabled,
+        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
-        if services_mock_enabled:
+        if services_mocks_enabled:
             # healthcheck_readiness_probe, healthcheck_liveness_probe
             response_body = {
                 "name": "webserver",
@@ -322,7 +322,7 @@ def mocked_storage_service_api_base(
     app: FastAPI,
     storage_service_openapi_specs: dict[str, Any],
     faker: Faker,
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to strage API
@@ -338,14 +338,14 @@ def mocked_storage_service_api_base(
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_STORAGE.base_url
-        if services_mock_enabled
+        if services_mocks_enabled
         else None,
         assert_all_called=False,
-        assert_all_mocked=services_mock_enabled,
+        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
 
-        if services_mock_enabled:
+        if services_mocks_enabled:
             respx_mock.get(path="/v0/", name="health_check").respond(
                 status.HTTP_200_OK,
                 json=Envelope[HealthCheck](
@@ -378,7 +378,7 @@ def mocked_storage_service_api_base(
 def mocked_catalog_service_api_base(
     app: FastAPI,
     catalog_service_openapi_specs: dict[str, Any],
-    services_mock_enabled: bool,
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
@@ -390,12 +390,12 @@ def mocked_catalog_service_api_base(
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_CATALOG.base_url
-        if services_mock_enabled
+        if services_mocks_enabled
         else None,
         assert_all_called=False,
-        assert_all_mocked=services_mock_enabled,
+        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
-        if services_mock_enabled:
+        if services_mocks_enabled:
             respx_mock.get("/v0/").respond(
                 status.HTTP_200_OK,
                 text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
@@ -428,7 +428,7 @@ def mocked_solver_job_outputs(mocker) -> None:
 
 @pytest.fixture
 def patch_webserver_long_running_project_tasks(
-    app: FastAPI, faker: Faker, services_mock_enabled: bool
+    app: FastAPI, faker: Faker, services_mocks_enabled: bool
 ) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
@@ -504,7 +504,7 @@ def patch_webserver_long_running_project_tasks(
         # that preserves the resultswith state
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        if services_mock_enabled:
+        if services_mocks_enabled:
             long_running_task_workflow = _LongRunningProjectTasks()
 
             webserver_mock_router.post(
