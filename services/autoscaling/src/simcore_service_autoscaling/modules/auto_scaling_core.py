@@ -884,15 +884,16 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     # instances found to be terminateable will now start the termination process.
     new_terminating_instances = []
     for instance in await _find_terminateable_instances(app, cluster):
-        await utils_docker.set_node_begin_termination_process(
-            get_docker_client(app), instance.node
-        )
-        new_terminating_instances.append(instance)
         assert instance.node.Description is not None  # nosec
-        _logger.info(
-            "%s began termination process now",
-            f"{instance.node.Description.Hostname}:{instance.ec2_instance.id}",
-        )
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"begin termination process for {instance.node.Description.Hostname}:{instance.ec2_instance.id}",
+        ), log_catch(_logger, reraise=False):
+            await utils_docker.set_node_begin_termination_process(
+                get_docker_client(app), instance.node
+            )
+            new_terminating_instances.append(instance)
 
     # instances that are in the termination process and already waited long enough are terminated.
     now = arrow.utcnow().datetime
@@ -904,13 +905,15 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     ]
     terminated_instance_ids = []
     if instances_to_terminate:
-        await get_ec2_client(app).terminate_instances(
-            [i.ec2_instance for i in instances_to_terminate]
-        )
-        _logger.info(
-            "EC2 terminated: '%s'",
-            f"{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}",
-        )
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"terminate '{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}'",
+        ):
+            await get_ec2_client(app).terminate_instances(
+                [i.ec2_instance for i in instances_to_terminate]
+            )
+
         if has_instrumentation(app):
             instrumentation = get_instrumentation(app)
             for i in instances_to_terminate:
