@@ -658,6 +658,7 @@ async def get_node_empty_since(node: Node) -> datetime.datetime | None:
 async def set_node_begin_termination_process(
     docker_client: AutoscalingDocker, node: Node
 ) -> Node:
+    """sets the node to drain and adds a docker label with the time"""
     assert node.Spec  # nosec
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
     new_tags[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = arrow.utcnow().isoformat()
@@ -666,7 +667,7 @@ async def set_node_begin_termination_process(
         docker_client,
         node,
         tags=new_tags,
-        available=bool(node.Spec.Availability is Availability.active),
+        available=False,
     )
 
 

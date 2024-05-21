@@ -53,14 +53,13 @@ from simcore_service_autoscaling.modules.docker import (
 )
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
+    _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 from types_aiobotocore_ec2.type_defs import InstanceTypeDef
-
-from services.autoscaling.tests.unit.conftest import with_labelize_drain_nodes
 
 
 @pytest.fixture
@@ -776,28 +775,36 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
     ).isoformat()
-    if with_labelize_drain_nodes:
-        # first making sure the node is drained, then terminate it after a delay to let it drain
-        await auto_scale_cluster(
-            app=initialized_app, auto_scaling_mode=auto_scaling_mode
+    # first making sure the node is drained, then terminate it after a delay to let it drain
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mocked_docker_remove_node.assert_not_called()
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+    mock_docker_tag_node.assert_called_once_with(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_attached_node.Spec.Labels
+        | {
+            _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: mock.ANY,
+        },
+        available=False,
+    )
+    mock_docker_tag_node.reset_mock()
+    # set the fake node to drain
+    fake_attached_node.Spec.Availability = Availability.drain
+    fake_attached_node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
+        arrow.utcnow()
+        .shift(
+            seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION.total_seconds()
+            - 1
         )
-        mocked_docker_remove_node.assert_not_called()
-        await _assert_ec2_instances(
-            ec2_client,
-            num_reservations=1,
-            num_instances=1,
-            instance_type=expected_ec2_type,
-            instance_state="running",
-        )
-        mock_docker_tag_node.assert_called_once_with(
-            get_docker_client(initialized_app),
-            fake_attached_node,
-            tags=fake_attached_node.Spec.Labels,
-            available=False,
-        )
-        mock_docker_tag_node.reset_mock()
-        # set the fake node to drain
-        fake_attached_node.Spec.Availability = Availability.drain
+        .datetime.isoformat()
+    )
 
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_called_once_with(
