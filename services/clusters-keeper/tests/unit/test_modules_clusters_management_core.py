@@ -213,3 +213,31 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     await _assert_instances_state(
         ec2_client, instance_ids=worker_instance_ids, state="terminated"
     )
+
+
+async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+    create_ec2_workers: Callable[[int], Awaitable[list[str]]],
+):
+    created_clusters = await create_cluster(
+        initialized_app, user_id=user_id, wallet_id=wallet_id
+    )
+    assert len(created_clusters) == 1
+
+    # simulate unresponsive dask-scheduler
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = False
+
+    # running the cluster management task shall not remove anything
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
