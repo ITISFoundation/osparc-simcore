@@ -90,6 +90,12 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
+    WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=1),
+        description="Time after which an EC2 instance may be terminated (min 0 max 1 minute) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
     WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Time after which an EC2 instance may be terminated (min 0, max 59 minutes) "
