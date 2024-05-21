@@ -72,6 +72,10 @@ from simcore_service_autoscaling.utils.utils_docker import (
 )
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from services.autoscaling.src.simcore_service_autoscaling.utils.utils_docker import (
+    get_node_last_updated_timestamp,
+)
+
 
 @pytest.fixture
 async def create_node_labels(
@@ -1186,6 +1190,19 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert get_node_last_readyness_update(updated_node) > updated_last_readyness
+
+
+def test_get_node_last_updated_timestamp(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    app_settings: ApplicationSettings,
+    host_node: Node,
+):
+    node_last_updated_time = get_node_last_updated_timestamp(host_node)
+    assert node_last_updated_time == arrow.get(host_node.UpdatedAt).datetime
 
 
 async def test_set_node_found_empty(

@@ -614,6 +614,11 @@ def get_node_last_readyness_update(node: Node) -> datetime.datetime:
     )  # mypy
 
 
+def get_node_last_updated_timestamp(node: Node) -> datetime.datetime:
+    assert node.UpdatedAt
+    return arrow.get(node.UpdatedAt).datetime
+
+
 async def set_node_found_empty(
     docker_client: AutoscalingDocker,
     node: Node,
