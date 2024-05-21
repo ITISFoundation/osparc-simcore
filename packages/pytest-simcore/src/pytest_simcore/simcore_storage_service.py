@@ -4,13 +4,14 @@
 import os
 from collections.abc import Callable, Iterable
 from copy import deepcopy
+from urllib.parse import urlunparse
 
 import aiohttp
 import pytest
 import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import parse_obj_as
+from pydantic import AnyUrl, parse_obj_as
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
@@ -39,8 +40,27 @@ def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable
 
 
 @pytest.fixture()
-async def storage_service(storage_endpoint: URL, docker_stack: dict) -> URL:
+async def storage_service(mocker, storage_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
+
+    def correct_ip(url: AnyUrl):
+        new_url = urlunparse(
+            (
+                url.scheme,
+                f"{storage_endpoint.host}:{storage_endpoint.port}",
+                url.path,
+                "",
+                url.query,
+                "",
+            )
+        )
+        return AnyUrl(f"{new_url}", scheme=url.scheme)
+
+    # NOTE: Mock to ensure container IP agrees with host IP when testing
+    mocker.patch(
+        "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
+        correct_ip,
+    )
 
     return storage_endpoint
 
