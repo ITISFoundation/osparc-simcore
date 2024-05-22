@@ -182,7 +182,6 @@ async def _process_heartbeat_event(
         return
 
     if running_service.wallet_id:
-        assert running_service.pricing_unit_cost  # nosec
         assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
 
         # Compute currently used credits
@@ -267,7 +266,6 @@ async def _process_stop_event(
         return
 
     if running_service.wallet_id:
-        assert running_service.pricing_unit_cost  # nosec
         assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
 
         # Compute currently used credits

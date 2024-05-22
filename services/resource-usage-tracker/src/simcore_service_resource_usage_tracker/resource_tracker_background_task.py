@@ -96,7 +96,6 @@ async def _close_unhealthy_service(
 
     # 2. Close the billing transaction (as not billed)
     if running_service.wallet_id:
-        assert running_service.pricing_unit_cost  # nosec
         assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
 
         computed_credits = await compute_service_run_credit_costs(
