@@ -59,6 +59,7 @@
         "--faker-user-id=1",
         "--faker-user-api-key=test",
         "--faker-user-api-secret=test",
+        "--faker-project-id=85ebc649-9694-44bb-96d4-9dd8205cf18b",
         "${file}"
       ],
       "cwd": "${workspaceFolder}",
