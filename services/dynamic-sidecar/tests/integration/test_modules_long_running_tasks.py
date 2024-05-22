@@ -24,6 +24,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
@@ -158,7 +159,7 @@ def state_paths_to_legacy_archives(
 
 @pytest.fixture
 async def restore_legacy_state_archives(
-    mocker,
+    mocker: MockerFixture,
     test_client: TestClient,
     user_id: UserID,
     project_id: ProjectID,

@@ -11,6 +11,7 @@ import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, parse_obj_as
+from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
@@ -39,7 +40,9 @@ def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable
 
 
 @pytest.fixture()
-async def storage_service(mocker, storage_endpoint: URL, docker_stack: dict) -> URL:
+async def storage_service(
+    mocker: MockerFixture, storage_endpoint: URL, docker_stack: dict
+) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
     def correct_ip(url: AnyUrl):
