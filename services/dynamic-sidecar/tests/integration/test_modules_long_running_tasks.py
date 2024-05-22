@@ -158,15 +158,7 @@ def state_paths_to_legacy_archives(
 
 
 @pytest.fixture
-async def restore_legacy_state_archives(
-    mocker: MockerFixture,
-    test_client: TestClient,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    state_paths_to_legacy_archives: dict[Path, Path],
-) -> None:
-
+async def simcore_storage_service(mocker: MockerFixture) -> None:
     storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
     storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
 
@@ -188,6 +180,16 @@ async def restore_legacy_state_archives(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
         correct_ip,
     )
+
+
+@pytest.fixture
+async def restore_legacy_state_archives(
+    test_client: TestClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    state_paths_to_legacy_archives: dict[Path, Path],
+) -> None:
 
     tasks = []
     for legacy_archive_zip in state_paths_to_legacy_archives.values():
@@ -365,6 +367,7 @@ def _get_expected_s3_objects(
 
 @pytest.mark.parametrize("repeat_count", [1, 2])
 async def test_legacy_state_open_and_clone(
+    simcore_storage_service: None,
     restore_legacy_state_archives: None,
     state_paths_to_legacy_archives: dict[Path, Path],
     expected_contents_paths: dict[Path, Path],
@@ -425,6 +428,7 @@ async def test_legacy_state_open_and_clone(
 
 @pytest.mark.parametrize("repeat_count", [1, 2])
 async def test_state_open_and_close(
+    simcore_storage_service: None,
     test_client: TestClient,
     state_paths_to_legacy_archives: dict[Path, Path],
     expected_contents_paths: dict[Path, Path],
