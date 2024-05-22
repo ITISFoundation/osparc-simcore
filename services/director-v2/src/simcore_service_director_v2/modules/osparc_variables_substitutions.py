@@ -27,7 +27,7 @@ from ..utils.osparc_variables import (
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
-from .api_keys_manager import get_or_create_api_key
+from .api_keys_manager import get_or_create_api_key, get_or_create_api_secret
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 from .db.repositories.users import UsersRepository
 
@@ -222,45 +222,11 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
     return deepcopy(specs)
 
 
-async def _get_or_create_api_key(
-    app: FastAPI,
-    product_name: ProductName,
-    user_id: UserID,
-    node_id: NodeID,
-    run_id: RunID,
-) -> str:
-    key_data = await get_or_create_api_key(
-        app,
-        product_name=product_name,
-        user_id=user_id,
-        node_id=node_id,
-        run_id=run_id,
-    )
-    return key_data.api_key  # type:ignore [no-any-return]
-
-
-async def _get_or_create_api_secret(
-    app: FastAPI,
-    product_name: ProductName,
-    user_id: UserID,
-    node_id: NodeID,
-    run_id: RunID,
-) -> str:
-    key_data = await get_or_create_api_key(
-        app,
-        product_name=product_name,
-        user_id=user_id,
-        node_id=node_id,
-        run_id=run_id,
-    )
-    return key_data.api_secret  # type:ignore [no-any-return]
-
-
 def _setup_service_lifespan_osparc_variables_table(app: FastAPI):
     app.state.service_lifespan_osparc_variables_table = table = OsparcVariablesTable()
 
-    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(_get_or_create_api_key)
-    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(_get_or_create_api_secret)
+    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(get_or_create_api_key)
+    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(get_or_create_api_secret)
 
     _logger.debug(
         "Registered service_lifespan_osparc_variables_table=%s",

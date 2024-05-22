@@ -54,7 +54,7 @@ class _APIKeysManager(
         return identifier
 
     @classmethod
-    def _deserialize_cleanup_context(cls, raw: StrBytes) -> _CleanupContext:
+    def _deserialize_cleanup_context(cls, raw: StrBytes):
         return _CleanupContext.parse_raw(raw)
 
     @classmethod
@@ -102,7 +102,7 @@ class _APIKeysManager(
         )
 
 
-def _get_api_key_display_name(node_id: NodeID, run_id: RunID) -> str:
+def _get_identifier(node_id: NodeID, run_id: RunID) -> str:
     # Generates a new unique key name for each service run
     # This avoids race conditions if the service is starting and
     # an the cleanup job is removing the key from an old run which
@@ -110,7 +110,7 @@ def _get_api_key_display_name(node_id: NodeID, run_id: RunID) -> str:
     return f"_auto_{uuid5(node_id, run_id)}"
 
 
-async def get_or_create_api_key(
+async def _get_or_create(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -119,7 +119,7 @@ async def get_or_create_api_key(
     run_id: RunID,
 ) -> ApiKeyGet:
     api_keys_manager: _APIKeysManager = _APIKeysManager.get_from_app_state(app)
-    display_name = _get_api_key_display_name(node_id, run_id)
+    display_name = _get_identifier(node_id, run_id)
 
     api_key: ApiKeyGet | None = await api_keys_manager.get(
         identifier=display_name,
@@ -140,9 +140,45 @@ async def get_or_create_api_key(
     return api_key
 
 
-async def safe_remove_api_key(app: FastAPI, *, node_id: NodeID, run_id: RunID) -> None:
+async def get_or_create_api_key(
+    app: FastAPI,
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
+    run_id: RunID,
+) -> str:
+    data = await _get_or_create(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        node_id=node_id,
+        run_id=run_id,
+    )
+    return data.api_key
+
+
+async def get_or_create_api_secret(
+    app: FastAPI,
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
+    run_id: RunID,
+) -> str:
+    data = await _get_or_create(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        node_id=node_id,
+        run_id=run_id,
+    )
+    return data.api_secret
+
+
+async def safe_remove_api_key_and_secret(
+    app: FastAPI, *, node_id: NodeID, run_id: RunID
+) -> None:
     api_keys_manager = _APIKeysManager.get_from_app_state(app)
-    display_name = _get_api_key_display_name(node_id, run_id)
+    display_name = _get_identifier(node_id, run_id)
 
     await api_keys_manager.remove(identifier=display_name)
 

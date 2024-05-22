@@ -20,9 +20,9 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_director_v2.modules.api_keys_manager import (
     _APIKeysManager,
-    _get_api_key_display_name,
+    _get_identifier,
     get_or_create_api_key,
-    safe_remove_api_key,
+    safe_remove_api_key_and_secret,
 )
 
 pytest_simcore_core_services_selection = [
@@ -52,7 +52,7 @@ def user_id(faker: Faker) -> UserID:
 
 
 def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID, run_id: RunID):
-    api_key_names = {_get_api_key_display_name(node_id, run_id) for _ in range(1000)}
+    api_key_names = {_get_identifier(node_id, run_id) for _ in range(1000)}
     assert len(api_key_names) == 1
 
 
@@ -156,7 +156,7 @@ async def test_api_keys_workflow(
     assert isinstance(api_key, ApiKeyGet)
     assert await _get_resource_count(api_keys_manager) == 1
 
-    await safe_remove_api_key(app, node_id=node_id, run_id=run_id)
+    await safe_remove_api_key_and_secret(app, node_id=node_id, run_id=run_id)
     assert await _get_resource_count(api_keys_manager) == 0
 
 

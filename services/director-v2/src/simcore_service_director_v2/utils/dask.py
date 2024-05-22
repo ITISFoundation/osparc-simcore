@@ -368,16 +368,14 @@ async def compute_task_envs(
             node_id=node_id,
         )
 
-        resolved_envs = (
-            await resolve_and_substitute_service_lifetime_variables_in_specs(
-                app=app,
-                specs=session_resolved_envs,
-                safe=True,
-                product_name=product_name,
-                user_id=user_id,
-                node_id=node_id,
-                run_id=RunID.create(),  # TODO: temporary
-            )
+        resolved_envs = await resolve_and_substitute_service_lifetime_variables_in_specs(
+            app=app,
+            specs=session_resolved_envs,
+            safe=True,
+            product_name=product_name,
+            user_id=user_id,
+            node_id=node_id,
+            run_id=RunID.create(),  # FIXME: needs to pass job_id and call safe_remove_api_key after job is done as well!
         )
 
         # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
