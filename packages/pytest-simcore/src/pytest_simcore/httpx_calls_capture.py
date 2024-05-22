@@ -92,7 +92,7 @@ def spy_httpx_calls_capture_path(
         )
     assert capture_path.suffix == ".json"
     capture_path.touch()
-    return capture_path
+    return capture_path.resolve()
 
 
 @pytest.fixture(scope="session")
