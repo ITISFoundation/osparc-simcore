@@ -17,7 +17,6 @@ import pytest
 import respx
 import yaml
 from asgi_lifespan import LifespanManager
-from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import ASGITransport
@@ -60,7 +59,6 @@ def app_environment(
         {
             **default_app_env_vars,
             "WEBSERVER_HOST": "webserver",
-            "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",

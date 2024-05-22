@@ -36,14 +36,14 @@ def pytest_addoption(parser: pytest.Parser):
     simcore_group.addoption(
         "--faker-user-email",
         action="store",
-        type=int,
+        type=str,
         default=None,
         help=_MESSAGE.format("user_email"),
     )
     simcore_group.addoption(
         "--faker-user-api-key",
         action="store",
-        type=int,
+        type=str,
         default=None,
         help=_MESSAGE.format("user_api_key"),
     )
