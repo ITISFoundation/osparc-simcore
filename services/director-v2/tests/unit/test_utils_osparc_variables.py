@@ -28,7 +28,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules import osparc_variables_substitutions
 from simcore_service_director_v2.modules.osparc_variables_substitutions import (
-    resolve_and_substitute_service_lifetime_variables_in_specs,
+    resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -194,7 +194,7 @@ async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
     }
     print("SPECS\n", specs)
 
-    replaced_specs = await resolve_and_substitute_service_lifetime_variables_in_specs(
+    replaced_specs = await resolve_and_substitute_service_lifespan_variables_in_specs(
         fake_app,
         specs=specs,
         user_id=1,

@@ -53,7 +53,7 @@ from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskJobID
 from ..modules.osparc_variables_substitutions import (
-    resolve_and_substitute_service_lifetime_variables_in_specs,
+    resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -368,7 +368,7 @@ async def compute_task_envs(
             node_id=node_id,
         )
 
-        resolved_envs = await resolve_and_substitute_service_lifetime_variables_in_specs(
+        resolved_envs = await resolve_and_substitute_service_lifespan_variables_in_specs(
             app=app,
             specs=session_resolved_envs,
             safe=True,

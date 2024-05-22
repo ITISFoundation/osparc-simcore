@@ -182,7 +182,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     return deepcopy(specs)
 
 
-async def resolve_and_substitute_service_lifetime_variables_in_specs(
+async def resolve_and_substitute_service_lifespan_variables_in_specs(
     app: FastAPI,
     specs: dict[str, Any],
     *,
