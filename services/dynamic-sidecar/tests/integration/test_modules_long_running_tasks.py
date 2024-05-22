@@ -4,10 +4,11 @@
 
 
 import filecmp
+import os
 import shutil
 from collections.abc import AsyncIterable, Iterable
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 from unittest.mock import AsyncMock
 
 import aioboto3
@@ -22,7 +23,7 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import AnyUrl, parse_obj_as
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
@@ -157,12 +158,36 @@ def state_paths_to_legacy_archives(
 
 @pytest.fixture
 async def restore_legacy_state_archives(
+    mocker,
     test_client: TestClient,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     state_paths_to_legacy_archives: dict[Path, Path],
 ) -> None:
+
+    storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
+    storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
+
+    def correct_ip(url: AnyUrl):
+
+        assert storage_host is not None
+        assert storage_port is not None
+
+        return AnyUrl.build(
+            scheme=url.scheme,
+            host=storage_host,
+            port=storage_port,
+            path=url.path,
+            query=url.query,
+        )
+
+    # NOTE: Mock to ensure container IP agrees with host IP when testing
+    mocker.patch(
+        "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
+        correct_ip,
+    )
+
     tasks = []
     for legacy_archive_zip in state_paths_to_legacy_archives.values():
         s3_path = f"{project_id}/{node_id}/{legacy_archive_zip.name}"
