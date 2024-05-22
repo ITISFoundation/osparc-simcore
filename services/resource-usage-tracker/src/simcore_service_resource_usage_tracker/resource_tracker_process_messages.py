@@ -266,7 +266,7 @@ async def _process_stop_event(
         _logger.error("Nothing to update. This should not happen investigate.")
         return
 
-    if running_service.wallet_id and running_service.pricing_unit_cost:
+    if running_service.wallet_id:
         assert running_service.pricing_unit_cost  # nosec
         assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
 
