@@ -4,7 +4,6 @@
 import os
 from collections.abc import Callable, Iterable
 from copy import deepcopy
-from urllib.parse import urlunparse
 
 import aiohttp
 import pytest
@@ -44,17 +43,16 @@ async def storage_service(mocker, storage_endpoint: URL, docker_stack: dict) -> 
     await wait_till_storage_responsive(storage_endpoint)
 
     def correct_ip(url: AnyUrl):
-        new_url = urlunparse(
-            (
-                url.scheme,
-                f"{storage_endpoint.host}:{storage_endpoint.port}",
-                url.path,
-                "",
-                url.query,
-                "",
-            )
+        assert storage_endpoint.host is not None
+        assert storage_endpoint.port is not None
+
+        return AnyUrl.build(
+            scheme=url.scheme,
+            host=storage_endpoint.host,
+            port=f"{storage_endpoint.port}",
+            path=url.path,
+            query=url.query,
         )
-        return AnyUrl(f"{new_url}", scheme=url.scheme)
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
