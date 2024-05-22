@@ -54,16 +54,12 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = []
 
-_logger = logging.getLogger()
-_faker: Faker = Faker()
-
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
-    mocker: MockerFixture,
 ) -> EnvVarsDict:
     # do not init other services
 
@@ -71,6 +67,7 @@ def app_environment(
     return setenvs_from_dict(
         monkeypatch,
         {
+            **app_environment,
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
@@ -149,7 +146,7 @@ async def test_subscribe_publish_receive_logs(
 
 
 @asynccontextmanager
-async def rabbit_consuming_context(
+async def _rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
@@ -202,7 +199,7 @@ async def test_multiple_producers_and_single_consumer(
 ):
     await produce_logs("lost", project_id)
 
-    async with rabbit_consuming_context(app, project_id) as consumer_message_handler:
+    async with _rabbit_consuming_context(app, project_id) as consumer_message_handler:
         # multiple producers
         asyncio.gather(
             *[
