@@ -148,7 +148,7 @@ async def safe_remove_api_key(app: FastAPI, *, node_id: NodeID, run_id: RunID) -
 
 
 def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
+    async def _on_startup() -> None:
         redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
 
         manager = _APIKeysManager(
@@ -157,9 +157,9 @@ def setup(app: FastAPI) -> None:
         manager.set_to_app_state(app)
         await manager.setup()
 
-    async def on_shutdown() -> None:
+    async def _on_shutdown() -> None:
         manager: _APIKeysManager = _APIKeysManager.get_from_app_state(app)
         await manager.shutdown()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)

@@ -166,10 +166,11 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if dynamic_scheduler_enabled or computational_backend_enabled:
         rabbitmq.setup(app)
 
+    redis.setup(app)
+    api_keys_manager.setup(app)
+
     if dynamic_scheduler_enabled:
-        redis.setup(app)
         dynamic_sidecar.setup(app)
-        api_keys_manager.setup(app)
         socketio.setup(app)
         notifier.setup(app)
 
