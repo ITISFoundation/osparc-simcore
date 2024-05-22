@@ -126,7 +126,7 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
-    drained_nodes, reserve_drained_nodes = sort_drained_nodes(
+    drained_nodes, reserve_drained_nodes, terminating_nodes = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     cluster = Cluster(
@@ -136,6 +136,7 @@ async def _analyze_current_cluster(
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
+        terminating_nodes=terminating_nodes,
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
@@ -148,6 +149,7 @@ async def _analyze_current_cluster(
             "reserve_drained_nodes": True,
             "pending_ec2s": "ec2_instance",
             "broken_ec2s": "ec2_instance",
+            "terminating_nodes": "ec2_instance",
         },
     )
     _logger.info(
@@ -239,7 +241,7 @@ async def _try_attach_pending_ec2s(
     all_drained_nodes = (
         cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
     )
-    drained_nodes, reserve_drained_nodes = sort_drained_nodes(
+    drained_nodes, reserve_drained_nodes, _ = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     return dataclasses.replace(
@@ -877,29 +879,53 @@ async def _find_terminateable_instances(
 
 
 async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
-    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure
-    # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    # instances found to be terminateable will now start the termination process.
+    new_terminating_instances = []
+    for instance in await _find_terminateable_instances(app, cluster):
+        assert instance.node.Description is not None  # nosec
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"begin termination process for {instance.node.Description.Hostname}:{instance.ec2_instance.id}",
+        ), log_catch(_logger, reraise=False):
+            await utils_docker.set_node_begin_termination_process(
+                get_docker_client(app), instance.node
+            )
+            new_terminating_instances.append(instance)
+
+    # instances that are in the termination process and already waited long enough are terminated.
+    now = arrow.utcnow().datetime
+    instances_to_terminate = [
+        i
+        for i in cluster.terminating_nodes
+        if (now - utils_docker.get_node_termination_started_since(i.node))
+        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION
+    ]
     terminated_instance_ids = []
-    if terminateable_instances := await _find_terminateable_instances(app, cluster):
-        await get_ec2_client(app).terminate_instances(
-            [i.ec2_instance for i in terminateable_instances]
-        )
-        _logger.info(
-            "EC2 terminated: '%s'",
-            f"{[i.node.Description.Hostname for i in terminateable_instances if i.node.Description]}",
-        )
+    if instances_to_terminate:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"terminate '{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}'",
+        ):
+            await get_ec2_client(app).terminate_instances(
+                [i.ec2_instance for i in instances_to_terminate]
+            )
+
         if has_instrumentation(app):
             instrumentation = get_instrumentation(app)
-            for i in terminateable_instances:
+            for i in instances_to_terminate:
                 instrumentation.instance_terminated(i.ec2_instance.type)
         # since these nodes are being terminated, remove them from the swarm
 
         await utils_docker.remove_nodes(
             get_docker_client(app),
-            nodes=[i.node for i in terminateable_instances],
+            nodes=[i.node for i in instances_to_terminate],
             force=True,
         )
-        terminated_instance_ids = [i.ec2_instance.id for i in terminateable_instances]
+        terminated_instance_ids = [i.ec2_instance.id for i in instances_to_terminate]
 
     still_drained_nodes = [
         i
@@ -909,8 +935,9 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     return dataclasses.replace(
         cluster,
         drained_nodes=still_drained_nodes,
+        terminating_nodes=cluster.terminating_nodes + new_terminating_instances,
         terminated_instances=cluster.terminated_instances
-        + [i.ec2_instance for i in terminateable_instances],
+        + [i.ec2_instance for i in instances_to_terminate],
     )
 
 

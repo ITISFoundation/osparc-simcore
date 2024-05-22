@@ -107,7 +107,12 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (0<=T<=59 minutes, is automatically capped)"
+        description="Time after which an EC2 instance may being the termination process (0<=T<=59 minutes, is automatically capped)"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+    EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=30),
+        description="Time after which an EC2 instance is terminated after draining"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
