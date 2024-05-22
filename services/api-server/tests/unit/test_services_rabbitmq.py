@@ -62,12 +62,10 @@ def app_environment(
     rabbit_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # do not init other services
-
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
