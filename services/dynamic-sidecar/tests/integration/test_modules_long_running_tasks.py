@@ -158,7 +158,7 @@ def state_paths_to_legacy_archives(
 
 
 @pytest.fixture
-async def simcore_storage_service(mocker: MockerFixture) -> None:
+async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
     storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
     storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
 
