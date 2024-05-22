@@ -29,7 +29,6 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 from models_library.api_schemas_storage import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
-from models_library.basic_types import IDStr
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
@@ -135,11 +134,10 @@ async def client(
 def auth(
     mocker: MockerFixture,
     app: FastAPI,
-    faker: Faker,
     user_id: UserID,
     user_email: EmailStr,
-    user_name: IDStr,
-    user_password: str,
+    user_api_key: str,
+    user_api_secret: str,
 ) -> HTTPBasicAuth:
     """
     Auth mocking repositories and db engine (i.e. does not require db up)
@@ -166,7 +164,7 @@ def auth(
         return_value=user_email,
     )
 
-    return HTTPBasicAuth(user_name, user_password)
+    return HTTPBasicAuth(user_api_key, user_api_secret)
 
 
 @pytest.fixture
