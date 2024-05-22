@@ -26,7 +26,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import ValidationError
 from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
@@ -79,16 +79,6 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
     mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return parse_obj_as(ProjectID, faker.uuid4())
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> NodeID:
-    return parse_obj_as(NodeID, faker.uuid4())
 
 
 @pytest.fixture
