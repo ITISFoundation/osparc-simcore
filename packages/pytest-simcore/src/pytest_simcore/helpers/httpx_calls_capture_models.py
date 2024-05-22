@@ -69,7 +69,7 @@ class HttpApiCallCaptureModel(BaseModel):
         return httpx.Response(status_code=self.status_code, json=self.response_body)
 
 
-def get_captured(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
+def get_captured_model(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
 
 
