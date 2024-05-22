@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 import json
-import os
 import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
@@ -253,24 +252,23 @@ def mocked_directorv2_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.base_url
-        if services_mocks_enabled
-        else None,
+        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
-        assert_all_mocked=services_mocks_enabled,
+        assert_all_mocked=True,
     ) as respx_mock:
+        assert openapi
+        assert (
+            openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
+        )
 
-        if services_mocks_enabled:
-            assert openapi
-            assert (
-                openapi["paths"]["/"]["get"]["operationId"]
-                == "check_service_health__get"
-            )
+        respx_mock.get(path="/", name="check_service_health__get").respond(
+            status.HTTP_200_OK,
+            json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
+        )
 
-            respx_mock.get(path="/", name="check_service_health__get").respond(
-                status.HTTP_200_OK,
-                json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
-            )
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
 
         yield respx_mock
 
@@ -294,25 +292,25 @@ def mocked_webserver_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.base_url
-        if services_mocks_enabled
-        else None,
+        base_url=settings.API_SERVER_WEBSERVER.base_url,
         assert_all_called=False,
-        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
-        if services_mocks_enabled:
-            # healthcheck_readiness_probe, healthcheck_liveness_probe
-            response_body = {
-                "name": "webserver",
-                "version": "1.0.0",
-                "api_version": "1.0.0",
-            }
-            respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
-                status.HTTP_200_OK, json=response_body
-            )
-            respx_mock.get(
-                path="/v0/health", name="healthcheck_liveness_probe"
-            ).respond(status.HTTP_200_OK, json=response_body)
+        # healthcheck_readiness_probe, healthcheck_liveness_probe
+        response_body = {
+            "name": "webserver",
+            "version": "1.0.0",
+            "api_version": "1.0.0",
+        }
+        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
 
         yield respx_mock
 
@@ -337,39 +335,39 @@ def mocked_storage_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_STORAGE.base_url
-        if services_mocks_enabled
-        else None,
+        base_url=settings.API_SERVER_STORAGE.base_url,
         assert_all_called=False,
-        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
 
-        if services_mocks_enabled:
-            respx_mock.get(path="/v0/", name="health_check").respond(
-                status.HTTP_200_OK,
-                json=Envelope[HealthCheck](
-                    data={
-                        "name": "storage",
-                        "status": "ok",
-                        "api_version": "1.0.0",
-                        "version": "1.0.0",
-                    },
-                ).dict(),
-            )
+        respx_mock.get(path="/v0/", name="health_check").respond(
+            status.HTTP_200_OK,
+            json=Envelope[HealthCheck](
+                data={
+                    "name": "storage",
+                    "status": "ok",
+                    "api_version": "1.0.0",
+                    "version": "1.0.0",
+                },
+            ).dict(),
+        )
 
-            assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
-            respx_mock.get(path="/v0/status", name="get_status").respond(
-                status.HTTP_200_OK,
-                json=Envelope[AppStatusCheck](
-                    data={
-                        "app_name": "storage",
-                        "version": "1.0.0",
-                        "url": faker.url(),
-                        "diagnostics_url": faker.url(),
-                    }
-                ).dict(),
-            )
+        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
+        respx_mock.get(path="/v0/status", name="get_status").respond(
+            status.HTTP_200_OK,
+            json=Envelope[AppStatusCheck](
+                data={
+                    "app_name": "storage",
+                    "version": "1.0.0",
+                    "url": faker.url(),
+                    "diagnostics_url": faker.url(),
+                }
+            ).dict(),
+        )
+
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
 
         yield respx_mock
 
@@ -389,20 +387,20 @@ def mocked_catalog_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_CATALOG.base_url
-        if services_mocks_enabled
-        else None,
+        base_url=settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
-        assert_all_mocked=services_mocks_enabled,
     ) as respx_mock:
-        if services_mocks_enabled:
-            respx_mock.get("/v0/").respond(
-                status.HTTP_200_OK,
-                text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
-            )
-            respx_mock.get("/v0/meta").respond(
-                status.HTTP_200_OK, json=schemas["Meta"]["example"]
-            )
+        respx_mock.get("/v0/").respond(
+            status.HTTP_200_OK,
+            text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
+        )
+        respx_mock.get("/v0/meta").respond(
+            status.HTTP_200_OK, json=schemas["Meta"]["example"]
+        )
+
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
 
         yield respx_mock
 
@@ -552,7 +550,7 @@ def patch_webserver_long_running_project_tasks(
 def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
     openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
     if openapi_file.is_file():
-        os.remove(openapi_file)
+        openapi_file.unlink()
     subprocess.run(
         "make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True
     )
