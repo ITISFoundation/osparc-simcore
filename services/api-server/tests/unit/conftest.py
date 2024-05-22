@@ -29,13 +29,15 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 from models_library.api_schemas_storage import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.basic_types import IDStr
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import EmailStr, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
@@ -130,7 +132,15 @@ async def client(
 
 
 @pytest.fixture
-def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
+def auth(
+    mocker: MockerFixture,
+    app: FastAPI,
+    faker: Faker,
+    user_id: UserID,
+    user_email: EmailStr,
+    user_name: IDStr,
+    user_password: str,
+) -> HTTPBasicAuth:
     """
     Auth mocking repositories and db engine (i.e. does not require db up)
 
@@ -148,15 +158,15 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     mocker.patch(
         "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
         autospec=True,
-        return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
+        return_value=UserAndProductTuple(user_id=user_id, product_name="osparc"),
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_active_user_email",
         autospec=True,
-        return_value=faker.email(),
+        return_value=user_email,
     )
 
-    return HTTPBasicAuth(faker.word(), faker.password())
+    return HTTPBasicAuth(user_name, user_password)
 
 
 @pytest.fixture

@@ -134,6 +134,8 @@ def create_httpx_async_client_spy_if_enabled(
             spy: MockType = mocker.patch(spy_target, side_effect=_wrapper)
             spy.httpx_calls_capture_path = spy_httpx_calls_capture_path
 
+            # TODO: respx.api.stop(clear=False, reset=False)
+
             return spy
         return None
 

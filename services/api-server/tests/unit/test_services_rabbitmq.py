@@ -87,11 +87,6 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return parse_obj_as(UserID, faker.pyint())
-
-
-@pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return parse_obj_as(ProjectID, faker.uuid4())
 
