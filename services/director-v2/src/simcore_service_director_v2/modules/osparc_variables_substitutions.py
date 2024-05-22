@@ -69,6 +69,39 @@ async def substitute_vendor_secrets_in_model(
     return result
 
 
+async def substitute_vendor_secrets_in_specs(
+    app: FastAPI,
+    specs: dict[str, Any],
+    *,
+    safe: bool = True,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: ProductName,
+) -> dict[str, Any]:
+    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
+    repo = get_repository(app, ServicesEnvironmentsRepository)
+
+    _logger.debug(
+        "substitute_vendor_secrets_in_specs detected_identifiers=%s",
+        resolver.get_identifiers(),
+    )
+
+    if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
+        # checks before to avoid unnecessary calls to pg
+        vendor_secrets = await repo.get_vendor_secrets(
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+
+        # resolve substitutions
+        resolver.set_substitutions(mappings=vendor_secrets)
+        new_specs: dict[str, Any] = resolver.run(safe=safe)
+        return new_specs
+
+    return deepcopy(specs)
+
+
 async def resolve_and_substitute_session_variables_in_model(
     app: FastAPI,
     model: BaseModel,
@@ -107,39 +140,6 @@ async def resolve_and_substitute_session_variables_in_model(
         raise_if_unresolved_osparc_variable_identifier_found(result)
 
     return result
-
-
-async def substitute_vendor_secrets_in_specs(
-    app: FastAPI,
-    specs: dict[str, Any],
-    *,
-    safe: bool = True,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    product_name: ProductName,
-) -> dict[str, Any]:
-    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
-    repo = get_repository(app, ServicesEnvironmentsRepository)
-
-    _logger.debug(
-        "substitute_vendor_secrets_in_specs detected_identifiers=%s",
-        resolver.get_identifiers(),
-    )
-
-    if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
-        # checks before to avoid unnecessary calls to pg
-        vendor_secrets = await repo.get_vendor_secrets(
-            service_key=service_key,
-            service_version=service_version,
-            product_name=product_name,
-        )
-
-        # resolve substitutions
-        resolver.set_substitutions(mappings=vendor_secrets)
-        new_specs: dict[str, Any] = resolver.run(safe=safe)
-        return new_specs
-
-    return deepcopy(specs)
 
 
 async def resolve_and_substitute_session_variables_in_specs(
