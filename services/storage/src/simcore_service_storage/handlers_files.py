@@ -290,11 +290,11 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_task_state_url = AnyUrl(
-        url=f"{request.url.scheme}://{ip_addr}:{port}{route}", scheme=request.url.scheme
-    )
+    complete_task_state_url = f"{request.url.scheme}://{ip_addr}:{port}{route}"
     response = FileUploadCompleteResponse(
-        links=FileUploadCompleteLinks(state=complete_task_state_url)
+        links=FileUploadCompleteLinks(
+            state=parse_obj_as(AnyUrl, complete_task_state_url)
+        )
     )
     return web.json_response(
         status=status.HTTP_202_ACCEPTED,
