@@ -19,10 +19,10 @@ from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_director_v2.modules.api_keys_manager import (
-    APIKeysManager,
-    _get_api_key_name,
+    _APIKeysManager,
+    _get_api_key_display_name,
     get_or_create_api_key,
-    safe_remove,
+    safe_remove_api_key,
 )
 
 pytest_simcore_core_services_selection = [
@@ -52,7 +52,7 @@ def user_id(faker: Faker) -> UserID:
 
 
 def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID, run_id: RunID):
-    api_key_names = {_get_api_key_name(node_id, run_id) for _ in range(1000)}
+    api_key_names = {_get_api_key_display_name(node_id, run_id) for _ in range(1000)}
     assert len(api_key_names) == 1
 
 
@@ -131,19 +131,19 @@ def api_keys_manager(
     mock_dynamic_sidecars_scheduler: None,
     redis_client_sdk: RedisClientSDK,
     app: FastAPI,
-) -> APIKeysManager:
-    manager = APIKeysManager(app, redis_client_sdk)
+) -> _APIKeysManager:
+    manager = _APIKeysManager(app, redis_client_sdk)
     manager.set_to_app_state(app)
     return manager
 
 
-async def _get_resource_count(api_keys_manager: APIKeysManager) -> int:
+async def _get_resource_count(api_keys_manager: _APIKeysManager) -> int:
     return len(await api_keys_manager._get_tracked())  # noqa: SLF001
 
 
 @pytest.mark.parametrize("is_used", [True])
 async def test_api_keys_workflow(
-    api_keys_manager: APIKeysManager,
+    api_keys_manager: _APIKeysManager,
     app: FastAPI,
     node_id: NodeID,
     run_id: RunID,
@@ -156,13 +156,13 @@ async def test_api_keys_workflow(
     assert isinstance(api_key, ApiKeyGet)
     assert await _get_resource_count(api_keys_manager) == 1
 
-    await safe_remove(app, node_id=node_id, run_id=run_id)
+    await safe_remove_api_key(app, node_id=node_id, run_id=run_id)
     assert await _get_resource_count(api_keys_manager) == 0
 
 
 @pytest.mark.parametrize("is_used", [False, True])
 async def test_background_cleanup(
-    api_keys_manager: APIKeysManager,
+    api_keys_manager: _APIKeysManager,
     app: FastAPI,
     node_id: NodeID,
     run_id: RunID,
