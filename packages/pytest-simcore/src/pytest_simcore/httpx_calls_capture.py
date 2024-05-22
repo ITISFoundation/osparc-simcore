@@ -221,11 +221,11 @@ def create_respx_mock_from_capture(
                 assert len(side_effects_callbacks) == len(captures)
 
             assert isinstance(respx_mocks, list)
-            for router in respx_mocks:
+            for respx_router_mock in respx_mocks:
                 assert (
-                    router._bases
+                    respx_router_mock._bases
                 ), "the base_url must be set before the fixture is extended"
-                router._assert_all_mocked = services_mocks_enabled
+                respx_router_mock._assert_all_mocked = services_mocks_enabled
 
             def _get_correct_mock_router_for_capture(
                 respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
@@ -258,8 +258,10 @@ def create_respx_mock_from_capture(
                     ),
                 )
 
-                router = _get_correct_mock_router_for_capture(respx_mocks, capture)
-                r = router.request(
+                respx_router_mock = _get_correct_mock_router_for_capture(
+                    respx_mocks, capture
+                )
+                r = respx_router_mock.request(
                     capture.method.upper(),
                     url=None,
                     path__regex=f"^{path_regex}$",
@@ -268,8 +270,13 @@ def create_respx_mock_from_capture(
                 assert r.side_effect == side_effect
                 side_effects.append(side_effect)
         else:
+            # Disabling mocks since it will use real API
+            for respx_router_mock in respx_mocks:
+                # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+                respx_router_mock.stop()
+
             print(
-                f"🔊 Skipping creation of respx.MockRouter from {capture_path.name} since --spy-httpx-calls-enabled=true"
+                f"🔊 Disabling mocks respx.MockRouter from {capture_path.name} since --spy-httpx-calls-enabled=true"
             )
 
         return respx_mocks
