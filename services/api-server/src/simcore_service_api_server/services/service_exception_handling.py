@@ -69,11 +69,7 @@ def backend_service_exception_handler(
     except ValidationError as exc:
         status_code = status.HTTP_502_BAD_GATEWAY
         detail = f"{service_name} service returned invalid response"
-        _logger.exception(
-            "Invalid data exchanged with %s service\n%s",
-            service_name,
-            f"{exc}",
-        )
+        _logger.exception("Invalid data exchanged with %s service", service_name)
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
