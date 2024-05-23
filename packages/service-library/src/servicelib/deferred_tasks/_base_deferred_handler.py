@@ -92,3 +92,12 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
     @classmethod
     async def cancel_deferred(cls, task_uid: TaskUID) -> None:
         """cancels a deferred"""
+
+    @classmethod
+    async def is_present(cls, task_uid: TaskUID) -> bool:  # type: ignore
+        """checks if deferred is still scheduled and has not finished
+
+        Returns:
+            `True` while task execution is not finished
+            `False` if task is no longer present
+        """

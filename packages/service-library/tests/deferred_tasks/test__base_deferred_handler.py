@@ -302,7 +302,6 @@ async def test_deferred_manager_cancelled(
         [int, timedelta, Callable[[], Awaitable[Any]]],
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ],
-    mocked_deferred_globals: dict[str, Any],
     caplog_debug_level: pytest.LogCaptureFixture,
     retry_count: int,
 ):
@@ -342,6 +341,41 @@ async def test_deferred_manager_cancelled(
         message=f"Found and cancelled run_deferred for '{task_uid}'",
         count=1,
     )
+
+
+async def test_deferred_manager_task_is_present(
+    get_mocked_deferred_handler: Callable[
+        [int, timedelta, Callable[[], Awaitable[Any]]],
+        tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
+    ]
+):
+    total_wait_time = 0.5
+
+    async def _run_for_short_period() -> None:
+        await asyncio.sleep(total_wait_time)
+
+    mocks, mocked_deferred_handler = get_mocked_deferred_handler(
+        0, timedelta(seconds=10), _run_for_short_period
+    )
+
+    await mocked_deferred_handler.start_deferred()
+
+    await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
+    mocks[MockKeys.START_DEFERRED].assert_called_once_with({})
+
+    await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_CREATED, count=1)
+    task_uid = TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
+
+    assert await mocked_deferred_handler.is_present(task_uid) is True
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.01),
+        stop=stop_after_delay(total_wait_time * 2),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert await mocked_deferred_handler.is_present(task_uid) is False
 
 
 @pytest.mark.parametrize("tasks_to_start", [100])

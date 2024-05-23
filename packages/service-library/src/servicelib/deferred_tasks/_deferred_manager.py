@@ -78,16 +78,28 @@ class _PatchCancelDeferred:
     def __init__(
         self,
         *,
-        class_unique_reference: ClassUniqueReference,
         original_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
         manager_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
     ) -> None:
-        self.class_unique_reference = class_unique_reference
         self.original_cancel_deferred = original_cancel_deferred
         self.manager_cancel_deferred = manager_cancel_deferred
 
     async def __call__(self, task_uid: TaskUID) -> None:
         await self.manager_cancel_deferred(task_uid)
+
+
+class _PatchIsPresent:
+    def __init__(
+        self,
+        *,
+        original_is_present: Callable[[TaskUID], Awaitable[bool]],
+        manager_is_present: Callable[[TaskUID], Awaitable[bool]],
+    ) -> None:
+        self.original_is_present = original_is_present
+        self.manager_is_present = manager_is_present
+
+    async def __call__(self, task_uid: TaskUID) -> bool:
+        return await self.manager_is_present(task_uid)
 
 
 def _log_state(task_state: TaskState, task_uid: TaskUID) -> None:
@@ -167,11 +179,18 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                     "Patching `cancel_deferred` for %s", class_unique_reference
                 )
                 patched_cancel_deferred = _PatchCancelDeferred(
-                    class_unique_reference=class_unique_reference,
                     original_cancel_deferred=subclass.cancel_deferred,
                     manager_cancel_deferred=self.__cancel_deferred,
                 )
                 subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
+
+            if not isinstance(subclass.is_present, _PatchIsPresent):
+                _logger.debug("Patching `is_present` for %s", class_unique_reference)
+                patched_is_present = _PatchIsPresent(
+                    original_is_present=subclass.is_present,
+                    manager_is_present=self.__is_present,
+                )
+                subclass.is_present = patched_is_present  # type: ignore
 
             self._patched_deferred_handlers[class_unique_reference] = subclass
 
@@ -196,6 +215,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 )
                 subclass.cancel_deferred = (  # type: ignore
                     subclass.cancel_deferred.original_cancel_deferred  # type: ignore
+                )
+
+            if isinstance(subclass.is_present, _PatchIsPresent):
+                _logger.debug(
+                    "Removing `is_present` patch for %s", class_unique_reference
+                )
+                subclass.is_present = (  # type: ignore
+                    subclass.is_present.original_is_present  # type: ignore
                 )
 
     def _get_global_queue_name(self, queue_name: _FastStreamRabbitQueue) -> str:
@@ -515,9 +542,13 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         _logger.info("Found and cancelled run_deferred for '%s'", task_uid)
         await self.__remove_task(task_uid, task_schedule)
 
+    async def __is_present(self, task_uid: TaskUID) -> bool:
+        task_schedule: TaskSchedule | None = await self._task_tracker.get(task_uid)
+        return task_schedule is not None
+
     def _register_subscribers(self) -> None:
         # Registers subscribers at runtime instead of import time.
-        # Enables for code reuse.
+        # Enables code reuse.
 
         # pylint:disable=unexpected-keyword-arg
         # pylint:disable=no-value-for-parameter
