@@ -55,5 +55,5 @@ class TaskSchedule(BaseModel):
             f"Populated by {TaskState.WORKER}. It always has a value after worker handles it."
             "Will be used "
         ),
-        discriminator="discriminator",
+        discriminator="result_type",
     )
