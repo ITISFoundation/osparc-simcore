@@ -96,15 +96,17 @@ async def create_cluster(
     return new_ec2_instance_data
 
 
-async def get_all_clusters(app: FastAPI) -> list[EC2InstanceData]:
+async def get_all_clusters(app: FastAPI) -> set[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
-    ec2_instance_data: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
-        key_names=[
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
-        ],
-        tags=all_created_ec2_instances_filter(app_settings),
-        state_names=["running"],
+    ec2_instance_data: set[EC2InstanceData] = set(
+        await get_ec2_client(app).get_instances(
+            key_names=[
+                app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
+            ],
+            tags=all_created_ec2_instances_filter(app_settings),
+            state_names=["running"],
+        )
     )
     return ec2_instance_data
 
