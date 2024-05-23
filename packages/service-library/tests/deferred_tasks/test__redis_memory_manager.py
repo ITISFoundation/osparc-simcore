@@ -76,6 +76,6 @@ async def test_memory_manager_list_all_entries(
 
     await logged_gather(*(_make_entry() for _ in range(count)))
 
-    entries = await memory_manager.list_all()
+    entries = await memory_manager.list()
     assert len(entries) == count
     assert entries == [task_schedule for _ in range(count)]

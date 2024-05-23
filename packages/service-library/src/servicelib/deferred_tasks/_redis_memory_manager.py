@@ -40,7 +40,7 @@ class RedisMemoryManager(BaseMemoryManager):
     async def remove(self, task_uid: TaskUID) -> None:
         await self.redis_sdk.redis.delete(_get_key(task_uid))
 
-    async def list_all(self) -> list[TaskSchedule]:
+    async def list(self) -> list[TaskSchedule]:
         return await logged_gather(
             *[
                 self._get_raw(x)

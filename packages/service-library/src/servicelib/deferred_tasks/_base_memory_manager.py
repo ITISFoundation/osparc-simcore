@@ -24,5 +24,5 @@ class BaseMemoryManager(ABC):
         """removes the entry for the provided task unique id"""
 
     @abstractmethod
-    async def list_all(self) -> list[TaskSchedule]:
+    async def list(self) -> list[TaskSchedule]:
         """returns a list with all the currently existing entries"""
