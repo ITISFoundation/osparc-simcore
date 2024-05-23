@@ -282,7 +282,7 @@ async def test_deferred_manager_raised_error(
         await _assert_log_message(
             caplog_debug_level,
             message=f"Schedule retry attempt for task_uid '{task_uid}'",
-            count=retry_count - 1,
+            count=retry_count,
         )
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
