@@ -1,6 +1,6 @@
 """ Safe access to all data resources distributed with this package
 
-See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
+https://docs.python.org/3.11/library/importlib.resources.html#module-importlib.resources
 """
 
 import importlib.resources
@@ -12,7 +12,7 @@ from pathlib import Path
 class DataResourcesFacade:
     """Facade to access data resources installed with a distribution
 
-    - Built on top of pkg_resources
+    - Built on top of importlib.resources
 
     Resources are read-only files/folders
     """
