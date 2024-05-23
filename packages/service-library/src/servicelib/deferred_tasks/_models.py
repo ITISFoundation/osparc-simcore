@@ -1,8 +1,9 @@
 from typing import Any, Literal, TypeAlias
 
+from models_library.basic_types import IDStr
 from pydantic import BaseModel
 
-TaskUID: TypeAlias = str  # Unique identifier provided by th MemoryManager
+TaskUID: TypeAlias = IDStr  # Unique identifier provided by th MemoryManager
 ClassUniqueReference: TypeAlias = str
 
 
