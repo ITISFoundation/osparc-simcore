@@ -181,9 +181,7 @@ async def _process_heartbeat_event(
         _logger.info("Nothing to update: %s", msg)
         return
 
-    if running_service.wallet_id:
-        assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
-
+    if running_service.wallet_id and running_service.pricing_unit_cost is not None:
         # Compute currently used credits
         computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
@@ -265,9 +263,7 @@ async def _process_stop_event(
         _logger.error("Nothing to update. This should not happen investigate.")
         return
 
-    if running_service.wallet_id:
-        assert isinstance(running_service.pricing_unit_cost, Decimal)  # nosec
-
+    if running_service.wallet_id and running_service.pricing_unit_cost is not None:
         # Compute currently used credits
         computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
