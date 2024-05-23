@@ -8,12 +8,12 @@ ClassUniqueReference: TypeAlias = str
 
 
 class TaskResultSuccess(BaseModel):
-    discriminator: Literal["success"] = "success"
+    result_type: Literal["success"] = "success"
     value: Any
 
 
 class TaskResultError(BaseModel):
-    discriminator: Literal["error"] = "error"
+    result_type: Literal["error"] = "error"
     # serializes an error form the worker: PC we need to talk on how to do this a bit better
     error: str
     str_traceback: str
@@ -23,7 +23,7 @@ class TaskResultError(BaseModel):
 
 
 class TaskResultCancelledError(BaseModel):
-    discriminator: Literal["cancelled"] = "cancelled"
+    result_type: Literal["cancelled"] = "cancelled"
 
 
 TaskExecutionResult: TypeAlias = (
