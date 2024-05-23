@@ -51,7 +51,7 @@ async def test_task_tracker_workflow(
 ):
     task_tracker = RedisTaskTracker(scheduling_redis_sdk)
 
-    task_uid: TaskUID = await task_tracker.get_task_unique_identifier()
+    task_uid: TaskUID = await task_tracker.get_new_unique_identifier()
 
     assert await task_tracker.get(task_uid) is None
 
@@ -71,7 +71,7 @@ async def test_task_tracker_list_all_entries(
     task_tracker = RedisTaskTracker(scheduling_redis_sdk)
 
     async def _make_entry() -> None:
-        task_uid = await task_tracker.get_task_unique_identifier()
+        task_uid = await task_tracker.get_new_unique_identifier()
         await task_tracker.save(task_uid, task_schedule)
 
     await logged_gather(*(_make_entry() for _ in range(count)))

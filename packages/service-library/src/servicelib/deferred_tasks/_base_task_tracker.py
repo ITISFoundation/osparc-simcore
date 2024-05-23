@@ -6,8 +6,8 @@ from ._task_schedule import TaskSchedule
 
 class BaseTaskTracker(ABC):
     @abstractmethod
-    async def get_task_unique_identifier(self) -> TaskUID:
-        """provides a unique identifier for the task"""
+    async def get_new_unique_identifier(self) -> TaskUID:
+        """provides a unique identifier for a new task"""
 
     @abstractmethod
     async def get(self, task_uid: TaskUID) -> TaskSchedule | None:

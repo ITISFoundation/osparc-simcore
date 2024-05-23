@@ -21,7 +21,7 @@ class RedisTaskTracker(BaseTaskTracker):
     def __init__(self, redis_sdk: RedisClientSDKHealthChecked) -> None:
         self.redis_sdk = redis_sdk
 
-    async def get_task_unique_identifier(self) -> TaskUID:
+    async def get_new_unique_identifier(self) -> TaskUID:
         candidate_already_exists = True
         while candidate_already_exists:
             candidate = f"{uuid4()}"

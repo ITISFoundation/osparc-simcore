@@ -236,7 +236,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             start_context,
         )
 
-        task_uid = await self._task_tracker.get_task_unique_identifier()
+        task_uid = await self._task_tracker.get_new_unique_identifier()
         subclass = self.__get_subclass(class_unique_reference)
         deferred_context = self.__get_deferred_context(start_context)
 
