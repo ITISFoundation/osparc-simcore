@@ -57,44 +57,38 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
     @abstractmethod
     async def start_deferred(cls, **kwargs) -> StartContext:
         """
-        helper function to be overwritten by the user and generates
-        the data passed to run_deferred.
-
-        Inside ``**kwargs`` the ``globals_for_start_context`` are also injected in addition
-        to any user provided fields when invoked from the subclass.
-
-        hast to returns: a context context object used during ``run_deferred`` and
-            to process the result inside ``deferred_result``
+        Used to start a deferred.
+        These values will be passed to ``run_deferred`` when it's ran.
         """
-        # NOTE: intercepted by ``DeferredManager``
 
     @classmethod
     async def on_deferred_created(
         cls, task_uid: TaskUID, context: DeferredContext
     ) -> None:
-        """return after deferred was scheduled"""
+        """called after deferred was scheduled"""
 
     @classmethod
     @abstractmethod
     async def run_deferred(cls, context: DeferredContext) -> ResultType:
-        """Code to be run in the background"""
+        """code to be ran by a worker"""
 
     @classmethod
     @abstractmethod
     async def on_deferred_result(
         cls, result: ResultType, context: DeferredContext
     ) -> None:
-        """Called in case `run_deferred` ended and provided a successful result"""
+        """called when ``run_deferred`` provided a successful result"""
 
     @classmethod
     async def on_finished_with_error(
         cls, error: TaskResultError, context: DeferredContext
     ) -> None:
         """
+        called when ``run_deferred`` code raises an error
+
         NOTE: by design the default action is to do nothing
         """
 
     @classmethod
     async def cancel_deferred(cls, task_uid: TaskUID) -> None:
-        """User can call this method to cancel the task"""
-        # NOTE: intercepted by ``DeferredManager``
+        """cancels a deferred"""
