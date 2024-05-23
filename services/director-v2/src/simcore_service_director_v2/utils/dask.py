@@ -27,7 +27,7 @@ from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
@@ -53,7 +53,6 @@ from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskJobID
 from ..modules.osparc_variables_substitutions import (
-    resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -359,7 +358,7 @@ async def compute_task_envs(
             service_version=ServiceVersion(node_image.tag),
             product_name=product_name,
         )
-        session_resolved_envs = await resolve_and_substitute_session_variables_in_specs(
+        resolved_envs = await resolve_and_substitute_session_variables_in_specs(
             app,
             vendor_substituted_envs,
             user_id=user_id,
@@ -367,17 +366,6 @@ async def compute_task_envs(
             project_id=project_id,
             node_id=node_id,
         )
-
-        resolved_envs = await resolve_and_substitute_service_lifespan_variables_in_specs(
-            app=app,
-            specs=session_resolved_envs,
-            safe=True,
-            product_name=product_name,
-            user_id=user_id,
-            node_id=node_id,
-            run_id=RunID.create(),  # FIXME: needs to pass job_id and call safe_remove_api_key after job is done as well!
-        )
-
         # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
         # we currently do not validate as we are using illegal docker key names with underscores
         task_envs = cast(ContainerEnvsDict, resolved_envs)
