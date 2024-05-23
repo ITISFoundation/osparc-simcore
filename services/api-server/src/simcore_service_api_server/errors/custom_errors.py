@@ -1,7 +1,7 @@
 from fastapi import Request, status
 from starlette.responses import JSONResponse
 
-from ...models.custom_errors import (
+from ..models.custom_errors import (
     CustomBaseError,
     InsufficientCreditsError,
     MissingWalletError,

@@ -6,7 +6,7 @@ from servicelib.error_codes import create_error_code
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ...models.schemas.errors import ErrorGet
+from ..models.schemas.errors import ErrorGet
 
 
 def create_error_json_response(*errors, status_code: int) -> JSONResponse:

@@ -2,7 +2,7 @@ from fastapi import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ...services.log_streaming import (
+from ..services.log_streaming import (
     LogDistributionBaseException,
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
