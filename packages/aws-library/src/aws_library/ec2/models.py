@@ -84,13 +84,16 @@ EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
 @dataclass(frozen=True)
 class EC2InstanceData:
     launch_time: datetime.datetime
-    id: str  # noqa: A003
+    id: str
     aws_private_dns: InstancePrivateDNSName
     aws_public_ip: str | None
-    type: InstanceTypeType  # noqa: A003
+    type: InstanceTypeType
     state: InstanceStateNameType
     resources: Resources
     tags: EC2Tags
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
 @dataclass(frozen=True)
