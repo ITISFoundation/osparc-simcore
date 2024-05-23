@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 
+from ...errors.http_error import create_error_json_response
 from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -33,7 +34,6 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 
