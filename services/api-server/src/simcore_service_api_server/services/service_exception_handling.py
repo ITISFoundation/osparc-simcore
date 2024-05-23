@@ -12,6 +12,7 @@ from ..models.schemas.errors import ErrorGet
 
 _logger = logging.getLogger(__name__)
 
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
 
 DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_429_TOO_MANY_REQUESTS: {
@@ -68,11 +69,7 @@ def backend_service_exception_handler(
     except ValidationError as exc:
         status_code = status.HTTP_502_BAD_GATEWAY
         detail = f"{service_name} service returned invalid response"
-        _logger.exception(
-            "Invalid data exchanged with %s service\n%s",
-            service_name,
-            f"{exc}",
-        )
+        _logger.exception("Invalid data exchanged with %s service", service_name)
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
@@ -98,11 +95,10 @@ def backend_service_exception_handler(
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             _logger.exception(
-                "Converted status code %s from %s service to status code %s\n%s",
+                "Converted status code %s from %s service to status code %s",
                 f"{exc.response.status_code}",
                 service_name,
                 f"{status_code}",
-                f"{exc}",
             )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers

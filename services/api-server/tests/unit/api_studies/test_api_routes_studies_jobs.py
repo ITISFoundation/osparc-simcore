@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import json
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 from uuid import UUID
@@ -16,12 +15,14 @@ import respx
 from faker import Faker
 from fastapi import status
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_models import (
+    CreateRespxMockCallback,
+    HttpApiCallCaptureModel,
+)
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import Study, StudyID
-from unit.conftest import SideEffectCallback
 
 
 @pytest.mark.xfail(reason="Still not implemented")
@@ -117,10 +118,7 @@ async def test_start_stop_delete_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
@@ -149,10 +147,13 @@ async def test_start_stop_delete_study_job(
         body["id"] = path_param_job_id
         return body
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        capture_file,
-        [_side_effect_no_project_id]
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=capture_file,
+        side_effects_callbacks=[_side_effect_no_project_id]
         + [_side_effect_with_project_id] * 3
         + [_side_effect_no_project_id],
     )
@@ -191,10 +192,7 @@ async def test_create_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
@@ -219,10 +217,13 @@ async def test_create_study_job(
 
     _default_side_effect.patch_called = False
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        _capture_file,
-        [_default_side_effect] * 5,
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=_capture_file,
+        side_effects_callbacks=[_default_side_effect] * 5,
     )
 
     response = await client.post(
