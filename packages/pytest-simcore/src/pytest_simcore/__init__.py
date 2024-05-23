@@ -7,10 +7,8 @@ import pytest
 __version__: str = version("pytest-simcore")
 
 
-def pytest_addoption(parser):
-    simcore_group = parser.getgroup(
-        "simcore", description="options related to pytest simcore"
-    )
+def pytest_addoption(parser: pytest.Parser):
+    simcore_group = parser.getgroup("simcore", description="pytest-simcore options")
     simcore_group.addoption(
         "--keep-docker-up",
         action="store_true",

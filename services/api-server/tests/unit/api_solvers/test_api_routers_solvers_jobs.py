@@ -32,16 +32,6 @@ def bucket_name():
 
 
 @pytest.fixture
-def project_id(faker: Faker) -> str:
-    return faker.uuid4()
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> str:
-    return faker.uuid4()
-
-
-@pytest.fixture
 def log_zip_path(faker: Faker, tmp_path: Path, project_id: str, node_id: str) -> Path:
     # a log file
     log_path = tmp_path / f"{project_id}-{node_id}.log"
