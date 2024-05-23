@@ -10,6 +10,7 @@ ResultType = TypeVar("ResultType")
 
 StartContext: TypeAlias = dict[str, Any]
 GlobalsContext: TypeAlias = dict[str, Any]
+
 # composed by merging `GlobalsContext` and `StartContext`
 DeferredContext: TypeAlias = dict[str, Any]
 
