@@ -14,7 +14,7 @@ from models_library.utils.enums import StrAutoEnum
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks._base_deferred_handler import (
     BaseDeferredHandler,
-    FullStartContext,
+    DeferredContext,
     StartContext,
 )
 from servicelib.deferred_tasks._deferred_manager import (
@@ -74,7 +74,7 @@ async def deferred_manager(
     manager = DeferredManager(
         rabbit_service,
         redis_sdk,
-        globals_for_start_context=mocked_deferred_globals,
+        globals_for_deferred_context=mocked_deferred_globals,
         max_workers=10,
     )
 
@@ -99,13 +99,13 @@ async def get_mocked_deferred_handler(
 
         class ObservableDeferredHandler(BaseDeferredHandler[Any]):
             @classmethod
-            async def get_retries(cls, start_context: FullStartContext) -> int:
-                mocks[MockKeys.GET_RETRIES](retry_count, start_context)
+            async def get_retries(cls, context: DeferredContext) -> int:
+                mocks[MockKeys.GET_RETRIES](retry_count, context)
                 return retry_count
 
             @classmethod
-            async def get_timeout(cls, start_context: FullStartContext) -> timedelta:
-                mocks[MockKeys.GET_TIMEOUT](timeout, start_context)
+            async def get_timeout(cls, context: DeferredContext) -> timedelta:
+                mocks[MockKeys.GET_TIMEOUT](timeout, context)
                 return timeout
 
             @classmethod
@@ -115,27 +115,27 @@ async def get_mocked_deferred_handler(
 
             @classmethod
             async def on_deferred_created(
-                cls, task_uid: TaskUID, start_context: FullStartContext
+                cls, task_uid: TaskUID, context: DeferredContext
             ) -> None:
-                mocks[MockKeys.ON_DEFERRED_CREATED](task_uid, start_context)
+                mocks[MockKeys.ON_DEFERRED_CREATED](task_uid, context)
 
             @classmethod
-            async def run_deferred(cls, start_context: FullStartContext) -> Any:
+            async def run_deferred(cls, context: DeferredContext) -> Any:
                 result = await run_deferred()
-                mocks[MockKeys.RUN_DEFERRED](start_context)
+                mocks[MockKeys.RUN_DEFERRED](context)
                 return result
 
             @classmethod
             async def on_deferred_result(
-                cls, result: Any, start_context: FullStartContext
+                cls, result: Any, context: DeferredContext
             ) -> None:
-                mocks[MockKeys.ON_DEFERRED_RESULT](result, start_context)
+                mocks[MockKeys.ON_DEFERRED_RESULT](result, context)
 
             @classmethod
             async def on_finished_with_error(
-                cls, error: TaskResultError, start_context: FullStartContext
+                cls, error: TaskResultError, context: DeferredContext
             ) -> None:
-                mocks[MockKeys.ON_FINISHED_WITH_ERROR](error, start_context)
+                mocks[MockKeys.ON_FINISHED_WITH_ERROR](error, context)
 
         deferred_manager.patch_based_deferred_handlers()
 
@@ -216,13 +216,13 @@ async def test_deferred_manager_result_ok(
     start_kwargs = {f"start_with{i}": f"par-{i}" for i in range(6)}
     await mocked_deferred_handler.start_deferred(**start_kwargs)
 
-    start_context = {**mocked_deferred_globals, **start_kwargs}
+    context = {**mocked_deferred_globals, **start_kwargs}
 
     await _assert_mock_call(mocks, key=MockKeys.GET_RETRIES, count=1)
-    mocks[MockKeys.GET_RETRIES].assert_called_with(retry_count, start_context)
+    mocks[MockKeys.GET_RETRIES].assert_called_with(retry_count, context)
 
     await _assert_mock_call(mocks, key=MockKeys.GET_TIMEOUT, count=1)
-    mocks[MockKeys.GET_TIMEOUT].assert_called_with(timeout, start_context)
+    mocks[MockKeys.GET_TIMEOUT].assert_called_with(timeout, context)
 
     await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
     mocks[MockKeys.START_DEFERRED].assert_called_with(start_kwargs)
@@ -231,11 +231,11 @@ async def test_deferred_manager_result_ok(
     assert TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=1)
-    mocks[MockKeys.RUN_DEFERRED].assert_called_once_with(start_context)
+    mocks[MockKeys.RUN_DEFERRED].assert_called_once_with(context)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=1)
     mocks[MockKeys.ON_DEFERRED_RESULT].assert_called_once_with(
-        run_deferred_return, start_context
+        run_deferred_return, context
     )
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)

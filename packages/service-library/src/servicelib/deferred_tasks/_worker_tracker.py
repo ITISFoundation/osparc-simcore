@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import NonNegativeInt
 
-from ._base_deferred_handler import BaseDeferredHandler, FullStartContext
+from ._base_deferred_handler import BaseDeferredHandler, DeferredContext
 from ._models import (
     TaskExecutionResult,
     TaskResultCancelledError,
@@ -41,12 +41,12 @@ class WorkerTracker:
         self,
         deferred_handler: type[BaseDeferredHandler],
         task_uid: TaskUID,
-        full_start_context: FullStartContext,
+        deferred_context: DeferredContext,
         timeout: timedelta,
     ) -> TaskExecutionResult:
         self._tasks[task_uid] = task = asyncio.create_task(
             _get_task_with_timeout(
-                deferred_handler.run_deferred(full_start_context), timeout=timeout
+                deferred_handler.run_deferred(deferred_context), timeout=timeout
             )
         )
 

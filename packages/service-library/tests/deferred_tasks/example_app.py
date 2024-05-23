@@ -10,8 +10,8 @@ from uuid import uuid4
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
+    DeferredContext,
     DeferredManager,
-    FullStartContext,
     StartContext,
     TaskUID,
 )
@@ -28,7 +28,7 @@ _logger = logging.getLogger(__name__)
 
 class ExampleDeferredHandler(BaseDeferredHandler[str]):
     @classmethod
-    async def get_timeout(cls, start_context: FullStartContext) -> timedelta:
+    async def get_timeout(cls, context: DeferredContext) -> timedelta:
         return timedelta(seconds=60)
 
     @classmethod
@@ -39,22 +39,20 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 
     @classmethod
     async def on_deferred_created(
-        cls, task_uid: TaskUID, start_context: FullStartContext
+        cls, task_uid: TaskUID, context: DeferredContext
     ) -> None:
-        in_memory_lists: InMemoryLists = start_context["in_memory_lists"]
+        in_memory_lists: InMemoryLists = context["in_memory_lists"]
         await in_memory_lists.append_to("scheduled", task_uid)
 
     @classmethod
-    async def run_deferred(cls, start_context: FullStartContext) -> str:
-        sleep_duration: float = start_context["sleep_duration"]
+    async def run_deferred(cls, context: DeferredContext) -> str:
+        sleep_duration: float = context["sleep_duration"]
         await asyncio.sleep(sleep_duration)
-        return start_context["sequence_id"]
+        return context["sequence_id"]
 
     @classmethod
-    async def on_deferred_result(
-        cls, result: str, start_context: FullStartContext
-    ) -> None:
-        in_memory_lists: InMemoryLists = start_context["in_memory_lists"]
+    async def on_deferred_result(cls, result: str, context: DeferredContext) -> None:
+        in_memory_lists: InMemoryLists = context["in_memory_lists"]
         await in_memory_lists.append_to("results", result)
 
 
@@ -91,7 +89,7 @@ class ExampleApp:
         self._manager = DeferredManager(
             rabbit_settings,
             self._redis_client,
-            globals_for_start_context={"in_memory_lists": in_memory_lists},
+            globals_for_deferred_context={"in_memory_lists": in_memory_lists},
             max_workers=max_workers,
         )
 

@@ -16,8 +16,8 @@ from settings_library.rabbit import RabbitSettings
 
 from ._base_deferred_handler import (
     BaseDeferredHandler,
+    DeferredContext,
     DeferredManagerContext,
-    FullStartContext,
     StartContext,
 )
 from ._base_memory_manager import BaseMemoryManager
@@ -106,7 +106,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         rabbit_settings: RabbitSettings,
         scheduler_redis_sdk: RedisClientSDKHealthChecked,
         *,
-        globals_for_start_context: DeferredManagerContext,
+        globals_for_deferred_context: DeferredManagerContext,
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
         delay_when_requeuing_message: timedelta = _DEFAULT_DELAY_BEFORE_NACK,
     ) -> None:
@@ -118,7 +118,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._worker_tracker = WorkerTracker(max_workers)
         self.delay_when_requeuing_message = delay_when_requeuing_message
 
-        self.globals_for_start_context = globals_for_start_context
+        self.globals_for_deferred_context = globals_for_deferred_context
 
         self._patched_deferred_handlers: dict[
             ClassUniqueReference, type[BaseDeferredHandler]
@@ -208,8 +208,8 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     ) -> type[BaseDeferredHandler]:
         return self._patched_deferred_handlers[class_unique_reference]
 
-    def __get_start_context(self, start_context: StartContext) -> FullStartContext:
-        return {**self.globals_for_start_context, **start_context}
+    def __get_start_context(self, start_context: StartContext) -> DeferredContext:
+        return {**self.globals_for_deferred_context, **start_context}
 
     async def __publish_to_queue(
         self, task_uid: TaskUID, queue: _FastStreamRabbitQueue

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from servicelib.deferred_tasks._base_deferred_handler import FullStartContext
+from servicelib.deferred_tasks._base_deferred_handler import DeferredContext
 from servicelib.deferred_tasks._deferred_manager import (
     _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
 )
@@ -78,17 +78,17 @@ async def __h_return_constant_integer(full_start_context) -> int:
     return 42
 
 
-async def __h_sum_numbers(full_start_context: FullStartContext) -> float:
-    return full_start_context["first"] + full_start_context["second"]
+async def __h_sum_numbers(deferred_context: DeferredContext) -> float:
+    return deferred_context["first"] + deferred_context["second"]
 
 
-async def __h_stringify(full_start_context: FullStartContext) -> str:
+async def __h_stringify(deferred_context: DeferredContext) -> str:
 
-    return f"{full_start_context['name']} is {full_start_context['age']} years old"
+    return f"{deferred_context['name']} is {deferred_context['age']} years old"
 
 
-async def __h_do_nothing(full_start_context: FullStartContext) -> None:
-    _ = full_start_context
+async def __h_do_nothing(deferred_context: DeferredContext) -> None:
+    _ = deferred_context
 
 
 @pytest.mark.parametrize(
@@ -105,7 +105,7 @@ async def test_returns_task_result_success(
     worker_tracker: WorkerTracker,
     task_uid: TaskUID,
     handler: Callable[..., Awaitable[Any]],
-    context: FullStartContext,
+    context: DeferredContext,
     expected_result: Any,
 ):
 
@@ -113,7 +113,7 @@ async def test_returns_task_result_success(
     result = await worker_tracker.handle_run_deferred(
         deferred_handler,  # type: ignore
         task_uid=task_uid,
-        full_start_context=context,
+        deferred_context=context,
         timeout=timedelta(seconds=0.1),
     )
     assert isinstance(result, TaskResultSuccess)
@@ -125,7 +125,7 @@ async def test_returns_task_result_error(
     worker_tracker: WorkerTracker,
     task_uid: TaskUID,
 ):
-    async def _handler(full_start_context: FullStartContext) -> None:
+    async def _handler(deferred_context: DeferredContext) -> None:
         msg = "raising an error as expected"
         raise RuntimeError(msg)
 
@@ -133,7 +133,7 @@ async def test_returns_task_result_error(
     result = await worker_tracker.handle_run_deferred(
         deferred_handler,  # type: ignore
         task_uid=task_uid,
-        full_start_context={},
+        deferred_context={},
         timeout=timedelta(seconds=0.1),
     )
     assert isinstance(result, TaskResultError)
@@ -145,7 +145,7 @@ async def test_returns_task_result_cancelled_error(
     worker_tracker: WorkerTracker,
     task_uid: TaskUID,
 ):
-    async def _handler(full_start_context: FullStartContext) -> None:
+    async def _handler(deferred_context: DeferredContext) -> None:
         await asyncio.sleep(1e6)
 
     deferred_handler = _get_mock_deferred_handler(_handler)
@@ -155,7 +155,7 @@ async def test_returns_task_result_cancelled_error(
             worker_tracker.handle_run_deferred(
                 deferred_handler,  # type: ignore
                 task_uid=task_uid,
-                full_start_context={},
+                deferred_context={},
                 timeout=timedelta(seconds=100),
             )
         )
