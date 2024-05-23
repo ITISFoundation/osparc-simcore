@@ -10,7 +10,7 @@ import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -524,7 +524,7 @@ async def create_service(
         diff = DeepDiff(
             task_template,
             service.Spec.TaskTemplate.dict(exclude_unset=True),
-            exclude_paths=excluded_paths,
+            exclude_paths=list(excluded_paths),
         )
         assert not diff, f"{diff}"
         assert service.Spec.Labels == base_labels
@@ -686,6 +686,7 @@ def cluster() -> Callable[..., Cluster]:
                 pending_ec2s=[],
                 broken_ec2s=[],
                 disconnected_nodes=[],
+                terminating_nodes=[],
                 terminated_instances=[],
             ),
             **cluter_overrides,
@@ -783,7 +784,7 @@ def patch_ec2_client_start_aws_instances_min_number_of_instances(
 def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
     list_of_instances = [
         EC2InstanceType(
-            name=faker.pystr(),
+            name=random.choice(get_args(InstanceTypeType)),  # noqa: S311
             resources=Resources(cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)

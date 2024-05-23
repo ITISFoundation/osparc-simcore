@@ -44,6 +44,8 @@ from simcore_service_autoscaling.modules.dask import DaskTaskResources
 from simcore_service_autoscaling.modules.docker import get_docker_client
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
+    _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
@@ -581,7 +583,40 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # 4. now scaling down, as we deleted all the tasks
     #
     del dask_future
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mock_dask_is_worker_connected.assert_called_once()
+    mock_dask_is_worker_connected.reset_mock()
+    mock_dask_get_worker_has_results_in_memory.assert_called()
+    assert mock_dask_get_worker_has_results_in_memory.call_count == 2
+    mock_dask_get_worker_has_results_in_memory.reset_mock()
+    mock_dask_get_worker_used_resources.assert_called()
+    assert mock_dask_get_worker_used_resources.call_count == 2
+    mock_dask_get_worker_used_resources.reset_mock()
+    # the node shall be waiting before draining
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_called_once_with(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_attached_node.Spec.Labels
+        | {
+            _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=True,
+    )
+    mock_docker_tag_node.reset_mock()
 
+    # now update the fake node to have the required label as expected
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    fake_attached_node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
+        arrow.utcnow()
+        .shift(
+            seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING.total_seconds()
+            - 1
+        )
+        .datetime.isoformat()
+    )
+
+    # now it will drain
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mock_dask_is_worker_connected.assert_called_once()
     mock_dask_is_worker_connected.reset_mock()
@@ -598,6 +633,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
         | {
+            _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
         },
@@ -655,6 +691,36 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
     ).isoformat()
+    # first making sure the node is drained, then terminate it after a delay to let it drain
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mocked_docker_remove_node.assert_not_called()
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+    mock_docker_tag_node.assert_called_once_with(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_attached_node.Spec.Labels
+        | {
+            _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: mock.ANY,
+        },
+        available=False,
+    )
+    mock_docker_tag_node.reset_mock()
+    # set the fake node to drain
+    fake_attached_node.Spec.Availability = Availability.drain
+    fake_attached_node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
+        arrow.utcnow()
+        .shift(
+            seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION.total_seconds()
+            - 1
+        )
+        .datetime.isoformat()
+    )
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_called_once_with(
         mock.ANY, nodes=[fake_attached_node], force=True
