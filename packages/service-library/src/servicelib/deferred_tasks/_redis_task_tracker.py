@@ -9,12 +9,12 @@ from ._base_task_tracker import BaseTaskTracker
 from ._models import TaskUID
 from ._task_schedule import TaskSchedule
 
-_MEMORY_MANAGER_PREFIX: Final[str] = "mm:"
+_TASK_TRACKER_PREFIX: Final[str] = "mm:"
 _MAX_REDIS_CONCURRENCY: Final[NonNegativeInt] = 10
 
 
 def _get_key(task_uid: TaskUID) -> str:
-    return f"{_MEMORY_MANAGER_PREFIX}{task_uid}"
+    return f"{_TASK_TRACKER_PREFIX}{task_uid}"
 
 
 class RedisTaskTracker(BaseTaskTracker):
@@ -48,7 +48,7 @@ class RedisTaskTracker(BaseTaskTracker):
             *[
                 self._get_raw(x)
                 async for x in self.redis_sdk.redis.scan_iter(
-                    match=f"{_MEMORY_MANAGER_PREFIX}*"
+                    match=f"{_TASK_TRACKER_PREFIX}*"
                 )
             ],
             max_concurrency=_MAX_REDIS_CONCURRENCY,

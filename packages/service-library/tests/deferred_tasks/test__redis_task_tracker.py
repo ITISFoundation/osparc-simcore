@@ -46,7 +46,7 @@ def task_schedule() -> TaskSchedule:
     )
 
 
-async def test_memory_manager_workflow(
+async def test_task_tracker_workflow(
     scheduling_redis_sdk: RedisClientSDKHealthChecked, task_schedule: TaskSchedule
 ):
     task_tracker = RedisTaskTracker(scheduling_redis_sdk)
@@ -63,7 +63,7 @@ async def test_memory_manager_workflow(
 
 
 @pytest.mark.parametrize("count", [0, 1, 10, 100])
-async def test_memory_manager_list_all_entries(
+async def test_task_tracker_list_all_entries(
     scheduling_redis_sdk: RedisClientSDKHealthChecked,
     task_schedule: TaskSchedule,
     count: int,

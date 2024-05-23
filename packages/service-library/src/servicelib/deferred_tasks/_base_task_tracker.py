@@ -5,8 +5,6 @@ from ._task_schedule import TaskSchedule
 
 
 class BaseTaskTracker(ABC):
-    """Basis for implementing memory management to keep track ledger entries"""
-
     @abstractmethod
     async def get_task_unique_identifier(self) -> TaskUID:
         """provides a unique identifier for the task"""
