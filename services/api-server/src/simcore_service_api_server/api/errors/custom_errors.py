@@ -10,11 +10,11 @@ class CustomBaseError(Exception):
     pass
 
 
-class InsufficientCredits(CustomBaseError):
+class InsufficientCreditsError(CustomBaseError):
     pass
 
 
-class MissingWallet(CustomBaseError):
+class MissingWalletError(CustomBaseError):
     pass
 
 
@@ -23,11 +23,11 @@ class ApplicationSetupError(CustomBaseError):
 
 
 async def custom_error_handler(_: Request, exc: CustomBaseError):
-    if isinstance(exc, InsufficientCredits):
+    if isinstance(exc, InsufficientCreditsError):
         return JSONResponse(
             status_code=status.HTTP_402_PAYMENT_REQUIRED, content=f"{exc}"
         )
-    if isinstance(exc, MissingWallet):
+    if isinstance(exc, MissingWalletError):
         return JSONResponse(
             status_code=status.HTTP_424_FAILED_DEPENDENCY, content=f"{exc}"
         )

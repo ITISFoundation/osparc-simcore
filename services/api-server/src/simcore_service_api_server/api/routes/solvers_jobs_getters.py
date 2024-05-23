@@ -41,7 +41,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCredits, MissingWallet
+from ..errors.custom_errors import InsufficientCreditsError, MissingWalletError
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import raise_if_job_not_associated_with_solver
@@ -233,11 +233,11 @@ async def get_job_outputs(
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
             msg = f"Job {project.uuid} does not have an associated wallet."
-            raise MissingWallet(msg)
+            raise MissingWalletError(msg)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         if wallet_with_credits.available_credits < 0.0:
             msg = f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
-            raise InsufficientCredits(msg)
+            raise InsufficientCreditsError(msg)
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
