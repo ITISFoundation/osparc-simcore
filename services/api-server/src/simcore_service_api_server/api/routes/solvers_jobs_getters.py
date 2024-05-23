@@ -23,6 +23,7 @@ from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
@@ -41,7 +42,6 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCreditsError, MissingWalletError
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import raise_if_job_not_associated_with_solver

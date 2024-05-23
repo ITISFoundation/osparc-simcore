@@ -11,7 +11,6 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from .._meta import API_VERSION, API_VTAG
-from ..api.errors.custom_errors import CustomBaseError, custom_error_handler
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -21,6 +20,7 @@ from ..api.errors.log_handling_error import log_handling_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
+from ..models.custom_errors import CustomBaseError, custom_error_handler
 from ..services import catalog, director_v2, storage, webserver
 from ..services.log_streaming import LogDistributionBaseException
 from ..services.rabbitmq import setup_rabbitmq
