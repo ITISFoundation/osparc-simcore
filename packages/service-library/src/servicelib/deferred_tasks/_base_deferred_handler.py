@@ -8,10 +8,10 @@ from ._models import ClassUniqueReference, TaskResultError, TaskUID
 
 ResultType = TypeVar("ResultType")
 
-UserStartContext: TypeAlias = dict[str, Any]
+StartContext: TypeAlias = dict[str, Any]
 DeferredManagerContext: TypeAlias = dict[str, Any]
 
-# composed by the `DeferredManagerContext` and `UserStartContext`
+# composed by the `DeferredManagerContext` and `StartContext`
 FullStartContext: TypeAlias = dict[str, Any]
 
 
@@ -55,7 +55,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     @abstractmethod
-    async def start_deferred(cls, **kwargs) -> UserStartContext:
+    async def start_deferred(cls, **kwargs) -> StartContext:
         """
         helper function to be overwritten by the user and generates
         the data passed to run_deferred.

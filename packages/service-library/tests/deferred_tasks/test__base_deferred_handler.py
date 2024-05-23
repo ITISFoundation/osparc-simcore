@@ -15,7 +15,7 @@ from pydantic import NonNegativeInt
 from servicelib.deferred_tasks._base_deferred_handler import (
     BaseDeferredHandler,
     FullStartContext,
-    UserStartContext,
+    StartContext,
 )
 from servicelib.deferred_tasks._deferred_manager import (
     DeferredManager,
@@ -109,7 +109,7 @@ async def get_mocked_deferred_handler(
                 return timeout
 
             @classmethod
-            async def start_deferred(cls, **kwargs) -> UserStartContext:
+            async def start_deferred(cls, **kwargs) -> StartContext:
                 mocks[MockKeys.START_DEFERRED](kwargs)
                 return kwargs
 

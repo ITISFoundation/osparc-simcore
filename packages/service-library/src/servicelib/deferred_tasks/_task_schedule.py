@@ -4,7 +4,7 @@ from enum import Enum
 import arrow
 from pydantic import BaseModel, Field, NonNegativeInt
 
-from ._base_deferred_handler import UserStartContext
+from ._base_deferred_handler import StartContext
 from ._models import ClassUniqueReference, TaskExecutionResult
 
 
@@ -30,7 +30,7 @@ class TaskSchedule(BaseModel):
         ...,
         description="reference to the class containing the code and handlers for the execution of the task",
     )
-    user_start_context: UserStartContext = Field(
+    start_context: StartContext = Field(
         ...,
         description="data used to assemble the ``StartContext``",
     )

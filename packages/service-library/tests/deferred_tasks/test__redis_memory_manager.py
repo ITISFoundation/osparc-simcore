@@ -39,7 +39,7 @@ def task_schedule() -> TaskSchedule:
             "timeout": timedelta(seconds=1),
             "execution_attempts": 1,
             "class_unique_reference": "mock",
-            "user_start_context": {},
+            "start_context": {},
             "state": TaskState.SCHEDULED,
             "result": None,
         },

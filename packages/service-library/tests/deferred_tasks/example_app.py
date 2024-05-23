@@ -12,8 +12,8 @@ from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredManager,
     FullStartContext,
+    StartContext,
     TaskUID,
-    UserStartContext,
 )
 from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
 from settings_library.rabbit import RabbitSettings
@@ -34,7 +34,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
     @classmethod
     async def start_deferred(
         cls, sleep_duration: float, sequence_id: int
-    ) -> UserStartContext:
+    ) -> StartContext:
         return {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
 
     @classmethod
