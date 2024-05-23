@@ -308,6 +308,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     mocked_dask_ping_scheduler.ping_scheduler.return_value = False
 
     # TODO: we need a delay here as well. a network issue might have happened and this kills it instantly.
+    assert False, "let's not do it this way!"
 
     # running now the cluster management task shall remove the cluster
     await check_clusters(initialized_app)
