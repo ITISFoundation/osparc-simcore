@@ -20,7 +20,7 @@ from ._base_deferred_handler import (
     GlobalsContext,
     StartContext,
 )
-from ._base_memory_manager import BaseMemoryManager
+from ._base_task_tracker import BaseTaskTracker
 from ._models import (
     ClassUniqueReference,
     TaskResultCancelledError,
@@ -28,7 +28,7 @@ from ._models import (
     TaskResultSuccess,
     TaskUID,
 )
-from ._redis_memory_manager import RedisMemoryManager
+from ._redis_task_tracker import RedisTaskTracker
 from ._task_schedule import TaskSchedule, TaskState
 from ._utils import stop_retry_for_unintended_errors
 from ._worker_tracker import WorkerTracker
@@ -111,9 +111,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         delay_when_requeuing_message: timedelta = _DEFAULT_DELAY_BEFORE_NACK,
     ) -> None:
 
-        self._memory_manager: BaseMemoryManager = RedisMemoryManager(
-            scheduler_redis_sdk
-        )
+        self._task_tracker: BaseTaskTracker = RedisTaskTracker(scheduler_redis_sdk)
 
         self._worker_tracker = WorkerTracker(max_workers)
         self.delay_when_requeuing_message = delay_when_requeuing_message
@@ -238,7 +236,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             start_context,
         )
 
-        task_uid = await self._memory_manager.get_task_unique_identifier()
+        task_uid = await self._task_tracker.get_task_unique_identifier()
         subclass = self.__get_subclass(class_unique_reference)
         deferred_context = self.__get_deferred_context(start_context)
 
@@ -253,14 +251,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         with log_catch(_logger, reraise=False):
             await subclass.on_deferred_created(task_uid, deferred_context)
 
-        await self._memory_manager.save(task_uid, task_schedule)
+        await self._task_tracker.save(task_uid, task_schedule)
         _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
         await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SCHEDULED)
 
     async def __get_task_schedule(
         self, task_uid: TaskUID, *, expected_state: TaskState
     ) -> TaskSchedule:
-        task_schedule = await self._memory_manager.get(task_uid)
+        task_schedule = await self._task_tracker.get(task_uid)
 
         if task_schedule is None:
             msg = f"Could not find a task_schedule for task_uid '{task_uid}'"
@@ -310,7 +308,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         )
 
         task_schedule.state = TaskState.SUBMIT_TASK
-        await self._memory_manager.save(task_uid, task_schedule)
+        await self._task_tracker.save(task_uid, task_schedule)
 
         await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)
 
@@ -325,7 +323,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         )
         task_schedule.execution_attempts -= 1
         task_schedule.state = TaskState.WORKER
-        await self._memory_manager.save(task_uid, task_schedule)
+        await self._task_tracker.save(task_uid, task_schedule)
 
         await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.WORKER)
 
@@ -370,7 +368,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         if isinstance(task_schedule.result, TaskResultSuccess):
             task_schedule.state = TaskState.DEFERRED_RESULT
-            await self._memory_manager.save(task_uid, task_schedule)
+            await self._task_tracker.save(task_uid, task_schedule)
             await self.__publish_to_queue(
                 task_uid, _FastStreamRabbitQueue.DEFERRED_RESULT
             )
@@ -378,7 +376,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         if isinstance(task_schedule.result, TaskResultError | TaskResultCancelledError):
             task_schedule.state = TaskState.ERROR_RESULT
-            await self._memory_manager.save(task_uid, task_schedule)
+            await self._task_tracker.save(task_uid, task_schedule)
             await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.ERROR_RESULT)
             return
 
@@ -407,12 +405,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             _logger.debug("Schedule retry attempt for task_uid '%s'", task_uid)
             # does not retry if task was cancelled
             task_schedule.state = TaskState.SUBMIT_TASK
-            await self._memory_manager.save(task_uid, task_schedule)
+            await self._task_tracker.save(task_uid, task_schedule)
             await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)
             return
 
         task_schedule.state = TaskState.FINISHED_WITH_ERROR
-        await self._memory_manager.save(task_uid, task_schedule)
+        await self._task_tracker.save(task_uid, task_schedule)
         await self.__publish_to_queue(
             task_uid, _FastStreamRabbitQueue.FINISHED_WITH_ERROR
         )
@@ -426,7 +424,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             arrow.utcnow().datetime - task_schedule.time_started,
         )
         _logger.debug("Removing task %s", task_uid)
-        await self._memory_manager.remove(task_uid)
+        await self._task_tracker.remove(task_uid)
 
     @stop_retry_for_unintended_errors
     async def _fs_handle_finished_with_error(  # pylint:disable=method-hidden
@@ -481,14 +479,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         await self.__remove_task(task_uid, task_schedule)
 
     async def __cancel_deferred(self, task_uid: TaskUID) -> None:
-        task_schedule: TaskSchedule | None = await self._memory_manager.get(task_uid)
+        task_schedule: TaskSchedule | None = await self._task_tracker.get(task_uid)
         if task_schedule is None:
             _logger.warning("No entry four to cancel found for task_uid '%s'", task_uid)
             return
 
         _logger.info("Attempting to cancel task_uid '%s'", task_uid)
         task_schedule.state = TaskState.MANUALLY_CANCELLED
-        await self._memory_manager.save(task_uid, task_schedule)
+        await self._task_tracker.save(task_uid, task_schedule)
 
         await self.__publish_to_queue(
             task_uid, _FastStreamRabbitQueue.MANUALLY_CANCELLED

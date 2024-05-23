@@ -4,7 +4,7 @@ from ._models import TaskUID
 from ._task_schedule import TaskSchedule
 
 
-class BaseMemoryManager(ABC):
+class BaseTaskTracker(ABC):
     """Basis for implementing memory management to keep track ledger entries"""
 
     @abstractmethod

@@ -8,7 +8,7 @@ from datetime import timedelta
 import pytest
 from pydantic import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
-from servicelib.deferred_tasks._redis_memory_manager import RedisMemoryManager
+from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskSchedule, TaskState
 from servicelib.redis import RedisClientSDKHealthChecked
 from servicelib.utils import logged_gather
@@ -49,17 +49,17 @@ def task_schedule() -> TaskSchedule:
 async def test_memory_manager_workflow(
     scheduling_redis_sdk: RedisClientSDKHealthChecked, task_schedule: TaskSchedule
 ):
-    memory_manager = RedisMemoryManager(scheduling_redis_sdk)
+    task_tracker = RedisTaskTracker(scheduling_redis_sdk)
 
-    task_uid: TaskUID = await memory_manager.get_task_unique_identifier()
+    task_uid: TaskUID = await task_tracker.get_task_unique_identifier()
 
-    assert await memory_manager.get(task_uid) is None
+    assert await task_tracker.get(task_uid) is None
 
-    await memory_manager.save(task_uid, task_schedule)
-    assert await memory_manager.get(task_uid) == task_schedule
+    await task_tracker.save(task_uid, task_schedule)
+    assert await task_tracker.get(task_uid) == task_schedule
 
-    await memory_manager.remove(task_uid)
-    assert await memory_manager.get(task_uid) is None
+    await task_tracker.remove(task_uid)
+    assert await task_tracker.get(task_uid) is None
 
 
 @pytest.mark.parametrize("count", [0, 1, 10, 100])
@@ -68,14 +68,14 @@ async def test_memory_manager_list_all_entries(
     task_schedule: TaskSchedule,
     count: int,
 ):
-    memory_manager = RedisMemoryManager(scheduling_redis_sdk)
+    task_tracker = RedisTaskTracker(scheduling_redis_sdk)
 
     async def _make_entry() -> None:
-        task_uid = await memory_manager.get_task_unique_identifier()
-        await memory_manager.save(task_uid, task_schedule)
+        task_uid = await task_tracker.get_task_unique_identifier()
+        await task_tracker.save(task_uid, task_schedule)
 
     await logged_gather(*(_make_entry() for _ in range(count)))
 
-    entries = await memory_manager.list()
+    entries = await task_tracker.list()
     assert len(entries) == count
     assert entries == [task_schedule for _ in range(count)]

@@ -1,20 +1,23 @@
 from typing import Final
 from uuid import uuid4
 
+from pydantic import NonNegativeInt
+
 from ..redis import RedisClientSDKHealthChecked
 from ..utils import logged_gather
-from ._base_memory_manager import BaseMemoryManager
+from ._base_task_tracker import BaseTaskTracker
 from ._models import TaskUID
 from ._task_schedule import TaskSchedule
 
 _MEMORY_MANAGER_PREFIX: Final[str] = "mm:"
+_MAX_REDIS_CONCURRENCY: Final[NonNegativeInt] = 10
 
 
 def _get_key(task_uid: TaskUID) -> str:
     return f"{_MEMORY_MANAGER_PREFIX}{task_uid}"
 
 
-class RedisMemoryManager(BaseMemoryManager):
+class RedisTaskTracker(BaseTaskTracker):
     def __init__(self, redis_sdk: RedisClientSDKHealthChecked) -> None:
         self.redis_sdk = redis_sdk
 
@@ -48,5 +51,5 @@ class RedisMemoryManager(BaseMemoryManager):
                     match=f"{_MEMORY_MANAGER_PREFIX}*"
                 )
             ],
-            max_concurrency=10,
+            max_concurrency=_MAX_REDIS_CONCURRENCY,
         )
