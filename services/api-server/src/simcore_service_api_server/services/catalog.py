@@ -12,7 +12,7 @@ from models_library.services import ServiceDockerData, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 
-from ..errors.services_exception_handling import service_exception_mapper
+from ..errors.services_exception_handlers import service_exception_mapper
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance

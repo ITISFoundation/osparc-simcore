@@ -22,7 +22,7 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
-from ...errors.services_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...models.pagination import Page, PaginationParams

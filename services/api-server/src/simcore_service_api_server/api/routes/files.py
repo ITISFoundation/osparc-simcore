@@ -30,7 +30,7 @@ from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
-from ...errors.services_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
