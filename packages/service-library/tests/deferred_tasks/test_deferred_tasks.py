@@ -71,13 +71,13 @@ class _RemoteProcess:
 
 
 @pytest.fixture
-async def redis_client(redis_service: RedisSettings) -> AsyncIterator[RedisClientSDK]:
-    redis_client_sdk = RedisClientSDK(
-        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
-    )
-    await redis_client_sdk.redis.flushall()
-    yield redis_client_sdk
-    await redis_client_sdk.redis.flushall()
+async def redis_client(
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ]
+) -> AsyncIterator[RedisClientSDK]:
+    async with get_redis_client_sdk(RedisDatabase.DEFERRED_TASKS) as client:
+        yield client
 
 
 @pytest.fixture
