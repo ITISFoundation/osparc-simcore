@@ -1,13 +1,17 @@
-astroid==3.1.0
+astroid==3.2.2
     # via pylint
 black==24.4.2
+    # via -r requirements/../../../requirements/devenv.txt
 build==1.2.1
     # via pip-tools
 bump2version==1.0.1
+    # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
 click==8.1.7
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dill==0.3.8
@@ -19,15 +23,21 @@ filelock==3.14.0
 identify==2.5.36
     # via pre-commit
 isort==5.13.2
-    # via pylint
+    # via
+    #   -r requirements/../../../requirements/devenv.txt
+    #   pylint
 mccabe==0.7.0
     # via pylint
 mypy-extensions==1.0.0
-    # via black
+    # via
+    #   -c requirements/_test.txt
+    #   black
 nodeenv==1.8.0
     # via pre-commit
 packaging==24.0
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   build
 pathspec==0.12.1
@@ -35,40 +45,51 @@ pathspec==0.12.1
 pip==24.0
     # via pip-tools
 pip-tools==7.4.1
-platformdirs==4.2.1
+    # via -r requirements/../../../requirements/devenv.txt
+platformdirs==4.2.2
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.7.0
-pylint==3.1.0
+pre-commit==3.7.1
+    # via -r requirements/../../../requirements/devenv.txt
+pylint==3.2.2
+    # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
 pyyaml==6.0.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.4.3
-setuptools==69.5.1
+ruff==0.4.4
+    # via -r requirements/../../../requirements/devenv.txt
+setuptools==70.0.0
     # via
     #   nodeenv
     #   pip-tools
 tomli==2.0.1
     # via
+    #   -c requirements/_test.txt
     #   black
     #   build
     #   pip-tools
     #   pylint
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via pylint
 typing-extensions==4.11.0
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   astroid
     #   black
-virtualenv==20.26.1
+virtualenv==20.26.2
     # via pre-commit
 watchdog==4.0.0
+    # via -r requirements/_tools.in
 wheel==0.43.0
     # via pip-tools

@@ -1,12 +1,14 @@
 import json
 from http import HTTPStatus
-from typing import Any, Literal
+from pathlib import Path
+from typing import Any, Literal, Protocol
 
 import httpx
+import respx
 from fastapi import status
 from pydantic import BaseModel, Field
 
-from .httpx_calls_capture_openapi import enhance_from_openapi_spec
+from .httpx_calls_capture_openapi import enhance_path_description_from_openapi_spec
 from .httpx_calls_capture_parameters import PathDescription
 
 
@@ -38,7 +40,7 @@ class HttpApiCallCaptureModel(BaseModel):
 
         path: PathDescription | str
         if enhance_from_openapi_specs:
-            path = enhance_from_openapi_spec(response)
+            path = enhance_path_description_from_openapi_spec(response)
         else:
             path = response.request.url.path
 
@@ -67,5 +69,25 @@ class HttpApiCallCaptureModel(BaseModel):
         return httpx.Response(status_code=self.status_code, json=self.response_body)
 
 
-def get_captured(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
+def get_captured_model(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
+
+
+class SideEffectCallback(Protocol):
+    def __call__(
+        self,
+        request: httpx.Request,
+        kwargs: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        ...
+
+
+class CreateRespxMockCallback(Protocol):
+    def __call__(
+        self,
+        respx_mocks: list[respx.MockRouter],
+        capture_path: Path,
+        side_effects_callbacks: list[SideEffectCallback],
+    ) -> list[respx.MockRouter]:
+        ...
