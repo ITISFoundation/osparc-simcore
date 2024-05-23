@@ -76,9 +76,11 @@ class WorkerTracker:
         # if an associated task exists it cancels it
         task: asyncio.Task | None = self._tasks.get(task_uid, None)
         if task:
-            # NOTE: this will produce a RuntimeWarning coroutine: '...' was never awaited
-            # The task isa waited in the `handle_run_deferred` (there are tests checking this)
-            # I'm not sure how to suppress it.
+            # NOTE: there is no need to await the task after cancelling it.
+            # It is already awaited, by ``handle_run_deferred, which handles
+            # it's result in case of cancellation.
+            # As a side effect it produces a RuntimeWarning coroutine: '...' was never awaited
+            # which cannot be suppressed
             task.cancel()
             return True
         return False
