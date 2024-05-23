@@ -32,7 +32,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         return f"{cls.__module__}.{cls.__name__}"
 
     @classmethod
-    async def get_retries(cls, start_context: FullStartContext) -> NonNegativeInt:
+    async def get_retries(cls, context: FullStartContext) -> NonNegativeInt:
         """
         returns: the amount of retries in case of error (default: 0)
 
@@ -43,12 +43,12 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         retried when the process is restarted or by another copy of the service.
         """
 
-        _ = start_context
+        _ = context
         return 0
 
     @classmethod
     @abstractmethod
-    async def get_timeout(cls, start_context: FullStartContext) -> timedelta:
+    async def get_timeout(cls, context: FullStartContext) -> timedelta:
         """return the timeout for the execution of `run_deferred`.
         If ``run_deferred`` does not finish executing in time a timeout exception will be raised
         """
@@ -70,25 +70,25 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     async def on_deferred_created(
-        cls, task_uid: TaskUID, start_context: FullStartContext
+        cls, task_uid: TaskUID, context: FullStartContext
     ) -> None:
         """return after deferred was scheduled"""
 
     @classmethod
     @abstractmethod
-    async def run_deferred(cls, start_context: FullStartContext) -> ResultType:
+    async def run_deferred(cls, context: FullStartContext) -> ResultType:
         """Code to be run in the background"""
 
     @classmethod
     @abstractmethod
     async def on_deferred_result(
-        cls, result: ResultType, start_context: FullStartContext
+        cls, result: ResultType, context: FullStartContext
     ) -> None:
         """Called in case `run_deferred` ended and provided a successful result"""
 
     @classmethod
     async def on_finished_with_error(
-        cls, error: TaskResultError, start_context: FullStartContext
+        cls, error: TaskResultError, context: FullStartContext
     ) -> None:
         """
         NOTE: by design the default action is to do nothing
