@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 
 from fastapi import HTTPException
@@ -7,6 +8,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from ..models.schemas.errors import ErrorGet
+
+_logger = logging.getLogger(__file__)
 
 
 def create_error_json_response(*errors, status_code: int) -> JSONResponse:
@@ -20,11 +23,11 @@ async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
     return create_error_json_response(exc.detail, status_code=exc.status_code)
 
 
-def make_http_error_handler_for_exception(
+def make_handler_for_exception(
     exception_cls: type[BaseException],
     status_code: int,
     *,
-    detail_message: str,
+    error_message: str,
     add_exception_to_message: bool = False,
     add_oec_to_message: bool = False,
 ) -> Callable:
@@ -35,13 +38,22 @@ def make_http_error_handler_for_exception(
     SEE https://docs.python.org/3/library/exceptions.html#concrete-exceptions
     """
 
-    async def _http_error_handler(_: Request, error: BaseException) -> JSONResponse:
-        assert isinstance(error, exception_cls)  # nosec
-        details = detail_message
+    async def _http_error_handler(_: Request, exception: BaseException) -> JSONResponse:
+        assert isinstance(exception, exception_cls)  # nosec
+
+        msg = error_message
         if add_exception_to_message:
-            details += f"\n{error}"
+            msg += f" {exception}"
+
         if add_oec_to_message:
-            details += f"\n[OEC: {create_error_code(error)}]"
-        return create_error_json_response(details, status_code=status_code)
+            error_code = create_error_code(exception)
+            msg += f" [{error_code}]"
+            _logger.exception(
+                "Unexpected %s: %s",
+                exception.__class__.__name__,
+                msg,
+                extra={"error_code": error_code},
+            )
+        return create_error_json_response(msg, status_code=status_code)
 
     return _http_error_handler

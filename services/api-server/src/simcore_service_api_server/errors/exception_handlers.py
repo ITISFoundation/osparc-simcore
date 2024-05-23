@@ -9,10 +9,12 @@ from ..core.settings import ApplicationSettings
 from ..models.custom_errors import CustomBaseError
 from ..services.log_streaming import LogDistributionBaseException
 from .custom_errors import custom_error_handler
-from .http_error import http_error_handler, make_http_error_handler_for_exception
+from .http_error import http_error_handler, make_handler_for_exception
 from .httpx_client_error import handle_httpx_client_exceptions
 from .log_handling_error import log_handling_error_handler
 from .validation_error import http422_error_handler
+
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 
 
 def setup(app: FastAPI):
@@ -28,18 +30,18 @@ def setup(app: FastAPI):
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,
-        make_http_error_handler_for_exception(
+        make_handler_for_exception(
             NotImplementedError,
             status.HTTP_501_NOT_IMPLEMENTED,
-            detail_message="Endpoint not implemented",
+            error_message="This endpoint is still not implemented (under development)",
         ),
     )
     app.add_exception_handler(
         Exception,
-        make_http_error_handler_for_exception(
+        make_handler_for_exception(
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail_message="Unexpected error",
+            error_message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
             add_exception_to_message=(settings.SC_BOOT_MODE == BootModeEnum.DEBUG),
             add_oec_to_message=True,
         ),
