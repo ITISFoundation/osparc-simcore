@@ -53,6 +53,10 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
+from ..errors.services_exception_handling import (
+    backend_service_exception_handler,
+    service_exception_mapper,
+)
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
@@ -60,10 +64,6 @@ from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from .service_exception_handling import (
-    backend_service_exception_handler,
-    service_exception_mapper,
-)
 
 _logger = logging.getLogger(__name__)
 

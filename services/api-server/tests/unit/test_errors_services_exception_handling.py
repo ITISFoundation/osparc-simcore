@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException, status
 from httpx import HTTPStatusError, Request, Response
-from simcore_service_api_server.services.service_exception_handling import (
+from simcore_service_api_server.errors.services_exception_handling import (
     service_exception_mapper,
 )
 
