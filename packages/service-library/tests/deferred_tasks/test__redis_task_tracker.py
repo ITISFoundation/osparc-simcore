@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 
 
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from datetime import timedelta
 
 import pytest
@@ -10,9 +11,9 @@ from pydantic import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskSchedule, TaskState
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
 from servicelib.utils import logged_gather
-from settings_library.redis import RedisDatabase, RedisSettings
+from settings_library.redis import RedisDatabase
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -21,14 +22,12 @@ pytest_simcore_core_services_selection = [
 
 @pytest.fixture
 async def scheduling_redis_sdk(
-    redis_service: RedisSettings,
-) -> AsyncIterable[RedisClientSDKHealthChecked]:
-    redis_sdk = RedisClientSDKHealthChecked(
-        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
-    )
-    await redis_sdk.redis.flushall()
-    yield redis_sdk
-    await redis_sdk.redis.flushall()
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ]
+) -> AsyncIterator[RedisClientSDK]:
+    async with get_redis_client_sdk(RedisDatabase.DEFERRED_TASKS) as client:
+        yield client
 
 
 @pytest.fixture
