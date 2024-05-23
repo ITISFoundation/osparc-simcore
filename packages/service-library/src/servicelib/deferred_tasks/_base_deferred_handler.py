@@ -9,9 +9,9 @@ from ._models import ClassUniqueReference, TaskResultError, TaskUID
 ResultType = TypeVar("ResultType")
 
 StartContext: TypeAlias = dict[str, Any]
-DeferredManagerContext: TypeAlias = dict[str, Any]
+GlobalsContext: TypeAlias = dict[str, Any]
 
-# composed by the `DeferredManagerContext` and `StartContext`
+# composed by the `GlobalsContext` and `StartContext`
 DeferredContext: TypeAlias = dict[str, Any]
 
 

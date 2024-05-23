@@ -74,7 +74,7 @@ async def deferred_manager(
     manager = DeferredManager(
         rabbit_service,
         redis_sdk,
-        globals_for_deferred_context=mocked_deferred_globals,
+        globals_context=mocked_deferred_globals,
         max_workers=10,
     )
 

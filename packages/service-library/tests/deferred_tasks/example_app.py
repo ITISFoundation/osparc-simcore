@@ -89,7 +89,7 @@ class ExampleApp:
         self._manager = DeferredManager(
             rabbit_settings,
             self._redis_client,
-            globals_for_deferred_context={"in_memory_lists": in_memory_lists},
+            globals_context={"in_memory_lists": in_memory_lists},
             max_workers=max_workers,
         )
 

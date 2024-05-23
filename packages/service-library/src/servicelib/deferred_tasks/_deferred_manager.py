@@ -17,7 +17,7 @@ from settings_library.rabbit import RabbitSettings
 from ._base_deferred_handler import (
     BaseDeferredHandler,
     DeferredContext,
-    DeferredManagerContext,
+    GlobalsContext,
     StartContext,
 )
 from ._base_memory_manager import BaseMemoryManager
@@ -106,7 +106,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         rabbit_settings: RabbitSettings,
         scheduler_redis_sdk: RedisClientSDKHealthChecked,
         *,
-        globals_for_deferred_context: DeferredManagerContext,
+        globals_context: GlobalsContext,
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
         delay_when_requeuing_message: timedelta = _DEFAULT_DELAY_BEFORE_NACK,
     ) -> None:
@@ -118,7 +118,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._worker_tracker = WorkerTracker(max_workers)
         self.delay_when_requeuing_message = delay_when_requeuing_message
 
-        self.globals_for_deferred_context = globals_for_deferred_context
+        self.globals_context = globals_context
 
         self._patched_deferred_handlers: dict[
             ClassUniqueReference, type[BaseDeferredHandler]
@@ -208,8 +208,8 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     ) -> type[BaseDeferredHandler]:
         return self._patched_deferred_handlers[class_unique_reference]
 
-    def __get_start_context(self, start_context: StartContext) -> DeferredContext:
-        return {**self.globals_for_deferred_context, **start_context}
+    def __get_deferred_context(self, start_context: StartContext) -> DeferredContext:
+        return {**self.globals_context, **start_context}
 
     async def __publish_to_queue(
         self, task_uid: TaskUID, queue: _FastStreamRabbitQueue
@@ -240,18 +240,18 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         task_uid = await self._memory_manager.get_task_unique_identifier()
         subclass = self.__get_subclass(class_unique_reference)
-        full_start_context = self.__get_start_context(start_context)
+        deferred_context = self.__get_deferred_context(start_context)
 
         task_schedule = TaskSchedule(
-            timeout=await subclass.get_timeout(full_start_context),
-            execution_attempts=await subclass.get_retries(full_start_context) + 1,
+            timeout=await subclass.get_timeout(deferred_context),
+            execution_attempts=await subclass.get_retries(deferred_context) + 1,
             class_unique_reference=class_unique_reference,
             start_context=start_context,
             state=TaskState.SCHEDULED,
         )
 
         with log_catch(_logger, reraise=False):
-            await subclass.on_deferred_created(task_uid, full_start_context)
+            await subclass.on_deferred_created(task_uid, deferred_context)
 
         await self._memory_manager.save(task_uid, task_schedule)
         _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
@@ -355,11 +355,11 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 f"Worker handling task_uid '{task_uid}' for {task_schedule}",
             ):
                 subclass = self.__get_subclass(task_schedule.class_unique_reference)
-                full_start_context = self.__get_start_context(
+                deferred_context = self.__get_deferred_context(
                     task_schedule.start_context
                 )
                 task_schedule.result = await self._worker_tracker.handle_run_deferred(
-                    subclass, task_uid, full_start_context, task_schedule.timeout
+                    subclass, task_uid, deferred_context, task_schedule.timeout
                 )
 
         _logger.debug(
@@ -448,10 +448,10 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 task_schedule.result.format_error(),
             )
             subclass = self.__get_subclass(task_schedule.class_unique_reference)
-            start_context = self.__get_start_context(task_schedule.start_context)
+            deferred_context = self.__get_deferred_context(task_schedule.start_context)
             with log_catch(_logger, reraise=False):
                 await subclass.on_finished_with_error(
-                    task_schedule.result, start_context
+                    task_schedule.result, deferred_context
                 )
         else:
             _logger.debug("Task '%s' cancelled!", task_uid)
@@ -470,11 +470,13 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         _raise_if_not_type(task_schedule.result, (TaskResultSuccess,))
 
         subclass = self.__get_subclass(task_schedule.class_unique_reference)
-        start_context = self.__get_start_context(task_schedule.start_context)
+        deferred_context = self.__get_deferred_context(task_schedule.start_context)
         assert isinstance(task_schedule.result, TaskResultSuccess)  # nosec
 
         with log_catch(_logger, reraise=False):
-            await subclass.on_deferred_result(task_schedule.result.value, start_context)
+            await subclass.on_deferred_result(
+                task_schedule.result.value, deferred_context
+            )
 
         await self.__remove_task(task_uid, task_schedule)
 
