@@ -1,6 +1,7 @@
-import datetime
 import logging
+from typing import Iterable
 
+import arrow
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
     AWSTagKey,
@@ -161,9 +162,11 @@ async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> 
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(
             [instance],
-            tags={HEARTBEAT_TAG_KEY: f"{datetime.datetime.now(datetime.timezone.utc)}"},
+            tags={HEARTBEAT_TAG_KEY: f"{arrow.utcnow().datetime}"},
         )
 
 
-async def delete_clusters(app: FastAPI, *, instances: list[EC2InstanceData]) -> None:
+async def delete_clusters(
+    app: FastAPI, *, instances: Iterable[EC2InstanceData]
+) -> None:
     await get_ec2_client(app).terminate_instances(instances)
