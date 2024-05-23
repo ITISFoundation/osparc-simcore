@@ -14,7 +14,7 @@ _APPLICATION_VERSION_TAG: Final[EC2Tags] = parse_obj_as(
     EC2Tags, {f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"}
 )
 
-HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
+HEARTBEAT_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "last_heartbeat")
 CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
 
 
