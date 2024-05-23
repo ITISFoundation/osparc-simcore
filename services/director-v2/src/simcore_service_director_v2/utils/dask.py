@@ -578,7 +578,11 @@ def check_if_cluster_is_able_to_run_pipeline(
     node_image: Image,
     cluster_id: ClusterID,
 ) -> None:
-    _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
+
+    _logger.debug(
+        "Dask scheduler infos: %s", f"{scheduler_info}"
+    )  # NOTE: be careful not to json_dumps this as it sometimes contain keys that are tuples!
+
     workers = scheduler_info.get("workers", {})
 
     cluster_resources_counter: collections.Counter = collections.Counter()
