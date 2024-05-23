@@ -26,8 +26,9 @@ DEFAULT_TASK_UPDATE_INTERVAL_S: Final[int] = 1
 
 main = typer.Typer(name=PROJECT_NAME)
 
-log = logging.getLogger(__name__)
-main.command()(create_settings_command(settings_cls=AppSettings, logger=log))
+_logger = logging.getLogger(__name__)
+
+main.command()(create_settings_command(settings_cls=AppSettings, logger=_logger))
 
 
 @main.command()
@@ -122,3 +123,8 @@ def close_and_save_service(
             update_interval,
         )
     )
+
+
+@main.command()
+def osparc_variables():
+    """Lists all registered osparc variables"""
