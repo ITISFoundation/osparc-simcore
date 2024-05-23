@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from servicelib.error_codes import create_error_code
 
 from ..models.schemas.errors import ErrorGet
 
@@ -100,23 +99,11 @@ def backend_service_exception_handler(
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             _logger.exception(
-                "Converted status code %s from %s service to status code %s\n%s",
+                "Converted status code %s from %s service to status code %s",
                 f"{exc.response.status_code}",
                 service_name,
                 f"{status_code}",
-                f"{exc}",
             )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
-        ) from exc
-    except Exception as exc:
-        error_code = create_error_code(exc)
-        _logger.exception(
-            "Back-end service failed unexpectedly [%s]",
-            f"{error_code}",
-            extra={"error_code": error_code},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         ) from exc
