@@ -177,6 +177,14 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ..., description="Password for accessing prometheus data"
     )
 
+    PRIMARY_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=2),
+        description="Usual time taken an EC2 instance with the given AMI takes to startup and be ready to receive jobs "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
+    )
+
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
