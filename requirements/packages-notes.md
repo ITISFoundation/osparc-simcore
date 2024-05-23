@@ -17,9 +17,6 @@ Keeps a list notes with relevant information about releases of python package. S
   - is a backport of Python 3.9’s standard library [importlib.resources](https://docs.python.org/3.7/library/importlib.html#module-importlib.resources)
 - [packaging](https://packaging.pypa.io/en/latest/)
   - used for  version handling, specifiers, markers, requirements, tags, utilities. It follows several PEPs and will probably end up in the python standard library
-  - might prefer over ``pkg_resources``
-- [pkg_resources](https://setuptools.readthedocs.io/en/latest/pkg_resources.html)
-  - most of the functionlity seems to be moved into the standard library. Some backports of those are ``importlib-metadata``, ``importlib-resources`` and ``packaging``.
 - [dataclasses](https://pypi.org/project/dataclasses/)
   - a backport of the [``dataclasses`` module](https://docs.python.org/3/library/dataclasses.html) for Python 3.6. Included as dataclasses in standard library from python >=3.7.
   - here is included as a dependency to [pydantic](https://pydantic-docs.helpmanual.io/)
