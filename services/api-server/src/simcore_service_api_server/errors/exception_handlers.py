@@ -8,11 +8,12 @@ from starlette.exceptions import HTTPException
 from ..core.settings import ApplicationSettings
 from ..models.custom_errors import CustomBaseError
 from ..services.log_streaming import LogDistributionBaseException
-from .custom_errors import custom_error_handler
-from .http_error import http_error_handler, make_handler_for_exception
-from .httpx_client_error import handle_httpx_client_exceptions
-from .log_handling_error import log_handling_error_handler
-from .validation_error import http422_error_handler
+from ._custom_errors_handlers import custom_error_handler
+from ._exception_handlers_factory import make_handler_for_exception
+from ._http_exception_handlers import http_error_handler
+from ._httpx_error_handlers import handle_httpx_client_exceptions
+from ._log_error_handlers import log_handling_error_handler
+from ._validation_error_handlers import http422_error_handler
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 

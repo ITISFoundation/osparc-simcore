@@ -7,7 +7,7 @@ from ..services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
-from .http_error import create_error_json_response
+from ._http_exception_handlers import create_error_json_response
 
 
 async def log_handling_error_handler(
