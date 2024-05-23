@@ -1,5 +1,4 @@
 # pylint: disable=too-many-arguments
-# pylint: disable=W0613
 
 import logging
 from collections import deque
@@ -42,7 +41,6 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
@@ -343,25 +341,17 @@ async def get_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
-        return JobMetadata(
+    project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=url_for(
+            "get_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "get_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )
 
 
 @router.get(
@@ -426,6 +416,8 @@ async def get_log_stream(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     log_check_timeout: Annotated[NonNegativeInt, Depends(get_log_check_timeout)],
 ):
+    assert request  # nosec
+
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"

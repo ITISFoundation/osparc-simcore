@@ -5,12 +5,10 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.exceptions import HTTPException
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 
-from ...errors.http_error import create_error_json_response
 from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -247,24 +245,16 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.update_project_metadata(
-            project_id=job_id, metadata=update.metadata
-        )
-        return JobMetadata(
+    project_metadata = await webserver_api.update_project_metadata(
+        project_id=job_id, metadata=update.metadata
+    )
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=url_for(
+            "replace_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "replace_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )
