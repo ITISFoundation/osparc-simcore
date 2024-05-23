@@ -29,7 +29,7 @@ class RedisMemoryManager(BaseMemoryManager):
 
     async def _get_raw(self, redis_key: str) -> TaskSchedule | None:
         found_data = await self.redis_sdk.redis.get(redis_key)
-        return None if found_data is None else TaskSchedule.construct(found_data)
+        return None if found_data is None else TaskSchedule.parse_raw(found_data)
 
     async def get(self, task_uid: TaskUID) -> TaskSchedule | None:
         return await self._get_raw(_get_key(task_uid))
