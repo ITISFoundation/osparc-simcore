@@ -6,8 +6,8 @@ class LogStreamingBaseError(ApiServerBaseError):
 
 
 class LogStreamerNotRegisteredError(LogStreamingBaseError):
-    pass
+    msg_template = "{msg}"
 
 
 class LogStreamerRegistionConflictError(LogStreamingBaseError):
-    pass
+    msg_template = "A stream was already connected to {job_id}. Only a single stream can be connected at the time"
