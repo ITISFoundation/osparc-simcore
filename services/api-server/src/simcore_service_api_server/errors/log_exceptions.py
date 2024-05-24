@@ -1,4 +1,4 @@
-from .errors import ApiServerBaseError
+from .base_exceptions import ApiServerBaseError
 
 
 class LogDistributionBaseError(ApiServerBaseError):

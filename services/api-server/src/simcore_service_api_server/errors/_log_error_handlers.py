@@ -2,12 +2,12 @@ from fastapi import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ..models.log_errors import (
+from ._http_exception_handlers import create_error_json_response
+from .log_exceptions import (
     LogDistributionBaseError,
     LogStreamerNotRegisteredError,
     LogStreamerRegistionConflictError,
 )
-from ._http_exception_handlers import create_error_json_response
 
 
 async def log_handling_error_handler(

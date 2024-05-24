@@ -6,14 +6,14 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from ..core.settings import ApplicationSettings
-from ..models.custom_errors import CustomBaseError
-from ..models.log_errors import LogDistributionBaseError
 from ._custom_errors_handlers import custom_error_handler
 from ._exception_handlers_factory import make_handler_for_exception
 from ._http_exception_handlers import http_error_handler
 from ._httpx_error_handlers import handle_httpx_client_exceptions
 from ._log_error_handlers import log_handling_error_handler
 from ._validation_error_handlers import http422_error_handler
+from .custom_exceptions import CustomBaseError
+from .log_exceptions import LogDistributionBaseError
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 

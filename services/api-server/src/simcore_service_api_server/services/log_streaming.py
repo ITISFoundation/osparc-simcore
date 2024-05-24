@@ -10,7 +10,7 @@ from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
-from ..models.log_errors import (
+from ..errors.log_exceptions import (
     LogStreamerNotRegisteredError,
     LogStreamerRegistionConflictError,
 )
