@@ -22,8 +22,9 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
+from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
     _prepare_environment_variables,
@@ -48,6 +49,21 @@ def ec2_boot_specs(app_settings: ApplicationSettings) -> EC2InstanceBootSpecific
     )
     assert isinstance(ec2_boot_specs, EC2InstanceBootSpecific)
     return ec2_boot_specs
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": json_dumps(
+                TLSAuthentication.Config.schema_extra["examples"][0]
+            )
+        },
+    )
 
 
 def test_create_startup_script(
