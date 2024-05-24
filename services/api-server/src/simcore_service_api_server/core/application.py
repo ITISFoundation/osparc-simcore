@@ -8,7 +8,7 @@ from servicelib.logging_utils import config_all_loggers
 from .._meta import API_VERSION, API_VTAG
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..exceptions import exception_handlers
+from ..exceptions import handlers
 from ..services import catalog, director_v2, storage, webserver
 from ..services.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
@@ -83,7 +83,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    exception_handlers.setup(app)
+    handlers.setup(app)
 
     if settings.API_SERVER_PROFILING:
         app.add_middleware(ProfilerMiddleware)

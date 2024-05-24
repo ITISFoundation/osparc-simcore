@@ -6,14 +6,14 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from ..core.settings import ApplicationSettings
-from ._custom_errors_handlers import custom_error_handler
-from ._exception_handlers_factory import make_handler_for_exception
-from ._http_exception_handlers import http_error_handler
+from ._custom_handlers import custom_error_handler
+from ._handlers_factory import make_handler_for_exception
+from ._http_error_handlers import http_error_handler
 from ._httpx_error_handlers import handle_httpx_client_exceptions
-from ._log_error_handlers import log_handling_error_handler
+from ._log_streaming_error_handlers import log_handling_error_handler
 from ._validation_error_handlers import http422_error_handler
-from .custom_exceptions import CustomBaseError
-from .log_exceptions import LogDistributionBaseError
+from .custom import CustomBaseError
+from .log_streaming import LogStreamingBaseError
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 
@@ -25,7 +25,7 @@ def setup(app: FastAPI):
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
-    app.add_exception_handler(LogDistributionBaseError, log_handling_error_handler)
+    app.add_exception_handler(LogStreamingBaseError, log_handling_error_handler)
     app.add_exception_handler(CustomBaseError, custom_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy

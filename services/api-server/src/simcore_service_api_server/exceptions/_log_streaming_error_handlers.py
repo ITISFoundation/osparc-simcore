@@ -2,16 +2,16 @@ from fastapi import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ._http_exception_handlers import create_error_json_response
-from .log_exceptions import (
-    LogDistributionBaseError,
+from ._http_error_handlers import create_error_json_response
+from .log_streaming import (
     LogStreamerNotRegisteredError,
     LogStreamerRegistionConflictError,
+    LogStreamingBaseError,
 )
 
 
 async def log_handling_error_handler(
-    _: Request, exc: LogDistributionBaseError
+    _: Request, exc: LogStreamingBaseError
 ) -> JSONResponse:
     msg = f"{exc}"
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR

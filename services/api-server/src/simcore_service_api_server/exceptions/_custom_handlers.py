@@ -1,11 +1,7 @@
 from fastapi import Request, status
 from starlette.responses import JSONResponse
 
-from .custom_exceptions import (
-    CustomBaseError,
-    InsufficientCreditsError,
-    MissingWalletError,
-)
+from .custom import CustomBaseError, InsufficientCreditsError, MissingWalletError
 
 
 async def custom_error_handler(_: Request, exc: CustomBaseError):

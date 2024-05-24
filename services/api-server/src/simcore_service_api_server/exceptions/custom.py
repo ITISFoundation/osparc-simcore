@@ -1,4 +1,4 @@
-from .base_exceptions import ApiServerBaseError
+from ._base import ApiServerBaseError
 
 
 class CustomBaseError(ApiServerBaseError):
