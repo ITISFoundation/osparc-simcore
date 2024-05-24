@@ -9,7 +9,7 @@ from ..log_streaming_errors import LogStreamingBaseError
 from ._custom_errors import custom_error_handler
 from ._handlers_factory import make_handler_for_exception
 from ._http_exceptions import http_exception_handler
-from ._httpx_exceptions import handle_httpx_client_exceptions
+from ._httpx_client_exceptions import handle_httpx_client_exceptions
 from ._log_streaming_errors import log_handling_error_handler
 from ._validation_errors import http422_error_handler
 

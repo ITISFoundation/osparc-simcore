@@ -53,6 +53,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..exceptions.service_errors_utils import (
+    ToApiTuple,
     service_exception_handler,
     service_exception_mapper,
 )
@@ -169,11 +170,10 @@ class AuthSession:
             optional["search"] = search
 
         with service_exception_handler(
-            "Webserver",
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    lambda _: "Could not list jobs",
+            service_name="Webserver",
+            http_status_map={
+                status.HTTP_404_NOT_FOUND: ToApiTuple(
+                    status.HTTP_404_NOT_FOUND, "Could not list jobs"
                 )
             },
         ):

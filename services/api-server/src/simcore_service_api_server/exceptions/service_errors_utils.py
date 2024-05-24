@@ -42,30 +42,32 @@ ServiceHTTPStatus: TypeAlias = int
 ApiHTTPStatus: TypeAlias = int
 
 
-class StatusDetailTuple(NamedTuple):
+class ToApiTuple(NamedTuple):
     status_code: ApiHTTPStatus
-    detail_callback: Callable[[Any], str] | None
+    detail: Callable[[Any], str] | str | None
 
 
 # service to public-api status maps
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, StatusDetailTuple]
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, ToApiTuple]
 
 
 def _get_http_exception_kwargs(
     service_name: str,
     service_error: httpx.HTTPStatusError,
     http_status_map: HttpStatusMap,
-    **endpoint_kwargs: Any,
+    **detail_kwargs: Any,
 ):
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if status_detail_tuple := http_status_map.get(service_error.response.status_code):
-        status_code, detail_callback = status_detail_tuple
-        if detail_callback is None:
-            detail = f"{service_error}."
-        else:
-            detail = f"{detail_callback(endpoint_kwargs)}."
+    if in_api := http_status_map.get(service_error.response.status_code):
+        detail = f"{service_error}."
+        if in_api.detail:
+            if callable(in_api.detail):
+                detail = f"{in_api.detail(detail_kwargs)}."
+            else:
+                detail = in_api.detail
+
     elif service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,

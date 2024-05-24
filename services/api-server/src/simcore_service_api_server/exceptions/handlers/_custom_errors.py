@@ -5,7 +5,7 @@ from ..custom_errors import (
     InsufficientCreditsError,
     MissingWalletError,
 )
-from ._http_exceptions import create_error_json_response
+from ._utils import create_error_json_response
 
 
 async def custom_error_handler(request: Request, exc: CustomBaseError):
