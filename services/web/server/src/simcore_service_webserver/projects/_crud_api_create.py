@@ -286,9 +286,7 @@ async def create_project(
             hidden=copy_data,
             project_nodes=project_nodes,
         )
-        task_progress.update(
-            message=f"inserted project {new_project['uuid']=} into the db"
-        )
+        task_progress.update()
 
         # 4. deep copy source project's files
         if copy_file_coro:
@@ -303,7 +301,7 @@ async def create_project(
         await api.update_dynamic_service_networks_in_project(
             request.app, ProjectID(new_project["uuid"])
         )
-        task_progress.update(message="updated network information in directorv2")
+        task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await api.create_or_update_pipeline(
@@ -320,7 +318,7 @@ async def create_project(
             is_template=as_template,
             app=request.app,
         )
-        task_progress.update(message=f"appended state to {new_project['uuid']}")
+        task_progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
