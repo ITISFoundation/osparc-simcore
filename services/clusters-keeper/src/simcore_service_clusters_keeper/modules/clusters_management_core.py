@@ -42,7 +42,7 @@ _WALLET_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "wallet_id")
 async def _get_all_associated_worker_instances(
     app: FastAPI,
     primary_instances: Iterable[EC2InstanceData],
-):
+) -> list[EC2InstanceData]:
     worker_instances = []
     for instance in primary_instances:
         assert "user_id" in instance.tags  # nosec

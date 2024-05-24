@@ -3,7 +3,7 @@ import datetime
 import functools
 import json
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import arrow
 import yaml
@@ -172,7 +172,7 @@ def _create_eta(
     estimated_time_to_running = instance_launch_time + max_cluster_start_time - now
     if dask_scheduler_ready is True:
         estimated_time_to_running = datetime.timedelta(seconds=0)
-    return estimated_time_to_running
+    return cast(datetime.timedelta, estimated_time_to_running)  # mypy
 
 
 def create_cluster_from_ec2_instance(
