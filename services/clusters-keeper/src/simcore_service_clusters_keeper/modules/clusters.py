@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 import arrow
 from aws_library.ec2.client import SimcoreEC2API
