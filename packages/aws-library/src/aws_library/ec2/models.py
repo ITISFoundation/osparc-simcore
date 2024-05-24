@@ -93,7 +93,7 @@ class EC2InstanceData:
     tags: EC2Tags
 
     def __hash__(self) -> int:
-        return hash(self.id)
+        return hash(self.__dict__)
 
 
 @dataclass(frozen=True)
