@@ -3,11 +3,14 @@
 # pylint: disable=redefined-outer-name
 
 
+from http import HTTPStatus
+
 import httpx
 import pytest
 from fastapi import FastAPI, HTTPException, status
 from httpx import HTTPStatusError, Request, Response
 from simcore_service_api_server.exceptions import setup_exception_handlers
+from simcore_service_api_server.exceptions.custom_errors import MissingWalletError
 from simcore_service_api_server.exceptions.service_errors_utils import (
     service_exception_mapper,
 )
@@ -52,12 +55,37 @@ def app() -> FastAPI:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="fail message"
         )
 
+    @app.post("/raise-custom-error")
+    def _raise_custom_exception():
+        raise MissingWalletError(job_id=123)
+
     return app
 
 
-async def test_http_exception_handlers(client: httpx.AsyncClient):
+async def test_raised_http_exception(client: httpx.AsyncClient):
     response = await client.post("/raise-http-exception")
+
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
     got = ErrorGet.parse_raw(response.text)
     assert got.errors == ["fail message"]
+
+
+async def test_fastapi_http_exception_respond_with_error_model(
+    client: httpx.AsyncClient,
+):
+    response = await client.get("/invalid")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    got = ErrorGet.parse_raw(response.text)
+    assert got.errors == [HTTPStatus(response.status_code).phrase]
+
+
+async def test_custom_error_handlers(client: httpx.AsyncClient):
+    response = await client.post("/raise-custom-error")
+
+    assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY
+
+    got = ErrorGet.parse_raw(response.text)
+    assert got.errors == [f"{MissingWalletError(job_id=123)}"]
