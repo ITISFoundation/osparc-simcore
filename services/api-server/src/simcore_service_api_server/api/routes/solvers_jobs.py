@@ -9,9 +9,7 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 
-from ...exceptions.services_exception_handlers import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
+from ...exceptions.services_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (

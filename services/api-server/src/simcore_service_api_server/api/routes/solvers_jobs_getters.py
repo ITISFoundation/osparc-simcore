@@ -22,9 +22,7 @@ from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
 from ...exceptions.custom import InsufficientCreditsError, MissingWalletError
-from ...exceptions.services_exception_handlers import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
+from ...exceptions.services_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
