@@ -9,12 +9,12 @@ from jsonschema import ValidationError
 from pydantic import parse_file_as
 
 from .httpx_calls_capture_errors import CaptureProcessingError
-from .httpx_calls_capture_model import HttpApiCallCaptureModel, get_captured
+from .httpx_calls_capture_models import HttpApiCallCaptureModel, get_captured_model
 
 _logger = logging.getLogger(__name__)
 
 
-class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
+class AsyncClientCaptureWrapper(httpx.AsyncClient):
     """
     Adds captures mechanism
     """
@@ -33,7 +33,7 @@ class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
         capture_name = f"{method} {url}"
         _logger.info("Capturing %s ... [might be slow]", capture_name)
         try:
-            capture: HttpApiCallCaptureModel = get_captured(
+            capture: HttpApiCallCaptureModel = get_captured_model(
                 name=capture_name, response=response
             )
             if (

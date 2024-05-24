@@ -596,7 +596,7 @@ async def test_run_computation(
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
     with pytest.raises(
