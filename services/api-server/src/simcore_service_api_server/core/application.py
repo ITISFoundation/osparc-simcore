@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
 
@@ -83,7 +84,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    exceptions.handlers.setup(app)
+    exceptions.setup_exception_handlers(
+        app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+    )
 
     if settings.API_SERVER_PROFILING:
         app.add_middleware(ProfilerMiddleware)

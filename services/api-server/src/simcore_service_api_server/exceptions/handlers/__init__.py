@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
-from models_library.basic_types import BootModeEnum
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from ...core.settings import ApplicationSettings
 from ..custom_errors import CustomBaseError
 from ..log_streaming_errors import LogStreamingBaseError
 from ._custom_errors import custom_error_handler
@@ -18,10 +16,7 @@ from ._validation_errors import http422_error_handler
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 
 
-def setup(app: FastAPI):
-    settings: ApplicationSettings = app.state.settings
-    assert isinstance(settings, ApplicationSettings)  # nosec
-
+def setup(app: FastAPI, *, is_debug: bool = False):
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
@@ -43,7 +38,7 @@ def setup(app: FastAPI):
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             error_message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
-            add_exception_to_message=(settings.SC_BOOT_MODE == BootModeEnum.DEBUG),
+            add_exception_to_message=is_debug,
             add_oec_to_message=True,
         ),
     )
