@@ -8,7 +8,7 @@ from servicelib.logging_utils import config_all_loggers
 from .._meta import API_VERSION, API_VTAG
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..errors import exception_handlers
+from ..exceptions import exception_handlers
 from ..services import catalog, director_v2, storage, webserver
 from ..services.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation

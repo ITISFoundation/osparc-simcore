@@ -9,7 +9,9 @@ from models_library.api_schemas_api_server.pricing_plans import ServicePricingPl
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 
-from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...exceptions.services_exception_handlers import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet

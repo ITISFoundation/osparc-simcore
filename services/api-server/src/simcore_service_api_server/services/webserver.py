@@ -53,7 +53,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
-from ..errors.services_exception_handlers import (
+from ..exceptions.services_exception_handlers import (
     backend_service_exception_handler,
     service_exception_mapper,
 )

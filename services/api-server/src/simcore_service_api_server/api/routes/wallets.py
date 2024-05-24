@@ -4,7 +4,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 
-from ...errors.services_exception_handlers import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...exceptions.services_exception_handlers import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED

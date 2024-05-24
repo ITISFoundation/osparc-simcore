@@ -17,7 +17,7 @@ from pydantic import AnyUrl, PositiveInt
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
-from ..errors.services_exception_handlers import service_exception_mapper
+from ..exceptions.services_exception_handlers import service_exception_mapper
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 

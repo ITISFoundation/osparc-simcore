@@ -13,7 +13,7 @@ from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
-from ..errors.services_exception_handlers import service_exception_mapper
+from ..exceptions.services_exception_handlers import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
