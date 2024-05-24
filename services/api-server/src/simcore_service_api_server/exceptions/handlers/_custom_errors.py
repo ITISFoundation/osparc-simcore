@@ -1,19 +1,25 @@
 from fastapi import Request, status
-from starlette.responses import JSONResponse
 
 from ..custom_errors import (
     CustomBaseError,
     InsufficientCreditsError,
     MissingWalletError,
 )
+from ._http_exceptions import create_error_json_response
 
 
-async def custom_error_handler(_: Request, exc: CustomBaseError):
+async def custom_error_handler(request: Request, exc: CustomBaseError):
+    assert request  # nosec
+
+    error_msg = f"{exc}"
     if isinstance(exc, InsufficientCreditsError):
-        return JSONResponse(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED, content=f"{exc}"
+        return create_error_json_response(
+            error_msg, status_code=status.HTTP_402_PAYMENT_REQUIRED
         )
     if isinstance(exc, MissingWalletError):
-        return JSONResponse(
-            status_code=status.HTTP_424_FAILED_DEPENDENCY, content=f"{exc}"
+        return create_error_json_response(
+            error_msg, status_code=status.HTTP_424_FAILED_DEPENDENCY
         )
+
+    msg = f"Exception handler is not implement for {exc=} [{type(exc)}]"
+    raise NotImplementedError(msg)

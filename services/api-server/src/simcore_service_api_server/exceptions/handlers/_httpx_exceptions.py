@@ -13,12 +13,14 @@ from httpx import HTTPError, TimeoutException
 _logger = logging.getLogger(__file__)
 
 
-async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
+async def handle_httpx_client_exceptions(request: Request, exc: HTTPError):
     """
     Default httpx exception handler.
     See https://www.python-httpx.org/exceptions/
     With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
     """
+    assert request  # nosec
+
     status_code: Any
     detail: str
     headers: dict[str, str] = {}

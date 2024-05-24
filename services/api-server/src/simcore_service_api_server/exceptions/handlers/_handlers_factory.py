@@ -5,7 +5,7 @@ from servicelib.error_codes import create_error_code
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ._http_exceptions import create_error_json_response
+from ._utils import create_error_json_response
 
 _logger = logging.getLogger(__file__)
 
@@ -25,7 +25,10 @@ def make_handler_for_exception(
     SEE https://docs.python.org/3/library/exceptions.html#concrete-exceptions
     """
 
-    async def _http_error_handler(_: Request, exception: BaseException) -> JSONResponse:
+    async def _http_error_handler(
+        request: Request, exception: BaseException
+    ) -> JSONResponse:
+        assert request  # nosec
         assert isinstance(exception, exception_cls)  # nosec
 
         msg = error_message
