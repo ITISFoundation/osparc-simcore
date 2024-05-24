@@ -307,10 +307,18 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     # simulate now a non responsive dask-scheduler, which means it is broken
     mocked_dask_ping_scheduler.ping_scheduler.return_value = False
 
-    # TODO: we need a delay here as well. a network issue might have happened and this kills it instantly.
-    assert False, "let's not do it this way!"
+    # running now the cluster management will not instantly remove the cluster, so now nothing will happen
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+    mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
-    # running now the cluster management task shall remove the cluster
+    # waiting for the termination time will now terminate the cluster
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="terminated"
@@ -318,3 +326,4 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+    mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()

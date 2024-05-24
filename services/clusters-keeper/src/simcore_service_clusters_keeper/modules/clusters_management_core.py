@@ -132,6 +132,7 @@ async def check_clusters(app: FastAPI) -> None:
     # analyse disconnected instances (currently starting or broken)
     disconnected_instances = primary_instances - connected_intances
 
+    # starting instances do not have a heartbeat set but sometimes might fail and should be terminated
     starting_instances = {
         instance
         for instance in disconnected_instances
@@ -148,10 +149,14 @@ async def check_clusters(app: FastAPI) -> None:
         )
         await delete_clusters(app, instances=terminateable_instances)
 
-    if broken_instances := disconnected_instances - starting_instances:
+    # the other instances are broken (they were at some point connected but now not anymore)
+    broken_instances = disconnected_instances - starting_instances
+    if terminateable_instances := await _find_terminateable_instances(
+        app, broken_instances
+    ):
         _logger.error(
             "The following clusters'primary EC2 were found as unresponsive "
             "(TIP: there is something wrong here, please inform support) and will be terminated now: '%s",
-            f"{[i.id for i in broken_instances]}",
+            f"{[i.id for i in terminateable_instances]}",
         )
-        await delete_clusters(app, instances=broken_instances)
+        await delete_clusters(app, instances=terminateable_instances)
