@@ -37,7 +37,7 @@ pytest_simcore_ops_services_selection = [
     "redis-commander",
 ]
 
-DEFAULT_LISTEN_PORT: Final[int] = 3562
+DEFAULT_LISTEN_PORT: Final[int] = 13562
 
 
 class _RemoteProcess:
