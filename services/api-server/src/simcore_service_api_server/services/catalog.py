@@ -91,6 +91,7 @@ class CatalogApi(BaseServiceClientApi):
         product_name: str,
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
+
         response = await self.client.get(
             "/services",
             params={"user_id": user_id, "details": True},

@@ -51,21 +51,6 @@ class StatusDetailTuple(NamedTuple):
 HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, StatusDetailTuple]
 
 
-def service_exception_mapper(
-    service_name: str,
-    http_status_map: HttpStatusMap,
-):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            with service_exception_handler(service_name, http_status_map, **kwargs):
-                return await func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 def _get_http_exception_kwargs(
     service_name: str,
     service_error: httpx.HTTPStatusError,
@@ -136,3 +121,18 @@ def service_exception_handler(
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
+
+
+def service_exception_mapper(
+    service_name: str,
+    http_status_map: HttpStatusMap,
+):
+    def _decorator(func):
+        @wraps(func)
+        async def _wrapper(*args, **kwargs):
+            with service_exception_handler(service_name, http_status_map, **kwargs):
+                return await func(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator
