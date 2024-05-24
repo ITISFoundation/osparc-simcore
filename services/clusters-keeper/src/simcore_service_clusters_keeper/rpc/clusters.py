@@ -6,6 +6,7 @@ from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
 from ..core.errors import Ec2InstanceNotFoundError
+from ..core.settings import get_application_settings
 from ..modules import clusters
 from ..modules.dask import ping_scheduler
 from ..modules.redis import get_redis_client
@@ -45,6 +46,8 @@ async def get_or_create_cluster(
             ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
     cluster_auth = get_scheduler_auth(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return create_cluster_from_ec2_instance(
         ec2_instance,
         user_id,
@@ -54,4 +57,5 @@ async def get_or_create_cluster(
             and await ping_scheduler(get_scheduler_url(ec2_instance), cluster_auth)
         ),
         cluster_auth=cluster_auth,
+        max_cluster_start_time=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_START_TIME,
     )

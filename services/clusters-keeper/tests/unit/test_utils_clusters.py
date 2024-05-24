@@ -241,6 +241,7 @@ def test_create_cluster_from_ec2_instance(
         faker.pyint(),
         dask_scheduler_ready=faker.pybool(),
         cluster_auth=authentication,
+        max_cluster_start_time=faker.time_delta(),
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state
