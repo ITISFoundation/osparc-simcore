@@ -1,9 +1,14 @@
-from typing import Any
+from typing import Any, Awaitable, Callable, TypeAlias
 
 from fastapi.encoders import jsonable_encoder
-from starlette.responses import JSONResponse
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
 
 from ...models.schemas.errors import ErrorGet
+
+ExceptionHandler: TypeAlias = Callable[
+    [Request, BaseException], Awaitable[JSONResponse]
+]
 
 
 def create_error_json_response(

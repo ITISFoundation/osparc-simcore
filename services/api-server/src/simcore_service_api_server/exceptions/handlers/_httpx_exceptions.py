@@ -7,8 +7,9 @@ import logging
 from typing import Any
 
 from fastapi import Request, status
-from fastapi.responses import JSONResponse
 from httpx import HTTPError, TimeoutException
+
+from ._utils import create_error_json_response
 
 _logger = logging.getLogger(__file__)
 
@@ -33,6 +34,7 @@ async def handle_httpx_client_exceptions(request: Request, exc: HTTPError):
 
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         _logger.exception("%s. host=%s. %s", detail, exc.request.url.host, f"{exc}")
-    return JSONResponse(
-        status_code=status_code, content={"detail": detail}, headers=headers
+
+    return create_error_json_response(
+        f"{detail}", status_code=status_code, headers=headers
     )

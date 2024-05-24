@@ -1,11 +1,10 @@
 import logging
-from collections.abc import Callable
 
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
 from servicelib.error_codes import create_error_code
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
-from ._utils import create_error_json_response
+from ._utils import ExceptionHandler, create_error_json_response
 
 _logger = logging.getLogger(__file__)
 
@@ -17,7 +16,7 @@ def make_handler_for_exception(
     error_message: str,
     add_exception_to_message: bool = False,
     add_oec_to_message: bool = False,
-) -> Callable:
+) -> ExceptionHandler:
     """
     Produces a handler for BaseException-type exceptions which converts them
     into an error JSON response with a given status code
