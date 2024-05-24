@@ -44,7 +44,7 @@ ApiHTTPStatus: TypeAlias = int
 
 class ToApiTuple(NamedTuple):
     status_code: ApiHTTPStatus
-    detail: Callable[[Any], str] | str | None
+    detail: Callable[[Any], str] | str | None = None
 
 
 # service to public-api status maps
@@ -60,13 +60,16 @@ def _get_http_exception_kwargs(
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if in_api := http_status_map.get(service_error.response.status_code):
-        detail = f"{service_error}."
+    if mapped := http_status_map.get(service_error.response.status_code):
+        in_api = ToApiTuple(*mapped)
+        status_code = in_api.status_code
         if in_api.detail:
             if callable(in_api.detail):
                 detail = f"{in_api.detail(detail_kwargs)}."
             else:
                 detail = in_api.detail
+        else:
+            detail = f"{service_error}."
 
     elif service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
