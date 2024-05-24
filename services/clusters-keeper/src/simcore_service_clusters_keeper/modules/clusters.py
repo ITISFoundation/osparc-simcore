@@ -162,7 +162,7 @@ async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> 
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(
             [instance],
-            tags={HEARTBEAT_TAG_KEY: f"{arrow.utcnow().datetime}"},
+            tags={HEARTBEAT_TAG_KEY: AWSTagValue(arrow.utcnow().datetime.isoformat())},
         )
 
 
