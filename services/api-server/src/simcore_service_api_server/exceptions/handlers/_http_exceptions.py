@@ -3,7 +3,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ..models.schemas.errors import ErrorGet
+from ...models.schemas.errors import ErrorGet
 
 
 def create_error_json_response(*errors, status_code: int) -> JSONResponse:
@@ -13,5 +13,5 @@ def create_error_json_response(*errors, status_code: int) -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(error_model), status_code=status_code)
 
 
-async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
     return create_error_json_response(exc.detail, status_code=exc.status_code)

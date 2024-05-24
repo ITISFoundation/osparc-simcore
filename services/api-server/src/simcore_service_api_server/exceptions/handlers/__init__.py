@@ -5,15 +5,15 @@ from models_library.basic_types import BootModeEnum
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from ..core.settings import ApplicationSettings
-from ._custom_handlers import custom_error_handler
+from ...core.settings import ApplicationSettings
+from ..custom_errors import CustomBaseError
+from ..log_streaming_errors import LogStreamingBaseError
+from ._custom_errors import custom_error_handler
 from ._handlers_factory import make_handler_for_exception
-from ._http_error_handlers import http_error_handler
-from ._httpx_error_handlers import handle_httpx_client_exceptions
-from ._log_streaming_error_handlers import log_handling_error_handler
-from ._validation_error_handlers import http422_error_handler
-from .custom import CustomBaseError
-from .log_streaming import LogStreamingBaseError
+from ._http_exceptions import http_exception_handler
+from ._httpx_exceptions import handle_httpx_client_exceptions
+from ._log_streaming_errors import log_handling_error_handler
+from ._validation_errors import http422_error_handler
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 
@@ -22,7 +22,7 @@ def setup(app: FastAPI):
     settings: ApplicationSettings = app.state.settings
     assert isinstance(settings, ApplicationSettings)  # nosec
 
-    app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     app.add_exception_handler(LogStreamingBaseError, log_handling_error_handler)

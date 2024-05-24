@@ -5,7 +5,7 @@ from servicelib.error_codes import create_error_code
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ._http_error_handlers import create_error_json_response
+from ._http_exceptions import create_error_json_response
 
 _logger = logging.getLogger(__file__)
 

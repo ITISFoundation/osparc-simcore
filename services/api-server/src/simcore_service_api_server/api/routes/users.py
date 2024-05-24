@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Security, status
 
-from ...exceptions.services_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.profiles import Profile, ProfileUpdate
 from ...services.webserver import AuthSession
