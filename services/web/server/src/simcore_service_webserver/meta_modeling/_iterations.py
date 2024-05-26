@@ -5,7 +5,7 @@
 import itertools
 import logging
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from copy import deepcopy
 from typing import Any, Literal, Optional
 
@@ -69,9 +69,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
         assert node_def.inputs  # nosec
 
         node_call = _function_nodes.catalog.get_implementation(node.key, node.version)
-        g: Generator[NodeOutputsDict, None, None] = node_call(
-            **{name: node.inputs[name] for name in node_def.inputs}
-        )
+        g = node_call(**{name: node.inputs[name] for name in node_def.inputs})
         assert isinstance(g, Iterator)  # nosec
         nodes_generators.append(g)
 
