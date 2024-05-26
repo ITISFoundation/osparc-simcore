@@ -5,7 +5,6 @@ types-aiofiles
 types-attrs
 types-cachetools
 types-PyYAML
-types-redis
 types-requests
 types-setuptools
 types-ujson
