@@ -4,7 +4,8 @@
 
 
 import pytest
-from aws_library.ec2.models import AWSTagKey, AWSTagValue, Resources
+from aws_library.ec2.models import AWSTagKey, AWSTagValue, EC2InstanceData, Resources
+from faker import Faker
 from pydantic import ByteSize, ValidationError, parse_obj_as
 
 
@@ -132,3 +133,40 @@ def test_aws_tag_key_invalid(ec2_tag_key: str):
 
     # for a value it does not
     parse_obj_as(AWSTagValue, ec2_tag_key)
+
+
+def test_ec2_instance_data_hashable(faker: Faker):
+    first_set_of_ec2s = {
+        EC2InstanceData(
+            faker.date_time(),
+            faker.pystr(),
+            faker.pystr(),
+            f"{faker.ipv4()}",
+            "g4dn.xlarge",
+            "running",
+            Resources(
+                cpus=faker.pyfloat(min_value=0.1),
+                ram=ByteSize(faker.pyint(min_value=123)),
+            ),
+            {AWSTagKey("mytagkey"): AWSTagValue("mytagvalue")},
+        )
+    }
+    second_set_of_ec2s = {
+        EC2InstanceData(
+            faker.date_time(),
+            faker.pystr(),
+            faker.pystr(),
+            f"{faker.ipv4()}",
+            "g4dn.xlarge",
+            "running",
+            Resources(
+                cpus=faker.pyfloat(min_value=0.1),
+                ram=ByteSize(faker.pyint(min_value=123)),
+            ),
+            {AWSTagKey("mytagkey"): AWSTagValue("mytagvalue")},
+        )
+    }
+
+    union_of_sets = first_set_of_ec2s.union(second_set_of_ec2s)
+    assert next(iter(first_set_of_ec2s)) in union_of_sets
+    assert next(iter(second_set_of_ec2s)) in union_of_sets

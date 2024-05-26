@@ -93,7 +93,18 @@ class EC2InstanceData:
     tags: EC2Tags
 
     def __hash__(self) -> int:
-        return hash(self.__dict__)
+        return hash(
+            (
+                self.launch_time,
+                self.id,
+                self.aws_private_dns,
+                self.aws_public_ip,
+                self.type,
+                self.state,
+                self.resources,
+                tuple(sorted(self.tags.items())),
+            )
+        )
 
 
 @dataclass(frozen=True)
