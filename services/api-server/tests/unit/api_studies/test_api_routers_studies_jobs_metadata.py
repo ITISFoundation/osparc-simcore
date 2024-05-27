@@ -4,14 +4,13 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict
 
 import httpx
 import pytest
-import respx
 from fastapi.encoders import jsonable_encoder
+from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
@@ -20,7 +19,6 @@ from simcore_service_api_server.models.schemas.jobs import (
 )
 from simcore_service_api_server.models.schemas.studies import StudyID
 from starlette import status
-from unit.conftest import SideEffectCallback
 
 
 class MockedBackendApiDict(TypedDict):
@@ -33,18 +31,17 @@ def mocked_backend(
     project_tests_dir: Path,
     mocked_webserver_service_api_base: MockRouter,
     mocked_catalog_service_api_base: MockRouter,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
 ) -> MockedBackendApiDict | None:
-    respx_mock_from_capture(
-        [
+    create_respx_mock_from_capture(
+        respx_mocks=[
             mocked_webserver_service_api_base,
             mocked_catalog_service_api_base,
         ],
-        project_tests_dir / "mocks" / "test_get_and_update_study_job_metadata.json",
-        [],
+        capture_path=project_tests_dir
+        / "mocks"
+        / "test_get_and_update_study_job_metadata.json",
+        side_effects_callbacks=[],
     )
 
     return MockedBackendApiDict(
