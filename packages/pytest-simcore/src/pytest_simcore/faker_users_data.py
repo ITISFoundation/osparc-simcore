@@ -69,10 +69,7 @@ def user_id(faker: Faker, request: pytest.FixtureRequest) -> UserID:
 
 @pytest.fixture(scope="session")
 def is_external_user_email(request: pytest.FixtureRequest) -> bool:
-    if user_email := request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None):
-        print(f"📧 {user_email=} was passed externally via {_FAKE_USER_EMAIL_OPTION}")
-        return True
-    return False
+    return bool(request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None))
 
 
 @pytest.fixture

@@ -50,10 +50,13 @@ def app_environment(
 
 @pytest.fixture
 def smtp_mock_or_none(
-    mocker: MockerFixture, is_external_user_email: bool
+    mocker: MockerFixture,
+    is_external_user_email: bool,
+    user_email: EmailStr,
 ) -> MagicMock | None:
     if not is_external_user_email:
         return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
+    print("🚨 Emails might be sent to", f"{user_email=}")
     return None
 
 
