@@ -83,7 +83,7 @@ async def upsert(
     data = {
         "project_uuid": f"{project_uuid}",
         "custom": custom_metadata,
-        "parent_projet_uuid": (
+        "parent_project_uuid": (
             f"{parent_project_uuid}" if parent_project_uuid is not None else None
         ),
         "parent_node_id": f"{parent_node_id}" if parent_node_id is not None else None,

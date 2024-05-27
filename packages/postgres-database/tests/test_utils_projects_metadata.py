@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 from collections.abc import Awaitable, Callable
+from uuid import UUID
 
 import pytest
 from aiopg.sa.connection import SAConnection
@@ -27,8 +28,10 @@ async def fake_project(
     connection: SAConnection,
     fake_user: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_nodes: Callable[..., Awaitable[RowProxy]],
 ) -> RowProxy:
     project: RowProxy = await create_fake_project(connection, fake_user, hidden=True)
+    await create_fake_nodes(project)
     return project
 
 
@@ -46,13 +49,18 @@ async def test_projects_metadata_repository(
 
     # subresource is attached to parent
     user_metadata = {"float": 3.14, "int": 42, "string": "foo", "bool": True}
-
+    random_project_uuid = faker.uuid4(cast_to=None)
+    assert isinstance(random_project_uuid, UUID)
     with pytest.raises(DBProjectNotFoundError):
-        await utils_projects_metadata.get(connection, project_uuid=faker.uuid4())
+        await utils_projects_metadata.get(connection, project_uuid=random_project_uuid)
 
     with pytest.raises(DBProjectNotFoundError):
         await utils_projects_metadata.upsert(
-            connection, project_uuid=faker.uuid4(), custom_metadata=user_metadata
+            connection,
+            project_uuid=random_project_uuid,
+            custom_metadata=user_metadata,
+            parent_project_uuid=None,
+            parent_node_id=None,
         )
 
     project_metadata = await utils_projects_metadata.get(
@@ -62,7 +70,11 @@ async def test_projects_metadata_repository(
     assert project_metadata.custom is None
 
     got = await utils_projects_metadata.upsert(
-        connection, project_uuid=project["uuid"], custom_metadata=user_metadata
+        connection,
+        project_uuid=project["uuid"],
+        custom_metadata=user_metadata,
+        parent_project_uuid=None,
+        parent_node_id=None,
     )
     assert got.custom
     assert user_metadata == got.custom
@@ -74,7 +86,11 @@ async def test_projects_metadata_repository(
     assert project_metadata == got
 
     got_after_update = await utils_projects_metadata.upsert(
-        connection, project_uuid=project["uuid"], custom_metadata={}
+        connection,
+        project_uuid=project["uuid"],
+        custom_metadata={},
+        parent_project_uuid=None,
+        parent_node_id=None,
     )
     assert got_after_update.custom == {}
     assert got.modified
