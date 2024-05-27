@@ -4,7 +4,6 @@
 # pylint:disable=protected-access
 
 import pytest
-from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
 from settings_library.s3 import S3Settings
@@ -22,11 +21,6 @@ def minimal_storage_config(
     monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return UserID(faker.pyint(min_value=1))
 
 
 def test_get_storage_client_instance(

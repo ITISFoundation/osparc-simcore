@@ -111,11 +111,6 @@ def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return faker.uuid4(cast_to=None)
 
