@@ -21,29 +21,6 @@ from uuid import uuid4
 
 import faker
 from faker import Faker
-from simcore_postgres_database.models.api_keys import api_keys
-from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_postgres_database.models.groups import groups
-from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
-)
-from simcore_postgres_database.models.products import Vendor, products
-from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.users import users
-from simcore_postgres_database.models.users_details import (
-    users_pre_registration_details,
-)
-from simcore_postgres_database.webserver_models import GroupType, UserStatus
-
-_STATES = [
-    StateType.NOT_STARTED,
-    StateType.PENDING,
-    StateType.RUNNING,
-    StateType.SUCCESS,
-    StateType.FAILED,
-]
-
 
 DEFAULT_FAKER: Final = faker.Faker()
 
@@ -72,6 +49,9 @@ _DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 def random_user(
     fake: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
 ) -> dict[str, Any]:
+    from simcore_postgres_database.models.users import users
+    from simcore_postgres_database.webserver_models import UserStatus
+
     assert set(overrides.keys()).issubset({c.name for c in users.columns})
 
     data = {
@@ -99,6 +79,10 @@ def random_pre_registration_details(
     created_by: int | None = None,
     **overrides,
 ):
+    from simcore_postgres_database.models.users_details import (
+        users_pre_registration_details,
+    )
+
     assert set(overrides.keys()).issubset(
         {c.name for c in users_pre_registration_details.columns}
     )
@@ -136,6 +120,8 @@ def random_pre_registration_details(
 
 def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
+    from simcore_postgres_database.models.projects import projects
+
     data = {
         "uuid": fake.uuid4(),
         "name": fake.word(),
@@ -153,6 +139,8 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
 
 def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+    from simcore_postgres_database.models.groups import groups
+    from simcore_postgres_database.webserver_models import GroupType
 
     data = {
         "name": fake.company(),
@@ -166,10 +154,22 @@ def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
+def _get_comp_pipeline_test_states():
+    from simcore_postgres_database.models.comp_pipeline import StateType
+
+    return [
+        StateType.NOT_STARTED,
+        StateType.PENDING,
+        StateType.RUNNING,
+        StateType.SUCCESS,
+        StateType.FAILED,
+    ]
+
+
 def fake_pipeline(**overrides) -> dict[str, Any]:
     data = {
         "dag_adjacency_list": json.dumps({}),
-        "state": random.choice(_STATES),
+        "state": random.choice(_get_comp_pipeline_test_states()),
     }
     data.update(overrides)
     return data
@@ -190,7 +190,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
             "inputs": json.dumps({}),
             "outputs": json.dumps({}),
             "image": json.dumps({}),
-            "state": random.choice(_STATES),
+            "state": random.choice(_get_comp_pipeline_test_states()),
             "submit": t0,
             "start": t0 + timedelta(seconds=1),
             "end": t0 + timedelta(minutes=5),
@@ -214,6 +214,7 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
+    from simcore_postgres_database.models.products import Vendor, products
 
     name = overrides.get("name")
     suffix = fake.unique.word() if name is None else name
@@ -255,7 +256,10 @@ def random_payment_method(
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
-    from simcore_postgres_database.models.payments_methods import payments_methods
+    from simcore_postgres_database.models.payments_methods import (
+        InitPromptAckFlowState,
+        payments_methods,
+    )
 
     data = {
         "payment_method_id": fake.uuid4(),
@@ -278,6 +282,7 @@ def random_payment_transaction(
 ) -> dict[str, Any]:
     """Generates Metadata + concept/info (excludes state)"""
     from simcore_postgres_database.models.payments_transactions import (
+        PaymentTransactionState,
         payments_transactions,
     )
 
@@ -327,6 +332,8 @@ def random_payment_autorecharge(
 def random_api_key(
     product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
+    from simcore_postgres_database.models.api_keys import api_keys
+
     data = {
         "display_name": fake.word(),
         "product_name": product_name,
