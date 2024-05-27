@@ -272,10 +272,6 @@ def _register_osparc_variables(app: FastAPI):
     _register_lifespan_variables_table(app)
 
 
-def get_registered_osparc_variables(app: FastAPI):
-    _register_osparc_variables(app)
-
-
 def setup(app: FastAPI):
     """
     **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
@@ -284,3 +280,15 @@ def setup(app: FastAPI):
         - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
     """
     app.add_event_handler("startup", functools.partial(_register_osparc_variables, app))
+
+
+#
+# CLI helpers
+#
+
+
+def list_osparc_session_variables() -> list[str]:
+    app = FastAPI()
+    _register_osparc_variables(app)
+    table = OsparcSessionVariablesTable.get_from_app_state(app)
+    return list(table.variables_names())
