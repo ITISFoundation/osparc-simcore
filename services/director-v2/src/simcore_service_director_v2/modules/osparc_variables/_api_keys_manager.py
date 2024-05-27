@@ -1,6 +1,6 @@
 from datetime import timedelta
-from typing import Any
-from uuid import uuid5
+from typing import Any, Final
+from uuid import UUID, uuid5
 
 from fastapi import FastAPI
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
@@ -110,6 +110,14 @@ def _get_identifier(node_id: NodeID, run_id: RunID) -> str:
     return f"_auto_{uuid5(node_id, run_id)}"
 
 
+_NAMESPACE: Final = UUID("ce021d45-82e6-4dfe-872c-2f452cf289f8")
+
+
+def _get_identifier2(user_id: UserID, product_name: ProductName):
+    uid = uuid5(_NAMESPACE, f"{user_id}/{product_name}")
+    return f"_auto_{product_name}_{user_id}_{uid}"
+
+
 async def _get_or_create(
     app: FastAPI,
     *,
@@ -120,6 +128,8 @@ async def _get_or_create(
 ) -> ApiKeyGet:
     api_keys_manager: _APIKeysManager = _APIKeysManager.get_from_app_state(app)
     display_name = _get_identifier(node_id, run_id)
+
+    # display_name = _get_identifier2(product_name=product_name, user_id=user_id)
 
     api_key: ApiKeyGet | None = await api_keys_manager.get(
         identifier=display_name,
