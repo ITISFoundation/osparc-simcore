@@ -35,6 +35,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
 ]
@@ -251,11 +252,6 @@ def file_on_s3_server(
 @pytest.fixture
 def job_id() -> str:
     return "some_incredible_string"
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
