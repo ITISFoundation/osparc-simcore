@@ -30,6 +30,7 @@ from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
@@ -39,7 +40,6 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client

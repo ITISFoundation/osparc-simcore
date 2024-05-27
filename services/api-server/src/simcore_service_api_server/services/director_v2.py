@@ -13,9 +13,9 @@ from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
+from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from .service_exception_handling import service_exception_mapper
 
 logger = logging.getLogger(__name__)
 

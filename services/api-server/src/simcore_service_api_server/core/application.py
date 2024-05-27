@@ -1,28 +1,16 @@
 import logging
 
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
-from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
-from starlette import status
-from starlette.exceptions import HTTPException
 
+from .. import exceptions
 from .._meta import API_VERSION, API_VTAG
-from ..api.errors.custom_errors import CustomBaseError, custom_error_handler
-from ..api.errors.http_error import (
-    http_error_handler,
-    make_http_error_handler_for_exception,
-)
-from ..api.errors.httpx_client_error import handle_httpx_client_exceptions
-from ..api.errors.log_handling_error import log_handling_error_handler
-from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
-from ..services.log_streaming import LogDistributionBaseException
 from ..services.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
@@ -96,31 +84,10 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("startup", create_start_app_handler(app))
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    app.add_exception_handler(HTTPException, http_error_handler)
-    app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
-    app.add_exception_handler(RequestValidationError, http422_error_handler)
-    app.add_exception_handler(LogDistributionBaseException, log_handling_error_handler)
-    app.add_exception_handler(CustomBaseError, custom_error_handler)
+    exceptions.setup_exception_handlers(
+        app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+    )
 
-    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
-    app.add_exception_handler(
-        NotImplementedError,
-        make_http_error_handler_for_exception(
-            NotImplementedError,
-            status.HTTP_501_NOT_IMPLEMENTED,
-            detail_message="Endpoint not implemented",
-        ),
-    )
-    app.add_exception_handler(
-        Exception,
-        make_http_error_handler_for_exception(
-            Exception,
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail_message="Unexpected error",
-            add_exception_to_message=(settings.SC_BOOT_MODE == BootModeEnum.DEBUG),
-            add_oec_to_message=True,
-        ),
-    )
     if settings.API_SERVER_PROFILING:
         app.add_middleware(ProfilerMiddleware)
 

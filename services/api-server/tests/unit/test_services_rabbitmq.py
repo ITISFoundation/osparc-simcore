@@ -44,8 +44,8 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
-    LogStreamerNotRegistered,
-    LogStreamerRegistionConflict,
+    LogStreamerNotRegisteredError,
+    LogStreamerRegistionConflictError,
 )
 from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
@@ -219,7 +219,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(LogStreamerRegistionConflict):
+    with pytest.raises(LogStreamerRegistionConflictError):
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -459,7 +459,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 async def test_log_generator_context(mocker: MockFixture, faker: Faker):
     log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
-    with pytest.raises(LogStreamerNotRegistered):
+    with pytest.raises(LogStreamerNotRegisteredError):
         async for log in log_streamer.log_generator():
             print(log)
 
