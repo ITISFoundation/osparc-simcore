@@ -113,7 +113,7 @@ async def _tcp_command(
     host: str = "localhost",
     port: int,
     read_chunk_size: int = 10000,
-    timeout: NonNegativeFloat = 1,
+    timeout: NonNegativeFloat = 10,
 ) -> Any:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
