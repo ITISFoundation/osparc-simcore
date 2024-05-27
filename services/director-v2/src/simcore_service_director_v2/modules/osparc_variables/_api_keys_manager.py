@@ -19,6 +19,68 @@ from settings_library.redis import RedisDatabase
 from ...utils.base_distributed_identifier import BaseDistributedIdentifierManager
 from ..rabbitmq import get_rabbitmq_rpc_client
 
+_NAMESPACE: Final = UUID("ce021d45-82e6-4dfe-872c-2f452cf289f8")
+
+
+def create_unique_identifier_from(user_id: UserID, product_name: ProductName) -> str:
+    return f"{uuid5(_NAMESPACE, f'{user_id}/{product_name}')}"
+
+
+#
+# RPC interface
+#
+
+
+async def create_api_key_and_secret(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    name: str,
+    expiration: timedelta | None = None,
+) -> ApiKeyGet:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    result = await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "create_api_keys"),
+        product_name=product_name,
+        user_id=user_id,
+        new=ApiKeyCreate(display_name=name, expiration=expiration),
+    )
+    return ApiKeyGet.parse_obj(result)
+
+
+async def get_api_key_and_secret(
+    app: FastAPI, *, product_name: ProductName, user_id: UserID, name: str
+) -> ApiKeyGet | None:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    result: Any | None = await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "api_key_get"),
+        product_name=product_name,
+        user_id=user_id,
+        name=name,
+    )
+    return parse_obj_as(ApiKeyGet | None, result)
+
+
+async def delete_api_key_and_secret(
+    app: FastAPI, *, product_name: ProductName, user_id: UserID, name: str
+):
+    rpc_client = get_rabbitmq_rpc_client(app)
+    await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "delete_api_keys"),
+        product_name=product_name,
+        user_id=user_id,
+        name=name,
+    )
+
+
+#
+# API Keys Manager
+
+
 _CLEANUP_INTERVAL = timedelta(minutes=5)
 
 
@@ -71,31 +133,25 @@ class _APIKeysManager(
     async def _create(  # type:ignore [override] # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
-        result = await self.rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "create_api_keys"),
+        result = await create_api_key_and_secret(
+            self.app,
             product_name=product_name,
             user_id=user_id,
-            new=ApiKeyCreate(display_name=identifier, expiration=None),
+            name=identifier,
+            expiration=None,
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
     async def get(  # type:ignore [override] # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
-        result: Any | None = await self.rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "api_key_get"),
-            product_name=product_name,
-            user_id=user_id,
-            name=identifier,
+        return await get_api_key_and_secret(
+            self.app, product_name=product_name, user_id=user_id, name=identifier
         )
-        return parse_obj_as(ApiKeyGet | None, result)
 
     async def _destroy(self, identifier: str, cleanup_context: _CleanupContext) -> None:
-        await self.rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "delete_api_keys"),
+        await delete_api_key_and_secret(
+            self.app,
             product_name=cleanup_context.product_name,
             user_id=cleanup_context.user_id,
             name=identifier,
@@ -110,14 +166,6 @@ def _get_identifier(node_id: NodeID, run_id: RunID) -> str:
     return f"_auto_{uuid5(node_id, run_id)}"
 
 
-_NAMESPACE: Final = UUID("ce021d45-82e6-4dfe-872c-2f452cf289f8")
-
-
-def _get_identifier2(user_id: UserID, product_name: ProductName):
-    uid = uuid5(_NAMESPACE, f"{user_id}/{product_name}")
-    return f"_auto_{product_name}_{user_id}_{uid}"
-
-
 async def _get_or_create(
     app: FastAPI,
     *,
@@ -128,8 +176,6 @@ async def _get_or_create(
 ) -> ApiKeyGet:
     api_keys_manager: _APIKeysManager = _APIKeysManager.get_from_app_state(app)
     display_name = _get_identifier(node_id, run_id)
-
-    # display_name = _get_identifier2(product_name=product_name, user_id=user_id)
 
     api_key: ApiKeyGet | None = await api_keys_manager.get(
         identifier=display_name,
