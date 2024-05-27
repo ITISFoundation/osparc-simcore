@@ -21,6 +21,10 @@ class DBProjectNotFoundError(Exception):
     ...
 
 
+class DBProjectNodeParentNotFoundError(Exception):
+    ...
+
+
 #
 # Data
 #
@@ -80,6 +84,10 @@ async def upsert(
     parent_project_uuid: uuid.UUID | None,
     parent_node_id: uuid.UUID | None,
 ) -> ProjectMetadata:
+    if (parent_project_uuid is None and parent_node_id is not None) or (
+        parent_project_uuid is not None and parent_node_id is None
+    ):
+        raise DBProjectNodeParentNotFoundError((parent_project_uuid, parent_node_id))
     data = {
         "project_uuid": f"{project_uuid}",
         "custom": custom_metadata,
@@ -101,4 +109,9 @@ async def upsert(
         return ProjectMetadata.from_orm(row)
 
     except ForeignKeyViolation as err:
+        assert err.pgerror is not None  # nosec
+        if "fk_projects_metadata_parent_node_id" in err.pgerror:
+            raise DBProjectNodeParentNotFoundError(
+                (parent_project_uuid, parent_node_id)
+            ) from err
         raise DBProjectNotFoundError(project_uuid) from err

@@ -261,7 +261,9 @@ async def create_fake_cluster(
 
 
 @pytest.fixture
-async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
+async def create_fake_project(
+    pg_engine: Engine,
+) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
     async def _creator(conn, user: RowProxy, **overrides) -> RowProxy:
