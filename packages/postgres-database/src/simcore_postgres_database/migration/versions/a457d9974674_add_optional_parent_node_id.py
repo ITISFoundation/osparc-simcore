@@ -5,6 +5,7 @@ Revises: baf0ee1c37dc
 Create Date: 2024-05-27 08:37:31.554118+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -29,7 +30,7 @@ def upgrade():
         "projects_metadata",
         "projects_nodes",
         ["parent_project_uuid", "parent_node_id"],
-        ["node_id", "project_uuid"],
+        ["project_uuid", "node_id"],
         onupdate="CASCADE",
         ondelete="SET NULL",
     )

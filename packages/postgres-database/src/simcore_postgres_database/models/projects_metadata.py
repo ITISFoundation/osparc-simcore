@@ -66,7 +66,7 @@ projects_metadata = sa.Table(
     sa.PrimaryKeyConstraint("project_uuid"),
     sa.ForeignKeyConstraint(
         ("parent_project_uuid", "parent_node_id"),
-        (projects_nodes.c.node_id, projects_nodes.c.project_uuid),
+        (projects_nodes.c.project_uuid, projects_nodes.c.node_id),
         onupdate="CASCADE",
         ondelete="SET NULL",
         name="fk_projects_metadata_parent_node_id",
