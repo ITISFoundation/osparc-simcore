@@ -82,7 +82,7 @@ cryptography==42.0.5
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==7.0.0
+docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -209,7 +209,6 @@ openapi-spec-validator==0.4.0
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
 pbr==6.0.0
     # via

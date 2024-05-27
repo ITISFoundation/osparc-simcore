@@ -71,7 +71,7 @@ cryptography==42.0.6
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-docker==7.0.0
+docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -193,7 +193,6 @@ openapi-spec-validator==0.7.1
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
     #   pytest-sugar
 pandas==2.2.2

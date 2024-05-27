@@ -49,7 +49,7 @@ distributed==2024.5.1
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via pytest
@@ -113,7 +113,6 @@ packaging==24.0
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-    #   docker
     #   pytest
     #   pytest-sugar
 partd==1.4.2

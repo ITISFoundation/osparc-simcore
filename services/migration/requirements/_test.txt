@@ -11,7 +11,7 @@ charset-normalizer==3.3.2
     # via requests
 coverage==7.5.1
     # via pytest-cov
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via pytest
@@ -30,9 +30,7 @@ mypy==1.10.0
 mypy-extensions==1.0.0
     # via mypy
 packaging==24.0
-    # via
-    #   docker
-    #   pytest
+    # via pytest
 pluggy==1.5.0
     # via pytest
 pytest==8.2.0

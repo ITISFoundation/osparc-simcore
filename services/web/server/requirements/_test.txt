@@ -44,7 +44,7 @@ coverage==7.5.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==6.1.3
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via
@@ -116,7 +116,6 @@ openapi-spec-validator==0.4.0
 packaging==23.1
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
@@ -230,8 +229,6 @@ urllib3==1.26.11
     #   -c requirements/_base.txt
     #   docker
     #   requests
-websocket-client==1.6.4
-    # via docker
 websockets==12.0
     # via -r requirements/_test.in
 yarl==1.5.1

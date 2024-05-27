@@ -80,7 +80,7 @@ debugpy==1.8.1
     # via -r requirements/_test.in
 deepdiff==7.0.1
     # via -r requirements/_test.in
-docker==7.0.0
+docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -201,7 +201,6 @@ ordered-set==4.1.0
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
 parse==1.20.1
     # via -r requirements/_test.in

@@ -45,7 +45,7 @@ coverage==7.5.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via
@@ -125,7 +125,6 @@ openapi-spec-validator==0.7.1
     #   -r requirements/_test.in
 packaging==24.0
     # via
-    #   docker
     #   pytest
     #   pytest-sugar
 pathable==0.4.3

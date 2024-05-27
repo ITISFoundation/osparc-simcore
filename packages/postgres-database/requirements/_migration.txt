@@ -10,7 +10,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via -r requirements/_migration.in
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_migration.in
 greenlet==3.0.3
     # via
@@ -29,8 +29,6 @@ markupsafe==2.1.5
     # via
     #   -c requirements/_base.txt
     #   mako
-packaging==24.0
-    # via docker
 requests==2.31.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

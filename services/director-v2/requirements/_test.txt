@@ -94,7 +94,7 @@ distributed==2024.5.1
     # via
     #   -c requirements/_base.txt
     #   dask
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via
@@ -200,7 +200,6 @@ packaging==24.0
     #   bokeh
     #   dask
     #   distributed
-    #   docker
     #   pytest
 pamqp==3.3.0
     # via
