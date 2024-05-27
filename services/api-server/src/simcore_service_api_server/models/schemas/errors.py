@@ -13,5 +13,10 @@ class ErrorGet(BaseModel):
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
-            "example": ["some error message", "another error message"]
+            "example": {
+                "errors": [
+                    "some error message",
+                    "another error message",
+                ]
+            }
         }
