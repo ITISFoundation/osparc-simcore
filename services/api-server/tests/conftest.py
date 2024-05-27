@@ -16,6 +16,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
