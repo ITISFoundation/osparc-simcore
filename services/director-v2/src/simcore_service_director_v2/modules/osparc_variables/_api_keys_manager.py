@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID, uuid5
 
 from fastapi import FastAPI
@@ -210,7 +210,7 @@ async def get_or_create_api_key(
         node_id=node_id,
         run_id=run_id,
     )
-    return data.api_key
+    return cast(str, data.api_key)
 
 
 async def get_or_create_api_secret(
@@ -227,7 +227,7 @@ async def get_or_create_api_secret(
         node_id=node_id,
         run_id=run_id,
     )
-    return data.api_secret
+    return cast(str, data.api_secret)
 
 
 async def safe_remove_api_key_and_secret(
