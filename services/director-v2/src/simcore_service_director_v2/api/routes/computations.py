@@ -157,7 +157,7 @@ async def _get_project_metadata(
     projects_metadata_repo: ProjectsMetadataRepository,
     computation: ComputationCreate,
 ) -> ProjectMetadataDict:
-    current_project_metadata = await projects_metadata_repo.get_metadata(
+    current_project_metadata = await projects_metadata_repo.get_custom_metadata(
         computation.project_id
     )
 
