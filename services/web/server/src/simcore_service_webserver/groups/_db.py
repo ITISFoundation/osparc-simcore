@@ -298,7 +298,7 @@ async def add_new_user_in_group(
     # add the new user to the group now
     user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
     if access_rights:
-        user_access_rights.update(access_rights)  # type: ignore
+        user_access_rights.update(access_rights)
     await conn.execute(
         # pylint: disable=no-value-for-parameter
         user_to_groups.insert().values(
