@@ -28,6 +28,10 @@ class ProjectNodesNodeNotFound(BaseProjectNodesError):
     ...
 
 
+class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
+    ...
+
+
 class ProjectNodesOperationNotAllowed(BaseProjectNodesError):
     ...
 
@@ -274,8 +278,12 @@ class ProjectNodesRepo:
         get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
             projects_nodes.c.node_id == f"{node_id}"
         )
-        project_id = await connection.scalar(get_stmt)
-        if project_id is None:
+        result = await connection.execute(get_stmt)
+        project_ids = await result.fetchall()
+        if not project_ids:
             msg = f"No project found containing {node_id=}"
             raise ProjectNodesNodeNotFound(msg)
-        return uuid.UUID(project_id)
+        if len(project_ids) > 1:
+            msg = f"Multiple project found containing {node_id=}"
+            raise ProjectNodesNonUniqueNodeFoundError(msg)
+        return uuid.UUID(project_ids[0][projects_nodes.c.project_uuid])

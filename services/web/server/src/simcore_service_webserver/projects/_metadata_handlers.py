@@ -32,6 +32,7 @@ from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
     ParentNodeNotFoundError,
     ProjectInvalidRightsError,
+    ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
 
@@ -50,6 +51,8 @@ def _handle_project_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+        except ProjectInvalidUsageError as exc:
+            raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
 
     return wrapper
 

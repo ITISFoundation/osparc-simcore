@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Final
 
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
@@ -14,10 +15,15 @@ from simcore_postgres_database.utils_projects_metadata import (
 )
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFound,
+    ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesRepo,
 )
 
-from .exceptions import ParentNodeNotFoundError, ProjectNotFoundError
+from .exceptions import (
+    ParentNodeNotFoundError,
+    ProjectInvalidUsageError,
+    ProjectNotFoundError,
+)
 
 
 @asynccontextmanager
@@ -52,6 +58,9 @@ async def get_project_metadata(engine: Engine, project_uuid: ProjectID) -> Metad
         return parse_obj_as(MetadataDict, metadata.custom or {})
 
 
+_NIL_NODE_UUID: Final[NodeID] = NodeID(int=0)
+
+
 async def set_project_metadata(
     engine: Engine,
     project_uuid: ProjectID,
@@ -70,6 +79,8 @@ async def set_project_metadata(
         parent_node_id = parse_obj_as(NodeID, parent_node_idstr)
 
     async with _acquire_and_handle(engine, project_uuid) as connection:
+        if parent_node_id == _NIL_NODE_UUID:
+            parent_node_id = None
         if parent_node_id:
             try:
                 parent_project_uuid = (
@@ -77,8 +88,16 @@ async def set_project_metadata(
                         connection, node_id=parent_node_id
                     )
                 )
+                if parent_project_uuid == project_uuid:
+                    # this is not allowed!
+                    msg = "Project cannot be parent of itself"
+                    raise ProjectInvalidUsageError(msg)
             except ProjectNodesNodeNotFound as err:
                 raise DBProjectNodeParentNotFoundError((None, parent_node_id)) from err
+            except ProjectNodesNonUniqueNodeFoundError as err:
+                msg = "missing parent project id"
+                raise ProjectInvalidUsageError(msg) from err
+
         metadata = await utils_projects_metadata.upsert(
             connection,
             project_uuid=project_uuid,
