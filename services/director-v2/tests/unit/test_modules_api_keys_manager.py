@@ -18,7 +18,7 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_director_v2.modules.osparc_variables._api_keys_manager import (
+from simcore_service_director_v2.modules.osparc_variables.api_keys_manager import (
     _APIKeysManager,
     _get_identifier,
     get_or_create_api_key,
@@ -106,7 +106,7 @@ async def mock_rpc_server(
 
     # mock returned client
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_keys_manager.get_rabbitmq_rpc_client",
+        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.get_rabbitmq_rpc_client",
         return_value=rpc_client,
         autospec=True,
     )

@@ -181,7 +181,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
 @pytest.fixture
 def mock_api_key_manager(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_keys_manager._get_or_create",
+        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager._get_or_create",
         return_value=ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0]),
         autospec=True,
     )

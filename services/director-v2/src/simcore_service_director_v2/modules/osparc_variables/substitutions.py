@@ -29,8 +29,8 @@ from ...utils.osparc_variables import (
     resolve_variables_from_context,
 )
 from ..db.repositories.services_environments import ServicesEnvironmentsRepository
-from ._api_keys_manager import get_or_create_api_key, get_or_create_api_secret
 from ._user_session import request_user_email, request_user_role
+from .api_keys_manager import get_or_create_api_key, get_or_create_api_secret
 
 _logger = logging.getLogger(__name__)
 
