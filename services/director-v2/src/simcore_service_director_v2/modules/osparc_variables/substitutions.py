@@ -291,4 +291,4 @@ def list_osparc_session_variables() -> list[str]:
     app = FastAPI()
     _register_osparc_variables(app)
     table = OsparcSessionVariablesTable.get_from_app_state(app)
-    return list(table.variables_names())
+    return sorted(table.variables_names())

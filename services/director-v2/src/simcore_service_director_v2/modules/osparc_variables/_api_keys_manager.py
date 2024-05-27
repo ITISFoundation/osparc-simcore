@@ -79,7 +79,7 @@ async def delete_api_key_and_secret(
 
 #
 # API Keys Manager
-
+#
 
 _CLEANUP_INTERVAL = timedelta(minutes=5)
 
