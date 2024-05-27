@@ -109,11 +109,12 @@ async def mock_rpc_server(
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
 
     # mock returned client
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.get_rabbitmq_rpc_client",
-        return_value=rpc_client,
-        autospec=True,
-    )
+    for module_name in ("api_keys_manager", "_api_auth_rpc"):
+        mocker.patch(
+            f"simcore_service_director_v2.modules.osparc_variables.{module_name}.get_rabbitmq_rpc_client",
+            return_value=rpc_client,
+            autospec=True,
+        )
 
     return rpc_client
 

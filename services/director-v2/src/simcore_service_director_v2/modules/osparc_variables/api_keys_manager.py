@@ -1,6 +1,6 @@
 import warnings
 from datetime import timedelta
-from typing import cast
+from typing import Final, cast
 from uuid import uuid5
 
 from fastapi import FastAPI
@@ -23,9 +23,11 @@ from ._api_auth_rpc import (
     get_api_key_and_secret,
 )
 
-#
-# API Keys Manager (DEPRECATED: Use interface above instead )
-#
+# This entire module, API Keys Manager, is DEPRECATED
+_DEPRECATION_MSG: Final = (
+    "Use osparc_variables._api_auth interface instead to generate API keys and secrets"
+)
+
 
 _CLEANUP_INTERVAL = timedelta(minutes=5)
 
@@ -122,7 +124,7 @@ async def _get_or_create(
 ) -> ApiKeyGet:
 
     warnings.warn(
-        "Use user-centric functional interface to generate API keys and secrets instead",
+        _DEPRECATION_MSG,
         category=DeprecationWarning,
         stacklevel=1,
     )
@@ -188,7 +190,7 @@ async def safe_remove_api_key_and_secret(
 ) -> None:
     # Left active so that registry deletes all generated api-keys deployed
     warnings.warn(
-        "Use user-centric functional interface to generate API keys and secrets instead",
+        _DEPRECATION_MSG,
         category=DeprecationWarning,
         stacklevel=1,
     )
