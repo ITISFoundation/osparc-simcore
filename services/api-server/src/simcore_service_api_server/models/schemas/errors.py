@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
@@ -10,3 +10,8 @@ class ErrorGet(BaseModel):
     #   - https://github.com/ITISFoundation/osparc-simcore/issues/2520
     #   - https://github.com/ITISFoundation/osparc-simcore/issues/2446
     errors: list[Any]
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": ["some error message", "another error message"]
+        }
