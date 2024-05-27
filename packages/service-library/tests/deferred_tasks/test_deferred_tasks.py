@@ -11,10 +11,11 @@ import sys
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack
 from pathlib import Path
-from typing import Any, Final, Protocol
+from typing import Any, Protocol
 
 import psutil
 import pytest
+from aiohttp.test_utils import unused_port
 from pydantic import NonNegativeFloat, NonNegativeInt, SecretStr
 from pydantic.json import pydantic_encoder
 from pytest_mock import MockerFixture
@@ -36,8 +37,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "redis-commander",
 ]
-
-DEFAULT_LISTEN_PORT: Final[int] = 13562
 
 
 class _RemoteProcess:
@@ -83,7 +82,7 @@ async def redis_client(
 @pytest.fixture
 async def get_remote_process(
     redis_client: RedisClientSDK,
-) -> AsyncIterable[Callable[[int], Awaitable[_RemoteProcess]]]:
+) -> AsyncIterable[Callable[[], Awaitable[_RemoteProcess]]]:
     python_interpreter = sys.executable
     current_module_path = (
         Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -93,9 +92,9 @@ async def get_remote_process(
 
     started_processes: list[_RemoteProcess] = []
 
-    async def _(port: int) -> _RemoteProcess:
+    async def _() -> _RemoteProcess:
         process = _RemoteProcess(
-            shell_command=f"{python_interpreter} {app_to_start}", port=port
+            shell_command=f"{python_interpreter} {app_to_start}", port=unused_port()
         )
         started_processes.append(process)
         return process
@@ -260,7 +259,7 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("start_stop_cycles", [0, 10])
 async def test_workflow_with_outages_in_process_running_deferred_manager(
-    get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
+    get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     remote_processes: int,
@@ -273,7 +272,7 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
             *[
                 exit_stack.enter_async_context(
                     _RemoteProcessLifecycleManager(
-                        await get_remote_process(DEFAULT_LISTEN_PORT + i),
+                        await get_remote_process(),
                         rabbit_service,
                         redis_service,
                         max_workers,
@@ -408,7 +407,7 @@ async def test_workflow_with_third_party_services_outages(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
-    get_remote_process: Callable[[int], Awaitable[_RemoteProcess]],
+    get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     max_workers: int,
@@ -418,7 +417,7 @@ async def test_workflow_with_third_party_services_outages(
     service_manager = ServiceManager(redis_client, rabbit_client, paused_container)
 
     async with _RemoteProcessLifecycleManager(
-        await get_remote_process(DEFAULT_LISTEN_PORT),
+        await get_remote_process(),
         rabbit_service,
         redis_service,
         max_workers,
