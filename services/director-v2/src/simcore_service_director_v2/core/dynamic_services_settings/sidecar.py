@@ -5,6 +5,7 @@ from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerPlacementConstraint
+from models_library.users import UserID
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
@@ -51,6 +52,18 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
         return v
+
+
+class EfsSettings(SettingsLibraryRCloneSettings):
+    EFS_DNS_NAME: str = Field(
+        description="time to cache directory entries for",
+        example="fs-xxx.efs.us-east-1.amazonaws.com",
+    )
+    EFS_ENABLED_FOR_USERS: list[UserID] = Field(
+        default_factory=list,
+        example='["1", "2"]',
+    )
+    EFS_BASE_DIRECTORY: str = Field(default="project-specific-data")
 
 
 class PlacementSettings(BaseCustomSettings):
@@ -123,6 +136,8 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    DYNAMIC_SIDECAR_EFS_SETTINGS: EfsSettings | None = Field(auto_default_from_env=True)
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
         auto_default_from_env=True

@@ -9,7 +9,7 @@ from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from settings_library.r_clone import S3Provider
 
-from ...core.dynamic_services_settings.sidecar import RCloneSettings
+from ...core.dynamic_services_settings.sidecar import EfsSettings, RCloneSettings
 from .errors import DynamicSidecarError
 
 DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
@@ -72,6 +72,24 @@ def _get_s3_volume_driver_config(
     options: dict[str, Any] = driver_config["Options"]
     options.update(extra_options)
 
+    return driver_config
+
+
+def _get_efs_volume_driver_config(
+    efs_settings: EfsSettings,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    storage_directory_name: str,
+) -> dict[str, Any]:
+    assert "/" not in storage_directory_name  # nosec
+    driver_config: dict[str, Any] = {
+        "Name": "nfs_data",
+        "Options": {
+            "type": "nfs",
+            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport",
+            "device": f":/{efs_settings.EFS_BASE_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+        },
+    }
     return driver_config
 
 
@@ -215,6 +233,39 @@ class DynamicSidecarVolumesPathsResolver:
                 },
                 "DriverConfig": _get_s3_volume_driver_config(
                     r_clone_settings=r_clone_settings,
+                    project_id=project_id,
+                    node_uuid=node_uuid,
+                    storage_directory_name=cls._volume_name(path).strip("_"),
+                ),
+            },
+        }
+
+    @classmethod
+    def mount_efs(
+        cls,
+        swarm_stack_name: str,
+        path: Path,
+        node_uuid: NodeID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
+        efs_settings: EfsSettings,
+    ) -> dict[str, Any]:
+        return {
+            "Source": cls.source(path, node_uuid, run_id),
+            "Target": cls.target(path),
+            "Type": "volume",
+            "VolumeOptions": {
+                "Labels": {
+                    "source": cls.source(path, node_uuid, run_id),
+                    "run_id": f"{run_id}",
+                    "node_uuid": f"{node_uuid}",
+                    "study_id": f"{project_id}",
+                    "user_id": f"{user_id}",
+                    "swarm_stack_name": swarm_stack_name,
+                },
+                "DriverConfig": _get_efs_volume_driver_config(
+                    efs_settings=efs_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
                     storage_directory_name=cls._volume_name(path).strip("_"),

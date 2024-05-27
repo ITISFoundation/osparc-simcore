@@ -251,10 +251,30 @@ def _get_mounts(
                 volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
             )
         )
+
+    # We check whether user has access to EFS feature
+    _mount_efs_enabled = False
+    efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
+    if efs_settings and scheduler_data.user_id in efs_settings.EFS_ENABLED_FOR_USERS:
+        _mount_efs_enabled = True
+
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
+        if _mount_efs_enabled:
+            assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_efs(
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
+                    efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
+                )
+            )
         # for now only enable this with dev features enabled
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
