@@ -57,6 +57,7 @@ async def registered_project(
 @pytest.fixture
 def projects_nodes_repo_of_invalid_project(faker: Faker) -> ProjectNodesRepo:
     invalid_project_uuid = faker.uuid4(cast_to=None)
+    assert isinstance(invalid_project_uuid, uuid.UUID)
     repo = ProjectNodesRepo(project_uuid=invalid_project_uuid)
     assert repo
     return repo
@@ -88,7 +89,9 @@ def create_fake_projects_node(
 @pytest.fixture
 def create_fake_node_id(faker: Faker) -> Callable[[], uuid.UUID]:
     def _creator() -> uuid.UUID:
-        return faker.uuid4(cast_to=None)
+        random_uuid = faker.uuid4(cast_to=None)
+        assert isinstance(random_uuid, uuid.UUID)
+        return random_uuid
 
     return _creator
 
@@ -378,9 +381,9 @@ async def test_get_project_id_from_node_id(
 
     for project_id_to_node_ids_map in list_of_project_id_node_ids_map:
         project_id = next(iter(project_id_to_node_ids_map))
-        random_node_id = random.choice(
+        random_node_id = random.choice(  # noqa: S311
             project_id_to_node_ids_map[project_id]
-        )  # noqa: S311
+        )
         received_project_id = await ProjectNodesRepo.get_project_id_from_node_id(
             connection, node_id=random_node_id
         )
@@ -393,7 +396,9 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
     projects_nodes_repo: ProjectNodesRepo,
     faker: Faker,
 ):
+    random_uuid = faker.uuid4(cast_to=None)
+    assert isinstance(random_uuid, uuid.UUID)
     with pytest.raises(ProjectNodesNodeNotFound):
         await ProjectNodesRepo.get_project_id_from_node_id(
-            connection, node_id=faker.uuid4(cast_to=None)
+            connection, node_id=random_uuid
         )
