@@ -124,6 +124,8 @@ def _register_session_variables_table(app: FastAPI):
 
     table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(request_user_email)
     table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(request_user_role)
+    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(get_or_create_api_key)
+    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(get_or_create_api_secret)
 
     _logger.debug(
         "Registered session_variables_table=%s", sorted(table.variables_names())

@@ -22,6 +22,8 @@ from simcore_service_director_v2.modules.osparc_variables.api_keys_manager impor
     _APIKeysManager,
     _get_identifier,
     get_or_create_api_key,
+    get_or_create_user_api_key,
+    get_or_create_user_api_secret,
     safe_remove_api_key_and_secret,
 )
 
@@ -159,6 +161,29 @@ async def test_api_keys_workflow(
 
     await safe_remove_api_key_and_secret(app, node_id=node_id, run_id=run_id)
     assert await _get_resource_count(api_keys_manager) == 0
+
+
+async def test_user_api_keys(
+    app: FastAPI,
+    mock_rpc_server: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+    user_api_key = await get_or_create_user_api_key(
+        app, product_name=product_name, user_id=user_id
+    )
+    user_api_secret = await get_or_create_user_api_secret(
+        app, product_name=product_name, user_id=user_id
+    )
+
+    # idempotent
+    for _ in range(3):
+        assert user_api_key == await get_or_create_user_api_key(
+            app, product_name=product_name, user_id=user_id
+        )
+        assert user_api_secret == await get_or_create_user_api_secret(
+            app, product_name=product_name, user_id=user_id
+        )
 
 
 @pytest.mark.parametrize("is_service_running", [False, True])
