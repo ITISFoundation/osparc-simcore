@@ -99,7 +99,7 @@ class RedisResourceRegistry:
     async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         fields = await self.client.hgetall(hash_key)
-        return ResourcesDict(**fields)  # type: ignore
+        return ResourcesDict(**fields)
 
     async def remove_resource(self, key: UserSessionDict, resource_name: str) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"

@@ -49,7 +49,7 @@ distributed==2024.5.1
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via pytest
@@ -113,7 +113,6 @@ packaging==24.0
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-    #   docker
     #   pytest
     #   pytest-sugar
 partd==1.4.2
@@ -160,10 +159,8 @@ pyyaml==6.0.1
     #   dask
     #   dask-gateway
     #   distributed
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
