@@ -41,7 +41,7 @@ charset-normalizer==3.3.2
     # via requests
 coverage==7.5.1
     # via pytest-cov
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.0
     # via
@@ -84,7 +84,6 @@ mypy-extensions==1.0.0
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
 pluggy==1.5.0
     # via pytest
@@ -109,9 +108,8 @@ python-dateutil==2.9.0.post0
     #   faker
 python-dotenv==1.0.1
     # via -r requirements/_test.in
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   async-asgi-testclient
     #   docker
 s3transfer==0.10.1

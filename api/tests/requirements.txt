@@ -102,10 +102,8 @@ referencing==0.31.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.31.0
-    # via
-    #   -c ../../requirements/constraints.txt
-    #   jsonschema-path
+requests==2.32.2
+    # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.18.0

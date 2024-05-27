@@ -8,7 +8,7 @@ charset-normalizer==3.3.2
     # via requests
 dnspython==2.6.1
     # via email-validator
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 email-validator==2.1.1
     # via pydantic
@@ -30,7 +30,6 @@ markupsafe==2.1.5
     # via jinja2
 packaging==24.0
     # via
-    #   docker
     #   pytest
     #   pytest-sugar
 playwright==1.43.0
@@ -73,7 +72,7 @@ python-slugify==8.0.4
     # via pytest-playwright
 pyyaml==6.0.1
     # via -r requirements/_test.in
-requests==2.31.0
+requests==2.32.2
     # via
     #   docker
     #   pytest-base-url

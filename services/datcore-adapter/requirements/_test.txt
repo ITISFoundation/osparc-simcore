@@ -89,10 +89,8 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   faker
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+requests==2.32.2
+    # via -r requirements/_test.in
 respx==0.21.1
     # via -r requirements/_test.in
 six==1.16.0
