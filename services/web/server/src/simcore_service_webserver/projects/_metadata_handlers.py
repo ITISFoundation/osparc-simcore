@@ -101,6 +101,7 @@ async def update_project_metadata(request: web.Request) -> web.Response:
         value=update.custom,
         # NOTE: MB this is where the PublicAPI shall bring in the parent node
         # see https://github.com/ITISFoundation/osparc-simcore/issues/5816
+        parent_project_uuid=None,
         parent_node_id=None,
     )
 

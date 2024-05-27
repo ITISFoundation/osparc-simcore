@@ -24,6 +24,7 @@ async def set_project_custom_metadata(
     user_id: UserID,
     project_uuid: ProjectID,
     value: MetadataDict,
+    parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
 ) -> MetadataDict:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
@@ -32,5 +33,6 @@ async def set_project_custom_metadata(
         engine=get_database_engine(app),
         project_uuid=project_uuid,
         custom_metadata=value,
+        parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,
     )

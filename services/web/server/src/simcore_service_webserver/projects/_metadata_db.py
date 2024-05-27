@@ -65,6 +65,7 @@ async def set_project_metadata(
     engine: Engine,
     project_uuid: ProjectID,
     custom_metadata: MetadataDict,
+    parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
 ) -> MetadataDict:
     """
@@ -73,7 +74,6 @@ async def set_project_metadata(
         NodeNotFoundError
         ValidationError: illegal metadata format in the database
     """
-    parent_project_uuid: ProjectID | None = None
     if parent_node_id is None and (parent_node_idstr := custom_metadata.get("node_id")):
         # NOTE: backward compatibility with S4l old client
         parent_node_id = parse_obj_as(NodeID, parent_node_idstr)
@@ -81,23 +81,24 @@ async def set_project_metadata(
     async with _acquire_and_handle(engine, project_uuid) as connection:
         if parent_node_id == _NIL_NODE_UUID:
             parent_node_id = None
-        if parent_node_id:
+        if parent_node_id and parent_project_uuid is None:
+            # let's try to get the parent project UUID
             try:
                 parent_project_uuid = (
                     await ProjectNodesRepo.get_project_id_from_node_id(
                         connection, node_id=parent_node_id
                     )
                 )
-                if parent_project_uuid == project_uuid:
-                    # this is not allowed!
-                    msg = "Project cannot be parent of itself"
-                    raise ProjectInvalidUsageError(msg)
+
             except ProjectNodesNodeNotFound as err:
                 raise DBProjectNodeParentNotFoundError((None, parent_node_id)) from err
             except ProjectNodesNonUniqueNodeFoundError as err:
                 msg = "missing parent project id"
                 raise ProjectInvalidUsageError(msg) from err
-
+        if parent_project_uuid and (parent_project_uuid == project_uuid):
+            # this is not allowed!
+            msg = "Project cannot be parent of itself"
+            raise ProjectInvalidUsageError(msg)
         metadata = await utils_projects_metadata.upsert(
             connection,
             project_uuid=project_uuid,
