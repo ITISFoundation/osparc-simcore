@@ -103,3 +103,37 @@ async def test_custom_metadata_handlers(
     )
     response = await client.get(f"{url}")
     await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+    ],
+)
+async def test_update_project_metadata_backward_compatibility(
+    # for deletion
+    mocked_director_v2_api: None,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    #
+    client: TestClient,
+    faker: Faker,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    # set metadata with fake node_id shall return 404
+    custom_metadata = {
+        "number": 3.14,
+        "string": "str",
+        "boolean": False,
+        "node_id": faker.uuid4(),
+    }
+    url = client.app.router["update_project_metadata"].url_for(
+        project_id=user_project["uuid"]
+    )
+    response = await client.patch(
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+    )
+    await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)

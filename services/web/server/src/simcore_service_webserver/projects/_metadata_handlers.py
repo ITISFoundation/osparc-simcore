@@ -3,13 +3,12 @@
 Design rationale:
 
 - Resource metadata/labels: https://cloud.google.com/apis/design/design_patterns#resource_labels
-	- named `metadata` instead of labels
-	- limit number of entries and depth? dict[str, st] ??
+    - named `metadata` instead of labels
+    - limit number of entries and depth? dict[str, st] ??
 - Singleton https://cloud.google.com/apis/design/design_patterns#singleton_resources
-	- the singleton is implicitly created or deleted when its parent is created or deleted
-	- Get and Update methods only
+    - the singleton is implicitly created or deleted when its parent is created or deleted
+    - Get and Update methods only
 """
-
 
 import functools
 
@@ -30,7 +29,11 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _metadata_api
 from ._common_models import ProjectPathParams, RequestContext
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ParentNodeNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 
 routes = web.RouteTableDef()
 
@@ -43,7 +46,7 @@ def _handle_project_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ProjectNotFoundError as exc:
+        except (ProjectNotFoundError, ParentNodeNotFoundError) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
@@ -93,6 +96,9 @@ async def update_project_metadata(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         value=update.custom,
+        # NOTE: MB this is where the PublicAPI shall bring in the parent node
+        # see https://github.com/ITISFoundation/osparc-simcore/issues/5816
+        parent_node_id=None,
     )
 
     return envelope_json_response(

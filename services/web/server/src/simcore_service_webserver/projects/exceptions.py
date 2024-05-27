@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+
 from typing import Any
 
 import redis.exceptions
@@ -77,6 +78,15 @@ class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 
     def __init__(self, *, project_uuid: str, node_uuid: str, **ctx):
+        super().__init__(**ctx)
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid
+
+
+class ParentNodeNotFoundError(BaseProjectError):
+    msg_template = "Parent node '{node_uuid}' not found"
+
+    def __init__(self, *, project_uuid: str | None, node_uuid: str, **ctx):
         super().__init__(**ctx)
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
