@@ -31,11 +31,6 @@ from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
 @pytest.fixture(params=("with_wallet", "without_wallet"))
 def wallet_id(faker: Faker, request: pytest.FixtureRequest) -> WalletID | None:
     return faker.pyint(min_value=1) if request.param == "with_wallet" else None
