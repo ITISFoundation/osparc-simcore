@@ -106,8 +106,9 @@ async def mock_rpc_server(
 
     # mock returned client
     mocker.patch(
-        "simcore_service_director_v2.modules.api_keys_manager.get_rabbitmq_rpc_client",
+        "simcore_service_director_v2.modules.osparc_variables._api_keys_manager.get_rabbitmq_rpc_client",
         return_value=rpc_client,
+        autospec=True,
     )
 
     return rpc_client
@@ -119,9 +120,9 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-def mock_dynamic_sidecars_scheduler(app: FastAPI, is_used: bool) -> None:
+def mock_dynamic_sidecars_scheduler(app: FastAPI, is_service_running: bool) -> None:
     scheduler_mock = AsyncMock()
-    scheduler_mock.is_service_tracked = lambda _: is_used
+    scheduler_mock.is_service_tracked = lambda _: is_service_running
     app.state.dynamic_sidecar_scheduler = scheduler_mock
 
 
@@ -141,7 +142,7 @@ async def _get_resource_count(api_keys_manager: _APIKeysManager) -> int:
     return len(await api_keys_manager._get_tracked())  # noqa: SLF001
 
 
-@pytest.mark.parametrize("is_used", [True])
+@pytest.mark.parametrize("is_service_running", [True])
 async def test_api_keys_workflow(
     api_keys_manager: _APIKeysManager,
     app: FastAPI,
@@ -153,14 +154,14 @@ async def test_api_keys_workflow(
     api_key = await get_or_create_api_key(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
-    assert isinstance(api_key, ApiKeyGet)
+    assert isinstance(api_key, str)
     assert await _get_resource_count(api_keys_manager) == 1
 
     await safe_remove_api_key_and_secret(app, node_id=node_id, run_id=run_id)
     assert await _get_resource_count(api_keys_manager) == 0
 
 
-@pytest.mark.parametrize("is_used", [False, True])
+@pytest.mark.parametrize("is_service_running", [False, True])
 async def test_background_cleanup(
     api_keys_manager: _APIKeysManager,
     app: FastAPI,
@@ -168,13 +169,15 @@ async def test_background_cleanup(
     run_id: RunID,
     product_name: ProductName,
     user_id: UserID,
-    is_used: bool,
+    is_service_running: bool,
 ) -> None:
     api_key = await get_or_create_api_key(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
-    assert isinstance(api_key, ApiKeyGet)
+    assert isinstance(api_key, str)
     assert await _get_resource_count(api_keys_manager) == 1
 
     await api_keys_manager._cleanup_unused_identifiers()  # noqa: SLF001
-    assert await _get_resource_count(api_keys_manager) == (1 if is_used else 0)
+    assert await _get_resource_count(api_keys_manager) == (
+        1 if is_service_running else 0
+    )
