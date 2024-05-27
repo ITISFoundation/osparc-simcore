@@ -12,7 +12,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -274,7 +274,6 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     node_id: NodeID,
     simcore_user_agent: str,
     swarm_stack_name: str,
-    run_id: RunID,
 ) -> str:
     """
     returns a docker-compose spec used by
