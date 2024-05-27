@@ -63,7 +63,7 @@ cryptography==42.0.7
     #   moto
 deepdiff==7.0.1
     # via -r requirements/_test.in
-docker==7.0.0
+docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -175,7 +175,6 @@ ordered-set==4.1.0
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
 pathable==0.4.3
     # via jsonschema-path
@@ -252,9 +251,8 @@ referencing==0.29.3
     #   jsonschema-specifications
 regex==2024.5.15
     # via cfn-lint
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   jsonschema-path
     #   moto

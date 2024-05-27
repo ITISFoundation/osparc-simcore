@@ -48,7 +48,7 @@ cryptography==42.0.6
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-docker==7.0.0
+docker==7.1.0
     # via moto
 exceptiongroup==1.2.1
     # via
@@ -132,7 +132,6 @@ openapi-spec-validator==0.7.1
     # via moto
 packaging==24.0
     # via
-    #   docker
     #   pytest
     #   pytest-sugar
 pathable==0.4.3
@@ -210,9 +209,8 @@ referencing==0.29.3
     #   jsonschema-specifications
 regex==2024.4.28
     # via cfn-lint
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   jsonschema-path
     #   moto
