@@ -13,6 +13,7 @@ from ._common import (
 )
 from .base import metadata
 from .projects import projects
+from .projects_nodes import projects_nodes
 
 projects_metadata = sa.Table(
     "projects_metadata",
@@ -39,6 +40,18 @@ projects_metadata = sa.Table(
         nullable=False,
         primary_key=True,
         doc="The project unique identifier is also used to identify the associated job",
+    ),
+    sa.Column(
+        "parent_node_id",
+        sa.String,
+        sa.ForeignKey(
+            projects_nodes.c.node_id,
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+            name="fk_projects_metadata_parent_node_id",
+        ),
+        nullable=True,
+        doc="If applicable the parent node ID of this project",
     ),
     sa.Column(
         "custom",
