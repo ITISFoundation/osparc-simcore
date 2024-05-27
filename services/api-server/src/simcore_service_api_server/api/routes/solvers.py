@@ -9,12 +9,12 @@ from models_library.api_schemas_api_server.pricing_plans import ServicePricingPl
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client

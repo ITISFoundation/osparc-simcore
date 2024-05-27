@@ -9,7 +9,7 @@ from typing import Any
 from uuid import UUID
 
 from cryptography import fernet
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
@@ -45,7 +45,6 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -53,6 +52,11 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
+from ..exceptions.service_errors_utils import (
+    ToApiTuple,
+    service_exception_handler,
+    service_exception_mapper,
+)
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
@@ -60,10 +64,6 @@ from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from .service_exception_handling import (
-    backend_service_exception_handler,
-    service_exception_mapper,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -169,12 +169,11 @@ class AuthSession:
         if search is not None:
             optional["search"] = search
 
-        with backend_service_exception_handler(
-            "Webserver",
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    lambda _: "Could not list jobs",
+        with service_exception_handler(
+            service_name="Webserver",
+            http_status_map={
+                status.HTTP_404_NOT_FOUND: ToApiTuple(
+                    status.HTTP_404_NOT_FOUND, "Could not list jobs"
                 )
             },
         ):

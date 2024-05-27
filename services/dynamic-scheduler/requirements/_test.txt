@@ -17,7 +17,7 @@ coverage==7.5.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==7.0.0
+docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.0
     # via
@@ -52,7 +52,6 @@ iniconfig==2.0.0
 packaging==24.0
     # via
     #   -c requirements/_base.txt
-    #   docker
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
@@ -89,10 +88,8 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 respx==0.21.1
     # via -r requirements/_test.in
 six==1.16.0

@@ -10,24 +10,16 @@ from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
+from ..exceptions.log_streaming_errors import (
+    LogStreamerNotRegisteredError,
+    LogStreamerRegistionConflictError,
+)
 from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
 _logger = logging.getLogger(__name__)
 
 _NEW_LINE: Final[str] = "\n"
-
-
-class LogDistributionBaseException(Exception):
-    pass
-
-
-class LogStreamerNotRegistered(LogDistributionBaseException):
-    pass
-
-
-class LogStreamerRegistionConflict(LogDistributionBaseException):
-    pass
 
 
 class LogDistributor:
@@ -66,15 +58,14 @@ class LogDistributor:
             queue = self._log_streamers.get(item.job_id)
             if queue is None:
                 msg = f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-                raise LogStreamerNotRegistered(msg)
+                raise LogStreamerNotRegisteredError(job_id=item.job_id, details=msg)
             await queue.put(item)
             return True
         return False
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
-            msg = f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
-            raise LogStreamerRegistionConflict(msg)
+            raise LogStreamerRegistionConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -82,8 +73,8 @@ class LogDistributor:
 
     async def deregister(self, job_id: JobID):
         if job_id not in self._log_streamers:
-            msg = f"No stream was connected to {job_id=}."
-            raise LogStreamerNotRegistered(msg)
+            msg = f"No stream was connected to {job_id}."
+            raise LogStreamerNotRegisteredError(details=msg, job_id=job_id)
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -134,7 +125,7 @@ class LogStreamer:
     async def log_generator(self) -> AsyncIterable[str]:
         if not self._is_registered:
             msg = f"LogStreamer for job_id={self._job_id} is not correctly registered"
-            raise LogStreamerNotRegistered(msg)
+            raise LogStreamerNotRegisteredError(msg=msg)
         done: bool = False
         while not done:
             try:
