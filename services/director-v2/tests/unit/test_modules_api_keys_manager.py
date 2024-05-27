@@ -1,6 +1,6 @@
-# pylint:disable=protected-access
-# pylint:disable=redefined-outer-name
-# pylint:disable=unused-argument
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock
@@ -18,7 +18,7 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_director_v2.modules.api_keys_manager import (
+from simcore_service_director_v2.modules.osparc_variables._api_keys_manager import (
     _APIKeysManager,
     _get_identifier,
     get_or_create_api_key,

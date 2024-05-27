@@ -27,7 +27,7 @@ from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
 from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
-from ...modules.osparc_variables_substitutions import (
+from ..osparc_variables.substitutions import (
     resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,

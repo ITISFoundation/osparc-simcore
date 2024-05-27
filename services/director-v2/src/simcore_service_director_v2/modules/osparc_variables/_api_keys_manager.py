@@ -16,8 +16,8 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK, RedisClientsManager
 from settings_library.redis import RedisDatabase
 
-from ..utils.base_distributed_identifier import BaseDistributedIdentifierManager
-from .rabbitmq import get_rabbitmq_rpc_client
+from ...utils.base_distributed_identifier import BaseDistributedIdentifierManager
+from ..rabbitmq import get_rabbitmq_rpc_client
 
 _CLEANUP_INTERVAL = timedelta(minutes=5)
 

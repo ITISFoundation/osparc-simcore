@@ -44,13 +44,13 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
-from ....api_keys_manager import safe_remove_api_key_and_secret
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....osparc_variables import safe_remove_api_key_and_secret
 from ...api_client import (
     SidecarsClient,
     get_dynamic_sidecar_service_health,

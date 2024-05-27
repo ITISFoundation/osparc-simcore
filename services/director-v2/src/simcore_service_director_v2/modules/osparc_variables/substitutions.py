@@ -22,15 +22,15 @@ from pydantic import BaseModel
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 
-from ..utils.db import get_repository
-from ..utils.osparc_variables import (
+from ...utils.db import get_repository
+from ...utils.osparc_variables import (
     ContextDict,
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
-from .api_keys_manager import get_or_create_api_key, get_or_create_api_secret
-from .db.repositories.services_environments import ServicesEnvironmentsRepository
-from .user_session import request_user_email, request_user_role
+from ..db.repositories.services_environments import ServicesEnvironmentsRepository
+from ._api_keys_manager import get_or_create_api_key, get_or_create_api_secret
+from ._user_session import request_user_email, request_user_role
 
 _logger = logging.getLogger(__name__)
 

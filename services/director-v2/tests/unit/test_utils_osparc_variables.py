@@ -26,8 +26,8 @@ from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_comp
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
-from simcore_service_director_v2.modules import osparc_variables_substitutions
-from simcore_service_director_v2.modules.osparc_variables_substitutions import (
+from simcore_service_director_v2.modules.osparc_variables import substitutions
+from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -145,7 +145,7 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     mock_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL = faker.url()
     app.state.settings = mock_settings
 
-    osparc_variables_substitutions.setup(app)
+    substitutions.setup(app)
 
     async with LifespanManager(app):
         yield app
