@@ -32,7 +32,7 @@ def _create_unique_identifier_from(*parts: Any) -> str:
 
 
 #
-# interface
+#  new interface
 #
 
 
@@ -88,9 +88,15 @@ async def get_or_create_user_api_secret(
     return cast(str, data.api_secret)
 
 
+__all__: tuple[str, ...] = (
+    "get_or_create_user_api_key",
+    "get_or_create_user_api_secret",
+    "create_user_api_name",
+)
+
+
 #
-# API Keys Manager (DEPRECATED)
-# Use interface above instead
+# API Keys Manager (DEPRECATED: Use interface above instead )
 #
 
 _CLEANUP_INTERVAL = timedelta(minutes=5)
