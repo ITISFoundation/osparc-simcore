@@ -123,10 +123,11 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     def _get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables_substitutions.get_repository",
-        side_effect=_get_repository,
-    )
+    for target in (
+        "simcore_service_director_v2.modules.osparc_variables.substitutions.get_repository",
+        "simcore_service_director_v2.modules.osparc_variables._user_session.get_repository",
+    ):
+        mocker.patch(target, side_effect=_get_repository, autospec=True)
 
 
 @pytest.fixture
@@ -180,8 +181,9 @@ async def test_resolve_and_substitute_session_variables_in_specs(
 @pytest.fixture
 def mock_api_key_manager(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables_substitutions.get_or_create_api_key",
+        "simcore_service_director_v2.modules.osparc_variables._api_keys_manager._get_or_create",
         return_value=ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0]),
+        autospec=True,
     )
 
 
