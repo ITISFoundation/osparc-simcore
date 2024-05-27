@@ -93,4 +93,4 @@ pytest-lazy-fixture>=999999999
 
 # skip requests https://github.com/ansible-collections/community.docker/issues/860
 # remove once docker fixes https://github.com/docker/docker-py/issues/3256
-requests<2.32.0
+requests<2.33.0
