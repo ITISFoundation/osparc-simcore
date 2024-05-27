@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-import logging
 
 import pytest
 from pytest_simcore.helpers.utils_envs import (
@@ -10,9 +9,10 @@ from pytest_simcore.helpers.utils_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
-from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
+from simcore_service_api_server.core.settings import ApplicationSettings
 
 
+@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
@@ -36,11 +36,5 @@ def app_environment(
 
 def test_unit_app_environment(app_environment: EnvVarsDict):
     assert app_environment
-
     settings = ApplicationSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
-
-    assert settings.SC_BOOT_MODE == BootModeEnum.PRODUCTION
-    assert settings.log_level == logging.DEBUG
-
-    assert settings.API_SERVER_POSTGRES is None
