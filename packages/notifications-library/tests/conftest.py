@@ -37,11 +37,11 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
-    if external_environment:
-        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
-        assert "PAYMENTS_GATEWAY_URL" in external_environment
-    return external_environment
+def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
+    if external_envfile_dict:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_envfile_dict
+        assert "PAYMENTS_GATEWAY_URL" in external_envfile_dict
+    return external_envfile_dict
 
 
 #

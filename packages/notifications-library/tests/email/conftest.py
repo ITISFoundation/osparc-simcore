@@ -11,13 +11,13 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     env_devel_dict: EnvVarsDict,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **env_devel_dict,
-            **external_environment,
+            **external_envfile_dict,
         },
     )
 

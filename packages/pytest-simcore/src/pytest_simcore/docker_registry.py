@@ -101,11 +101,11 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
 
 @pytest.fixture
 def external_registry_settings(
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ) -> RegistrySettings | None:
-    if external_environment:
+    if external_envfile_dict:
         config = {
-            field: external_environment.get(field, None)
+            field: external_envfile_dict.get(field, None)
             for field in RegistrySettings.__fields__
         }
         return RegistrySettings.parse_obj(config)
