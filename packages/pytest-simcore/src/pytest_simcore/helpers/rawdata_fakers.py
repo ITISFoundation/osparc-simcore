@@ -8,6 +8,8 @@
 
     NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
     required fields in postgres_database.models tables or pydantic models.
+
+    NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
 """
 
 
