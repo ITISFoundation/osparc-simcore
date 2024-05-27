@@ -4,6 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import json
+import random
+from pathlib import Path
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -12,9 +14,11 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
+from models_library.projects_nodes_io import NodeID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
@@ -119,21 +123,59 @@ async def test_update_project_metadata_backward_compatibility(
     client: TestClient,
     faker: Faker,
     logged_user: UserInfoDict,
-    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     assert client.app
 
-    # set metadata with fake node_id shall return 404
-    custom_metadata = {
-        "number": 3.14,
-        "string": "str",
-        "boolean": False,
-        "node_id": faker.uuid4(),
-    }
-    url = client.app.router["update_project_metadata"].url_for(
-        project_id=user_project["uuid"]
-    )
-    response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
-    )
-    await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as child_project:
+
+        # set metadata with fake node_id shall return 404
+        custom_metadata = {
+            "number": 3.14,
+            "string": "str",
+            "boolean": False,
+            "node_id": faker.uuid4(),
+        }
+        url = client.app.router["update_project_metadata"].url_for(
+            project_id=child_project["uuid"]
+        )
+        response = await client.patch(
+            f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+        )
+        await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)
+
+        async with NewProject(
+            fake_project,
+            client.app,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as parent_project:
+            random_parent_node_id = NodeID(
+                random.choice(list(parent_project["workbench"]))  # noqa: S311
+            )
+            custom_metadata = {
+                "number": 3.14,
+                "string": "str",
+                "boolean": False,
+                "node_id": f"{random_parent_node_id}",
+            }
+            url = client.app.router["update_project_metadata"].url_for(
+                project_id=child_project["uuid"]
+            )
+            response = await client.patch(
+                f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+            )
+            data, _ = await assert_status(
+                response, expected_status_code=status.HTTP_200_OK
+            )
+            assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+            # NOTE: for now the parents are not returned. if this changes, this test should be adapted
