@@ -271,9 +271,8 @@ pyyaml==6.0.1
     #   moto
     #   openapi-spec-validator
     #   responses
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   moto
     #   responses

@@ -189,9 +189,8 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   docker
     #   jsonschema-path

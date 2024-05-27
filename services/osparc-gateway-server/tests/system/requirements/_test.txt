@@ -150,10 +150,8 @@ pyyaml==6.0.1
     #   dask
     #   dask-gateway
     #   distributed
-requests==2.31.0
-    # via
-    #   -c requirements/../../../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0

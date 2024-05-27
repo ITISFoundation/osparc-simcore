@@ -238,9 +238,8 @@ pyyaml==6.0.1
     #   responses
 regex==2024.4.28
     # via cfn-lint
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   moto
     #   responses

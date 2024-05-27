@@ -84,10 +84,8 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 rpds-py==0.18.0
     # via
     #   jsonschema

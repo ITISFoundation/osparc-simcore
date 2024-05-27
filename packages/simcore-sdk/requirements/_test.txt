@@ -270,9 +270,8 @@ referencing==0.29.3
     #   jsonschema-specifications
 regex==2024.4.28
     # via cfn-lint
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
     #   docker
     #   jsonschema-path

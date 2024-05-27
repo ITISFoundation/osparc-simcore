@@ -182,9 +182,8 @@ redis==5.0.4
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.31.0
+requests==2.32.2
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker
 setuptools==69.1.1

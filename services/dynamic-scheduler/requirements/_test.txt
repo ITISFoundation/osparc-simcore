@@ -88,10 +88,8 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 respx==0.21.1
     # via -r requirements/_test.in
 six==1.16.0

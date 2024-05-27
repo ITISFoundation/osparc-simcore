@@ -151,10 +151,8 @@ referencing==0.29.3
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   docker
+requests==2.32.2
+    # via docker
 respx==0.21.1
     # via -r requirements/_test.in
 rpds-py==0.18.0
