@@ -54,7 +54,7 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         return v
 
 
-class EfsSettings(SettingsLibraryRCloneSettings):
+class EfsSettings(BaseCustomSettings):
     EFS_DNS_NAME: str = Field(
         description="AWS Elastic File System DNS name",
         example="fs-xxx.efs.us-east-1.amazonaws.com",
