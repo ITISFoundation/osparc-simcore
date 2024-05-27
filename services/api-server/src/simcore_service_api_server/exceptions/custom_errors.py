@@ -6,7 +6,8 @@ class CustomBaseError(ApiServerBaseError):
 
 
 class InsufficientCreditsError(CustomBaseError):
-    msg_template = "Wallet '{wallet_name}' does not have any credits. Please add some before requesting solver ouputs"
+    # NOTE: Same message as WalletNotEnoughCreditsError
+    msg_template = "Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add some before requesting solver ouputs"
 
 
 class MissingWalletError(CustomBaseError):

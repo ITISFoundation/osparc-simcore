@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS
 from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -232,8 +233,11 @@ async def get_job_outputs(
         if wallet is None:
             raise MissingWalletError(job_id=project.uuid)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
-        if wallet_with_credits.available_credits < 0.0:
-            raise InsufficientCreditsError(wallet_name=wallet_with_credits.name)
+        if wallet_with_credits.available_credits <= ZERO_CREDITS:
+            raise InsufficientCreditsError(
+                wallet_name=wallet_with_credits.name,
+                wallet_credit_amount=wallet_with_credits.available_credits,
+            )
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
