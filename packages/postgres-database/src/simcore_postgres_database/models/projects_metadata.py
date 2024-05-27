@@ -42,28 +42,35 @@ projects_metadata = sa.Table(
         doc="The project unique identifier is also used to identify the associated job",
     ),
     sa.Column(
-        "parent_node_id",
-        sa.String,
-        sa.ForeignKey(
-            projects_nodes.c.node_id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
-            name="fk_projects_metadata_parent_node_id",
-        ),
-        nullable=True,
-        doc="If applicable the parent node ID of this project",
-    ),
-    sa.Column(
         "custom",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="Reserved for the user to store custom metadata",
     ),
+    sa.Column(
+        "parent_project_uuid",
+        sa.String,
+        nullable=True,
+        doc="If applicable the parent project UUID of this project",
+    ),
+    sa.Column(
+        "parent_node_id",
+        sa.String,
+        nullable=True,
+        doc="If applicable the parent node UUID of this project",
+    ),
     # TIME STAMPS ----ß
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.PrimaryKeyConstraint("project_uuid"),
+    sa.ForeignKeyConstraint(
+        ("parent_project_uuid", "parent_node_id"),
+        (projects_nodes.c.node_id, projects_nodes.c.project_uuid),
+        onupdate="CASCADE",
+        ondelete="SET NULL",
+        name="fk_projects_metadata_parent_node_id",
+    ),
 )
 
 
