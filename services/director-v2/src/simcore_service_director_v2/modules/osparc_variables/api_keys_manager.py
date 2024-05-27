@@ -300,6 +300,12 @@ async def get_or_create_api_secret(
 async def safe_remove_api_key_and_secret(
     app: FastAPI, *, node_id: NodeID, run_id: RunID
 ) -> None:
+    # Left active so that registry deletes all generated api-keys deployed
+    warnings.warn(
+        "Use user-centric functional interface to generate API keys and secrets instead",
+        category=DeprecationWarning,
+        stacklevel=1,
+    )
     api_keys_manager = _APIKeysManager.get_from_app_state(app)
     display_name = _get_identifier(node_id, run_id)
 
