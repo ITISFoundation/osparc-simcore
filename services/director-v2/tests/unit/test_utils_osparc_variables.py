@@ -126,7 +126,7 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
 
     for target in (
         "simcore_service_director_v2.modules.osparc_variables.substitutions.get_repository",
-        "simcore_service_director_v2.modules.osparc_variables._user_session.get_repository",
+        "simcore_service_director_v2.modules.osparc_variables._user.get_repository",
     ):
         mocker.patch(target, side_effect=_get_repository, autospec=True)
 
@@ -164,18 +164,20 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
         assert app
         assert product_name
         assert user_id
+        assert expiration is None
+
         fake_data.display_name = name
         return fake_data
 
     # RPC interface at api_keys_manager
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.create_api_key_and_secret",
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.create_api_key_and_secret",
         side_effect=_create,
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.get_api_key_and_secret",
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_api_key_and_secret",
         side_effect=_get,
         autospec=True,
     )

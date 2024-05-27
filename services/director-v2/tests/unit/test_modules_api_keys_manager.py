@@ -18,12 +18,14 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_service_director_v2.modules.osparc_variables._api_auth import (
+    get_or_create_user_api_key,
+    get_or_create_user_api_secret,
+)
 from simcore_service_director_v2.modules.osparc_variables.api_keys_manager import (
     _APIKeysManager,
     _get_identifier,
     get_or_create_api_key,
-    get_or_create_user_api_key,
-    get_or_create_user_api_secret,
     safe_remove_api_key_and_secret,
 )
 
