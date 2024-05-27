@@ -1,5 +1,6 @@
 import contextlib
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
 
@@ -281,7 +282,9 @@ class SimcoreEC2API:
         )
         return all_instances
 
-    async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
+    async def terminate_instances(
+        self, instance_datas: Iterable[EC2InstanceData]
+    ) -> None:
         try:
             with log_context(
                 _logger,
