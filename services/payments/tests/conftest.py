@@ -68,7 +68,6 @@ def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
     if external_envfile_dict:
-        print("")
         return external_envfile_dict
     return env_devel_dict
 
