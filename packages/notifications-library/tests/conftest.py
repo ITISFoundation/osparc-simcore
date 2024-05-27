@@ -41,13 +41,6 @@ def pytest_addoption(parser: pytest.Parser):
         "simcore",
     )
     group.addoption(
-        "--external-user-email",
-        action="store",
-        type=str,
-        default=None,
-        help="Overrides `user_email` fixture",
-    )
-    group.addoption(
         "--external-support-email",
         action="store",
         type=str,
@@ -62,23 +55,6 @@ def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
         assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
         assert "PAYMENTS_GATEWAY_URL" in external_environment
     return external_environment
-
-
-@pytest.fixture(scope="session")
-def external_user_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-user-email", default=None)
-    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
-
-
-@pytest.fixture
-def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> EmailStr:
-    """Overrides pytest_simcore.faker_users_data.user_email"""
-    if external_user_email:
-        print(
-            f"📧 EXTERNAL `user_email` detected. Setting user_email={external_user_email}"
-        )
-        return external_user_email
-    return user_email
 
 
 @pytest.fixture(scope="session")

@@ -2,7 +2,7 @@
 These tests can be run against external configuration
 
 cd packages/notifications-library
-pytest --external-envfile=.my-env --external-support-email=support@email.com  --external-user-email=my@email.com tests/email
+pytest --external-envfile=.my-env --external-support-email=support@email.com  --fake-user-email=my@email.com tests/email
 
 """
 

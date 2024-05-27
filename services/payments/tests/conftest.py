@@ -55,18 +55,6 @@ def secret_key() -> str:
     return generate_token_secret_key(32)
 
 
-def pytest_addoption(parser: pytest.Parser):
-    group = parser.getgroup("simcore")
-
-    group.addoption(
-        "--external-email",
-        action="store",
-        type=str,
-        default=None,
-        help="An email for test_services_notifier_email",
-    )
-
-
 @pytest.fixture(scope="session")
 def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
     if external_environment:
