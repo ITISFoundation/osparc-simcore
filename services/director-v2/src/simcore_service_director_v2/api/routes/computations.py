@@ -160,26 +160,34 @@ async def _get_project_metadata(
     projects_metadata_repo: ProjectsMetadataRepository,
     computation: ComputationCreate,
 ) -> ProjectMetadataDict:
-    current_project_metadata = await projects_metadata_repo.get_custom_metadata(
-        computation.project_id
-    )
-
-    if not current_project_metadata:
-        return {}
-    if "node_id" not in current_project_metadata:
-        return {}
-
-    parent_node_id = NodeID(current_project_metadata["node_id"])
-    parent_node_idstr = NodeIDStr(f"{parent_node_id}")
     try:
-        parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
-        parent_project = await project_repo.get_project(parent_project_id)
-        assert parent_node_idstr in parent_project.workbench
-        return ProjectMetadataDict(
-            parent_node_id=parent_node_id,
-            parent_node_name=parent_project.workbench[parent_node_idstr].label,
-            parent_project_id=parent_project_id,
-            parent_project_name=parent_project.name,
+        if (
+            result := await projects_metadata_repo.get_parent_project_and_node(
+                computation.project_id
+            )
+        ) is not None:
+            parent_project_uuid, parent_node_id = result
+            parent_project = await project_repo.get_project(parent_project_uuid)
+            parent_node_idstr = NodeIDStr(f"{parent_node_id}")
+            if parent_node_idstr not in parent_project.workbench:
+                _logger.error(
+                    "Could not find %s in parent project %s",
+                    f"{parent_node_id=}",
+                    f"{parent_project_uuid=}",
+                )
+                return {}
+            assert parent_node_idstr in parent_project.workbench  # nosec
+            return ProjectMetadataDict(
+                parent_node_id=parent_node_id,
+                parent_node_name=parent_project.workbench[parent_node_idstr].label,
+                parent_project_id=parent_project_uuid,
+                parent_project_name=parent_project.name,
+            )
+    except DBProjectNotFoundError:
+        _logger.exception("Could not find project: %s", f"{computation.project_id=}")
+    except ProjectNotFoundError:
+        _logger.exception(
+            "Could not find parent project: %s", f"{parent_project_uuid=}"
         )
     except (
         ProjectNotFoundError,
@@ -187,7 +195,7 @@ async def _get_project_metadata(
         ProjectNodesNonUniqueNodeFoundError,
     ):
         _logger.exception("Could not find project/node: %s", f"{parent_node_id=}")
-        return {}
+    return {}
 
 
 async def _try_start_pipeline(
@@ -622,9 +630,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[
-                    CompTaskAtDB
-                ] = await comp_tasks_repo.list_computational_tasks(project_id)
+                comp_tasks: list[CompTaskAtDB] = (
+                    await comp_tasks_repo.list_computational_tasks(project_id)
+                )
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
