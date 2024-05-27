@@ -1,3 +1,4 @@
+import warnings
 from datetime import timedelta
 from typing import Any, Final, cast
 from uuid import UUID, uuid5
@@ -136,7 +137,7 @@ async def get_or_create_user_api_secret(
 
 
 #
-# API Keys Manager (deprecated)
+# API Keys Manager (DEPRECATED)
 # Use interface above instead
 #
 
@@ -233,6 +234,13 @@ async def _get_or_create(
     node_id: NodeID,
     run_id: RunID,
 ) -> ApiKeyGet:
+
+    warnings.warn(
+        "Use user-centric functional interface to generate API keys and secrets instead",
+        category=DeprecationWarning,
+        stacklevel=1,
+    )
+
     api_keys_manager: _APIKeysManager = _APIKeysManager.get_from_app_state(app)
     display_name = _get_identifier(node_id, run_id)
 

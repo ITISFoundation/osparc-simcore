@@ -15,7 +15,7 @@ from models_library.osparc_variable_identifier import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import BaseModel
@@ -30,7 +30,7 @@ from ...utils.osparc_variables import (
 )
 from ..db.repositories.services_environments import ServicesEnvironmentsRepository
 from ._user_session import request_user_email, request_user_role
-from .api_keys_manager import get_or_create_api_key, get_or_create_api_secret
+from .api_keys_manager import get_or_create_user_api_key, get_or_create_user_api_secret
 
 _logger = logging.getLogger(__name__)
 
@@ -106,31 +106,35 @@ async def substitute_vendor_secrets_in_specs(
 class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin):
     app_state_name: str = "session_variables_table"
 
+    @classmethod
+    def create(cls, app: FastAPI):
+        table = cls()
+        # Registers some session osparc_variables
+        # WARNING: context_name needs to match session_context!
+        # NOTE: please keep alphabetically ordered
+        for name, context_name in [
+            ("OSPARC_VARIABLE_NODE_ID", "node_id"),
+            ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
+            ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
+            ("OSPARC_VARIABLE_USER_ID", "user_id"),
+            ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
+        ]:
+            table.register_from_context(name, context_name)
 
-def _register_session_variables_table(app: FastAPI):
-    table = OsparcSessionVariablesTable()
+        table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(request_user_email)
+        table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(request_user_role)
+        table.register_from_handler("OSPARC_VARIABLE_API_KEY")(
+            get_or_create_user_api_key
+        )
+        table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(
+            get_or_create_user_api_secret
+        )
 
-    # Registers some session osparc_variables
-    # WARNING: context_name needs to match session_context!
-    # NOTE: please keep alphabetically ordered
-    for name, context_name in [
-        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
-        ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
-        ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
-        ("OSPARC_VARIABLE_USER_ID", "user_id"),
-        ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
-    ]:
-        table.register_from_context(name, context_name)
-
-    table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(request_user_email)
-    table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(request_user_role)
-    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(get_or_create_api_key)
-    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(get_or_create_api_secret)
-
-    _logger.debug(
-        "Registered session_variables_table=%s", sorted(table.variables_names())
-    )
-    table.set_to_app_state(app)
+        _logger.debug(
+            "Registered session_variables_table=%s", sorted(table.variables_names())
+        )
+        table.set_to_app_state(app)
+        return table
 
 
 async def resolve_and_substitute_session_variables_in_model(
@@ -213,67 +217,6 @@ async def resolve_and_substitute_session_variables_in_specs(
     return deepcopy(specs)
 
 
-class OsparcLifeSpanVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin):
-    app_state_name: str = "service_lifespan_osparc_variables_table"
-
-
-def _register_lifespan_variables_table(app: FastAPI):
-    table = OsparcLifeSpanVariablesTable()
-    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(get_or_create_api_key)
-    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(get_or_create_api_secret)
-
-    _logger.debug(
-        "Registered service_lifespan_osparc_variables_table=%s",
-        sorted(table.variables_names()),
-    )
-
-    table.set_to_app_state(app)
-
-
-async def resolve_and_substitute_service_lifespan_variables_in_specs(
-    app: FastAPI,
-    specs: dict[str, Any],
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    node_id: NodeID,
-    run_id: RunID,
-    safe: bool = True,
-) -> dict[str, Any]:
-    registry = OsparcLifeSpanVariablesTable.get_from_app_state(app)
-    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
-
-    if requested := set(resolver.get_identifiers()):
-        available = set(registry.variables_names())
-
-        if identifiers := available.intersection(requested):
-            environs = await resolve_variables_from_context(
-                registry.copy(include=identifiers),
-                context=ContextDict(
-                    app=app,
-                    product_name=product_name,
-                    user_id=user_id,
-                    node_id=node_id,
-                    run_id=run_id,
-                    api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
-                ),
-                # NOTE: the api key and secret cannot be resolved in parallel
-                # due to race conditions
-                resolve_in_parallel=False,
-            )
-
-            resolver.set_substitutions(mappings=environs)
-            new_specs: dict[str, Any] = resolver.run(safe=safe)
-            return new_specs
-
-    return deepcopy(specs)
-
-
-def _register_osparc_variables(app: FastAPI):
-    _register_session_variables_table(app)
-    _register_lifespan_variables_table(app)
-
-
 def setup(app: FastAPI):
     """
     **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
@@ -281,7 +224,9 @@ def setup(app: FastAPI):
         - **session variables**: some session information as "current user email" or the "current product name"
         - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
     """
-    app.add_event_handler("startup", functools.partial(_register_osparc_variables, app))
+    app.add_event_handler(
+        "startup", functools.partial(OsparcSessionVariablesTable.create, app)
+    )
 
 
 #
@@ -291,6 +236,5 @@ def setup(app: FastAPI):
 
 def list_osparc_session_variables() -> list[str]:
     app = FastAPI()
-    _register_osparc_variables(app)
-    table = OsparcSessionVariablesTable.get_from_app_state(app)
+    table = OsparcSessionVariablesTable.create(app)
     return sorted(table.variables_names())

@@ -28,7 +28,6 @@ from settings_library.docker_registry import RegistrySettings
 
 from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ..osparc_variables.substitutions import (
-    resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_model,
@@ -382,17 +381,6 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         product_name=product_name,
         project_id=project_id,
         node_id=node_id,
-    )
-    service_spec = await resolve_and_substitute_service_lifespan_variables_in_specs(
-        app=app,
-        specs=service_spec,
-        # NOTE: at this point all OsparcIdentifiers have to be replaced
-        # an error will be raised otherwise
-        safe=True,
-        product_name=product_name,
-        user_id=user_id,
-        node_id=node_id,
-        run_id=run_id,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(

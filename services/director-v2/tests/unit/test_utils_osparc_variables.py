@@ -16,7 +16,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -28,7 +28,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
-    resolve_and_substitute_service_lifespan_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -162,6 +161,8 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "user_id": "${OSPARC_VARIABLE_USER_ID}",
         "email": "${OSPARC_VARIABLE_USER_EMAIL}",
         "user_role": "${OSPARC_VARIABLE_USER_ROLE}",
+        "api_key": "${OSPARC_VARIABLE_API_KEY}",
+        "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
     }
     print("SPECS\n", specs)
 
@@ -187,28 +188,6 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
     )
 
 
-async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
-    mock_api_key_manager: None, fake_app: FastAPI, faker: Faker
-):
-    specs = {
-        "api_key": "${OSPARC_VARIABLE_API_KEY}",
-        "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
-    }
-    print("SPECS\n", specs)
-
-    replaced_specs = await resolve_and_substitute_service_lifespan_variables_in_specs(
-        fake_app,
-        specs=specs,
-        user_id=1,
-        product_name="a_product",
-        node_id=faker.uuid4(cast_to=None),
-        run_id=RunID.create(),
-    )
-    print("REPLACED SPECS\n", replaced_specs)
-
-    assert OSPARC_IDENTIFIER_PREFIX not in f"{replaced_specs}"
-
-
 @pytest.fixture
 def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
     base = "simcore_service_director_v2.modules.db.repositories.services_environments"
@@ -225,8 +204,8 @@ async def test_substitute_vendor_secrets_in_specs(
     mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
-        "api_key": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
-        "api_secret": "${OSPARC_VARIABLE_VENDOR_SECRET_TWO}",
+        "vendor_secret_one": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
+        "vendor_secret_two": "${OSPARC_VARIABLE_VENDOR_SECRET_TWO}",
     }
     print("SPECS\n", specs)
 
