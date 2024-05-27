@@ -1,17 +1,16 @@
 import datetime
 import uuid
-from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from simcore_postgres_database.models.projects_metadata import projects_metadata
+from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation
 from .models.projects import projects
-from .utils_models import FromRowMixin
+from .models.projects_metadata import projects_metadata
 
 #
 # Errors
@@ -27,11 +26,16 @@ class DBProjectNotFoundError(Exception):
 #
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectMetadata(FromRowMixin):
+class ProjectMetadata(BaseModel):
     custom: dict[str, Any] | None
     created: datetime.datetime | None
     modified: datetime.datetime | None
+    parent_project_uuid: uuid.UUID | None
+    parent_node_id: uuid.UUID | None
+
+    class Config:
+        frozen = True
+        orm_mode = True
 
 
 #
@@ -47,6 +51,8 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
             projects_metadata.c.custom,
             projects_metadata.c.created,
             projects_metadata.c.modified,
+            projects_metadata.c.parent_project_uuid,
+            projects_metadata.c.parent_node_id,
         )
         .select_from(
             sa.join(
@@ -63,7 +69,7 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
     if row is None:
         msg = f"Project project_uuid={project_uuid!r} not found"
         raise DBProjectNotFoundError(msg)
-    return ProjectMetadata.from_row(row)
+    return ProjectMetadata.from_orm(row)
 
 
 async def upsert(
@@ -71,10 +77,16 @@ async def upsert(
     *,
     project_uuid: uuid.UUID,
     custom_metadata: dict[str, Any],
+    parent_project_uuid: uuid.UUID | None,
+    parent_node_id: uuid.UUID | None,
 ) -> ProjectMetadata:
     data = {
         "project_uuid": f"{project_uuid}",
         "custom": custom_metadata,
+        "parent_projet_uuid": (
+            f"{parent_project_uuid}" if parent_project_uuid is not None else None
+        ),
+        "parent_node_id": f"{parent_node_id}" if parent_node_id is not None else None,
     }
     insert_stmt = pg_insert(projects_metadata).values(**data)
     upsert_stmt = insert_stmt.on_conflict_do_update(
@@ -86,7 +98,7 @@ async def upsert(
         result: ResultProxy = await connection.execute(upsert_stmt)
         row: RowProxy | None = await result.first()
         assert row  # nosec
-        return ProjectMetadata.from_row(row)
+        return ProjectMetadata.from_orm(row)
 
     except ForeignKeyViolation as err:
         raise DBProjectNotFoundError(project_uuid) from err
