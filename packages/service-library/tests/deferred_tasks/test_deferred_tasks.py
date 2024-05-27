@@ -110,7 +110,7 @@ async def _tcp_command(
     command: str,
     payload: dict[str, Any],
     *,
-    host: str = "127.0.0.1",
+    host: str = "localhost",
     port: int,
     read_chunk_size: int = 10000,
     timeout: NonNegativeFloat = 1,
