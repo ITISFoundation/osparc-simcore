@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
@@ -24,6 +25,11 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
+    ProjectNodeCreate,
+    ProjectNodesRepo,
+)
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -283,6 +289,35 @@ async def create_fake_project(
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )
+
+
+@pytest.fixture
+def create_fake_uuid(faker: Faker) -> Callable[[], uuid.UUID]:
+    def _creator() -> uuid.UUID:
+        random_uuid = faker.uuid4(cast_to=None)
+        assert isinstance(random_uuid, uuid.UUID)
+        return random_uuid
+
+    return _creator
+
+
+@pytest.fixture
+async def create_fake_projects_node(
+    connection: aiopg.sa.connection.SAConnection,
+    faker: Faker,
+    create_fake_uuid: Callable[[], uuid.UUID],
+) -> Callable[[uuid.UUID], Awaitable[ProjectNode]]:
+    async def _creator(project_uuid: uuid.UUID) -> ProjectNode:
+        fake_node = ProjectNodeCreate(
+            node_id=create_fake_uuid(),
+            required_resources=faker.pydict(allowed_types=(str,)),
+        )
+        repo = ProjectNodesRepo(project_uuid=project_uuid)
+        created_nodes = await repo.add(connection, nodes=[fake_node])
+        assert created_nodes
+        return created_nodes[0]
+
+    return _creator
 
 
 @pytest.fixture

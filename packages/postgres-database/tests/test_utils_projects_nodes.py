@@ -73,25 +73,15 @@ def projects_nodes_repo(registered_project: dict[str, Any]) -> ProjectNodesRepo:
 @pytest.fixture
 def create_fake_projects_node(
     faker: Faker,
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
 ) -> Callable[..., ProjectNodeCreate]:
     def _creator() -> ProjectNodeCreate:
         node = ProjectNodeCreate(
-            node_id=create_fake_node_id(),
+            node_id=create_fake_uuid(),
             required_resources=faker.pydict(allowed_types=(str,)),
         )
         assert node
         return node
-
-    return _creator
-
-
-@pytest.fixture
-def create_fake_node_id(faker: Faker) -> Callable[[], uuid.UUID]:
-    def _creator() -> uuid.UUID:
-        random_uuid = faker.uuid4(cast_to=None)
-        assert isinstance(random_uuid, uuid.UUID)
-        return random_uuid
 
     return _creator
 
@@ -169,21 +159,21 @@ async def test_list_project_nodes(
 async def test_get_project_node_of_invalid_project_raises(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
 ):
     with pytest.raises(ProjectNodesNodeNotFound):
         await projects_nodes_repo_of_invalid_project.get(
-            connection, node_id=create_fake_node_id()
+            connection, node_id=create_fake_uuid()
         )
 
 
 async def test_get_project_node_of_empty_project_raises(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
 ):
     with pytest.raises(ProjectNodesNodeNotFound):
-        await projects_nodes_repo.get(connection, node_id=create_fake_node_id())
+        await projects_nodes_repo.get(connection, node_id=create_fake_uuid())
 
 
 async def test_get_project_node(
@@ -208,7 +198,7 @@ async def test_update_project_node_of_invalid_node_raises(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
     faker: Faker,
 ):
     new_nodes = await projects_nodes_repo.add(
@@ -221,7 +211,7 @@ async def test_update_project_node_of_invalid_node_raises(
     with pytest.raises(ProjectNodesNodeNotFound):
         await projects_nodes_repo.update(
             connection,
-            node_id=create_fake_node_id(),
+            node_id=create_fake_uuid(),
             required_resources={faker.pystr(): faker.pyint()},
         )
 
@@ -230,7 +220,7 @@ async def test_update_project_node(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
     faker: Faker,
 ):
     new_nodes = await projects_nodes_repo.add(
@@ -255,10 +245,10 @@ async def test_update_project_node(
 async def test_delete_invalid_node_does_nothing(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
+    create_fake_uuid: Callable[[], uuid.UUID],
 ):
     await projects_nodes_repo_of_invalid_project.delete(
-        connection, node_id=create_fake_node_id()
+        connection, node_id=create_fake_uuid()
     )
 
 
