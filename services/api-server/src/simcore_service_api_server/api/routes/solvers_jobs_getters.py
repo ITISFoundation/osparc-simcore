@@ -1,5 +1,4 @@
 # pylint: disable=too-many-arguments
-# pylint: disable=W0613
 
 import logging
 from collections import deque
@@ -16,12 +15,15 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS
 from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
+from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -31,7 +33,6 @@ from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...services.log_streaming import LogDistributor, LogStreamer
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
@@ -41,8 +42,6 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCredits, MissingWallet
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
@@ -232,12 +231,13 @@ async def get_job_outputs(
     if product_price is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
-            msg = f"Job {project.uuid} does not have an associated wallet."
-            raise MissingWallet(msg)
+            raise MissingWalletError(job_id=project.uuid)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
-        if wallet_with_credits.available_credits < 0.0:
-            msg = f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
-            raise InsufficientCredits(msg)
+        if wallet_with_credits.available_credits <= ZERO_CREDITS:
+            raise InsufficientCreditsError(
+                wallet_name=wallet_with_credits.name,
+                wallet_credit_amount=wallet_with_credits.available_credits,
+            )
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
@@ -345,25 +345,17 @@ async def get_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
-        return JobMetadata(
+    project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=url_for(
+            "get_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "get_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )
 
 
 @router.get(
@@ -428,6 +420,8 @@ async def get_log_stream(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     log_check_timeout: Annotated[NonNegativeInt, Depends(get_log_check_timeout)],
 ):
+    assert request  # nosec
+
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"

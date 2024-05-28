@@ -114,6 +114,10 @@ class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorError):
     msg_template = "Computational task {node_id} not found"
 
 
+class WalletNotEnoughCreditsError(PydanticErrorMixin, DirectorError):
+    msg_template = "Wallet '{wallet_name}' has {wallet_credit_amount} credits."
+
+
 #
 # SCHEDULER ERRORS
 #

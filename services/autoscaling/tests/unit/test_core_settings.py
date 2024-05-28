@@ -88,6 +88,26 @@ def test_defining_both_computational_and_dynamic_modes_is_invalid_and_raises(
         ApplicationSettings.create_from_envs()
 
 
+def test_invalid_EC2_INSTANCES_TIME_BEFORE_DRAINING(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_DRAINING": "1:05:00"})
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    assert (
+        datetime.timedelta(minutes=1)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    )
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_DRAINING": "-1:05:00"})
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        datetime.timedelta(seconds=10)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    )
+
+
 def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):

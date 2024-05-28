@@ -257,9 +257,11 @@ async def compute_output_data_schema(
                 user_id=user_id,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
-                file_name=next(iter(port.file_to_key_map))
-                if port.file_to_key_map
-                else port.key,
+                file_name=(
+                    next(iter(port.file_to_key_map))
+                    if port.file_to_key_map
+                    else port.key
+                ),
                 link_type=file_link_type,
                 file_size=ByteSize(0),  # will create a single presigned link
                 sha256_checksum=None,
@@ -268,9 +270,11 @@ async def compute_output_data_schema(
             assert len(value_links.urls) == 1  # nosec
             output_data_schema[port.key].update(
                 {
-                    "mapping": next(iter(port.file_to_key_map))
-                    if port.file_to_key_map
-                    else None,
+                    "mapping": (
+                        next(iter(port.file_to_key_map))
+                        if port.file_to_key_map
+                        else None
+                    ),
                     "url": f"{value_links.urls[0]}",
                 }
             )
@@ -574,7 +578,11 @@ def check_if_cluster_is_able_to_run_pipeline(
     node_image: Image,
     cluster_id: ClusterID,
 ) -> None:
-    _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
+
+    _logger.debug(
+        "Dask scheduler infos: %s", f"{scheduler_info}"
+    )  # NOTE: be careful not to json_dumps this as it sometimes contain keys that are tuples!
+
     workers = scheduler_info.get("workers", {})
 
     cluster_resources_counter: collections.Counter = collections.Counter()

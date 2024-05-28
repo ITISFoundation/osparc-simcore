@@ -101,6 +101,10 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+        except ProjectStartsTooManyDynamicNodesError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+        except ClustersKeeperNotAvailableError as exc:
+            raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -303,21 +307,16 @@ async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
-    try:
-        await projects_api.start_project_node(
-            request,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            node_id=path_params.node_id,
-        )
 
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    await projects_api.start_project_node(
+        request,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+    )
 
-    except ProjectStartsTooManyDynamicNodesError as exc:
-        raise web.HTTPConflict(reason=f"{exc}") from exc
-    except ClustersKeeperNotAvailableError as exc:
-        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 async def _stop_dynamic_service_task(

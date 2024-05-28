@@ -107,7 +107,7 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
             confirmation_token: ConfirmationTokenDict | None = (
-                ConfirmationTokenDict(**confirmation) if confirmation else None  # type: ignore[misc]
+                ConfirmationTokenDict(**confirmation) if confirmation else None  # type: ignore[typeddict-item]
             )
             return confirmation_token
 

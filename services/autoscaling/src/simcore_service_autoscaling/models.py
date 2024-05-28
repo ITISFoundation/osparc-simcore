@@ -34,6 +34,9 @@ class _BaseInstance(_TaskAssignmentMixin):
         if self.available_resources == Resources.create_as_empty():
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
+    def has_assigned_tasks(self) -> bool:
+        return bool(self.available_resources < self.ec2_instance.resources)
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssociatedInstance(_BaseInstance):
@@ -82,6 +85,11 @@ class Cluster:
             "description": "This is a docker node which is not backed by a running EC2 instance"
         }
     )
+    terminating_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
+        }
+    )
     terminated_instances: list[EC2InstanceData]
 
     def can_scale_down(self) -> bool:
@@ -90,6 +98,7 @@ class Cluster:
             or self.pending_nodes
             or self.drained_nodes
             or self.pending_ec2s
+            or self.terminating_nodes
         )
 
     def total_number_of_machines(self) -> int:
@@ -100,6 +109,7 @@ class Cluster:
             + len(self.reserve_drained_nodes)
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
+            + len(self.terminating_nodes)
         )
 
 
