@@ -19,7 +19,7 @@ The `BaseDeferredHandler` is the interface to the user.
     provides the result of an execution
 - `on_finished_with_error` (called by state `FinishedWithError`) [optional] {can be overwritten by the user}:
     react to execution error, only triggered if all retry attempts fail
-- `cancel_deferred`: (called by the user) [optional]:
+- `cancel`: (called by the user) [optional]:
     send a message to cancel the current task. A warning will be logged but no call to either
     `on_result` or `on_finished_with_error` will occur.
 
@@ -29,7 +29,7 @@ The `BaseDeferredHandler` is the interface to the user.
 ```mermaid
 stateDiagram-v2
     * --> Scheduled: via [start]
-    ** --> ManuallyCancelled: via [cancel_deferred]
+    ** --> ManuallyCancelled: via [cancel]
 
     ManuallyCancelled --> Worker: attempts to cancel task in
 

@@ -85,7 +85,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         """
 
     @classmethod
-    async def cancel_deferred(cls, task_uid: TaskUID) -> None:
+    async def cancel(cls, task_uid: TaskUID) -> None:
         """cancels a deferred"""
 
     @classmethod

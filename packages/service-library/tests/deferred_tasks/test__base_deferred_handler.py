@@ -318,7 +318,7 @@ async def test_deferred_manager_cancelled(
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_CREATED, count=1)
     task_uid = TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
 
-    await mocked_deferred_handler.cancel_deferred(task_uid)
+    await mocked_deferred_handler.cancel(task_uid)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
 

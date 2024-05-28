@@ -78,14 +78,14 @@ class _PatchCancelDeferred:
     def __init__(
         self,
         *,
-        original_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
-        manager_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
+        original_cancel: Callable[[TaskUID], Awaitable[None]],
+        manager_cancel: Callable[[TaskUID], Awaitable[None]],
     ) -> None:
-        self.original_cancel_deferred = original_cancel_deferred
-        self.manager_cancel_deferred = manager_cancel_deferred
+        self.original_cancel = original_cancel
+        self.manager_cancel = manager_cancel
 
     async def __call__(self, task_uid: TaskUID) -> None:
-        await self.manager_cancel_deferred(task_uid)
+        await self.manager_cancel(task_uid)
 
 
 class _PatchIsPresent:
@@ -177,17 +177,17 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                     )
                     subclass.start = patched_start  # type: ignore
 
-            if not isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
+            if not isinstance(subclass.cancel, _PatchCancelDeferred):
                 with log_context(
                     _logger,
                     logging.DEBUG,
-                    f"Patch `cancel_deferred` for {class_unique_reference}",
+                    f"Patch `cancel` for {class_unique_reference}",
                 ):
-                    patched_cancel_deferred = _PatchCancelDeferred(
-                        original_cancel_deferred=subclass.cancel_deferred,
-                        manager_cancel_deferred=self.__cancel_deferred,
+                    patched_cancel = _PatchCancelDeferred(
+                        original_cancel=subclass.cancel,
+                        manager_cancel=self.__cancel,
                     )
-                    subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
+                    subclass.cancel = patched_cancel  # type: ignore
 
             if not isinstance(subclass.is_present, _PatchIsPresent):
                 with log_context(
@@ -221,14 +221,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                         subclass.start.original_start  # type: ignore
                     )
 
-            if isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
+            if isinstance(subclass.cancel, _PatchCancelDeferred):
                 with log_context(
                     _logger,
                     logging.DEBUG,
-                    f"Remove `cancel_deferred` patch for {class_unique_reference}",
+                    f"Remove `cancel` patch for {class_unique_reference}",
                 ):
-                    subclass.cancel_deferred = (  # type: ignore
-                        subclass.cancel_deferred.original_cancel_deferred  # type: ignore
+                    subclass.cancel = (  # type: ignore
+                        subclass.cancel.original_cancel  # type: ignore
                     )
 
             if isinstance(subclass.is_present, _PatchIsPresent):
@@ -519,7 +519,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         await self.__remove_task(task_uid, task_schedule)
 
-    async def __cancel_deferred(self, task_uid: TaskUID) -> None:
+    async def __cancel(self, task_uid: TaskUID) -> None:
         task_schedule: TaskSchedule | None = await self._task_tracker.get(task_uid)
         if task_schedule is None:
             _logger.warning("No entry four to cancel found for task_uid '%s'", task_uid)
