@@ -333,14 +333,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               this.fireDataEvent("updateTemplate", updatedData);
             }
           });
-          infoCard.addListener("updateTags", e => {
-            const updatedData = e.getData();
-            if (osparc.utils.Resources.isStudy(resourceData)) {
-              this.fireDataEvent("updateStudy", updatedData);
-            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-              this.fireDataEvent("updateTemplate", updatedData);
-            }
-          });
           infoCard.addListener("openTags", () => this.openTags());
         }
         infoCard.addListener("openAccessRights", () => this.openAccessRights());
