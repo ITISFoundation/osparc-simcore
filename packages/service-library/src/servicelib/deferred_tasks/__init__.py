@@ -1,5 +1,5 @@
 """
-# How to use
+# SEE original PR https://github.com/ITISFoundation/osparc-simcore/pull/5704
 
 The `BaseDeferredHandler` is the interface to the user.
 (**note:** "states" are defined in the diagram below in the rectangles)
