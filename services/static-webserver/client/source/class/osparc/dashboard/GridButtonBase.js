@@ -173,8 +173,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             backgroundColor: "background-card-overlay",
             padding: this.self().PADDING - 2,
             maxWidth: this.self().ITEM_WIDTH,
-            maxHeight: this.self().ITEM_HEIGHT,
-            visibility: "excluded"
+            maxHeight: this.self().ITEM_HEIGHT
           });
           control.setLayout(fgrid);
           break;
@@ -265,9 +264,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowY: false
           });
           layout = this.getChildControl("footer");
-          layout.set({
-            visibility: "visible"
-          });
           layout.add(control, this.self().FPOS.MODIFIED);
           break;
         case "project-status":
