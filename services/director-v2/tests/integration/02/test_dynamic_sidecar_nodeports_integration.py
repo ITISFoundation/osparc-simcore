@@ -47,6 +47,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
@@ -61,6 +62,7 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.storage import StorageSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
@@ -74,6 +76,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -110,6 +113,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
     "minio",
+    "portainer",
 ]
 
 
@@ -326,6 +330,20 @@ def dev_feature_r_clone_enabled(request) -> str:
 
 
 @pytest.fixture
+async def patch_storage_setup(
+    mocker: MockerFixture,
+) -> None:
+    local_settings = StorageSettings.create_from_envs()
+
+    original_setup = dv2_modules_storage.setup
+
+    def setup(app: FastAPI, settings: StorageSettings) -> None:
+        original_setup(app, local_settings)
+
+    mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
+
+
+@pytest.fixture
 def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -334,6 +352,7 @@ def mock_env(
     dask_scheduler_service: str,
     dask_scheduler_auth: InternalClusterAuthentication,
     minimal_configuration: None,
+    patch_storage_setup: None,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -343,10 +362,21 @@ def mock_env(
 
     image_name = f"{registry}/dynamic-sidecar:{image_tag}"
 
+    local_settings = StorageSettings.create_from_envs()
+
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     setenvs_from_dict(
         monkeypatch,
         {
+            "STORAGE_HOST": "storage",
+            "STORAGE_PORT": "8080",
+            "NODE_PORTS_STORAGE_AUTH": json.dumps(
+                {
+                    "STORAGE_HOST": local_settings.STORAGE_HOST,
+                    "STORAGE_PORT": local_settings.STORAGE_PORT,
+                }
+            ),
+            "STORAGE_ENDPOINT": "storage:8080",
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
