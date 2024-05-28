@@ -50,11 +50,6 @@ def product_name(faker: Faker) -> ProductName:
     return faker.pystr()
 
 
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint()
-
-
 def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID, run_id: RunID):
     api_key_names = {_get_identifier(node_id, run_id) for _ in range(1000)}
     assert len(api_key_names) == 1

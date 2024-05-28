@@ -24,11 +24,6 @@ from simcore_service_webserver.users.api import FullNameDict
 
 
 @pytest.fixture()
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture()
 def project_uuid(faker: Faker) -> ProjectID:
     return faker.uuid4(cast_to=None)
 
