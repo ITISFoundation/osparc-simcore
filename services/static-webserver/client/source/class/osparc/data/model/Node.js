@@ -1363,7 +1363,7 @@ qx.Class.define("osparc.data.model.Node", {
             return;
           }
           const interval = 1000;
-          qx.event.Timer.once(() => this.__waitForServiceReady.call(this, srvUrl), this, interval);
+          qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
         })
     },
 
@@ -1380,11 +1380,11 @@ qx.Class.define("osparc.data.model.Node", {
             if (request.status >= 200 || request.status < 300) {
               this.__serviceReadyIn(srvUrl)
             } else {
-              retry()
+              retry() // eslint-disable-line no-use-before-define
             }
           })
           .catch(() => {
-            retry()
+            retry() // eslint-disable-line no-use-before-define
           })
       }
       const retry = () => {
