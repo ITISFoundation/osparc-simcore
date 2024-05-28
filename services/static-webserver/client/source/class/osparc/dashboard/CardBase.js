@@ -416,12 +416,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
       if (workbench === null) {
         // it is a service
         return;
+      }
+
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
       }
 
       // Updatable study
