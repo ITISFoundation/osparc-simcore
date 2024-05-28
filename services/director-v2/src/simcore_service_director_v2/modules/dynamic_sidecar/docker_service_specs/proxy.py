@@ -1,4 +1,3 @@
-import random
 from typing import Any
 
 from models_library.docker import StandardSimcoreDockerLabels
@@ -67,19 +66,10 @@ def get_dynamic_proxy_spec(
             {
                 "Protocol": "tcp",
                 "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
-                "PublishedPort": random.randint(0, 99999),
-                "PublishMode": "host",
             }
         )
     if proxy_settings.PROXY_EXPOSE_PORT:
-        ports.append(
-            {
-                "Protocol": "tcp",
-                "TargetPort": 80,
-                "PublishMode": "host",
-                "PublishedPort": random.randint(0, 99999),
-            }
-        )
+        ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
         "endpoint_spec": {"Ports": ports} if ports else {},
