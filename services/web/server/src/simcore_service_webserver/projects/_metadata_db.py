@@ -72,6 +72,8 @@ async def set_project_metadata(
     Raises:
         ProjectNotFoundError
         NodeNotFoundError
+        ParentNodeNotFoundError
+        ProjectInvalidUsageError
         ValidationError: illegal metadata format in the database
     """
     if parent_node_id is None and (parent_node_idstr := custom_metadata.get("node_id")):
