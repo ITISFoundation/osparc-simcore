@@ -11,7 +11,7 @@ The `BaseDeferredHandler` is the interface to the user.
     timeout for running the user code
 - `start_deferred` (called by the user) [required] {MUST be implemented by user}:
     defines a nice entrypoint to start new tasks
-- `on_deferred_created` (called after `start_deferred` executes) [optional] {can be overwritten by the user}:
+- `on_created` (called after `start_deferred` executes) [optional] {can be overwritten by the user}:
     provides a global identifier for the started task
 - `run_deferred` (called by state `Worker`) [required] {MUST be implemented by user}:
     code the user wants to run

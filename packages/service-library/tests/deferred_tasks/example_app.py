@@ -38,9 +38,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         return {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
 
     @classmethod
-    async def on_deferred_created(
-        cls, task_uid: TaskUID, context: DeferredContext
-    ) -> None:
+    async def on_created(cls, task_uid: TaskUID, context: DeferredContext) -> None:
         in_memory_lists: InMemoryLists = context["in_memory_lists"]
         await in_memory_lists.append_to("scheduled", task_uid)
 

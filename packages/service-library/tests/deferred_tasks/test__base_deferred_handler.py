@@ -114,7 +114,7 @@ async def get_mocked_deferred_handler(
                 return kwargs
 
             @classmethod
-            async def on_deferred_created(
+            async def on_created(
                 cls, task_uid: TaskUID, context: DeferredContext
             ) -> None:
                 mocks[MockKeys.ON_DEFERRED_CREATED](task_uid, context)

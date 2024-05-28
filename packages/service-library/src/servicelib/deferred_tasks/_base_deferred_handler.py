@@ -61,10 +61,8 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         """
 
     @classmethod
-    async def on_deferred_created(
-        cls, task_uid: TaskUID, context: DeferredContext
-    ) -> None:
-        """called after deferred was scheduled"""
+    async def on_created(cls, task_uid: TaskUID, context: DeferredContext) -> None:
+        """called after deferred was scheduled to run"""
 
     @classmethod
     @abstractmethod
