@@ -24,7 +24,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisDatabase, RedisSettings
+from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -70,18 +70,8 @@ class _RemoteProcess:
 
 
 @pytest.fixture
-async def redis_client(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
-) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(RedisDatabase.DEFERRED_TASKS) as client:
-        yield client
-
-
-@pytest.fixture
 async def get_remote_process(
-    redis_client: RedisClientSDK,
+    redis_client_sdk_deferred_tasks: RedisClientSDK,
 ) -> AsyncIterable[Callable[[], Awaitable[_RemoteProcess]]]:
     python_interpreter = sys.executable
     current_module_path = (
@@ -403,7 +393,7 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
 async def test_workflow_with_third_party_services_outages(
     mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
-    redis_client: RedisClientSDK,
+    redis_client_sdk_deferred_tasks: RedisClientSDK,
     rabbit_client: RabbitMQClient,
     get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
@@ -412,7 +402,9 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-    service_manager = ServiceManager(redis_client, rabbit_client, paused_container)
+    service_manager = ServiceManager(
+        redis_client_sdk_deferred_tasks, rabbit_client, paused_container
+    )
 
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),

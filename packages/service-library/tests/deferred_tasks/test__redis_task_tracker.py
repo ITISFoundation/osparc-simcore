@@ -2,8 +2,6 @@
 # pylint:disable=unused-argument
 
 
-from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager
 from datetime import timedelta
 
 import pytest
@@ -11,23 +9,12 @@ from pydantic import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskSchedule, TaskState
-from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDKHealthChecked
 from servicelib.utils import logged_gather
-from settings_library.redis import RedisDatabase
 
 pytest_simcore_core_services_selection = [
     "redis",
 ]
-
-
-@pytest.fixture
-async def scheduling_redis_sdk(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
-) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(RedisDatabase.DEFERRED_TASKS) as client:
-        yield client
 
 
 @pytest.fixture
@@ -46,9 +33,10 @@ def task_schedule() -> TaskSchedule:
 
 
 async def test_task_tracker_workflow(
-    scheduling_redis_sdk: RedisClientSDKHealthChecked, task_schedule: TaskSchedule
+    redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
+    task_schedule: TaskSchedule,
 ):
-    task_tracker = RedisTaskTracker(scheduling_redis_sdk)
+    task_tracker = RedisTaskTracker(redis_client_sdk_deferred_tasks)
 
     task_uid: TaskUID = await task_tracker.get_new_unique_identifier()
 
@@ -63,11 +51,11 @@ async def test_task_tracker_workflow(
 
 @pytest.mark.parametrize("count", [0, 1, 10, 100])
 async def test_task_tracker_list_all_entries(
-    scheduling_redis_sdk: RedisClientSDKHealthChecked,
+    redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
     task_schedule: TaskSchedule,
     count: int,
 ):
-    task_tracker = RedisTaskTracker(scheduling_redis_sdk)
+    task_tracker = RedisTaskTracker(redis_client_sdk_deferred_tasks)
 
     async def _make_entry() -> None:
         task_uid = await task_tracker.get_new_unique_identifier()
