@@ -173,7 +173,6 @@ def simcore_services_ready(
         env_prefix = service.upper().replace("-", "_")
 
         assert endpoint.host
-
         monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
         monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
 
