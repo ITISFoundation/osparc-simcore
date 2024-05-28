@@ -46,8 +46,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
   events: {
     "updateStudy": "qx.event.type.Data",
-    "updateService": "qx.event.type.Data",
-    "updateTags": "qx.event.type.Data"
+    "updateService": "qx.event.type.Data"
   },
 
   properties: {
