@@ -76,7 +76,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.storage import StorageClient
+from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -335,26 +335,10 @@ async def patch_storage_setup(
 ) -> None:
     local_settings = StorageSettings.create_from_envs()
 
-    def setup(app: FastAPI, settings: StorageSettings):
-        _ = settings
+    original_setup = dv2_modules_storage.setup
 
-        def on_startup() -> None:
-            StorageClient.create(
-                app,
-                client=httpx.AsyncClient(
-                    base_url=f"{local_settings.api_base_url}",
-                    timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-                ),
-            )
-            logger.debug("created client for storage: %s", local_settings.api_base_url)
-
-        async def on_shutdown() -> None:
-            client = StorageClient.instance(app).client
-            await client.aclose()
-            del client
-
-        app.add_event_handler("startup", on_startup)
-        app.add_event_handler("shutdown", on_shutdown)
+    def setup(app: FastAPI, settings: StorageSettings) -> None:
+        original_setup(app, local_settings)
 
     mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
 
