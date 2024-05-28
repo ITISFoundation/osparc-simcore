@@ -29,7 +29,7 @@ from ._models import (
     TaskUID,
 )
 from ._redis_task_tracker import RedisTaskTracker
-from ._task_schedule import TaskSchedule, TaskState
+from ._task_schedule import TaskScheduleModel, TaskState
 from ._utils import stop_retry_for_unintended_errors
 from ._worker_tracker import WorkerTracker
 
@@ -283,7 +283,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         subclass = self.__get_subclass(class_unique_reference)
         deferred_context = self.__get_deferred_context(start_context)
 
-        task_schedule = TaskSchedule(
+        task_schedule = TaskScheduleModel(
             timeout=await subclass.get_timeout(deferred_context),
             execution_attempts=await subclass.get_retries(deferred_context) + 1,
             class_unique_reference=class_unique_reference,
@@ -300,7 +300,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
     async def __get_task_schedule(
         self, task_uid: TaskUID, *, expected_state: TaskState
-    ) -> TaskSchedule:
+    ) -> TaskScheduleModel:
         task_schedule = await self._task_tracker.get(task_uid)
 
         if task_schedule is None:
@@ -459,7 +459,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         )
 
     async def __remove_task(
-        self, task_uid: TaskUID, task_schedule: TaskSchedule
+        self, task_uid: TaskUID, task_schedule: TaskScheduleModel
     ) -> None:
         _logger.info(
             "Finished handling of '%s' in %s",
@@ -520,7 +520,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         await self.__remove_task(task_uid, task_schedule)
 
     async def __cancel(self, task_uid: TaskUID) -> None:
-        task_schedule: TaskSchedule | None = await self._task_tracker.get(task_uid)
+        task_schedule: TaskScheduleModel | None = await self._task_tracker.get(task_uid)
         if task_schedule is None:
             _logger.warning("No entry four to cancel found for task_uid '%s'", task_uid)
             return
@@ -557,7 +557,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         await self.__remove_task(task_uid, task_schedule)
 
     async def __is_present(self, task_uid: TaskUID) -> bool:
-        task_schedule: TaskSchedule | None = await self._task_tracker.get(task_uid)
+        task_schedule: TaskScheduleModel | None = await self._task_tracker.get(task_uid)
         return task_schedule is not None
 
     def _register_subscribers(self) -> None:

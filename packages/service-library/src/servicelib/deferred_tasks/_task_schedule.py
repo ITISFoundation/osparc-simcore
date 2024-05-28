@@ -22,7 +22,7 @@ class TaskState(str, Enum):
     MANUALLY_CANCELLED = "MANUALLY_CANCELLED"
 
 
-class TaskSchedule(BaseModel):
+class TaskScheduleModel(BaseModel):
     timeout: timedelta = Field(
         ..., description="Amount of time after which the task execution will time out"
     )

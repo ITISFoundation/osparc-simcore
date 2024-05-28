@@ -8,7 +8,7 @@ import pytest
 from pydantic import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
-from servicelib.deferred_tasks._task_schedule import TaskSchedule, TaskState
+from servicelib.deferred_tasks._task_schedule import TaskScheduleModel, TaskState
 from servicelib.redis import RedisClientSDKHealthChecked
 from servicelib.utils import logged_gather
 
@@ -18,9 +18,9 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def task_schedule() -> TaskSchedule:
+def task_schedule() -> TaskScheduleModel:
     return parse_obj_as(
-        TaskSchedule,
+        TaskScheduleModel,
         {
             "timeout": timedelta(seconds=1),
             "execution_attempts": 1,
@@ -34,7 +34,7 @@ def task_schedule() -> TaskSchedule:
 
 async def test_task_tracker_workflow(
     redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
-    task_schedule: TaskSchedule,
+    task_schedule: TaskScheduleModel,
 ):
     task_tracker = RedisTaskTracker(redis_client_sdk_deferred_tasks)
 
@@ -52,7 +52,7 @@ async def test_task_tracker_workflow(
 @pytest.mark.parametrize("count", [0, 1, 10, 100])
 async def test_task_tracker_list_all_entries(
     redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
-    task_schedule: TaskSchedule,
+    task_schedule: TaskScheduleModel,
     count: int,
 ):
     task_tracker = RedisTaskTracker(redis_client_sdk_deferred_tasks)

@@ -7,7 +7,7 @@ from ..redis import RedisClientSDKHealthChecked
 from ..utils import logged_gather
 from ._base_task_tracker import BaseTaskTracker
 from ._models import TaskUID
-from ._task_schedule import TaskSchedule
+from ._task_schedule import TaskScheduleModel
 
 _TASK_TRACKER_PREFIX: Final[str] = "mm:"
 _MAX_REDIS_CONCURRENCY: Final[NonNegativeInt] = 10
@@ -30,20 +30,20 @@ class RedisTaskTracker(BaseTaskTracker):
             )
         return TaskUID(candidate)
 
-    async def _get_raw(self, redis_key: str) -> TaskSchedule | None:
+    async def _get_raw(self, redis_key: str) -> TaskScheduleModel | None:
         found_data = await self.redis_sdk.redis.get(redis_key)
-        return None if found_data is None else TaskSchedule.parse_raw(found_data)
+        return None if found_data is None else TaskScheduleModel.parse_raw(found_data)
 
-    async def get(self, task_uid: TaskUID) -> TaskSchedule | None:
+    async def get(self, task_uid: TaskUID) -> TaskScheduleModel | None:
         return await self._get_raw(_get_key(task_uid))
 
-    async def save(self, task_uid: TaskUID, task_schedule: TaskSchedule) -> None:
+    async def save(self, task_uid: TaskUID, task_schedule: TaskScheduleModel) -> None:
         await self.redis_sdk.redis.set(_get_key(task_uid), task_schedule.json())
 
     async def remove(self, task_uid: TaskUID) -> None:
         await self.redis_sdk.redis.delete(_get_key(task_uid))
 
-    async def all(self) -> list[TaskSchedule]:
+    async def all(self) -> list[TaskScheduleModel]:
         return await logged_gather(
             *[
                 self._get_raw(x)
