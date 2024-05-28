@@ -391,5 +391,26 @@ qx.Class.define("osparc.info.StudyUtils", {
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
     },
+
+    patchStudyData: function(studyData, fieldKey, value) {
+      return new Promise((resolve, reject) => {
+        const patchData = {};
+        patchData[fieldKey] = value;
+        const params = {
+          url: {
+            "studyId": studyData["uuid"]
+          },
+          data: patchData
+        };
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            studyData[fieldKey] = value;
+            // A bit hacky, but it's not sent back to the backend
+            studyData["lastChangeDate"] = new Date().toISOString();
+            resolve();
+          })
+          .catch(err => reject(err));
+      });
+    }
   }
 });

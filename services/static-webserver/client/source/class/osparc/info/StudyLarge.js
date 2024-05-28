@@ -31,10 +31,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     } else if (study instanceof Object) {
       const studyModel = new osparc.data.model.Study(study);
       this.setStudy(studyModel);
-
-      if ("resourceType" in study) {
-        this.__isTemplate = study["resourceType"] === "template";
-      }
+    }
+    if ("resourceType" in study) {
+      this.__isTemplate = study["resourceType"] === "template";
     }
 
     if (openOptions !== undefined) {
@@ -244,9 +243,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
-          "name": newLabel
-        });
+        this.__patchStudy("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -308,9 +305,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__updateStudy({
-          "thumbnail": validUrl
-        });
+        this.__patchStudy("thumbnail", validUrl);
       }, this);
       thumbnailEditor.addListener("cancel", () => win.close());
     },
@@ -323,18 +318,17 @@ qx.Class.define("osparc.info.StudyLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
-          "description": newDescription
-        });
+        this.__patchStudy("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __updateStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __patchStudy: function(fieldKey, value) {
+      this.getStudy().patchStudy(fieldKey, value)
         .then(studyData => {
+          studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
