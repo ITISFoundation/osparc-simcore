@@ -13,9 +13,9 @@
    "data": {
     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3D6377d922-fcd7-11ee-b4fc-0242ac140024%26hidden%3Dtrue.cfc51e24-171c-4655-a668-844c8761f828",
     "task_name": "POST /v0/projects?from_study=6377d922-fcd7-11ee-b4fc-0242ac140024&hidden=true",
-    "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828",
-    "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828/result",
-    "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828"
+    "status_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828",
+    "result_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828/result",
+    "abort_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253D6377d922-fcd7-11ee-b4fc-0242ac140024%2526hidden%253Dtrue.cfc51e24-171c-4655-a668-844c8761f828"
    }
   },
   "status_code": 202
