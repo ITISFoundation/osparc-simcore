@@ -93,7 +93,7 @@ async def get_mocked_deferred_handler(
     def _(
         retry_count: int,
         timeout: timedelta,
-        run_deferred: Callable[[DeferredContext], Awaitable[Any]],
+        run: Callable[[DeferredContext], Awaitable[Any]],
     ) -> tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]]:
         mocks: dict[MockKeys, Mock] = {k: Mock() for k in MockKeys}
 
@@ -120,8 +120,8 @@ async def get_mocked_deferred_handler(
                 mocks[MockKeys.ON_DEFERRED_CREATED](task_uid, context)
 
             @classmethod
-            async def run_deferred(cls, context: DeferredContext) -> Any:
-                result = await run_deferred(context)
+            async def run(cls, context: DeferredContext) -> Any:
+                result = await run(context)
                 mocks[MockKeys.RUN_DEFERRED](context)
                 return result
 
@@ -192,7 +192,7 @@ async def test_rabbit_resources_are_prefixed_with_instancing_module_name(
 
 
 @pytest.mark.parametrize(
-    "run_deferred_return", [{}, None, 1, 1.34, [], [12, 35, 7, "str", 455.66]]
+    "run_return", [{}, None, 1, 1.34, [], [12, 35, 7, "str", 455.66]]
 )
 async def test_deferred_manager_result_ok(
     get_mocked_deferred_handler: Callable[
@@ -200,15 +200,15 @@ async def test_deferred_manager_result_ok(
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ],
     mocked_deferred_globals: dict[str, Any],
-    run_deferred_return: Any,
+    run_return: Any,
 ):
-    async def _run_deferred_ok(_: DeferredContext) -> Any:
-        return run_deferred_return
+    async def _run_ok(_: DeferredContext) -> Any:
+        return run_return
 
     retry_count = 1
     timeout = timedelta(seconds=1)
     mocks, mocked_deferred_handler = get_mocked_deferred_handler(
-        retry_count, timeout, _run_deferred_ok
+        retry_count, timeout, _run_ok
     )
 
     start_kwargs = {f"start_with{i}": f"par-{i}" for i in range(6)}
@@ -232,9 +232,7 @@ async def test_deferred_manager_result_ok(
     mocks[MockKeys.RUN_DEFERRED].assert_called_once_with(context)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=1)
-    mocks[MockKeys.ON_DEFERRED_RESULT].assert_called_once_with(
-        run_deferred_return, context
-    )
+    mocks[MockKeys.ON_DEFERRED_RESULT].assert_called_once_with(run_return, context)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
 
@@ -255,11 +253,11 @@ async def test_deferred_manager_raised_error(
         "This is an expected error that was raised and should be found in the logs"
     )
 
-    async def _run_deferred_raises(_: DeferredContext) -> None:
+    async def _run_raises(_: DeferredContext) -> None:
         raise RuntimeError(expected_error_message)
 
     mocks, mocked_deferred_handler = get_mocked_deferred_handler(
-        retry_count, timedelta(seconds=1), _run_deferred_raises
+        retry_count, timedelta(seconds=1), _run_raises
     )
 
     await mocked_deferred_handler.start_deferred()
@@ -305,11 +303,11 @@ async def test_deferred_manager_cancelled(
 ):
     caplog_debug_level.clear()
 
-    async def _run_deferred_to_cancel(_: DeferredContext) -> None:
+    async def _run_to_cancel(_: DeferredContext) -> None:
         await asyncio.sleep(1e6)
 
     mocks, mocked_deferred_handler = get_mocked_deferred_handler(
-        retry_count, timedelta(seconds=10), _run_deferred_to_cancel
+        retry_count, timedelta(seconds=10), _run_to_cancel
     )
 
     await mocked_deferred_handler.start_deferred()
@@ -336,7 +334,7 @@ async def test_deferred_manager_cancelled(
 
     await _assert_log_message(
         caplog_debug_level,
-        message=f"Found and cancelled run_deferred for '{task_uid}'",
+        message=f"Found and cancelled run for '{task_uid}'",
         count=1,
     )
 
@@ -400,11 +398,11 @@ async def test_deferred_manager_start_parallelized(
 ):
     caplog_debug_level.clear()
 
-    async def _run_deferred_ok(_: DeferredContext) -> None:
+    async def _run_ok(_: DeferredContext) -> None:
         await asyncio.sleep(0.1)
 
     mocks, mocked_deferred_handler = get_mocked_deferred_handler(
-        3, timedelta(seconds=1), _run_deferred_ok
+        3, timedelta(seconds=1), _run_ok
     )
 
     await asyncio.gather(
@@ -422,7 +420,7 @@ async def test_deferred_manager_start_parallelized(
         caplog_debug_level, message="Schedule retry attempt for task_uid ", count=0
     )
     await _assert_log_message(
-        caplog_debug_level, message="Found and cancelled run_deferred for '", count=0
+        caplog_debug_level, message="Found and cancelled run for '", count=0
     )
 
 
@@ -432,11 +430,11 @@ async def test_deferred_manager_code_times_out(
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ]
 ):
-    async def _run_deferred_that_times_out(_: DeferredContext) -> None:
+    async def _run_that_times_out(_: DeferredContext) -> None:
         await asyncio.sleep(1e6)
 
     mocks, mocked_deferred_handler = get_mocked_deferred_handler(
-        1, timedelta(seconds=0.5), _run_deferred_that_times_out
+        1, timedelta(seconds=0.5), _run_that_times_out
     )
 
     await mocked_deferred_handler.start_deferred()

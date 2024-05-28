@@ -69,7 +69,7 @@ def task_uid(faker: Faker) -> TaskUID:
 
 def _get_mock_deferred_handler(handler: Callable[..., Awaitable[Any]]) -> AsyncMock:
     async_mock = AsyncMock()
-    async_mock.run_deferred = handler
+    async_mock.run = handler
     return async_mock
 
 
@@ -110,7 +110,7 @@ async def test_returns_task_result_success(
 ):
 
     deferred_handler = _get_mock_deferred_handler(handler)
-    result = await worker_tracker.handle_run_deferred(
+    result = await worker_tracker.handle_run(
         deferred_handler,  # type: ignore
         task_uid=task_uid,
         deferred_context=context,
@@ -130,7 +130,7 @@ async def test_returns_task_result_error(
         raise RuntimeError(msg)
 
     deferred_handler = _get_mock_deferred_handler(_handler)
-    result = await worker_tracker.handle_run_deferred(
+    result = await worker_tracker.handle_run(
         deferred_handler,  # type: ignore
         task_uid=task_uid,
         deferred_context={},
@@ -152,7 +152,7 @@ async def test_returns_task_result_cancelled_error(
 
     def _start_in_task() -> asyncio.Task:
         return asyncio.create_task(
-            worker_tracker.handle_run_deferred(
+            worker_tracker.handle_run(
                 deferred_handler,  # type: ignore
                 task_uid=task_uid,
                 deferred_context={},
@@ -163,11 +163,11 @@ async def test_returns_task_result_cancelled_error(
     task = _start_in_task()
     # context switch for task to start
     await asyncio.sleep(0)
-    assert worker_tracker.cancel_run_deferred(task_uid) is True
+    assert worker_tracker.cancel_run(task_uid) is True
 
     assert len(worker_tracker._tasks) == 1  # noqa: SLF001
     result = await task
     assert len(worker_tracker._tasks) == 0  # noqa: SLF001
     assert isinstance(result, TaskResultCancelledError)
 
-    assert worker_tracker.cancel_run_deferred("missing_task_uid") is False
+    assert worker_tracker.cancel_run("missing_task_uid") is False

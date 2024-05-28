@@ -13,7 +13,7 @@ The `BaseDeferredHandler` is the interface to the user.
     defines a nice entrypoint to start new tasks
 - `on_created` (called after `start_deferred` executes) [optional] {can be overwritten by the user}:
     provides a global identifier for the started task
-- `run_deferred` (called by state `Worker`) [required] {MUST be implemented by user}:
+- `run` (called by state `Worker`) [required] {MUST be implemented by user}:
     code the user wants to run
 - `on_result` (called by state `DeferredResult`) [required] {MUST be implemented by user}:
     provides the result of an execution
@@ -52,7 +52,7 @@ Used internally for scheduling the task's execution:
 
 - `Scheduled`: triggered by `start_deferred` and creates a schedule for the task
 - `SubmitTask`: decreases retry counter
-- `Worker`: checks if enough workers slots are available (can refuse task), creates from `run_deferred` code and saves the result.
+- `Worker`: checks if enough workers slots are available (can refuse task), creates from `run` code and saves the result.
 - `ErrorResult`: checks if it can reschedule the task or gives up
 - `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the schedule
 - `DeferredResult`: invokes `on_result` and removes the schedule

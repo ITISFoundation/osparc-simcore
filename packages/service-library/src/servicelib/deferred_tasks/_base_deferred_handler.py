@@ -36,10 +36,10 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         """
         returns: the amount of retries in case of error (default: 0)
 
-        This is used only when ``run_deferred`` raises an error other than `asyncio.CancelledError`` and this
-        value is > 0. The code inside ``run_deferred`` will be retried.
+        This is used only when ``run`` raises an error other than `asyncio.CancelledError`` and this
+        value is > 0. The code inside ``run`` will be retried.
 
-        NOTE: if the process running the ``run_deferred`` code dies, it automatically gets
+        NOTE: if the process running the ``run`` code dies, it automatically gets
         retried when the process is restarted or by another copy of the service.
         """
         assert context  # nosec
@@ -48,8 +48,8 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
     @classmethod
     @abstractmethod
     async def get_timeout(cls, context: DeferredContext) -> timedelta:
-        """return the timeout for the execution of `run_deferred`.
-        If ``run_deferred`` does not finish executing in time a timeout exception will be raised
+        """return the timeout for the execution of `run`.
+        If ``run`` does not finish executing in time a timeout exception will be raised
         """
 
     @classmethod
@@ -57,7 +57,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
     async def start_deferred(cls, **kwargs) -> StartContext:
         """
         Used to start a deferred.
-        These values will be passed to ``run_deferred`` when it's ran.
+        These values will be passed to ``run`` when it's ran.
         """
 
     @classmethod
@@ -66,20 +66,20 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     @abstractmethod
-    async def run_deferred(cls, context: DeferredContext) -> ResultType:
+    async def run(cls, context: DeferredContext) -> ResultType:
         """code to be ran by a worker"""
 
     @classmethod
     @abstractmethod
     async def on_result(cls, result: ResultType, context: DeferredContext) -> None:
-        """called when ``run_deferred`` provided a successful result"""
+        """called when ``run`` provided a successful result"""
 
     @classmethod
     async def on_finished_with_error(
         cls, error: TaskResultError, context: DeferredContext
     ) -> None:
         """
-        called when ``run_deferred`` code raises an error
+        called when ``run`` code raises an error
 
         NOTE: by design the default action is to do nothing
         """

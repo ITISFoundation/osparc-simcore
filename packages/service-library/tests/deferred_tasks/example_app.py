@@ -43,7 +43,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         await in_memory_lists.append_to("scheduled", task_uid)
 
     @classmethod
-    async def run_deferred(cls, context: DeferredContext) -> str:
+    async def run(cls, context: DeferredContext) -> str:
         sleep_duration: float = context["sleep_duration"]
         await asyncio.sleep(sleep_duration)
         return context["sequence_id"]

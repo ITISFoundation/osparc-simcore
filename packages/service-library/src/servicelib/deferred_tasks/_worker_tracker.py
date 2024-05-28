@@ -37,7 +37,7 @@ class WorkerTracker:
     def has_free_slots(self) -> bool:
         return not self._semaphore.locked()
 
-    async def handle_run_deferred(
+    async def handle_run(
         self,
         deferred_handler: type[BaseDeferredHandler],
         task_uid: TaskUID,
@@ -46,7 +46,7 @@ class WorkerTracker:
     ) -> TaskExecutionResult:
         self._tasks[task_uid] = task = asyncio.create_task(
             _get_task_with_timeout(
-                deferred_handler.run_deferred(deferred_context), timeout=timeout
+                deferred_handler.run(deferred_context), timeout=timeout
             )
         )
 
@@ -67,7 +67,7 @@ class WorkerTracker:
 
         return result_to_return
 
-    def cancel_run_deferred(self, task_uid: TaskUID) -> bool:
+    def cancel_run(self, task_uid: TaskUID) -> bool:
         """Attempts to cancel the a task.
         It is important to note that the task might not be running in this instance.
 
@@ -77,7 +77,7 @@ class WorkerTracker:
         task: asyncio.Task | None = self._tasks.get(task_uid, None)
         if task:
             # NOTE: there is no need to await the task after cancelling it.
-            # It is already awaited, by ``handle_run_deferred, which handles
+            # It is already awaited, by ``handle_run, which handles
             # it's result in case of cancellation.
             # As a side effect it produces a RuntimeWarning coroutine: '...' was never awaited
             # which cannot be suppressed

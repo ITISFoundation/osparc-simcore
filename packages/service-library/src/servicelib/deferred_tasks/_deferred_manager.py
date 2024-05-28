@@ -399,7 +399,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 deferred_context = self.__get_deferred_context(
                     task_schedule.start_context
                 )
-                task_schedule.result = await self._worker_tracker.handle_run_deferred(
+                task_schedule.result = await self._worker_tracker.handle_run(
                     subclass, task_uid, deferred_context, task_schedule.timeout
                 )
 
@@ -545,7 +545,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         )
 
         if task_schedule.state == TaskState.WORKER:
-            run_was_cancelled = self._worker_tracker.cancel_run_deferred(task_uid)
+            run_was_cancelled = self._worker_tracker.cancel_run(task_uid)
             if not run_was_cancelled:
                 _logger.debug(
                     "Currently not handling task related to '%s'. Did not cancel it.",
@@ -553,7 +553,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 )
                 return
 
-        _logger.info("Found and cancelled run_deferred for '%s'", task_uid)
+        _logger.info("Found and cancelled run for '%s'", task_uid)
         await self.__remove_task(task_uid, task_schedule)
 
     async def __is_present(self, task_uid: TaskUID) -> bool:
