@@ -32,11 +32,6 @@ pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
 def wallet_id(faker: Faker) -> WalletID:
     return faker.pyint(min_value=1)
 

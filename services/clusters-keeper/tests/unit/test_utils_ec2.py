@@ -18,11 +18,6 @@ from simcore_service_clusters_keeper.utils.ec2 import (
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
 def wallet_id(faker: Faker) -> WalletID:
     return faker.pyint(min_value=1)
 

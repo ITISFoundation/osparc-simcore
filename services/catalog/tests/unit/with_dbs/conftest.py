@@ -7,7 +7,6 @@ import itertools
 import random
 from copy import deepcopy
 from datetime import datetime
-from random import randint
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 
 import pytest
@@ -125,11 +124,6 @@ def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
 #   -> user, user_to_groups
 # - products
 #
-
-
-@pytest.fixture(scope="session")
-def user_id() -> UserID:
-    return UserID(randint(1, 10000))
 
 
 @pytest.fixture()
