@@ -32,9 +32,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         return timedelta(seconds=60)
 
     @classmethod
-    async def start_deferred(
-        cls, sleep_duration: float, sequence_id: int
-    ) -> StartContext:
+    async def start(cls, sleep_duration: float, sequence_id: int) -> StartContext:
         return {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
 
     @classmethod
@@ -127,7 +125,7 @@ async def _commands_handler(
         return None
 
     if command == "start":
-        await ExampleDeferredHandler.start_deferred(**payload)
+        await ExampleDeferredHandler.start(**payload)
         return None
 
     if command == "get-scheduled":

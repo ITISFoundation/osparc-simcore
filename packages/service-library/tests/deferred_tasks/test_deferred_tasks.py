@@ -185,9 +185,7 @@ class _RemoteProcessLifecycleManager:
     async def stop(self) -> None:
         await self.remote_process.stop()
 
-    async def start_deferred_task(
-        self, sleep_duration: float, sequence_id: int
-    ) -> None:
+    async def start_task(self, sleep_duration: float, sequence_id: int) -> None:
         response = await _tcp_command(
             "start",
             {"sleep_duration": sleep_duration, "sequence_id": sequence_id},
@@ -295,7 +293,7 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
         # start all in parallel divided among workers
         await asyncio.gather(
             *[
-                manager.start_deferred_task(0.1, i)
+                manager.start_task(0.1, i)
                 for manager, sequence_ids in zip(
                     managers, sequence_ids_list, strict=True
                 )
@@ -425,10 +423,7 @@ async def test_workflow_with_third_party_services_outages(
 
         # start all in parallel
         await asyncio.gather(
-            *[
-                manager.start_deferred_task(0.1, i)
-                for i in range(deferred_tasks_to_start)
-            ]
+            *[manager.start_task(0.1, i) for i in range(deferred_tasks_to_start)]
         )
         # makes sure tasks have been scheduled
         await _assert_has_entries(

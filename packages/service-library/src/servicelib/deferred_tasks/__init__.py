@@ -9,9 +9,9 @@ The `BaseDeferredHandler` is the interface to the user.
     returns the max attempts to retry user code
 - `get_timeout` (used by state`Scheduled`) [required] {MUST be implemented by user}:
     timeout for running the user code
-- `start_deferred` (called by the user) [required] {MUST be implemented by user}:
+- `start` (called by the user) [required] {MUST be implemented by user}:
     defines a nice entrypoint to start new tasks
-- `on_created` (called after `start_deferred` executes) [optional] {can be overwritten by the user}:
+- `on_created` (called after `start` executes) [optional] {can be overwritten by the user}:
     provides a global identifier for the started task
 - `run` (called by state `Worker`) [required] {MUST be implemented by user}:
     code the user wants to run
@@ -28,7 +28,7 @@ The `BaseDeferredHandler` is the interface to the user.
 
 ```mermaid
 stateDiagram-v2
-    * --> Scheduled: via [start_deferred]
+    * --> Scheduled: via [start]
     ** --> ManuallyCancelled: via [cancel_deferred]
 
     ManuallyCancelled --> Worker: attempts to cancel task in
@@ -50,7 +50,7 @@ stateDiagram-v2
 
 Used internally for scheduling the task's execution:
 
-- `Scheduled`: triggered by `start_deferred` and creates a schedule for the task
+- `Scheduled`: triggered by `start` and creates a schedule for the task
 - `SubmitTask`: decreases retry counter
 - `Worker`: checks if enough workers slots are available (can refuse task), creates from `run` code and saves the result.
 - `ErrorResult`: checks if it can reschedule the task or gives up

@@ -60,17 +60,17 @@ class _PatchStartDeferred:
         self,
         *,
         class_unique_reference: ClassUniqueReference,
-        original_start_deferred: Callable[..., Awaitable[StartContext]],
+        original_start: Callable[..., Awaitable[StartContext]],
         manager_schedule_deferred: Callable[
             [ClassUniqueReference, StartContext], Awaitable[None]
         ],
     ):
         self.class_unique_reference = class_unique_reference
-        self.original_start_deferred = original_start_deferred
+        self.original_start = original_start
         self.manager_schedule_deferred = manager_schedule_deferred
 
     async def __call__(self, **kwargs) -> None:
-        result: StartContext = await self.original_start_deferred(**kwargs)
+        result: StartContext = await self.original_start(**kwargs)
         await self.manager_schedule_deferred(self.class_unique_reference, result)
 
 
@@ -164,18 +164,18 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 subclass._get_class_unique_reference()  # noqa: SLF001
             )
 
-            if not isinstance(subclass.start_deferred, _PatchStartDeferred):
+            if not isinstance(subclass.start, _PatchStartDeferred):
                 with log_context(
                     _logger,
                     logging.DEBUG,
-                    f"Patch `start_deferred` for {class_unique_reference}",
+                    f"Patch `start` for {class_unique_reference}",
                 ):
-                    patched_start_deferred = _PatchStartDeferred(
+                    patched_start = _PatchStartDeferred(
                         class_unique_reference=class_unique_reference,
-                        original_start_deferred=subclass.start_deferred,
-                        manager_schedule_deferred=self.__start_deferred,
+                        original_start=subclass.start,
+                        manager_schedule_deferred=self.__start,
                     )
-                    subclass.start_deferred = patched_start_deferred  # type: ignore
+                    subclass.start = patched_start  # type: ignore
 
             if not isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
                 with log_context(
@@ -211,14 +211,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 subclass._get_class_unique_reference()  # noqa: SLF001
             )
 
-            if isinstance(subclass.start_deferred, _PatchStartDeferred):
+            if isinstance(subclass.start, _PatchStartDeferred):
                 with log_context(
                     _logger,
                     logging.DEBUG,
-                    f"Remove `start_deferred` patch for {class_unique_reference}",
+                    f"Remove `start` patch for {class_unique_reference}",
                 ):
-                    subclass.start_deferred = (  # type: ignore
-                        subclass.start_deferred.original_start_deferred  # type: ignore
+                    subclass.start = (  # type: ignore
+                        subclass.start.original_start  # type: ignore
                     )
 
             if isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
@@ -265,13 +265,13 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             ),
         )
 
-    async def __start_deferred(
+    async def __start(
         self,
         class_unique_reference: ClassUniqueReference,
         start_context: StartContext,
     ) -> None:
         """Assembles TaskSchedule stores it and starts the scheduling chain"""
-        # NOTE: this is used internally but triggered by when calling `BaseDeferredHandler.start_deferred`
+        # NOTE: this is used internally but triggered by when calling `BaseDeferredHandler.start`
 
         _logger.debug(
             "Scheduling '%s' with payload '%s'",

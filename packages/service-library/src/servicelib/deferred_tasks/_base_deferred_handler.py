@@ -54,7 +54,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     @abstractmethod
-    async def start_deferred(cls, **kwargs) -> StartContext:
+    async def start(cls, **kwargs) -> StartContext:
         """
         Used to start a deferred.
         These values will be passed to ``run`` when it's ran.

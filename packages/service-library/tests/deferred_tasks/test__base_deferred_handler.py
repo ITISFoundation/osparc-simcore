@@ -109,7 +109,7 @@ async def get_mocked_deferred_handler(
                 return timeout
 
             @classmethod
-            async def start_deferred(cls, **kwargs) -> StartContext:
+            async def start(cls, **kwargs) -> StartContext:
                 mocks[MockKeys.START_DEFERRED](kwargs)
                 return kwargs
 
@@ -212,7 +212,7 @@ async def test_deferred_manager_result_ok(
     )
 
     start_kwargs = {f"start_with{i}": f"par-{i}" for i in range(6)}
-    await mocked_deferred_handler.start_deferred(**start_kwargs)
+    await mocked_deferred_handler.start(**start_kwargs)
 
     context = {**mocked_deferred_globals, **start_kwargs}
 
@@ -260,7 +260,7 @@ async def test_deferred_manager_raised_error(
         retry_count, timedelta(seconds=1), _run_raises
     )
 
-    await mocked_deferred_handler.start_deferred()
+    await mocked_deferred_handler.start()
 
     await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
     mocks[MockKeys.START_DEFERRED].assert_called_once_with({})
@@ -310,7 +310,7 @@ async def test_deferred_manager_cancelled(
         retry_count, timedelta(seconds=10), _run_to_cancel
     )
 
-    await mocked_deferred_handler.start_deferred()
+    await mocked_deferred_handler.start()
 
     await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
     mocks[MockKeys.START_DEFERRED].assert_called_once_with({})
@@ -359,7 +359,7 @@ async def test_deferred_manager_task_is_present(
         0, timedelta(seconds=10), _run_for_short_period
     )
 
-    await mocked_deferred_handler.start_deferred(fail=fail)
+    await mocked_deferred_handler.start(fail=fail)
 
     await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
     mocks[MockKeys.START_DEFERRED].assert_called_once_with({"fail": fail})
@@ -406,7 +406,7 @@ async def test_deferred_manager_start_parallelized(
     )
 
     await asyncio.gather(
-        *[mocked_deferred_handler.start_deferred() for _ in range(tasks_to_start)]
+        *[mocked_deferred_handler.start() for _ in range(tasks_to_start)]
     )
 
     await _assert_mock_call(
@@ -437,7 +437,7 @@ async def test_deferred_manager_code_times_out(
         1, timedelta(seconds=0.5), _run_that_times_out
     )
 
-    await mocked_deferred_handler.start_deferred()
+    await mocked_deferred_handler.start()
 
     await _assert_mock_call(mocks, key=MockKeys.START_DEFERRED, count=1)
     mocks[MockKeys.START_DEFERRED].assert_called_once_with({})
