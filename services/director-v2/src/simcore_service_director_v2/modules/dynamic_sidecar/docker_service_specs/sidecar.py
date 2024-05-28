@@ -333,7 +333,7 @@ def _get_ports(
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
-                "PublishedPort": random.randint(0, 99999),
+                "PublishedPort": random.randint(0, 50999),
                 "PublishMode": "host",
             }
         )
@@ -344,7 +344,7 @@ def _get_ports(
                 {
                     "Protocol": "tcp",
                     "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUGGING_PORT,
-                    "PublishedPort": random.randint(0, 99999),
+                    "PublishedPort": random.randint(0, 50999),
                     "PublishMode": "host",
                 }
             )

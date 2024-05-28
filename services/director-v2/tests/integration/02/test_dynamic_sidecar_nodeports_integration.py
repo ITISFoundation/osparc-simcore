@@ -47,6 +47,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
@@ -61,6 +62,7 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.storage import StorageSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
@@ -74,6 +76,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.modules.storage import StorageClient
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -327,6 +330,36 @@ def dev_feature_r_clone_enabled(request) -> str:
 
 
 @pytest.fixture
+async def patch_storage_setup(
+    mocker: MockerFixture,
+) -> None:
+    local_settings = StorageSettings.create_from_envs()
+
+    def setup(app: FastAPI, settings: StorageSettings):
+        _ = settings
+
+        def on_startup() -> None:
+            StorageClient.create(
+                app,
+                client=httpx.AsyncClient(
+                    base_url=f"{local_settings.api_base_url}",
+                    timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+                ),
+            )
+            logger.debug("created client for storage: %s", local_settings.api_base_url)
+
+        async def on_shutdown() -> None:
+            client = StorageClient.instance(app).client
+            await client.aclose()
+            del client
+
+        app.add_event_handler("startup", on_startup)
+        app.add_event_handler("shutdown", on_shutdown)
+
+    mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
+
+
+@pytest.fixture
 def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -335,6 +368,7 @@ def mock_env(
     dask_scheduler_service: str,
     dask_scheduler_auth: InternalClusterAuthentication,
     minimal_configuration: None,
+    patch_storage_setup: None,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -344,10 +378,21 @@ def mock_env(
 
     image_name = f"{registry}/dynamic-sidecar:{image_tag}"
 
+    local_settings = StorageSettings.create_from_envs()
+
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     setenvs_from_dict(
         monkeypatch,
         {
+            "STORAGE_HOST": "storage",
+            "STORAGE_PORT": "8080",
+            "NODE_PORTS_STORAGE_AUTH": json.dumps(
+                {
+                    "STORAGE_HOST": local_settings.STORAGE_HOST,
+                    "STORAGE_PORT": local_settings.STORAGE_PORT,
+                }
+            ),
+            "STORAGE_ENDPOINT": "storage:8080",
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
