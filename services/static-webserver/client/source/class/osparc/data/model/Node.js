@@ -1349,49 +1349,48 @@ qx.Class.define("osparc.data.model.Node", {
 
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
-      const pingRequest = new qx.io.request.Xhr(srvUrl);
-      pingRequest.addListenerOnce("success", () => {
-        this.__waitForServiceWebsite(srvUrl);
-      }, this);
-      pingRequest.addListenerOnce("fail", e => {
-        const error = e.getTarget().getResponse();
-        this.getStatus().setInteractive("connecting");
-        console.log("service not ready yet, waiting... " + error);
-        // Check if node is still there
-        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
-          return;
-        }
-        const interval = 1000;
-        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
-      });
-      pingRequest.send();
+      fetch(srvUrl)
+        .then(request => {
+          if (request.status >= 200 || request.status < 300) {
+            this.__waitForServiceWebsite(srvUrl)
+          }
+        })
+        .catch(err => {
+          this.getStatus().setInteractive("connecting");
+          console.log("service not ready yet, waiting... " + err);
+          // Check if node is still there
+          if (this.getWorkbench().getNode(this.getNodeId()) === null) {
+            return;
+          }
+          const interval = 1000;
+          qx.event.Timer.once(() => this.__waitForServiceReady.call(this, srvUrl), this, interval);
+        })
     },
 
     __waitForServiceWebsite: function(srvUrl) {
       // request the frontend to make sure it is ready
-      let retries = 5;
-      const request = new XMLHttpRequest();
+      let retries = 5
       const openAndSend = () => {
         if (retries === 0) {
-          return;
+          return
         }
-        retries--;
-        request.open("GET", srvUrl);
-        request.send();
-      };
+        retries--
+        fetch(srvUrl)
+          .then(request => {
+            if (request.status >= 200 || request.status < 300) {
+              this.__serviceReadyIn(srvUrl)
+            } else {
+              retry()
+            }
+          })
+          .catch(() => {
+            retry()
+          })
+      }
       const retry = () => {
-        setTimeout(() => openAndSend(), 2000);
+        setTimeout(() => openAndSend(), 2000)
       };
-      request.onerror = () => retry();
-      request.ontimeout = () => retry();
-      request.onload = () => {
-        if (request.status < 200 || request.status >= 300) {
-          retry();
-        } else {
-          this.__serviceReadyIn(srvUrl);
-        }
-      };
-      openAndSend();
+      openAndSend()
     },
 
     __serviceReadyIn: function(srvUrl) {

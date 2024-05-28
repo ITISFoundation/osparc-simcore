@@ -179,7 +179,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       }, this);
       pingRequest.addListenerOnce("fail", () => {
         const interval = 2000;
-        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
+        qx.event.Timer.once(() => this.__waitForServiceReady.call(this, srvUrl), this, interval);
       });
       pingRequest.send();
     },
