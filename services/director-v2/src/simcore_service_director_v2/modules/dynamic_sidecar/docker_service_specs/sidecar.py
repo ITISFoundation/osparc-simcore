@@ -16,6 +16,7 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
+from servicelib.utils import unused_port
 from settings_library.node_ports import StorageAuthSettings
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -332,6 +333,8 @@ def _get_ports(
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
+                "PublishedPort": unused_port(),
+                "PublishMode": "host",
             }
         )
 
@@ -341,6 +344,8 @@ def _get_ports(
                 {
                     "Protocol": "tcp",
                     "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUGGING_PORT,
+                    "PublishedPort": unused_port(),
+                    "PublishMode": "host",
                 }
             )
     return ports
