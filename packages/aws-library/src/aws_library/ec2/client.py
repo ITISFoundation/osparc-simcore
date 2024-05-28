@@ -173,7 +173,7 @@ class SimcoreEC2API:
                 UserData=compose_user_data(instance_config.startup_script),
                 NetworkInterfaces=[
                     {
-                        "AssociatePublicIpAddress": True,
+                        "AssociatePublicIpAddress": False,
                         "DeviceIndex": 0,
                         "SubnetId": instance_config.subnet_id,
                         "Groups": instance_config.security_group_ids,
