@@ -74,6 +74,32 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     __grid: null,
     _servicesGrid: null,
 
+    _patchNode: function(nodeId, key, newValue, fetchButton) {
+      if (fetchButton) {
+        fetchButton.setFetching(true);
+      }
+      this.setEnabled(false);
+
+      osparc.info.StudyUtils.patchStudyData(this._studyData, nodeId, key, newValue)
+        .then(() => {
+          this.fireDataEvent("updateService", this._studyData);
+          this._populateLayout();
+        })
+        .catch(err => {
+          if ("message" in err) {
+            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          } else {
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+          }
+        })
+        .finally(() => {
+          if (fetchButton) {
+            fetchButton.setFetching(false);
+          }
+          this.setEnabled(true);
+        });
+    },
+
     _updateStudy: function(fetchButton) {
       if (fetchButton) {
         fetchButton.setFetching(true);
