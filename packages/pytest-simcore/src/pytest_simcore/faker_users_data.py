@@ -24,6 +24,9 @@ _MESSAGE = (
 )
 
 
+_FAKE_USER_EMAIL_OPTION = "--faker-user-email"
+
+
 def pytest_addoption(parser: pytest.Parser):
     simcore_group = parser.getgroup("simcore")
     simcore_group.addoption(
@@ -34,7 +37,7 @@ def pytest_addoption(parser: pytest.Parser):
         help=_MESSAGE.format("user_id"),
     )
     simcore_group.addoption(
-        "--faker-user-email",
+        _FAKE_USER_EMAIL_OPTION,
         action="store",
         type=str,
         default=None,
@@ -64,11 +67,17 @@ def user_id(faker: Faker, request: pytest.FixtureRequest) -> UserID:
     )
 
 
+@pytest.fixture(scope="session")
+def is_external_user_email(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None))
+
+
 @pytest.fixture
 def user_email(faker: Faker, request: pytest.FixtureRequest) -> EmailStr:
     return parse_obj_as(
         EmailStr,
-        request.config.getoption("--faker-user-email", default=None) or faker.email(),
+        request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None)
+        or faker.email(),
     )
 
 

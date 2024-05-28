@@ -55,32 +55,20 @@ def secret_key() -> str:
     return generate_token_secret_key(32)
 
 
-def pytest_addoption(parser: pytest.Parser):
-    group = parser.getgroup("simcore")
-
-    group.addoption(
-        "--external-email",
-        action="store",
-        type=str,
-        default=None,
-        help="An email for test_services_notifier_email",
-    )
-
-
 @pytest.fixture(scope="session")
-def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
-    if external_environment:
-        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
-        assert "PAYMENTS_GATEWAY_URL" in external_environment
-    return external_environment
+def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
+    if external_envfile_dict:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_envfile_dict
+        assert "PAYMENTS_GATEWAY_URL" in external_envfile_dict
+    return external_envfile_dict
 
 
 @pytest.fixture
 def env_devel_dict(
-    env_devel_dict: EnvVarsDict, external_environment: EnvVarsDict
+    env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
-    if external_environment:
-        return external_environment
+    if external_envfile_dict:
+        return external_envfile_dict
     return env_devel_dict
 
 

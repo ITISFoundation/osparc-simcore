@@ -43,11 +43,6 @@ def project_id(faker: Faker) -> ProjectID:
 
 
 @pytest.fixture
-def user_id() -> UserID:
-    return 42
-
-
-@pytest.fixture
 def expected_volume_config(
     swarm_stack_name: str,
     node_uuid: UUID,
