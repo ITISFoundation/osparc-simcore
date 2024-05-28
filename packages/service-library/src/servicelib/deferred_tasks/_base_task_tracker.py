@@ -22,5 +22,5 @@ class BaseTaskTracker(ABC):
         """removes the entry for the provided task unique id"""
 
     @abstractmethod
-    async def list(self) -> list[TaskSchedule]:
+    async def all(self) -> list[TaskSchedule]:
         """returns a list with all the currently existing entries"""

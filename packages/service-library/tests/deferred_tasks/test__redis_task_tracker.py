@@ -63,6 +63,6 @@ async def test_task_tracker_list_all_entries(
 
     await logged_gather(*(_make_entry() for _ in range(count)))
 
-    entries = await task_tracker.list()
+    entries = await task_tracker.all()
     assert len(entries) == count
     assert entries == [task_schedule for _ in range(count)]
