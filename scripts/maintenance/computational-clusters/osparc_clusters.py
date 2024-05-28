@@ -735,7 +735,9 @@ async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, No
             remote_bind_host=ip_address,
             remote_bind_port=_SCHEDULER_PORT,
         ) as tunnel:
-            forward_url = f"tls://127.0.0.1:{tunnel.local_bind_ports[0]}"
+            assert tunnel  # nosec
+            host, port = tunnel.local_bind_address
+            forward_url = f"tls://{host}:{port}"
             async with distributed.Client(
                 forward_url,
                 security=security,
