@@ -15,13 +15,13 @@ The `BaseDeferredHandler` is the interface to the user.
     provides a global identifier for the started task
 - `run_deferred` (called by state `Worker`) [required] {MUST be implemented by user}:
     code the user wants to run
-- `on_deferred_result` (called by state `DeferredResult`) [required] {MUST be implemented by user}:
+- `on_result` (called by state `DeferredResult`) [required] {MUST be implemented by user}:
     provides the result of an execution
 - `on_finished_with_error` (called by state `FinishedWithError`) [optional] {can be overwritten by the user}:
     react to execution error, only triggered if all retry attempts fail
 - `cancel_deferred`: (called by the user) [optional]:
     send a message to cancel the current task. A warning will be logged but no call to either
-    `on_deferred_result` or `on_finished_with_error` will occur.
+    `on_result` or `on_finished_with_error` will occur.
 
 
 ## DeferredHandler lifecycle
@@ -41,7 +41,7 @@ stateDiagram-v2
     ErrorResult --> FinishedWithError: gives up when out of retries or if cancelled
     Worker --> DeferredResult: success
 
-    DeferredResult --> °: calls [on_deferred_result]
+    DeferredResult --> °: calls [on_result]
     FinishedWithError --> °°: calls [on_finished_with_error]
     Worker --> °°°: task cancelled
 ```
@@ -55,7 +55,7 @@ Used internally for scheduling the task's execution:
 - `Worker`: checks if enough workers slots are available (can refuse task), creates from `run_deferred` code and saves the result.
 - `ErrorResult`: checks if it can reschedule the task or gives up
 - `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the schedule
-- `DeferredResult`: invokes `on_deferred_result` and removes the schedule
+- `DeferredResult`: invokes `on_result` and removes the schedule
 - `ManuallyCancelled`: sends message to all instances to cancel. The instance handling the task will cancel the task and remove the schedule
 """
 

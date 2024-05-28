@@ -126,9 +126,7 @@ async def get_mocked_deferred_handler(
                 return result
 
             @classmethod
-            async def on_deferred_result(
-                cls, result: Any, context: DeferredContext
-            ) -> None:
+            async def on_result(cls, result: Any, context: DeferredContext) -> None:
                 mocks[MockKeys.ON_DEFERRED_RESULT](result, context)
 
             @classmethod

@@ -515,9 +515,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         assert isinstance(task_schedule.result, TaskResultSuccess)  # nosec
 
         with log_catch(_logger, reraise=False):
-            await subclass.on_deferred_result(
-                task_schedule.result.value, deferred_context
-            )
+            await subclass.on_result(task_schedule.result.value, deferred_context)
 
         await self.__remove_task(task_uid, task_schedule)
 

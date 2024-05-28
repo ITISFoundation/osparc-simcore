@@ -51,7 +51,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         return context["sequence_id"]
 
     @classmethod
-    async def on_deferred_result(cls, result: str, context: DeferredContext) -> None:
+    async def on_result(cls, result: str, context: DeferredContext) -> None:
         in_memory_lists: InMemoryLists = context["in_memory_lists"]
         await in_memory_lists.append_to("results", result)
 

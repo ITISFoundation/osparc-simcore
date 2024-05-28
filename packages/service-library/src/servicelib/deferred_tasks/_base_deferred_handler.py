@@ -73,9 +73,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     @abstractmethod
-    async def on_deferred_result(
-        cls, result: ResultType, context: DeferredContext
-    ) -> None:
+    async def on_result(cls, result: ResultType, context: DeferredContext) -> None:
         """called when ``run_deferred`` provided a successful result"""
 
     @classmethod
