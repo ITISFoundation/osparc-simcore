@@ -75,7 +75,7 @@ services:
       <<: *common_environment
       EFS_GUARDIAN_REMOTE_DEBUGGING_PORT : 3000
     ports:
-      - "8010:8000"
+      - "8013:8000"
       - "3020:3000"
 
   invitations:
