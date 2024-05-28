@@ -32,6 +32,10 @@ from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOu
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.jobs import (
+    get_custom_metadata,
+    raise_if_job_not_associated_with_solver,
+)
 from ...services.log_streaming import LogDistributor, LogStreamer
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
@@ -42,9 +46,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCredits, MissingWallet
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import get_custom_metadata, raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,

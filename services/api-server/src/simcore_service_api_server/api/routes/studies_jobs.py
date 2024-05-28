@@ -28,6 +28,12 @@ from ...models.schemas.jobs import (
 )
 from ...models.schemas.studies import Study, StudyID
 from ...services.director_v2 import DirectorV2Api
+from ...services.jobs import (
+    get_custom_metadata,
+    replace_custom_metadata,
+    start_project,
+    stop_project,
+)
 from ...services.solver_job_models_converters import create_jobstatus_from_task
 from ...services.storage import StorageApi
 from ...services.study_job_models_converters import (
@@ -38,12 +44,6 @@ from ...services.study_job_models_converters import (
 from ...services.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import (
-    get_custom_metadata,
-    replace_custom_metadata,
-    start_project,
-    stop_project,
-)
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
