@@ -14,7 +14,7 @@ class TaskResultSuccess(BaseModel):
 
 class TaskResultError(BaseModel):
     result_type: Literal["error"] = "error"
-    # serializes an error form the worker: PC we need to talk on how to do this a bit better
+    # serialized error from the worker
     error: str
     str_traceback: str
 
