@@ -187,6 +187,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects?from_study={templateId}"
           },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}"
+          },
           put: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}"
@@ -399,14 +403,6 @@ qx.Class.define("osparc.data.Resources", {
           getPage: {
             method: "GET",
             url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
-          },
-          put: {
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/projects/{studyId}"
           }
         }
       },
