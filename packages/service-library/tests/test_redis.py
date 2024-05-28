@@ -39,18 +39,12 @@ async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
 
 @pytest.fixture
 async def redis_client_sdk(
-    redis_service: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ]
 ) -> AsyncIterator[RedisClientSDK]:
-    redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
-    client = RedisClientSDK(redis_resources_dns)
-    assert client
-    assert client.redis_dsn == redis_resources_dns
-    await client.setup()
-
-    yield client
-    # cleanup, properly close the clients
-    await client.redis.flushall()
-    await client.shutdown()
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
+        yield client
 
 
 @pytest.fixture
