@@ -18,10 +18,11 @@
 qx.Class.define("osparc.dashboard.ResourceDetails", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function(resourceData) {
+  construct: function(resourceData, resourceModel) {
     this.base(arguments);
 
     this.__resourceData = resourceData;
+    this.__resourceModel = resourceModel;
 
     this.__addPages();
   },
