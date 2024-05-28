@@ -52,7 +52,7 @@ from ..core.errors import (
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskJobID
-from ..modules.osparc_variables_substitutions import (
+from ..modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
