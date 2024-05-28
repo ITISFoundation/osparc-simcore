@@ -19,7 +19,7 @@ async def get_project_metadata(
     )
 
 
-async def set_project_custom_metadata(
+async def set_project_metadata(
     app: web.Application,
     user_id: UserID,
     project_uuid: ProjectID,

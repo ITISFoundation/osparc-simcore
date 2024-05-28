@@ -94,7 +94,7 @@ async def update_project_metadata(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     update = await parse_request_body_as(ProjectMetadataUpdate, request)
 
-    custom_metadata = await _metadata_api.set_project_custom_metadata(
+    custom_metadata = await _metadata_api.set_project_metadata(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
