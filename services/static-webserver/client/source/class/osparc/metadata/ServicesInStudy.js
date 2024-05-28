@@ -80,7 +80,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
       }
       this.setEnabled(false);
 
-      osparc.info.StudyUtils.patchStudyData(this._studyData, nodeId, key, newValue)
+      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, key, newValue)
         .then(() => {
           this.fireDataEvent("updateService", this._studyData);
           this._populateLayout();
