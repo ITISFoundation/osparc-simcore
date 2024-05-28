@@ -18,11 +18,11 @@ DeferredContext: TypeAlias = dict[str, Any]
 class BaseDeferredHandler(ABC, Generic[ResultType]):
     """Base class to define a deferred task."""
 
-    SUBCLASSES: ClassVar[list[type["BaseDeferredHandler"]]] = []
+    _SUBCLASSES: ClassVar[list[type["BaseDeferredHandler"]]] = []
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        BaseDeferredHandler.SUBCLASSES.append(cls)
+        BaseDeferredHandler._SUBCLASSES.append(cls)
 
     @classmethod
     def _get_class_unique_reference(cls) -> ClassUniqueReference:
@@ -42,8 +42,7 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         NOTE: if the process running the ``run_deferred`` code dies, it automatically gets
         retried when the process is restarted or by another copy of the service.
         """
-
-        _ = context
+        assert context  # nosec
         return 0
 
     @classmethod

@@ -158,72 +158,88 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         the call to ``Scheduler.setup()`` this should be called to allow for
         scheduling.
         """
-        for subclass in BaseDeferredHandler.SUBCLASSES:
+        # pylint:disable=protected-access
+        for subclass in BaseDeferredHandler._SUBCLASSES:  # noqa: SLF001
             class_unique_reference: ClassUniqueReference = (
-                subclass._get_class_unique_reference()  # pylint:disable=protected-access # noqa: SLF001
+                subclass._get_class_unique_reference()  # noqa: SLF001
             )
 
             if not isinstance(subclass.start_deferred, _PatchStartDeferred):
-                _logger.debug(
-                    "Patching `start_deferred` for %s", class_unique_reference
-                )
-                patched_start_deferred = _PatchStartDeferred(
-                    class_unique_reference=class_unique_reference,
-                    original_start_deferred=subclass.start_deferred,
-                    manager_schedule_deferred=self.__start_deferred,
-                )
-                subclass.start_deferred = patched_start_deferred  # type: ignore
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Patch `start_deferred` for {class_unique_reference}",
+                ):
+                    patched_start_deferred = _PatchStartDeferred(
+                        class_unique_reference=class_unique_reference,
+                        original_start_deferred=subclass.start_deferred,
+                        manager_schedule_deferred=self.__start_deferred,
+                    )
+                    subclass.start_deferred = patched_start_deferred  # type: ignore
 
             if not isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
-                _logger.debug(
-                    "Patching `cancel_deferred` for %s", class_unique_reference
-                )
-                patched_cancel_deferred = _PatchCancelDeferred(
-                    original_cancel_deferred=subclass.cancel_deferred,
-                    manager_cancel_deferred=self.__cancel_deferred,
-                )
-                subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Patch `cancel_deferred` for {class_unique_reference}",
+                ):
+                    patched_cancel_deferred = _PatchCancelDeferred(
+                        original_cancel_deferred=subclass.cancel_deferred,
+                        manager_cancel_deferred=self.__cancel_deferred,
+                    )
+                    subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
 
             if not isinstance(subclass.is_present, _PatchIsPresent):
-                _logger.debug("Patching `is_present` for %s", class_unique_reference)
-                patched_is_present = _PatchIsPresent(
-                    original_is_present=subclass.is_present,
-                    manager_is_present=self.__is_present,
-                )
-                subclass.is_present = patched_is_present  # type: ignore
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Patch `is_present` for {class_unique_reference}",
+                ):
+                    patched_is_present = _PatchIsPresent(
+                        original_is_present=subclass.is_present,
+                        manager_is_present=self.__is_present,
+                    )
+                    subclass.is_present = patched_is_present  # type: ignore
 
             self._patched_deferred_handlers[class_unique_reference] = subclass
 
     @classmethod
     def un_patch_base_deferred_handlers(cls) -> None:
-        for subclass in BaseDeferredHandler.SUBCLASSES:
+        # pylint:disable=protected-access
+        for subclass in BaseDeferredHandler._SUBCLASSES:  # noqa: SLF001
             class_unique_reference: ClassUniqueReference = (
-                subclass._get_class_unique_reference()  # pylint:disable=protected-access # noqa: SLF001
+                subclass._get_class_unique_reference()  # noqa: SLF001
             )
 
             if isinstance(subclass.start_deferred, _PatchStartDeferred):
-                _logger.debug(
-                    "Removing `start_deferred` patch for %s", class_unique_reference
-                )
-                subclass.start_deferred = (  # type: ignore
-                    subclass.start_deferred.original_start_deferred  # type: ignore
-                )
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Remove `start_deferred` patch for {class_unique_reference}",
+                ):
+                    subclass.start_deferred = (  # type: ignore
+                        subclass.start_deferred.original_start_deferred  # type: ignore
+                    )
 
             if isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
-                _logger.debug(
-                    "Removing `cancel_deferred` patch for %s", class_unique_reference
-                )
-                subclass.cancel_deferred = (  # type: ignore
-                    subclass.cancel_deferred.original_cancel_deferred  # type: ignore
-                )
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Remove `cancel_deferred` patch for {class_unique_reference}",
+                ):
+                    subclass.cancel_deferred = (  # type: ignore
+                        subclass.cancel_deferred.original_cancel_deferred  # type: ignore
+                    )
 
             if isinstance(subclass.is_present, _PatchIsPresent):
-                _logger.debug(
-                    "Removing `is_present` patch for %s", class_unique_reference
-                )
-                subclass.is_present = (  # type: ignore
-                    subclass.is_present.original_is_present  # type: ignore
-                )
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Remove `is_present` patch for {class_unique_reference}",
+                ):
+                    subclass.is_present = (  # type: ignore
+                        subclass.is_present.original_is_present  # type: ignore
+                    )
 
     def _get_global_queue_name(self, queue_name: _FastStreamRabbitQueue) -> str:
         return f"{self._global_resources_prefix}_{queue_name}"
