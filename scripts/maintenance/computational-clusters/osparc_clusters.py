@@ -715,7 +715,13 @@ def _ssh_tunnel(
 
 
 @contextlib.asynccontextmanager
-async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, None]:
+async def _dask_client(
+    ip_address: str,
+    *,
+    ssh_user_name: str,
+    ssh_key_path: Path,
+    bastion_host: str,
+) -> AsyncGenerator[distributed.Client, None]:
     security = distributed.Security()
     assert state.deploy_config
     dask_certificates = state.deploy_config / "assets" / "dask-certificates"
@@ -729,9 +735,9 @@ async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, No
     try:
         assert state.ssh_key_path  # nosec
         with _ssh_tunnel(
-            ssh_host=_BASTION_HOST,
-            username=SSH_USER_NAME,
-            private_key_path=state.ssh_key_path,
+            ssh_host=bastion_host,
+            username=ssh_user_name,
+            private_key_path=ssh_key_path,
             remote_bind_host=ip_address,
             remote_bind_port=_SCHEDULER_PORT,
         ) as tunnel:
@@ -804,8 +810,12 @@ async def _analyze_computational_instances(
             processing_jobs = {}
             all_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
+                assert ssh_key_path
                 async with _dask_client(
-                    instance.ec2_instance.private_dns_name
+                    instance.ec2_instance.private_dns_name,
+                    ssh_user_name=SSH_USER_NAME,
+                    ssh_key_path=ssh_key_path,
+                    bastion_host=_BASTION_HOST,
                 ) as client:
                     scheduler_info = client.scheduler_info()
                     datasets_on_cluster = await _wrap_dask_async_call(
@@ -1203,10 +1213,15 @@ async def _list_computational_clusters(
 
 
 async def _trigger_job_cancellation_in_scheduler(
-    cluster: ComputationalCluster, task_id: TaskId
+    cluster: ComputationalCluster,
+    task_id: TaskId,
+    ssh_key_path: Path,
 ) -> None:
     async with _dask_client(
-        cluster.primary.ec2_instance.private_dns_name
+        cluster.primary.ec2_instance.private_dns_name,
+        ssh_user_name=SSH_USER_NAME,
+        ssh_key_path=ssh_key_path,
+        bastion_host=_BASTION_HOST,
     ) as dask_client:
         task_future = distributed.Future(task_id)
         cancel_event = distributed.Event(
@@ -1219,10 +1234,15 @@ async def _trigger_job_cancellation_in_scheduler(
 
 
 async def _remove_job_from_scheduler(
-    cluster: ComputationalCluster, task_id: TaskId
+    cluster: ComputationalCluster,
+    task_id: TaskId,
+    ssh_key_path: Path,
 ) -> None:
     async with _dask_client(
-        cluster.primary.ec2_instance.private_dns_name
+        cluster.primary.ec2_instance.private_dns_name,
+        ssh_user_name=SSH_USER_NAME,
+        ssh_key_path=ssh_key_path,
+        bastion_host=_BASTION_HOST,
     ) as dask_client:
         await _wrap_dask_async_call(dask_client.unpublish_dataset(task_id))
         print(f"unpublished {task_id} from scheduler")
@@ -1279,12 +1299,16 @@ async def _cancel_jobs(  # noqa: C901, PLR0912
                 for comp_task, dask_task in task_to_dask_job:
                     if dask_task is not None and dask_task.state != "unknown":
                         await _trigger_job_cancellation_in_scheduler(
-                            the_cluster, dask_task.job_id
+                            the_cluster,
+                            dask_task.job_id,
+                            ssh_key_path=state.ssh_key_path,
                         )
                         if comp_task is None:
                             # we need to clear it of the cluster
                             await _remove_job_from_scheduler(
-                                the_cluster, dask_task.job_id
+                                the_cluster,
+                                dask_task.job_id,
+                                ssh_key_path=state.ssh_key_path,
                             )
                     if comp_task is not None and force:
                         await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
@@ -1295,11 +1319,15 @@ async def _cancel_jobs(  # noqa: C901, PLR0912
                 comp_task, dask_task = task_to_dask_job[selected_index]
                 if dask_task is not None and dask_task.state != "unknown":
                     await _trigger_job_cancellation_in_scheduler(
-                        the_cluster, dask_task.job_id
+                        the_cluster, dask_task.job_id, ssh_key_path=state.ssh_key_path
                     )
                     if comp_task is None:
                         # we need to clear it of the cluster
-                        await _remove_job_from_scheduler(the_cluster, dask_task.job_id)
+                        await _remove_job_from_scheduler(
+                            the_cluster,
+                            dask_task.job_id,
+                            ssh_key_path=state.ssh_key_path,
+                        )
 
                 if comp_task is not None and force:
                     await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
