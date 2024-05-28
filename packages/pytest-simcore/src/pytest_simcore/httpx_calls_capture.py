@@ -242,11 +242,7 @@ def create_respx_mock_from_capture(
                 assert isinstance(url_path, PathDescription)
 
                 # path
-                path_regex: str = str(url_path.path)
-                for param in url_path.path_parameters:
-                    path_regex = path_regex.replace(
-                        "{" + param.name + "}", param.respx_lookup
-                    )
+                path_regex = url_path.to_path_regex()
 
                 # response
                 side_effect = _CaptureSideEffect(
