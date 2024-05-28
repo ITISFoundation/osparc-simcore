@@ -292,24 +292,13 @@ async def create_fake_project(
 
 
 @pytest.fixture
-def create_fake_uuid(faker: Faker) -> Callable[[], uuid.UUID]:
-    def _creator() -> uuid.UUID:
-        random_uuid = faker.uuid4(cast_to=None)
-        assert isinstance(random_uuid, uuid.UUID)
-        return random_uuid
-
-    return _creator
-
-
-@pytest.fixture
 async def create_fake_projects_node(
     connection: aiopg.sa.connection.SAConnection,
     faker: Faker,
-    create_fake_uuid: Callable[[], uuid.UUID],
 ) -> Callable[[uuid.UUID], Awaitable[ProjectNode]]:
     async def _creator(project_uuid: uuid.UUID) -> ProjectNode:
         fake_node = ProjectNodeCreate(
-            node_id=create_fake_uuid(),
+            node_id=uuid.uuid4(),
             required_resources=faker.pydict(allowed_types=(str,)),
         )
         repo = ProjectNodesRepo(project_uuid=project_uuid)
