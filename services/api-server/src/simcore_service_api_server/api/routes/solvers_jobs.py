@@ -5,11 +5,11 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.exceptions import HTTPException
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -23,7 +23,6 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -33,7 +32,6 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 
@@ -247,24 +245,16 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.update_project_metadata(
-            project_id=job_id, metadata=update.metadata
-        )
-        return JobMetadata(
+    project_metadata = await webserver_api.update_project_metadata(
+        project_id=job_id, metadata=update.metadata
+    )
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=url_for(
+            "replace_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "replace_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )

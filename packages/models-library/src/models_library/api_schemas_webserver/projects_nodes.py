@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from models_library.projects_nodes import InputsDict
+from models_library.projects_nodes import InputID, InputsDict
 from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
@@ -27,11 +27,12 @@ BootOptions: TypeAlias = dict
 
 class NodePatch(InputSchemaWithoutCamelCase):
     service_version: ServiceVersion = FieldNotRequired(alias="version")
-    label: str = Field(None)
-    inputs: InputsDict = Field(None)
+    label: str = FieldNotRequired()
+    inputs: InputsDict = FieldNotRequired()
+    inputs_required: list[InputID] = FieldNotRequired(alias="inputsRequired")
     input_nodes: list[NodeID] = FieldNotRequired(alias="inputNodes")
-    progress: float | None = Field(
-        None, ge=0, le=100
+    progress: float | None = FieldNotRequired(
+        ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
     boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
 
