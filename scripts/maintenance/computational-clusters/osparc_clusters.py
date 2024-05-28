@@ -7,11 +7,11 @@ import json
 import re
 import uuid
 from collections import defaultdict, namedtuple
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Coroutine
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final, Generator, TypeAlias
 
 import arrow
 import boto3
@@ -24,19 +24,14 @@ from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
-from pydantic import (
-    BaseModel,
-    ByteSize,
-    PostgresDsn,
-    TypeAdapter,
-    ValidationError,
-    field_validator,
-)
+from paramiko import Ed25519Key
+from pydantic import BaseModel, ByteSize, PostgresDsn, TypeAdapter, ValidationError
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sshtunnel import SSHTunnelForwarder
 
 app = typer.Typer()
 
@@ -162,12 +157,6 @@ state: AppState = AppState(
 class PostgresDB(BaseModel):
     dsn: PostgresDsn
 
-    @classmethod
-    @field_validator("db")
-    def check_db_name(cls, v):
-        assert v.path and len(v.path) > 1, "database must be provided"  # noqa: PT018
-        return v
-
 
 @contextlib.asynccontextmanager
 async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
@@ -181,7 +170,9 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
         ]:
             assert state.environment[env]
         postgres_db = PostgresDB(
-            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+            dsn=TypeAdapter(PostgresDsn).validate_python(
+                f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+            )
         )
 
         engine = create_async_engine(
@@ -561,7 +552,7 @@ def _print_computational_clusters(
             "\n".join(
                 [
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
-                    f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
+                    f"Dask Scheduler TLS: tls://{cluster.primary.ec2_instance.public_ip_address}:8786",
                     f"Graylog UI: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
                     f"Prometheus UI: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
                     f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
@@ -694,6 +685,35 @@ async def _dask_list_tasks(
     return list_of_tasks
 
 
+_SCHEDULER_PORT: Final[int] = 8786
+
+
+_BASTION_HOST: Final[str] = "18.218.251.214"
+
+
+@contextlib.contextmanager
+def _ssh_tunnel(
+    *,
+    ssh_host: str,
+    username: str,
+    private_key_path: Path,
+    remote_bind_host: str,
+    remote_bind_port: int,
+) -> Generator[SSHTunnelForwarder | None, Any, None]:
+    try:
+        with SSHTunnelForwarder(
+            (ssh_host, 22),
+            ssh_username=username,
+            ssh_pkey=Ed25519Key(filename=private_key_path),
+            remote_bind_address=(remote_bind_host, remote_bind_port),
+            local_bind_address=("127.0.0.1", 0),
+            set_keepalive=10,
+        ) as tunnel:
+            yield tunnel
+    finally:
+        pass
+
+
 @contextlib.asynccontextmanager
 async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, None]:
     security = distributed.Security()
@@ -707,16 +727,29 @@ async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, No
             require_encryption=True,
         )
     try:
-
-        async with distributed.Client(
-            f"tls://{ip_address}:8786",
-            security=security,
-            timeout="5",
-            asynchronous=True,
-        ) as client:
-            yield client
+        assert state.ssh_key_path  # nosec
+        with _ssh_tunnel(
+            ssh_host=_BASTION_HOST,
+            username=SSH_USER_NAME,
+            private_key_path=state.ssh_key_path,
+            remote_bind_host=ip_address,
+            remote_bind_port=_SCHEDULER_PORT,
+        ) as tunnel:
+            forward_url = f"tls://127.0.0.1:{tunnel.local_bind_ports[0]}"
+            async with distributed.Client(
+                forward_url,
+                security=security,
+                timeout="5",
+                asynchronous=True,
+            ) as client:
+                yield client
     finally:
-        ...
+        pass
+
+
+def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
+    assert isinstance(called_fct, Coroutine)
+    return called_fct
 
 
 async def _analyze_computational_instances(
@@ -770,11 +803,13 @@ async def _analyze_computational_instances(
             all_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
                 async with _dask_client(
-                    instance.ec2_instance.public_ip_address
+                    instance.ec2_instance.private_dns_name
                 ) as client:
                     scheduler_info = client.scheduler_info()
-                    datasets_on_cluster = await client.list_datasets()
-                    processing_jobs = await client.processing()
+                    datasets_on_cluster = await _wrap_dask_async_call(
+                        client.list_datasets()
+                    )
+                    processing_jobs = await _wrap_dask_async_call(client.processing())
                     all_tasks = await _dask_list_tasks(client)
 
             assert isinstance(datasets_on_cluster, tuple)
@@ -1169,15 +1204,15 @@ async def _trigger_job_cancellation_in_scheduler(
     cluster: ComputationalCluster, task_id: TaskId
 ) -> None:
     async with _dask_client(
-        cluster.primary.ec2_instance.public_ip_address
+        cluster.primary.ec2_instance.private_dns_name
     ) as dask_client:
         task_future = distributed.Future(task_id)
         cancel_event = distributed.Event(
             name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
             client=dask_client,
         )
-        await cancel_event.set()
-        await task_future.cancel()
+        await _wrap_dask_async_call(cancel_event.set())
+        await _wrap_dask_async_call(task_future.cancel())
         print(f"cancelled {task_id} in scheduler/workers")
 
 
@@ -1185,9 +1220,9 @@ async def _remove_job_from_scheduler(
     cluster: ComputationalCluster, task_id: TaskId
 ) -> None:
     async with _dask_client(
-        cluster.primary.ec2_instance.public_ip_address
+        cluster.primary.ec2_instance.private_dns_name
     ) as dask_client:
-        await dask_client.unpublish_dataset(task_id)
+        await _wrap_dask_async_call(dask_client.unpublish_dataset(task_id))
         print(f"unpublished {task_id} from scheduler")
 
 

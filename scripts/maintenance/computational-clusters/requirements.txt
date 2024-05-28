@@ -14,3 +14,4 @@ pylint
 python-dotenv
 typer[all]
 sqlalchemy[asyncio]
+sshtunnel
