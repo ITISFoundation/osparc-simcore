@@ -94,11 +94,6 @@ async def socketio_server(
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint()
-
-
-@pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return faker.uuid4(cast_to=None)
 

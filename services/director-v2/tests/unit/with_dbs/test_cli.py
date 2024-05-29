@@ -259,3 +259,9 @@ def test_free_reserved_disk_space(
     result = cli_runner.invoke(main, ["free-reserved-disk-space", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
+
+
+def test_osparc_variables(cli_runner: CliRunner):
+    result = cli_runner.invoke(main, ["osparc-variables"])
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    print(result.stdout)

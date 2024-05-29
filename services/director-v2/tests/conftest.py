@@ -35,6 +35,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -276,12 +277,12 @@ def disable_rabbitmq(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disable_api_keys_manager(mocker: MockerFixture) -> None:
+def disableapi_keys_manager(mocker: MockerFixture) -> None:
     def mock_setup(app: FastAPI) -> None:
         app.state.api_keys_manager = AsyncMock()
 
     mocker.patch(
-        "simcore_service_director_v2.modules.api_keys_manager.setup",
+        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.setup",
         side_effect=mock_setup,
     )
 
