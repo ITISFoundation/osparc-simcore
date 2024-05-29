@@ -18,11 +18,13 @@ async def _set_requested_state(
     await tracker.save(node_id, model)
 
 
+# TODO: call this when user requests the start of a service
 async def set_tracked_as_running(app: FastAPI, node_id: NodeID) -> None:
     """Stores the intention fo the user: ``start`` requested"""
     await _set_requested_state(app, node_id, UserRequestedState.RUNNING)
 
 
+# TODO: call this when user requests the stop of a service
 async def set_tracked_as_stopped(app: FastAPI, node_id: NodeID) -> None:
     """Stores the intention of the user: ``stop`` requested"""
     await _set_requested_state(app, node_id, UserRequestedState.STOPPED)
