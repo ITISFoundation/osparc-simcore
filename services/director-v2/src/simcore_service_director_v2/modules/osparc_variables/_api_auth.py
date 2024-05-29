@@ -19,12 +19,12 @@ def create_unique_api_name_for(product_name: ProductName, user_id: UserID) -> st
 
 # NOTE: Uses caching to prevent multiple calls to the external service
 # when 'get_or_create_user_api_key' or 'get_or_create_user_api_secret' are invoked.
-def _build_cache_key(fct, *_, **kwargs):
+def _cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['product_name']}_{kwargs['user_id']}"
 
 
-@cached(ttl=3, key_builder=_build_cache_key)
-async def _get_or_create_data(
+@cached(ttl=3, key_builder=_cache_key)
+async def _get_or_create_for(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -42,7 +42,7 @@ async def get_or_create_user_api_key(
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_data(
+    data = await _get_or_create_for(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -55,7 +55,7 @@ async def get_or_create_user_api_secret(
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_data(
+    data = await _get_or_create_for(
         app,
         product_name=product_name,
         user_id=user_id,
