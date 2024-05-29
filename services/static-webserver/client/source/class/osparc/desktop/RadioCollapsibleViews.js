@@ -24,21 +24,35 @@ qx.Class.define("osparc.desktop.RadioCollapsibleViews", {
   construct: function(collapsibleViews = []) {
     this.base(arguments);
 
-    this.__collapsibleViews = collapsibleViews;
+    this.__collapsibleViews = [];
+
+    collapsibleViews.forEach(cv => this.addCollapsibleView(cv));
   },
 
   members: {
     __collapsibleViews: null,
 
     /**
-     * @param {osparc.widget.CollapsibleView} collapsibleView
+     * @param {osparc.widget.CollapsibleView | osparc.desktop.PanelView} collapsibleView
      */
     addCollapsibleView: function(collapsibleView) {
       this.__collapsibleViews.push(collapsibleView);
+
+      collapsibleView.addListener("changeCollapsed", e => {
+        const collapsed = e.getData();
+        if (collapsed === false) {
+          // close the other views
+          const idx = this.__collapsibleViews.indexOf(collapsibleView);
+          this.__collapsibleViews.forEach((cv, idx2) => {
+            if (idx !== idx2) {
+              cv.setCollapsed(true);
+            }
+          })
+        }
+      }, this);
     },
 
     openCollapsibleView: function(idx = 0) {
-      this.__collapsibleViews.forEach(cv => cv.setCollapsed(true));
       if (idx < this.__collapsibleViews.length) {
         this.__collapsibleViews[idx].setCollapsed(false);
       }
