@@ -159,16 +159,10 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
         fake_data.display_name = name
         return fake_data
 
-    # RPC interface at api_keys_manager
+    # mocks RPC interface
     mocker.patch(
         "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
         side_effect=_create,
-        autospec=True,
-    )
-
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager._get_or_create",
-        return_value=fake_data,
         autospec=True,
     )
 
