@@ -63,6 +63,10 @@ qx.Class.define("osparc.ui.form.FileInput", {
     __selectBtn: null,
     __selectedFiles: null,
 
+    getButton: function() {
+      return this.__selectBtn;
+    },
+
     __attachEventHandlers: function() {
       this.__input.addListener("change", () => {
         const fileNames = [];
