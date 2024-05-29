@@ -284,26 +284,17 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __buildLayout: function() {
       this._removeAll();
-      const isWorkbenchContext = this.getPageContext() === "workbench";
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
-      if (isWorkbenchContext) {
-        if (hasOutput) {
-          // WORKBENCH mode WITH output
-          this.__buildInfoLayout();
-        } else {
-          // WORKBENCH mode WITHOUT output
-          this.__addProgressBar();
-          this.__buildNoFileWBLayout();
-        }
+      if (hasOutput) {
+        this.__buildInfoLayout();
       } else {
-        this.setMargin(10);
-        if (hasOutput) {
-          // APP mode WITH output
-          this.__buildInfoLayout();
+        this.__addProgressBar();
+        const isWorkbenchContext = this.getPageContext() === "workbench";
+        if (isWorkbenchContext) {
+          this.__buildWorkbenchLayout();
         } else {
-          // APP mode WITHOUT output
-          this.__addProgressBar();
-          this.__buildNoFileAppLayout();
+          this.setMargin(10);
+          this.__buildAppModeLayout();
         }
       }
     },
@@ -390,19 +381,6 @@ qx.Class.define("osparc.file.FilePicker", {
       return resetFileBtn;
     },
 
-    __buildNoFileWBLayout: function() {
-      const uploadFileSection = this.__getUploadFileSection();
-      this._add(uploadFileSection);
-
-      const fileDrop = this.__getFileDropSection();
-      this._add(fileDrop, {
-        flex: 1
-      });
-
-      const downloadLinkSection = this.__getDownloadLinkSection();
-      this._add(downloadLinkSection);
-    },
-
     __getUploadFileSection: function() {
       const uploadFileSection = new osparc.ui.form.FileInput();
       uploadFileSection.addListener("selectionChanged", () => {
@@ -473,7 +451,20 @@ qx.Class.define("osparc.file.FilePicker", {
       return layout;
     },
 
-    __buildNoFileAppLayout: function() {
+    __buildWorkbenchLayout: function() {
+      const uploadFileSection = this.__getUploadFileSection();
+      this._add(uploadFileSection);
+
+      const fileDrop = this.__getFileDropSection();
+      this._add(fileDrop, {
+        flex: 1
+      });
+
+      const downloadLinkSection = this.__getDownloadLinkSection();
+      this._add(downloadLinkSection);
+    },
+
+    __buildAppModeLayout: function() {
       let msg = this.tr("In order to Select a file you have three options:");
       const options = [
         this.tr("- Upload a file"),
