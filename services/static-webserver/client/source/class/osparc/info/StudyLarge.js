@@ -20,18 +20,13 @@ qx.Class.define("osparc.info.StudyLarge", {
   extend: osparc.info.CardLarge,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param study {osparc.data.model.Study} Study model
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
   construct: function(study, openOptions = true) {
     this.base(arguments);
 
-    if (study instanceof osparc.data.model.Study) {
-      this.setStudy(study);
-    } else if (study instanceof Object) {
-      const studyModel = new osparc.data.model.Study(study);
-      this.setStudy(studyModel);
-    }
+    this.setStudy(study);
     if ("resourceType" in study) {
       this.__isTemplate = study["resourceType"] === "template";
     }
