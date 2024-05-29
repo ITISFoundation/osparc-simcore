@@ -35,6 +35,8 @@ class ServiceRunCreate(BaseModel):
     project_name: str
     node_id: NodeID
     node_name: str
+    parent_project_id: ProjectID | None
+    parent_node_id: NodeID | None
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: ResourceTrackerServiceType

@@ -104,6 +104,12 @@ class ResourceTrackerRepository(
                     project_name=data.project_name,
                     node_id=f"{data.node_id}",
                     node_name=data.node_name,
+                    parent_project_id=f"{data.parent_project_id}"
+                    if data.parent_project_id
+                    else None,
+                    parent_node_id=f"{data.parent_node_id}"
+                    if data.parent_node_id
+                    else None,
                     service_key=data.service_key,
                     service_version=data.service_version,
                     service_type=data.service_type,

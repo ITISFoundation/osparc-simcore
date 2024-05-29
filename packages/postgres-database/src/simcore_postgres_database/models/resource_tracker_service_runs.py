@@ -120,6 +120,19 @@ resource_tracker_service_runs = sa.Table(
         nullable=True,
         doc="we want to store the node/service name/label for tracking/billing purposes and be sure it stays there even when the node is deleted.",
     ),
+    # Project/Node parent fields
+    sa.Column(
+        "parent_project_id",  # UUID
+        sa.String,
+        nullable=True,
+        doc="We want to store the parent project id for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
+    ),
+    sa.Column(
+        "parent_node_id",  # UUID
+        sa.String,
+        nullable=True,
+        doc="we want to store the parent node/service id for tracking/billing purposes and be sure it stays there even when the node is deleted.",
+    ),
     # Service fields
     sa.Column(
         "service_key",
