@@ -2,13 +2,12 @@ import uuid
 from typing import Any, cast
 from uuid import uuid5
 
-from aiocache import cached
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 
-from ._api_auth_rpc import create_api_key_and_secret, get_api_key_and_secret
+from ._api_auth_rpc import get_or_create_api_key_and_secret
 
 
 def _create_unique_identifier_from(*parts: Any) -> str:
@@ -21,11 +20,6 @@ def create_user_api_name(product_name: ProductName, user_id: UserID) -> str:
     return f"__auto_{_create_unique_identifier_from(product_name, user_id)}"
 
 
-def _build_cache_key(fct, *_, **kwargs):
-    return f"{fct.__name__}_{kwargs['product_name']}_{kwargs['user_id']}"
-
-
-@cached(ttl=3, key_builder=_build_cache_key)
 async def _get_or_create_data(
     app: FastAPI,
     *,
@@ -34,11 +28,7 @@ async def _get_or_create_data(
 ) -> ApiKeyGet:
 
     name = create_user_api_name(product_name, user_id)
-    if data := await get_api_key_and_secret(
-        app, product_name=product_name, user_id=user_id, name=name
-    ):
-        return data
-    return await create_api_key_and_secret(
+    return await get_or_create_api_key_and_secret(
         app, product_name=product_name, user_id=user_id, name=name, expiration=None
     )
 

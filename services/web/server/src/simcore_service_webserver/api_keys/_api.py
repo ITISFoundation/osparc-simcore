@@ -1,5 +1,6 @@
 import re
 import string
+from datetime import timedelta
 from typing import Final
 
 from aiohttp import web
@@ -36,6 +37,7 @@ async def create_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKeyGet:
+    # generate key and secret
     prefix = _PUNCTUATION_REGEX.sub("_", new.display_name[:5])
     api_key = f"{prefix}_{generate_token_secret_key(_KEY_LEN)}"
     api_secret = generate_token_secret_key(_SECRET_LEN)
@@ -58,12 +60,33 @@ async def create_api_key(
     )
 
 
-async def get(
+async def get_api_key(
     app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
 ) -> ApiKeyGet | None:
     repo = ApiKeyRepo.create_from_app(app)
     row = await repo.get(display_name=name, user_id=user_id, product_name=product_name)
     return ApiKeyGet.parse_obj(row) if row else None
+
+
+async def get_or_create_api_key(
+    app: web.Application,
+    *,
+    name: str,
+    user_id: UserID,
+    product_name: ProductName,
+    expiration: timedelta | None = None,
+) -> ApiKeyGet:
+    found = await get_api_key(
+        app, name=name, user_id=user_id, product_name=product_name
+    )
+    if not found:
+        found = await create_api_key(
+            app,
+            new=ApiKeyCreate(display_name=name, expiration=expiration),
+            user_id=user_id,
+            product_name=product_name,
+        )
+    return found
 
 
 async def delete_api_key(

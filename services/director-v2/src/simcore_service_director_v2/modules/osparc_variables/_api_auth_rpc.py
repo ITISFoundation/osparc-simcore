@@ -49,6 +49,26 @@ async def get_api_key_and_secret(
     return parse_obj_as(ApiKeyGet | None, result)
 
 
+async def get_or_create_api_key_and_secret(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    name: str,
+    expiration: timedelta | None = None,
+) -> ApiKeyGet:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    result = await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_or_create_api_keys"),
+        product_name=product_name,
+        user_id=user_id,
+        name=name,
+        expiration=expiration,
+    )
+    return ApiKeyGet.parse_obj(result)
+
+
 async def delete_api_key_and_secret(
     app: FastAPI, *, product_name: ProductName, user_id: UserID, name: str
 ):
