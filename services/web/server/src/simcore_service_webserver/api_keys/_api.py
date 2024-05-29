@@ -30,6 +30,13 @@ async def list_api_keys(
     return names
 
 
+def _generate_api_key_and_secret(name: str):
+    prefix = _PUNCTUATION_REGEX.sub("_", name[:5])
+    api_key = f"{prefix}_{generate_token_secret_key(_KEY_LEN)}"
+    api_secret = generate_token_secret_key(_SECRET_LEN)
+    return api_key, api_secret
+
+
 async def create_api_key(
     app: web.Application,
     *,
@@ -38,9 +45,7 @@ async def create_api_key(
     product_name: ProductName,
 ) -> ApiKeyGet:
     # generate key and secret
-    prefix = _PUNCTUATION_REGEX.sub("_", new.display_name[:5])
-    api_key = f"{prefix}_{generate_token_secret_key(_KEY_LEN)}"
-    api_secret = generate_token_secret_key(_SECRET_LEN)
+    api_key, api_secret = _generate_api_key_and_secret(new.display_name)
 
     # raises if name exists already!
     repo = ApiKeyRepo.create_from_app(app)
@@ -76,17 +81,19 @@ async def get_or_create_api_key(
     product_name: ProductName,
     expiration: timedelta | None = None,
 ) -> ApiKeyGet:
-    found = await get_api_key(
-        app, name=name, user_id=user_id, product_name=product_name
+
+    api_key, api_secret = _generate_api_key_and_secret(name)
+
+    repo = ApiKeyRepo.create_from_app(app)
+    row = await repo.get_or_create(
+        user_id=user_id,
+        product_name=product_name,
+        display_name=name,
+        expiration=expiration,
+        api_key=api_key,
+        api_secret=api_secret,
     )
-    if not found:
-        found = await create_api_key(
-            app,
-            new=ApiKeyCreate(display_name=name, expiration=expiration),
-            user_id=user_id,
-            product_name=product_name,
-        )
-    return found
+    return ApiKeyGet.parse_obj(row)
 
 
 async def delete_api_key(
