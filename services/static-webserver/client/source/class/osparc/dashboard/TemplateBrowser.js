@@ -33,35 +33,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     }
   },
 
-  statics: {
-    updateService: function(studyData, nodeId, newVersion) {
-      if (nodeId in studyData["workbench"]) {
-        if (newVersion === undefined) {
-          const node = studyData["workbench"][nodeId];
-          newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
-        }
-        for (const id in studyData["workbench"]) {
-          if (id === nodeId) {
-            studyData["workbench"][nodeId]["version"] = newVersion;
-          }
-        }
-      }
-    },
-
-    updateAllServices: function(studyData, updatableNodeIds) {
-      for (const nodeId in studyData["workbench"]) {
-        if (updatableNodeIds && !updatableNodeIds.includes(nodeId)) {
-          continue;
-        }
-        const node = studyData["workbench"][nodeId];
-        if (osparc.service.Utils.isUpdatable(node)) {
-          const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
-          this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
-        }
-      }
-    }
-  },
-
   members: {
     __updateAllButton: null,
 
@@ -278,17 +249,15 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __updateTemplates: async function(uniqueTemplatesData) {
       for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
-        this.self().updateAllServices(studyData);
-        const params = {
-          url: {
-            "studyId": studyData["uuid"]
-          },
-          data: studyData
-        };
-        await osparc.data.Resources.fetch("studies", "put", params)
-          .then(updatedData => {
-            this._updateTemplateData(updatedData);
-          })
+        const templatePromises = [];
+        for (const nodeId in studyData["workbench"]) {
+          const newVersion = osparc.metadata.ServicesInStudyUpdate.getLatestVersion(studyData, nodeId)
+          if (newVersion) {
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, "version", newVersion));
+          }
+        }
+        Promise.all(templatePromises)
+          .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
             if ("message" in err) {
               osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");

@@ -130,7 +130,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     __updateAllServices: async function(updatableNodeIds, button) {
       for (const updatableNodeId of updatableNodeIds) {
         const newVersion = this.self().getLatestVersion(this._studyData, updatableNodeId);
-        await this.__updateService(updatableNodeId, newVersion, button);
+        if (newVersion) {
+          await this.__updateService(updatableNodeId, newVersion, button);
+        }
       }
     },
 
