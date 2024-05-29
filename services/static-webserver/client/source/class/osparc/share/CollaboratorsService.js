@@ -74,7 +74,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     getEveryoneObj: function() {
       return {
         "gid": 1,
-        "label": "Public",
+        "label": qx.locale.Manager.tr("Public"),
         "description": "",
         "thumbnail": null,
         "accessRights": this.getCollaboratorAccessRight(),

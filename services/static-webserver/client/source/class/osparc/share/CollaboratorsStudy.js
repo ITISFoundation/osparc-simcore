@@ -115,7 +115,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     getEveryoneObj: function(isResourceStudy) {
       return {
         "gid": 1,
-        "label": "Public",
+        "label": qx.locale.Manager.tr("Public"),
         "description": "",
         "thumbnail": null,
         "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
