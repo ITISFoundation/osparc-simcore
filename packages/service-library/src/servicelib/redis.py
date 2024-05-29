@@ -223,17 +223,20 @@ class RedisClientsManager:
     databases: set[RedisDatabase]
     settings: RedisSettings
 
-    _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
+    _client_sdks: dict[RedisDatabase, RedisClientSDKHealthChecked] = field(
+        default_factory=dict
+    )
 
     async def setup(self) -> None:
         for db in self.databases:
-            self._client_sdks[db] = client_sdk = RedisClientSDK(
+            self._client_sdks[db] = RedisClientSDKHealthChecked(
                 redis_dsn=self.settings.build_redis_dsn(db)
             )
-            await client_sdk.setup()
+
+        await logged_gather(*(c.setup() for c in self._client_sdks.values()))
 
     async def shutdown(self) -> None:
         await logged_gather(*(c.shutdown() for c in self._client_sdks.values()))
 
-    def client(self, database: RedisDatabase) -> RedisClientSDK:
+    def client(self, database: RedisDatabase) -> RedisClientSDKHealthChecked:
         return self._client_sdks[database]
