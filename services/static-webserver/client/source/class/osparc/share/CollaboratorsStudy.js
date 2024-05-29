@@ -212,6 +212,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         if (item) {
           item.setEnabled(true);
         }
+        return;
       }
 
       osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
