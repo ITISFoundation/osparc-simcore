@@ -392,46 +392,38 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     patchNodeData: function(studyData, nodeId, fieldKey, value) {
-      return new Promise((resolve, reject) => {
-        const patchData = {};
-        patchData[fieldKey] = value;
-        const params = {
-          url: {
-            "studyId": studyData["uuid"],
-            "nodeId": nodeId
-          },
-          data: patchData
-        };
-        osparc.data.Resources.fetch("studies", "patchNode", params)
-          .then(() => {
-            studyData["workbench"][nodeId][fieldKey] = value;
-            // A bit hacky, but it's not sent back to the backend
-            studyData["lastChangeDate"] = new Date().toISOString();
-            resolve();
-          })
-          .catch(err => reject(err));
-      });
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: {
+          "studyId": studyData["uuid"],
+          "nodeId": nodeId
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patchNode", params)
+        .then(() => {
+          studyData["workbench"][nodeId][fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
     },
 
     patchStudyData: function(studyData, fieldKey, value) {
-      return new Promise((resolve, reject) => {
-        const patchData = {};
-        patchData[fieldKey] = value;
-        const params = {
-          url: {
-            "studyId": studyData["uuid"]
-          },
-          data: patchData
-        };
-        osparc.data.Resources.fetch("studies", "patch", params)
-          .then(() => {
-            studyData[fieldKey] = value;
-            // A bit hacky, but it's not sent back to the backend
-            studyData["lastChangeDate"] = new Date().toISOString();
-            resolve();
-          })
-          .catch(err => reject(err));
-      });
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params)
+        .then(() => {
+          studyData[fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
     }
   }
 });

@@ -295,23 +295,19 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     patchServiceData: function(serviceData, fieldKey, value) {
-      return new Promise((resolve, reject) => {
-        const patchData = {};
-        patchData[fieldKey] = value;
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            serviceData["key"],
-            serviceData["version"]
-          ),
-          data: patchData
-        };
-        osparc.data.Resources.fetch("services", "patch", params)
-          .then(() => {
-            serviceData[fieldKey] = value;
-            resolve();
-          })
-          .catch(err => reject(err));
-      });
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          serviceData["key"],
+          serviceData["version"]
+        ),
+        data: patchData
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(() => {
+          serviceData[fieldKey] = value;
+        });
     }
   }
 });
