@@ -465,31 +465,56 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildAppModeLayout: function() {
-      let msg = this.tr("In order to Select a file you have three options:");
-      const options = [
-        this.tr("- Upload a file"),
-        this.tr("- Select a file from tree"),
-        this.tr("- Provide Link")
-      ];
-      for (let i=0; i<options.length; i++) {
-        msg += "<br>" + options[i];
-      }
-      const intro = new qx.ui.basic.Label(msg).set({
-        font: "text-16",
-        rich: true
-      });
-      this._add(intro);
+      const radioCollapsibleViews = new osparc.desktop.RadioCollapsibleViews();
 
+      const contentMargin = 10;
+
+      const newFileSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const uploadFileSection = this.__getUploadFileSection();
-      this._add(uploadFileSection);
+      newFileSection.add(uploadFileSection);
+      const fileDrop = this.__getFileDropSection();
+      newFileSection.add(fileDrop, {
+        flex: 1
+      });
+      const newFilePView = new osparc.desktop.PanelView().set({
+        title: "Select New File",
+        content: newFileSection
+      });
+      newFilePView.getInnerContent().set({
+        margin: contentMargin
+      });
+      radioCollapsibleViews.addCollapsibleView(newFilePView);
+      this._add(newFilePView, {
+        flex: 1
+      });
 
       const fileBrowserLayout = this.__getFileBrowserLayout();
-      this._add(fileBrowserLayout, {
+      const usedFilePView = new osparc.desktop.PanelView().set({
+        title: "Select Used File",
+        content: fileBrowserLayout
+      });
+      usedFilePView.getInnerContent().set({
+        margin: contentMargin
+      });
+      radioCollapsibleViews.addCollapsibleView(usedFilePView);
+      this._add(usedFilePView, {
         flex: 1
       });
 
       const downloadLinkSection = this.__getDownloadLinkSection();
-      this._add(downloadLinkSection);
+      const downloadLinkPView = new osparc.desktop.PanelView().set({
+        title: "Select Download Link",
+        content: downloadLinkSection
+      });
+      downloadLinkPView.getInnerContent().set({
+        margin: contentMargin
+      });
+      radioCollapsibleViews.addCollapsibleView(downloadLinkPView);
+      this._add(downloadLinkPView, {
+        flex: 1
+      });
+
+      radioCollapsibleViews.openCollapsibleView(0);
     },
 
     __getFileBrowserLayout: function() {
