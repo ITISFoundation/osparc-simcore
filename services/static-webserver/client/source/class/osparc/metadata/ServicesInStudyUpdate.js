@@ -137,14 +137,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }
     },
 
-    __updateService: function(nodeId, newVersion, button) {
-      this.setEnabled(false);
-      this.self().updateService(this._studyData, nodeId, newVersion);
-      this._updateStudy(button);
+    __updateService: async function(nodeId, newVersion, button) {
+      await this._patchNode(nodeId, "version", newVersion, button);
     },
 
     __updateAllServices: function(updatableNodeIds, button) {
-      this.setEnabled(false);
       this.self().updateAllServices(this._studyData, updatableNodeIds);
       this._updateStudy(button);
     },
