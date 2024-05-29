@@ -72,14 +72,9 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     getEveryoneObj: function() {
-      return {
-        "gid": 1,
-        "label": qx.locale.Manager.tr("Public"),
-        "description": "",
-        "thumbnail": null,
-        "accessRights": this.getCollaboratorAccessRight(),
-        "collabType": 0
-      };
+      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      everyone["accessRights"] = this.getCollaboratorAccessRight();
+      return everyone;
     }
   },
 

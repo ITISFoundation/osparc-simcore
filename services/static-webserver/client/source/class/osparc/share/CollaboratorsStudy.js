@@ -113,14 +113,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     getEveryoneObj: function(isResourceStudy) {
-      return {
-        "gid": 1,
-        "label": qx.locale.Manager.tr("Public"),
-        "description": "",
-        "thumbnail": null,
-        "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
-        "collabType": 0
-      };
+      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      everyone["accessRights"] = isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+      return everyone;
     }
   },
 
