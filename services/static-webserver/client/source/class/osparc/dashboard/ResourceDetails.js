@@ -415,7 +415,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const preview = new osparc.study.StudyPreview(resourceData);
+        const resourceModel = this.__resourceModel;
+        const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
