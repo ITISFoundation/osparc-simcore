@@ -143,16 +143,6 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
 
     fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
 
-    async def _get(
-        app: FastAPI, *, product_name: ProductName, user_id: UserID, name: str
-    ):
-        assert app
-        assert product_name
-        assert user_id
-        if fake_data.display_name != name:
-            return None
-        return fake_data
-
     async def _create(
         app: FastAPI,
         *,
@@ -171,14 +161,8 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
 
     # RPC interface at api_keys_manager
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_auth.create_api_key_and_secret",
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
         side_effect=_create,
-        autospec=True,
-    )
-
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_api_key_and_secret",
-        side_effect=_get,
         autospec=True,
     )
 
