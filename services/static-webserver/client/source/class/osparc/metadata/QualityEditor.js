@@ -456,17 +456,11 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       if (this.__validate(this.__schema, patchData["quality"])) {
         btn.setFetching(true);
         if (osparc.utils.Resources.isService(this.__resourceData)) {
-          const params = {
-            url: osparc.data.Resources.getServiceUrl(
-              this.__resourceData["key"],
-              this.__resourceData["version"]
-            ),
-            data: patchData
-          };
-          osparc.data.Resources.fetch("services", "patch", params)
-            .then(serviceData => {
-              this.__initResourceData(serviceData);
-              this.fireDataEvent("updateQuality", serviceData);
+          const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
+          osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, "quality", newQuality)
+            .then(() => {
+              this.__initResourceData(serviceDataCopy);
+              this.fireDataEvent("updateQuality", serviceDataCopy);
             })
             .catch(err => {
               console.error(err);
