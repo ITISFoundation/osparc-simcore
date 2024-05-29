@@ -44,7 +44,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
   },
 
   events: {
-    "updateService": "qx.event.type.Data"
+    "updateAccessRights": "qx.event.type.Data"
   },
 
   statics: {
@@ -94,7 +94,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       });
       osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy)
         .then(() => {
-          this.fireDataEvent("updateService", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
           text += "<br>";
           text += this.tr("The user will not get notified.");
@@ -124,7 +124,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
       osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
-          this.fireDataEvent("updateService", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
@@ -144,7 +144,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
       osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
-          this.fireDataEvent("updateService", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
