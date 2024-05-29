@@ -51,28 +51,16 @@ qx.Class.define("osparc.file.FileDrop", {
     }
     msg += "</center>";
 
-    const dropHere = this.__dropHere = new qx.ui.basic.Label(msg).set({
+    const dropHereMessage = this.__dropHereMessage = new qx.ui.basic.Label(msg).set({
       font: "text-14",
       rich: true,
       alignX: "center",
       alignY: "middle"
     });
-    this._add(dropHere, {
-      top: 40,
-      left: 40
-    });
+    this._add(dropHereMessage);
 
-    const centerDropHere = () => {
-      // center it
-      const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
-      const fileDropBounds = this.getBounds() || this.getSizeHint();
-      dropHere.setLayoutProperties({
-        top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
-        left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
-      });
-    };
-    dropHere.addListener("appear", centerDropHere);
-    this.addListener("resize", centerDropHere);
+    dropHereMessage.addListener("appear", this.__centerDropHereMessage);
+    this.addListener("resize", this.__centerDropHereMessage);
 
     const svgLayer = this.__svgLayer = new osparc.workbench.SvgWidget();
     this._add(svgLayer, {
@@ -123,7 +111,7 @@ qx.Class.define("osparc.file.FileDrop", {
 
   members: {
     __svgLayer: null,
-    __dropHere: null,
+    __dropHereMessage: null,
     __dropMe: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
@@ -134,7 +122,25 @@ qx.Class.define("osparc.file.FileDrop", {
     },
 
     __applyShowDropHere: function(value) {
-      this.__dropHere.setVisibility(value ? "visible" : "excluded");
+      this.__dropHereMessage.setVisibility(value ? "visible" : "excluded");
+    },
+
+    __centerDropHereMessage: function() {
+      const dropHere = this.__dropHereMessage;
+      // center it
+      const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
+      const fileDropBounds = this.getBounds() || this.getSizeHint();
+      dropHere.setLayoutProperties({
+        top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
+        left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
+      });
+    },
+
+    setDropHereMessage: function(msg) {
+      this.__dropHereMessage.set({
+        value: msg
+      });
+      this.__centerDropHereMessage();
     },
 
     resetDropAction: function() {
@@ -212,11 +218,11 @@ qx.Class.define("osparc.file.FileDrop", {
 
     __updateWidgets: function(dragging, posX, posY) {
       if (dragging) {
-        this.__dropHere.exclude();
+        this.__dropHereMessage.exclude();
         this.__updateDropMe(posX, posY);
       } else {
         if (this.getShowDropHere()) {
-          this.__dropHere.show();
+          this.__dropHereMessage.show();
         }
         this.__hideDropMe();
       }

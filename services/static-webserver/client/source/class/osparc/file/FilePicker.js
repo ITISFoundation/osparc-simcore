@@ -472,6 +472,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const uploadFileSection = this.__getUploadFileSection();
       newFileSection.add(uploadFileSection);
       const fileDrop = this.__getFileDropSection();
+      fileDrop.setDropHereMessage(this.tr("Drop file here"));
       newFileSection.add(fileDrop, {
         flex: 1
       });
