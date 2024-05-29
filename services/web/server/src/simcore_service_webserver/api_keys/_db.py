@@ -91,7 +91,7 @@ class ApiKeyRepo:
         api_secret: str,
     ) -> ApiKeyInDB:
         async with self.engine.acquire() as conn:
-            # Implemented as "create or get" using ON CONFLICT callback
+            # Implemented as "create or get"
             insert_stmt = (
                 pg_insert(api_keys)
                 .values(
@@ -104,6 +104,10 @@ class ApiKeyRepo:
                 )
                 .on_conflict_do_update(
                     index_elements=["user_id", "display_name"],
+                    set_={
+                        "product_name": product_name
+                    },  # dummy enable returning since on_conflict_do_nothing returns None
+                    # NOTE: use this entry for reference counting in https://github.com/ITISFoundation/osparc-simcore/issues/5875
                 )
                 .returning(api_keys)
             )
