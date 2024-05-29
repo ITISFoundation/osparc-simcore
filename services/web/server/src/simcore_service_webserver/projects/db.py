@@ -494,9 +494,6 @@ class ProjectDBAPI(BaseProjectDB):
             msg = f"Missing: {', '.join(start_messages)}"
             raise ProjectNodeRequiredInputsNotSetError(msg)
 
-        # TODO: figure out if we also need to propagate this via socketio to the FE for better formatting
-        # especially when opening the project, since the node cannot start if the required inputs are missing
-
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
     # for the workbench, and at some point, this column should be removed from the table.
     # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
