@@ -465,8 +465,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildAppModeLayout: function() {
-      const radioCollapsibleViews = new osparc.desktop.RadioCollapsibleViews();
-
+      const collapsibleViews = [];
       const contentMargin = 10;
 
       const newFileSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -480,40 +479,32 @@ qx.Class.define("osparc.file.FilePicker", {
         title: "Select New File",
         content: newFileSection
       });
-      newFilePView.getInnerContent().set({
-        margin: contentMargin
-      });
-      radioCollapsibleViews.addCollapsibleView(newFilePView);
-      this._add(newFilePView, {
-        flex: 1
-      });
+      collapsibleViews.push(newFilePView);
 
       const fileBrowserLayout = this.__getFileBrowserLayout();
       const usedFilePView = new osparc.desktop.PanelView().set({
         title: "Select Used File",
         content: fileBrowserLayout
       });
-      usedFilePView.getInnerContent().set({
-        margin: contentMargin
-      });
-      radioCollapsibleViews.addCollapsibleView(usedFilePView);
-      this._add(usedFilePView, {
-        flex: 1
-      });
+      collapsibleViews.push(usedFilePView);
 
       const downloadLinkSection = this.__getDownloadLinkSection();
       const downloadLinkPView = new osparc.desktop.PanelView().set({
         title: "Select Download Link",
         content: downloadLinkSection
       });
-      downloadLinkPView.getInnerContent().set({
-        margin: contentMargin
-      });
-      radioCollapsibleViews.addCollapsibleView(downloadLinkPView);
-      this._add(downloadLinkPView, {
-        flex: 1
-      });
+      collapsibleViews.push(downloadLinkPView);
 
+      const radioCollapsibleViews = new osparc.desktop.RadioCollapsibleViews();
+      collapsibleViews.forEach(cv => {
+        cv.getInnerContainer().set({
+          margin: contentMargin
+        });
+        this._add(cv, {
+          flex: 1
+        });
+        radioCollapsibleViews.addCollapsibleView(cv);
+      });
       radioCollapsibleViews.openCollapsibleView(0);
     },
 
