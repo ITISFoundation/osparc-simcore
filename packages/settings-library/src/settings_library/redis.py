@@ -17,7 +17,6 @@ class RedisDatabase(int, Enum):
     ANNOUNCEMENTS = 5
     DISTRIBUTED_IDENTIFIERS = 6
     DEFERRED_TASKS = 7
-    DYNAMIC_SERVICES = 8
 
 
 class RedisSettings(BaseCustomSettings):
