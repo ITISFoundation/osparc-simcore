@@ -297,23 +297,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
-      let owner = "";
-      let defaultHits = null;
+      let owner = null;
       let workbench = null;
+      let defaultHits = null;
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "template":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
-          uuid = resourceData.key ? resourceData.key : uuid;
-          owner = resourceData.owner ? resourceData.owner : owner;
+          uuid = resourceData.key ? resourceData.key : null;
+          owner = resourceData.owner ? resourceData.owner : "";
           defaultHits = 0;
           break;
       }
