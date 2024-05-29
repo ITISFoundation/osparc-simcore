@@ -544,6 +544,7 @@ async def test_delete_file(
     user_id: int,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
+    storage_service: URL,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")

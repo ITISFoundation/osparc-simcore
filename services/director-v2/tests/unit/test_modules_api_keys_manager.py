@@ -1,6 +1,6 @@
-# pylint:disable=protected-access
-# pylint:disable=redefined-outer-name
-# pylint:disable=unused-argument
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock
@@ -18,11 +18,15 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_director_v2.modules.api_keys_manager import (
-    APIKeysManager,
-    _get_api_key_name,
+from simcore_service_director_v2.modules.osparc_variables._api_auth import (
+    get_or_create_user_api_key,
+    get_or_create_user_api_secret,
+)
+from simcore_service_director_v2.modules.osparc_variables.api_keys_manager import (
+    _APIKeysManager,
+    _get_identifier,
     get_or_create_api_key,
-    safe_remove,
+    safe_remove_api_key_and_secret,
 )
 
 pytest_simcore_core_services_selection = [
@@ -46,13 +50,8 @@ def product_name(faker: Faker) -> ProductName:
     return faker.pystr()
 
 
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint()
-
-
 def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID, run_id: RunID):
-    api_key_names = {_get_api_key_name(node_id, run_id) for _ in range(1000)}
+    api_key_names = {_get_identifier(node_id, run_id) for _ in range(1000)}
     assert len(api_key_names) == 1
 
 
@@ -105,10 +104,12 @@ async def mock_rpc_server(
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
 
     # mock returned client
-    mocker.patch(
-        "simcore_service_director_v2.modules.api_keys_manager.get_rabbitmq_rpc_client",
-        return_value=rpc_client,
-    )
+    for module_name in ("api_keys_manager", "_api_auth_rpc"):
+        mocker.patch(
+            f"simcore_service_director_v2.modules.osparc_variables.{module_name}.get_rabbitmq_rpc_client",
+            return_value=rpc_client,
+            autospec=True,
+        )
 
     return rpc_client
 
@@ -119,9 +120,9 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-def mock_dynamic_sidecars_scheduler(app: FastAPI, is_used: bool) -> None:
+def mock_dynamic_sidecars_scheduler(app: FastAPI, is_service_running: bool) -> None:
     scheduler_mock = AsyncMock()
-    scheduler_mock.is_service_tracked = lambda _: is_used
+    scheduler_mock.is_service_tracked = lambda _: is_service_running
     app.state.dynamic_sidecar_scheduler = scheduler_mock
 
 
@@ -131,19 +132,19 @@ def api_keys_manager(
     mock_dynamic_sidecars_scheduler: None,
     redis_client_sdk: RedisClientSDK,
     app: FastAPI,
-) -> APIKeysManager:
-    manager = APIKeysManager(app, redis_client_sdk)
+) -> _APIKeysManager:
+    manager = _APIKeysManager(app, redis_client_sdk)
     manager.set_to_app_state(app)
     return manager
 
 
-async def _get_resource_count(api_keys_manager: APIKeysManager) -> int:
+async def _get_resource_count(api_keys_manager: _APIKeysManager) -> int:
     return len(await api_keys_manager._get_tracked())  # noqa: SLF001
 
 
-@pytest.mark.parametrize("is_used", [True])
+@pytest.mark.parametrize("is_service_running", [True])
 async def test_api_keys_workflow(
-    api_keys_manager: APIKeysManager,
+    api_keys_manager: _APIKeysManager,
     app: FastAPI,
     node_id: NodeID,
     run_id: RunID,
@@ -153,28 +154,53 @@ async def test_api_keys_workflow(
     api_key = await get_or_create_api_key(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
-    assert isinstance(api_key, ApiKeyGet)
+    assert isinstance(api_key, str)
     assert await _get_resource_count(api_keys_manager) == 1
 
-    await safe_remove(app, node_id=node_id, run_id=run_id)
+    await safe_remove_api_key_and_secret(app, node_id=node_id, run_id=run_id)
     assert await _get_resource_count(api_keys_manager) == 0
 
 
-@pytest.mark.parametrize("is_used", [False, True])
+async def test_user_api_keys(
+    app: FastAPI,
+    mock_rpc_server: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+    user_api_key = await get_or_create_user_api_key(
+        app, product_name=product_name, user_id=user_id
+    )
+    user_api_secret = await get_or_create_user_api_secret(
+        app, product_name=product_name, user_id=user_id
+    )
+
+    # idempotent
+    for _ in range(3):
+        assert user_api_key == await get_or_create_user_api_key(
+            app, product_name=product_name, user_id=user_id
+        )
+        assert user_api_secret == await get_or_create_user_api_secret(
+            app, product_name=product_name, user_id=user_id
+        )
+
+
+@pytest.mark.parametrize("is_service_running", [False, True])
 async def test_background_cleanup(
-    api_keys_manager: APIKeysManager,
+    api_keys_manager: _APIKeysManager,
     app: FastAPI,
     node_id: NodeID,
     run_id: RunID,
     product_name: ProductName,
     user_id: UserID,
-    is_used: bool,
+    is_service_running: bool,
 ) -> None:
     api_key = await get_or_create_api_key(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
-    assert isinstance(api_key, ApiKeyGet)
+    assert isinstance(api_key, str)
     assert await _get_resource_count(api_keys_manager) == 1
 
     await api_keys_manager._cleanup_unused_identifiers()  # noqa: SLF001
-    assert await _get_resource_count(api_keys_manager) == (1 if is_used else 0)
+    assert await _get_resource_count(api_keys_manager) == (
+        1 if is_service_running else 0
+    )

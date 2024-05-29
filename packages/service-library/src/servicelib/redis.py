@@ -78,7 +78,8 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
-        await self._client.close(close_connection_pool=True)
+        # NOTE: redis-py does not yet completely fill all the needed types for mypy
+        await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):

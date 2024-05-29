@@ -47,11 +47,6 @@ def group_id() -> int:
     return 234
 
 
-@pytest.fixture
-def user_id() -> int:
-    return 132
-
-
 async def test_setup_projects_db(client: TestClient):
     assert client.app
     db_api = ProjectDBAPI.get_from_app_context(app=client.app)

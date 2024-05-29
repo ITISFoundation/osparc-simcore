@@ -1,20 +1,22 @@
-from collections.abc import Callable
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
-import respx
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_models import (
+    CreateRespxMockCallback,
+    HttpApiCallCaptureModel,
+)
 from simcore_service_api_server._meta import API_VTAG
-from unit.conftest import SideEffectCallback
-
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 
 @pytest.mark.parametrize(
@@ -23,10 +25,7 @@ from unit.conftest import SideEffectCallback
 async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     capture: str,
@@ -44,10 +43,10 @@ async def test_get_wallet(
             response["data"]["walletId"] = path_params["wallet_id"]
         return response
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base],
-        project_tests_dir / "mocks" / capture,
-        [_get_wallet_side_effect],
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_service_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[_get_wallet_side_effect],
     )
 
     wallet_id: int = 159873
@@ -66,18 +65,15 @@ async def test_get_wallet(
 async def test_get_default_wallet(
     client: AsyncClient,
     mocked_webserver_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base],
-        project_tests_dir / "mocks" / "get_default_wallet.json",
-        [],
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_service_api_base],
+        capture_path=project_tests_dir / "mocks" / "get_default_wallet.json",
+        side_effects_callbacks=[],
     )
 
     response = await client.get(f"{API_VTAG}/wallets/default", auth=auth)
