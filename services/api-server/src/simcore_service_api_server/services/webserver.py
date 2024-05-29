@@ -244,11 +244,13 @@ class AuthSession:
     # PROJECTS -------------------------------------------------
 
     @_exception_mapper({})
-    async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
+    async def create_project(
+        self, project: ProjectCreateNew, hidden: bool
+    ) -> ProjectGet:
         # POST /projects --> 202 Accepted
         response = await self.client.post(
             "/projects",
-            params={"hidden": True},
+            params={"hidden": hidden},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
