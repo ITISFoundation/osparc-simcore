@@ -431,9 +431,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __getDownloadLinkSection: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       layout.add(new qx.ui.basic.Label(this.tr("Provide Link")));
 
@@ -481,21 +479,21 @@ qx.Class.define("osparc.file.FilePicker", {
         flex: 1
       });
       const newFilePView = new osparc.desktop.PanelView().set({
-        title: "Select New File",
+        title: this.tr("Select New File"),
         content: newFileSection
       });
       collapsibleViews.push(newFilePView);
 
       const fileBrowserLayout = this.__getFileBrowserLayout();
       const usedFilePView = new osparc.desktop.PanelView().set({
-        title: "Select Used File",
+        title: this.tr("Select Used File"),
         content: fileBrowserLayout
       });
       collapsibleViews.push(usedFilePView);
 
       const downloadLinkSection = this.__getDownloadLinkSection();
       const downloadLinkPView = new osparc.desktop.PanelView().set({
-        title: "Select Download Link",
+        title: this.tr("Select Download Link"),
         content: downloadLinkSection
       });
       collapsibleViews.push(downloadLinkPView);
