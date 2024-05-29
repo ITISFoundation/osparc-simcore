@@ -402,7 +402,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           },
           data: patchData
         };
-        osparc.data.Resources.fetch("studies", "patch", params)
+        osparc.data.Resources.fetch("studies", "patchNode", params)
           .then(() => {
             studyData["workbench"][nodeId][fieldKey] = value;
             // A bit hacky, but it's not sent back to the backend
