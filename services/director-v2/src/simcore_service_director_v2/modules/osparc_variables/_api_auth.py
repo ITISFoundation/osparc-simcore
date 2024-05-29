@@ -1,5 +1,6 @@
-from typing import Any, Final, cast
-from uuid import UUID, uuid5
+import uuid
+from typing import Any, cast
+from uuid import uuid5
 
 from aiocache import cached
 from fastapi import FastAPI
@@ -9,11 +10,11 @@ from models_library.users import UserID
 
 from ._api_auth_rpc import create_api_key_and_secret, get_api_key_and_secret
 
-_NAMESPACE: Final = UUID("ce021d45-82e6-4dfe-872c-2f452cf289f8")
-
 
 def _create_unique_identifier_from(*parts: Any) -> str:
-    return f"{uuid5(_NAMESPACE, '/'.join(map(str, parts)) )}"
+    # NOTE: The namespace chosen doesn't significantly impact the resulting UUID
+    # as long as it's consistently used across the same context
+    return f"{uuid5(uuid.NAMESPACE_DNS, '/'.join(map(str, parts)) )}"
 
 
 def create_user_api_name(product_name: ProductName, user_id: UserID) -> str:
