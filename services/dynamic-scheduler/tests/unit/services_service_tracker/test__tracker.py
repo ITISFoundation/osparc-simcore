@@ -1,0 +1,57 @@
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+
+from uuid import uuid4
+
+import pytest
+from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.redis import RedisSettings
+from simcore_service_dynamic_scheduler.services.service_tracker._models import (
+    TrackedServiceModel,
+    UserRequestedState,
+)
+from simcore_service_dynamic_scheduler.services.service_tracker._setup import (
+    get_tracker,
+)
+from simcore_service_dynamic_scheduler.services.service_tracker._tracker import Tracker
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+
+
+@pytest.fixture
+def app_environment(
+    disable_rabbitmq_setup: None,
+    app_environment: EnvVarsDict,
+    redis_service: RedisSettings,
+) -> EnvVarsDict:
+    return app_environment
+
+
+@pytest.fixture
+def tracker(app: FastAPI) -> Tracker:
+    return get_tracker(app)
+
+
+async def test_tracker_workflow(tracker: Tracker):
+    node_id: NodeID = uuid4()
+
+    # ensure does not already exist
+    result = await tracker.load(node_id)
+    assert result is None
+
+    # node creation
+    model = TrackedServiceModel(requested_sate=UserRequestedState.RUNNING)
+    await tracker.save(node_id, model)
+
+    # check if exists
+    result = await tracker.load(node_id)
+    assert result == model
+
+    # remove and check is missing
+    await tracker.delete(node_id)
+    result = await tracker.load(node_id)
+    assert result is None
