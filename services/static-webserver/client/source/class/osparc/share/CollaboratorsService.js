@@ -102,8 +102,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
         })
         .finally(() => cb());
     },
@@ -129,8 +129,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -149,8 +149,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
         .finally(() => item.setEnabled(true));
     },

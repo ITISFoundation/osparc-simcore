@@ -165,8 +165,8 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
             this.fireDataEvent("updateClassifiers", serviceDataCopy);
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
             console.error(err);
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
           });
       }
     }
