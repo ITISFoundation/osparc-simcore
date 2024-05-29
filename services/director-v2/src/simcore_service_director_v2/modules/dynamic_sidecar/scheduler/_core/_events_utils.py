@@ -44,13 +44,13 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
-from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....osparc_variables import safe_remove_api_key_and_secret
 from ...api_client import (
     SidecarsClient,
     get_dynamic_sidecar_service_health,
@@ -340,7 +340,7 @@ async def attempt_pod_removal_and_data_saving(
         TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
     )
 
-    await safe_remove(
+    await safe_remove_api_key_and_secret(
         app, node_id=scheduler_data.node_uuid, run_id=scheduler_data.run_id
     )
 
