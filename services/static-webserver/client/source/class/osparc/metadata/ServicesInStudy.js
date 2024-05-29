@@ -100,39 +100,6 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         });
     },
 
-    _updateStudy: function(fetchButton) {
-      if (fetchButton) {
-        fetchButton.setFetching(true);
-      }
-
-      this.setEnabled(false);
-      const params = {
-        url: {
-          "studyId": this._studyData["uuid"]
-        },
-        data: this._studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this._studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
-          this.fireDataEvent("updateService", updatedData);
-          this._populateLayout();
-        })
-        .catch(err => {
-          if ("message" in err) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
-          }
-        })
-        .finally(() => {
-          if (fetchButton) {
-            fetchButton.setFetching(false);
-          }
-          this.setEnabled(true);
-        });
-    },
-
     __populateEmptyLayout: function() {
       this._introText.removeAll();
 
