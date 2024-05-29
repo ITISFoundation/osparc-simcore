@@ -50,10 +50,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # PLUGINS SETUP
 
     setup_director_v2(app)
+
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
-    setup_redis(app)
 
+    setup_redis(app)
     setup_service_tracker(app)
 
     setup_rest_api(app)
