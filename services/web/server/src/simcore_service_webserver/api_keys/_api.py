@@ -94,7 +94,7 @@ async def get_or_create_api_key(
         api_secret=api_secret,
     )
     return ApiKeyGet.construct(
-        display_name=row.display_name, api_key=row.api_key, api_secret=row.api_key
+        display_name=row.display_name, api_key=row.api_key, api_secret=row.api_secret
     )
 
 

@@ -190,6 +190,8 @@ async def test_get_or_create_api_key(
 
         # create once
         created = await get_or_create_api_key(client.app, **options)
+        assert created.display_name == options["name"]
+        assert created.api_key != created.api_secret
 
         # idempottent
         for _ in range(3):
