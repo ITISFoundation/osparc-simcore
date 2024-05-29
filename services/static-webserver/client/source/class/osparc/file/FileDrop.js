@@ -59,8 +59,8 @@ qx.Class.define("osparc.file.FileDrop", {
     });
     this._add(dropHereMessage);
 
-    dropHereMessage.addListener("appear", this.__centerDropHereMessage);
-    this.addListener("resize", this.__centerDropHereMessage);
+    dropHereMessage.addListener("appear", () => this.__centerDropHereMessage(), this);
+    this.addListener("resize", () => this.__centerDropHereMessage(), this);
 
     const svgLayer = this.__svgLayer = new osparc.workbench.SvgWidget();
     this._add(svgLayer, {
