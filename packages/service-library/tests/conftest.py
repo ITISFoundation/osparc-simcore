@@ -3,6 +3,8 @@
 # pylint: disable=unused-import
 
 import sys
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,8 @@ from typing import Any
 import pytest
 import servicelib
 from faker import Faker
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
     "pytest_simcore.container_pause",
@@ -61,3 +65,26 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
     }
     data["object"] = deepcopy(data)
     return data
+
+
+@pytest.fixture
+async def get_redis_client_sdk(
+    redis_service: RedisSettings,
+) -> Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]:
+    @asynccontextmanager
+    async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
+        redis_resources_dns = redis_service.build_redis_dsn(database)
+        client = RedisClientSDK(redis_resources_dns)
+        assert client
+        assert client.redis_dsn == redis_resources_dns
+        await client.setup()
+
+        await client.redis.flushall()
+
+        yield client
+
+        # cleanup, properly close the clients
+        await client.redis.flushall()
+        await client.shutdown()
+
+    return _
