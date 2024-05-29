@@ -11,8 +11,8 @@ from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     get_tracked,
     remove_tracked,
-    set_tracked_as_running,
-    set_tracked_as_stopped,
+    set_request_as_running,
+    set_request_as_stopped,
 )
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
     UserRequestedState,
@@ -39,13 +39,13 @@ async def test_services_tracer_workflow(app: FastAPI):
     assert await get_tracked(app, node_id) is None
 
     # service requested as to be in RUNNING
-    await set_tracked_as_running(app, node_id)
+    await set_request_as_running(app, node_id)
     tracked_model = await get_tracked(app, node_id)
     assert tracked_model
     assert tracked_model.requested_sate == UserRequestedState.RUNNING
 
     # service requested as to be in STOPPED
-    await set_tracked_as_stopped(app, node_id)
+    await set_request_as_stopped(app, node_id)
     tracked_model = await get_tracked(app, node_id)
     assert tracked_model
     assert tracked_model.requested_sate == UserRequestedState.STOPPED

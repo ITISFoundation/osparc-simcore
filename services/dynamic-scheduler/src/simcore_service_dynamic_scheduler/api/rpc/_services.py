@@ -13,6 +13,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 
 from ...core.settings import ApplicationSettings
 from ...services.director_v2 import DirectorV2Client
+from ...services.service_tracker import set_request_as_running, set_request_as_stopped
 
 router = RPCRouter()
 
@@ -29,6 +30,8 @@ async def get_service_status(
 async def run_dynamic_service(
     app: FastAPI, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
 ) -> NodeGet | DynamicServiceGet:
+    await set_request_as_running(app, rpc_dynamic_service_create.node_uuid)
+
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     return await director_v2_client.run_dynamic_service(rpc_dynamic_service_create)
 
@@ -42,6 +45,8 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: FastAPI, *, node_id: NodeID, simcore_user_agent: str, save_state: bool
 ) -> NodeGet | DynamicServiceGet:
+    await set_request_as_stopped(app, node_id)
+
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
     return await director_v2_client.stop_dynamic_service(
