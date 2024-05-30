@@ -6,7 +6,9 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
+from pydantic import NonNegativeInt
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
     TrackedServiceModel,
@@ -27,6 +29,7 @@ def app_environment(
     disable_rabbitmq_setup: None,
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
+    remove_redis_data: None,
 ) -> EnvVarsDict:
     return app_environment
 
@@ -55,3 +58,17 @@ async def test_tracker_workflow(tracker: Tracker):
     await tracker.delete(node_id)
     result = await tracker.load(node_id)
     assert result is None
+
+
+@pytest.mark.parametrize("item_count", [100])
+async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> None:
+    assert await tracker.all() == []
+
+    model_to_insert = TrackedServiceModel(requested_sate=UserRequestedState.RUNNING)
+
+    await logged_gather(
+        *[tracker.save(uuid4(), model_to_insert) for _ in range(item_count)],
+        max_concurrency=100
+    )
+
+    assert await tracker.all() == [model_to_insert for _ in range(item_count)]

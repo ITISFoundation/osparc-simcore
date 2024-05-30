@@ -1,13 +1,16 @@
 from dataclasses import dataclass
+from typing import Final
 
 from models_library.projects_nodes_io import NodeID
 from servicelib.redis import RedisClientSDKHealthChecked
 
 from ._models import TrackedServiceModel
 
+_KEY_PREFIX: Final[str] = "t::"
+
 
 def _get_key(node_id: NodeID) -> str:
-    return f"t::{node_id}"
+    return f"{_KEY_PREFIX}{node_id}"
 
 
 @dataclass
@@ -29,3 +32,11 @@ class Tracker:
 
     async def delete(self, node_id: NodeID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(node_id))
+
+    async def all(self) -> list[TrackedServiceModel]:
+        found_keys = await self.redis_client_sdk.redis.keys(f"{_KEY_PREFIX}*")
+        return [
+            TrackedServiceModel.from_bytes(v)
+            for v in await self.redis_client_sdk.redis.mget(found_keys)
+            if v is not None
+        ]

@@ -39,3 +39,9 @@ async def get_tracked(app: FastAPI, node_id: NodeID) -> TrackedServiceModel | No
     """Returns information about the tracked service"""
     tracker: Tracker = get_tracker(app)
     return await tracker.load(node_id)
+
+
+async def get_all_tracked(app: FastAPI) -> list[TrackedServiceModel]:
+    """Returns all tracked services"""
+    tracker: Tracker = get_tracker(app)
+    return await tracker.all()
