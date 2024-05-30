@@ -116,6 +116,26 @@ async def test_get_and_update_study_job_metadata(
     study_id: StudyID,
     mocked_backend: MockedBackendApiDict,
 ):
+    """
+    To generate mock capture you can run
+
+    pytest \
+        --ff \
+        --log-cli-level=INFO \
+        --pdb \
+        --setup-show \
+        -sx \
+        -vv \
+        --spy-httpx-calls-enabled=true \
+        --spy-httpx-calls-capture-path=test-httpx-spy-capture.ignore.keep.json \
+        --faker-user-id=1 \
+        --faker-user-email=foo@email.com \
+        --faker-user-api-key=test \
+        --faker-user-api-secret=test \
+        --faker-project-id=784f63f4-1d9f-11ef-892d-0242ac140012 \
+        -k test_get_and_update_study_job_metadata
+    """
+
     # Creates a job (w/o running it)
     resp = await client.post(
         f"/v0/studies/{study_id}/jobs",
