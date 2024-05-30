@@ -6,6 +6,7 @@ from typing import Any
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
@@ -16,28 +17,24 @@ from .models.projects_nodes import projects_nodes
 #
 # Errors
 #
-class BaseProjectNodesError(Exception):
-    ...
+class BaseProjectNodesError(PydanticErrorMixin, RuntimeError):
+    msg_template: str = "Project nodes unexpected error"
 
 
 class ProjectNodesProjectNotFound(BaseProjectNodesError):
-    ...
+    msg_template: str = "Project {project_uuid} not found"
 
 
 class ProjectNodesNodeNotFound(BaseProjectNodesError):
-    ...
+    msg_template: str = "Node {node_id} not found"
 
 
 class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
-    ...
-
-
-class ProjectNodesOperationNotAllowed(BaseProjectNodesError):
-    ...
+    msg_template: str = "Multiple project found containing node {node_id}. TIP: misuse, the same node ID was found in several projects."
 
 
 class ProjectNodesDuplicateNode(BaseProjectNodesError):
-    ...
+    msg_template: str = "Project node already exists, you cannot have 2x the same node in the same project."
 
 
 class ProjectNodeCreate(BaseModel):
@@ -110,12 +107,10 @@ class ProjectNodesRepo:
             return [ProjectNode.from_orm(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
-            msg = f"Project {self.project_uuid} not found"
-            raise ProjectNodesProjectNotFound(msg) from exc
+            raise ProjectNodesProjectNotFound(project_uuid=self.project_uuid) from exc
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
-            msg = f"Project node already exists: {exc}"
-            raise ProjectNodesDuplicateNode(msg) from exc
+            raise ProjectNodesDuplicateNode() from exc
 
     async def list(self, connection: SAConnection) -> list[ProjectNode]:  # noqa: A003
         """list the nodes in the current project
@@ -155,8 +150,7 @@ class ProjectNodesRepo:
         assert result  # nosec
         row = await result.first()
         if row is None:
-            msg = f"Node with {node_id} not found"
-            raise ProjectNodesNodeNotFound(msg)
+            raise ProjectNodesNodeNotFound(node_id=node_id)
         assert row  # nosec
         return ProjectNode.from_orm(row)
 
@@ -184,8 +178,7 @@ class ProjectNodesRepo:
         result = await connection.execute(update_stmt)
         row = await result.first()
         if not row:
-            msg = f"Node with {node_id} not found"
-            raise ProjectNodesNodeNotFound(msg)
+            raise ProjectNodesNodeNotFound(node_id=node_id)
         assert row  # nosec
         return ProjectNode.from_orm(row)
 
@@ -273,7 +266,8 @@ class ProjectNodesRepo:
     ) -> uuid.UUID:
         """
         Raises:
-            ProjectNodesNodeNotFound:
+            ProjectNodesNodeNotFound: if no node_id found
+            ProjectNodesNonUniqueNodeFoundError: there are multiple projects that contain that node
         """
         get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
             projects_nodes.c.node_id == f"{node_id}"
@@ -281,9 +275,7 @@ class ProjectNodesRepo:
         result = await connection.execute(get_stmt)
         project_ids = await result.fetchall()
         if not project_ids:
-            msg = f"No project found containing {node_id=}"
-            raise ProjectNodesNodeNotFound(msg)
+            raise ProjectNodesNodeNotFound(node_id=node_id)
         if len(project_ids) > 1:
-            msg = f"Multiple project found containing {node_id=}"
-            raise ProjectNodesNonUniqueNodeFoundError(msg)
+            raise ProjectNodesNonUniqueNodeFoundError(node_id=node_id)
         return uuid.UUID(project_ids[0][projects_nodes.c.project_uuid])
