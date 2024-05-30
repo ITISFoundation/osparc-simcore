@@ -91,6 +91,14 @@ _WALLET_STATUS_MAP: Mapping = {
 }
 
 
+def _get_lrt_urls(lrt_response: httpx.Response):
+    # WARNING: this function is patched in patch_lrt_response_urls fixture
+    data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+    assert data is not None  # nosec
+
+    return data.status_href, data.result_href
+
+
 class WebserverApi(BaseServiceClientApi):
     """Access to web-server API
 
@@ -194,22 +202,7 @@ class AuthSession:
             return Page[ProjectGet].parse_raw(resp.text)
 
     async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
-        data = Envelope[TaskGet].parse_raw(lrt_response.text).data
-        assert data is not None  # nosec
-
-        # FIXME: only for testsing
-        data.status_href = lrt_response.request.url.copy_with(
-            path=httpx.URL(data.status_href).path
-        )
-        data.result_href = lrt_response.request.url.copy_with(
-            path=httpx.URL(data.result_href).path
-        )
-        data.abort_href = lrt_response.request.url.copy_with(
-            path=httpx.URL(data.abort_href).path
-        )
-
-        status_url = data.status_href
-        result_url = data.result_href
+        status_url, result_url = _get_lrt_urls(lrt_response)
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
