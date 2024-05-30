@@ -34,7 +34,7 @@ from ..modules import (
     socketio,
     storage,
 )
-from ..modules.osparc_variables import api_keys_manager, substitutions
+from ..modules.osparc_variables import substitutions
 from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
@@ -168,7 +168,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if dynamic_scheduler_enabled:
         redis.setup(app)
         dynamic_sidecar.setup(app)
-        api_keys_manager.setup(app)
         socketio.setup(app)
         notifier.setup(app)
 

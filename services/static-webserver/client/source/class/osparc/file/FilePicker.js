@@ -464,6 +464,21 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildAppModeLayout: function() {
+      let msg = this.tr("In order to Select a File you have three options:");
+      const options = [
+        this.tr("- Upload a New File"),
+        this.tr("- Provide a File Link"),
+        this.tr("- Select a File from other ") + osparc.product.Utils.getStudyAlias()
+      ];
+      for (let i=0; i<options.length; i++) {
+        msg += "<br>" + options[i];
+      }
+      const intro = new qx.ui.basic.Label(msg).set({
+        font: "text-16",
+        rich: true
+      });
+      this._add(intro);
+
       const collapsibleViews = [];
       const contentMargin = 10;
 
@@ -485,19 +500,19 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       collapsibleViews.push(newFilePView);
 
-      const fileBrowserLayout = this.__getFileBrowserLayout();
-      const usedFilePView = new osparc.desktop.PanelView().set({
-        title: this.tr("Select Used File"),
-        content: fileBrowserLayout
-      });
-      collapsibleViews.push(usedFilePView);
-
       const downloadLinkSection = this.__getDownloadLinkSection();
       const downloadLinkPView = new osparc.desktop.PanelView().set({
         title: this.tr("Select Download Link"),
         content: downloadLinkSection
       });
       collapsibleViews.push(downloadLinkPView);
+
+      const fileBrowserLayout = this.__getFileBrowserLayout();
+      const usedFilePView = new osparc.desktop.PanelView().set({
+        title: this.tr("Select File from other ") + osparc.product.Utils.getStudyAlias(),
+        content: fileBrowserLayout
+      });
+      collapsibleViews.push(usedFilePView);
 
       const radioCollapsibleViews = new osparc.desktop.RadioCollapsibleViews();
       collapsibleViews.forEach(cv => {

@@ -74,22 +74,15 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     __grid: null,
     _servicesGrid: null,
 
-    _updateStudy: function(fetchButton) {
+    _patchNode: function(nodeId, key, newValue, fetchButton) {
       if (fetchButton) {
         fetchButton.setFetching(true);
       }
-
       this.setEnabled(false);
-      const params = {
-        url: {
-          "studyId": this._studyData["uuid"]
-        },
-        data: this._studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this._studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
-          this.fireDataEvent("updateService", updatedData);
+
+      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, key, newValue)
+        .then(() => {
+          this.fireDataEvent("updateService", this._studyData);
           this._populateLayout();
         })
         .catch(err => {

@@ -342,9 +342,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
-          "name": newLabel
-        });
+        this.__patchStudy("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -382,9 +380,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__updateStudy({
-          "thumbnail": validUrl
-        });
+        this.__patchStudy("thumbnail", validUrl);
       }, this);
       thumbnailEditor.addListener("cancel", () => win.close());
     },
@@ -396,17 +392,15 @@ qx.Class.define("osparc.info.MergedLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
-          "description": newDescription
-        });
+        this.__patchStudy("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __updateStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __patchStudy: function(fieldKey, value) {
+      this.getStudy().patchStudy(fieldKey, value)
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
