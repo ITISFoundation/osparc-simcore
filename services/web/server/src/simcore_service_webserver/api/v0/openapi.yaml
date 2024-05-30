@@ -2223,6 +2223,18 @@ paths:
           default: false
         name: hidden
         in: query
+      - required: false
+        schema:
+          title: X-Simcore-Parent-Project-Uuid
+          type: string
+        name: x-simcore-parent-project-uuid
+        in: header
+      - required: false
+        schema:
+          title: X-Simcore-Parent-Node-Id
+          type: string
+        name: x-simcore-parent-node-id
+        in: header
       requestBody:
         content:
           application/json:

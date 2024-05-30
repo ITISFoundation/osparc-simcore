@@ -11,7 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
@@ -50,6 +50,8 @@ router = APIRouter(
 async def create_project(
     _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
+    x_simcore_parent_project_uuid: str | None = Header(default=None),
+    x_simcore_parent_node_id: str | None = Header(default=None),
 ):
     ...
 
