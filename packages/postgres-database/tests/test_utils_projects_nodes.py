@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesDuplicateNodeError,
     ProjectNodesNodeNotFoundError,
+    ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
 )
@@ -102,6 +103,9 @@ async def test_create_projects_nodes(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
+
+    assert await projects_nodes_repo.add(connection, nodes=[]) == []
+
     new_nodes = await projects_nodes_repo.add(
         connection,
         nodes=[create_fake_projects_node()],
@@ -385,4 +389,35 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
     with pytest.raises(ProjectNodesNodeNotFoundError):
         await ProjectNodesRepo.get_project_id_from_node_id(
             connection, node_id=random_uuid
+        )
+
+
+async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same_node_id_exist(
+    pg_engine: Engine,
+    connection: SAConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    registered_user: RowProxy,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    project1 = await create_fake_project(connection, registered_user)
+    project1_repo = ProjectNodesRepo(project_uuid=project1.uuid)
+
+    project2 = await create_fake_project(connection, registered_user)
+    project2_repo = ProjectNodesRepo(project_uuid=project2.uuid)
+
+    shared_node = create_fake_projects_node()
+
+    project1_nodes = await project1_repo.add(connection, nodes=[shared_node])
+    assert len(project1_nodes) == 1
+    project2_nodes = await project2_repo.add(connection, nodes=[shared_node])
+    assert len(project2_nodes) == 1
+    assert project1_nodes[0].dict(
+        include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
+    ) == project2_nodes[0].dict(
+        include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
+    )
+    with pytest.raises(ProjectNodesNonUniqueNodeFoundError):
+        await ProjectNodesRepo.get_project_id_from_node_id(
+            connection, node_id=project1_nodes[0].node_id
         )
