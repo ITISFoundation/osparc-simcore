@@ -8,6 +8,7 @@ from functools import partial
 from typing import Any
 from uuid import UUID
 
+import httpx
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -192,7 +193,21 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(self, data: TaskGet):
+    async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
+        data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+        assert data is not None  # nosec
+
+        # FIXME: only for testsing
+        data.status_href = lrt_response.request.url.copy_with(
+            path=httpx.URL(data.status_href).path
+        )
+        data.result_href = lrt_response.request.url.copy_with(
+            path=httpx.URL(data.result_href).path
+        )
+        data.abort_href = lrt_response.request.url.copy_with(
+            path=httpx.URL(data.abort_href).path
+        )
+
         status_url = data.status_href
         result_url = data.result_href
 
@@ -255,10 +270,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -268,10 +280,7 @@ class AuthSession:
             "/projects", cookies=self.session_cookies, params=query
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
