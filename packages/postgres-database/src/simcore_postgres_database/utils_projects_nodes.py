@@ -26,7 +26,7 @@ class ProjectNodesProjectNotFoundError(BaseProjectNodesError):
 
 
 class ProjectNodesNodeNotFoundError(BaseProjectNodesError):
-    msg_template: str = "Node {node_id} not found"
+    msg_template: str = "Node {node_id!r} from project {project_uuid!r} not found"
 
 
 class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
@@ -152,7 +152,9 @@ class ProjectNodesRepo:
         assert result  # nosec
         row = await result.first()
         if row is None:
-            raise ProjectNodesNodeNotFoundError(node_id=node_id)
+            raise ProjectNodesNodeNotFoundError(
+                project_uuid=self.project_uuid, node_id=node_id
+            )
         assert row  # nosec
         return ProjectNode.from_orm(row)
 
@@ -180,7 +182,9 @@ class ProjectNodesRepo:
         result = await connection.execute(update_stmt)
         row = await result.first()
         if not row:
-            raise ProjectNodesNodeNotFoundError(node_id=node_id)
+            raise ProjectNodesNodeNotFoundError(
+                project_uuid=self.project_uuid, node_id=node_id
+            )
         assert row  # nosec
         return ProjectNode.from_orm(row)
 
@@ -281,7 +285,7 @@ class ProjectNodesRepo:
         result = await connection.execute(get_stmt)
         project_ids = await result.fetchall()
         if not project_ids:
-            raise ProjectNodesNodeNotFoundError(node_id=node_id)
+            raise ProjectNodesNodeNotFoundError(project_uuid=None, node_id=node_id)
         if len(project_ids) > 1:
             raise ProjectNodesNonUniqueNodeFoundError(node_id=node_id)
         return uuid.UUID(project_ids[0][projects_nodes.c.project_uuid])
