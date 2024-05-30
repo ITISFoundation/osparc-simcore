@@ -15,10 +15,12 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.deferred_manager import setup_deferred_manager
 from ..services.director_v2 import setup_director_v2
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.redis import setup_redis
 from ..services.service_tracker import setup_service_tracker
+from ..services.status_monitor._setup import setup_status_monitor
 from .settings import ApplicationSettings
 
 
@@ -55,7 +57,10 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_rpc_api_routes(app)
 
     setup_redis(app)
+
     setup_service_tracker(app)
+    setup_deferred_manager(app)
+    setup_status_monitor(app)
 
     setup_rest_api(app)
 
