@@ -53,7 +53,6 @@ qx.Class.define("osparc.data.model.Node", {
     this.setOutputs({});
 
     this.__inputNodes = [];
-    this.__exposedNodes = [];
 
     if (study) {
       this.setStudy(study);
@@ -331,7 +330,6 @@ qx.Class.define("osparc.data.model.Node", {
   members: {
     __metaData: null,
     __inputNodes: null,
-    __exposedNodes: null,
     __settingsForm: null,
     __posX: null,
     __posY: null,
@@ -512,7 +510,6 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
-      this.addOutputNodes(nodeData.outputNodes);
     },
 
     populateStates: function(nodeData) {
@@ -874,44 +871,6 @@ qx.Class.define("osparc.data.model.Node", {
       return (index > -1);
     },
     // !---- Input Nodes -----
-
-    // ----- Output Nodes -----
-    getOutputNodes: function() {
-      return this.__exposedNodes;
-    },
-
-    addOutputNodes: function(outputNodes) {
-      if (outputNodes) {
-        outputNodes.forEach(outputNode => {
-          this.addOutputNode(outputNode);
-        });
-      }
-    },
-
-    addOutputNode: function(outputNodeId) {
-      if (!this.__exposedNodes.includes(outputNodeId)) {
-        this.__exposedNodes.push(outputNodeId);
-        this.fireEvent("outputListChanged");
-        return true;
-      }
-      return false;
-    },
-
-    removeOutputNode: function(outputNodeId) {
-      const index = this.__exposedNodes.indexOf(outputNodeId);
-      if (index > -1) {
-        // remove node connection
-        this.__exposedNodes.splice(index, 1);
-        this.fireEvent("outputListChanged");
-      }
-      return false;
-    },
-
-    isOutputNode: function(outputNodeId) {
-      const index = this.__exposedNodes.indexOf(outputNodeId);
-      return (index > -1);
-    },
-    // !---- Output Nodes -----
 
     canNodeStart: function() {
       return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());
