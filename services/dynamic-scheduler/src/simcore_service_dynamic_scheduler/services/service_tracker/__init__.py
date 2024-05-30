@@ -5,6 +5,7 @@ from ._api import (
     set_request_as_running,
     set_request_as_stopped,
 )
+from ._models import TrackedServiceModel
 from ._setup import setup_service_tracker
 
 __all__: tuple[str, ...] = (
@@ -14,4 +15,5 @@ __all__: tuple[str, ...] = (
     "set_request_as_running",
     "set_request_as_stopped",
     "setup_service_tracker",
+    "TrackedServiceModel",
 )

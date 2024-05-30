@@ -17,7 +17,10 @@ from simcore_service_dynamic_scheduler.services.service_tracker._models import (
 from simcore_service_dynamic_scheduler.services.service_tracker._setup import (
     get_tracker,
 )
-from simcore_service_dynamic_scheduler.services.service_tracker._tracker import Tracker
+from simcore_service_dynamic_scheduler.services.service_tracker._tracker import (
+    Tracker,
+    _get_key,
+)
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -62,13 +65,14 @@ async def test_tracker_workflow(tracker: Tracker):
 
 @pytest.mark.parametrize("item_count", [100])
 async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> None:
-    assert await tracker.all() == []
+    assert await tracker.all() == {}
 
     model_to_insert = TrackedServiceModel(requested_sate=UserRequestedState.RUNNING)
 
+    data_to_insert = {uuid4(): model_to_insert for _ in range(item_count)}
+
     await logged_gather(
-        *[tracker.save(uuid4(), model_to_insert) for _ in range(item_count)],
-        max_concurrency=100
+        *[tracker.save(k, v) for k, v in data_to_insert.items()], max_concurrency=100
     )
 
-    assert await tracker.all() == [model_to_insert for _ in range(item_count)]
+    assert await tracker.all() == {_get_key(k): v for k, v in data_to_insert.items()}

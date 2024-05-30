@@ -33,10 +33,12 @@ class Tracker:
     async def delete(self, node_id: NodeID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(node_id))
 
-    async def all(self) -> list[TrackedServiceModel]:
+    async def all(self) -> dict[NodeID, TrackedServiceModel]:
         found_keys = await self.redis_client_sdk.redis.keys(f"{_KEY_PREFIX}*")
-        return [
-            TrackedServiceModel.from_bytes(v)
-            for v in await self.redis_client_sdk.redis.mget(found_keys)
+        found_values = await self.redis_client_sdk.redis.mget(found_keys)
+
+        return {
+            k: TrackedServiceModel.from_bytes(v)
+            for k, v in zip(found_keys, found_values, strict=True)
             if v is not None
-        ]
+        }

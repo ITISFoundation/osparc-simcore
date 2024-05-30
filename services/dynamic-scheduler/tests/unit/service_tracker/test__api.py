@@ -60,7 +60,7 @@ async def test_services_tracer_workflow(app: FastAPI, item_count: NonNegativeInt
     assert await get_tracked(app, node_id) is None
 
     # check listing services
-    assert await get_all_tracked(app) == []
+    assert await get_all_tracked(app) == {}
 
     await logged_gather(
         *[set_request_as_stopped(app, uuid4()) for _ in range(item_count)],
