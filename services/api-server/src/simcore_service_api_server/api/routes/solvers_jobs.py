@@ -107,7 +107,7 @@ async def create_job(
 
     project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
     new_project: ProjectGet = await webserver_api.create_project(
-        project_in, hidden=hidden
+        project_in, is_hidden=hidden
     )
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
