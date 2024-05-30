@@ -187,6 +187,7 @@ async def test_set_project_ancestors_with_invalid_parents(
 
     #
     another_project = await create_fake_project(connection, user, hidden=False)
+    another_project_node = await create_fake_projects_node(another_project["uuid"])
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
             connection,
@@ -203,13 +204,30 @@ async def test_set_project_ancestors_with_invalid_parents(
             parent_node_id=project_node.node_id,
         )
 
+    # mix a node from one project and a parent project
+    yet_another_project = await create_fake_project(connection, user, hidden=False)
+    with pytest.raises(DBProjectInvalidParentNodeError):
+        await utils_projects_metadata.set_project_ancestors(
+            connection,
+            project_uuid=yet_another_project["uuid"],
+            parent_project_uuid=project["uuid"],
+            parent_node_id=another_project_node.node_id,
+        )
+
+    with pytest.raises(DBProjectInvalidParentNodeError):
+        await utils_projects_metadata.set_project_ancestors(
+            connection,
+            project_uuid=yet_another_project["uuid"],
+            parent_project_uuid=another_project["uuid"],
+            parent_node_id=project_node.node_id,
+        )
+
 
 async def test_set_project_ancestors(
     connection: SAConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
-    faker: Faker,
 ):
     user: RowProxy = await create_fake_user(connection)
 
@@ -273,3 +291,93 @@ async def test_set_project_ancestors(
     assert updated_child_metadata.parent_node_id is None
     assert updated_child_metadata.root_parent_project_uuid is None
     assert updated_child_metadata.root_parent_node_id is None
+
+
+async def _create_child_project(
+    connection: SAConnection,
+    user: RowProxy,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
+    parent_project: RowProxy | None,
+    parent_node: ProjectNode | None,
+) -> tuple[RowProxy, ProjectNode]:
+    project = await create_fake_project(connection, user, hidden=False)
+    node = await create_fake_projects_node(project["uuid"])
+    if parent_project and parent_node:
+        await utils_projects_metadata.set_project_ancestors(
+            connection,
+            project_uuid=project["uuid"],
+            parent_project_uuid=parent_project["uuid"],
+            parent_node_id=parent_node.node_id,
+        )
+    return project, node
+
+
+@pytest.fixture
+async def create_projects_genealogy(
+    connection: SAConnection,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
+) -> Callable[[RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]]:
+    async def _(user: RowProxy) -> list[tuple[RowProxy, ProjectNode]]:
+        ancestors: list[tuple[RowProxy, ProjectNode]] = []
+
+        ancestor_project = await create_fake_project(connection, user, hidden=False)
+        ancestor_node = await create_fake_projects_node(ancestor_project["uuid"])
+        ancestors.append((ancestor_project, ancestor_node))
+
+        for _ in range(13):
+            child_project, child_node = await _create_child_project(
+                connection,
+                user,
+                create_fake_project,
+                create_fake_projects_node,
+                ancestor_project,
+                ancestor_node,
+            )
+            ancestor_project = child_project
+            ancestor_node = child_node
+            ancestors.append((child_project, child_node))
+
+        return ancestors
+
+    return _
+
+
+async def test_not_implemented_use_cases(
+    connection: SAConnection,
+    create_fake_user: Callable[..., Awaitable[RowProxy]],
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
+    create_projects_genealogy: Callable[
+        [RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]
+    ],
+):
+    """This will tests use-cases that are currently not implemented and that are expected to fail with an exception
+    Basically any project with children cannot have a change in its genealogy anymore. yes children are sacred.
+    If you still want to change them you need to go first via the children.
+    """
+    user = await create_fake_user(connection)
+    # add a missing parent to an already existing chain of parent-children
+    ancestors = await create_projects_genealogy(user)
+    missing_parent_project = await create_fake_project(connection, user)
+    missing_parent_node = await create_fake_projects_node(
+        missing_parent_project["uuid"]
+    )
+
+    with pytest.raises(NotImplementedError):
+        await utils_projects_metadata.set_project_ancestors(
+            connection,
+            project_uuid=ancestors[0][0]["uuid"],
+            parent_project_uuid=missing_parent_project["uuid"],
+            parent_node_id=missing_parent_node.node_id,
+        )
+
+    # modifying a parent-child relationship in the middle of the genealogy is also not implemented
+    with pytest.raises(NotImplementedError):
+        await utils_projects_metadata.set_project_ancestors(
+            connection,
+            project_uuid=ancestors[3][0]["uuid"],
+            parent_project_uuid=missing_parent_project["uuid"],
+            parent_node_id=missing_parent_node.node_id,
+        )

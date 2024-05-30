@@ -10,7 +10,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import parse_obj_as
 from simcore_postgres_database import utils_projects_metadata
 from simcore_postgres_database.utils_projects_metadata import (
-    DBProjectNodeParentNotFoundError,
+    DBProjectInvalidParentNodeError,
     DBProjectNotFoundError,
 )
 from simcore_postgres_database.utils_projects_nodes import (
@@ -37,7 +37,7 @@ async def _acquire_and_handle(
 
     except DBProjectNotFoundError as err:
         raise ProjectNotFoundError(project_uuid=project_uuid) from err
-    except DBProjectNodeParentNotFoundError as err:
+    except DBProjectInvalidParentNodeError as err:
         project_id, node_id = err.args[0]
         raise ParentNodeNotFoundError(
             project_uuid=project_id, node_uuid=node_id
@@ -93,7 +93,7 @@ async def set_project_metadata(
                 )
 
             except ProjectNodesNodeNotFoundError as err:
-                raise DBProjectNodeParentNotFoundError((None, parent_node_id)) from err
+                raise DBProjectInvalidParentNodeError((None, parent_node_id)) from err
             except ProjectNodesNonUniqueNodeFoundError as err:
                 msg = "missing parent project id"
                 raise ProjectInvalidUsageError(msg) from err
@@ -101,7 +101,7 @@ async def set_project_metadata(
             # this is not allowed!
             msg = "Project cannot be parent of itself"
             raise ProjectInvalidUsageError(msg)
-        metadata = await utils_projects_metadata.upsert(
+        metadata = await utils_projects_metadata.set_project_custom_metadata(
             connection,
             project_uuid=project_uuid,
             custom_metadata=custom_metadata,

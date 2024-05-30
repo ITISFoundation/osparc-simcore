@@ -107,6 +107,17 @@ def _check_valid_ancestors_combination(
         raise DBProjectInvalidAncestorsError
 
 
+async def _project_has_any_child(
+    connection: SAConnection, project_uuid: uuid.UUID
+) -> bool:
+    get_stmt = sa.select(projects_metadata.c.project_uuid).where(
+        projects_metadata.c.parent_project_uuid == f"{project_uuid}"
+    )
+    if await connection.scalar(get_stmt) is not None:
+        return True
+    return False
+
+
 async def _compute_root_parent_from_parent(
     connection: SAConnection,
     *,
@@ -141,9 +152,20 @@ async def set_project_ancestors(
     parent_project_uuid: uuid.UUID | None,
     parent_node_id: uuid.UUID | None,
 ) -> ProjectMetadata:
+    """
+    Raises:
+        NotImplementedError: if you touch ancestry of a project that has children
+        DBProjectInvalidAncestorsError: if you pass invalid parents
+        DBProjectInvalidParentProjectError: the parent_project_uuid is invalid
+        DBProjectInvalidParentNodeError: the parent_node_ID is invalid
+        DBProjectNotFoundError: the project_uuid is not found
+    """
     _check_valid_ancestors_combination(
         project_uuid, parent_project_uuid, parent_node_id
     )
+    if await _project_has_any_child(connection, project_uuid):
+        msg = "Cannot set ancestors for a project with children"
+        raise NotImplementedError(msg)
     (
         root_parent_project_uuid,
         root_parent_node_id,
