@@ -45,25 +45,16 @@ def mocked_backend(
         )
     }
 
-    # mock every entry
-    for name in [
-        "create_project",
-        "get_task_status",
-        "get_task_result",
-        "get_project",
-        "replace_project",
-        "get_project_inputs",
-        "update_project_metadata",
-        "delete_project",
-    ]:
-        c = captures[name]
-        assert isinstance(c.path, PathDescription)
-        mocked_webserver_service_api_base.request(
-            method=c.method.upper(),
-            url=None,
-            path__regex=f"^{c.path.to_path_regex()}$",
-            name=name,
-        ).mock(return_value=c.as_response())
+    # mock every entry except `get_project_metadata*`
+    for name, c in captures.items():
+        if not name.startswith("get_project_metadata"):
+            assert isinstance(c.path, PathDescription)
+            mocked_webserver_service_api_base.request(
+                method=c.method.upper(),
+                url=None,
+                path__regex=f"^{c.path.to_path_regex()}$",
+                name=name,
+            ).mock(return_value=c.as_response())
 
     # mock this entrypoint using https://lundberg.github.io/respx/guide/#iterable
     c1 = captures["get_project_metadata"]
@@ -91,7 +82,7 @@ def mocked_backend(
 @pytest.fixture
 def study_id() -> StudyID:
     # NOTE: this id is used in  mocks/test_get_and_update_study_job_metadata.json
-    return StudyID("6377d922-fcd7-11ee-b4fc-0242ac140024")
+    return StudyID("784f63f4-1d9f-11ef-892d-0242ac140012")
 
 
 async def test_get_and_update_study_job_metadata(
