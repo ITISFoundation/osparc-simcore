@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import json
 import re
 from pathlib import Path
 from typing import TypedDict
@@ -60,6 +61,7 @@ def mocked_backend(
             groups[name] = group
         used.update(group)
 
+    print("Captures groups:", json.dumps(groups, indent=1))
     assert groups == {
         "clone_project": [],
         "get_clone_project_task_status": [
@@ -89,8 +91,7 @@ def mocked_backend(
                 path__regex=f"^{c.path.to_path_regex()}$",
                 name=name,
             ).mock(
-                side_effect=[_.as_response() for _ in cc[:-1]],
-                return_value=cc[-1].as_response(),
+                side_effect=[_.as_response() for _ in cc],
             )
         else:
             mocked_webserver_service_api_base.request(
