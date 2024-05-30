@@ -97,7 +97,7 @@ projects_metadata = sa.Table(
         (projects_nodes.c.project_uuid, projects_nodes.c.node_id),
         onupdate="CASCADE",
         ondelete="SET NULL",
-        name="fk_projects_metadata_parent_node_id",
+        name="fk_projects_metadata_root_parent_node_id",
     ),
 )
 
