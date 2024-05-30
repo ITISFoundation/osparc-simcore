@@ -55,6 +55,7 @@ def mock_redis_client(
 def app_environment(
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment

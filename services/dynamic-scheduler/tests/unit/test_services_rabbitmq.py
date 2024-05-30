@@ -22,6 +22,7 @@ pytest_simcore_core_services_selection = [
 def app_environment(
     disable_redis_setup: None,
     disable_service_tracker_setup: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:

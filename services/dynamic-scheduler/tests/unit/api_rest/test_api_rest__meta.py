@@ -15,6 +15,7 @@ def app_environment(
     disable_rabbitmq_setup: None,
     disable_redis_setup: None,
     disable_service_tracker_setup: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
