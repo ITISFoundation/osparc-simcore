@@ -156,3 +156,45 @@ async def test_create_and_delete_solver_job(
     # NOTE: ideas for further tests
     # Run job and try to delete while running
     # Run a job and delete when finished
+
+
+@pytest.mark.parametrize("hidden", [True, False])
+async def test_create_job(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
+    hidden: bool,
+):
+
+    mock_webserver_router = (
+        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
+    )
+    callback = mock_webserver_router["create_projects"].side_effect
+
+    def create_project_side_effect(request: httpx.Request):
+        query = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
+        _hidden = query.get("hidden")
+        assert _hidden == ("true" if hidden else "false")
+        return callback(request)
+
+    mock_webserver_router = (
+        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
+    )
+    mock_webserver_router["create_projects"].side_effect = create_project_side_effect
+
+    # create Job
+    resp = await client.post(
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        auth=auth,
+        params={"hidden": f"{hidden}"},
+        json=JobInputs(
+            values={
+                "x": 3.14,
+                "n": 42,
+            }
+        ).dict(),
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    job = Job.parse_obj(resp.json())
