@@ -451,7 +451,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         "tsr_target": this.__copyQualityData["tsr_target"]
       };
       const patchData = {
-        "quality" : newQuality
+        "quality": newQuality
       };
       if (this.__validate(this.__schema, patchData["quality"])) {
         btn.setFetching(true);

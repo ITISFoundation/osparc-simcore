@@ -79,7 +79,7 @@ class CreditsWarningThresholdFrontendUserPreference(FrontendUserPreference):
 
 class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "walletIndicatorVisibility"
-    value: str | None = "always"
+    value: str | None = "warning"
 
 
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
