@@ -10,8 +10,8 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
     APP_STARTED_DISABLED_BANNER_MSG,
 )
-from ..api.routes import setup_api_routes
-from ..rpc.rpc_routes import setup_rpc_routes
+from ..api.rest.routes import setup_api_routes
+from ..api.rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
