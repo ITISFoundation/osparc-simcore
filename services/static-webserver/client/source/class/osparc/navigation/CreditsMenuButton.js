@@ -100,6 +100,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
           textColor: osparc.desktop.credits.Utils.creditsToColor(creditsLeft, "text")
         });
       }
+      this.__computeVisibility();
     },
 
     __computeVisibility: function() {
