@@ -97,7 +97,7 @@ async def test_get_and_update_study_job_metadata(
         auth=auth,
         json={"values": {}},
     )
-    assert resp.status_code == status.HTTP_201_CREATED
+    assert resp.status_code == status.HTTP_200_OK
     job = Job(**resp.json())
 
     # Get metadata
