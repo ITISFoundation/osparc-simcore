@@ -303,6 +303,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const progressLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
+      progressLayout.alwaysEnabled = true;
 
       const progressBar = new qx.ui.indicator.ProgressBar();
       const nodeStatus = this.getNode().getStatus();
@@ -332,7 +333,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const uploading = (validProgress > 0 && validProgress < 100);
         progressLayout.setVisibility(uploading ? "visible" : "excluded");
         this._getChildren().forEach(child => {
-          if (child !== progressLayout) {
+          if (!child.alwaysEnabled) {
             child.setEnabled(!uploading);
           }
         });
