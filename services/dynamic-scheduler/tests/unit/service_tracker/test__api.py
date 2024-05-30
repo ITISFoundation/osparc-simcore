@@ -29,6 +29,7 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def app_environment(
     disable_rabbitmq_setup: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
     remove_redis_data: None,

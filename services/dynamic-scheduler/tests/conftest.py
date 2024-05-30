@@ -96,6 +96,12 @@ def disable_service_tracker_setup(mocker: MockerFixture) -> None:
     mocker.patch(f"{base_path}.setup_service_tracker")
 
 
+@pytest.fixture
+def disable_deferred_manager_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_deferred_manager")
+
+
 MAX_TIME_FOR_APP_TO_STARTUP = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
