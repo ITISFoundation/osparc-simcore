@@ -45,14 +45,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
     },
 
     __updateBootMode: function(nodeId, newBootModeId) {
-      if (!("bootOptions" in this._studyData["workbench"][nodeId])) {
-        this._studyData["workbench"][nodeId]["bootOptions"] = {};
-      }
-      this._studyData["workbench"][nodeId]["bootOptions"] = {
-        "boot_mode": newBootModeId
-      };
+      const workbench = this._studyData["workbench"];
+      let newBootOptions = "bootOptions" in workbench[nodeId] ? osparc.utils.Utils.deepCloneObject(workbench[nodeId]["bootOptions"]) : {};
+      newBootOptions["boot_mode"] = newBootModeId;
 
-      this._updateStudy();
+      this._patchNode(nodeId, "bootOptions", newBootOptions);
     },
 
     _populateHeader: function() {

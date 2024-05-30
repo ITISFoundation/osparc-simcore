@@ -188,6 +188,7 @@ async def test_start_stop_delete_study_job(
     _check_response(response, status.HTTP_204_NO_CONTENT)
 
 
+@pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
@@ -196,6 +197,7 @@ async def test_create_study_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
+    hidden: bool,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -213,9 +215,17 @@ async def test_create_study_job(
             project_id = path_params.get("project_id")
             assert project_id is not None
             assert project_id in name
+        if capture.method == "POST":
+            _default_side_effect.post_called = True
+            query_dict = dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            )
+            _hidden = query_dict.get("hidden")
+            assert _hidden == ("true" if hidden else "false")
         return capture.response_body
 
     _default_side_effect.patch_called = False
+    _default_side_effect.post_called = False
 
     create_respx_mock_from_capture(
         respx_mocks=[
@@ -229,10 +239,12 @@ async def test_create_study_job(
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
+        params={"hidden": f"{hidden}"},
         json={"values": {}},
     )
     assert response.status_code == 200
     assert _default_side_effect.patch_called
+    assert _default_side_effect.post_called
 
 
 async def test_get_study_job_outputs(

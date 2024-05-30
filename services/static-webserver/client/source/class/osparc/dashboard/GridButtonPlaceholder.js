@@ -29,6 +29,8 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
     this.set({
       cursor: "not-allowed"
     });
+
+    this.getChildControl("footer").exclude();
   },
 
   properties: {
