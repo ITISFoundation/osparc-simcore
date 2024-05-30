@@ -5,6 +5,7 @@ from typing import Final
 import arrow
 import orjson
 from models_library.utils.enums import StrAutoEnum
+from servicelib.deferred_tasks import TaskUID
 
 _SECONDS_TO_TRIGGER_SERVICE_CHECKING: Final[float] = 1e6
 
@@ -34,6 +35,7 @@ class TrackedServiceModel:
 
     # stored for debug mainly this is used to compute ``current_state``
     service_status: str = ""
+    service_status_task_uid: TaskUID | None = None
 
     last_checked: float | None = None
 
