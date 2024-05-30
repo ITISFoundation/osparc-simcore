@@ -14,7 +14,7 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-
+arrow
 fastapi
 httpx
 packaging
