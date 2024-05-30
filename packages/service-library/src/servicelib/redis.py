@@ -240,3 +240,10 @@ class RedisClientsManager:
 
     def client(self, database: RedisDatabase) -> RedisClientSDKHealthChecked:
         return self._client_sdks[database]
+
+    async def __aenter__(self):
+        await self.setup()
+        return self
+
+    async def __aexit__(self, *args):
+        await self.shutdown()
