@@ -13,10 +13,7 @@ import httpx
 import pytest
 from fastapi.encoders import jsonable_encoder
 from pydantic import parse_file_as
-from pytest_simcore.helpers.httpx_calls_capture_models import (
-    CreateRespxMockCallback,
-    HttpApiCallCaptureModel,
-)
+from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_parameters import PathDescription
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import (
@@ -36,7 +33,6 @@ class MockedBackendApiDict(TypedDict):
 def mocked_backend(
     project_tests_dir: Path,
     mocked_webserver_service_api_base: MockRouter,
-    create_respx_mock_from_capture: CreateRespxMockCallback,
 ) -> MockedBackendApiDict | None:
     # load
     captures = {
@@ -47,7 +43,9 @@ def mocked_backend(
         )
     }
 
-    # group captures
+    # NOTE: This code should move to `create_respx_mock_from_capture`
+
+    # group captures based on manually adjusted capture names (see assert below)
     names = list(captures)
     groups = {}
     used = set()
@@ -78,7 +76,7 @@ def mocked_backend(
         "delete_project": [],
     }
 
-    # setup mocks
+    # setup mocks as single or iterable responses
     for name, group in groups.items():
         c = captures[name]
         assert isinstance(c.path, PathDescription)
