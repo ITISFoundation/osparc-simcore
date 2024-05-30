@@ -419,17 +419,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     __getInputRequiredButton: function(portId) {
       const node = this.getNode();
       const inputRequiredBtn = new qx.ui.menu.Button();
-      inputRequiredBtn.addListener("execute", () => {
+      const evalButton = () => {
         const inputsRequired = node.getInputsRequired();
-        const index = inputsRequired.indexOf(5);
-        if (index > -1) {
-          inputsRequired.splice(index, 1);
-        } else {
-          inputsRequired.push(portId);
-        }
-      }, this);
-      node.addListener("changeInputsRequired", e => {
-        const inputsRequired = e.getData();
         if (inputsRequired.includes(portId)) {
           inputRequiredBtn.set({
             icon: "@FontAwesome5Solid/check/8",
@@ -441,7 +432,19 @@ qx.Class.define("osparc.form.renderer.PropForm", {
             label: this.tr("Input not Required")
           });
         }
+      }
+      inputRequiredBtn.addListener("execute", () => {
+        const inputsRequired = node.getInputsRequired();
+        const index = inputsRequired.indexOf(portId);
+        if (index > -1) {
+          inputsRequired.splice(index, 1);
+        } else {
+          inputsRequired.push(portId);
+        }
+        evalButton();
       }, this);
+      node.addListener("changeInputsRequired", () => evalButton(), this);
+      evalButton();
       return inputRequiredBtn;
     },
 
