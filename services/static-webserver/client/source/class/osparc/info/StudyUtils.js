@@ -195,10 +195,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       });
       cb.addListener("changeValue", e => {
         const newVal = e.getData();
-        devObj["disableServiceAutoStart"] = !newVal;
-        study.updateStudy({
-          dev: devObj
-        });
+        const devObjCopy = osparc.utils.Utils.deepCloneObject(devObj);
+        devObjCopy["disableServiceAutoStart"] = !newVal;
+        study.patchStudy("dev", devObjCopy);
       });
       return cb;
     },
@@ -391,5 +390,40 @@ qx.Class.define("osparc.info.StudyUtils", {
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
     },
+
+    patchNodeData: function(studyData, nodeId, fieldKey, value) {
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: {
+          "studyId": studyData["uuid"],
+          "nodeId": nodeId
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patchNode", params)
+        .then(() => {
+          studyData["workbench"][nodeId][fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
+    patchStudyData: function(studyData, fieldKey, value) {
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params)
+        .then(() => {
+          studyData[fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    }
   }
 });

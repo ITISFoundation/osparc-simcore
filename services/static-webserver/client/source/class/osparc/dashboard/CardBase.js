@@ -50,8 +50,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SHARED_ORGS: "@FontAwesome5Solid/users/13",
     SHARED_ALL: "@FontAwesome5Solid/globe/13",
     PERM_READ: "@FontAwesome5Solid/eye/13",
-    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/13",
-    MODE_GUIDED: "@FontAwesome5Solid/play/13",
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
@@ -299,23 +297,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
-      let owner = "";
-      let defaultHits = null;
+      let owner = null;
       let workbench = null;
+      let defaultHits = null;
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "template":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
-          uuid = resourceData.key ? resourceData.key : uuid;
-          owner = resourceData.owner ? resourceData.owner : owner;
+          uuid = resourceData.key ? resourceData.key : null;
+          owner = resourceData.owner ? resourceData.owner : "";
           defaultHits = 0;
           break;
       }
@@ -418,12 +416,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
       if (workbench === null) {
         // it is a service
         return;
+      }
+
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
       }
 
       // Updatable study

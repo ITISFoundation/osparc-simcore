@@ -130,6 +130,7 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false,
+      event: "changeWorkbench",
       init: {}
     },
 
@@ -552,6 +553,24 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
+    serializeStudyData: function() {
+      let studyData = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (key === "workbench") {
+          studyData[key] = this.getWorkbench().serialize();
+          return;
+        }
+        if (key === "ui") {
+          studyData[key] = this.getUi().serialize();
+          return;
+        }
+        const value = this.get(key);
+        studyData[key] = value;
+      });
+      return studyData;
+    },
+
     serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
@@ -574,6 +593,32 @@ qx.Class.define("osparc.data.model.Study", {
         }
       });
       return jsonObject;
+    },
+
+    patchStudy: function(fieldKey, value) {
+      return new Promise((resolve, reject) => {
+        const patchData = {};
+        patchData[fieldKey] = value;
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: patchData
+        };
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const setter = "set" + upKey;
+            this[setter](value);
+            // A bit hacky, but it's not sent back to the backend
+            this.set({
+              lastChangeDate: new Date()
+            });
+            const studyData = this.serializeStudyData();
+            resolve(studyData);
+          })
+          .catch(err => reject(err));
+      });
     },
 
     updateStudy: function(params, run = false) {
