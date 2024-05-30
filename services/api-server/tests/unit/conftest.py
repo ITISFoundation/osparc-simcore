@@ -34,7 +34,6 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, parse_obj_as
