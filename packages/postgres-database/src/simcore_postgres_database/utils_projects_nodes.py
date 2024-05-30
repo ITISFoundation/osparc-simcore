@@ -112,9 +112,9 @@ class ProjectNodesRepo:
             ) from exc
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
-            raise ProjectNodesDuplicateNodeError() from exc
+            raise ProjectNodesDuplicateNodeError from exc
 
-    async def list(self, connection: SAConnection) -> list[ProjectNode]:  # noqa: A003
+    async def list(self, connection: SAConnection) -> list[ProjectNode]:
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
