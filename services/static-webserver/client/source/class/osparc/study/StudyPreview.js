@@ -19,28 +19,24 @@ qx.Class.define("osparc.study.StudyPreview", {
   extend: qx.ui.core.Widget,
 
   /**
-   * @param studyData {Object} Serialized Study Object
+   * @param study {osparc.data.model.Study} Study model
    */
-  construct: function(studyData) {
+  construct: function(study) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__studyData = studyData;
+    this.__study = study;
 
-    this.__buildLayout();
+    this.__buildPreview();
   },
 
   members: {
-    __studyData: null,
-
-    __buildLayout: function() {
-      this.__buildPreview();
-    },
+    __study: null,
 
     __buildPreview: function() {
-      const study = new osparc.data.model.Study(this.__studyData);
-      const uiMode = osparc.data.model.Study.getUiMode(this.__studyData);
+      const study = this.__study;
+      const uiMode = study.getUi().getMode();
       if (uiMode !== "app" && !study.isPipelineEmpty()) {
         const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
         workbenchUIPreview.setStudy(study);
