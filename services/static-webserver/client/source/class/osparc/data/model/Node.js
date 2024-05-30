@@ -135,6 +135,13 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeInputs"
     },
 
+    inputsRequired: {
+      check: "Array",
+      init: [],
+      event: "changeInputsRequired",
+      apply: "__applyInputsRequired"
+    },
+
     outputs: {
       check: "Object",
       nullable: false,
@@ -1491,6 +1498,7 @@ qx.Class.define("osparc.data.model.Node", {
         inputsUnits: this.__getInputUnits(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
+        inputsRequired: this.getInputsRequired(),
         thumbnail: this.getThumbnail(),
         bootOptions: this.getBootOptions()
       };

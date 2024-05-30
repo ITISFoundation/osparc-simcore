@@ -286,6 +286,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         });
       }
+
+      if (optionsMenu.getChildren().length) {
+        optionsMenu.addSeparator();
+      }
+      const inputRequiredButton = this.__getInputRequiredButton(field.key);
+      optionsMenu.add(inputRequiredButton);
     },
 
     __connectToInputNode: function(targetPortId, inputNodeId, outputKey) {
@@ -342,6 +348,26 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return null;
     },
 
+    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, menu, menuBtn) {
+      menuBtn.exclude();
+      menu.removeAll();
+
+      const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
+      if (inputNode) {
+        for (const outputKey in inputNode.getOutputs()) {
+          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
+            .then(compatible => {
+              if (compatible) {
+                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
+                menu.add(paramButton);
+                menuBtn.show();
+              }
+            });
+        }
+      }
+    },
+
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
       selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
@@ -366,26 +392,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return existingParamBtn;
     },
 
-    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, menu, menuBtn) {
-      menuBtn.exclude();
-      menu.removeAll();
-
-      const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-      if (inputNode) {
-        for (const outputKey in inputNode.getOutputs()) {
-          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
-            .then(compatible => {
-              if (compatible) {
-                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
-                paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
-                menu.add(paramButton);
-                menuBtn.show();
-              }
-            });
-        }
-      }
-    },
-
     __populateExistingParamsMenu: function(targetPortId, menu, menuBtn) {
       menuBtn.exclude();
       menu.removeAll();
@@ -408,6 +414,35 @@ qx.Class.define("osparc.form.renderer.PropForm", {
             }
           });
       });
+    },
+
+    __getInputRequiredButton: function(portId) {
+      const node = this.getNode();
+      const inputRequiredBtn = new qx.ui.menu.Button();
+      inputRequiredBtn.addListener("execute", () => {
+        const inputsRequired = node.getInputsRequired();
+        const index = inputsRequired.indexOf(5);
+        if (index > -1) {
+          inputsRequired.splice(index, 1);
+        } else {
+          inputsRequired.push(portId);
+        }
+      }, this);
+      node.addListener("changeInputsRequired", e => {
+        const inputsRequired = e.getData();
+        if (inputsRequired.includes(portId)) {
+          inputRequiredBtn.set({
+            icon: "@FontAwesome5Solid/check/8",
+            label: this.tr("Input Required")
+          });
+        } else {
+          inputRequiredBtn.set({
+            icon: null,
+            label: this.tr("Input not Required")
+          });
+        }
+      }, this);
+      return inputRequiredBtn;
     },
 
     // overridden
