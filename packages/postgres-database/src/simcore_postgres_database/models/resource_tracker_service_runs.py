@@ -104,7 +104,7 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "project_name",
         sa.String,
-        nullable=True,
+        nullable=False,
         doc="we want to store the project name for tracking/billing purposes and be sure it stays there even when the project is deleted (that's also reason why we do not introduce foreign key)",
     ),
     # Node fields
@@ -117,21 +117,39 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "node_name",
         sa.String,
-        nullable=True,
+        nullable=False,
         doc="we want to store the node/service name/label for tracking/billing purposes and be sure it stays there even when the node is deleted.",
     ),
     # Project/Node parent fields
     sa.Column(
         "parent_project_id",  # UUID
         sa.String,
-        nullable=True,
+        nullable=False,
         doc="We want to store the parent project id for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
+    ),
+    sa.Column(
+        "root_parent_project_id",  # UUID
+        sa.String,
+        nullable=False,
+        doc="we want to store the root parent project id for tracking/billing purposes and be sure it stays there even when the node is deleted.",
+    ),
+    sa.Column(
+        "root_parent_project_name",
+        sa.String,
+        nullable=False,
+        doc="We want to store the root parent project name for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
     ),
     sa.Column(
         "parent_node_id",  # UUID
         sa.String,
-        nullable=True,
+        nullable=False,
         doc="we want to store the parent node/service id for tracking/billing purposes and be sure it stays there even when the node is deleted.",
+    ),
+    sa.Column(
+        "root_parent_node_id",  # UUID
+        sa.String,
+        nullable=False,
+        doc="We want to store the root parent node id for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
     ),
     # Service fields
     sa.Column(

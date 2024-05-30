@@ -35,8 +35,11 @@ class ServiceRunCreate(BaseModel):
     project_name: str
     node_id: NodeID
     node_name: str
-    parent_project_id: ProjectID | None
-    parent_node_id: NodeID | None
+    parent_project_id: ProjectID
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
+    parent_node_id: NodeID
+    root_parent_node_id: NodeID
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: ResourceTrackerServiceType
@@ -74,6 +77,11 @@ class ServiceRunDB(BaseModel):
     project_name: str
     node_id: NodeID
     node_name: str
+    parent_project_id: ProjectID
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
+    parent_node_id: NodeID
+    root_parent_node_id: NodeID
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: ResourceTrackerServiceType
