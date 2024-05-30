@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
@@ -45,7 +47,27 @@ async def api_key_get(
     user_id: UserID,
     name: str,
 ) -> ApiKeyGet | None:
-    return await _api.get(app, name=name, user_id=user_id, product_name=product_name)
+    return await _api.get_api_key(
+        app, name=name, user_id=user_id, product_name=product_name
+    )
+
+
+@router.expose()
+async def get_or_create_api_keys(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    name: str,
+    expiration: timedelta | None = None,
+) -> ApiKeyGet:
+    return await _api.get_or_create_api_key(
+        app,
+        name=name,
+        user_id=user_id,
+        product_name=product_name,
+        expiration=expiration,
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
