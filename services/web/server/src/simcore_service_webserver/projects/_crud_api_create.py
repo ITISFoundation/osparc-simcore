@@ -32,6 +32,7 @@ from ..storage.api import (
 )
 from ..users.api import get_user_fullname
 from . import projects_api
+from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -212,6 +213,7 @@ async def _compose_project_data(
 
 async def create_project(
     task_progress: TaskProgress,
+    *,
     request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
@@ -221,6 +223,8 @@ async def create_project(
     product_name: str,
     predefined_project: ProjectDict | None,
     simcore_user_agent: str,
+    parent_project_uuid: ProjectID | None,
+    parent_node_id: NodeID | None,
 ) -> None:
     """Implements TaskProtocol for 'create_projects' handler
 
@@ -285,6 +289,14 @@ async def create_project(
             force_as_template=as_template,
             hidden=copy_data,
             project_nodes=project_nodes,
+        )
+        # add parent linking if needed
+        await set_project_ancestors(
+            request.app,
+            user_id=user_id,
+            project_uuid=new_project["uuid"],
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
         )
         task_progress.update()
 

@@ -44,9 +44,9 @@ async def set_project_ancestors(
     app: web.Application,
     user_id: UserID,
     project_uuid: ProjectID,
-    custom_metadata: MetadataDict,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
+    custom_metadata: MetadataDict | None = None,  # backwards compatbility
 ) -> None:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
