@@ -1,5 +1,6 @@
-from typing import Any, Final, cast
-from uuid import UUID, uuid5
+import uuid
+from typing import cast
+from uuid import uuid5
 
 from aiocache import cached
 from fastapi import FastAPI
@@ -7,37 +8,31 @@ from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 
-from ._api_auth_rpc import create_api_key_and_secret, get_api_key_and_secret
-
-_NAMESPACE: Final = UUID("ce021d45-82e6-4dfe-872c-2f452cf289f8")
+from ._api_auth_rpc import get_or_create_api_key_and_secret
 
 
-def _create_unique_identifier_from(*parts: Any) -> str:
-    return f"{uuid5(_NAMESPACE, '/'.join(map(str, parts)) )}"
+def create_unique_api_name_for(product_name: ProductName, user_id: UserID) -> str:
+    # NOTE: The namespace chosen doesn't significantly impact the resulting UUID
+    # as long as it's consistently used across the same context
+    return f"__auto_{uuid5(uuid.NAMESPACE_DNS, f'{product_name}/{user_id}')}"
 
 
-def create_user_api_name(product_name: ProductName, user_id: UserID) -> str:
-    return f"__auto_{_create_unique_identifier_from(product_name, user_id)}"
-
-
-def _build_cache_key(fct, *_, **kwargs):
+# NOTE: Uses caching to prevent multiple calls to the external service
+# when 'get_or_create_user_api_key' or 'get_or_create_user_api_secret' are invoked.
+def _cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['product_name']}_{kwargs['user_id']}"
 
 
-@cached(ttl=3, key_builder=_build_cache_key)
-async def _get_or_create_data(
+@cached(ttl=3, key_builder=_cache_key)
+async def _get_or_create_for(
     app: FastAPI,
     *,
     product_name: ProductName,
     user_id: UserID,
 ) -> ApiKeyGet:
 
-    name = create_user_api_name(product_name, user_id)
-    if data := await get_api_key_and_secret(
-        app, product_name=product_name, user_id=user_id, name=name
-    ):
-        return data
-    return await create_api_key_and_secret(
+    name = create_unique_api_name_for(product_name, user_id)
+    return await get_or_create_api_key_and_secret(
         app, product_name=product_name, user_id=user_id, name=name, expiration=None
     )
 
@@ -47,7 +42,7 @@ async def get_or_create_user_api_key(
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_data(
+    data = await _get_or_create_for(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -60,7 +55,7 @@ async def get_or_create_user_api_secret(
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_data(
+    data = await _get_or_create_for(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -71,5 +66,5 @@ async def get_or_create_user_api_secret(
 __all__: tuple[str, ...] = (
     "get_or_create_user_api_key",
     "get_or_create_user_api_secret",
-    "create_user_api_name",
+    "create_unique_api_name_for",
 )
