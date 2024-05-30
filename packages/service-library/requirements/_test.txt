@@ -134,6 +134,7 @@ pathable==0.4.3
 pluggy==1.5.0
     # via pytest
 psutil==5.9.8
+    # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pytest==8.2.0
