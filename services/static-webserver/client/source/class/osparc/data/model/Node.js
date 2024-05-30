@@ -138,8 +138,7 @@ qx.Class.define("osparc.data.model.Node", {
     inputsRequired: {
       check: "Array",
       init: [],
-      event: "changeInputsRequired",
-      apply: "__applyInputsRequired"
+      event: "changeInputsRequired"
     },
 
     outputs: {
