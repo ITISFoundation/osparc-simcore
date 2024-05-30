@@ -39,7 +39,10 @@ def mock_rabbitmq_clients(
 
 @pytest.fixture
 def mock_redis_client(
-    disable_redis_setup: None, mocker: MockerFixture, redis_client_ok: bool
+    disable_redis_setup: None,
+    disable_service_tracker_setup: None,
+    mocker: MockerFixture,
+    redis_client_ok: bool,
 ) -> None:
     base_path = "simcore_service_dynamic_scheduler.api.rest._dependencies"
     mocker.patch(

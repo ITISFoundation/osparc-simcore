@@ -14,6 +14,7 @@ from simcore_service_dynamic_scheduler.models.schemas.meta import Meta
 def app_environment(
     disable_rabbitmq_setup: None,
     disable_redis_setup: None,
+    disable_service_tracker_setup: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
