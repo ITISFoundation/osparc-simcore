@@ -30,6 +30,7 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def app_environment(
     disable_rabbitmq_setup: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
     remove_redis_data: None,
@@ -76,3 +77,7 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
     )
 
     assert await tracker.all() == {_get_key(k): v for k, v in data_to_insert.items()}
+
+
+async def test_remove_missing_key_does_not_raise_error(tracker: Tracker):
+    await tracker.delete(uuid4())
