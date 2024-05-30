@@ -5,7 +5,6 @@
 import re
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import httpx
 import pytest
@@ -39,11 +38,6 @@ def installed_package_dir() -> Path:
     dirpath = Path(simcore_service_efs_guardian.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
-
-
-@pytest.fixture
-def env_devel_dict(env_devel_dict: EnvVarsDict) -> EnvVarsDict:
-    return env_devel_dict
 
 
 @pytest.fixture
@@ -117,5 +111,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
         base_url="http://efs-guardian.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
-        assert isinstance(client._transport, ASGITransport)
+        assert isinstance(
+            client._transport, ASGITransport  # pylint: disable=protected-access
+        )
         yield client
