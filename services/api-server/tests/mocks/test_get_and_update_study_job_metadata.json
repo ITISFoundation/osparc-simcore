@@ -471,7 +471,7 @@
   }
  },
  {
-  "name": "patch_project_metdata",
+  "name": "patch_project_metadata",
   "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/8dd46a50-1e6f-11ef-90e3-0242ac14000c/metadata')>",
   "method": "PATCH",
   "host": "webserver",

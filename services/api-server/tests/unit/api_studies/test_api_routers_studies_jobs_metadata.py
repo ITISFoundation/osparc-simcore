@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import re
 from pathlib import Path
 from typing import TypedDict
 
@@ -45,34 +46,42 @@ def mocked_backend(
         )
     }
 
-    # mock every entry except `get_project_metadata*`
-    for name, c in captures.items():
-        if not name.startswith("get_project_metadata"):
-            assert isinstance(c.path, PathDescription)
+    names = list(captures)
+    groups = {}
+    used = set()
+    for n, name in enumerate(names):
+        group = (
+            [other for other in names[n:] if re.match(rf"{name}_\d+$", other)]
+            if name not in used
+            else []
+        )
+        groups[name] = group
+        used.update(group)
+
+    print(f"{groups=}")
+
+    for name, group in groups.items():
+        c = captures[name]
+        assert isinstance(c.path, PathDescription)
+        if group:
+            # mock this entrypoint using https://lundberg.github.io/respx/guide/#iterable
+            cc = [c] + [captures[_] for _ in group]
+            mocked_webserver_service_api_base.request(
+                method=c.method.upper(),
+                url=None,
+                path__regex=f"^{c.path.to_path_regex()}$",
+                name=name,
+            ).mock(
+                side_effect=[_.as_response() for _ in cc[:-1]],
+                return_value=cc[-1].as_response(),
+            )
+        else:
             mocked_webserver_service_api_base.request(
                 method=c.method.upper(),
                 url=None,
                 path__regex=f"^{c.path.to_path_regex()}$",
                 name=name,
             ).mock(return_value=c.as_response())
-
-    # mock this entrypoint using https://lundberg.github.io/respx/guide/#iterable
-    c1 = captures["get_project_metadata"]
-    assert isinstance(c1.path, PathDescription)
-    c2 = captures["get_project_metadata_2"]
-    c3 = captures["get_project_metadata_3"]
-    mocked_webserver_service_api_base.request(
-        method=c.method.upper(),
-        url=None,
-        path__regex=f"^{c1.path.to_path_regex()}$",
-        name="get_project_metadata",
-    ).mock(
-        side_effect=[
-            c1.as_response(),
-            c2.as_response(),
-        ],
-        return_value=c3.as_response(),
-    )
 
     return MockedBackendApiDict(
         webserver=mocked_webserver_service_api_base,
