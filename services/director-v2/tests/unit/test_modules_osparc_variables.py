@@ -9,6 +9,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
+from datetime import timedelta
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -16,7 +17,8 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.products import ProductName
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -26,9 +28,8 @@ from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_comp
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
-from simcore_service_director_v2.modules import osparc_variables_substitutions
-from simcore_service_director_v2.modules.osparc_variables_substitutions import (
-    resolve_and_substitute_service_lifetime_variables_in_specs,
+from simcore_service_director_v2.modules.osparc_variables import substitutions
+from simcore_service_director_v2.modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -123,10 +124,11 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     def _get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables_substitutions.get_repository",
-        side_effect=_get_repository,
-    )
+    for target in (
+        "simcore_service_director_v2.modules.osparc_variables.substitutions.get_repository",
+        "simcore_service_director_v2.modules.osparc_variables._user.get_repository",
+    ):
+        mocker.patch(target, side_effect=_get_repository, autospec=True)
 
 
 @pytest.fixture
@@ -134,6 +136,35 @@ def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
     base = "simcore_service_director_v2.modules.db.repositories.users"
     mocker.patch(f"{base}.UsersRepo.get_role", return_value=UserRole("USER"))
     mocker.patch(f"{base}.UsersRepo.get_email", return_value="e@ma.il")
+
+
+@pytest.fixture
+def mock_api_key_manager(mocker: MockerFixture) -> None:
+
+    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+
+    async def _create(
+        app: FastAPI,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        name: str,
+        expiration: timedelta,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+        assert expiration is None
+
+        fake_data.display_name = name
+        return fake_data
+
+    # mocks RPC interface
+    mocker.patch(
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
+        side_effect=_create,
+        autospec=True,
+    )
 
 
 @pytest.fixture
@@ -145,14 +176,14 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     mock_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL = faker.url()
     app.state.settings = mock_settings
 
-    osparc_variables_substitutions.setup(app)
+    substitutions.setup(app)
 
     async with LifespanManager(app):
         yield app
 
 
 async def test_resolve_and_substitute_session_variables_in_specs(
-    mock_user_repo: None, fake_app: FastAPI, faker: Faker
+    mock_user_repo: None, mock_api_key_manager: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
@@ -161,6 +192,8 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "user_id": "${OSPARC_VARIABLE_USER_ID}",
         "email": "${OSPARC_VARIABLE_USER_EMAIL}",
         "user_role": "${OSPARC_VARIABLE_USER_ROLE}",
+        "api_key": "${OSPARC_VARIABLE_API_KEY}",
+        "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
     }
     print("SPECS\n", specs)
 
@@ -171,36 +204,6 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         product_name="a_product",
         project_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
-    )
-    print("REPLACED SPECS\n", replaced_specs)
-
-    assert OSPARC_IDENTIFIER_PREFIX not in f"{replaced_specs}"
-
-
-@pytest.fixture
-def mock_api_key_manager(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables_substitutions.get_or_create_api_key",
-        return_value=ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0]),
-    )
-
-
-async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
-    mock_api_key_manager: None, fake_app: FastAPI, faker: Faker
-):
-    specs = {
-        "api_key": "${OSPARC_VARIABLE_API_KEY}",
-        "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
-    }
-    print("SPECS\n", specs)
-
-    replaced_specs = await resolve_and_substitute_service_lifetime_variables_in_specs(
-        fake_app,
-        specs=specs,
-        user_id=1,
-        product_name="a_product",
-        node_id=faker.uuid4(cast_to=None),
-        run_id=RunID.create(),
     )
     print("REPLACED SPECS\n", replaced_specs)
 
@@ -223,8 +226,8 @@ async def test_substitute_vendor_secrets_in_specs(
     mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
-        "api_key": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
-        "api_secret": "${OSPARC_VARIABLE_VENDOR_SECRET_TWO}",
+        "vendor_secret_one": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
+        "vendor_secret_two": "${OSPARC_VARIABLE_VENDOR_SECRET_TWO}",
     }
     print("SPECS\n", specs)
 

@@ -219,6 +219,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
           },
+          patchNode: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}"
+          },
           deleteNode: {
             useCache: false,
             method: "DELETE",

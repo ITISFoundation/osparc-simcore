@@ -173,7 +173,7 @@ class SimcoreEC2API:
                 UserData=compose_user_data(instance_config.startup_script),
                 NetworkInterfaces=[
                     {
-                        "AssociatePublicIpAddress": True,
+                        "AssociatePublicIpAddress": False,
                         "DeviceIndex": 0,
                         "SubnetId": instance_config.subnet_id,
                         "Groups": instance_config.security_group_ids,
@@ -199,11 +199,7 @@ class SimcoreEC2API:
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
-                    aws_public_ip=(
-                        instance["PublicIpAddress"]
-                        if "PublicIpAddress" in instance
-                        else None
-                    ),
+                    aws_public_ip=instance.get("PublicIpAddress", None),
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
                     tags=parse_obj_as(
@@ -263,11 +259,7 @@ class SimcoreEC2API:
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
-                        aws_public_ip=(
-                            instance["PublicIpAddress"]
-                            if "PublicIpAddress" in instance
-                            else None
-                        ),
+                        aws_public_ip=instance.get("PublicIpAddress", None),
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
                         resources=ec2_instance_types[0].resources,

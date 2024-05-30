@@ -249,17 +249,15 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __updateTemplates: async function(uniqueTemplatesData) {
       for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
-        osparc.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
-        const params = {
-          url: {
-            "studyId": studyData["uuid"]
-          },
-          data: studyData
-        };
-        await osparc.data.Resources.fetch("studies", "put", params)
-          .then(updatedData => {
-            this._updateTemplateData(updatedData);
-          })
+        const templatePromises = [];
+        for (const nodeId in studyData["workbench"]) {
+          const newVersion = osparc.metadata.ServicesInStudyUpdate.getLatestVersion(studyData, nodeId)
+          if (newVersion) {
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, "version", newVersion));
+          }
+        }
+        Promise.all(templatePromises)
+          .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
             if ("message" in err) {
               osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");

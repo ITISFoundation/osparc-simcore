@@ -24,6 +24,18 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     this.__resourceData = resourceData;
     this.__resourceModel = resourceModel;
 
+    this.__resourceModel = null;
+    switch (resourceData["resourceType"]) {
+      case "study":
+      case "template":
+        this.__resourceModel = new osparc.data.model.Study(resourceData);
+        break;
+      case "service":
+        this.__resourceModel = new osparc.data.model.Service(resourceData);
+        break;
+    }
+    this.__resourceModel["resourceType"] = resourceData["resourceType"];
+
     this.__addPages();
   },
 
@@ -70,6 +82,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
   members: {
     __resourceData: null,
+    __resourceModel: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -314,7 +327,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
-
+        const resourceModel = this.__resourceModel;
         let infoCard = null;
         if (osparc.utils.Resources.isService(resourceData)) {
           infoCard = new osparc.info.ServiceLarge(resourceData, null, false);
@@ -325,7 +338,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             }
           });
         } else {
-          infoCard = new osparc.info.StudyLarge(resourceData, false);
+          infoCard = new osparc.info.StudyLarge(resourceModel, false);
           infoCard.addListener("updateStudy", e => {
             const updatedData = e.getData();
             if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -405,7 +418,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const preview = new osparc.study.StudyPreview(resourceData);
+        const resourceModel = this.__resourceModel;
+        const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);

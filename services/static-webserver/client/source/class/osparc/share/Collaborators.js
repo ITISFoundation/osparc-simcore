@@ -146,6 +146,16 @@ qx.Class.define("osparc.share.Collaborators", {
       }
 
       return vBox;
+    },
+
+    getEveryoneObj: function() {
+      return {
+        "gid": 1,
+        "label": qx.locale.Manager.tr("Public"),
+        "description": "",
+        "thumbnail": null,
+        "collabType": 0
+      }
     }
   },
 

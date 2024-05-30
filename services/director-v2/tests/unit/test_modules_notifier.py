@@ -42,9 +42,6 @@ def disable_modules_setup(mock_exclusive: None, mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.core.application"
     mocker.patch(f"{module_base}.db.setup", autospec=True, return_value=False)
     mocker.patch(
-        f"{module_base}.api_keys_manager.setup", autospec=True, return_value=False
-    )
-    mocker.patch(
         f"{module_base}.resource_usage_tracker_client.setup",
         autospec=True,
         return_value=False,
@@ -91,11 +88,6 @@ async def socketio_server(
 
     async with socketio_server_factory(settings.DIRECTOR_V2_RABBITMQ) as server:
         yield server
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint()
 
 
 @pytest.fixture

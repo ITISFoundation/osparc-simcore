@@ -38,8 +38,19 @@ def all_env_devel_undefined(
     delenvs_from_dict(monkeypatch, env_devel_dict, raising=False)
 
 
+def pytest_addoption(parser: pytest.Parser):
+    simcore_group = parser.getgroup("simcore")
+    simcore_group.addoption(
+        "--external-envfile",
+        action="store",
+        type=Path,
+        default=None,
+        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
+    )
+
+
 @pytest.fixture(scope="session")
-def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
+def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.

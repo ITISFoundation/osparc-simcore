@@ -7,9 +7,10 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 import os
+import socket
 from collections.abc import Awaitable, Coroutine, Generator, Iterable
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import toolz
 from pydantic import NonNegativeInt
@@ -167,3 +168,10 @@ def partition_gen(
         yield ()
 
     yield from toolz.partition_all(slice_size, input_list)
+
+
+def unused_port() -> int:
+    """Return a port that is unused on the current host."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return cast(int, s.getsockname()[1])

@@ -130,7 +130,6 @@ def mock_env(
     mock_exclusive: None,
     disable_postgres: None,
     disable_rabbitmq: None,
-    disable_api_keys_manager: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,

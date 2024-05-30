@@ -44,7 +44,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
   },
 
   events: {
-    "updateService": "qx.event.type.Data"
+    "updateAccessRights": "qx.event.type.Data"
   },
 
   statics: {
@@ -72,14 +72,9 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     getEveryoneObj: function() {
-      return {
-        "gid": 1,
-        "label": "Public",
-        "description": "",
-        "thumbnail": null,
-        "accessRights": this.getCollaboratorAccessRight(),
-        "collabType": 0
-      };
+      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      everyone["accessRights"] = this.getCollaboratorAccessRight();
+      return everyone;
     }
   },
 
@@ -92,19 +87,14 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       if (gids.length === 0) {
         return;
       }
+
+      const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {
-        this._serializedDataCopy["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+        newAccessRights[gid] = this.self().getCollaboratorAccessRight();
       });
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this._serializedDataCopy["key"],
-          this._serializedDataCopy["version"]
-        ),
-        data: this._serializedDataCopy
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
+      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy)
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
           text += "<br>";
           text += this.tr("The user will not get notified.");
@@ -112,8 +102,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
         })
         .finally(() => cb());
     },
@@ -129,24 +119,18 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         if (item) {
           item.setEnabled(true);
         }
+        return;
       }
 
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this._serializedDataCopy["key"],
-          this._serializedDataCopy["version"]
-        ),
-        data: this._serializedDataCopy
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
+      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -158,22 +142,15 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this._serializedDataCopy["key"],
-          this._serializedDataCopy["version"]
-        ),
-        data: this._serializedDataCopy
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
+      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
         .finally(() => item.setEnabled(true));
     },

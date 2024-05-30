@@ -101,12 +101,12 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
 
 
 @pytest.fixture
-def user(registered_user: Callable[..., dict[str, Any]]):
+def user(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
     return registered_user()
 
 
 @pytest.fixture
-def user_id(user):
+def user_id(user: dict[str, Any]):
     return user["id"]
 
 

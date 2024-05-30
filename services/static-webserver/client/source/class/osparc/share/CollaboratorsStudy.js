@@ -113,14 +113,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     getEveryoneObj: function(isResourceStudy) {
-      return {
-        "gid": 1,
-        "label": "Public",
-        "description": "",
-        "thumbnail": null,
-        "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
-        "collabType": 0
-      };
+      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      everyone["accessRights"] = isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+      return everyone;
     }
   },
 
@@ -152,8 +147,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
         })
         .finally(() => cb());
 
@@ -217,6 +212,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         if (item) {
           item.setEnabled(true);
         }
+        return;
       }
 
       osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
@@ -226,8 +222,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -246,8 +242,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
         .finally(() => item.setEnabled(true));
     },

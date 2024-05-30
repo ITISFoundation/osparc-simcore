@@ -153,28 +153,20 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
             this.fireDataEvent("updateClassifiers", this.__resourceData);
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
             console.error(err);
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
           });
       } else {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.__resourceData["key"],
-            this.__resourceData["version"]
-          ),
-          data: {
-            "classifiers": newClassifiers
-          }
-        };
-        osparc.data.Resources.fetch("services", "patch", params)
-          .then(updatedService => {
+        const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
+        osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, "classifiers", newClassifiers)
+          .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
-            this.fireDataEvent("updateClassifiers", updatedService);
+            this.fireDataEvent("updateClassifiers", serviceDataCopy);
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
             console.error(err);
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
           });
       }
     }

@@ -20,7 +20,6 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
-    api_keys_manager,
     catalog,
     comp_scheduler,
     dask_clients_pool,
@@ -29,13 +28,13 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     notifier,
-    osparc_variables_substitutions,
     rabbitmq,
     redis,
     resource_usage_tracker_client,
     socketio,
     storage,
 )
+from ..modules.osparc_variables import substitutions
 from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
@@ -139,7 +138,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         settings = app.state.settings
     assert settings  # nosec
 
-    osparc_variables_substitutions.setup(app)
+    substitutions.setup(app)
 
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
         director_v0.setup(app, settings.DIRECTOR_V0)
@@ -169,7 +168,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if dynamic_scheduler_enabled:
         redis.setup(app)
         dynamic_sidecar.setup(app)
-        api_keys_manager.setup(app)
         socketio.setup(app)
         notifier.setup(app)
 

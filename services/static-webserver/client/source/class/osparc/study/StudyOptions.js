@@ -318,9 +318,9 @@ qx.Class.define("osparc.study.StudyOptions", {
     __updateName: function(studyData, name) {
       return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
         .catch(err => {
+          console.error(err);
           const msg = this.tr("Something went wrong Renaming");
           osparc.FlashMessenger.logAs(msg, "ERROR");
-          console.error(err);
         });
     }
   }
