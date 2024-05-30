@@ -92,6 +92,14 @@ class ParentNodeNotFoundError(BaseProjectError):
         self.project_uuid = project_uuid
 
 
+class ParentProjectNotFoundError(BaseProjectError):
+    msg_template = "Parent project '{project_uuid}' not found"
+
+    def __init__(self, *, project_uuid: str | None, **ctx):
+        super().__init__(**ctx)
+        self.project_uuid = project_uuid
+
+
 ProjectLockError = redis.exceptions.LockError
 
 

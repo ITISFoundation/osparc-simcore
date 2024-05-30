@@ -30,6 +30,7 @@ from ..utils_aiohttp import envelope_json_response
 from . import _metadata_api
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
+    NodeNotFoundError,
     ParentNodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
@@ -47,7 +48,11 @@ def _handle_project_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError, ParentNodeNotFoundError) as exc:
+        except (
+            ProjectNotFoundError,
+            NodeNotFoundError,
+            ParentNodeNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
@@ -73,7 +78,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    custom_metadata = await _metadata_api.get_project_metadata(
+    custom_metadata = await _metadata_api.get_project_custom_metadata(
         request.app, user_id=req_ctx.user_id, project_uuid=path_params.project_id
     )
 
@@ -94,11 +99,35 @@ async def update_project_metadata(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     update = await parse_request_body_as(ProjectMetadataUpdate, request)
 
-    custom_metadata = await _metadata_api.set_project_metadata(
+    custom_metadata = await _metadata_api.set_project_custom_metadata(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         value=update.custom,
+    )
+
+    return envelope_json_response(
+        ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
+    )
+
+
+@routes.patch(
+    f"/{api_version_prefix}/projects/{{project_id}}/parents",
+    name="update_project_metadata",
+)
+@login_required
+@permission_required("project.update")
+@_handle_project_exceptions
+async def update_project_ancestors(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    update = await parse_request_body_as(ProjectMetadataUpdate, request)
+
+    custom_metadata = await _metadata_api.set_project_ancestors(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        custom_metadata=update.custom,
         # NOTE: MB this is where the PublicAPI shall bring in the parent node
         # see https://github.com/ITISFoundation/osparc-simcore/issues/5816
         parent_project_uuid=None,
