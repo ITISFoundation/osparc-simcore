@@ -46,6 +46,7 @@ def mocked_backend(
         )
     }
 
+    # group captures
     names = list(captures)
     groups = {}
     used = set()
@@ -55,11 +56,27 @@ def mocked_backend(
             if name not in used
             else []
         )
-        groups[name] = group
+        if name not in used:
+            groups[name] = group
         used.update(group)
 
-    print(f"{groups=}")
+    assert groups == {
+        "clone_project": [],
+        "get_clone_project_task_status": [
+            "get_clone_project_task_status_1",
+            "get_clone_project_task_status_2",
+            "get_clone_project_task_status_3",
+            "get_clone_project_task_status_4",
+        ],
+        "get_clone_project_task_result": [],
+        "patch_project": [],
+        "get_project_inputs": [],
+        "get_project_metadata": ["get_project_metadata_1", "get_project_metadata_2"],
+        "patch_project_metadata": [],
+        "delete_project": [],
+    }
 
+    # setup mocks
     for name, group in groups.items():
         c = captures[name]
         assert isinstance(c.path, PathDescription)
