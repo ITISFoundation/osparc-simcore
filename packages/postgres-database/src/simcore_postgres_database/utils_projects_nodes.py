@@ -267,6 +267,10 @@ class ProjectNodesRepo:
         connection: SAConnection, *, node_id: uuid.UUID
     ) -> uuid.UUID:
         """
+        WARNING: this function should not be used! it has a flaw! a Node ID is not unique and there can
+        be more than one project linked to it.
+        TODO: return project idS? and adapt code
+
         Raises:
             ProjectNodesNodeNotFound: if no node_id found
             ProjectNodesNonUniqueNodeFoundError: there are multiple projects that contain that node
