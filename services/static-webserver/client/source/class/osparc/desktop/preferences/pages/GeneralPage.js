@@ -68,8 +68,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
         const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
-          minimum: 100,
+          minimum: 50,
           maximum: 10000,
+          value: 100,
           singleStep: 10,
           allowGrowX: false
         });
