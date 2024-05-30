@@ -79,7 +79,7 @@ alembic==1.8.1
 anyio==4.3.0
     # via
     #   fast-depends
-    #   watchfiles
+    #   faststream
 arrow==1.2.3
     # via
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -166,7 +166,7 @@ faker==19.6.1
     # via -r requirements/_base.in
 fast-depends==2.4.2
     # via faststream
-faststream==0.2.12
+faststream==0.5.10
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -415,6 +415,7 @@ rich==13.4.2
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+    #   typer
 setproctitle==1.2.3
     # via gunicorn
 setuptools==69.1.1
@@ -422,6 +423,8 @@ setuptools==69.1.1
     #   gunicorn
     #   jsonschema
     #   openapi-spec-validator
+shellingham==1.5.4
+    # via typer
 six==1.16.0
     # via
     #   isodate
@@ -472,7 +475,7 @@ tqdm==4.64.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
 twilio==7.12.0
     # via -r requirements/_base.in
-typer==0.4.1
+typer==0.12.3
     # via
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -480,12 +483,14 @@ typer==0.4.1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   faststream
-typing-extensions==4.3.0
+typing-extensions==4.12.0
     # via
     #   aiodebug
     #   aiodocker
     #   anyio
+    #   faststream
     #   pydantic
+    #   typer
 ujson==5.5.0
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -520,10 +525,6 @@ urllib3==1.26.11
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-uvloop==0.19.0
-    # via faststream
-watchfiles==0.21.0
-    # via faststream
 werkzeug==2.1.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 yarl==1.5.1
