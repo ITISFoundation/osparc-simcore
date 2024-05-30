@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
@@ -86,7 +86,7 @@ async def create_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
-    hidden: Annotated[bool, Header()] = True,
+    hidden: Annotated[bool, Query()] = True,
 ):
     """Creates a job in a specific release with given inputs.
 

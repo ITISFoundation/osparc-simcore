@@ -188,7 +188,7 @@ async def test_create_job(
     resp = await client.post(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
-        headers={"hidden": f"{hidden}"},
+        params={"hidden": f"{hidden}"},
         json=JobInputs(
             values={
                 "x": 3.14,

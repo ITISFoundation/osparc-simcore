@@ -2,7 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
@@ -81,7 +81,7 @@ async def create_study_job(
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    hidden: Annotated[bool, Header()] = True,
+    hidden: Annotated[bool, Query()] = True,
 ) -> Job:
     project = await webserver_api.clone_project(project_id=study_id, hidden=hidden)
     job = create_job_from_study(
