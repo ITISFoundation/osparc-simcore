@@ -19,9 +19,9 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
-    ProjectNodesDuplicateNode,
-    ProjectNodesNodeNotFound,
-    ProjectNodesProjectNotFound,
+    ProjectNodesDuplicateNodeError,
+    ProjectNodesNodeNotFoundError,
+    ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
 )
 
@@ -90,7 +90,7 @@ async def test_create_projects_nodes_raises_if_project_not_found(
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    with pytest.raises(ProjectNodesProjectNotFound):
+    with pytest.raises(ProjectNodesProjectNotFoundError):
         await projects_nodes_repo_of_invalid_project.add(
             connection,
             nodes=[create_fake_projects_node()],
@@ -120,7 +120,7 @@ async def test_create_twice_same_projects_nodes_raises(
     new_nodes = await projects_nodes_repo.add(connection, nodes=[node_create])
     assert new_nodes
     assert len(new_nodes) == 1
-    with pytest.raises(ProjectNodesDuplicateNode):
+    with pytest.raises(ProjectNodesDuplicateNodeError):
         await projects_nodes_repo.add(
             connection,
             nodes=[node_create],
@@ -159,7 +159,7 @@ async def test_get_project_node_of_invalid_project_raises(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
 ):
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo_of_invalid_project.get(
             connection, node_id=uuid.uuid4()
         )
@@ -169,7 +169,7 @@ async def test_get_project_node_of_empty_project_raises(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
 ):
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.get(connection, node_id=uuid.uuid4())
 
 
@@ -204,7 +204,7 @@ async def test_update_project_node_of_invalid_node_raises(
     assert len(new_nodes) == 1
     assert new_nodes[0]
     assert new_nodes[0].created == new_nodes[0].modified
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.update(
             connection,
             node_id=uuid.uuid4(),
@@ -264,7 +264,7 @@ async def test_delete_node(
     assert received_node == new_nodes[0]
     await projects_nodes_repo.delete(connection, node_id=new_nodes[0].node_id)
 
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.get(connection, node_id=new_nodes[0].node_id)
 
 
@@ -289,7 +289,7 @@ async def test_delete_project_delete_all_nodes(
     await _delete_project(connection, projects_nodes_repo.project_uuid)
 
     # the project cannot be found anymore (the link in projects_to_projects_nodes is auto-removed)
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.get(connection, node_id=new_nodes[0].node_id)
 
     # the underlying projects_nodes should also be gone, thanks to migration
@@ -382,7 +382,7 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
 ):
     random_uuid = faker.uuid4(cast_to=None)
     assert isinstance(random_uuid, uuid.UUID)
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await ProjectNodesRepo.get_project_id_from_node_id(
             connection, node_id=random_uuid
         )

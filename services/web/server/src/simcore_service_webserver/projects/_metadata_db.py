@@ -14,7 +14,7 @@ from simcore_postgres_database.utils_projects_metadata import (
     DBProjectNotFoundError,
 )
 from simcore_postgres_database.utils_projects_nodes import (
-    ProjectNodesNodeNotFound,
+    ProjectNodesNodeNotFoundError,
     ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesRepo,
 )
@@ -92,7 +92,7 @@ async def set_project_metadata(
                     )
                 )
 
-            except ProjectNodesNodeNotFound as err:
+            except ProjectNodesNodeNotFoundError as err:
                 raise DBProjectNodeParentNotFoundError((None, parent_node_id)) from err
             except ProjectNodesNonUniqueNodeFoundError as err:
                 msg = "missing parent project id"

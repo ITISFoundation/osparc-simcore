@@ -38,7 +38,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFound
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFoundError
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -178,7 +178,7 @@ async def _get_project_metadata(
             parent_project_id=parent_project_id,
             parent_project_name=parent_project.name,
         )
-    except (ProjectNotFoundError, ProjectNodesNodeNotFound):
+    except (ProjectNotFoundError, ProjectNodesNodeNotFoundError):
         _logger.exception("Could not find project/node: %s", f"{parent_node_id=}")
         return {}
 
