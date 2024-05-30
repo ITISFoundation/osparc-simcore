@@ -83,6 +83,9 @@ async def create_study_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
 ) -> Job:
+    """
+    hidden -- if True (default) hides project from UI
+    """
     project = await webserver_api.clone_project(project_id=study_id, hidden=hidden)
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
