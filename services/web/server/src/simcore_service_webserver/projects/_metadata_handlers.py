@@ -109,32 +109,3 @@ async def update_project_metadata(request: web.Request) -> web.Response:
     return envelope_json_response(
         ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
     )
-
-
-# TODO: do this or not?
-# @routes.patch(
-#     f"/{api_version_prefix}/projects/{{project_id}}/parents",
-#     name="update_project_metadata",
-# )
-# @login_required
-# @permission_required("project.update")
-# @_handle_project_exceptions
-# async def update_project_ancestors(request: web.Request) -> web.Response:
-#     req_ctx = RequestContext.parse_obj(request)
-#     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-#     update = await parse_request_body_as(ProjectMetadataUpdate, request)
-
-#     custom_metadata = await _metadata_api.set_project_ancestors(
-#         request.app,
-#         user_id=req_ctx.user_id,
-#         project_uuid=path_params.project_id,
-#         custom_metadata=update.custom,
-#         # NOTE: MB this is where the PublicAPI shall bring in the parent node
-#         # see https://github.com/ITISFoundation/osparc-simcore/issues/5816
-#         parent_project_uuid=None,
-#         parent_node_id=None,
-#     )
-
-#     return envelope_json_response(
-#         ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
-#     )
