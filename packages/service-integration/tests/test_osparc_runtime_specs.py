@@ -85,7 +85,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
             data["deploy"] = {"placement": {"constraints": item.value}}
 
         else:
-            assert False, item
+            raise AssertionError(item)
 
     print(Service(**data).json(exclude_unset=True, indent=2))
 
