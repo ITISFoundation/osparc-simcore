@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 from pydantic import Field
 from pydantic.types import PositiveInt
 
-from .services import ServiceKeyVersion, ServiceMetaData
+from .services import BaseServiceMetaData, ServiceKeyVersion
 from .services_access import ServiceGroupAccessRights
 
 # -------------------------------------------------------------------
@@ -18,7 +18,7 @@ from .services_access import ServiceGroupAccessRights
 #  - table services_access_rights
 
 
-class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
+class ServiceMetaDataAtDB(ServiceKeyVersion, BaseServiceMetaData):
     # for a partial update all members must be Optional
     classifiers: list[str] | None = Field([])
     owner: PositiveInt | None

@@ -14,7 +14,7 @@ app = typer.Typer()
 def _version_callback(value: bool):
     if value:
         rich.print(__version__)
-        raise typer.Exit()
+        raise typer.Exit
 
 
 @app.callback()
@@ -38,7 +38,7 @@ def main(
     ),
 ):
     """o2s2parc service integration library"""
-    assert version or not version  # nosec
+    assert isinstance(version, bool | None)  # nosec
 
     overrides = {}
     if registry_name:

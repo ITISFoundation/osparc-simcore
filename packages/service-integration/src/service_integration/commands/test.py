@@ -14,7 +14,8 @@ def main(
     """Runs tests against service directory"""
 
     if not service_dir.exists():
-        raise typer.BadParameter("Invalid path to service directory")
+        msg = "Invalid path to service directory"
+        raise typer.BadParameter(msg)
 
     rich.print(f"Testing '{service_dir.resolve()}' ...")
     error_code = pytest_runner.main(service_dir=service_dir, extra_args=[])
