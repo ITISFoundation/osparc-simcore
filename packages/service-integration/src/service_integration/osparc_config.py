@@ -14,7 +14,7 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NamedTuple
+from typing import Any, Literal
 
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
@@ -43,7 +43,6 @@ from pydantic.fields import Field
 from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
-from .errors import ConfigNotFoundError
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
@@ -56,12 +55,6 @@ SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
     ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
 }
-
-
-## MODELS ---------------------------------------------------------------------------------
-#
-# Project config -> stored in repo's basedir/.osparc
-#
 
 
 class DockerComposeOverwriteConfig(ComposeSpecification):
@@ -262,55 +255,3 @@ class RuntimeConfig(BaseModel):
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
         return labels
-
-
-## FILES -----------------------------------------------------------
-
-
-class ConfigFileDescriptor(NamedTuple):
-    glob_pattern: str
-    required: bool = True
-
-
-class OsparcConfigFilesTree:
-    """
-    Defines config file structure and how they  map to the models
-    """
-
-    _FILES_GLOBS: ClassVar[dict] = {
-        DockerComposeOverwriteConfig.__name__: ConfigFileDescriptor(
-            glob_pattern="docker-compose.overwrite.y*ml", required=False
-        ),
-        MetadataConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
-        RuntimeConfig.__name__: ConfigFileDescriptor(glob_pattern="runtime.y*ml"),
-    }
-
-    @staticmethod
-    def config_file_path(scope: Literal["user", "project"]) -> Path:
-        basedir = Path.cwd()  # assumes project is in CWD
-        if scope == "user":
-            basedir = Path.home()
-        return basedir / ".osparc" / "service-integration.json"
-
-    def search(self, start_dir: Path) -> dict[str, Path]:
-        """Tries to match of any of file layouts
-        and returns associated config files
-        """
-        found = {
-            configtype: list(start_dir.rglob(pattern))
-            for configtype, (pattern, required) in self._FILES_GLOBS.items()
-            if required
-        }
-
-        if not found:
-            raise ConfigNotFoundError(basedir=start_dir)
-
-        msg = "TODO"
-        raise NotImplementedError(msg)
-
-        # TODO:
-        # scenarios:
-        #   .osparc/meta, [runtime]
-        #   .osparc/{service-name}/meta, [runtime]
-
-        # metadata is required, runtime is optional?
