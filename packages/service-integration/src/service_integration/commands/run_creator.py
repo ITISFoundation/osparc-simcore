@@ -52,17 +52,19 @@ json_input=$INPUT_FOLDER/inputs.json
     ]
     input_config = get_input_config(metadata_file)
     for input_key, input_value in input_config.items():
+        input_key_upper = f"{input_key}".upper()
+
         if "data:" in input_value["type"]:
             filename = input_key
             if "fileToKeyMap" in input_value and len(input_value["fileToKeyMap"]) > 0:
                 filename, _ = next(iter(input_value["fileToKeyMap"].items()))
-            input_script.append(f"{str(input_key).upper()}=$INPUT_FOLDER/{filename!s}")
-            input_script.append(f"export {str(input_key).upper()}")
+            input_script.append(f"{input_key_upper}=$INPUT_FOLDER/{filename}")
+            input_script.append(f"export {input_key_upper}")
         else:
             input_script.append(
-                f"{str(input_key).upper()}=$(< \"$json_input\" jq '.{input_key}')"
+                f"{input_key_upper}=$(< \"$json_input\" jq '.{input_key}')"
             )
-            input_script.append(f"export {str(input_key).upper()}")
+            input_script.append(f"export {input_key_upper}")
 
     input_script.extend(
         [
