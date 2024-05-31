@@ -16,7 +16,7 @@ from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
-from .events import app_lifespan
+from .events import create_on_shutdown, create_on_startup
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -38,12 +38,14 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=app_lifespan,
     )
     override_fastapi_openapi_method(app)
 
     # STATE
     app.state.settings = settings
+
+    # STARTUP-EVENT
+    app.add_event_handler("startup", create_on_startup(app))
 
     # PLUGIN SETUP
     setup_function_services(app)
@@ -51,15 +53,12 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
+    # MIDDLEWARES
     if app.state.settings.CATALOG_PROFILING:
         app.add_middleware(ProfilerMiddleware)
 
-    # EXCEPTIONS
-    setup_exception_handlers(app)
-
-    # MIDDLEWARES
-    # middleware to time requests (ONLY for development)
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+        # middleware to time requests (ONLY for development)
         app.add_middleware(
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
@@ -71,5 +70,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.include_router(health_router)
     # api under /v*
     app.include_router(api_router, prefix=f"/{API_VTAG}")
+
+    # SHUTDOWN-EVENT
+    app.add_event_handler("shutdown", create_on_shutdown(app))
+
+    # EXCEPTIONS
+    setup_exception_handlers(app)
 
     return app
