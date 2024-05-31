@@ -430,7 +430,7 @@ async def test_new_project(
     )
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -456,7 +456,7 @@ async def test_new_project_from_template(
             parse_obj_as(uuidlib.UUID, node_name)
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_other_study(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -531,7 +531,7 @@ async def test_new_project_with_parent(
         assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -585,7 +585,7 @@ async def test_new_project_from_template_with_body(
             parse_obj_as(uuidlib.UUID, node_name)
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_template_from_project(
     client: TestClient,
     logged_user: dict[str, Any],
