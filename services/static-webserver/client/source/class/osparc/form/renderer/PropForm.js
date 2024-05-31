@@ -476,6 +476,16 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         row++;
       }
 
+      const evalRequired = () => {
+        const inputsRequired = this.getNode().getInputsRequired();
+        for (const portId in this.__ctrlLinkMap) {
+          const label = this._getLabelFieldChild(portId).child;
+          label.setRequired(inputsRequired.includes(portId));
+        }
+      }
+      this.getNode().addListener("changeInputsRequired", () => evalRequired());
+      evalRequired();
+
       // add port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         label: this.tr("Input"),
