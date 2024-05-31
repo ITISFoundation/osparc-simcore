@@ -245,12 +245,21 @@ class AuthSession:
 
     @_exception_mapper({})
     async def create_project(
-        self, project: ProjectCreateNew, *, is_hidden: bool
+        self,
+        project: ProjectCreateNew,
+        *,
+        is_hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
         response = await self.client.post(
             "/projects",
             params={"hidden": is_hidden},
+            headers={
+                "X-Simcore-Parent-Project-Uuid": f"{parent_project_uuid}",
+                "X-Simcore-Parent-Node-Id": f"{parent_node_id}",
+            },
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
