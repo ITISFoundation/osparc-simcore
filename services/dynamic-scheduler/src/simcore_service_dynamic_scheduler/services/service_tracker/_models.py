@@ -29,7 +29,7 @@ class TrackedServiceModel:
     requested_sate: UserRequestedState
 
     # set this after parsing the incoming state via the API calls
-    current_state: ServiceStates = ServiceStates.UNKNOWN
+    current_state: ServiceStates = ServiceStates.UNKNOWN  # type: ignore
 
     # stored for debug mainly this is used to compute ``current_state``
     service_status: str = ""
@@ -41,7 +41,8 @@ class TrackedServiceModel:
         self.check_status_after = (arrow.utcnow() + delay).timestamp()
 
     def to_bytes(self) -> bytes:
-        return orjson.dumps(self)
+        result: bytes = orjson.dumps(self)
+        return result
 
     @classmethod
     def from_bytes(cls, json: bytes) -> "TrackedServiceModel":

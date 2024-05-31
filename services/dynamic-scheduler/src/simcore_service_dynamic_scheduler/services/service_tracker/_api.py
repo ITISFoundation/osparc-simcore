@@ -34,12 +34,12 @@ async def _set_requested_state(
 
 async def set_request_as_running(app: FastAPI, node_id: NodeID) -> None:
     """Stores the intention fo the user: ``start`` requested"""
-    await _set_requested_state(app, node_id, UserRequestedState.RUNNING)
+    await _set_requested_state(app, node_id, UserRequestedState.RUNNING)  # type: ignore
 
 
 async def set_request_as_stopped(app: FastAPI, node_id: NodeID) -> None:
     """Stores the intention of the user: ``stop`` requested"""
-    await _set_requested_state(app, node_id, UserRequestedState.STOPPED)
+    await _set_requested_state(app, node_id, UserRequestedState.STOPPED)  # type: ignore
 
 
 def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
