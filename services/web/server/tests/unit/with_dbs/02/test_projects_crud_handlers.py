@@ -486,7 +486,7 @@ async def test_new_project_from_other_study(
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_new_project_with_parent(
+async def test_new_project_with_parent_project_node(
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
