@@ -34,7 +34,6 @@ def bump_version_string(current_version: str, bump: str) -> str:
     return new_version
 
 
-# TODO: from https://github.com/ITISFoundation/osparc-simcore/issues/2409
 # ### versioning
 # a single version number does not suffice. Instead we should have a set of versions that describes "what is inside the container"
 # - service version (following semantic versioning): for the published service
@@ -42,6 +41,7 @@ def bump_version_string(current_version: str, bump: str) -> str:
 # - executable name: the public name of the wrapped program (e.g. matlab)
 # - executable version: the version of the program (e.g. matlab 2020b)
 # - further libraries version dump (e.g. requirements.txt, etc)
+# SEE from https://github.com/ITISFoundation/osparc-simcore/issues/2409
 
 
 class ExecutableVersionInfo(BaseModel):

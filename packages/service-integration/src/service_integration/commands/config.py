@@ -9,7 +9,12 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
+from ..osparc_config import (
+    OSPARC_CONFIG_DIRNAME,
+    DockerComposeOverwriteConfig,
+    MetadataConfig,
+    RuntimeConfig,
+)
 
 
 def create_osparc_specs(
@@ -95,7 +100,7 @@ def main(
 ):
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
-    config_dir = from_spec_file.parent / ".osparc"
+    config_dir = from_spec_file.parent / OSPARC_CONFIG_DIRNAME
     project_cfg_path = config_dir / "docker-compose.overwrite.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"

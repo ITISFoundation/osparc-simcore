@@ -4,6 +4,8 @@ from pathlib import Path
 import typer
 import yaml
 
+from ..osparc_config import OSPARC_CONFIG_DIRNAME
+
 
 def get_input_config(metadata_file: Path) -> dict:
     inputs = {}
@@ -16,7 +18,7 @@ def get_input_config(metadata_file: Path) -> dict:
 
 def main(
     metadata_file: Path = typer.Option(
-        ".osparc/metadata.yml",
+        f"{OSPARC_CONFIG_DIRNAME}/metadata.yml",
         "--metadata",
         help="The metadata yaml of the node",
     ),

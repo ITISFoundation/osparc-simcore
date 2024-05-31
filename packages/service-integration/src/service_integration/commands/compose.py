@@ -10,7 +10,12 @@ from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
+from ..osparc_config import (
+    OSPARC_CONFIG_DIRNAME,
+    DockerComposeOverwriteConfig,
+    MetadataConfig,
+    RuntimeConfig,
+)
 from ..osparc_image_specs import create_image_spec
 from ..settings import AppSettings
 
@@ -128,7 +133,7 @@ def create_docker_compose_image_spec(
 def main(
     ctx: typer.Context,
     config_path: Path = typer.Option(
-        ".osparc",
+        OSPARC_CONFIG_DIRNAME,
         "-m",
         "--metadata",
         help="osparc config file or folder. "

@@ -48,7 +48,7 @@ from .yaml_utils import yaml_safe_load
 
 _logger = logging.getLogger(__name__)
 
-CONFIG_FOLDER_NAME = ".osparc"
+OSPARC_CONFIG_DIRNAME = ".osparc"
 
 
 SERVICE_KEY_FORMATS = {
