@@ -35,6 +35,8 @@ class ServiceRunGet(
     project_name: str
     node_id: NodeID
     node_name: str
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: str

@@ -2962,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -9986,6 +9986,8 @@ components:
       - project_name
       - node_id
       - node_name
+      - root_parent_project_id
+      - root_parent_project_name
       - service_key
       - service_version
       - service_type
@@ -10022,6 +10024,13 @@ components:
           format: uuid
         node_name:
           title: Node Name
+          type: string
+        root_parent_project_id:
+          title: Root Parent Project Id
+          type: string
+          format: uuid
+        root_parent_project_name:
+          title: Root Parent Project Name
           type: string
         service_key:
           title: Service Key
