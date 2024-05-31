@@ -35,7 +35,12 @@ from . import projects_api
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ParentNodeNotFoundError,
+    ParentProjectNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .models import ProjectDict
 from .utils import NodesMap, clone_project_document, default_copy_project_name
 
@@ -351,6 +356,9 @@ async def create_project(
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
+
+    except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     except asyncio.CancelledError:
         log.warning(

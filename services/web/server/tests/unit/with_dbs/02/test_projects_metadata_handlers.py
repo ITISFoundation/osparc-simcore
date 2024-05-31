@@ -159,7 +159,7 @@ async def test_new_project_with_parent_project_node(
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
 
-    # now we set the metadata with another node_id
+    # now we set the metadata with another node_id which shall not override the already set genealogy
     another_node_id = random.choice(  # noqa: S311
         [n for n in parent_project["workbench"] if NodeID(n) != parent_node_id]
     )
@@ -186,6 +186,66 @@ async def test_new_project_with_parent_project_node(
         )
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_new_project_with_invalid_parent_project_node(
+    # for deletion
+    mocked_director_v2_api: None,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    #
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    aiopg_engine: aiopg.sa.Engine,
+    faker: Faker,
+):
+    """this is new way of setting parents by using request headers"""
+    catalog_subsystem_mock([user_project])
+    parent_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
+    assert parent_project
+
+    parent_project_uuid = parse_obj_as(ProjectID, parent_project["uuid"])
+    parent_node_id = parse_obj_as(
+        NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
+    )
+
+    # creating with random project UUID should fail
+    random_project_uuid = parse_obj_as(ProjectID, faker.uuid4())
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.not_found,
+        logged_user,
+        primary_group,
+        parent_project_uuid=random_project_uuid,
+        parent_node_id=parent_node_id,
+    )
+    assert not child_project
+
+    # creating with a random node ID should fail too
+    random_node_id = parse_obj_as(NodeID, faker.uuid4())
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.not_found,
+        logged_user,
+        primary_group,
+        parent_project_uuid=parent_project_uuid,
+        parent_node_id=random_node_id,
+    )
+    assert not child_project
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
