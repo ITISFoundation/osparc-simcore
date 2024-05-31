@@ -19,7 +19,9 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -507,7 +509,10 @@ async def test_new_project_with_parent(
         expected.created,
         logged_user,
         primary_group,
-        from_study=user_project,
+        parent_project_uuid=parse_obj_as(ProjectID, parent_project["uuid"]),
+        parent_node_id=parse_obj_as(
+            NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
+        ),
     )
     assert child_project
 
