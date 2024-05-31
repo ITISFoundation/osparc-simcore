@@ -50,7 +50,11 @@ async def set_project_ancestors(
 ) -> None:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    if parent_node_id is None and (parent_node_idstr := custom_metadata.get("node_id")):
+    if (
+        parent_node_id is None
+        and custom_metadata is not None
+        and (parent_node_idstr := custom_metadata.get("node_id"))
+    ):
         # NOTE: backward compatibility with S4l old client
         parent_node_id = parse_obj_as(NodeID, parent_node_idstr)
 
