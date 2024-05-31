@@ -49,7 +49,7 @@ def docker_compose_overwrite_path(tests_data_dir, tmp_path) -> Path:
 
 @pytest.fixture
 def metadata_file_path(tests_data_dir, tmp_path) -> Path:
-    name = "docker-compose.metadata.yml"
+    name = "metadata.yml"
     dst = shutil.copy(
         src=tests_data_dir / name,
         dst=tmp_path / name,
