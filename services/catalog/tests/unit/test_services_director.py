@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.core.application import init_app
+from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.services.director import DirectorApi
 
 
@@ -26,7 +26,7 @@ def minimal_app(
     monkeypatch.setenv("CATALOG_POSTGRES", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
-    return init_app()
+    return create_app()
 
 
 @pytest.fixture()

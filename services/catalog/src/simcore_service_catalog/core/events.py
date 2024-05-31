@@ -1,9 +1,10 @@
 import logging
-from collections.abc import Callable
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from servicelib.db_async_engine import close_db_connection, connect_to_db
 
+from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..db.events import setup_default_product
 from ..services.director import close_director, setup_director
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
@@ -11,35 +12,35 @@ from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 _logger = logging.getLogger(__name__)
 
 
-def create_start_app_handler(app: FastAPI) -> Callable:
-    async def start_app() -> None:
-        _logger.info("Application started")
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):
 
-        # setup connection to pg db
-        if app.state.settings.CATALOG_POSTGRES:
-            await connect_to_db(app, app.state.settings.CATALOG_POSTGRES)
-            await setup_default_product(app)
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
-        if app.state.settings.CATALOG_DIRECTOR:
-            # setup connection to director
-            await setup_director(app)
+    # setup connection to pg db
+    if app.state.settings.CATALOG_POSTGRES:
+        await connect_to_db(app, app.state.settings.CATALOG_POSTGRES)
+        await setup_default_product(app)
 
-            # FIXME: check director service is in place and ready. Hand-shake??
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
-            await start_registry_sync_task(app)
+    if app.state.settings.CATALOG_DIRECTOR:
+        # setup connection to director
+        await setup_director(app)
 
-    return start_app
+        # FIXME: check director service is in place and ready. Hand-shake??
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
+        await start_registry_sync_task(app)
 
+    _logger.info("Application started")
 
-def create_stop_app_handler(app: FastAPI) -> Callable:
-    async def stop_app() -> None:
-        _logger.info("Application stopping")
-        if app.state.settings.CATALOG_DIRECTOR:
-            try:
-                await stop_registry_sync_task(app)
-                await close_director(app)
-                await close_db_connection(app)
-            except Exception:  # pylint: disable=broad-except
-                _logger.exception("Unexpected error while closing application")
+    yield
 
-    return stop_app
+    _logger.info("Application stopping")
+    if app.state.settings.CATALOG_DIRECTOR:
+        try:
+            await stop_registry_sync_task(app)
+            await close_director(app)
+            await close_db_connection(app)
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception("Unexpected error while closing application")
+
+    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

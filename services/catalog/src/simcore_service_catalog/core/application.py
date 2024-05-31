@@ -1,43 +1,32 @@
 import logging
-import time
-from collections.abc import Callable
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.logging_utils import config_all_loggers
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import (
-    API_VERSION,
-    API_VTAG,
-    APP_FINISHED_BANNER_MSG,
-    APP_STARTED_BANNER_MSG,
-    PROJECT_NAME,
-    SUMMARY,
-)
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
-from .events import create_start_app_handler, create_stop_app_handler
+from .events import app_lifespan
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
-def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
+
     assert settings  # nosec
-    logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
-    logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
-    config_all_loggers(settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED)
     _logger.debug(settings.json(indent=2))
 
     app = FastAPI(
@@ -49,6 +38,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
+        lifespan=app_lifespan,
     )
     override_fastapi_openapi_method(app)
 
@@ -64,41 +54,22 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.CATALOG_PROFILING:
         app.add_middleware(ProfilerMiddleware)
 
-    # EVENTS
-    async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-
-    async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("startup", create_start_app_handler(app))
-
-    app.add_event_handler("shutdown", create_stop_app_handler(app))
-    app.add_event_handler("shutdown", _on_shutdown)
-
     # EXCEPTIONS
     setup_exception_handlers(app)
+
+    # MIDDLEWARES
+    # middleware to time requests (ONLY for development)
+    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+        app.add_middleware(
+            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
+        )
+
+    app.add_middleware(GZipMiddleware)
 
     # ROUTES
     # healthcheck at / and at /v0/
     app.include_router(health_router)
     # api under /v*
     app.include_router(api_router, prefix=f"/{API_VTAG}")
-
-    # MIDDLEWARES
-    # middleware to time requests (ONLY for development)
-    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
-
-        async def _add_process_time_header(request: Request, call_next: Callable):
-            start_time = time.time()
-            response = await call_next(request)
-            process_time = time.time() - start_time
-            response.headers["X-Process-Time"] = str(process_time)
-            return response
-
-        app.add_middleware(BaseHTTPMiddleware, dispatch=_add_process_time_header)
-
-    app.add_middleware(GZipMiddleware)
 
     return app

@@ -22,7 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_service_catalog.core.application import init_app
+from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.db.tables import (
     groups,
     services_access_rights,
@@ -82,7 +82,7 @@ def app(
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
-    return init_app()
+    return create_app()
 
 
 @pytest.fixture
