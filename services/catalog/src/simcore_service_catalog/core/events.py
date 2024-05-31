@@ -8,12 +8,12 @@ from ..db.events import setup_default_product
 from ..services.director import close_director, setup_director
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
-        logger.info("Application started")
+        _logger.info("Application started")
 
         # setup connection to pg db
         if app.state.settings.CATALOG_POSTGRES:
@@ -33,15 +33,13 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
 def create_stop_app_handler(app: FastAPI) -> Callable:
     async def stop_app() -> None:
-        logger.info("Application stopping")
+        _logger.info("Application stopping")
         if app.state.settings.CATALOG_DIRECTOR:
             try:
                 await stop_registry_sync_task(app)
                 await close_director(app)
                 await close_db_connection(app)
             except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Unexpected error while closing application", exc_info=True
-                )
+                _logger.exception("Unexpected error while closing application")
 
     return stop_app
