@@ -169,15 +169,18 @@ def monkeypatch_setenv_from_app_config(
 
 
 @pytest.fixture
-def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
+async def request_create_project() -> (  # noqa: C901, PLR0915
+    AsyncIterator[Callable[..., Awaitable[ProjectDict]]]
+):
     """this fixture allows to create projects through the webserver interface
-
-        NOTE: a next iteration should take care of cleaning up created projects
 
     Returns:
         Callable[..., Awaitable[ProjectDict]]: _description_
     """
     # pylint: disable=too-many-statements
+
+    created_project_uuids = []
+    used_clients = []
 
     async def _setup(
         client: TestClient,
@@ -358,6 +361,14 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 
+        created_project_uuids.append(new_project["uuid"])
+        used_clients.append(client)
+
         return new_project
 
-    return _creator
+    yield _creator
+
+    # cleanup projects
+    for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
+        url = client.app.router["delete_project"].url_for(project_id=project_uuid)
+        await client.delete(url.path)
