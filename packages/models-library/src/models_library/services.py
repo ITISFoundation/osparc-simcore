@@ -1,10 +1,11 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, ClassVar, Final, TypeAlias
 from uuid import uuid4
 
 import arrow
+import pydantic
 from pydantic import (
     BaseModel,
     ConstrainedStr,
@@ -480,12 +481,95 @@ ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]
 ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]
 
 
+_EXAMPLE = {
+    "name": "oSparc Python Runner",
+    "key": "simcore/services/comp/osparc-python-runner",
+    "type": "computational",
+    "integration-version": "1.0.0",
+    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
+    "version": "1.7.0",
+    "description": "oSparc Python Runner",
+    "contact": "smith@company.com",
+    "authors": [
+        {
+            "name": "John Smith",
+            "email": "smith@company.com",
+            "affiliation": "Company",
+        },
+        {
+            "name": "Richard Brown",
+            "email": "brown@uni.edu",
+            "affiliation": "University",
+        },
+    ],
+    "inputs": {
+        "input_1": {
+            "displayOrder": 1,
+            "label": "Input data",
+            "description": "Any code, requirements or data file",
+            "type": "data:*/*",
+        }
+    },
+    "outputs": {
+        "output_1": {
+            "displayOrder": 1,
+            "label": "Output data",
+            "description": "All data produced by the script is zipped as output_data.zip",
+            "type": "data:*/*",
+            "fileToKeyMap": {"output_data.zip": "output_1"},
+        }
+    },
+}
+
+_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
+    **_EXAMPLE,
+    "inputs": {
+        "input_1": {
+            "label": "Input data",
+            "description": "Any code, requirements or data file",
+            "type": "data:*/*",
+        }
+    },
+    "outputs": {
+        "output_1": {
+            "label": "Output data",
+            "description": "All data produced by the script is zipped as output_data.zip",
+            "type": "data:*/*",
+            "fileToKeyMap": {"output_data.zip": "output_1"},
+        }
+    },
+    "boot-options": {
+        "example_service_defined_boot_mode": BootOption.Config.schema_extra["examples"][
+            0
+        ],
+        "example_service_defined_theme_selection": BootOption.Config.schema_extra[
+            "examples"
+        ][1],
+    },
+    "min-visible-inputs": 2,
+}
+
+
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     """
     Static metadata for a service injected in the image labels
 
-    This is one to one with node-meta-v0.0.1.json
+    NOTE: This model serialized in .osparc/metadata.yml and in the labels of the docker image
     """
+
+    version_display: str | None = Field(
+        None,
+        description="A user-friendly or marketing name for the release."
+        " This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.'"
+        " This name is not used for version comparison but is useful for communication and documentation purposes.",
+    )
+
+    release_date: date | None = Field(
+        None,
+        description="The date when the specific version of the service was released."
+        " This field helps in tracking the timeline of releases and understanding the sequence of updates."
+        " The date should be formatted in YYYY-MM-DD format for consistency and easy sorting.",
+    )
 
     integration_version: str | None = Field(
         None,
@@ -537,102 +621,21 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         description="regexp pattern for detecting computational service's progress",
     )
 
-    class Config:
+    class Config(pydantic.BaseConfig):
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
-        frozen = False  # it inherits from ServiceKeyVersion.
+        frozen = False  # overrides config from ServiceKeyVersion.
+        allow_population_by_field_name = True
 
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {
-                    "name": "oSparc Python Runner",
-                    "key": "simcore/services/comp/osparc-python-runner",
-                    "type": "computational",
-                    "integration-version": "1.0.0",
-                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
-                    "version": "1.7.0",
-                    "description": "oSparc Python Runner",
-                    "contact": "smith@company.com",
-                    "authors": [
-                        {
-                            "name": "John Smith",
-                            "email": "smith@company.com",
-                            "affiliation": "Company",
-                        },
-                        {
-                            "name": "Richard Brown",
-                            "email": "brown@uni.edu",
-                            "affiliation": "University",
-                        },
-                    ],
-                    "inputs": {
-                        "input_1": {
-                            "displayOrder": 1,
-                            "label": "Input data",
-                            "description": "Any code, requirements or data file",
-                            "type": "data:*/*",
-                        }
-                    },
-                    "outputs": {
-                        "output_1": {
-                            "displayOrder": 1,
-                            "label": "Output data",
-                            "description": "All data produced by the script is zipped as output_data.zip",
-                            "type": "data:*/*",
-                            "fileToKeyMap": {"output_data.zip": "output_1"},
-                        }
-                    },
-                },
+                _EXAMPLE,
+                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
                 # latest
                 {
-                    "name": "oSparc Python Runner",
-                    "key": "simcore/services/comp/osparc-python-runner",
-                    "type": "computational",
-                    "integration-version": "1.0.0",
-                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
-                    "version": "1.7.0",
-                    "description": "oSparc Python Runner with boot options",
-                    "contact": "smith@company.com",
-                    "authors": [
-                        {
-                            "name": "John Smith",
-                            "email": "smith@company.com",
-                            "affiliation": "Company",
-                        },
-                        {
-                            "name": "Richard Brown",
-                            "email": "brown@uni.edu",
-                            "affiliation": "University",
-                        },
-                    ],
-                    "inputs": {
-                        "input_1": {
-                            "label": "Input data",
-                            "description": "Any code, requirements or data file",
-                            "type": "data:*/*",
-                        }
-                    },
-                    "outputs": {
-                        "output_1": {
-                            "label": "Output data",
-                            "description": "All data produced by the script is zipped as output_data.zip",
-                            "type": "data:*/*",
-                            "fileToKeyMap": {"output_data.zip": "output_1"},
-                        }
-                    },
-                    "boot-options": {
-                        "example_service_defined_boot_mode": BootOption.Config.schema_extra[
-                            "examples"
-                        ][
-                            0
-                        ],
-                        "example_service_defined_theme_selection": BootOption.Config.schema_extra[
-                            "examples"
-                        ][
-                            1
-                        ],
-                    },
-                    "min-visible-inputs": 2,
+                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                    "version_display": "Matterhorn ",
+                    "release_date": "2024-05-30",
                 },
             ]
         }
