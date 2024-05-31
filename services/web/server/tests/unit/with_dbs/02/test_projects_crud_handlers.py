@@ -13,6 +13,8 @@ from http import HTTPStatus
 from math import ceil
 from typing import Any
 
+import aiopg
+import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
@@ -38,6 +40,9 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_projects_metadata import (
+    get as get_db_project_metadata,
+)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups.api import (
@@ -491,6 +496,7 @@ async def test_new_project_with_parent(
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
+    aiopg_engine: aiopg.sa.Engine,
 ):
     catalog_subsystem_mock([user_project])
     parent_project = await request_create_project(
@@ -515,6 +521,14 @@ async def test_new_project_with_parent(
         ),
     )
     assert child_project
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
+        )
+        assert project_db_metadata.parent_project_uuid == ProjectID(
+            parent_project["uuid"]
+        )
+        assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
 
 
 @pytest.mark.parametrize(*standard_role_response())
