@@ -204,9 +204,8 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       label.setValue(newLabel);
 
-      // add tooltip to the label
-      const toolTipText = this.tr("Required input: without it, the service will not start/run.");
-      const toolTipSuffix = "<br>" + toolTipText;
+      // add "required" text to the label's tooltip
+      const toolTipSuffix = "<br>" + this.tr("Required input: without it, the service will not start/run.");
       let newToolTip = label.getToolTipText();
       newToolTip = newToolTip.replace(toolTipSuffix, "");
       if (inputsRequired.includes(portId)) {
@@ -214,12 +213,14 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       label.setToolTipText(newToolTip);
 
-      // add tooltip to the field
-      const field = this._getCtrlFieldChild(portId).child;
-      field.getContentElement().removeAttribute("title");
+      // add "required" text to the description
+      const infoButton = this._getInfoFieldChild(portId).child;
+      let newHintText = infoButton.getHintText();
+      newHintText = newHintText.replace(toolTipSuffix, "");
       if (inputsRequired.includes(portId)) {
-        field.getContentElement().setAttribute("title", toolTipText);
+        newHintText += toolTipSuffix;
       }
+      infoButton.setHintText(newHintText);
     },
 
     getChangedXUnits: function() {
