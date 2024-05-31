@@ -13,7 +13,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class DirectorSettings(BaseCustomSettings):
