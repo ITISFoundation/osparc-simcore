@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from service_integration import __version__
 

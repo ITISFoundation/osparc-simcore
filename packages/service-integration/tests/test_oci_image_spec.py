@@ -30,7 +30,7 @@ def test_create_annotations_from_metadata(tests_data_dir: Path):
     meta_cfg = MetaConfig.from_yaml(tests_data_dir / "metadata.yml")
 
     # map io_spec to OCI image-spec
-    oic_image_spec = OciImageSpecAnnotations(
+    OciImageSpecAnnotations(
         authors=", ".join([f"{a.name} ({a.email})" for a in meta_cfg.authors])
     )
 

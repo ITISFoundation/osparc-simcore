@@ -305,7 +305,8 @@ class ConfigFilesStructure:
         if not found:
             raise ConfigNotFound(basedir=start_dir)
 
-        raise NotImplementedError("TODO")
+        msg = "TODO"
+        raise NotImplementedError(msg)
 
         # TODO:
         # scenarios:

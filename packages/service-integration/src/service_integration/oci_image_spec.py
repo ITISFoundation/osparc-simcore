@@ -153,5 +153,4 @@ class LabelSchemaAnnotations(BaseModel):
             set(self.__fields__.keys())
         )  # nosec
 
-        oci_data = {_TO_OCI[key]: value for key, value in convertable_data.items()}
-        return oci_data
+        return {_TO_OCI[key]: value for key, value in convertable_data.items()}

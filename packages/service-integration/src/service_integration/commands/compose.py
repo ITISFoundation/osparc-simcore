@@ -20,10 +20,7 @@ error_console = Console(stderr=True)
 def _run_git(*args) -> str:
     """:raises CalledProcessError"""
     return subprocess.run(  # nosec
-        [
-            "git",
-        ]
-        + list(args),
+        ["git", *list(args)],
         capture_output=True,
         encoding="utf8",
         check=True,
@@ -88,7 +85,8 @@ def create_docker_compose_image_spec(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
         )
         if not oci_spec:
-            raise ValueError("Undefined OCI image spec")
+            msg = "Undefined OCI image spec"
+            raise ValueError(msg)
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
         extra_labels.update(oci_labels)
@@ -118,15 +116,13 @@ def create_docker_compose_image_spec(
         "config", "--get", "remote.origin.url"
     )
 
-    compose_spec = create_image_spec(
+    return create_image_spec(
         settings,
         meta_cfg,
         docker_compose_overwrite_cfg,
         runtime_cfg,
         extra_labels=extra_labels,
     )
-
-    return compose_spec
 
 
 def main(
@@ -149,7 +145,8 @@ def main(
 
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
-        raise typer.BadParameter("Invalid path to metadata file or folder")
+        msg = "Invalid path to metadata file or folder"
+        raise typer.BadParameter(msg)
 
     if config_path.is_dir():
         # equivalent to 'basedir/**/metadata.yml'
@@ -162,7 +159,7 @@ def main(
 
     configs_kwargs_map: dict[str, dict[str, Path]] = {}
 
-    for meta_config in sorted(list(basedir.rglob(config_pattern))):
+    for meta_config in sorted(basedir.rglob(config_pattern)):
         config_name = meta_config.parent.name
         configs_kwargs_map[config_name] = {}
 

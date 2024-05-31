@@ -54,9 +54,7 @@ json_input=$INPUT_FOLDER/inputs.json
             filename = input_key
             if "fileToKeyMap" in input_value and len(input_value["fileToKeyMap"]) > 0:
                 filename, _ = next(iter(input_value["fileToKeyMap"].items()))
-            input_script.append(
-                f"{str(input_key).upper()}=$INPUT_FOLDER/{str(filename)}"
-            )
+            input_script.append(f"{str(input_key).upper()}=$INPUT_FOLDER/{filename!s}")
             input_script.append(f"export {str(input_key).upper()}")
         else:
             input_script.append(

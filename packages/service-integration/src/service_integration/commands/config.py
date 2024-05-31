@@ -53,11 +53,12 @@ def create_osparc_specs(
                         labels = dict(item.strip().split("=") for item in build_labels)
                     elif isinstance(build_labels, dict):
                         labels = build_labels
-                    elif labels__root__ := getattr(build_labels, "__root__"):
+                    elif labels__root__ := build_labels.__root__:
                         assert isinstance(labels__root__, dict)  # nosec
                         labels = labels__root__
                     else:
-                        raise ValueError(f"Invalid build labels {build_labels}")
+                        msg = f"Invalid build labels {build_labels}"
+                        raise ValueError(msg)
 
                     meta_cfg = MetaConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)

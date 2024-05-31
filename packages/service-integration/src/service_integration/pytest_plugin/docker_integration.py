@@ -8,10 +8,10 @@ import os
 import shutil
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
-from typing import Iterator
 
 import docker
 import jsonschema
@@ -119,11 +119,10 @@ def host_folders(temporary_path: Path) -> dict:
 @pytest.fixture
 def container_variables() -> dict:
     # of type INPUT_FOLDER=/home/scu/data/input
-    env = {
+    return {
         f"{str(folder).upper()}_FOLDER": (_CONTAINER_FOLDER / folder).as_posix()
         for folder in _FOLDER_NAMES
     }
-    return env
 
 
 @pytest.fixture
@@ -224,7 +223,7 @@ def assert_container_runs(
         list_of_files = [
             x.name
             for x in validation_folders[folder].iterdir()
-            if not ".gitkeep" in x.name
+            if ".gitkeep" not in x.name
         ]
         for file_name in list_of_files:
             assert Path(
@@ -244,14 +243,12 @@ def assert_container_runs(
             continue
         # test if the generated files are the ones expected
         list_of_files = [
-            x.name for x in host_folders[folder].iterdir() if not ".gitkeep" in x.name
+            x.name for x in host_folders[folder].iterdir() if ".gitkeep" not in x.name
         ]
         for file_name in list_of_files:
             assert Path(
                 validation_folders[folder] / file_name
-            ).exists(), "{} is not present in {}".format(
-                file_name, validation_folders[folder]
-            )
+            ).exists(), f"{file_name} is not present in {validation_folders[folder]}"
         _, _, errors = filecmp.cmpfiles(
             host_folders[folder],
             validation_folders[folder],
@@ -274,7 +271,7 @@ def assert_container_runs(
     for key, value in io_simcore_labels["outputs"].items():
         assert "type" in value
         # rationale: files are on their own and other types are in inputs.json
-        if not "data:" in value["type"]:
+        if "data:" not in value["type"]:
             # check that keys are available
             assert key in output_cfg
         else:

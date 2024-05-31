@@ -19,7 +19,7 @@ def create_image_spec(
     docker_compose_overwrite_cfg: DockerComposeOverwriteCfg,
     runtime_cfg: RuntimeConfig | None = None,
     *,
-    extra_labels: dict[str, str] = None,
+    extra_labels: dict[str, str] | None = None,
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
@@ -46,10 +46,9 @@ def create_image_spec(
     )
     build_spec = BuildItem(**overwrite_options)
 
-    compose_spec = ComposeSpecification(
+    return ComposeSpecification(
         version=settings.COMPOSE_VERSION,
         services={
             service_name: Service(image=meta_cfg.image_name(settings), build=build_spec)
         },
     )
-    return compose_spec
