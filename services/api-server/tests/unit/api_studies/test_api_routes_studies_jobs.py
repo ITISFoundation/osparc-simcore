@@ -24,6 +24,8 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import Study, StudyID
 
+_faker = Faker()
+
 
 @pytest.mark.xfail(reason="Still not implemented")
 @pytest.mark.acceptance_test(
@@ -188,6 +190,10 @@ async def test_start_stop_delete_study_job(
     _check_response(response, status.HTTP_204_NO_CONTENT)
 
 
+@pytest.mark.parametrize(
+    "parent_node_id, parent_project_id",
+    [(_faker.uuid4(), _faker.uuid4()), (None, None)],
+)
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
@@ -198,6 +204,8 @@ async def test_create_study_job(
     project_tests_dir: Path,
     fake_study_id: UUID,
     hidden: bool,
+    parent_project_id: UUID | None,
+    parent_node_id: UUID | None,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -216,12 +224,23 @@ async def test_create_study_job(
             assert project_id is not None
             assert project_id in name
         if capture.method == "POST":
+            # test hidden boolean
             _default_side_effect.post_called = True
             query_dict = dict(
                 elm.split("=") for elm in request.url.query.decode().split("&")
             )
             _hidden = query_dict.get("hidden")
             assert _hidden == ("true" if hidden else "false")
+
+            # test parent project and node ids
+            if parent_project_id is not None:
+                assert f"{parent_project_id}" == dict(request.headers).get(
+                    "x-simcore-parent-project-uuid"
+                )
+            if parent_node_id is not None:
+                assert f"{parent_node_id}" == dict(request.headers).get(
+                    "x-simcore-parent-node-id"
+                )
         return capture.response_body
 
     _default_side_effect.patch_called = False
@@ -236,9 +255,15 @@ async def test_create_study_job(
         side_effects_callbacks=[_default_side_effect] * 5,
     )
 
+    header_dict = {}
+    if parent_project_id is not None:
+        header_dict["X-Simcore-Parent-Project-Uuid"] = f"{parent_project_id}"
+    if parent_node_id is not None:
+        header_dict["X-Simcore-Parent-Node-Id"] = f"{parent_node_id}"
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
+        headers=header_dict,
         params={"hidden": f"{hidden}"},
         json={"values": {}},
     )

@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from typing import TypedDict
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import httpx
 import jinja2
@@ -16,6 +16,8 @@ from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCapture
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from starlette import status
+
+_faker = Faker()
 
 
 class MockedBackendApiDict(TypedDict):
@@ -160,7 +162,8 @@ async def test_create_and_delete_solver_job(
 
 
 @pytest.mark.parametrize(
-    "parent_node_id, parent_project_id", [(uuid4(), uuid4()), (None, None)]
+    "parent_node_id, parent_project_id",
+    [(_faker.uuid4(), _faker.uuid4()), (None, None)],
 )
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_job(
@@ -185,7 +188,7 @@ async def test_create_job(
         _hidden = query.get("hidden")
         assert _hidden == ("true" if hidden else "false")
 
-        # check parent project id
+        # check parent project and node id
         if parent_project_id is not None:
             assert f"{parent_project_id}" == dict(request.headers).get(
                 "x-simcore-parent-project-uuid"
