@@ -641,7 +641,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         }
 
 
-class ServiceMetaData(_BaseServiceCommonDataModel):
+class BaseServiceMetaData(_BaseServiceCommonDataModel):
     # Overrides all fields of _BaseServiceCommonDataModel:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
