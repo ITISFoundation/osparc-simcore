@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.requests import Request
@@ -20,6 +20,8 @@ from ...services.director import DirectorApi
 from ...services.function_services import get_function_service, is_function_service
 from .database import get_repository
 from .director import get_director_api
+
+_logger = logging.getLogger(__name__)
 
 
 def get_default_service_resources(request: Request) -> ResourcesDict:
@@ -43,8 +45,12 @@ async def check_service_read_access(
     user_id: int,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
     x_simcore_products_name: str = Header(None),
 ) -> AccessInfo:
     # get the user's groups
@@ -74,13 +80,10 @@ async def check_service_read_access(
     )
 
 
-logger = logging.getLogger(__name__)
-
-
 async def get_service_from_registry(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: DirectorApi = Depends(get_director_api),
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
 ) -> ServiceGet:
     """
     Retrieves service metadata from the docker registry via the director
@@ -105,7 +108,7 @@ async def get_service_from_registry(
         return service
 
     except ValidationError as exc:
-        logger.warning(
+        _logger.warning(
             "Invalid service metadata in registry. Audit registry data for %s %s",
             f"{service_key=}",
             f"{service_version=}",
