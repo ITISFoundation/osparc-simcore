@@ -262,10 +262,23 @@ class AuthSession:
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
+    async def clone_project(
+        self,
+        *,
+        project_id: UUID,
+        hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
+    ) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
         response = await self.client.post(
-            "/projects", cookies=self.session_cookies, params=query
+            "/projects",
+            cookies=self.session_cookies,
+            params=query,
+            headers={
+                "X-Simcore-Parent-Project-Uuid": f"{parent_project_uuid}",
+                "X-Simcore-Parent-Node-Id": f"{parent_node_id}",
+            },
         )
         response.raise_for_status()
         data = Envelope[TaskGet].parse_raw(response.text).data

@@ -2,13 +2,15 @@ import logging
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
+from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
+from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 
@@ -82,11 +84,18 @@ async def create_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
+    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
+    x_simcore_parent_node_id: NodeID | None = Header(default=None),
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI
     """
-    project = await webserver_api.clone_project(project_id=study_id, hidden=hidden)
+    project = await webserver_api.clone_project(
+        project_id=study_id,
+        hidden=hidden,
+        parent_project_uuid=x_simcore_parent_project_uuid,
+        parent_node_id=x_simcore_parent_node_id,
+    )
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
     )
