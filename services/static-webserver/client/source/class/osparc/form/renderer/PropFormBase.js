@@ -129,8 +129,9 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           let newLabel = label.getValue();
           newLabel = newLabel.replace(requiredSuffix, "");
           if (required) {
-            label.setValue(newLabel + requiredSuffix);
+            newLabel += requiredSuffix;
           }
+          label.setValue(newLabel);
         }
         label.set({
           rich: false, // override, required for showing the cut off ellipses
