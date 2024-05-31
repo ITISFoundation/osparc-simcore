@@ -141,8 +141,11 @@ rich==13.4.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   typer
 setuptools==69.2.0
     # via jsonschema
+shellingham==1.5.4
+    # via typer
 six==1.16.0
     # via
     #   jsonschema
@@ -160,7 +163,7 @@ starlette==0.27.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-typer==0.6.1
+typer==0.12.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -168,6 +171,7 @@ typing-extensions==4.4.0
     # via
     #   aiodocker
     #   pydantic
+    #   typer
 uvicorn==0.19.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in

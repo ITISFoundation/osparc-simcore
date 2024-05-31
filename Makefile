@@ -41,6 +41,7 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
+	efs-guardian \
 	invitations \
   migration \
 	osparc-gateway-server \
