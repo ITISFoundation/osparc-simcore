@@ -205,7 +205,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       label.setValue(newLabel);
 
       // add tooltip
-      const toolTipSuffix = "<br>REQUIRED";
+      const toolTipSuffix = this.tr("<br>Required input: Without it, the service will not start/run.");
       let newToolTip = label.getToolTipText();
       newToolTip = newToolTip.replace(toolTipSuffix, "");
       if (inputsRequired.includes(portId)) {
