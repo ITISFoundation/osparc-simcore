@@ -5,7 +5,6 @@ from typing import Any, ClassVar, Final, TypeAlias
 from uuid import uuid4
 
 import arrow
-import pydantic
 from pydantic import (
     BaseModel,
     ConstrainedStr,
@@ -621,7 +620,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         description="regexp pattern for detecting computational service's progress",
     )
 
-    class Config(pydantic.BaseConfig):
+    class Config:
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
         frozen = False  # overrides config from ServiceKeyVersion.
