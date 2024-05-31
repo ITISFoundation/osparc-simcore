@@ -420,8 +420,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const node = this.getNode();
       const inputRequiredBtn = new qx.ui.menu.Button();
       const evalButton = () => {
-        const inputsRequired = node.getInputsRequired();
-        if (inputsRequired.includes(portId)) {
+        if (node.getInputsRequired().includes(portId)) {
           inputRequiredBtn.set({
             icon: "@FontAwesome5Regular/check-square/12",
             label: this.tr("Input Required")
@@ -448,6 +447,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        const portId = item.key;
 
         const fieldOpts = this.__createLinkUnlinkStack(item);
         if (fieldOpts) {
@@ -457,10 +457,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         }
 
-        this.__createDropMechanism(item, item.key);
+        this.__createDropMechanism(item, portId);
 
         // Notify focus and focus out
-        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+        const msgDataFn = (nodeId, pId) => this.__arePortsCompatible(nodeId, pId, this.getNode().getNodeId(), item.key);
 
         item.addListener("focus", () => {
           if (this.getNode()) {
