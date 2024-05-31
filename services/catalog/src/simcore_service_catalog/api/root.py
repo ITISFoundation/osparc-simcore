@@ -18,23 +18,24 @@ router.include_router(health.router)
 # API
 router.include_router(meta.router, tags=["meta"], prefix="/meta")
 
-SERVICE_PREFIX = "/services"
-SERVICE_TAGS: list[str | Enum] = [
+_SERVICE_PREFIX = "/services"
+_SERVICE_TAGS: list[str | Enum] = [
     "services",
 ]
 
-router.include_router(
-    services_resources.router, tags=SERVICE_TAGS, prefix=SERVICE_PREFIX
-)
-router.include_router(
-    services_specifications.router, tags=SERVICE_TAGS, prefix=SERVICE_PREFIX
-)
-
-router.include_router(services_ports.router, tags=SERVICE_TAGS, prefix=SERVICE_PREFIX)
 
 router.include_router(
-    services_access_rights.router, tags=SERVICE_TAGS, prefix=SERVICE_PREFIX
+    services_resources.router, tags=_SERVICE_TAGS, prefix=_SERVICE_PREFIX
+)
+router.include_router(
+    services_specifications.router, tags=_SERVICE_TAGS, prefix=_SERVICE_PREFIX
+)
+
+router.include_router(services_ports.router, tags=_SERVICE_TAGS, prefix=_SERVICE_PREFIX)
+
+router.include_router(
+    services_access_rights.router, tags=_SERVICE_TAGS, prefix=_SERVICE_PREFIX
 )
 
 # NOTE: that this router must come after resources/specifications/ports/access_rights
-router.include_router(services.router, tags=SERVICE_TAGS, prefix=SERVICE_PREFIX)
+router.include_router(services.router, tags=_SERVICE_TAGS, prefix=_SERVICE_PREFIX)
