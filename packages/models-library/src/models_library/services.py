@@ -522,6 +522,7 @@ _EXAMPLE = {
 
 _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
     **_EXAMPLE,
+    "description": "oSparc Python Runner with boot options",
     "inputs": {
         "input_1": {
             "label": "Input data",
