@@ -634,7 +634,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                 # latest
                 {
                     **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
-                    "version_display": "Matterhorn ",
+                    "version_display": "Matterhorn Release",
                     "release_date": "2024-05-30",
                 },
             ]
