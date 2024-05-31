@@ -89,8 +89,8 @@ async def create_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
-    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ):
     """Creates a job in a specific release with given inputs.
 

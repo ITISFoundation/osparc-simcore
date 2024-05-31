@@ -4,6 +4,7 @@
 
 from pathlib import Path
 from typing import TypedDict
+from uuid import UUID, uuid4
 
 import httpx
 import jinja2
@@ -158,6 +159,9 @@ async def test_create_and_delete_solver_job(
     # Run a job and delete when finished
 
 
+@pytest.mark.parametrize(
+    "parent_node_id, parent_project_id", [(uuid4(), uuid4()), (None, None)]
+)
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_job(
     auth: httpx.BasicAuth,
@@ -166,6 +170,8 @@ async def test_create_job(
     solver_version: str,
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
     hidden: bool,
+    parent_project_id: UUID | None,
+    parent_node_id: UUID | None,
 ):
 
     mock_webserver_router = (
@@ -174,9 +180,20 @@ async def test_create_job(
     callback = mock_webserver_router["create_projects"].side_effect
 
     def create_project_side_effect(request: httpx.Request):
+        # check `hidden` bool
         query = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
         _hidden = query.get("hidden")
         assert _hidden == ("true" if hidden else "false")
+
+        # check parent project id
+        if parent_project_id is not None:
+            assert f"{parent_project_id}" == dict(request.headers).get(
+                "x-simcore-parent-project-uuid"
+            )
+        if parent_node_id is not None:
+            assert f"{parent_node_id}" == dict(request.headers).get(
+                "x-simcore-parent-node-id"
+            )
         return callback(request)
 
     mock_webserver_router = (
@@ -185,10 +202,16 @@ async def test_create_job(
     mock_webserver_router["create_projects"].side_effect = create_project_side_effect
 
     # create Job
+    header_dict = {}
+    if parent_project_id is not None:
+        header_dict["X-Simcore-Parent-Project-Uuid"] = f"{parent_project_id}"
+    if parent_node_id is not None:
+        header_dict["X-Simcore-Parent-Node-Id"] = f"{parent_node_id}"
     resp = await client.post(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         params={"hidden": f"{hidden}"},
+        headers=header_dict,
         json=JobInputs(
             values={
                 "x": 3.14,
