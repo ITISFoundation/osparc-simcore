@@ -37,6 +37,10 @@ _TO_OCI = {
 }
 
 
+def _underscore_as_dot(field_name: str):
+    return field_name.replace("_", ".")
+
+
 class OciImageSpecAnnotations(BaseModel):
     # TODO: review and polish constraints
 
@@ -98,7 +102,7 @@ class OciImageSpecAnnotations(BaseModel):
     )
 
     class Config:
-        alias_generator = lambda field_name: field_name.replace("_", ".")
+        alias_generator = _underscore_as_dot
         allow_population_by_field_name = True
         extra = Extra.forbid
 

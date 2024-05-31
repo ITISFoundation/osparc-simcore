@@ -9,8 +9,8 @@ import yaml
 from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service
 from service_integration.osparc_config import (
-    DockerComposeOverwriteCfg,
-    MetaConfig,
+    DockerComposeOverwriteConfig,
+    MetadataConfig,
     RuntimeConfig,
 )
 from service_integration.osparc_image_specs import create_image_spec
@@ -27,10 +27,10 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
     # image-spec for devel, prod, ...
 
     # load & parse osparc configs
-    docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+    docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
         tests_data_dir / "docker-compose.overwrite.yml"
     )
-    meta_cfg = MetaConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
+    meta_cfg = MetadataConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
     runtime_cfg = RuntimeConfig.from_yaml(tests_data_dir / "runtime.yml")
     assert runtime_cfg.callbacks_mapping is not None
 

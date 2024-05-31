@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from ..osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
 
 
 def create_osparc_specs(
@@ -60,11 +60,11 @@ def create_osparc_specs(
                         msg = f"Invalid build labels {build_labels}"
                         raise ValueError(msg)
 
-                    meta_cfg = MetaConfig.from_labels_annotations(labels)
+                    meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
 
                     docker_compose_overwrite_cfg = (
-                        DockerComposeOverwriteCfg.create_default(
+                        DockerComposeOverwriteConfig.create_default(
                             service_name=meta_cfg.service_name()
                         )
                     )

@@ -490,15 +490,10 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     integration_version: str | None = Field(
         None,
         alias="integration-version",
-        description="integration version number",
+        description="Defines which version of the integration workflow should use",
         regex=VERSION_RE,
-        examples=["1.0.0"],
     )
-    progress_regexp: str | None = Field(
-        None,
-        alias="progress_regexp",
-        description="regexp pattern for detecting computational service's progress",
-    )
+
     service_type: ServiceType = Field(
         ...,
         alias="type",
@@ -526,6 +521,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         alias="boot-options",
         description="Service defined boot options. These get injected in the service as env variables.",
     )
+
     min_visible_inputs: NonNegativeInt | None = Field(
         None,
         alias="min-visible-inputs",
@@ -533,6 +529,12 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
             "The number of 'data type inputs' displayed by default in the UI. "
             "When None all 'data type inputs' are displayed."
         ),
+    )
+
+    progress_regexp: str | None = Field(
+        None,
+        alias="progress_regexp",
+        description="regexp pattern for detecting computational service's progress",
     )
 
     class Config:

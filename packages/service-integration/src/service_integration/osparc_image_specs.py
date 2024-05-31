@@ -9,14 +9,14 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from .osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
 from .settings import AppSettings
 
 
 def create_image_spec(
     settings: AppSettings,
-    meta_cfg: MetaConfig,
-    docker_compose_overwrite_cfg: DockerComposeOverwriteCfg,
+    meta_cfg: MetadataConfig,
+    docker_compose_overwrite_cfg: DockerComposeOverwriteConfig,
     runtime_cfg: RuntimeConfig | None = None,
     *,
     extra_labels: dict[str, str] | None = None,

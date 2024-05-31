@@ -8,7 +8,7 @@ integrates with osparc.
     - config should provide enough information about that context to allow
         - build an image
         - run an container
-    on a single command call.
+      on a single command call.
     -
 """
 
@@ -43,7 +43,7 @@ from pydantic.fields import Field
 from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
-from .errors import ConfigNotFound
+from .errors import ConfigNotFoundError
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
@@ -64,14 +64,14 @@ SERVICE_KEY_FORMATS = {
 #
 
 
-class DockerComposeOverwriteCfg(ComposeSpecification):
-    """picks up configurations used to overwrite the docker-compuse output"""
+class DockerComposeOverwriteConfig(ComposeSpecification):
+    """Content of docker-compose.overwrite.yml configuration file"""
 
     @classmethod
     def create_default(
         cls, service_name: str | None = None
-    ) -> "DockerComposeOverwriteCfg":
-        model: "DockerComposeOverwriteCfg" = cls.parse_obj(
+    ) -> "DockerComposeOverwriteConfig":
+        model: "DockerComposeOverwriteConfig" = cls.parse_obj(
             {
                 "services": {
                     service_name: {
@@ -85,16 +85,17 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
         return model
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
+    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "DockerComposeOverwriteCfg" = cls.parse_obj(data)
+        model: "DockerComposeOverwriteConfig" = cls.parse_obj(data)
         return model
 
 
-class MetaConfig(ServiceDockerData):
-    """Details about general info and I/O configuration of the service
+class MetadataConfig(ServiceDockerData):
+    """Content of metadata.yml configuration file
 
+    Details about general info and I/O configuration of the service
     Necessary for both image- and runtime-spec
     """
 
@@ -109,18 +110,18 @@ class MetaConfig(ServiceDockerData):
         return v
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "MetaConfig":
+    def from_yaml(cls, path: Path) -> "MetadataConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "MetaConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.parse_obj(data)
         return model
 
     @classmethod
-    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetaConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetadataConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        model: "MetaConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.parse_obj(data)
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
@@ -194,7 +195,7 @@ class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
         allow_population_by_field_name = True
 
 
-def _get_alias_generator(field_name: str) -> str:
+def _underscore_as_minus(field_name: str) -> str:
     return field_name.replace("_", "-")
 
 
@@ -240,7 +241,7 @@ class RuntimeConfig(BaseModel):
         return v
 
     class Config:
-        alias_generator = _get_alias_generator
+        alias_generator = _underscore_as_minus
         allow_population_by_field_name = True
         extra = Extra.forbid
 
@@ -271,17 +272,16 @@ class ConfigFileDescriptor(NamedTuple):
     required: bool = True
 
 
-class ConfigFilesStructure:
+class OsparcConfigFilesTree:
     """
-    Defines config file structure and how they
-    map to the models
+    Defines config file structure and how they  map to the models
     """
 
-    FILES_GLOBS: ClassVar[dict] = {
-        DockerComposeOverwriteCfg.__name__: ConfigFileDescriptor(
+    _FILES_GLOBS: ClassVar[dict] = {
+        DockerComposeOverwriteConfig.__name__: ConfigFileDescriptor(
             glob_pattern="docker-compose.overwrite.y*ml", required=False
         ),
-        MetaConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
+        MetadataConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
         RuntimeConfig.__name__: ConfigFileDescriptor(glob_pattern="runtime.y*ml"),
     }
 
@@ -298,12 +298,12 @@ class ConfigFilesStructure:
         """
         found = {
             configtype: list(start_dir.rglob(pattern))
-            for configtype, (pattern, required) in self.FILES_GLOBS.items()
+            for configtype, (pattern, required) in self._FILES_GLOBS.items()
             if required
         }
 
         if not found:
-            raise ConfigNotFound(basedir=start_dir)
+            raise ConfigNotFoundError(basedir=start_dir)
 
         msg = "TODO"
         raise NotImplementedError(msg)

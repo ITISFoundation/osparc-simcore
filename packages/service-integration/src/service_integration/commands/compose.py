@@ -10,7 +10,7 @@ from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from ..osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 from ..settings import AppSettings
 
@@ -57,15 +57,15 @@ def create_docker_compose_image_spec(
     config_basedir = meta_config_path.parent
 
     # required
-    meta_cfg = MetaConfig.from_yaml(meta_config_path)
+    meta_cfg = MetadataConfig.from_yaml(meta_config_path)
 
     # required
     if docker_compose_overwrite_path:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
             docker_compose_overwrite_path
         )
     else:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.create_default(
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.create_default(
             service_name=meta_cfg.service_name()
         )
 
