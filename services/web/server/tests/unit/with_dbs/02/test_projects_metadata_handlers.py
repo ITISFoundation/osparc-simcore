@@ -306,7 +306,7 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
         tests_data_dir=tests_data_dir,
     ) as child_project:
 
-        # set metadata with node_id set to UUID(0), whih should not raise
+        # set metadata with node_id set to UUID(0), which should not raise
         # Notice that the parent project ID is not passed!
         custom_metadata = {
             "number": 3.14,
