@@ -613,4 +613,6 @@ async def clone_project(request: web.Request):
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
         predefined_project=None,
+        parent_project_uuid=None,
+        parent_node_id=None,
     )
