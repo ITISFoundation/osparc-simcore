@@ -126,11 +126,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const label = this._createLabel(names[i], item);
         label.setRequired = required => {
           const requiredSuffix = " *";
-          const oldLabel = label.getValue();
+          let newLabel = label.getValue();
+          newLabel = newLabel.replace(requiredSuffix, "");
           if (required) {
-            label.setValue(oldLabel + requiredSuffix);
-          } else {
-            label.setValue(oldLabel.replace(requiredSuffix, ""));
+            label.setValue(newLabel + requiredSuffix);
           }
         }
         label.set({
