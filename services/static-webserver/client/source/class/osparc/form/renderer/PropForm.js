@@ -433,8 +433,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         }
       }
-      inputRequiredBtn.addListener("execute", () => node.toggleInputRequired(portId), this);
       node.addListener("changeInputsRequired", () => evalButton(), this);
+      inputRequiredBtn.addListener("execute", () => node.toggleInputRequired(portId), this);
       evalButton();
       return inputRequiredBtn;
     },
