@@ -116,7 +116,7 @@ async def list_services(
         # FIXME: add name, ddescription, type, etc...
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
-        services_overview = [
+        return [
             ServiceGet.construct(
                 key=key,
                 version=version,
@@ -131,7 +131,6 @@ async def list_services(
             )
             for key, version in services_in_db
         ]
-        return services_overview
 
     # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
     @cached(ttl=DIRECTOR_CACHING_TTL)

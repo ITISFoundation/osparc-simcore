@@ -1,7 +1,8 @@
 import asyncio
 import functools
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -16,15 +17,15 @@ logger = logging.getLogger(__name__)
 
 MINUTE = 60
 
-director_startup_retry_policy = dict(
+director_startup_retry_policy = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
-    wait=wait_random(2, 5),
-    stop=stop_after_delay(2 * MINUTE),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-    reraise=True,
-)
+    "wait": wait_random(2, 5),
+    "stop": stop_after_delay(2 * MINUTE),
+    "before_sleep": before_sleep_log(logger, logging.WARNING),
+    "reraise": True,
+}
 
 
 class UnresponsiveService(RuntimeError):
@@ -42,7 +43,8 @@ async def setup_director(app: FastAPI) -> None:
             async for attempt in AsyncRetrying(**director_startup_retry_policy):
                 with attempt:
                     if not await client.is_responsive():
-                        raise UnresponsiveService("Director-v0 is not responsive")
+                        msg = "Director-v0 is not responsive"
+                        raise UnresponsiveService(msg)
 
                     logger.info(
                         "Connection to director-v0 succeded [%s]",

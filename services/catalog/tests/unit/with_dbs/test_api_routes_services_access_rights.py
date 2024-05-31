@@ -7,7 +7,8 @@
 # type: ignore
 
 import random
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,

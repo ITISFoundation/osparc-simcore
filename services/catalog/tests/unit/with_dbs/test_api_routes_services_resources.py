@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import urllib.parse
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from random import choice, randint
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -40,12 +41,10 @@ def mock_director_service_labels(
     director_mockup: respx.MockRouter, app: FastAPI
 ) -> Route:
     slash = urllib.parse.quote_plus("/")
-    mock_route = director_mockup.get(
+    return director_mockup.get(
         url__regex=rf"v0/services/simcore{slash}services{slash}(comp|dynamic|frontend)({slash}[\w{slash}-]+)+/[0-9]+.[0-9]+.[0-9]+/labels",
         name="get_service_labels",
     ).respond(200, json={"data": {}})
-
-    return mock_route
 
 
 @pytest.fixture

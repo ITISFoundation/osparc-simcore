@@ -5,7 +5,7 @@
 # pylint:disable=not-context-manager
 
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 import respx
@@ -26,9 +26,7 @@ def minimal_app(
     monkeypatch.setenv("CATALOG_POSTGRES", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
-    app = init_app()
-
-    yield app
+    return init_app()
 
 
 @pytest.fixture()

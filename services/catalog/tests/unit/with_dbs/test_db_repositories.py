@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 import pytest
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -22,8 +22,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def services_repo(sqlalchemy_async_engine: AsyncEngine):
-    repo = ServicesRepository(sqlalchemy_async_engine)
-    return repo
+    return ServicesRepository(sqlalchemy_async_engine)
 
 
 @dataclass
@@ -84,13 +83,12 @@ async def fake_catalog_with_jupyterlab(
         ]
     )
 
-    info = FakeCatalogInfo(
+    return FakeCatalogInfo(
         expected_services_count=5,
         expected_latest="1.1.3",
         expected_1_1_x=["1.1.3", "1.1.0"],
         expected_0_x_x=["0.10.0", "0.0.7", "0.0.1"],
     )
-    return info
 
 
 async def test_create_services(

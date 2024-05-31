@@ -5,9 +5,10 @@
 
 import itertools
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 
 import pytest
 import respx
@@ -81,9 +82,7 @@ def app(
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
-    app = init_app()
-
-    return app
+    return init_app()
 
 
 @pytest.fixture
@@ -173,7 +172,9 @@ async def user_groups_ids(
     async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            await conn.execute(groups.insert().values(**dict(zip(cols, row))))
+            await conn.execute(
+                groups.insert().values(**dict(zip(cols, row, strict=False)))
+            )
 
     gids = [1, user_db["primary_gid"]] + [items[0] for items in data]
 
@@ -368,29 +369,29 @@ async def service_catalog_faker(
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
-        data = dict(
-            key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            version=".".join([str(faker.pyint()) for _ in range(3)]),
-            owner=user_gid,
-            name=faker.name(),
-            description=faker.sentence(),
-            thumbnail=random.choice([faker.image_url(), None]),
-            classifiers=[],
-            quality={},
-            deprecated=None,
-        )
+        data = {
+            "key": f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
+            "version": ".".join([str(faker.pyint()) for _ in range(3)]),
+            "owner": user_gid,
+            "name": faker.name(),
+            "description": faker.sentence(),
+            "thumbnail": random.choice([faker.image_url(), None]),
+            "classifiers": [],
+            "quality": {},
+            "deprecated": None,
+        }
         data.update(overrides)
         return data
 
     def _random_access(service, **overrides) -> dict[str, Any]:
-        data = dict(
-            key=service["key"],
-            version=service["version"],
-            gid=random.choice(user_groups_ids),
-            execute_access=faker.pybool(),
-            write_access=faker.pybool(),
-            product_name=random.choice(products_names),
-        )
+        data = {
+            "key": service["key"],
+            "version": service["version"],
+            "gid": random.choice(user_groups_ids),
+            "execute_access": faker.pybool(),
+            "write_access": faker.pybool(),
+            "product_name": random.choice(products_names),
+        }
         data.update(overrides)
         return data
 

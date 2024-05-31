@@ -68,7 +68,8 @@ async def test_list_services_with_details(
             "data": [
                 {
                     **fake_registry_service_data,
-                    **{"key": s[0]["key"], "version": s[0]["version"]},
+                    "key": s[0]["key"],
+                    "version": s[0]["version"],
                 }
                 for s in fake_services[::2]
             ]
@@ -277,10 +278,8 @@ async def test_list_services_that_are_deprecated(
             "data": [
                 {
                     **fake_registry_service_data,
-                    **{
-                        "key": deprecated_service[0]["key"],
-                        "version": deprecated_service[0]["version"],
-                    },
+                    "key": deprecated_service[0]["key"],
+                    "version": deprecated_service[0]["version"],
                 }
             ]
         },

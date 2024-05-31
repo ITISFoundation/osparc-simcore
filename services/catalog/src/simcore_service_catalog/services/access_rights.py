@@ -3,8 +3,9 @@
 """
 import logging
 import operator
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, cast
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI
@@ -48,7 +49,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
 
 async def evaluate_default_policy(
     app: FastAPI, service: ServiceDockerData
-) -> tuple[Optional[PositiveInt], list[ServiceAccessRightsAtDB]]:
+) -> tuple[PositiveInt | None, list[ServiceAccessRightsAtDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
     default access-rights policies
 
@@ -76,9 +77,8 @@ async def evaluate_default_policy(
 
     for user_email in possible_owner_email:
         possible_gid = await groups_repo.get_user_gid_from_email(user_email)
-        if possible_gid:
-            if not owner_gid:
-                owner_gid = possible_gid
+        if possible_gid and not owner_gid:
+            owner_gid = possible_gid
     if not owner_gid:
         logger.warning("service %s:%s has no owner", service.key, service.version)
     else:
@@ -106,7 +106,7 @@ async def evaluate_auto_upgrade_policy(
     # AUTO-UPGRADE PATCH policy:
     #
     #  - Any new patch released, inherits the access rights from previous compatible version
-    #  - TODO: add as option in the publication contract, i.e. in ServiceDockerData
+    #  - IDEA: add as option in the publication contract, i.e. in ServiceDockerData?
     #  - Does NOT apply to front-end services
     #
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2244)
@@ -158,16 +158,16 @@ def reduce_access_rights(
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
 
-    def get_target(access: ServiceAccessRightsAtDB) -> tuple[Union[str, int], ...]:
+    def get_target(access: ServiceAccessRightsAtDB) -> tuple[str | int, ...]:
         """Hashable identifier of the resource the access rights apply to"""
-        return tuple([access.key, access.version, access.gid, access.product_name])
+        return (access.key, access.version, access.gid, access.product_name)
 
     def get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
         """Extracts only"""
         flags = access.dict(include={"execute_access", "write_access"})
         return cast(dict[str, bool], flags)
 
-    access_flags_map: dict[tuple[Union[str, int], ...], dict[str, bool]] = {}
+    access_flags_map: dict[tuple[str | int, ...], dict[str, bool]] = {}
     for access in access_rights:
         target = get_target(access)
         access_flags = access_flags_map.get(target)

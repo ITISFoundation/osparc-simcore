@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from servicelib.db_async_engine import close_db_connection, connect_to_db

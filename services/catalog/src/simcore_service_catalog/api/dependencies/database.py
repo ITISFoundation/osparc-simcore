@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
 
 from fastapi import Depends
 from fastapi.requests import Request

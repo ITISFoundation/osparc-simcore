@@ -150,7 +150,7 @@ async def _get_service_labels(
         # and will fail validating the key or the version
         if err.status_code == status.HTTP_400_BAD_REQUEST:
             return None
-        raise err
+        raise
 
 
 def _get_service_settings(
