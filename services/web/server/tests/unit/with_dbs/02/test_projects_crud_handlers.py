@@ -30,6 +30,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
+    standard_user_role_response,
 )
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
@@ -475,6 +476,40 @@ async def test_new_project_from_other_study(
         assert new_project["name"].endswith("(Copy)")
         for node_name in new_project["workbench"]:
             parse_obj_as(uuidlib.UUID, node_name)
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_new_project_with_parent(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    expected,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+):
+    catalog_subsystem_mock([user_project])
+    parent_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
+    assert parent_project
+
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
+    assert child_project
 
 
 @pytest.mark.parametrize(*standard_role_response())
