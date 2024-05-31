@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from copy import deepcopy
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -172,10 +172,14 @@ def _get_service_settings(
 async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: DirectorApi = Depends(get_director_api),
-    default_service_resources: ResourcesDict = Depends(get_default_service_resources),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    user_groups: list[GroupAtDB] = Depends(list_user_groups),
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    default_service_resources: Annotated[
+        ResourcesDict, Depends(get_default_service_resources)
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    user_groups: Annotated[list[GroupAtDB], Depends(list_user_groups)],
 ) -> ServiceResourcesDict:
     image_version = parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}")
     if is_function_service(service_key):

@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_catalog.services import ServiceGet
@@ -28,8 +29,8 @@ router = APIRouter()
     **RESPONSE_MODEL_POLICY,
 )
 async def list_service_ports(
-    _user: AccessInfo = Depends(check_service_read_access),
-    service: ServiceGet = Depends(get_service_from_registry),
+    _user: Annotated[AccessInfo, Depends(check_service_read_access)],
+    service: Annotated[ServiceGet, Depends(get_service_from_registry)],
 ):
     ports: list[ServicePortGet] = []
 

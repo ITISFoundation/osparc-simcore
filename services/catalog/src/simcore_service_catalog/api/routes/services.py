@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, TypeAlias, cast
+from typing import Annotated, Any, TypeAlias, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -84,11 +84,15 @@ router = APIRouter()
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
-    details: bool | None = True,
-    director_client: DirectorApi = Depends(get_director_api),
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    x_simcore_products_name: str = Header(...),
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    x_simcore_products_name: Annotated[str, Header(...)],
+    details: bool | None = True,  # noqa: FBT002
 ):
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -186,9 +190,13 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service: ServiceGet = Depends(get_service_from_registry),
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    service: Annotated[ServiceGet, Depends(get_service_from_registry)],
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
     x_simcore_products_name: str = Header(None),
 ):
     # get the user groups
@@ -254,10 +262,14 @@ async def update_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     updated_service: ServiceUpdate,
-    director_client: DirectorApi = Depends(get_director_api),
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    x_simcore_products_name: str = Header(None),
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    x_simcore_products_name: Annotated[str, Header(None)],
 ):
     if is_function_service(service_key):
         # NOTE: this is a temporary decision after discussing with OM
