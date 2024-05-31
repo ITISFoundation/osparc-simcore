@@ -124,8 +124,17 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        label.setRequired = required => {
+          const requiredSuffix = " *";
+          const oldLabel = label.getValue();
+          if (required) {
+            label.setValue(oldLabel + requiredSuffix);
+          } else {
+            label.setValue(oldLabel.replace(requiredSuffix, ""));
+          }
+        }
         label.set({
-          rich: false, // override, required for showing the vut off ellipses
+          rich: false, // override, required for showing the cut off ellipses
           toolTipText: names[i]
         });
         label.setBuddy(item);
