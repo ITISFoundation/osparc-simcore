@@ -173,7 +173,7 @@ fastapi==0.99.1
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.7
+faststream==0.5.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in

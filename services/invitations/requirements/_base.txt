@@ -66,8 +66,6 @@ click==8.1.7
     # via
     #   typer
     #   uvicorn
-colorama==0.4.6
-    # via typer
 cryptography==42.0.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -96,7 +94,7 @@ fastapi==0.99.1
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.2
+faststream==0.5.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -258,7 +256,7 @@ tqdm==4.66.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.10.0
+typer==0.12.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
