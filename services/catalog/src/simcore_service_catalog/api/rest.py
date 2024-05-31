@@ -18,7 +18,6 @@ v0_router = APIRouter()
 v0_router.include_router(
     health.router,
     tags=["diagnostics"],
-    prefix="/",
 )
 
 # meta
