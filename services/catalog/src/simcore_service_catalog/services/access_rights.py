@@ -20,7 +20,7 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
 from ..utils.versioning import as_version, is_patch_release
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
@@ -41,7 +41,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
     if not data or "build_date" not in data:
         return True
 
-    logger.debug("retrieved service extras are %s", data)
+    _logger.debug("retrieved service extras are %s", data)
 
     service_build_data = datetime.strptime(data["build_date"], "%Y-%m-%dT%H:%M:%SZ")
     return service_build_data < OLD_SERVICES_DATE
@@ -66,7 +66,7 @@ async def evaluate_default_policy(
 
     if _is_frontend_service(service) or await _is_old_service(app, service):
         everyone_gid = (await groups_repo.get_everyone_group()).gid
-        logger.debug("service %s:%s is old or frontend", service.key, service.version)
+        _logger.debug("service %s:%s is old or frontend", service.key, service.version)
         # let's make that one available to everyone
         group_ids.append(everyone_gid)
 
@@ -80,7 +80,7 @@ async def evaluate_default_policy(
         if possible_gid and not owner_gid:
             owner_gid = possible_gid
     if not owner_gid:
-        logger.warning("service %s:%s has no owner", service.key, service.version)
+        _logger.warning("service %s:%s has no owner", service.key, service.version)
     else:
         group_ids.append(owner_gid)
 
@@ -135,15 +135,14 @@ async def evaluate_auto_upgrade_policy(
             previous_release.key, previous_release.version
         )
 
-        for access in previous_access_rights:
-            service_access_rights.append(
-                access.copy(
-                    exclude={"created", "modified"},
-                    update={"version": service_metadata.version},
-                    deep=True,
-                )
+        service_access_rights = [
+            access.copy(
+                exclude={"created", "modified"},
+                update={"version": service_metadata.version},
+                deep=True,
             )
-
+            for access in previous_access_rights
+        ]
     return service_access_rights
 
 
@@ -179,16 +178,15 @@ def reduce_access_rights(
         else:
             access_flags_map[target] = get_flags(access)
 
-    reduced_access_rights = []
-    for target in access_flags_map:
-        reduced_access_rights.append(
-            ServiceAccessRightsAtDB(
-                key=f"{target[0]}",
-                version=f"{target[1]}",
-                gid=int(target[2]),
-                product_name=f"{target[3]}",
-                **access_flags_map[target],
-            )
+    reduced_access_rights: list[ServiceAccessRightsAtDB] = [
+        ServiceAccessRightsAtDB(
+            key=f"{target[0]}",
+            version=f"{target[1]}",
+            gid=int(target[2]),
+            product_name=f"{target[3]}",
+            **access_flags_map[target],
         )
+        for target in access_flags_map
+    ]
 
     return reduced_access_rights
