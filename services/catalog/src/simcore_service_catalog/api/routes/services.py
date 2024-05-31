@@ -269,7 +269,7 @@ async def update_service(
     services_repo: Annotated[
         ServicesRepository, Depends(get_repository(ServicesRepository))
     ],
-    x_simcore_products_name: Annotated[str, Header(None)],
+    x_simcore_products_name: Annotated[str | None, Header()] = None,
 ):
     if is_function_service(service_key):
         # NOTE: this is a temporary decision after discussing with OM
