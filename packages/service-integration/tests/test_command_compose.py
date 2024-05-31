@@ -25,7 +25,7 @@ def compose_file_path(metadata_file_path: Path) -> Path:
 
 def test_make_docker_compose_meta(
     run_program_with_args: Callable,
-    project_file_path: Path,
+    docker_compose_overwrite_path: Path,
     metadata_file_path: Path,
     compose_file_path: Path,
 ):
