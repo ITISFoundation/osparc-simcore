@@ -247,6 +247,29 @@ async def test_new_project_with_invalid_parent_project_node(
     )
     assert not child_project
 
+    # creating with only a parent project ID should fail too
+    child_project = await request_create_project(
+        client,
+        expected.unprocessable,
+        expected.unprocessable,
+        logged_user,
+        primary_group,
+        parent_project_uuid=parent_project_uuid,
+    )
+    assert not child_project
+
+    # creating with only a parent project ID should fail too
+    random_node_id = parse_obj_as(NodeID, faker.uuid4())
+    child_project = await request_create_project(
+        client,
+        expected.unprocessable,
+        expected.unprocessable,
+        logged_user,
+        primary_group,
+        parent_node_id=parent_node_id,
+    )
+    assert not child_project
+
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_set_project_parent_backward_compatibility(
