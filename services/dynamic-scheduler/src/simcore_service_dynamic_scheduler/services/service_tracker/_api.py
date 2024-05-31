@@ -1,9 +1,12 @@
 import logging
+from datetime import timedelta
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceState
 from servicelib.deferred_tasks import TaskUID
 
 from ._models import TrackedServiceModel, UserRequestedState
@@ -11,6 +14,10 @@ from ._setup import get_tracker
 from ._tracker import Tracker
 
 _logger = logging.getLogger(__name__)
+
+
+_LOW_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
+_NORMAL_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 
 async def _set_requested_state(
@@ -35,6 +42,22 @@ async def set_request_as_stopped(app: FastAPI, node_id: NodeID) -> None:
     await _set_requested_state(app, node_id, UserRequestedState.STOPPED)
 
 
+def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
+    # Attributes where to find the state
+    # NodeGet -> service_state
+    # DynamicServiceGet -> state
+    # NodeGetIdle -> service_state
+    state_key = "state" if isinstance(status, DynamicServiceGet) else "service_state"
+
+    state: ServiceState | str = getattr(status, state_key)
+    state_str: str = state.value if isinstance(state, ServiceState) else state
+
+    if state_str != "running":
+        return _LOW_RATE_POLL_INTERVAL
+
+    return _NORMAL_RATE_POLL_INTERVAL
+
+
 async def set_new_status(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> None:
@@ -49,8 +72,25 @@ async def set_new_status(
         return
 
     model.service_status = status.json()
-    model.set_last_checked_to_now()
+    model.set_check_status_after_to(_get_poll_interval(status))
     model.service_status_task_uid = None
+    await tracker.save(node_id, model)
+
+
+async def set_check_status_after_to(
+    app: FastAPI, node_id: NodeID, delay: timedelta
+) -> None:
+    tracker: Tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    if model is None:
+        _logger.info(
+            "Could not find a %s entry for node_id %s: skipping set_new_status",
+            TrackedServiceModel.__name__,
+            node_id,
+        )
+        return
+
+    model.set_check_status_after_to(delay)
     await tracker.save(node_id, model)
 
 

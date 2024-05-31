@@ -1,10 +1,10 @@
-import asyncio
+from datetime import timedelta
 
 import arrow
 import pytest
 from faker import Faker
+from servicelib.deferred_tasks import TaskUID
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
-    _SECONDS_TO_TRIGGER_SERVICE_CHECKING,
     ServiceStates,
     TrackedServiceModel,
     UserRequestedState,
@@ -13,18 +13,21 @@ from simcore_service_dynamic_scheduler.services.service_tracker._models import (
 
 @pytest.mark.parametrize("requested_state", UserRequestedState)
 @pytest.mark.parametrize("current_state", ServiceStates)
-@pytest.mark.parametrize("last_checked", [None, 1, arrow.utcnow().timestamp()])
+@pytest.mark.parametrize("check_status_after", [None, 1, arrow.utcnow().timestamp()])
+@pytest.mark.parametrize("service_status_task_uid", [None, TaskUID("ok")])
 def test_serialization(
     faker: Faker,
     requested_state: UserRequestedState,
     current_state: ServiceStates,
-    last_checked: float,
+    check_status_after: float | None,
+    service_status_task_uid: TaskUID | None,
 ):
     tracked_model = TrackedServiceModel(
-        service_status=faker.pystr(),
         requested_sate=requested_state,
         current_state=current_state,
-        last_checked=last_checked,
+        service_status=faker.pystr(),
+        check_status_after=check_status_after,
+        service_status_task_uid=service_status_task_uid,
     )
 
     as_bytes = tracked_model.to_bytes()
@@ -32,16 +35,15 @@ def test_serialization(
     assert TrackedServiceModel.from_bytes(as_bytes) == tracked_model
 
 
-async def test_last_checked():
+async def test_set_check_status_after_to():
     model = TrackedServiceModel(UserRequestedState.RUNNING)
+    assert model.check_status_after is None
 
-    # when last_checked is None
-    assert model.seconds_since_last_check() == _SECONDS_TO_TRIGGER_SERVICE_CHECKING
+    delay = timedelta(seconds=4)
 
-    model.set_last_checked_to_now()
+    before = (arrow.utcnow() + delay).timestamp()
+    model.set_check_status_after_to(delay)
+    after = (arrow.utcnow() + delay).timestamp()
 
-    assert model.seconds_since_last_check() < 0.1
-
-    await asyncio.sleep(0.1)
-
-    assert model.seconds_since_last_check() > 0.1
+    assert model.check_status_after
+    assert before < model.check_status_after < after

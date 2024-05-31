@@ -1,8 +1,10 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+from datetime import timedelta
 from uuid import uuid4
 
+import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -18,10 +20,16 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
     get_all_tracked,
     get_tracked,
     remove_tracked,
+    set_check_status_after_to,
     set_new_status,
     set_request_as_running,
     set_request_as_stopped,
     set_service_status_task_uid,
+)
+from simcore_service_dynamic_scheduler.services.service_tracker._api import (
+    _LOW_RATE_POLL_INTERVAL,
+    _NORMAL_RATE_POLL_INTERVAL,
+    _get_poll_interval,
 )
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
     UserRequestedState,
@@ -120,3 +128,42 @@ async def test_set_service_status_task_uid(app: FastAPI, node_id: NodeID, faker:
     assert model
 
     assert model.service_status_task_uid == task_uid
+
+
+async def test_set_check_status_after_to(app: FastAPI, node_id: NodeID):
+    await set_request_as_running(app, node_id)
+
+    delay = timedelta(seconds=6)
+
+    benfore = (arrow.utcnow() + delay).timestamp()
+    await set_check_status_after_to(app, node_id, delay)
+    after = (arrow.utcnow() + delay).timestamp()
+
+    model = await get_tracked(app, node_id)
+    assert model
+    assert model.check_status_after
+
+    assert benfore < model.check_status_after < after
+
+
+@pytest.mark.parametrize(
+    "status, expected_poll_interval",
+    [
+        (
+            NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+            _LOW_RATE_POLL_INTERVAL,
+        ),
+        *[
+            (DynamicServiceGet.parse_obj(x), _NORMAL_RATE_POLL_INTERVAL)
+            for x in DynamicServiceGet.Config.schema_extra["examples"]
+        ],
+        (
+            NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
+            _LOW_RATE_POLL_INTERVAL,
+        ),
+    ],
+)
+def test__get_poll_interval(
+    status: NodeGet | DynamicServiceGet | NodeGetIdle, expected_poll_interval: timedelta
+):
+    assert _get_poll_interval(status) == expected_poll_interval
