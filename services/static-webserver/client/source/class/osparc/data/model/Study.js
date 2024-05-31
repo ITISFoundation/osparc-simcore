@@ -608,13 +608,16 @@ qx.Class.define("osparc.data.model.Study", {
         };
         osparc.data.Resources.fetch("studies", "patchNode", params)
           .then(() => {
-            const upKey = qx.lang.String.firstUp(fieldKey);
-            const setter = "set" + upKey;
-            this.getWorkbench()[setter](value);
-            // A bit hacky, but it's not sent back to the backend
-            this.set({
-              lastChangeDate: new Date()
-            });
+            const node = this.getWorkbench().getNode(nodeId);
+            if (node) {
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const setter = "set" + upKey;
+              node[setter](value);
+              // A bit hacky, but it's not sent back to the backend
+              this.set({
+                lastChangeDate: new Date()
+              });
+            }
             const studyData = this.serializeStudyData();
             resolve(studyData);
           })

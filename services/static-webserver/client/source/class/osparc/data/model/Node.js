@@ -137,8 +137,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     inputsRequired: {
       check: "Array",
-      init: [],
-      event: "changeInputsRequired"
+      init: []
     },
 
     outputs: {
@@ -233,7 +232,8 @@ qx.Class.define("osparc.data.model.Node", {
     "fileUploaded": "qx.event.type.Event",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
-    "changeInputNodes": "qx.event.type.Event"
+    "changeInputNodes": "qx.event.type.Event",
+    "changeInputsRequired": "qx.event.type.Event"
   },
 
   statics: {
@@ -877,6 +877,17 @@ qx.Class.define("osparc.data.model.Node", {
       return (index > -1);
     },
     // !---- Input Nodes -----
+
+    toggleInputRequired: function(portId) {
+      const inputsRequired = this.getInputsRequired();
+      const index = inputsRequired.indexOf(portId);
+      if (index > -1) {
+        inputsRequired.splice(index, 1);
+      } else {
+        inputsRequired.push(portId);
+      }
+      this.fireEvent("changeInputsRequired");
+    },
 
     canNodeStart: function() {
       return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());

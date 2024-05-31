@@ -423,26 +423,17 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const inputsRequired = node.getInputsRequired();
         if (inputsRequired.includes(portId)) {
           inputRequiredBtn.set({
-            icon: "@FontAwesome5Solid/check/8",
+            icon: "@FontAwesome5Regular/check-square/12",
             label: this.tr("Input Required")
           });
         } else {
           inputRequiredBtn.set({
-            icon: null,
+            icon: "@FontAwesome5Regular/square/12",
             label: this.tr("Input not Required")
           });
         }
       }
-      inputRequiredBtn.addListener("execute", () => {
-        const inputsRequired = node.getInputsRequired();
-        const index = inputsRequired.indexOf(portId);
-        if (index > -1) {
-          inputsRequired.splice(index, 1);
-        } else {
-          inputsRequired.push(portId);
-        }
-        evalButton();
-      }, this);
+      inputRequiredBtn.addListener("execute", () => node.toggleInputRequired(portId), this);
       node.addListener("changeInputsRequired", () => evalButton(), this);
       evalButton();
       return inputRequiredBtn;
