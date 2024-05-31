@@ -888,6 +888,7 @@ qx.Class.define("osparc.data.model.Node", {
       } else {
         inputsRequired.push(portId);
       }
+      this.setInputsRequired(inputsRequired);
       this.fireEvent("changeInputsRequired");
     },
 
