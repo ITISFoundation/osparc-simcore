@@ -38,7 +38,7 @@ def main(
     ),
 ):
     """o2s2parc service integration library"""
-    assert True  # nosec
+    assert isinstance(version, bool)  # nosec
 
     overrides = {}
     if registry_name:
