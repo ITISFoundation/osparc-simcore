@@ -110,7 +110,7 @@ def standard_user_role_response() -> (
         [
             (user_role, response)
             for user_role, response in all_roles[1]
-            if user_role not in [UserRole.ANONYMOUS, UserRole.GUEST]
+            if user_role in [UserRole.USER]
         ],
     )
 
