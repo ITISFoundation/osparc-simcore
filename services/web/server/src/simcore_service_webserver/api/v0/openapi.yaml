@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.3
+  version: 0.40.4
 servers:
 - url: ''
   description: webserver
@@ -11459,15 +11459,27 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: A user-friendly or marketing name for the release. This can
+            be used to reference the release in a more readable and recognizable format,
+            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
+            name is not used for version comparison but is useful for communication
+            and documentation purposes.
+        releaseDate:
+          title: Releasedate
+          type: string
+          description: The date when the specific version of the service was released.
+            This field helps in tracking the timeline of releases and understanding
+            the sequence of updates. The date should be formatted in YYYY-MM-DD format
+            for consistency and easy sorting.
+          format: date
         integration-version:
           title: Integration-Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
-          description: integration version number
-        progress_regexp:
-          title: Progress Regexp
-          type: string
-          description: regexp pattern for detecting computational service's progress
+          description: Defines which version of the integration workflow should use
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'
@@ -11507,6 +11519,10 @@ components:
           type: integer
           description: The number of 'data type inputs' displayed by default in the
             UI. When None all 'data type inputs' are displayed.
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
         owner:
           title: Owner
           type: string
@@ -11514,7 +11530,8 @@ components:
       description: 'Static metadata for a service injected in the image labels
 
 
-        This is one to one with node-meta-v0.0.1.json'
+        NOTE: This model serialized in .osparc/metadata.yml and in the labels of the
+        docker image'
       example:
         name: File Picker
         description: description
