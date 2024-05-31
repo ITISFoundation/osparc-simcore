@@ -18,7 +18,7 @@ from pydantic import (
     validator,
 )
 
-from .basic_regex import VERSION_RE
+from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS, VERSION_RE
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_constants import FILENAME_RE, PROPERTY_TYPE_RE
@@ -575,7 +575,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         None,
         alias="integration-version",
         description="This version is used to maintain backward compatibility when there are changes in the way a service is integrated into the framework",
-        regex=VERSION_RE,
+        regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     )
 
     service_type: ServiceType = Field(
