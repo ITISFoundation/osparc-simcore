@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import Request, Response
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _DEFAULT_CHECK_INTERVAL_S: float = 0.5
 
@@ -18,7 +18,7 @@ async def _cancel_task_if_client_disconnected(
     with suppress(asyncio.CancelledError):
         while True:
             if await request.is_disconnected():
-                logger.warning("client %s disconnected!", request.client)
+                _logger.warning("client %s disconnected!", request.client)
                 task.cancel()
                 break
             await asyncio.sleep(interval)
@@ -38,7 +38,7 @@ def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Any]]):
         try:
             return await handler_task
         except asyncio.CancelledError:
-            logger.warning(
+            _logger.warning(
                 "request %s was cancelled by client %s!", request.url, request.client
             )
             return Response("Oh No!", status_code=499)

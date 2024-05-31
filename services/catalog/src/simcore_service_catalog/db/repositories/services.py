@@ -26,7 +26,7 @@ from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
@@ -335,7 +335,7 @@ class ServicesRepository(BaseRepository):
                     result = await conn.execute(on_update_stmt)
                     assert result  # nosec
             except ForeignKeyViolation:
-                logger.warning(
+                _logger.warning(
                     "The service %s:%s is missing from services_meta_data",
                     rights.key,
                     rights.version,
@@ -368,7 +368,7 @@ class ServicesRepository(BaseRepository):
 
         :param allow_use_latest_service_version: if True, then the latest version of the specs will be returned, defaults to False
         """
-        logger.debug(
+        _logger.debug(
             "getting specifications from db for %s", f"{key}:{version} for {groups=}"
         )
         gid_to_group_map = {group.gid: group for group in groups}
@@ -392,7 +392,7 @@ class ServicesRepository(BaseRepository):
                 ),
             ):
                 try:
-                    logger.debug("found following %s", f"{row=}")
+                    _logger.debug("found following %s", f"{row=}")
                     # validate the specs first
                     db_service_spec = ServiceSpecificationsAtDB.from_orm(row)
                     db_spec_version = packaging.version.parse(
@@ -421,7 +421,7 @@ class ServicesRepository(BaseRepository):
                         primary_specs = db_service_spec
 
                 except ValidationError as exc:
-                    logger.warning(
+                    _logger.warning(
                         "skipping service specifications for group '%s' as invalid: %s",
                         f"{row.gid}",
                         f"{exc}",
