@@ -38,7 +38,6 @@ class ServiceRunGet(
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: str
-    service_resources: dict
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus

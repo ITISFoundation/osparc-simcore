@@ -2962,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -7667,6 +7667,13 @@ components:
           title: Inputs
           type: object
           description: values of input properties
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
+          description: Defines inputs that are required in order to run the service
         inputsUnits:
           title: Inputsunits
           type: object
@@ -7905,6 +7912,12 @@ components:
         inputs:
           title: Inputs
           type: object
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
         inputNodes:
           title: Inputnodes
           type: array
@@ -9976,7 +9989,6 @@ components:
       - service_key
       - service_version
       - service_type
-      - service_resources
       - started_at
       - service_run_status
       type: object
@@ -10022,9 +10034,6 @@ components:
         service_type:
           title: Service Type
           type: string
-        service_resources:
-          title: Service Resources
-          type: object
         started_at:
           title: Started At
           type: string
