@@ -910,8 +910,6 @@ services:
           cpus: "1.0"
           memory: 1024M
 
-    networks:
-      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
