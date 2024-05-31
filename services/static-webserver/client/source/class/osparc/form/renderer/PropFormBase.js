@@ -124,15 +124,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
-        label.setRequired = required => {
-          const requiredSuffix = " *";
-          let newLabel = label.getValue();
-          newLabel = newLabel.replace(requiredSuffix, "");
-          if (required) {
-            newLabel += requiredSuffix;
-          }
-          label.setValue(newLabel);
-        }
         label.set({
           rich: false, // override, required for showing the cut off ellipses
           toolTipText: names[i]
@@ -198,6 +189,29 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         filteredData[portId] = osparc.utils.Units.convertValue(filteredData[portId], ctrl.unitPrefix, unitPrefix);
       });
       return filteredData;
+    },
+
+    evalFieldRequired: function(portId) {
+      const label = this._getLabelFieldChild(portId).child;
+      const inputsRequired = this.getNode().getInputsRequired();
+
+      // add star (*) to the label
+      const requiredSuffix = " *";
+      let newLabel = label.getValue();
+      newLabel = newLabel.replace(requiredSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newLabel += requiredSuffix;
+      }
+      label.setValue(newLabel);
+
+      // add tooltip
+      const toolTipSuffix = "<br>REQUIRED";
+      let newToolTip = label.getToolTipText();
+      newToolTip = newToolTip.replace(toolTipSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newToolTip += toolTipSuffix;
+      }
+      label.setToolTipText(newToolTip);
     },
 
     getChangedXUnits: function() {

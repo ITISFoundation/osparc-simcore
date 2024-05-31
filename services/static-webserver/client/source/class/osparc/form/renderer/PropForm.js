@@ -477,10 +477,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       }
 
       const evalRequired = () => {
-        const inputsRequired = this.getNode().getInputsRequired();
         for (const portId in this.__ctrlLinkMap) {
-          const label = this._getLabelFieldChild(portId).child;
-          label.setRequired(inputsRequired.includes(portId));
+          this.evalFieldRequired(portId);
         }
       }
       this.getNode().addListener("changeInputsRequired", () => evalRequired());
