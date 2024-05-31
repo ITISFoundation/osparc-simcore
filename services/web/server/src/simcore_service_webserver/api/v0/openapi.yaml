@@ -2223,16 +2223,26 @@ paths:
           default: false
         name: hidden
         in: query
-      - required: false
+      - description: Optionally sets a parent project UUID (both project and node
+          must be set)
+        required: false
         schema:
           title: X-Simcore-Parent-Project-Uuid
           type: string
+          description: Optionally sets a parent project UUID (both project and node
+            must be set)
+          format: uuid
         name: x-simcore-parent-project-uuid
         in: header
-      - required: false
+      - description: Optionally sets a parent node ID (both project and node must
+          be set)
+        required: false
         schema:
           title: X-Simcore-Parent-Node-Id
           type: string
+          description: Optionally sets a parent node ID (both project and node must
+            be set)
+          format: uuid
         name: x-simcore-parent-node-id
         in: header
       requestBody:
@@ -11477,16 +11487,17 @@ components:
         releaseDate:
           title: Releasedate
           type: string
-          description: The date when the specific version of the service was released.
-            This field helps in tracking the timeline of releases and understanding
-            the sequence of updates. The date should be formatted in YYYY-MM-DD format
-            for consistency and easy sorting.
-          format: date
+          description: "A timestamp when the specific version of the service was released.\
+            \ This field helps in tracking the timeline of releases and understanding\
+            \ the sequence of updates. A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z\
+            \ or [\xB1]HH[:]MM]"
+          format: date-time
         integration-version:
           title: Integration-Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
           type: string
-          description: Defines which version of the integration workflow should use
+          description: This version is used to maintain backward compatibility when
+            there are changes in the way a service is integrated into the framework
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'
@@ -11537,8 +11548,8 @@ components:
       description: 'Static metadata for a service injected in the image labels
 
 
-        NOTE: This model serialized in .osparc/metadata.yml and in the labels of the
-        docker image'
+        NOTE: This model is serialized in .osparc/metadata.yml and in the labels of
+        the docker image'
       example:
         name: File Picker
         description: description
