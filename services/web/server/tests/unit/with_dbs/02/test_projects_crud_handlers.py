@@ -13,17 +13,13 @@ from http import HTTPStatus
 from math import ceil
 from typing import Any
 
-import aiopg
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -40,9 +36,6 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
-from simcore_postgres_database.utils_projects_metadata import (
-    get as get_db_project_metadata,
-)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups.api import (
@@ -420,7 +413,7 @@ async def test_new_project(
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group,
-    expected,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
@@ -436,7 +429,7 @@ async def test_new_project_from_template(
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
     template_project,
-    expected,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
@@ -462,7 +455,7 @@ async def test_new_project_from_other_study(
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
     user_project: ProjectDict,
-    expected,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     project_db_cleaner,
@@ -486,59 +479,13 @@ async def test_new_project_from_other_study(
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_new_project_with_parent_project_node(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    primary_group: dict[str, str],
-    user_project: ProjectDict,
-    expected,
-    storage_subsystem_mock,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
-    project_db_cleaner,
-    request_create_project: Callable[..., Awaitable[ProjectDict]],
-    aiopg_engine: aiopg.sa.Engine,
-):
-    catalog_subsystem_mock([user_project])
-    parent_project = await request_create_project(
-        client,
-        expected.accepted,
-        expected.created,
-        logged_user,
-        primary_group,
-        from_study=user_project,
-    )
-    assert parent_project
-
-    child_project = await request_create_project(
-        client,
-        expected.accepted,
-        expected.created,
-        logged_user,
-        primary_group,
-        parent_project_uuid=parse_obj_as(ProjectID, parent_project["uuid"]),
-        parent_node_id=parse_obj_as(
-            NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
-        ),
-    )
-    assert child_project
-    async with aiopg_engine.acquire() as connection:
-        project_db_metadata = await get_db_project_metadata(
-            connection, child_project["uuid"]
-        )
-        assert project_db_metadata.parent_project_uuid == ProjectID(
-            parent_project["uuid"]
-        )
-        assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
-
-
-@pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
     template_project,
-    expected,
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],

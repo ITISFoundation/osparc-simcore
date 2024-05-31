@@ -5,9 +5,10 @@
 
 import json
 import random
-from copy import deepcopy
-from pathlib import Path
+from collections.abc import Awaitable, Callable
 
+import aiopg
+import aiopg.sa
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -15,15 +16,20 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from pytest_simcore.helpers.utils_projects import NewProject
-from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_user_role_response,
+)
 from servicelib.aiohttp import status
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_projects_metadata import (
+    get as get_db_project_metadata,
+)
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -31,12 +37,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4313"
 )
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_custom_metadata_handlers(
     # for deletion
     mocked_director_v2_api: None,
@@ -46,6 +47,7 @@ async def test_custom_metadata_handlers(
     faker: Faker,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
+    expected: ExpectedResponse,
 ):
     #
     # metadata is a singleton subresource of a project
@@ -60,9 +62,7 @@ async def test_custom_metadata_handlers(
     )
     response = await client.get(f"{url}")
 
-    _, error = await assert_status(
-        response, expected_status_code=status.HTTP_404_NOT_FOUND
-    )
+    _, error = await assert_status(response, expected_status_code=expected.not_found)
     error_message = error["errors"][0]["message"]
     assert invalid_project_id in error_message
     assert "project" in error_message.lower()
@@ -72,7 +72,7 @@ async def test_custom_metadata_handlers(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")
-    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    data, _ = await assert_status(response, expected_status_code=expected.ok)
     assert data["custom"] == {}
 
     # replace metadata
@@ -86,14 +86,14 @@ async def test_custom_metadata_handlers(
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
 
-    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    data, _ = await assert_status(response, expected_status_code=expected.ok)
 
     assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
 
     # delete project
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
     response = await client.delete(f"{url}")
-    await assert_status(response, expected_status_code=status.HTTP_204_NO_CONTENT)
+    await assert_status(response, expected_status_code=expected.no_content)
 
     async def _wait_until_deleted():
         tasks = _crud_api_delete.get_scheduled_tasks(
@@ -108,16 +108,152 @@ async def test_custom_metadata_handlers(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")
-    await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)
+    await assert_status(response, expected_status_code=expected.not_found)
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
-async def test_update_project_metadata_backward_compatibility_with_same_project_raises(
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_new_project_with_parent_project_node(
+    # for deletion
+    mocked_director_v2_api: None,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    #
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    aiopg_engine: aiopg.sa.Engine,
+):
+    """this is new way of setting parents by using request headers"""
+    catalog_subsystem_mock([user_project])
+    parent_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
+    assert parent_project
+
+    parent_project_uuid = parse_obj_as(ProjectID, parent_project["uuid"])
+    parent_node_id = parse_obj_as(
+        NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
+    )
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        parent_project_uuid=parent_project_uuid,
+        parent_node_id=parent_node_id,
+    )
+    assert child_project
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
+        )
+        assert project_db_metadata.parent_project_uuid == parent_project_uuid
+        assert project_db_metadata.parent_node_id == parent_node_id
+
+    # now we set the metadata with another node_id
+    another_node_id = random.choice(  # noqa: S311
+        [n for n in parent_project["workbench"] if NodeID(n) != parent_node_id]
+    )
+    assert NodeID(another_node_id) != parent_node_id
+    custom_metadata = {
+        "number": 3.14,
+        "string": "str",
+        "boolean": False,
+        "node_id": f"{another_node_id}",
+    }
+    assert client.app
+    url = client.app.router["update_project_metadata"].url_for(
+        project_id=child_project["uuid"]
+    )
+    response = await client.patch(
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+    )
+    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    # check child project has parent unchanged
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
+        )
+        assert project_db_metadata.parent_project_uuid == parent_project_uuid
+        assert project_db_metadata.parent_node_id == parent_node_id
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_set_project_parent_backward_compatibility(
+    # for deletion
+    mocked_director_v2_api: None,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    #
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    expected: ExpectedResponse,
+    aiopg_engine: aiopg.sa.Engine,
+):
+    """backwards compatiblity with sim4life.io runs like so
+    - create a project
+    - pass project metadata with a node_id inside
+    - osparc will try to find the project id and set it as parent
+    """
+    assert client.app
+
+    # create a blank project (no nodes necessary)
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        project={"name": "child"},
+    )
+
+    # create a parent project with nodes
+    parent_project = user_project
+
+    # create some custom data with one of parents node_id as creator
+    random_parent_node_id = NodeID(
+        random.choice(list(parent_project["workbench"]))  # noqa: S311
+    )
+    custom_metadata = {
+        "number": 3.14,
+        "string": "str",
+        "boolean": False,
+        "node_id": f"{random_parent_node_id}",
+    }
+
+    url = client.app.router["update_project_metadata"].url_for(
+        project_id=child_project["uuid"]
+    )
+    response = await client.patch(
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+    )
+    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    # check child project has parent set correctly
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
+        )
+        assert project_db_metadata.parent_project_uuid == ProjectID(
+            parent_project["uuid"]
+        )
+        assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_update_project_metadata_backward_compatibility_with_same_project_does_not_raises_and_does_not_work(
     # for deletion
     mocked_director_v2_api: None,
     storage_subsystem_mock: MockedStorageSubsystem,
@@ -126,9 +262,8 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     faker: Faker,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    fake_project: ProjectDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
+    expected: ExpectedResponse,
+    aiopg_engine: aiopg.sa.Engine,
 ):
     assert client.app
 
@@ -146,9 +281,9 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     response = await client.patch(
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
-    await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)
+    await assert_status(response, expected_status_code=expected.ok)
 
-    # using one of its own nodes as parent is not allowed at the moment
+    # using one of its own nodes as parent is not allowed
     custom_metadata = {
         "number": 3.14,
         "string": "str",
@@ -161,164 +296,63 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     response = await client.patch(
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
-    await assert_status(
-        response, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-    )
+    await assert_status(response, expected_status_code=expected.ok)
 
-
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
-async def test_update_project_metadata_backward_compatibility_with_project_using_same_node_ids_raises(
-    # for deletion
-    mocked_director_v2_api: None,
-    storage_subsystem_mock: MockedStorageSubsystem,
-    #
-    client: TestClient,
-    faker: Faker,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    fake_project: ProjectDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-):
-    assert client.app
-
-    child_project = user_project
-
-    # this is a valid parent project here BUT with the exact same node IDs that raises
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        tests_data_dir=tests_data_dir,
-    ) as parent_project_with_same_node_ids:
-        random_parent_node_id = NodeID(
-            random.choice(  # noqa: S311
-                list(parent_project_with_same_node_ids["workbench"])
-            )
+    # check project has no parent
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
         )
-        custom_metadata = {
-            "number": 3.14,
-            "string": "str",
-            "boolean": False,
-            "node_id": f"{random_parent_node_id}",
-        }
-        url = client.app.router["update_project_metadata"].url_for(
-            project_id=child_project["uuid"]
-        )
-        response = await client.patch(
-            f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
-        )
-        await assert_status(
-            response, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
+        assert project_db_metadata.parent_project_uuid is None
+        assert project_db_metadata.parent_node_id is None
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
-async def test_update_project_metadata_backward_compatibility_with_valid_project(
-    # for deletion
-    mocked_director_v2_api: None,
-    storage_subsystem_mock: MockedStorageSubsystem,
-    #
-    client: TestClient,
-    faker: Faker,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    fake_project: ProjectDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-):
-    assert client.app
-
-    child_project = user_project
-
-    # this is a valid parent project with different node IDs
-    fake_project_with_different_nodes = deepcopy(fake_project)
-    node_mapping = {node_id: faker.uuid4() for node_id in fake_project["workbench"]}
-    stringified_workbench = json_dumps(fake_project["workbench"])
-    for old_node_id, new_node_id in node_mapping.items():
-        stringified_workbench = stringified_workbench.replace(old_node_id, new_node_id)
-
-    fake_project_with_different_nodes["workbench"] = json_loads(stringified_workbench)
-
-    async with NewProject(
-        fake_project_with_different_nodes,
-        client.app,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        tests_data_dir=tests_data_dir,
-    ) as parent_project:
-        random_parent_node_id = NodeID(
-            random.choice(list(parent_project["workbench"]))  # noqa: S311
-        )
-        custom_metadata = {
-            "number": 3.14,
-            "string": "str",
-            "boolean": False,
-            "node_id": f"{random_parent_node_id}",
-        }
-        url = client.app.router["update_project_metadata"].url_for(
-            project_id=child_project["uuid"]
-        )
-        response = await client.patch(
-            f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
-        )
-        data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
-        assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
-        # NOTE: for now the parents are not returned. if this changes, this test should be adapted
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_update_project_metadata_s4lacad_backward_compatibility_passing_nil_parent_node_id(
     # for deletion
     mocked_director_v2_api: None,
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
-    faker: Faker,
     logged_user: UserInfoDict,
-    fake_project: ProjectDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    expected: ExpectedResponse,
+    aiopg_engine: aiopg.sa.Engine,
 ):
     assert client.app
 
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        tests_data_dir=tests_data_dir,
-    ) as child_project:
+    child_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        from_study=user_project,
+    )
 
-        # set metadata with node_id set to UUID(0), which should not raise
-        # Notice that the parent project ID is not passed!
-        custom_metadata = {
-            "number": 3.14,
-            "string": "str",
-            "boolean": False,
-            "node_id": "00000000-0000-0000-0000-000000000000",
-        }
-        url = client.app.router["update_project_metadata"].url_for(
-            project_id=child_project["uuid"]
+    # set metadata with node_id set to UUID(0), which should not raise
+    # Notice that the parent project ID is not passed!
+    custom_metadata = {
+        "number": 3.14,
+        "string": "str",
+        "boolean": False,
+        "node_id": "00000000-0000-0000-0000-000000000000",
+    }
+    url = client.app.router["update_project_metadata"].url_for(
+        project_id=child_project["uuid"]
+    )
+    response = await client.patch(
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+    )
+    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
+    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+
+    # check project has no parent
+    async with aiopg_engine.acquire() as connection:
+        project_db_metadata = await get_db_project_metadata(
+            connection, child_project["uuid"]
         )
-        response = await client.patch(
-            f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
-        )
-        data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
-        assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+        assert project_db_metadata.parent_project_uuid is None
+        assert project_db_metadata.parent_node_id is None

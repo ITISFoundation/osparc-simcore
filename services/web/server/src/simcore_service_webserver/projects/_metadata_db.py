@@ -108,6 +108,15 @@ async def set_project_custom_metadata(
 
 
 @_handle_projects_metadata_exceptions
+async def project_has_ancestors(engine: Engine, *, project_uuid: ProjectID) -> bool:
+    async with engine.acquire() as connection:
+        metadata = await utils_projects_metadata.get(
+            connection, project_uuid=project_uuid
+        )
+    return bool(metadata.parent_project_uuid is not None)
+
+
+@_handle_projects_metadata_exceptions
 async def set_project_ancestors(
     engine: Engine,
     *,

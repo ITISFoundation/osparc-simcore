@@ -11,6 +11,7 @@ Design rationale:
 """
 
 import functools
+import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.projects_metadata import (
@@ -22,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.logging_utils import log_catch
 
 from .._meta import api_version_prefix
 from ..login.decorators import login_required
@@ -38,6 +40,8 @@ from .exceptions import (
 )
 
 routes = web.RouteTableDef()
+
+_logger = logging.getLogger(__name__)
 
 
 def _handle_project_exceptions(handler: Handler):
@@ -105,6 +109,13 @@ async def update_project_metadata(request: web.Request) -> web.Response:
         project_uuid=path_params.project_id,
         value=update.custom,
     )
+    with log_catch(_logger, reraise=False):
+        await _metadata_api.set_project_ancestors_from_custom_metadata(
+            request.app,
+            user_id=req_ctx.user_id,
+            project_uuid=path_params.project_id,
+            custom_metadata=custom_metadata,
+        )
 
     return envelope_json_response(
         ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
