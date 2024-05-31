@@ -4,7 +4,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
 
-from typing import Annotated, Any
+from typing import Any
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -22,31 +22,23 @@ from .models import ProjectTypeAPI
 
 
 class ProjectCreateHeaders(BaseModel):
-    simcore_user_agent: Annotated[
-        str,
-        Field(
-            default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            description="Optional simcore user agent",
-            alias=X_SIMCORE_USER_AGENT,
-        ),
-    ]
 
-    parent_project_uuid: Annotated[
-        ProjectID | None,
-        Field(
-            default=None,
-            description="Optional parent project UUID",
-            alias=X_SIMCORE_PARENT_PROJECT_UUID,
-        ),
-    ]
-    parent_node_id: Annotated[
-        NodeID | None,
-        Field(
-            default=None,
-            description="Optional parent node ID",
-            alias=X_SIMCORE_PARENT_NODE_ID,
-        ),
-    ]
+    simcore_user_agent: str = Field(
+        default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+        description="Optional simcore user agent",
+        alias=X_SIMCORE_USER_AGENT,
+    )
+
+    parent_project_uuid: ProjectID | None = Field(
+        default=None,
+        description="Optional parent project UUID",
+        alias=X_SIMCORE_PARENT_PROJECT_UUID,
+    )
+    parent_node_id: NodeID | None = Field(
+        default=None,
+        description="Optional parent node ID",
+        alias=X_SIMCORE_PARENT_NODE_ID,
+    )
 
     @root_validator
     @classmethod
@@ -58,6 +50,9 @@ class ProjectCreateHeaders(BaseModel):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
         return values
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class ProjectCreateParams(BaseModel):
