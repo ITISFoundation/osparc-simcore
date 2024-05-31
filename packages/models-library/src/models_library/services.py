@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar, Final, TypeAlias
 from uuid import uuid4
@@ -554,7 +554,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     """
     Static metadata for a service injected in the image labels
 
-    NOTE: This model serialized in .osparc/metadata.yml and in the labels of the docker image
+    NOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image
     """
 
     version_display: str | None = Field(
@@ -564,17 +564,17 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         " This name is not used for version comparison but is useful for communication and documentation purposes.",
     )
 
-    release_date: date | None = Field(
+    release_date: datetime | None = Field(
         None,
-        description="The date when the specific version of the service was released."
+        description="A timestamp when the specific version of the service was released."
         " This field helps in tracking the timeline of releases and understanding the sequence of updates."
-        " The date should be formatted in YYYY-MM-DD format for consistency and easy sorting.",
+        " A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]",
     )
 
     integration_version: str | None = Field(
         None,
         alias="integration-version",
-        description="Defines which version of the integration workflow should use",
+        description="This version is used to maintain backward compatibility when there are changes in the way a service is integrated into the framework",
         regex=VERSION_RE,
     )
 
@@ -635,7 +635,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                 {
                     **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
                     "version_display": "Matterhorn Release",
-                    "release_date": "2024-05-30",
+                    "release_date": "2024-05-31T13:45:30",
                 },
             ]
         }
