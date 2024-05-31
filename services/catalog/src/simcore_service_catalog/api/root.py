@@ -1,3 +1,5 @@
+from enum import Enum
+
 from fastapi import APIRouter
 
 from .routes import (
@@ -17,7 +19,7 @@ router.include_router(health.router)
 router.include_router(meta.router, tags=["meta"], prefix="/meta")
 
 SERVICE_PREFIX = "/services"
-SERVICE_TAGS = [
+SERVICE_TAGS: list[str | Enum] = [
     "services",
 ]
 

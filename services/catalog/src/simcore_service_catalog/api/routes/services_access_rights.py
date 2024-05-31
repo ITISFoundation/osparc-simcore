@@ -13,12 +13,9 @@ from ..dependencies.database import get_repository
 from ..dependencies.services import AccessInfo, check_service_read_access
 from ._constants import RESPONSE_MODEL_POLICY
 
-#
-# Routes -----------------------------------------------------------------------------------------------
-#
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 
 @router.get(

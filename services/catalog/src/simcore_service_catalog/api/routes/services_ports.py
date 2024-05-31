@@ -14,11 +14,6 @@ from ._constants import RESPONSE_MODEL_POLICY
 
 _logger = logging.getLogger(__name__)
 
-
-#
-# Routes -----------------------------------------------------------------------------------------------
-#
-
 router = APIRouter()
 
 

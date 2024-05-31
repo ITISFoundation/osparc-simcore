@@ -28,7 +28,7 @@ from ..services.function_services import setup_function_services
 from .events import create_start_app_handler, create_stop_app_handler
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
@@ -38,7 +38,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
     config_all_loggers(settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    logger.debug(settings.json(indent=2))
+    _logger.debug(settings.json(indent=2))
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
