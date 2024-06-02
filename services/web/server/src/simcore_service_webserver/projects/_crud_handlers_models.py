@@ -45,14 +45,14 @@ class ProjectCreateHeaders(BaseModel):
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
         if (
             values.get("parent_project_uuid") is None
-            and values.get("paren_node_id") is not None
+            and values.get("parent_node_id") is not None
         ):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
         return values
 
     class Config:
-        allow_population_by_field_name = True
+        allow_population_by_field_name = False
 
 
 class ProjectCreateParams(BaseModel):
