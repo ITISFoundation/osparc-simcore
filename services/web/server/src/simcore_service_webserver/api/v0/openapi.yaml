@@ -2223,6 +2223,13 @@ paths:
           default: false
         name: hidden
         in: query
+      - required: false
+        schema:
+          title: X-Simcore-User-Agent
+          type: string
+          default: undefined
+        name: x-simcore-user-agent
+        in: header
       - description: Optionally sets a parent project UUID (both project and node
           must be set)
         required: false

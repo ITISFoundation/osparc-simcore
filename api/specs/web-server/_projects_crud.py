@@ -51,6 +51,7 @@ router = APIRouter(
 async def create_project(
     _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
+    x_simcore_user_agent: Annotated[str | None, Header()] = "undefined",
     x_simcore_parent_project_uuid: Annotated[
         ProjectID | None,
         Header(
