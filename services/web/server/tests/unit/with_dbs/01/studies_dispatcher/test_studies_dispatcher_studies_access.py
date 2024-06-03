@@ -93,7 +93,6 @@ async def published_project(
         user_id=None,
         as_template=True,  # <--IS a template
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
@@ -119,7 +118,6 @@ async def unpublished_project(
         user_id=None,
         as_template=True,
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
