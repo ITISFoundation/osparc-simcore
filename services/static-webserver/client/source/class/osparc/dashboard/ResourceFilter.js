@@ -22,9 +22,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   construct: function() {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(10));
     this.set({
-      padding: 10
+      padding: 10,
+      allowGrowX: false
     });
 
     this.__buildLayout();
@@ -51,28 +52,42 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __buildSharedWithFilter: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const buttons = [];
 
-      const showAll = new qx.ui.toolbar.RadioButton("Home", "@FontAwesome5Solid/home/20");
+      const showAll = new qx.ui.toolbar.RadioButton("Home", "@FontAwesome5Solid/home/20").set({
+        gap: 6
+      });
       showAll.filterById = "show-all";
-      layout.add(showAll);
+      buttons.push(showAll);
 
-      const myStudies = new qx.ui.toolbar.RadioButton("My Studies", "@FontAwesome5Solid/user/20");
-      myStudies.filterById = "my-resources";
-      layout.add(myStudies);
+      const myResources = new qx.ui.toolbar.RadioButton("My Studies", "@FontAwesome5Solid/user/20");
+      myResources.filterById = "my-resources";
+      buttons.push(myResources);
 
       const sharedWithMe = new qx.ui.toolbar.RadioButton("Shared with me", "@FontAwesome5Solid/users/20");
       sharedWithMe.filterById = "shared-with-me";
-      layout.add(sharedWithMe);
+      buttons.push(sharedWithMe);
 
       const sharedWithEveryone = new qx.ui.toolbar.RadioButton("Shared with Everyone", "@FontAwesome5Solid/globe/20");
       sharedWithEveryone.filterById = "shared-with-everyone";
-      layout.add(sharedWithEveryone);
+      buttons.push(sharedWithEveryone);
 
       const radioGroup = new qx.ui.form.RadioGroup();
-      radioGroup.add(showAll);
-      radioGroup.add(myStudies);
-      radioGroup.add(sharedWithMe);
-      radioGroup.add(sharedWithEveryone);
+
+      buttons.forEach(button => {
+        button.set({
+          font: "text-14",
+          gap: 6,
+          backgroundColor: "transparent",
+          padding: 8
+        });
+        button.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+        layout.add(button);
+        radioGroup.add(button);
+      });
+
       radioGroup.setAllowEmptySelection(false);
 
       this._add(layout);
