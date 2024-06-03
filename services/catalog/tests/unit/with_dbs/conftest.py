@@ -18,7 +18,6 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from models_library.products import ProductName
 from models_library.services import ServiceDockerData
-from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -191,12 +190,6 @@ def user(
         yield dict(row)
 
         conn.execute(users.delete().where(users.c.id == created_uid))
-
-
-@pytest.fixture
-def user_id(user: dict[str, Any]) -> UserID:
-    # Enforces user to be in database
-    return parse_obj_as(UserID, user["id"])
 
 
 @pytest.fixture()
@@ -492,7 +485,7 @@ async def service_catalog_faker(
 
 
 @pytest.fixture
-def mock_catalog_background_task(mocker: MockerFixture) -> None:
+def mocked_catalog_background_task(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
     mocker.patch(
         "simcore_service_catalog.core.events.start_registry_sync_task",

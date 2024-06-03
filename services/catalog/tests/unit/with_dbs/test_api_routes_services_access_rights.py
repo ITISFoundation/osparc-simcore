@@ -28,7 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 
 async def test_get_service_access_rights(
-    mock_catalog_background_task: None,
+    mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
     user: dict[str, Any],
     target_product: ProductName,
@@ -74,7 +74,7 @@ async def test_get_service_access_rights(
 
 
 async def test_get_service_access_rights_with_more_gids(
-    mock_catalog_background_task: None,
+    mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
     user: dict[str, Any],
     other_product: ProductName,

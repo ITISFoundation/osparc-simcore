@@ -94,7 +94,7 @@ async def mock_director_service_api(
 
 async def test_list_service_ports(
     disable_service_caching: None,
-    mock_catalog_background_task: None,
+    mocked_catalog_background_task: None,
     mock_check_service_read_access: None,
     mock_director_service_api: None,
     client: TestClient,

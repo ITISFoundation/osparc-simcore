@@ -182,7 +182,7 @@ class _ServiceResourceParams:
     ],
 )
 async def test_get_service_resources(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
@@ -286,7 +286,7 @@ def create_mock_director_service_labels(
     ],
 )
 async def test_get_service_resources_sim4life_case(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
@@ -306,7 +306,7 @@ async def test_get_service_resources_sim4life_case(
 
 
 async def test_get_service_resources_raises_errors(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
 ) -> None:
