@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           plural: true
         })
       }, {
-        id: "my-studies",
+        id: "my-resources",
         label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           plural: true
         })

@@ -103,7 +103,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (checks && myGroupId in checks) {
           const myAccessRights = checks[myGroupId];
           const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
-          if (sharedWith === "my-studies") {
+          if (sharedWith === "my-resources") {
             return !totalAccess;
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;

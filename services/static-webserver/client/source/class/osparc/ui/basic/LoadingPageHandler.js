@@ -52,7 +52,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     });
 
     const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-    const sideMaxWidth = 150;
+    const sideMaxWidth = 200;
     this._mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
     const fitResourceCards = () => {
       const w = document.documentElement.clientWidth;

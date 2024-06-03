@@ -632,6 +632,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
+      const resourceFilter = new osparc.dashboard.ResourceFilter();
+      this._addToLeftColumn(resourceFilter);
+
       return this._resourcesContainer;
     },
 
