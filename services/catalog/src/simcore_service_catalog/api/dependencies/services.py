@@ -3,8 +3,7 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Annotated, Any, cast
 
-from fastapi import Depends, Header, HTTPException, status
-from fastapi.requests import Request
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
@@ -12,6 +11,7 @@ from models_library.api_schemas_catalog.services_specifications import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ResourcesDict
 from pydantic import ValidationError
+from servicelib.fastapi.dependencies import get_app
 
 from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
@@ -24,13 +24,17 @@ from .director import get_director_api
 _logger = logging.getLogger(__name__)
 
 
-def get_default_service_resources(request: Request) -> ResourcesDict:
-    app_settings: ApplicationSettings = request.app.state.settings
+def get_default_service_resources(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> ResourcesDict:
+    app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_RESOURCES
 
 
-def get_default_service_specifications(request: Request) -> ServiceSpecifications:
-    app_settings: ApplicationSettings = request.app.state.settings
+def get_default_service_specifications(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> ServiceSpecifications:
+    app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
 
 

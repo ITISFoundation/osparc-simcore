@@ -12,13 +12,13 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
-from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_registry
@@ -76,11 +76,11 @@ router = APIRouter()
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
 @router.get("", response_model=list[ServiceGet], **RESPONSE_MODEL_POLICY)
-@cancellable_request
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
     key_builder=_build_cache_key,
 )
+@cancel_on_disconnect
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,

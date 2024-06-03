@@ -29,7 +29,10 @@ class DirectorSettings(BaseCustomSettings):
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
     ResourcesDict,
     {
-        "CPU": {"limit": 0.1, "reservation": 0.1},
+        "CPU": {
+            "limit": 0.1,
+            "reservation": 0.1,
+        },
         "RAM": {
             "limit": parse_obj_as(ByteSize, "2Gib"),
             "reservation": parse_obj_as(ByteSize, "2Gib"),

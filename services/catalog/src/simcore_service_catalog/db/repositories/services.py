@@ -66,6 +66,28 @@ def _make_list_services_query(
     return query
 
 
+def _is_newer(
+    old: ServiceSpecificationsAtDB | None,
+    new: ServiceSpecificationsAtDB,
+):
+    return old is None or (
+        packaging.version.parse(old.service_version)
+        < packaging.version.parse(new.service_version)
+    )
+
+
+def _merge_specs(
+    everyone_spec: ServiceSpecificationsAtDB | None,
+    team_specs: dict[GroupID, ServiceSpecificationsAtDB],
+    user_spec: ServiceSpecificationsAtDB | None,
+) -> dict[str, Any]:
+    merged_spec = {}
+    for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
+        if spec is not None:
+            merged_spec.update(spec.dict(include={"sidecar", "service"}))
+    return merged_spec
+
+
 class ServicesRepository(BaseRepository):
     """
     API that operates on services_access_rights and services_meta_data tables
@@ -80,20 +102,20 @@ class ServicesRepository(BaseRepository):
         combine_access_with_and: bool | None = True,
         product_name: str | None = None,
     ) -> list[ServiceMetaDataAtDB]:
-        services_in_db = []
 
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
-                _make_list_services_query(
-                    gids,
-                    execute_access,
-                    write_access,
-                    combine_access_with_and,
-                    product_name,
+            return [
+                ServiceMetaDataAtDB.from_orm(row)
+                async for row in await conn.stream(
+                    _make_list_services_query(
+                        gids,
+                        execute_access,
+                        write_access,
+                        combine_access_with_and,
+                        product_name,
+                    )
                 )
-            ):
-                services_in_db.append(ServiceMetaDataAtDB.from_orm(row))
-        return services_in_db
+            ]
 
     async def list_service_releases(
         self,
@@ -132,10 +154,11 @@ class ServicesRepository(BaseRepository):
         if limit_count and limit_count > 0:
             query = query.limit(limit_count)
 
-        releases = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(query):
-                releases.append(ServiceMetaDataAtDB.from_orm(row))
+            releases = [
+                ServiceMetaDataAtDB.from_orm(row)
+                async for row in await conn.stream(query)
+            ]
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
         def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
@@ -266,7 +289,6 @@ class ServicesRepository(BaseRepository):
         """
         - If product_name is not specificed, then all are considered in the query
         """
-        services_in_db = []
         search_expression = (services_access_rights.c.key == key) & (
             services_access_rights.c.version == version
         )
@@ -276,9 +298,10 @@ class ServicesRepository(BaseRepository):
         query = sa.select(services_access_rights).where(search_expression)
 
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(query):
-                services_in_db.append(ServiceAccessRightsAtDB.from_orm(row))
-        return services_in_db
+            return [
+                ServiceAccessRightsAtDB.from_orm(row)
+                async for row in await conn.stream(query)
+            ]
 
     async def list_services_access_rights(
         self,
@@ -361,6 +384,7 @@ class ServicesRepository(BaseRepository):
         key: ServiceKey,
         version: ServiceVersion,
         groups: tuple[GroupAtDB, ...],
+        *,
         allow_use_latest_service_version: bool = False,
     ) -> ServiceSpecifications | None:
         """returns the service specifications for service 'key:version' and for 'groups'
@@ -432,25 +456,3 @@ class ServicesRepository(BaseRepository):
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
         return None  # mypy
-
-
-def _is_newer(
-    old: ServiceSpecificationsAtDB | None,
-    new: ServiceSpecificationsAtDB,
-):
-    return old is None or (
-        packaging.version.parse(old.service_version)
-        < packaging.version.parse(new.service_version)
-    )
-
-
-def _merge_specs(
-    everyone_spec: ServiceSpecificationsAtDB | None,
-    team_specs: dict[GroupID, ServiceSpecificationsAtDB],
-    user_spec: ServiceSpecificationsAtDB | None,
-) -> dict[str, Any]:
-    merged_spec = {}
-    for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
-        if spec is not None:
-            merged_spec.update(spec.dict(include={"sidecar", "service"}))
-    return merged_spec
