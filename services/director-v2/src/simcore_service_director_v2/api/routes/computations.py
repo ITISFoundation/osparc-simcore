@@ -162,7 +162,7 @@ async def _get_project_metadata(
 ) -> ProjectMetadataDict:
     try:
         if (
-            result := await projects_metadata_repo.get_parent_project_and_node(
+            result := await projects_metadata_repo.get_project_ancestors(
                 computation.project_id
             )
         ) is not None:
@@ -630,9 +630,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = (
-                    await comp_tasks_repo.list_computational_tasks(project_id)
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
