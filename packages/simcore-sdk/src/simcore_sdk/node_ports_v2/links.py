@@ -1,14 +1,8 @@
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, TypeAlias
 
-from models_library.basic_regex import UUID_RE
-from models_library.projects_nodes_io import BaseFileLink, DownloadLink
-from models_library.projects_nodes_io import PortLink as BasePortLink
-from pydantic import AnyUrl, Extra, Field, StrictBool, StrictFloat, StrictInt, StrictStr
-
-
-class PortLink(BasePortLink):
-    node_uuid: str = Field(..., regex=UUID_RE, alias="nodeUuid")
+from models_library.projects_nodes_io import BaseFileLink, DownloadLink, PortLink
+from pydantic import AnyUrl, Extra, StrictBool, StrictFloat, StrictInt, StrictStr
 
 
 class FileLink(BaseFileLink):
@@ -19,17 +13,17 @@ class FileLink(BaseFileLink):
 
 
 # TODO: needs to be in sync with project_nodes.InputTypes and project_nodes.OutputTypes
-DataItemValue = Union[
-    StrictBool,
-    StrictInt,
-    StrictFloat,
-    StrictStr,
-    DownloadLink,
-    PortLink,
-    FileLink,
-    list[Any],  # arrays
-    dict[str, Any],  # object
-]
+DataItemValue: TypeAlias = (
+    StrictBool
+    | StrictInt
+    | StrictFloat
+    | StrictStr
+    | DownloadLink
+    | PortLink
+    | FileLink
+    | list[Any]  # arrays
+    | dict[str, Any]  # object
+)
 
 #
 # - the port's value is stored as Optional[DataItemValue]
@@ -38,12 +32,13 @@ DataItemValue = Union[
 # - ItemValue values are resolved into ItemConcreteValue using Port.get()
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
-SchemaValidatedTypes = Union[
-    StrictBool, StrictInt, StrictFloat, StrictStr, list[Any], dict[str, Any]
-]
-ItemValue = Union[SchemaValidatedTypes, AnyUrl]
-ItemConcreteValue = Union[SchemaValidatedTypes, Path]
-ItemConcreteValueTypes = (
+SchemaValidatedTypes: TypeAlias = (
+    StrictBool | StrictInt | StrictFloat | StrictStr | list[Any] | dict[str, Any]
+)
+
+ItemValue: TypeAlias = SchemaValidatedTypes | AnyUrl
+ItemConcreteValue: TypeAlias = SchemaValidatedTypes | Path
+ItemConcreteValueTypes: TypeAlias = (
     type[StrictBool]
     | type[StrictInt]
     | type[StrictFloat]
