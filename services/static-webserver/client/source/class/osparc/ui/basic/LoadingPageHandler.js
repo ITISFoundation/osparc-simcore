@@ -38,21 +38,15 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
     stack.add(this.__mainLayoutWithSides);
 
-    const leftSpace = new qx.ui.core.Widget().set({
-      maxWidth: 150
-    });
+    const leftSpace = new qx.ui.core.Widget();
     this.__mainLayoutWithSides.add(leftSpace, {
       flex: 1
     });
 
     this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__mainLayoutWithSides.add(this._mainLayout, {
-      flex: 1
-    });
+    this.__mainLayoutWithSides.add(this._mainLayout);
 
-    const rightSpace = new qx.ui.core.Widget().set({
-      maxWidth: 150
-    });
+    const rightSpace = new qx.ui.core.Widget();
     this.__mainLayoutWithSides.add(rightSpace, {
       flex: 1
     });
