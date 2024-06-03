@@ -37,6 +37,9 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNotFoundError,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_api import (
+    check_project_node_has_all_required_inputs,
+)
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
@@ -911,7 +914,8 @@ async def test_check_project_node_has_all_required_inputs_raises(
 ):
 
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
-        await db_api.check_project_node_has_all_required_inputs(
+        await check_project_node_has_all_required_inputs(
+            db_api,
             user_id=logged_user["id"],
             project_uuid=UUID(inserted_project["uuid"]),
             node_id=UUID("324d6ef2-a82c-414d-9001-dc84da1cbea3"),
@@ -936,7 +940,8 @@ async def test_check_project_node_has_all_required_inputs_ok(
     db_api: ProjectDBAPI,
     inserted_project: dict,
 ):
-    await db_api.check_project_node_has_all_required_inputs(
+    await check_project_node_has_all_required_inputs(
+        db_api,
         user_id=logged_user["id"],
         project_uuid=UUID(inserted_project["uuid"]),
         node_id=UUID("324d6ef2-a82c-414d-9001-dc84da1cbea3"),

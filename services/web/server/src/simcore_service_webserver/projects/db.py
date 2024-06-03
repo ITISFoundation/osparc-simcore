@@ -17,7 +17,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
-from models_library.projects_nodes import Node, OutputsDict
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import (
     PricingPlanAndUnitIdsTuple,
@@ -45,7 +45,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
-from simcore_sdk.node_ports_v2.links import PortLink
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_
@@ -79,7 +78,6 @@ from ._db_utils import (
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
-    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
@@ -445,54 +443,6 @@ class ProjectDBAPI(BaseProjectDB):
                 convert_to_schema_names(project, user_email),
                 project_type,
             )
-
-    async def check_project_node_has_all_required_inputs(
-        self, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
-    ) -> None:
-        project_dict, _ = await self.get_project(user_id, f"{project_uuid}")
-        workbench = project_dict["workbench"]
-
-        nodes_map: dict[str, Node] = {i: Node(**workbench[i]) for i in workbench}
-        node = nodes_map[f"{node_id}"]
-
-        unset_required_inputs: list[str] = []
-        unset_outputs_in_upstream: list[tuple[str, str]] = []
-
-        def _check_required_input(required_input_key: str) -> None:
-            input_entry: PortLink | None = None
-            if node.inputs:
-                input_entry = node.inputs.get(required_input_key, None)
-            if input_entry is None:
-                # NOT linked to any node connect service or set value manually(whichever applies)
-                unset_required_inputs.append(required_input_key)
-                return
-
-            source_node_id: str = f"{input_entry.node_uuid}"
-            source_output_key = input_entry.output
-
-            source_node = nodes_map[source_node_id]
-
-            output_entry: OutputsDict | None = None
-            if source_node.outputs:
-                output_entry = source_node.outputs.get(source_output_key, None)
-            if output_entry is None:
-                unset_outputs_in_upstream.append((source_output_key, source_node.label))
-
-        for required_input in node.inputs_required:
-            _check_required_input(required_input)
-
-        node_with_required_inputs = node.label
-        if unset_required_inputs:
-            msg = f"Missing '{', '.join(unset_required_inputs)}' connection(s) to '{node_with_required_inputs}'"
-            raise ProjectNodeRequiredInputsNotSetError(msg)
-
-        if unset_outputs_in_upstream:
-            start_messages = [
-                f"'{input_key}' of '{service_name}'"
-                for input_key, service_name in unset_outputs_in_upstream
-            ]
-            msg = f"Missing: {', '.join(start_messages)}"
-            raise ProjectNodeRequiredInputsNotSetError(msg)
 
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
     # for the workbench, and at some point, this column should be removed from the table.
