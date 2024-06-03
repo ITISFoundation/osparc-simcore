@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.3
+  version: 0.40.4
 servers:
 - url: ''
   description: webserver
@@ -2223,6 +2223,35 @@ paths:
           default: false
         name: hidden
         in: query
+      - required: false
+        schema:
+          title: X-Simcore-User-Agent
+          type: string
+          default: undefined
+        name: x-simcore-user-agent
+        in: header
+      - description: Optionally sets a parent project UUID (both project and node
+          must be set)
+        required: false
+        schema:
+          title: X-Simcore-Parent-Project-Uuid
+          type: string
+          description: Optionally sets a parent project UUID (both project and node
+            must be set)
+          format: uuid
+        name: x-simcore-parent-project-uuid
+        in: header
+      - description: Optionally sets a parent node ID (both project and node must
+          be set)
+        required: false
+        schema:
+          title: X-Simcore-Parent-Node-Id
+          type: string
+          description: Optionally sets a parent node ID (both project and node must
+            be set)
+          format: uuid
+        name: x-simcore-parent-node-id
+        in: header
       requestBody:
         content:
           application/json:
@@ -7667,6 +7696,13 @@ components:
           title: Inputs
           type: object
           description: values of input properties
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
+          description: Defines inputs that are required in order to run the service
         inputsUnits:
           title: Inputsunits
           type: object
@@ -7905,6 +7941,12 @@ components:
         inputs:
           title: Inputs
           type: object
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
         inputNodes:
           title: Inputnodes
           type: array
@@ -11441,15 +11483,28 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: A user-friendly or marketing name for the release. This can
+            be used to reference the release in a more readable and recognizable format,
+            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
+            name is not used for version comparison but is useful for communication
+            and documentation purposes.
+        releaseDate:
+          title: Releasedate
+          type: string
+          description: "A timestamp when the specific version of the service was released.\
+            \ This field helps in tracking the timeline of releases and understanding\
+            \ the sequence of updates. A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z\
+            \ or [\xB1]HH[:]MM]"
+          format: date-time
         integration-version:
           title: Integration-Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
           type: string
-          description: integration version number
-        progress_regexp:
-          title: Progress Regexp
-          type: string
-          description: regexp pattern for detecting computational service's progress
+          description: This version is used to maintain backward compatibility when
+            there are changes in the way a service is integrated into the framework
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'
@@ -11489,6 +11544,10 @@ components:
           type: integer
           description: The number of 'data type inputs' displayed by default in the
             UI. When None all 'data type inputs' are displayed.
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
         owner:
           title: Owner
           type: string
@@ -11496,7 +11555,8 @@ components:
       description: 'Static metadata for a service injected in the image labels
 
 
-        This is one to one with node-meta-v0.0.1.json'
+        NOTE: This model is serialized in .osparc/metadata.yml and in the labels of
+        the docker image'
       example:
         name: File Picker
         description: description

@@ -65,7 +65,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
   members: {
     __resourceData: null,
-    __copyResourceData: null,
+    __copyQualityData: null,
     __schema: null,
     __enabledQuality: null,
     __TSRSection: null,
@@ -78,7 +78,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       }
 
       this.__resourceData = resourceData;
-      this.__copyResourceData = osparc.utils.Resources.isService(resourceData) ? osparc.utils.Utils.deepCloneObject(resourceData) : osparc.data.model.Study.deepCloneStudyObject(resourceData);
+      this.__copyQualityData = osparc.utils.Utils.deepCloneObject(resourceData["quality"]);
 
       const ajvLoader = new qx.util.DynamicScriptLoader([
         "/resource/ajv/ajv-6-11-0.min.js",
@@ -197,10 +197,10 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     },
 
     __populateEnable: function() {
-      this.__enabledQuality.setValue(this.__copyResourceData["quality"]["enabled"]);
+      this.__enabledQuality.setValue(this.__copyQualityData["enabled"]);
       this.__enabledQuality.addListener("changeValue", e => {
         const value = e.getData();
-        this.__copyResourceData["quality"]["enabled"] = value;
+        this.__copyQualityData["enabled"] = value;
       }, this);
       this.__enabledQuality.bind("value", this.__TSRSection, "visibility", {
         converter: value => value ? "visible" : "excluded"
@@ -277,8 +277,8 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     },
 
     __populateTSRData: function() {
-      const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
-      const copyTSRTarget = this.__copyResourceData["quality"]["tsr_target"];
+      const copyTSRCurrent = this.__copyQualityData["tsr_current"];
+      const copyTSRTarget = this.__copyQualityData["tsr_target"];
       const tsrTotalRating = new osparc.ui.basic.StarsRating();
       tsrTotalRating.set({
         nStars: 4,
@@ -445,54 +445,39 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     },
 
     __save: function(btn) {
-      const data = {
-        "quality" : {}
+      const newQuality = {
+        "enabled": this.__copyQualityData["enabled"],
+        "tsr_current": this.__copyQualityData["tsr_current"],
+        "tsr_target": this.__copyQualityData["tsr_target"]
       };
-      data["quality"]["enabled"] = this.__copyResourceData["quality"]["enabled"];
-      data["quality"]["tsr_current"] = this.__copyResourceData["quality"]["tsr_current"];
-      data["quality"]["tsr_target"] = this.__copyResourceData["quality"]["tsr_target"];
-      if (this.__validate(this.__schema, data["quality"])) {
+      const patchData = {
+        "quality": newQuality
+      };
+      if (this.__validate(this.__schema, patchData["quality"])) {
         btn.setFetching(true);
-        if (osparc.utils.Resources.isService(this.__copyResourceData)) {
-          const params = {
-            url: osparc.data.Resources.getServiceUrl(
-              this.__copyResourceData["key"],
-              this.__copyResourceData["version"]
-            ),
-            data: data
-          };
-          osparc.data.Resources.fetch("services", "patch", params)
-            .then(serviceData => {
-              this.__initResourceData(serviceData);
-              this.fireDataEvent("updateQuality", serviceData);
+        if (osparc.utils.Resources.isService(this.__resourceData)) {
+          const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
+          osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, "quality", newQuality)
+            .then(() => {
+              this.__initResourceData(serviceDataCopy);
+              this.fireDataEvent("updateQuality", serviceDataCopy);
             })
             .catch(err => {
               console.error(err);
               osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
-            .finally(() => {
-              btn.setFetching(false);
-            });
+            .finally(() => btn.setFetching(false));
         } else {
-          const isTemplate = osparc.utils.Resources.isTemplate(this.__copyResourceData);
-          const params = {
-            url: {
-              "studyId": this.__copyResourceData["uuid"]
-            },
-            data: this.__copyResourceData
-          };
-          osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
-            .then(resourceData => {
-              this.__initResourceData(resourceData);
-              this.fireDataEvent("updateQuality", resourceData);
+          osparc.info.StudyUtils.patchStudyData(this.__resourceData, "quality", newQuality)
+            .then(() => {
+              this.__initResourceData(this.__resourceData);
+              this.fireDataEvent("updateQuality", this.__resourceData);
             })
             .catch(err => {
               console.error(err);
               osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
-            .finally(() => {
-              btn.setFetching(false);
-            });
+            .finally(() => btn.setFetching(false));
         }
       }
     },

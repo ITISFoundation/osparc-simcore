@@ -46,6 +46,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "dynamic-schdlr": "/",
+    "efs-guardian": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",

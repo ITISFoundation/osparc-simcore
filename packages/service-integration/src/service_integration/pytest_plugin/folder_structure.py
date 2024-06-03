@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from ..osparc_config import OSPARC_CONFIG_DIRNAME
+
 
 @pytest.fixture(scope="session")
 def project_slug_dir(request: pytest.FixtureRequest) -> Path:
@@ -15,7 +17,7 @@ def project_slug_dir(request: pytest.FixtureRequest) -> Path:
 
     assert isinstance(root_dir, Path)
     assert root_dir.exists()
-    assert any(root_dir.glob(".osparc"))
+    assert any(root_dir.glob(OSPARC_CONFIG_DIRNAME))
     return root_dir
 
 

@@ -10,7 +10,12 @@ from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from ..osparc_config import (
+    OSPARC_CONFIG_DIRNAME,
+    DockerComposeOverwriteConfig,
+    MetadataConfig,
+    RuntimeConfig,
+)
 from ..osparc_image_specs import create_image_spec
 from ..settings import AppSettings
 
@@ -20,10 +25,7 @@ error_console = Console(stderr=True)
 def _run_git(*args) -> str:
     """:raises CalledProcessError"""
     return subprocess.run(  # nosec
-        [
-            "git",
-        ]
-        + list(args),
+        ["git", *list(args)],
         capture_output=True,
         encoding="utf8",
         check=True,
@@ -60,15 +62,15 @@ def create_docker_compose_image_spec(
     config_basedir = meta_config_path.parent
 
     # required
-    meta_cfg = MetaConfig.from_yaml(meta_config_path)
+    meta_cfg = MetadataConfig.from_yaml(meta_config_path)
 
     # required
     if docker_compose_overwrite_path:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
             docker_compose_overwrite_path
         )
     else:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.create_default(
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.create_default(
             service_name=meta_cfg.service_name()
         )
 
@@ -88,7 +90,8 @@ def create_docker_compose_image_spec(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
         )
         if not oci_spec:
-            raise ValueError("Undefined OCI image spec")
+            msg = "Undefined OCI image spec"
+            raise ValueError(msg)
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
         extra_labels.update(oci_labels)
@@ -118,7 +121,7 @@ def create_docker_compose_image_spec(
         "config", "--get", "remote.origin.url"
     )
 
-    compose_spec = create_image_spec(
+    return create_image_spec(
         settings,
         meta_cfg,
         docker_compose_overwrite_cfg,
@@ -126,13 +129,11 @@ def create_docker_compose_image_spec(
         extra_labels=extra_labels,
     )
 
-    return compose_spec
-
 
 def main(
     ctx: typer.Context,
     config_path: Path = typer.Option(
-        ".osparc",
+        OSPARC_CONFIG_DIRNAME,
         "-m",
         "--metadata",
         help="osparc config file or folder. "
@@ -149,7 +150,8 @@ def main(
 
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
-        raise typer.BadParameter("Invalid path to metadata file or folder")
+        msg = "Invalid path to metadata file or folder"
+        raise typer.BadParameter(msg)
 
     if config_path.is_dir():
         # equivalent to 'basedir/**/metadata.yml'
@@ -162,7 +164,7 @@ def main(
 
     configs_kwargs_map: dict[str, dict[str, Path]] = {}
 
-    for meta_config in sorted(list(basedir.rglob(config_pattern))):
+    for meta_config in sorted(basedir.rglob(config_pattern)):
         config_name = meta_config.parent.name
         configs_kwargs_map[config_name] = {}
 

@@ -277,17 +277,6 @@ def disable_rabbitmq(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disableapi_keys_manager(mocker: MockerFixture) -> None:
-    def mock_setup(app: FastAPI) -> None:
-        app.state.api_keys_manager = AsyncMock()
-
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables.api_keys_manager.setup",
-        side_effect=mock_setup,
-    )
-
-
-@pytest.fixture
 def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(

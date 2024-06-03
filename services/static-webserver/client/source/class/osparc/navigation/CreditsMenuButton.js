@@ -37,12 +37,8 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     this.getContentElement().setStyle("line-height", 1.2);
 
     const preferencesSettings = osparc.Preferences.getInstance();
-    this.__computeVisibility();
     preferencesSettings.addListener("changeWalletIndicatorVisibility", () => this.__computeVisibility());
-    preferencesSettings.addListener("changeCreditsWarningThreshold", () => {
-      this.__computeVisibility();
-      this.__updateCredits();
-    });
+    preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateCredits());
 
     const store = osparc.store.Store.getInstance();
     this.__contextWalletChanged(store.getContextWallet());
@@ -100,6 +96,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
           textColor: osparc.desktop.credits.Utils.creditsToColor(creditsLeft, "text")
         });
       }
+      this.__computeVisibility();
     },
 
     __computeVisibility: function() {

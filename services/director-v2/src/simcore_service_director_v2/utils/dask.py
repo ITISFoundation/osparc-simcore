@@ -601,7 +601,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         json_dumps(task_resources, indent=2),
     )
 
-    if can_a_worker_run_task:
+    if can_a_worker_run_task:  # OsparcErrorMixin
         return
 
     # check if we have missing resources

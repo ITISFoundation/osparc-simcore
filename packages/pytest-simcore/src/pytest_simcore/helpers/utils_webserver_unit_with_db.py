@@ -101,6 +101,20 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
     )
 
 
+def standard_user_role_response() -> (
+    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
+):
+    all_roles = standard_role_response()
+    return (
+        all_roles[0],
+        [
+            (user_role, response)
+            for user_role, response in all_roles[1]
+            if user_role in [UserRole.USER]
+        ],
+    )
+
+
 class MockedStorageSubsystem(NamedTuple):
     copy_data_folders_from_project: mock.MagicMock
     delete_project: mock.MagicMock

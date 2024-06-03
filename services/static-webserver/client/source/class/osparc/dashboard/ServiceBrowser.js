@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __itemClicked: function(card) {
       const serviceData = card.getResourceData();
-      this._openDetailsView(serviceData);
+      this._openResourceDetails(serviceData);
       this.resetSelection();
     },
 
