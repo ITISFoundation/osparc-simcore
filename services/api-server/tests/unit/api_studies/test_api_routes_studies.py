@@ -6,6 +6,7 @@
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypedDict
+from uuid import UUID
 
 import httpx
 import pytest
@@ -16,6 +17,8 @@ from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCapture
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.studies import Study, StudyID, StudyPort
+
+_faker = Faker()
 
 
 class MockedBackendApiDict(TypedDict):
@@ -137,17 +140,50 @@ async def test_list_study_ports(
 @pytest.mark.acceptance_test(
     "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
 )
+@pytest.mark.parametrize(
+    "parent_node_id, parent_project_id",
+    [(_faker.uuid4(), _faker.uuid4()), (None, None)],
+)
 async def test_clone_study(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     study_id: StudyID,
     mocked_webserver_service_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
+    parent_project_id: UUID | None,
+    parent_node_id: UUID | None,
 ):
     # Mocks /projects
     patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
 
-    resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
+    callback = mocked_webserver_service_api_base["create_projects"].side_effect
+    assert callback is not None
+
+    def clone_project_side_effect(request: httpx.Request):
+        if parent_project_id is not None:
+            _parent_project_id = dict(request.headers).get(
+                "x-simcore-parent-project-uuid"
+            )
+            assert _parent_project_id == f"{parent_project_id}"
+        if parent_node_id is not None:
+            _parent_node_id = dict(request.headers).get("x-simcore-parent-node-id")
+            assert _parent_node_id == f"{parent_node_id}"
+        return callback(request)
+
+    mocked_webserver_service_api_base[
+        "create_projects"
+    ].side_effect = clone_project_side_effect
+
+    _headers = {}
+    if parent_project_id is not None:
+        _headers["X-Simcore-Parent-Project-Uuid"] = f"{parent_project_id}"
+    if parent_node_id is not None:
+        _headers["X-Simcore-Parent-Node-Id"] = f"{parent_node_id}"
+    resp = await client.post(
+        f"/v0/studies/{study_id}:clone", headers=_headers, auth=auth
+    )
+
+    assert mocked_webserver_service_api_base["create_projects"].called
 
     assert resp.status_code == status.HTTP_201_CREATED
 

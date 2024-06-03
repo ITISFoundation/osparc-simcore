@@ -180,7 +180,9 @@ async def test_create_job(
     mock_webserver_router = (
         mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
     )
+    assert mock_webserver_router is not None
     callback = mock_webserver_router["create_projects"].side_effect
+    assert callback is not None
 
     def create_project_side_effect(request: httpx.Request):
         # check `hidden` bool
@@ -199,9 +201,6 @@ async def test_create_job(
             )
         return callback(request)
 
-    mock_webserver_router = (
-        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
-    )
     mock_webserver_router["create_projects"].side_effect = create_project_side_effect
 
     # create Job
