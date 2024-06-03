@@ -36,67 +36,48 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-@pytest.fixture()
-async def products_names(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[list[str]]:
-    """Inits products db table and returns product names"""
-    data = [
-        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
-        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
-        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
-    ]
-
-    # pylint: disable=no-value-for-parameter
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-        for n, (name, regex) in enumerate(data):
-            stmt = products.insert().values(name=name, host_regex=regex, priority=n)
-            await conn.execute(stmt)
-
-    names = [
-        "osparc",
-    ] + [items[0] for items in data]
-
-    yield names
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(products.delete())
-
-
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    # starts postgres service before app starts
-    postgres_db: sa.engine.Engine,
-    postgres_host_config: PostgresTestConfig,
-    products_names: list[str],
+    postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    env_vars = setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         {
             **app_environment,
+            **postgres_env_vars_dict,
             "SC_BOOT_MODE": "local-development",
             "POSTGRES_CLIENT_NAME": "pytest_client",
         },
     )
 
+
+@pytest.fixture
+async def app_settings(  # starts postgres service before app starts
+    postgres_db: sa.engine.Engine,
+    postgres_host_config: PostgresTestConfig,
+    app_settings: ApplicationSettings,
+) -> ApplicationSettings:
+    # Database is init BEFORE app
     assert postgres_db
     print("database started:", postgres_host_config)
-    print("database w/products in table:", products_names)
 
     # Ensures both postgres service and app environs are the same!
-    assert env_vars["POSTGRES_USER"] == postgres_host_config["user"]
-    assert env_vars["POSTGRES_DB"] == postgres_host_config["database"]
-    assert env_vars["POSTGRES_PASSWORD"] == postgres_host_config["password"]
-
-    return env_vars
+    assert app_settings
+    assert app_settings.CATALOG_POSTGRES
+    assert app_settings.CATALOG_POSTGRES.POSTGRES_USER == postgres_host_config["user"]
+    assert app_settings.CATALOG_POSTGRES.POSTGRES_DB == postgres_host_config["database"]
+    assert (
+        app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
+        == postgres_host_config["password"]
+    )
+    return app_settings
 
 
 @pytest.fixture
 def client(app: FastAPI) -> Iterator[TestClient]:
+    # NOTE: sync client since we use benchmarch fixture!
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
@@ -138,26 +119,56 @@ def mocked_director_service_api(
 
 
 @pytest.fixture()
+async def products_names(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[list[str]]:
+    """Inits products db table and returns product names"""
+    data = [
+        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
+        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
+        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
+    ]
+
+    # pylint: disable=no-value-for-parameter
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
+        for n, (name, regex) in enumerate(data):
+            stmt = products.insert().values(name=name, host_regex=regex, priority=n)
+            await conn.execute(stmt)
+
+    names = [
+        "osparc",
+    ] + [items[0] for items in data]
+
+    yield names
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(products.delete())
+
+
+@pytest.fixture()
 def user(
     postgres_db: sa.engine.Engine, user: dict[str, Any]
 ) -> Iterator[dict[str, Any]]:
 
-    with postgres_db.connect() as con:
+    with postgres_db.connect() as conn:
         # removes all users before continuing
-        con.execute(users.delete())
+        conn.execute(users.delete())
 
-        result = con.execute(users.insert().values(**user).returning(users.c.id))
+        result = conn.execute(users.insert().values(**user).returning(users.c.id))
         row = result.first()
         assert row
+        created_uid = row.id
 
         # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select(users).where(users.c.id == row.id))
+        result = conn.execute(sa.select(users).where(users.c.id == created_uid))
         row = result.first()
         assert row
 
         yield dict(row)
 
-        con.execute(users.delete().where(users.c.id == user_id))
+        conn.execute(users.delete().where(users.c.id == created_uid))
 
 
 @pytest.fixture

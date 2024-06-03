@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from models_library.api_schemas_catalog.services import ServiceGet
+from models_library.products import ProductName
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -28,21 +29,41 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def disable_service_caching(monkeypatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", 1)
+def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+@pytest.fixture
+def target_product(products_names: list[str]) -> ProductName:
+    assert (
+        len(set(products_names)) > 1
+    ), "please adjust the fixture to have the right number of products"
+    # injects fake data in db
+    return parse_obj_as(ProductName, products_names[-1])
+
+
+@pytest.fixture
+def other_product(
+    products_names: list[str], target_product: ProductName
+) -> ProductName:
+    for name in products_names:
+        if name != target_product:
+            return name
+    pytest.fail(
+        f"Could not find other product than {target_product=} in {products_names=}"
+    )
 
 
 async def test_list_services_with_details(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: UserID,
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
     benchmark,
 ):
-    target_product = products_names[-1]
     # create some fake services
     NUM_SERVICES = 1000
     fake_services = [
@@ -89,14 +110,14 @@ async def test_list_services_with_details(
 async def test_list_services_without_details(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: int,
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
     benchmark,
 ):
-    target_product = products_names[-1]
+
     # injects fake data in db
     NUM_SERVICES = 1000
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
@@ -132,13 +153,13 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     disable_service_caching,
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: int,
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
+
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -163,17 +184,13 @@ async def test_list_services_without_details_with_another_product_returns_other_
     disable_service_caching: None,
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: int,
-    products_names: list[str],
+    target_product: ProductName,
+    other_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
-    # injects fake data in db
     NUM_SERVICES = 15
     await services_db_tables_injector(
         [
@@ -189,9 +206,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(
-        f"{url}", headers={"x-simcore-products-name": products_names[0]}
-    )
+    response = client.get(f"{url}", headers={"x-simcore-products-name": other_product})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
@@ -201,16 +216,13 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     disable_service_caching,
     mock_catalog_background_task,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: int,
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
+
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -239,16 +251,13 @@ async def test_list_services_that_are_deprecated(
     disable_service_caching,
     mock_catalog_background_task,
     mocked_director_service_api: MockRouter,
-    client: TestClient,
     user_id: int,
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
+
     # injects fake data in db
     deprecation_date = datetime.utcnow() + timedelta(days=1)
     deprecated_service = service_catalog_faker(
