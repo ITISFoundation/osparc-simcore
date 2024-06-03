@@ -18,7 +18,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,7 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -38,6 +38,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -58,7 +59,7 @@ from ...core.errors import (
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -72,7 +73,6 @@ from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
-from ...utils import db as db_utils
 from ...utils.dags import (
     compute_pipeline_details,
     compute_pipeline_started_timestamp,
@@ -91,7 +91,7 @@ from ..dependencies.rut_client import get_rut_client
 from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
-PIPELINE_ABORT_TIMEOUT_S = 10
+_PIPELINE_ABORT_TIMEOUT_S: Final[int] = 10
 
 _logger = logging.getLogger(__name__)
 
@@ -147,6 +147,66 @@ async def _check_pipeline_startable(
             ) from exc
 
 
+_UNKNOWN_NODE: Final[str] = "unknown node"
+
+
+async def _get_project_metadata(
+    project_id: ProjectID,
+    project_repo: ProjectsRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
+) -> ProjectMetadataDict:
+    try:
+        project_ancestors = await projects_metadata_repo.get_project_ancestors(
+            project_id
+        )
+        if project_ancestors.parent_project_uuid is None:
+            # no parents here
+            return {}
+
+        assert project_ancestors.parent_node_id is not None  # nosec
+        assert project_ancestors.root_project_uuid is not None  # nosec
+        assert project_ancestors.root_node_id is not None  # nosec
+
+        async def _get_project_node_names(
+            project_uuid: ProjectID, node_id: NodeID
+        ) -> tuple[str, str]:
+            prj = await project_repo.get_project(project_uuid)
+            node_id_str = NodeIDStr(f"{node_id}")
+            if node_id_str not in prj.workbench:
+                _logger.error(
+                    "%s not found in %s. it is an ancestor of %s. Please check!",
+                    f"{node_id=}",
+                    f"{prj.uuid=}",
+                    f"{project_id=}",
+                )
+                return prj.name, _UNKNOWN_NODE
+            return prj.name, prj.workbench[node_id_str].label
+
+        parent_project_name, parent_node_name = await _get_project_node_names(
+            project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
+        )
+        root_parent_project_name, root_parent_node_name = await _get_project_node_names(
+            project_ancestors.root_project_uuid, project_ancestors.root_node_id
+        )
+        return ProjectMetadataDict(
+            parent_node_id=project_ancestors.parent_node_id,
+            parent_node_name=parent_node_name,
+            parent_project_id=project_ancestors.parent_project_uuid,
+            parent_project_name=parent_project_name,
+            root_parent_node_id=project_ancestors.root_node_id,
+            root_parent_node_name=root_parent_node_name,
+            root_parent_project_id=project_ancestors.root_project_uuid,
+            root_parent_project_name=root_parent_project_name,
+        )
+
+    except DBProjectNotFoundError:
+        _logger.exception("Could not find project: %s", f"{project_id=}")
+    except ProjectNotFoundError as exc:
+        _logger.exception("Could not find parent project: %s", f"{exc.project_id=}")
+
+    return {}
+
+
 async def _try_start_pipeline(
     *,
     project_repo: ProjectsRepository,
@@ -193,7 +253,7 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=await db_utils.get_project_metadata(
+            project_metadata=await _get_project_metadata(
                 computation.project_id, project_repo, projects_metadata_repo
             ),
         )
@@ -573,7 +633,7 @@ async def delete_computation(
                 return retry_state.outcome.result()
 
             @retry(
-                stop=stop_after_delay(PIPELINE_ABORT_TIMEOUT_S),
+                stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S),
                 wait=wait_random(0, 2),
                 retry_error_callback=return_last_value,
                 retry=retry_if_result(lambda result: result is False),
@@ -594,7 +654,7 @@ async def delete_computation(
                 _logger.error(
                     "pipeline %s could not be stopped properly after %ss",
                     project_id,
-                    PIPELINE_ABORT_TIMEOUT_S,
+                    _PIPELINE_ABORT_TIMEOUT_S,
                 )
 
         # delete the pipeline now
