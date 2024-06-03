@@ -15,14 +15,16 @@ import respx
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_service_catalog.core.application import create_app
+from simcore_service_catalog.core.settings import ApplicationSettings
 from simcore_service_catalog.db.tables import (
     groups,
     services_access_rights,
@@ -31,7 +33,6 @@ from simcore_service_catalog.db.tables import (
 from sqlalchemy import tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
-from starlette.testclient import TestClient
 
 
 @pytest.fixture()
@@ -64,25 +65,33 @@ async def products_names(
 
 
 @pytest.fixture
-def app(
+def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mocker: MockerFixture,
     app_environment: EnvVarsDict,
+    # starts postgres service before app starts
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     products_names: list[str],
-) -> FastAPI:
+) -> EnvVarsDict:
+    env_vars = setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "SC_BOOT_MODE": "local-development",
+            "POSTGRES_CLIENT_NAME": "pytest_client",
+        },
+    )
+
+    assert postgres_db
     print("database started:", postgres_host_config)
     print("database w/products in table:", products_names)
 
     # Ensures both postgres service and app environs are the same!
-    assert app_environment["POSTGRES_USER"] == postgres_host_config["user"]
-    assert app_environment["POSTGRES_DB"] == postgres_host_config["database"]
-    assert app_environment["POSTGRES_PASSWORD"] == postgres_host_config["password"]
+    assert env_vars["POSTGRES_USER"] == postgres_host_config["user"]
+    assert env_vars["POSTGRES_DB"] == postgres_host_config["database"]
+    assert env_vars["POSTGRES_PASSWORD"] == postgres_host_config["password"]
 
-    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
-    monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
-    return create_app()
+    return env_vars
 
 
 @pytest.fixture
@@ -93,9 +102,11 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 @pytest.fixture()
-def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
+def mocked_director_service_api(
+    app_settings: ApplicationSettings,
+) -> Iterator[respx.MockRouter]:
     with respx.mock(
-        base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
+        base_url=app_settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:

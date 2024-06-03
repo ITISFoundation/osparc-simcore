@@ -33,7 +33,7 @@ def disable_service_caching(monkeypatch):
 
 async def test_list_services_with_details(
     mock_catalog_background_task: None,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -62,7 +62,7 @@ async def test_list_services_with_details(
     # now fake the director such that it returns half the services
     fake_registry_service_data = ServiceDockerData.Config.schema_extra["examples"][0]
 
-    director_mockup.get("/services", name="list_services").respond(
+    mocked_director_service_api.get("/services", name="list_services").respond(
         200,
         json={
             "data": [
@@ -87,7 +87,7 @@ async def test_list_services_with_details(
 
 async def test_list_services_without_details(
     mock_catalog_background_task: None,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -130,7 +130,7 @@ async def test_list_services_without_details(
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
     disable_service_caching,
     mock_catalog_background_task: None,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -161,7 +161,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 async def test_list_services_without_details_with_another_product_returns_other_services(
     disable_service_caching: None,
     mock_catalog_background_task: None,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -199,7 +199,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
     disable_service_caching,
     mock_catalog_background_task,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -237,7 +237,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
 async def test_list_services_that_are_deprecated(
     disable_service_caching,
     mock_catalog_background_task,
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     client: TestClient,
     user_id: int,
     products_names: list[str],
@@ -272,7 +272,7 @@ async def test_list_services_that_are_deprecated(
 
     # for details, the director must return the same service
     fake_registry_service_data = ServiceDockerData.Config.schema_extra["examples"][0]
-    director_mockup.get("/services", name="list_services").respond(
+    mocked_director_service_api.get("/services", name="list_services").respond(
         200,
         json={
             "data": [

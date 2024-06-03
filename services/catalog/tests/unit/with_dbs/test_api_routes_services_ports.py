@@ -73,13 +73,13 @@ async def mock_check_service_read_access(
 
 @pytest.fixture
 async def mock_director_service_api(
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     service_key: str,
     service_version: str,
     service_metadata: dict[str, Any],
 ):
     # SEE services/director/src/simcore_service_director/api/v0/openapi.yaml
-    director_mockup.get(
+    mocked_director_service_api.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
         name="services_by_key_version_get",
     ).respond(

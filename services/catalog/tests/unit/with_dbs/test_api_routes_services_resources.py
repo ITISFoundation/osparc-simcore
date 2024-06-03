@@ -38,10 +38,10 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mock_director_service_labels(
-    director_mockup: respx.MockRouter, app: FastAPI
+    mocked_director_service_api: respx.MockRouter, app: FastAPI
 ) -> Route:
     slash = urllib.parse.quote_plus("/")
-    return director_mockup.get(
+    return mocked_director_service_api.get(
         url__regex=rf"v0/services/simcore{slash}services{slash}(comp|dynamic|frontend)({slash}[\w{slash}-]+)+/[0-9]+.[0-9]+.[0-9]+/labels",
         name="get_service_labels",
     ).respond(200, json={"data": {}})
@@ -208,7 +208,7 @@ async def test_get_service_resources(
 
 @pytest.fixture
 def create_mock_director_service_labels(
-    director_mockup: respx.MockRouter, app: FastAPI
+    mocked_director_service_api: respx.MockRouter, app: FastAPI
 ) -> Callable:
     def factory(services_labels: dict[str, dict[str, Any]]) -> None:
         for service_name, data in services_labels.items():
@@ -216,7 +216,7 @@ def create_mock_director_service_labels(
                 f"simcore/services/dynamic/{service_name}"
             )
             for k, mock_key in enumerate((encoded_key, service_name)):
-                director_mockup.get(
+                mocked_director_service_api.get(
                     url__regex=rf"v0/services/{mock_key}/[\w/.]+/labels",
                     name=f"get_service_labels_for_{service_name}_{k}",
                 ).respond(200, json={"data": data})
