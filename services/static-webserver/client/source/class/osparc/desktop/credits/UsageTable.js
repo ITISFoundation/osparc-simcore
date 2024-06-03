@@ -69,5 +69,58 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     columnModel.setColumnWidth(5, 70)
     columnModel.setColumnWidth(6, 56)
     columnModel.setColumnWidth(7, 130)
+  },
+
+  statics: {
+    COLS: {
+      PROJECT: {
+        id: "project",
+        column: 0,
+        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
+        width: 130
+      },
+      NODE: {
+        id: "node",
+        column: 1,
+        label: qx.locale.Manager.tr("Node"),
+        width: 130
+      },
+      SERVICE: {
+        id: "service",
+        column: 2,
+        label: qx.locale.Manager.tr("Service"),
+        width: 130
+      },
+      START: {
+        id: "start",
+        column: 3,
+        label: qx.locale.Manager.tr("Start"),
+        width: 130
+      },
+      DURATION: {
+        id: "duration",
+        column: 4,
+        label: qx.locale.Manager.tr("Duration"),
+        width: 70
+      },
+      STATUS: {
+        id: "status",
+        column: 5,
+        label: qx.locale.Manager.tr("Status"),
+        width: 70
+      },
+      COST: {
+        id: "cost",
+        column: 6,
+        label: qx.locale.Manager.tr("Credits"),
+        width: 56
+      },
+      USER: {
+        id: "project",
+        column: 7,
+        label: qx.locale.Manager.tr("User"),
+        width: 130
+      }
+    }
   }
-})
+});
