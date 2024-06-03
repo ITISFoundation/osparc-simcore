@@ -562,7 +562,7 @@ async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.R
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
 
 @pytest.fixture

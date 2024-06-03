@@ -80,7 +80,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
-    ProjectNodesNodeNotFound,
+    ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
@@ -1355,7 +1355,7 @@ async def get_project_node_resources(
             )
         return node_resources
 
-    except ProjectNodesNodeNotFound as exc:
+    except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
         ) from exc
@@ -1397,7 +1397,7 @@ async def update_project_node_resources(
             check_update_allowed=True,
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
-    except ProjectNodesNodeNotFound as exc:
+    except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
         ) from exc
