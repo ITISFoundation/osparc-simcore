@@ -151,10 +151,12 @@ class ProjectNodeConnectionsMissingError(ProjectNodeRequiredInputsNotSetError):
         node_with_required_inputs: NodeID,
         **ctx,
     ):
-
-        joined_unset_required_inputs = ", ".join(unset_required_inputs)
-        ctx["joined_unset_required_inputs"] = joined_unset_required_inputs
-        super().__init__(**ctx)
+        super().__init__(
+            joined_unset_required_inputs=", ".join(unset_required_inputs),
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+            **ctx,
+        )
         self.unset_required_inputs = unset_required_inputs
         self.node_with_required_inputs = node_with_required_inputs
 
@@ -172,9 +174,11 @@ class ProjectNodeOutputPortMissingValueError(ProjectNodeRequiredInputsNotSetErro
             f"'{input_key}' of '{service_name}'"
             for input_key, service_name in unset_outputs_in_upstream
         ]
-        joined_start_message = ", ".join(start_messages)
-        ctx["joined_start_message"] = joined_start_message
-        super().__init__(**ctx)
+        super().__init__(
+            joined_start_message=", ".join(start_messages),
+            unset_outputs_in_upstream=unset_outputs_in_upstream,
+            **ctx,
+        )
         self.unset_outputs_in_upstream = unset_outputs_in_upstream
 
 
