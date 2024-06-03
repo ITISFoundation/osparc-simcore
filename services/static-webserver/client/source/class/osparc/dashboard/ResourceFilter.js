@@ -81,6 +81,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           backgroundColor: "transparent",
           padding: 8
         });
+        button.getChildControl("icon").set({
+          width: 25, // align all icons
+          scale: true
+        })
         button.getContentElement().setStyles({
           "border-radius": "8px"
         });
