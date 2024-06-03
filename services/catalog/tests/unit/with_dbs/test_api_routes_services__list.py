@@ -33,27 +33,6 @@ def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
 
 
-@pytest.fixture
-def target_product(products_names: list[str]) -> ProductName:
-    assert (
-        len(set(products_names)) > 1
-    ), "please adjust the fixture to have the right number of products"
-    # injects fake data in db
-    return parse_obj_as(ProductName, products_names[-1])
-
-
-@pytest.fixture
-def other_product(
-    products_names: list[str], target_product: ProductName
-) -> ProductName:
-    for name in products_names:
-        if name != target_product:
-            return name
-    pytest.fail(
-        f"Could not find other product than {target_product=} in {products_names=}"
-    )
-
-
 async def test_list_services_with_details(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,

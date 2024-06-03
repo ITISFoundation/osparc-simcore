@@ -16,6 +16,7 @@ import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from models_library.products import ProductName
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -145,6 +146,27 @@ async def products_names(
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products.delete())
+
+
+@pytest.fixture
+def target_product(products_names: list[str]) -> ProductName:
+    assert (
+        len(set(products_names)) > 1
+    ), "please adjust the fixture to have the right number of products"
+    # injects fake data in db
+    return parse_obj_as(ProductName, products_names[-1])
+
+
+@pytest.fixture
+def other_product(
+    products_names: list[str], target_product: ProductName
+) -> ProductName:
+    for name in products_names:
+        if name != target_product:
+            return name
+    pytest.fail(
+        f"Could not find other product than {target_product=} in {products_names=}"
+    )
 
 
 @pytest.fixture()
