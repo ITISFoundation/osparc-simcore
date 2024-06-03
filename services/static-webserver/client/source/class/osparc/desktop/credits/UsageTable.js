@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         width: 56
       },
       USER: {
-        id: "project",
+        id: "user",
         column: 7,
         label: qx.locale.Manager.tr("User"),
         width: 140

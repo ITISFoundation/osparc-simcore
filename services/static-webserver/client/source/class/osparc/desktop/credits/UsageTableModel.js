@@ -67,6 +67,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       })
       this.base(arguments, columnIndex, ascending)
     },
+
     // overridden
     _loadRowCount() {
       const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
@@ -92,6 +93,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
           this._onRowCountLoaded(null)
         })
     },
+
     // overridden
     _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true)
@@ -130,7 +132,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
                 }
               }
               data.push({
-                project: rawRow["project_name"] || rawRow["project_id"],
+                // root_parent_project is the same as project if it has no parent
+                project: rawRow["root_parent_project_name"] || rawRow["root_parent_project_id"] || rawRow["project_name"] || rawRow["project_id"],
                 node: rawRow["node_name"] || rawRow["node_id"],
                 service,
                 start,
