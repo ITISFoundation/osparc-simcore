@@ -32,6 +32,10 @@ from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOu
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.jobs import (
+    get_custom_metadata,
+    raise_if_job_not_associated_with_solver,
+)
 from ...services.log_streaming import LogDistributor, LogStreamer
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
@@ -43,7 +47,6 @@ from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
@@ -345,11 +348,11 @@ async def get_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
-    return JobMetadata(
+    return await get_custom_metadata(
+        job_name=job_name,
         job_id=job_id,
-        metadata=project_metadata.custom,
-        url=url_for(
+        webserver_api=webserver_api,
+        self_url=url_for(
             "get_job_custom_metadata",
             solver_key=solver_key,
             version=version,
