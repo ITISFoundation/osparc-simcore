@@ -265,13 +265,14 @@ class AuthSession:
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
         response = await self.client.post(
             "/projects",
             params={"hidden": is_hidden},
-            headers={
-                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
-                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
-            },
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
@@ -289,14 +290,18 @@ class AuthSession:
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
+        _headers = (
+            {
+                X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+                X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+            },
+        )
+
         response = await self.client.post(
             "/projects",
             cookies=self.session_cookies,
             params=query,
-            headers={
-                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
-                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
-            },
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
