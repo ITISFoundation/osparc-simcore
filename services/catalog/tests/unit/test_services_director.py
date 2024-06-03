@@ -20,7 +20,7 @@ from simcore_service_catalog.services.director import DirectorApi
 
 @pytest.fixture
 def minimal_app(
-    monkeypatch: pytest.MonkeyPatch, service_test_environ: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict
 ) -> Iterator[FastAPI]:
     # disable a couple of subsystems
     monkeypatch.setenv("CATALOG_POSTGRES", "null")

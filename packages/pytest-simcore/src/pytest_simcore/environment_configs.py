@@ -72,7 +72,15 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
     return envs
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def service_name(project_slug_dir: Path) -> str:
+    """
+    project_slug_dir MUST be defined on root's conftest.py
+    """
+    return project_slug_dir.name
+
+
+@pytest.fixture(scope="session")
 def docker_compose_service_environment_dict(
     services_docker_compose_file: Path, env_devel_dict: EnvVarsDict, service_name: str
 ) -> EnvVarsDict:

@@ -33,14 +33,9 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def service_name() -> str:
-    return "payments"
-
-
-@pytest.fixture(scope="session")
-def project_slug_dir(osparc_simcore_root_dir: Path, service_name: str) -> Path:
+def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / service_name
+    service_folder = osparc_simcore_root_dir / "services" / "payments"
     assert service_folder.exists()
     assert any(service_folder.glob("src/simcore_service_payments"))
     return service_folder

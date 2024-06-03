@@ -2,13 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import sys
 from pathlib import Path
 
 import pytest
 import simcore_service_catalog
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_envfile
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
 pytest_plugins = [
     "pytest_simcore.postgres_service",
@@ -23,20 +22,13 @@ pytest_plugins = [
 ]
 
 
-_CURRENT_DIR = (
-    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-)
-
-
-## FOLDER LAYOUT ---------------------------------------------------------------------
-
-
 @pytest.fixture(scope="session")
-def project_slug_dir() -> Path:
-    folder = _CURRENT_DIR.parent.parent
-    assert folder.exists()
-    assert any(folder.glob("src/simcore_service_catalog"))
-    return folder
+def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
+    # fixtures in pytest_simcore.environs
+    service_folder = osparc_simcore_root_dir / "services" / "catalog"
+    assert service_folder.exists()
+    assert any(service_folder.glob("src/simcore_service_catalog"))
+    return service_folder
 
 
 @pytest.fixture(scope="session")
@@ -49,29 +41,27 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def service_env_file(project_slug_dir: Path) -> Path:
-    env_devel_path = project_slug_dir / ".env-devel"
-    assert env_devel_path.exists()
-    return env_devel_path
-
-
-# TEST ENVIRONS ------
-
-
-@pytest.fixture(scope="session")
-def testing_environ_vars(
-    testing_environ_vars: EnvVarsDict, service_env_file: Path
+@pytest.fixture
+def env_devel_dict(
+    env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
-    # Extends packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars
-    # Environ seen by docker compose (i.e. postgres_db)
-    app_envs = load_dotenv(service_env_file, verbose=True)
-    return {**testing_environ_vars, **app_envs}
+    if external_envfile_dict:
+        assert "CATALOG_DEV_FEATURES_ENABLED" in external_envfile_dict
+        assert "CATALOG_SERVICES_DEFAULT_RESOURCES" in external_envfile_dict
+        return external_envfile_dict
+    return env_devel_dict
 
 
 @pytest.fixture
-def service_test_environ(
-    service_env_file: Path, monkeypatch: pytest.MonkeyPatch
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    docker_compose_service_environment_dict: EnvVarsDict,
 ) -> EnvVarsDict:
-    # environs seen by app are defined by the service env-file!
-    return setenvs_from_envfile(monkeypatch, service_env_file, verbose=True)
+    """Produces testing environment for the app
+    by replicating the environment defined in the docker-compose
+    when initialized with .env-devel
+    """
+    return setenvs_from_dict(
+        monkeypatch,
+        {**docker_compose_service_environment_dict},
+    )

@@ -67,7 +67,7 @@ async def products_names(
 def app(
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
-    service_test_environ: EnvVarsDict,
+    app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     products_names: list[str],
@@ -76,9 +76,9 @@ def app(
     print("database w/products in table:", products_names)
 
     # Ensures both postgres service and app environs are the same!
-    assert service_test_environ["POSTGRES_USER"] == postgres_host_config["user"]
-    assert service_test_environ["POSTGRES_DB"] == postgres_host_config["database"]
-    assert service_test_environ["POSTGRES_PASSWORD"] == postgres_host_config["password"]
+    assert app_environment["POSTGRES_USER"] == postgres_host_config["user"]
+    assert app_environment["POSTGRES_DB"] == postgres_host_config["database"]
+    assert app_environment["POSTGRES_PASSWORD"] == postgres_host_config["password"]
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
