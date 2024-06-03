@@ -72,7 +72,9 @@ async def _insert_and_get_row(
 ):
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.first()
-    assert row[pk_col] == pk_value
+
+    # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    assert getattr(row, pk_col.name) == pk_value
 
     result = await conn.execute(sa.select(table).where(pk_col == pk_value))
     return result.first()
@@ -93,7 +95,9 @@ async def insert_and_get_row_lifespan(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
         )
 
-    yield dict(row)
+    # NOTE: DO NO USE dict(row) since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    # pylint: disable=protected-access
+    yield row._asdict()
 
     # delete row
     async with sqlalchemy_async_engine.begin() as conn:

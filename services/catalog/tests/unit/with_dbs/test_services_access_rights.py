@@ -85,6 +85,7 @@ async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
     user_groups_ids: list[int],
     target_product: ProductName,
+    other_product: ProductName,
     services_db_tables_injector: Callable,
     service_catalog_faker: Callable,
     mocker,
@@ -146,7 +147,7 @@ async def test_auto_upgrade_policy(
                 "1.0.10",
                 team_access="x",
                 everyone_access=None,
-                product=products_names[-1],
+                product=other_product,
             ),
         ]
     )
@@ -185,7 +186,7 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in inherited_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in inherited_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }
 
     # ALL
@@ -196,5 +197,5 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in service_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }
