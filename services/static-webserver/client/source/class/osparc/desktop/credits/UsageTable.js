@@ -30,13 +30,13 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
 
     const columnModel = this.getTableColumnModel();
 
-    columnModel.setDataCellRenderer(6, new qx.ui.table.cellrenderer.Number());
+    columnModel.setDataCellRenderer(this.self().COLS.COST.column, new qx.ui.table.cellrenderer.Number());
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.setColumnVisible(6, false);
-      columnModel.setColumnVisible(7, false);
+      columnModel.setColumnVisible(this.self().COLS.COST.column, false);
+      columnModel.setColumnVisible(this.self().COLS.USER.column, false);
     }
-    columnModel.setColumnVisible(2, false)
+    columnModel.setColumnVisible(this.self().COLS.SERVICE.column, false);
 
     // Array [0, 1, ..., N] where N is column_count - 1 (default column order)
     this.__columnOrder = [...Array(columnModel.getOverallColumnCount()).keys()]
@@ -62,13 +62,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
       }
     }, this)
 
-    columnModel.setColumnWidth(0, 130)
-    columnModel.setColumnWidth(1, 130)
-    columnModel.setColumnWidth(3, 130)
-    columnModel.setColumnWidth(4, 70)
-    columnModel.setColumnWidth(5, 70)
-    columnModel.setColumnWidth(6, 56)
-    columnModel.setColumnWidth(7, 130)
+    Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
   },
 
   statics: {
