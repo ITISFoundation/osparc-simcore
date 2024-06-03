@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import asyncio
-import contextlib
 import datetime
 import json
 import re
@@ -11,31 +10,25 @@ from pathlib import Path
 from typing import Any, Final
 
 import arrow
-import distributed
 import paramiko
 import parse
 import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import TagTypeDef
-from pydantic import ByteSize, TypeAdapter, ValidationError
+from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
 
-from .dask import (
-    dask_client,
-    remove_job_from_scheduler,
-    trigger_job_cancellation_in_scheduler,
-)
-from .db import abort_job_in_db, list_computational_tasks_from_db
-from .ec2 import list_computational_instances_from_ec2, list_dynamic_instances_from_ec2
+from . import dask, db, ec2
 from .models import (
     AppState,
     ComputationalCluster,
     ComputationalInstance,
     ComputationalTask,
     DaskTask,
+    DockerContainer,
     DynamicInstance,
     DynamicService,
     InstanceRole,
@@ -548,38 +541,11 @@ async def _analyze_dynamic_instances_running_services_concurrently(
     ]
 
 
-async def _dask_list_tasks(
-    dask_client: distributed.Client,
-) -> dict[TaskState, list[TaskId]]:
-    def _list_tasks(
-        dask_scheduler: distributed.Scheduler,
-    ) -> dict[TaskId, TaskState]:
-        # NOTE: this is ok and needed: this runs on the dask scheduler, so don't remove this import
-
-        task_state_to_tasks = {}
-        for task in dask_scheduler.tasks.values():
-            if task.state in task_state_to_tasks:
-                task_state_to_tasks[task.state].append(task.key)
-            else:
-                task_state_to_tasks[task.state] = [task.key]
-
-        return dict(task_state_to_tasks)
-
-    try:
-        list_of_tasks: dict[
-            TaskState, list[TaskId]
-        ] = await dask_client.run_on_scheduler(
-            _list_tasks
-        )  # type: ignore
-    except TypeError:
-        rich.print(f"ERROR while recoverring unrunnable tasks using {dask_client=}")
-    return list_of_tasks
-
-
 _SCHEDULER_PORT: Final[int] = 8786
 
 
 async def _analyze_computational_instances(
+    state: AppState,
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
@@ -624,21 +590,15 @@ async def _analyze_computational_instances(
         if isinstance(dask_ip, str):
             instance.dask_ip = dask_ip
         if instance.role is InstanceRole.manager:
-            scheduler_info = {}
-            datasets_on_cluster = ()
-            processing_jobs = {}
-            all_tasks = {}
-            with contextlib.suppress(TimeoutError, OSError):
-                assert ssh_key_path
-                async with dask_client(
-                    instance.ec2_instance.private_dns_name
-                ) as client:
-                    scheduler_info = client.scheduler_info()
-                    datasets_on_cluster = await _wrap_dask_async_call(
-                        client.list_datasets()
-                    )
-                    processing_jobs = await _wrap_dask_async_call(client.processing())
-                    all_tasks = await _dask_list_tasks(client)
+            (
+                scheduler_info,
+                datasets_on_cluster,
+                processing_jobs,
+                all_tasks,
+            ) = await dask.get_scheduler_details(
+                state,
+                AnyUrl(instance.ec2_instance.private_dns_name),
+            )
 
             assert isinstance(datasets_on_cluster, tuple)
             assert isinstance(processing_jobs, dict)
@@ -668,6 +628,7 @@ async def _analyze_computational_instances(
 
 
 async def _parse_computational_clusters(
+    state: AppState,
     instances: ServiceResourceInstancesCollection,
     ssh_key_path: Path | None,
     user_id: int | None,
@@ -686,7 +647,9 @@ async def _parse_computational_clusters(
         and (user_id is None or comp_instance.user_id == user_id)
         and (wallet_id is None or comp_instance.wallet_id == wallet_id)
     ]
-    return await _analyze_computational_instances(computational_instances, ssh_key_path)
+    return await _analyze_computational_instances(
+        state, computational_instances, ssh_key_path
+    )
 
 
 async def _parse_dynamic_instances(
@@ -712,7 +675,9 @@ async def _parse_dynamic_instances(
 async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> None:
     # get all the running instances
     assert state.ec2_resource_autoscaling
-    dynamic_instances = await list_dynamic_instances_from_ec2(state, user_id, wallet_id)
+    dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
+        state, user_id, wallet_id
+    )
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         dynamic_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -723,7 +688,7 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
     )
 
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await list_computational_instances_from_ec2(
+    computational_instances = await ec2.list_computational_instances_from_ec2(
         state, user_id, wallet_id
     )
     computational_clusters = await _parse_computational_clusters(
@@ -780,7 +745,7 @@ async def _list_computational_clusters(
     state: AppState, user_id: int, wallet_id: int
 ) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await _list_computational_instances_from_ec2(
+    computational_instances = await db.list_computational_instances_from_ec2(
         state, user_id, wallet_id
     )
     return await _parse_computational_clusters(
@@ -792,7 +757,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     state: AppState, user_id: int, wallet_id: int, *, force: bool
 ) -> None:
     # get the theory
-    computational_tasks = await list_computational_tasks_from_db(state, user_id)
+    computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
 
     # get the reality
     computational_clusters = await _list_computational_clusters(
@@ -840,20 +805,20 @@ async def cancel_jobs(  # noqa: C901, PLR0912
             elif response == "all":
                 for comp_task, dask_task in task_to_dask_job:
                     if dask_task is not None and dask_task.state != "unknown":
-                        await trigger_job_cancellation_in_scheduler(
+                        await dask.trigger_job_cancellation_in_scheduler(
                             state,
                             the_cluster,
                             dask_task.job_id,
                         )
                         if comp_task is None:
                             # we need to clear it of the cluster
-                            await remove_job_from_scheduler(
+                            await dask.remove_job_from_scheduler(
                                 state,
                                 the_cluster,
                                 dask_task.job_id,
                             )
                     if comp_task is not None and force:
-                        await abort_job_in_db(
+                        await db.abort_job_in_db(
                             state, comp_task.project_id, comp_task.node_id
                         )
 
@@ -862,17 +827,17 @@ async def cancel_jobs(  # noqa: C901, PLR0912
                 selected_index = TypeAdapter(int).validate_python(response)
                 comp_task, dask_task = task_to_dask_job[selected_index]
                 if dask_task is not None and dask_task.state != "unknown":
-                    await trigger_job_cancellation_in_scheduler(
+                    await dask.trigger_job_cancellation_in_scheduler(
                         state, the_cluster, dask_task.job_id
                     )
                     if comp_task is None:
                         # we need to clear it of the cluster
-                        await remove_job_from_scheduler(
+                        await dask.remove_job_from_scheduler(
                             state, the_cluster, dask_task.job_id
                         )
 
                 if comp_task is not None and force:
-                    await abort_job_in_db(
+                    await db.abort_job_in_db(
                         state, comp_task.project_id, comp_task.node_id
                     )
 
@@ -884,7 +849,7 @@ async def trigger_cluster_termination(
     state: AppState, user_id: int, wallet_id: int
 ) -> None:
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await _list_computational_instances_from_ec2(
+    computational_instances = await ec2.list_computational_instances_from_ec2(
         state, user_id, wallet_id
     )
     computational_clusters = await _parse_computational_clusters(
