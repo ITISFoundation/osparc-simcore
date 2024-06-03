@@ -74,6 +74,7 @@ from .exceptions import (
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectInvalidRightsError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -105,6 +106,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPConflict(reason=f"{exc}") from exc
         except ClustersKeeperNotAvailableError as exc:
             raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+        except ProjectNodeRequiredInputsNotSetError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
 
     return wrapper
 

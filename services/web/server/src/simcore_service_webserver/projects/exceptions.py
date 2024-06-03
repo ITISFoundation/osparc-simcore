@@ -4,6 +4,7 @@ from typing import Any
 
 import redis.exceptions
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 
 from ..errors import WebServerBaseError
@@ -134,6 +135,51 @@ class ProjectNodeResourcesInvalidError(BaseProjectError):
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
     ...
+
+
+class ProjectNodeRequiredInputsNotSetError(BaseProjectError):
+    ...
+
+
+class ProjectNodeConnectionsMissingError(ProjectNodeRequiredInputsNotSetError):
+    msg_template = "Missing '{joined_unset_required_inputs}' connection(s) to '{node_with_required_inputs}'"
+
+    def __init__(
+        self,
+        *,
+        unset_required_inputs: list[str],
+        node_with_required_inputs: NodeID,
+        **ctx,
+    ):
+        super().__init__(
+            joined_unset_required_inputs=", ".join(unset_required_inputs),
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+            **ctx,
+        )
+        self.unset_required_inputs = unset_required_inputs
+        self.node_with_required_inputs = node_with_required_inputs
+
+
+class ProjectNodeOutputPortMissingValueError(ProjectNodeRequiredInputsNotSetError):
+    msg_template = "Missing: {joined_start_message}"
+
+    def __init__(
+        self,
+        *,
+        unset_outputs_in_upstream: list[tuple[str, str]],
+        **ctx,
+    ):
+        start_messages = [
+            f"'{input_key}' of '{service_name}'"
+            for input_key, service_name in unset_outputs_in_upstream
+        ]
+        super().__init__(
+            joined_start_message=", ".join(start_messages),
+            unset_outputs_in_upstream=unset_outputs_in_upstream,
+            **ctx,
+        )
+        self.unset_outputs_in_upstream = unset_outputs_in_upstream
 
 
 class DefaultPricingUnitNotFoundError(BaseProjectError):
