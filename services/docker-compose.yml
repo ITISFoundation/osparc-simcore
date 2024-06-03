@@ -343,6 +343,15 @@ services:
       - computational_services_subnet
     secrets: *dask_tls_secrets
 
+  efs-guardian:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -901,8 +910,6 @@ services:
           cpus: "1.0"
           memory: 1024M
 
-    networks:
-      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

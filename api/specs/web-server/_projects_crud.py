@@ -11,7 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
@@ -26,6 +26,7 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page
 from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
@@ -50,6 +51,19 @@ router = APIRouter(
 async def create_project(
     _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
+    x_simcore_user_agent: Annotated[str | None, Header()] = "undefined",
+    x_simcore_parent_project_uuid: Annotated[
+        ProjectID | None,
+        Header(
+            description="Optionally sets a parent project UUID (both project and node must be set)",
+        ),
+    ] = None,
+    x_simcore_parent_node_id: Annotated[
+        NodeID | None,
+        Header(
+            description="Optionally sets a parent node ID (both project and node must be set)",
+        ),
+    ] = None,
 ):
     ...
 

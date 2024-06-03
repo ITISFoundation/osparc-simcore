@@ -102,6 +102,14 @@ services:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
 
+  efs-guardian:
+    environment:
+      <<: *common-environment
+      EFS_GUARDIAN_LOGLEVEL: DEBUG
+    volumes:
+      - ./efs-guardian:/devel/services/efs-guardian
+      - ../packages:/devel/packages
+
   static-webserver:
     volumes:
       - ./static-webserver/client/source-output:/static-content

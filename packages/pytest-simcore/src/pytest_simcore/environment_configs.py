@@ -11,7 +11,7 @@ from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_envs import delenvs_from_dict, load_dotenv, setenvs_from_dict
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session")  # MD: get this, I will mock it with my app environmnet
 def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"

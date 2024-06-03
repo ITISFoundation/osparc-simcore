@@ -7,6 +7,7 @@ import typer
 import yaml
 from models_library.services import ServiceDockerData
 
+from ..osparc_config import OSPARC_CONFIG_DIRNAME
 from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
@@ -57,7 +58,7 @@ def get_version(
         TargetVersionChoices.SEMANTIC_VERSION
     ),
     metadata_file: Path = typer.Option(
-        ".osparc/metadata.yml",
+        f"{OSPARC_CONFIG_DIRNAME}/metadata.yml",
         help="The metadata yaml file",
     ),
 ):

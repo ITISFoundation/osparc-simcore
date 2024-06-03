@@ -38,7 +38,7 @@ qx.Class.define("osparc.form.PortInfoHint", {
         const color = qx.theme.manager.Color.getInstance().resolve("failed-red");
         text += `<br><br><font color="${color}">${errorMsg}</font>`;
       }
-      this._hint.setText(text);
+      this.setHintText(text);
       this.set({
         source: errorMsg ? this.self().ERROR_ICON : osparc.ui.hint.InfoHint.INFO_ICON,
         textColor: errorMsg ? "failed-red" : "text"

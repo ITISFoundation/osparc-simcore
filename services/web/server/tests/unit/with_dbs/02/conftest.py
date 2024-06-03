@@ -170,7 +170,6 @@ async def template_project(
         client.app,
         user_id=None,
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
         as_template=True,
     ) as template_project:
@@ -205,7 +204,6 @@ async def create_template_project(
                 client.app,
                 user_id=None,
                 product_name=osparc_product_name,
-                clear_all=True,
                 tests_data_dir=tests_data_dir,
                 as_template=True,
             )
