@@ -21,7 +21,7 @@ class AppState:
     computational_parser: parse.Parser
     deploy_config: Path | None = None
     ssh_key_path: Path | None = None
-    use_bastion: bool = True
+
     computational_bastion: Instance | None = None
     dynamic_bastion: Instance | None = None
 

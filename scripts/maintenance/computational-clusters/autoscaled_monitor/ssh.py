@@ -1,11 +1,12 @@
 import contextlib
 import datetime
 import json
+import logging
 import re
 from collections import defaultdict
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, AsyncGenerator, Final
 
 import arrow
 import paramiko
@@ -13,15 +14,17 @@ import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance
 from paramiko import Ed25519Key
-from pydantic import AnyUrl, ByteSize
+from pydantic import ByteSize
 from sshtunnel import SSHTunnelForwarder
 
 from .constants import DYN_SERVICES_NAMING_CONVENTION
+from .ec2 import get_bastion_instance_from_remote_instance
 from .models import AppState, DockerContainer, DynamicService
-from .utils import to_async
 
 _DEFAULT_SSH_PORT: Final[int] = 22
 _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
+
+_logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
@@ -43,13 +46,16 @@ def ssh_tunnel(
             set_keepalive=10,
         ) as tunnel:
             yield tunnel
+    except Exception:
+        _logger.exception("Unexpected issue with ssh tunnel")
+        raise
     finally:
         pass
 
 
 @contextlib.contextmanager
 def _ssh_client(
-    url: AnyUrl, *, username: str, private_key_path: Path
+    url: str, *, username: str, private_key_path: Path
 ) -> Generator[paramiko.SSHClient, Any, None]:
     try:
         with paramiko.SSHClient() as client:
@@ -61,25 +67,31 @@ def _ssh_client(
                 timeout=5,
             )
             yield client
-
+    except Exception:
+        _logger.exception("Unexpected issue with ssh client")
+        raise
     finally:
         pass
 
 
-@contextlib.contextmanager
-def ssh_instance(
+@contextlib.asynccontextmanager
+async def ssh_instance(
     instance: Instance, *, state: AppState, username: str, private_key_path: Path
-) -> Generator[paramiko.SSHClient, Any, None]:
+) -> AsyncGenerator[paramiko.SSHClient, Any]:
     """ssh in instance with/without tunnel as needed"""
     assert state.ssh_key_path  # nosec
     try:
-        with contextlib.ExitStack() as stack:
-            url = AnyUrl(instance.public_ip_address)
-            if state.use_bastion:
+        async with contextlib.AsyncExitStack() as stack:
+            if instance.public_ip_address:
+                url = instance.public_ip_address
+            else:
                 assert state.environment
+                bastion_instance = await get_bastion_instance_from_remote_instance(
+                    state, instance
+                )
                 tunnel = stack.enter_context(
                     ssh_tunnel(
-                        ssh_host="123.12.321.21",
+                        ssh_host=bastion_instance.public_dns_name,
                         username=username,
                         private_key_path=state.ssh_key_path,
                         remote_bind_host=instance.private_ip_address,
@@ -88,26 +100,25 @@ def ssh_instance(
                 )
                 assert tunnel  # nosec
                 host, port = tunnel.local_bind_address
-                url = AnyUrl(f"{host}:{port}")
-
+                url = f"{host}:{port}"
                 ssh_client = stack.enter_context(
                     _ssh_client(
                         url, username=username, private_key_path=private_key_path
                     )
                 )
                 yield ssh_client
+
     finally:
         pass
 
 
-@to_async
-def get_available_disk_space(
+async def get_available_disk_space(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> ByteSize:
     assert state.ssh_key_path
 
     try:
-        with ssh_instance(
+        async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
         ) as ssh_client:
             # Command to get disk space for /docker partition
@@ -133,13 +144,12 @@ def get_available_disk_space(
         return ByteSize(0)
 
 
-@to_async
-def get_dask_ip(
+async def get_dask_ip(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> str:
 
     try:
-        with ssh_instance(
+        async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
         ) as ssh_client:
             dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_default.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
@@ -161,12 +171,11 @@ def get_dask_ip(
         return "Not Ready"
 
 
-@to_async
-def list_running_dyn_services(
+async def list_running_dyn_services(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> list[DynamicService]:
     try:
-        with ssh_instance(
+        async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
         ) as ssh_client:
             # Run the Docker command to list containers

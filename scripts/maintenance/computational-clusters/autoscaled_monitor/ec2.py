@@ -2,7 +2,6 @@ import json
 from typing import Final
 
 import boto3
-from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef
@@ -91,7 +90,6 @@ async def list_dynamic_instances_from_ec2(
 _DEFAULT_BASTION_NAME: Final[str] = "bastion-host"
 
 
-@cached
 async def get_computational_bastion_instance(state: AppState) -> Instance:
     assert state.ec2_resource_clusters_keeper  # nosec
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
@@ -110,12 +108,11 @@ async def get_computational_bastion_instance(state: AppState) -> Instance:
     return possible_bastions[0]
 
 
-@cached
 async def get_dynamic_bastion_instance(state: AppState) -> Instance:
-    assert state.ec2_resource_clusters_keeper  # nosec
+    assert state.ec2_resource_autoscaling  # nosec
     assert state.environment["EC2_INSTANCES_KEY_NAME"]  # nosec
     instances = await _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper,
+        state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
         {},
         None,
@@ -129,10 +126,32 @@ async def get_dynamic_bastion_instance(state: AppState) -> Instance:
     return possible_bastions[0]
 
 
+def cluster_keeper_region(state: AppState) -> str:
+    assert state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"]  # nosec
+    return state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"]
+
+
+def autoscaling_region(state: AppState) -> str:
+    assert state.environment["AUTOSCALING_EC2_REGION_NAME"]  # nosec
+    return state.environment["AUTOSCALING_EC2_REGION_NAME"]
+
+
+async def get_bastion_instance_from_remote_instance(
+    state: AppState, remote_instance: Instance
+) -> Instance:
+    availability_zone = remote_instance.placement["AvailabilityZone"]
+    if cluster_keeper_region(state) in availability_zone:
+        return await get_computational_bastion_instance(state)
+    if autoscaling_region(state) in availability_zone:
+        return await get_dynamic_bastion_instance(state)
+    msg = "no corresponding bastion instance!"
+    raise RuntimeError(msg)
+
+
 def cluster_keeper_ec2_client(state: AppState) -> EC2ServiceResource:
     return boto3.resource(
         "ec2",
-        region_name=state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
+        region_name=cluster_keeper_region(state),
         aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=state.environment[
             "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
@@ -143,7 +162,7 @@ def cluster_keeper_ec2_client(state: AppState) -> EC2ServiceResource:
 def autoscaling_ec2_client(state: AppState) -> EC2ServiceResource:
     return boto3.resource(
         "ec2",
-        region_name=state.environment["AUTOSCALING_EC2_REGION_NAME"],
+        region_name=autoscaling_region(state),
         aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
