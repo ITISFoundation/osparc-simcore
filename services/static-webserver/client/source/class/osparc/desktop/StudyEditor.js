@@ -169,7 +169,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(() => {
-          this.__lastSavedStudy = study.serialize();
+          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(study.serialize());
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -761,7 +761,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const newObj = this.getStudy().serialize();
       return this.getStudy().updateStudy(newObj, run)
         .then(() => {
-          this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(newObj);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
