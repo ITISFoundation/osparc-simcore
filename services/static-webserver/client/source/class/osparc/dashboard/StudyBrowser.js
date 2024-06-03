@@ -285,14 +285,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _reloadCards: function() {
-      this.__addNewStudyButtons();
-
       const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
       const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studiesList");
       this.__configureCards(cards);
+
+      this.__addNewStudyButtons();
 
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
