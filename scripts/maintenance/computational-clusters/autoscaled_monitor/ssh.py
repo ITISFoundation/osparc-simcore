@@ -24,7 +24,7 @@ _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
 
 
 @contextlib.contextmanager
-def _ssh_tunnel(
+def ssh_tunnel(
     *,
     ssh_host: str,
     username: str,
@@ -77,7 +77,7 @@ def ssh_instance(
             if state.use_bastion:
                 assert state.environment
                 tunnel = stack.enter_context(
-                    _ssh_tunnel(
+                    ssh_tunnel(
                         ssh_host="123.12.321.21",
                         username=username,
                         private_key_path=state.ssh_key_path,

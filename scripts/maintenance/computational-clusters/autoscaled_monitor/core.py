@@ -12,7 +12,7 @@ import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import TagTypeDef
-from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
@@ -33,7 +33,9 @@ from .models import (
 )
 
 
-def _parse_computational(instance: Instance) -> ComputationalInstance | None:
+def _parse_computational(
+    state: AppState, instance: Instance
+) -> ComputationalInstance | None:
     name = utils.get_instance_name(instance)
     if result := state.computational_parser.search(name):
         assert isinstance(result, parse.Result)
@@ -65,7 +67,7 @@ def _create_graylog_permalinks(
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
-def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
+def _parse_dynamic(state: AppState, instance: Instance) -> DynamicInstance | None:
     name = utils.get_instance_name(instance)
     if result := state.dynamic_parser.search(name):
         assert isinstance(result, parse.Result)
@@ -354,7 +356,7 @@ async def _analyze_computational_instances(
                 all_tasks,
             ) = await dask.get_scheduler_details(
                 state,
-                AnyUrl(instance.ec2_instance.private_dns_name),
+                instance.ec2_instance,
             )
 
             assert isinstance(datasets_on_cluster, tuple)
@@ -398,7 +400,7 @@ async def _parse_computational_clusters(
         )
         if (
             comp_instance := await asyncio.get_event_loop().run_in_executor(
-                None, _parse_computational, instance
+                None, _parse_computational, state, instance
             )
         )
         and (user_id is None or comp_instance.user_id == user_id)
@@ -419,7 +421,7 @@ async def _parse_dynamic_instances(
     dynamic_instances = [
         dyn_instance
         for instance in track(instances, description="Parsing dynamic instances...")
-        if (dyn_instance := _parse_dynamic(instance))
+        if (dyn_instance := _parse_dynamic(state, instance))
     ]
     if dynamic_instances and ssh_key_path:
         dynamic_instances = (
