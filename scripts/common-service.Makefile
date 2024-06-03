@@ -180,3 +180,23 @@ _run-test-ci: _check_venv_active
 .PHONY: _assert_target_defined
 _assert_target_defined:
 	$(if $(target),,$(error unset argument 'target' is required))
+
+
+
+
+#
+# OPENAPI SPECIFICATIONS ROUTINES
+#
+
+
+# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
+OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
+OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
+
+define validate_openapi_specs
+	# Validating OAS '$(1)' ...
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$(strip $(1))
+endef
