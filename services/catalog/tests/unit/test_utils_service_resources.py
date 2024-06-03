@@ -1,3 +1,11 @@
+# pylint: disable=not-context-manager
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 from typing import Any
 
 import pytest

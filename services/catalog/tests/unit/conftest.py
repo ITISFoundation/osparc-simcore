@@ -1,20 +1,30 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=not-context-manager
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
+
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
 import simcore_service_catalog
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_service_catalog.core.application import create_app
+from simcore_service_catalog.core.settings import ApplicationSettings
 
 pytest_plugins = [
-    "pytest_simcore.postgres_service",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -41,7 +51,7 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
@@ -65,3 +75,27 @@ def app_environment(
         monkeypatch,
         {**docker_compose_service_environment_dict},
     )
+
+
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
+@pytest.fixture
+def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
+    assert app_environment
+    return ApplicationSettings.create_from_envs()
+
+
+@pytest.fixture
+async def app(
+    app_settings: ApplicationSettings, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
+    assert app_environment
+    the_test_app = create_app(settings=app_settings)
+    async with LifespanManager(
+        the_test_app,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
+    ):
+        yield the_test_app
