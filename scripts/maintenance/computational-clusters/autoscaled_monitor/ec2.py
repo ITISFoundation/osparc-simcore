@@ -2,6 +2,7 @@ import json
 from typing import Final
 
 import boto3
+from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef
@@ -90,6 +91,7 @@ async def list_dynamic_instances_from_ec2(
 _DEFAULT_BASTION_NAME: Final[str] = "bastion-host"
 
 
+@cached()
 async def get_computational_bastion_instance(state: AppState) -> Instance:
     assert state.ec2_resource_clusters_keeper  # nosec
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
@@ -108,6 +110,7 @@ async def get_computational_bastion_instance(state: AppState) -> Instance:
     return possible_bastions[0]
 
 
+@cached()
 async def get_dynamic_bastion_instance(state: AppState) -> Instance:
     assert state.ec2_resource_autoscaling  # nosec
     assert state.environment["EC2_INSTANCES_KEY_NAME"]  # nosec

@@ -33,6 +33,7 @@ from .models import (
 )
 
 
+@utils.to_async
 def _parse_computational(
     state: AppState, instance: Instance
 ) -> ComputationalInstance | None:
@@ -304,13 +305,8 @@ async def _analyze_computational_instances(
     if ssh_key_path is not None:
         all_disk_spaces = await asyncio.gather(
             *(
-                asyncio.get_event_loop().run_in_executor(
-                    None,
-                    ssh.get_available_disk_space,
-                    state,
-                    instance.ec2_instance,
-                    SSH_USER_NAME,
-                    ssh_key_path,
+                ssh.get_available_disk_space(
+                    state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
                 )
                 for instance in computational_instances
             ),
@@ -319,13 +315,8 @@ async def _analyze_computational_instances(
 
         all_dask_ips = await asyncio.gather(
             *(
-                asyncio.get_event_loop().run_in_executor(
-                    None,
-                    ssh.get_dask_ip,
-                    state,
-                    instance.ec2_instance,
-                    SSH_USER_NAME,
-                    ssh_key_path,
+                ssh.get_dask_ip(
+                    state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
                 )
                 for instance in computational_instances
             ),
@@ -391,11 +382,7 @@ async def _parse_computational_clusters(
         for instance in track(
             instances, description="Parsing computational instances..."
         )
-        if (
-            comp_instance := await asyncio.get_event_loop().run_in_executor(
-                None, _parse_computational, state, instance
-            )
-        )
+        if (comp_instance := await _parse_computational(state, instance))
         and (user_id is None or comp_instance.user_id == user_id)
         and (wallet_id is None or comp_instance.wallet_id == wallet_id)
     ]

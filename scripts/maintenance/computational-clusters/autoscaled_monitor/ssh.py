@@ -102,15 +102,15 @@ async def ssh_instance(
                 )
                 assert tunnel  # nosec
                 hostname, port = tunnel.local_bind_address
-                ssh_client = stack.enter_context(
-                    _ssh_client(
-                        hostname,
-                        port,
-                        username=username,
-                        private_key_path=private_key_path,
-                    )
+            ssh_client = stack.enter_context(
+                _ssh_client(
+                    hostname,
+                    port,
+                    username=username,
+                    private_key_path=private_key_path,
                 )
-                yield ssh_client
+            )
+            yield ssh_client
 
     finally:
         pass
@@ -156,13 +156,16 @@ async def get_dask_ip(
         async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
         ) as ssh_client:
-            dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_default.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
+            dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
 
             # Run the command on the remote machine
-            _, stdout, _ = ssh_client.exec_command(dask_ip_command)
+            _, stdout, stderr = ssh_client.exec_command(dask_ip_command)
             exit_status = stdout.channel.recv_exit_status()
-
             if exit_status != 0:
+                error_message = stderr.read().decode().strip()
+                _logger.error(
+                    "Command failed with exit status %s: %s", exit_status, error_message
+                )
                 return "Not Found / Drained / Not Ready"
 
             # Available disk space will be captured here

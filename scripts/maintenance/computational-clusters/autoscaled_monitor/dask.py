@@ -39,7 +39,7 @@ async def dask_client(
 
         async with contextlib.AsyncExitStack() as stack:
             if instance.public_ip_address is not None:
-                url = AnyUrl(f"tls://{instance.public_ip_address}")
+                url = AnyUrl(f"tls://{instance.public_ip_address}:{_SCHEDULER_PORT}")
             else:
                 bastion_instance = await get_bastion_instance_from_remote_instance(
                     state, instance
@@ -126,7 +126,6 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     datasets_on_cluster = ()
     processing_jobs = {}
     all_tasks = {}
-    rich.print(instance.placement)
     with contextlib.suppress(TimeoutError, OSError):
         async with dask_client(state, instance) as client:
             scheduler_info = client.scheduler_info()
