@@ -23,18 +23,18 @@ from .models import ProjectTypeAPI
 
 class ProjectCreateHeaders(BaseModel):
 
-    simcore_user_agent: str = Field(
+    simcore_user_agent: str = Field(  # type: ignore[pydantic-alias]
         default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         description="Optional simcore user agent",
         alias=X_SIMCORE_USER_AGENT,
     )
 
-    parent_project_uuid: ProjectID | None = Field(
+    parent_project_uuid: ProjectID | None = Field(  # type: ignore[pydantic-alias]
         default=None,
         description="Optional parent project UUID",
         alias=X_SIMCORE_PARENT_PROJECT_UUID,
     )
-    parent_node_id: NodeID | None = Field(
+    parent_node_id: NodeID | None = Field(  # type: ignore[pydantic-alias]
         default=None,
         description="Optional parent node ID",
         alias=X_SIMCORE_PARENT_NODE_ID,
