@@ -25,7 +25,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import (
     PostgresTestConfig,
-    insert_get_and_delete_row,
+    insert_and_get_row_lifespan,
 )
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
@@ -124,26 +124,28 @@ def mocked_director_service_api(
 
 @pytest.fixture
 async def product(
-    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+    product: dict[str, Any],
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     injects product in db
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
-    async with insert_get_and_delete_row(
+    async with insert_and_get_row_lifespan(
         sqlalchemy_async_engine,
         table=products,
         values=product,
         pk_col=products.c.name,
         pk_value=product["name"],
-    ) as data:
-        yield data
+    ) as row:
+        yield row
 
 
 @pytest.fixture
-def target_product(product: dict[str, Any]) -> ProductName:
-    return parse_obj_as(ProductName, product["name"])
+def target_product(product: dict[str, Any], product_name: ProductName) -> ProductName:
+    assert product_name == parse_obj_as(ProductName, product["name"])
+    return product_name
 
 
 @pytest.fixture
@@ -154,23 +156,30 @@ def other_product(product: dict[str, Any]) -> ProductName:
 
 
 @pytest.fixture
+def products_names(
+    target_product: ProductName, other_product: ProductName
+) -> list[str]:
+    return [other_product, target_product]
+
+
+@pytest.fixture
 async def user(
-    sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_get_and_delete_row(
+    async with insert_and_get_row_lifespan(
         sqlalchemy_async_engine,
         table=users,
         values=user,
         pk_col=users.c.id,
         pk_value=user["id"],
-    ) as data:
-        yield data
+    ) as row:
+        yield row
 
 
 @pytest.fixture()
@@ -239,7 +248,7 @@ async def services_db_tables_injector(
     # pylint: disable=no-value-for-parameter
     inserted_services: set[tuple[str, str]] = set()
 
-    async def inject_in_db(fake_catalog: list[tuple]):
+    async def _inject_in_db(fake_catalog: list[tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
 
         async with sqlalchemy_async_engine.begin() as conn:
@@ -260,7 +269,7 @@ async def services_db_tables_injector(
                 stmt_access = services_access_rights.insert().values(access_rights)
                 await conn.execute(stmt_access)
 
-    yield inject_in_db
+    yield _inject_in_db
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(

@@ -28,15 +28,6 @@ def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def product_name(
-    products_names: list[str],
-) -> str:
-    target_product = products_names[-1]
-    assert target_product
-    return target_product
-
-
-@pytest.fixture
 def service_key() -> str:
     return "simcore/services/comp/itis/fake_sleeper"
 

@@ -1,5 +1,4 @@
-import logging
-from collections.abc import AsyncIterable, Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any, TypedDict
 
@@ -8,8 +7,6 @@ import sqlalchemy as sa
 from psycopg2 import OperationalError
 from simcore_postgres_database.models.base import metadata
 from sqlalchemy.ext.asyncio import AsyncEngine
-
-log = logging.getLogger(__name__)
 
 
 class PostgresTestConfig(TypedDict):
@@ -70,7 +67,7 @@ def is_postgres_responsive(url) -> bool:
     return True
 
 
-async def insert_and_get_row(
+async def _insert_and_get_row(
     conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
 ):
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
@@ -81,22 +78,23 @@ async def insert_and_get_row(
     return result.first()
 
 
-async def delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
-    return await conn.execute(table.delete().where(pk_col == pk_value))
-
-
 @asynccontextmanager
-async def insert_get_and_delete_row(
+async def insert_and_get_row_lifespan(
     sqlalchemy_async_engine: AsyncEngine,
+    *,
     table: sa.Table,
     values: dict[str, Any],
     pk_col: sa.Column,
     pk_value: Any,
-) -> AsyncIterable[dict[str, Any]]:
+) -> AsyncIterator[dict[str, Any]]:
+    # insert & get
     async with sqlalchemy_async_engine.begin() as conn:
-        row = await insert_and_get_row(conn, table, values, pk_col, pk_value)
+        row = await _insert_and_get_row(
+            conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
+        )
 
     yield dict(row)
 
+    # delete row
     async with sqlalchemy_async_engine.begin() as conn:
-        await delete_row(conn, table, pk_col, pk_value)
+        await conn.execute(table.delete().where(pk_col == pk_value))

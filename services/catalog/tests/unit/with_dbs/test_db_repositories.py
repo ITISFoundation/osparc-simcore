@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import pytest
+from models_library.products import ProductName
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging import version
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -36,11 +37,10 @@ class FakeCatalogInfo:
 
 @pytest.fixture()
 async def fake_catalog_with_jupyterlab(
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
-    target_product = products_names[-1]
 
     # injects fake data in db
     await services_db_tables_injector(
@@ -116,11 +116,10 @@ async def test_create_services(
 async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ):
-    target_product = products_names[-1]
 
     # injects fake data in db
     await services_db_tables_injector(

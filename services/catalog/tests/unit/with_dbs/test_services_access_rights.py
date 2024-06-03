@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB
+from models_library.products import ProductName
 from models_library.services import ServiceDockerData, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB
 from pydantic import parse_obj_as
@@ -83,13 +84,12 @@ def test_reduce_access_rights():
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     services_db_tables_injector: Callable,
     service_catalog_faker: Callable,
     mocker,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
-    target_product = products_names[0]
 
     # Avoids calls to director API
     mocker.patch(

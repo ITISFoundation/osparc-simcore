@@ -30,6 +30,7 @@ from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
 )
 from models_library.generated_models.docker_rest_api import ServiceSpec
+from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
@@ -168,14 +169,13 @@ async def test_get_service_specifications(
     user_id: UserID,
     user: dict[str, Any],
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     sqlalchemy_async_engine: AsyncEngine,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
-    target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     SERVICE_VERSION = "0.0.1"
     await services_db_tables_injector(
@@ -261,13 +261,12 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     user_id: UserID,
     user: dict[str, Any],
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
-    target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     sorted_versions = [
         "0.0.1",
