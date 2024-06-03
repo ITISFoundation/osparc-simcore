@@ -1,4 +1,7 @@
+import asyncio
 import datetime
+import functools
+from typing import Awaitable, Callable, ParamSpec, TypeVar
 
 import arrow
 from mypy_boto3_ec2.service_resource import Instance
@@ -45,3 +48,17 @@ def color_encode_with_state(string: str, ec2_instance: Instance) -> str:
 
 def color_encode_with_threshold(string: str, value, threshold) -> str:
     return string if value > threshold else DANGER.format(string)
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def to_async(func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
+        loop = asyncio.get_running_loop()
+        partial_func = functools.partial(func, *args, **kwargs)
+        return loop.run_in_executor(None, partial_func)
+
+    return wrapper

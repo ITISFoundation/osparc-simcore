@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 dependencies = [
   "arrow",
+  "aiocache",
   "asyncpg",
   "black",
   "boto3",

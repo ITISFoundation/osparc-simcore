@@ -1,13 +1,17 @@
-import asyncio
 import json
+from typing import Final
 
+import boto3
+from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_ec2.service_resource import ServiceResourceInstancesCollection
+from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef
 
 from .models import AppState
+from .utils import get_instance_name, to_async
 
 
+@to_async
 def _list_running_ec2_instances(
     ec2_resource: EC2ServiceResource,
     key_name: str,
@@ -56,9 +60,7 @@ async def list_computational_instances_from_ec2(
         ), "custom tags are different on primary and workers. TIP: adjust this code now"
         custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_clusters_keeper
-    return await asyncio.get_event_loop().run_in_executor(
-        None,
-        _list_running_ec2_instances,
+    return await _list_running_ec2_instances(
         state.ec2_resource_clusters_keeper,
         state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
         custom_tags,
@@ -77,12 +79,71 @@ async def list_dynamic_instances_from_ec2(
     if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
         custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
     assert state.ec2_resource_autoscaling
-    return await asyncio.get_event_loop().run_in_executor(
-        None,
-        _list_running_ec2_instances,
+    return await _list_running_ec2_instances(
         state.ec2_resource_autoscaling,
         state.environment["EC2_INSTANCES_KEY_NAME"],
         custom_tags,
         user_id,
         wallet_id,
+    )
+
+
+_DEFAULT_BASTION_NAME: Final[str] = "bastion-host"
+
+
+@cached
+async def get_computational_bastion_instance(state: AppState) -> Instance:
+    assert state.ec2_resource_clusters_keeper  # nosec
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]  # nosec
+    instances = await _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        {},
+        None,
+        None,
+    )
+
+    possible_bastions = list(
+        filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances)
+    )
+    assert len(possible_bastions) == 1
+    return possible_bastions[0]
+
+
+@cached
+async def get_dynamic_bastion_instance(state: AppState) -> Instance:
+    assert state.ec2_resource_clusters_keeper  # nosec
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]  # nosec
+    instances = await _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper,
+        state.environment["EC2_INSTANCES_KEY_NAME"],
+        {},
+        None,
+        None,
+    )
+
+    possible_bastions = list(
+        filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances)
+    )
+    assert len(possible_bastions) == 1
+    return possible_bastions[0]
+
+
+def cluster_keeper_ec2_client(state: AppState) -> EC2ServiceResource:
+    return boto3.resource(
+        "ec2",
+        region_name=state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment[
+            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
+        ],
+    )
+
+
+def autoscaling_ec2_client(state: AppState) -> EC2ServiceResource:
+    return boto3.resource(
+        "ec2",
+        region_name=state.environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )

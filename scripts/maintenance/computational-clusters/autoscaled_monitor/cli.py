@@ -2,7 +2,6 @@ import asyncio
 from pathlib import Path
 from typing import Annotated
 
-import boto3
 import parse
 import rich
 import typer
@@ -14,6 +13,7 @@ from .constants import (
     DEFAULT_DYNAMIC_EC2_FORMAT,
     DEPLOY_SSH_KEY_PARSER,
 )
+from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
 from .models import AppState
 
 state: AppState = AppState(
@@ -61,25 +61,11 @@ def main(
     assert (
         deploy_config.is_dir()
     ), "deploy-config argument is not pointing to a directory!"
-
     state.environment = _parse_environment(deploy_config)
 
     # connect to ec2s
-    state.ec2_resource_autoscaling = boto3.resource(
-        "ec2",
-        region_name=state.environment["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
-    )
-
-    state.ec2_resource_clusters_keeper = boto3.resource(
-        "ec2",
-        region_name=state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
-        aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=state.environment[
-            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
-        ],
-    )
+    state.ec2_resource_autoscaling = autoscaling_ec2_client(state)
+    state.ec2_resource_clusters_keeper = cluster_keeper_ec2_client(state)
 
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     state.dynamic_parser = parse.compile(

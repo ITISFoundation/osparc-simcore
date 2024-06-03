@@ -8,6 +8,7 @@ from mypy_boto3_ec2.service_resource import Instance
 from pydantic import AnyUrl
 
 from .constants import SSH_USER_NAME, TASK_CANCEL_EVENT_NAME_TEMPLATE
+from .ec2 import get_computational_bastion_instance
 from .models import AppState, ComputationalCluster, TaskId, TaskState
 from .ssh import ssh_tunnel
 
@@ -35,14 +36,16 @@ async def dask_client(
         )
 
     try:
+
         async with contextlib.AsyncExitStack() as stack:
             url = AnyUrl(f"tls://{instance.public_ip_address}")
             if state.use_bastion:
+                bastion_instance = await get_computational_bastion_instance(state)
                 assert state.ssh_key_path  # nosec
                 assert state.environment  # nosec
                 tunnel = stack.enter_context(
                     ssh_tunnel(
-                        ssh_host="123.12.321.21",
+                        ssh_host=bastion_instance.public_dns_name,
                         username=SSH_USER_NAME,
                         private_key_path=state.ssh_key_path,
                         remote_bind_host=instance.private_ip_address,
@@ -120,6 +123,7 @@ async def get_scheduler_details(state: AppState, instance: Instance):
     datasets_on_cluster = ()
     processing_jobs = {}
     all_tasks = {}
+    rich.print(instance.placement)
     with contextlib.suppress(TimeoutError, OSError):
         async with dask_client(state, instance) as client:
             scheduler_info = client.scheduler_info()

@@ -18,6 +18,7 @@ from sshtunnel import SSHTunnelForwarder
 
 from .constants import DYN_SERVICES_NAMING_CONVENTION
 from .models import AppState, DockerContainer, DynamicService
+from .utils import to_async
 
 _DEFAULT_SSH_PORT: Final[int] = 22
 _LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
@@ -99,6 +100,7 @@ def ssh_instance(
         pass
 
 
+@to_async
 def get_available_disk_space(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> ByteSize:
@@ -131,6 +133,7 @@ def get_available_disk_space(
         return ByteSize(0)
 
 
+@to_async
 def get_dask_ip(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> str:
@@ -158,6 +161,7 @@ def get_dask_ip(
         return "Not Ready"
 
 
+@to_async
 def list_running_dyn_services(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> list[DynamicService]:

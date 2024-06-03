@@ -251,21 +251,14 @@ async def _fetch_instance_details(
 ) -> tuple[list[DynamicService] | BaseException, ByteSize | BaseException]:
     # Run both SSH operations concurrently for this instance
     running_services, disk_space = await asyncio.gather(
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            ssh.list_running_dyn_services,
+        ssh.list_running_dyn_services(
             state,
             instance.ec2_instance,
             SSH_USER_NAME,
             ssh_key_path,
         ),
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            ssh.get_available_disk_space,
-            state,
-            instance.ec2_instance,
-            SSH_USER_NAME,
-            ssh_key_path,
+        ssh.get_available_disk_space(
+            state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
         ),
         return_exceptions=True,
     )
