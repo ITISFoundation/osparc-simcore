@@ -5,16 +5,22 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.clusters import ClusterID
-from pydantic import PositiveInt
+from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
-from ...models.schemas.jobs import JobID, JobPricingSpecification, JobStatus
-from ...services.director_v2 import DirectorV2Api
-from ...services.solver_job_models_converters import create_jobstatus_from_task
-from ...services.webserver import AuthSession
-from ..dependencies.authentication import get_current_user_id
-from ..dependencies.services import get_api_client
-from ..dependencies.webserver import get_webserver_session
+from ..api.dependencies.authentication import get_current_user_id
+from ..api.dependencies.services import get_api_client
+from ..api.dependencies.webserver import get_webserver_session
+from ..models.schemas.jobs import (
+    JobID,
+    JobMetadata,
+    JobMetadataUpdate,
+    JobPricingSpecification,
+    JobStatus,
+)
+from .director_v2 import DirectorV2Api
+from .solver_job_models_converters import create_jobstatus_from_task
+from .webserver import AuthSession
 
 _logger = logging.getLogger(__name__)
 
@@ -64,3 +70,38 @@ async def stop_project(
     task = await director2_api.get_computation(job_id, user_id)
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
+
+
+async def get_custom_metadata(
+    *,
+    job_name: str,
+    job_id: JobID,
+    webserver_api: AuthSession,
+    self_url: HttpUrl,
+):
+    assert job_name  # nosec
+    project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=self_url,
+    )
+
+
+async def replace_custom_metadata(
+    *,
+    job_name: str,
+    job_id: JobID,
+    update: JobMetadataUpdate,
+    webserver_api: AuthSession,
+    self_url: HttpUrl,
+):
+    assert job_name  # nosec
+    project_metadata = await webserver_api.update_project_metadata(
+        project_id=job_id, metadata=update.metadata
+    )
+    return JobMetadata(
+        job_id=job_id,
+        metadata=project_metadata.custom,
+        url=self_url,
+    )
