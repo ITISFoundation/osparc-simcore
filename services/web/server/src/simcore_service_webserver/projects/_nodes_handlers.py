@@ -107,7 +107,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
         except ClustersKeeperNotAvailableError as exc:
             raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
         except ProjectNodeRequiredInputsNotSetError as exc:
-            raise web.HTTPConflict(reason=f"{exc}", text=f"{exc}") from exc
+            raise web.HTTPConflict(reason=f"{exc}") from exc
 
     return wrapper
 
