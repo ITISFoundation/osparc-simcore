@@ -38,7 +38,7 @@ from simcore_service_webserver.projects.exceptions import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import (
-    check_project_node_has_all_required_inputs,
+    _check_project_node_has_all_required_inputs,
 )
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -914,7 +914,7 @@ async def test_check_project_node_has_all_required_inputs_raises(
 ):
 
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
-        await check_project_node_has_all_required_inputs(
+        await _check_project_node_has_all_required_inputs(
             db_api,
             user_id=logged_user["id"],
             project_uuid=UUID(inserted_project["uuid"]),
@@ -940,7 +940,7 @@ async def test_check_project_node_has_all_required_inputs_ok(
     db_api: ProjectDBAPI,
     inserted_project: dict,
 ):
-    await check_project_node_has_all_required_inputs(
+    await _check_project_node_has_all_required_inputs(
         db_api,
         user_id=logged_user["id"],
         project_uuid=UUID(inserted_project["uuid"]),

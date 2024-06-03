@@ -448,7 +448,7 @@ async def update_project_node_resources_from_hardware_info(
         raise ClustersKeeperNotAvailableError from exc
 
 
-async def check_project_node_has_all_required_inputs(
+async def _check_project_node_has_all_required_inputs(
     db: ProjectDBAPI, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
 ) -> None:
 
@@ -518,7 +518,7 @@ async def _start_dynamic_service(
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
     try:
-        await check_project_node_has_all_required_inputs(
+        await _check_project_node_has_all_required_inputs(
             db, user_id, project_uuid, node_uuid
         )
     except ProjectNodeRequiredInputsNotSetError as e:
