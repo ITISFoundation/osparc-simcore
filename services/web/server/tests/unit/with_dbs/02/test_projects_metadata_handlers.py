@@ -258,7 +258,7 @@ async def test_new_project_with_invalid_parent_project_node(
     )
     assert not child_project
 
-    # creating with only a parent project ID should fail too
+    # creating with only a parent node ID should fail too
     random_node_id = parse_obj_as(NodeID, faker.uuid4())
     child_project = await request_create_project(
         client,
