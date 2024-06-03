@@ -46,6 +46,9 @@ class ProjectCreateHeaders(BaseModel):
         if (
             values.get("parent_project_uuid") is None
             and values.get("parent_node_id") is not None
+        ) or (
+            values.get("parent_project_uuid") is not None
+            and values.get("parent_node_id") is None
         ):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
