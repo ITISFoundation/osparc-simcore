@@ -676,12 +676,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node === null) {
           continue;
         }
-        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes, true);
-        this.__addInputOutputNodesAndEdges(node, nodeData.outputNodes, false);
+        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes);
       }
     },
 
-    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds, isInput) {
+    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds) {
       if (inputOutputNodeIds) {
         inputOutputNodeIds.forEach(inputOutputNodeId => {
           const node1 = this.getNode(inputOutputNodeId);
@@ -690,11 +689,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
           const edge = new osparc.data.model.Edge(null, node1, node);
           this.addEdge(edge);
-          if (isInput) {
-            node.addInputNode(inputOutputNodeId);
-          } else {
-            node.addOutputNode(inputOutputNodeId);
-          }
+          node.addInputNode(inputOutputNodeId);
         });
       }
     },
