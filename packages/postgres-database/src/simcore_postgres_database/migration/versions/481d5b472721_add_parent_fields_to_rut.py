@@ -1,16 +1,17 @@
 """add_parent_fields_to_rut
 
-Revision ID: 9f11c52f3b40
-Revises: baf0ee1c37dc
-Create Date: 2024-05-31 09:17:42.715690+00:00
+Revision ID: 481d5b472721
+Revises: 0d85bd35bdaa
+Create Date: 2024-06-03 08:58:35.086686+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "9f11c52f3b40"
-down_revision = "baf0ee1c37dc"
+revision = "481d5b472721"
+down_revision = "0d85bd35bdaa"
 branch_labels = None
 depends_on = None
 
@@ -42,13 +43,14 @@ def upgrade():
     op.execute(
         sa.DDL(
             f"""
-        UPDATE resource_tracker_service_runs
-        SET parent_project_id = project_id,
-            root_parent_project_id = project_id,
-            root_parent_project_name = project_name,
-            parent_node_id = node_id,
-            root_parent_node_id = node_id
-    """
+
+                UPDATE resource_tracker_service_runs
+                SET parent_project_id = project_id,
+                    root_parent_project_id = project_id,
+                    root_parent_project_name = project_name,
+                    parent_node_id = node_id,
+                    root_parent_node_id = node_id
+                """
         )
     )
 
@@ -92,6 +94,7 @@ def upgrade():
         existing_type=sa.VARCHAR(),
         nullable=False,
     )
+
     # ### end Alembic commands ###
 
 

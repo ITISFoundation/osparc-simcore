@@ -125,31 +125,31 @@ resource_tracker_service_runs = sa.Table(
         "parent_project_id",  # UUID
         sa.String,
         nullable=False,
-        doc="We want to store the parent project id for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
+        doc="If a user starts computational jobs via a dynamic service, a new project is created in the backend. This newly created project is considered a child project, and the project from which it was created is the parent project. We want to store the parent project ID for tracking and billing purposes, and ensure it remains even when the node is deleted. This is also the reason why we do not introduce a foreign key.",
     ),
     sa.Column(
         "root_parent_project_id",  # UUID
         sa.String,
         nullable=False,
-        doc="we want to store the root parent project id for tracking/billing purposes and be sure it stays there even when the node is deleted.",
+        doc="Similar to the parent project concept, we are flexible enough to allow multiple nested computational jobs, which create multiple nested projects. For this reason, we keep the parent project ID, so we know from which project the user started their computation.",
     ),
     sa.Column(
         "root_parent_project_name",
         sa.String,
         nullable=False,
-        doc="We want to store the root parent project name for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
+        doc="We want to store the root parent project name for tracking/billing purposes.",
     ),
     sa.Column(
         "parent_node_id",  # UUID
         sa.String,
         nullable=False,
-        doc="we want to store the parent node/service id for tracking/billing purposes and be sure it stays there even when the node is deleted.",
+        doc="Since each project can have multiple nodes, similar to the parent project concept, we also store the parent node..",
     ),
     sa.Column(
         "root_parent_node_id",  # UUID
         sa.String,
         nullable=False,
-        doc="We want to store the root parent node id for tracking/billing purposes and be sure it stays there even when the node is deleted (that's also reason why we do not introduce foreign key)",
+        doc="Since each project can have multiple nodes, similar to the root parent project concept, we also store the root parent node.",
     ),
     # Service fields
     sa.Column(
