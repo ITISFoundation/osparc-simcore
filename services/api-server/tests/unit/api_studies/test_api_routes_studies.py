@@ -15,6 +15,10 @@ from fastapi import status
 from pydantic import parse_file_as, parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.studies import Study, StudyID, StudyPort
 
@@ -162,11 +166,13 @@ async def test_clone_study(
     def clone_project_side_effect(request: httpx.Request):
         if parent_project_id is not None:
             _parent_project_id = dict(request.headers).get(
-                "x-simcore-parent-project-uuid"
+                X_SIMCORE_PARENT_PROJECT_UUID.lower()
             )
             assert _parent_project_id == f"{parent_project_id}"
         if parent_node_id is not None:
-            _parent_node_id = dict(request.headers).get("x-simcore-parent-node-id")
+            _parent_node_id = dict(request.headers).get(
+                X_SIMCORE_PARENT_NODE_ID.lower()
+            )
             assert _parent_node_id == f"{parent_node_id}"
         return callback(request)
 
@@ -176,9 +182,9 @@ async def test_clone_study(
 
     _headers = {}
     if parent_project_id is not None:
-        _headers["X-Simcore-Parent-Project-Uuid"] = f"{parent_project_id}"
+        _headers[X_SIMCORE_PARENT_PROJECT_UUID] = f"{parent_project_id}"
     if parent_node_id is not None:
-        _headers["X-Simcore-Parent-Node-Id"] = f"{parent_node_id}"
+        _headers[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     resp = await client.post(
         f"/v0/studies/{study_id}:clone", headers=_headers, auth=auth
     )

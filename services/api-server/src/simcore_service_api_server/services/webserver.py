@@ -46,6 +46,10 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -265,8 +269,8 @@ class AuthSession:
             "/projects",
             params={"hidden": is_hidden},
             headers={
-                "X-Simcore-Parent-Project-Uuid": f"{parent_project_uuid}",
-                "X-Simcore-Parent-Node-Id": f"{parent_node_id}",
+                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
+                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
             },
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
@@ -290,8 +294,8 @@ class AuthSession:
             cookies=self.session_cookies,
             params=query,
             headers={
-                "X-Simcore-Parent-Project-Uuid": f"{parent_project_uuid}",
-                "X-Simcore-Parent-Node-Id": f"{parent_node_id}",
+                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
+                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
             },
         )
         response.raise_for_status()

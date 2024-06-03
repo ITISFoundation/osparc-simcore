@@ -20,6 +20,10 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     HttpApiCallCaptureModel,
 )
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import Study, StudyID
@@ -235,11 +239,11 @@ async def test_create_study_job(
             # test parent project and node ids
             if parent_project_id is not None:
                 assert f"{parent_project_id}" == dict(request.headers).get(
-                    "x-simcore-parent-project-uuid"
+                    X_SIMCORE_PARENT_PROJECT_UUID.lower()
                 )
             if parent_node_id is not None:
                 assert f"{parent_node_id}" == dict(request.headers).get(
-                    "x-simcore-parent-node-id"
+                    X_SIMCORE_PARENT_NODE_ID.lower()
                 )
         return capture.response_body
 
@@ -257,9 +261,9 @@ async def test_create_study_job(
 
     header_dict = {}
     if parent_project_id is not None:
-        header_dict["X-Simcore-Parent-Project-Uuid"] = f"{parent_project_id}"
+        header_dict[X_SIMCORE_PARENT_PROJECT_UUID] = f"{parent_project_id}"
     if parent_node_id is not None:
-        header_dict["X-Simcore-Parent-Node-Id"] = f"{parent_node_id}"
+        header_dict[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
