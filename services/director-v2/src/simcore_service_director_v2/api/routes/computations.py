@@ -18,7 +18,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -38,10 +38,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_postgres_database.utils_projects_nodes import (
-    ProjectNodesNodeNotFoundError,
-    ProjectNodesNonUniqueNodeFoundError,
-)
+from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -155,46 +152,65 @@ async def _check_pipeline_startable(
             ) from exc
 
 
+_UNKNOWN_NODE: Final[str] = "unknown node"
+
+
 async def _get_project_metadata(
     project_repo: ProjectsRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
     computation: ComputationCreate,
 ) -> ProjectMetadataDict:
     try:
-        if (
-            result := await projects_metadata_repo.get_project_ancestors(
-                computation.project_id
-            )
-        ) is not None:
-            parent_project_uuid, parent_node_id = result
-            parent_project = await project_repo.get_project(parent_project_uuid)
-            parent_node_idstr = NodeIDStr(f"{parent_node_id}")
-            if parent_node_idstr not in parent_project.workbench:
+        project_ancestors = await projects_metadata_repo.get_project_ancestors(
+            computation.project_id
+        )
+        if project_ancestors.parent_project_uuid is None:
+            # no parents here
+            return {}
+
+        assert project_ancestors.parent_node_id is not None  # nosec
+        assert project_ancestors.root_project_uuid is not None  # nosec
+        assert project_ancestors.root_node_id is not None  # nosec
+
+        async def _get_project_node_names(
+            project_uuid: ProjectID, node_id: NodeID
+        ) -> tuple[str, str]:
+            prj = await project_repo.get_project(project_uuid)
+            node_id_str = NodeIDStr(f"{node_id}")
+            if node_id_str not in prj.workbench:
                 _logger.error(
-                    "Could not find %s in parent project %s",
-                    f"{parent_node_id=}",
-                    f"{parent_project_uuid=}",
+                    "%s not found in %s. it is an ancestor of %s. Please check!",
+                    f"{node_id=}",
+                    f"{prj.uuid=}",
+                    f"{computation.project_id=}",
                 )
-                return {}
-            assert parent_node_idstr in parent_project.workbench  # nosec
-            return ProjectMetadataDict(
-                parent_node_id=parent_node_id,
-                parent_node_name=parent_project.workbench[parent_node_idstr].label,
-                parent_project_id=parent_project_uuid,
-                parent_project_name=parent_project.name,
-            )
+                return prj.name, _UNKNOWN_NODE
+            return prj.name, prj.workbench[node_id_str].label
+
+        parent_project_name, parent_node_name = await _get_project_node_names(
+            project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
+        )
+        root_parent_project_name, root_parent_node_name = await _get_project_node_names(
+            project_ancestors.root_project_uuid, project_ancestors.root_node_id
+        )
+        return ProjectMetadataDict(
+            parent_node_id=project_ancestors.parent_node_id,
+            parent_node_name=parent_node_name,
+            parent_project_id=project_ancestors.parent_project_uuid,
+            parent_project_name=parent_project_name,
+            root_parent_node_id=project_ancestors.root_node_id,
+            root_parent_node_name=root_parent_node_name,
+            root_parent_project_id=project_ancestors.root_project_uuid,
+            root_parent_project_name=root_parent_project_name,
+        )
+
     except DBProjectNotFoundError:
         _logger.exception("Could not find project: %s", f"{computation.project_id=}")
     except ProjectNotFoundError:
         _logger.exception(
             "Could not find parent project: %s", f"{parent_project_uuid=}"
         )
-    except (
-        ProjectNotFoundError,
-        ProjectNodesNodeNotFoundError,
-        ProjectNodesNonUniqueNodeFoundError,
-    ):
-        _logger.exception("Could not find project/node: %s", f"{parent_node_id=}")
+
     return {}
 
 
