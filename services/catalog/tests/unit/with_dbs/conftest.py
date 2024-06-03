@@ -18,11 +18,15 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from models_library.products import ProductName
 from models_library.services import ServiceDockerData
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
+from pytest_simcore.helpers.utils_postgres import (
+    PostgresTestConfig,
+    insert_get_and_delete_row,
+)
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_catalog.core.settings import ApplicationSettings
@@ -118,78 +122,55 @@ def mocked_director_service_api(
 #
 
 
-@pytest.fixture()
-async def products_names(
+@pytest.fixture
+async def product(
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects product in db
+    """
+    # NOTE: this fixture ignores products' group-id but it is fine for this test context
+    assert product["group_id"] is None
+    async with insert_get_and_delete_row(
+        sqlalchemy_async_engine,
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+        pk_value=product["name"],
+    ) as data:
+        yield data
+
+
+@pytest.fixture
+def target_product(product: dict[str, Any]) -> ProductName:
+    return parse_obj_as(ProductName, product["name"])
+
+
+@pytest.fixture
+def other_product(product: dict[str, Any]) -> ProductName:
+    other = parse_obj_as(ProductName, "osparc")
+    assert other != product["name"]
+    return other
+
+
+@pytest.fixture
+async def user(
     sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[list[str]]:
-    """Inits products db table and returns product names"""
-    data = [
-        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
-        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
-        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
-    ]
-
-    # pylint: disable=no-value-for-parameter
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-        for n, (name, regex) in enumerate(data):
-            stmt = products.insert().values(name=name, host_regex=regex, priority=n)
-            await conn.execute(stmt)
-
-    names = [
-        "osparc",
-    ] + [items[0] for items in data]
-
-    yield names
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(products.delete())
-
-
-@pytest.fixture
-def target_product(products_names: list[str]) -> ProductName:
-    assert (
-        len(set(products_names)) > 1
-    ), "please adjust the fixture to have the right number of products"
-    # injects fake data in db
-    return parse_obj_as(ProductName, products_names[-1])
-
-
-@pytest.fixture
-def other_product(
-    products_names: list[str], target_product: ProductName
-) -> ProductName:
-    for name in products_names:
-        if name != target_product:
-            return name
-    pytest.fail(
-        f"Could not find other product than {target_product=} in {products_names=}"
-    )
-
-
-@pytest.fixture()
-def user(
-    postgres_db: sa.engine.Engine, user: dict[str, Any]
-) -> Iterator[dict[str, Any]]:
-
-    with postgres_db.connect() as conn:
-        # removes all users before continuing
-        conn.execute(users.delete())
-
-        result = conn.execute(users.insert().values(**user).returning(users.c.id))
-        row = result.first()
-        assert row
-        created_uid = row.id
-
-        # this is needed to get the primary_gid correctly
-        result = conn.execute(sa.select(users).where(users.c.id == created_uid))
-        row = result.first()
-        assert row
-
-        yield dict(row)
-
-        conn.execute(users.delete().where(users.c.id == created_uid))
+    user: dict[str, Any],
+    user_id: UserID,
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects a user in db
+    """
+    assert user_id == user["id"]
+    async with insert_get_and_delete_row(
+        sqlalchemy_async_engine,
+        table=users,
+        values=user,
+        pk_col=users.c.id,
+        pk_value=user["id"],
+    ) as data:
+        yield data
 
 
 @pytest.fixture()
