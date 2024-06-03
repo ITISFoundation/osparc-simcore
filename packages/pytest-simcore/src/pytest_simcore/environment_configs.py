@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 
 import pytest
-import yaml
 
 from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_envs import load_dotenv, setenvs_from_dict
@@ -77,6 +76,9 @@ def docker_compose_service_environment_dict(
     - env_devel_dict in environment_configs plugin
     - service_name needs to be defined
     """
+    # NOTE: By keeping import here, this library is ONLY required when the fixture is used
+    import yaml
+
     service = yaml.safe_load(services_docker_compose_file.read_text())["services"][
         service_name
     ]
