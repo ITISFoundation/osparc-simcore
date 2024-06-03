@@ -32,12 +32,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   },
 
   properties: {
-    filterBy: {
+    sharedWith: {
       check: ["show-all", "my-resources", "shared-with-me", "shared-with-everyone"],
       init: "all",
       nullable: false,
-      event: "changeFilterBy",
-      apply: "__applyFilterBy"
+      event: "changeSharedWith",
+      apply: "__applySharedWith"
     }
   },
 
@@ -52,29 +52,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __buildSharedWithFilter: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const buttons = [];
-
-      const showAll = new qx.ui.toolbar.RadioButton("Home", "@FontAwesome5Solid/home/20").set({
-        gap: 6
-      });
-      showAll.filterById = "show-all";
-      buttons.push(showAll);
-
-      const myResources = new qx.ui.toolbar.RadioButton("My Studies", "@FontAwesome5Solid/user/20");
-      myResources.filterById = "my-resources";
-      buttons.push(myResources);
-
-      const sharedWithMe = new qx.ui.toolbar.RadioButton("Shared with me", "@FontAwesome5Solid/users/20");
-      sharedWithMe.filterById = "shared-with-me";
-      buttons.push(sharedWithMe);
-
-      const sharedWithEveryone = new qx.ui.toolbar.RadioButton("Shared with Everyone", "@FontAwesome5Solid/globe/20");
-      sharedWithEveryone.filterById = "shared-with-everyone";
-      buttons.push(sharedWithEveryone);
-
       const radioGroup = new qx.ui.form.RadioGroup();
 
-      buttons.forEach(button => {
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions("study");
+      options.forEach(option => {
+        const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
+        button.id = option.id;
         button.set({
           font: "text-14",
           gap: 6,
@@ -88,8 +71,11 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         button.getContentElement().setStyles({
           "border-radius": "8px"
         });
+
         layout.add(button);
         radioGroup.add(button);
+
+        button.addListener("execute", () => this.setSharedWith(option.id), this);
       });
 
       radioGroup.setAllowEmptySelection(false);
