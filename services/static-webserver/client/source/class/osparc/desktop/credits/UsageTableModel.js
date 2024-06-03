@@ -57,7 +57,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       1: "node_name",
       2: "service_key",
       3: "started_at",
-      // 4: DONT SORT BY DURATION
+      // 4: (not used) SORTING BY DURATION
       5: "service_run_status",
       6: "credit_cost",
       7: "user_email"
