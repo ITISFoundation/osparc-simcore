@@ -8,6 +8,7 @@ from functools import partial
 from typing import Any
 from uuid import UUID
 
+import httpx
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -88,6 +89,14 @@ _WALLET_STATUS_MAP: Mapping = {
     status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
     status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
 }
+
+
+def _get_lrt_urls(lrt_response: httpx.Response):
+    # WARNING: this function is patched in patch_lrt_response_urls fixture
+    data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+    assert data is not None  # nosec
+
+    return data.status_href, data.result_href
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -192,9 +201,8 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(self, data: TaskGet):
-        status_url = data.status_href
-        result_url = data.result_href
+    async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
+        status_url, result_url = _get_lrt_urls(lrt_response)
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
@@ -255,10 +263,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -268,10 +273,7 @@ class AuthSession:
             "/projects", cookies=self.session_cookies, params=query
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
