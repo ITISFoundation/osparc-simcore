@@ -89,6 +89,8 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
             "project_name",
             "node_id",
             "node_name",
+            "root_parent_project_id",
+            "root_parent_project_name",
             "service_key",
             "service_version",
             "service_type",
