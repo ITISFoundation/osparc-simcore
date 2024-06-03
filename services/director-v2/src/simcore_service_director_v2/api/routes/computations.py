@@ -18,7 +18,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,7 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -38,7 +38,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -59,7 +58,7 @@ from ...core.errors import (
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -72,12 +71,8 @@ from ...modules.db.repositories.projects_metadata import ProjectsMetadataReposit
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
-from ...utils.computations import (
-    find_deprecated_tasks,
-    get_pipeline_state_from_task_states,
-    is_pipeline_running,
-    is_pipeline_stopped,
-)
+from ...utils import computations as utils
+from ...utils import db as db_utils
 from ...utils.dags import (
     compute_pipeline_details,
     compute_pipeline_started_timestamp,
@@ -106,10 +101,10 @@ router = APIRouter()
 async def _check_pipeline_not_running(
     comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
 ) -> None:
-    pipeline_state = get_pipeline_state_from_task_states(
+    pipeline_state = utils.get_pipeline_state_from_task_states(
         await comp_tasks_repo.list_computational_tasks(computation.project_id)
     )
-    if is_pipeline_running(pipeline_state):
+    if utils.is_pipeline_running(pipeline_state):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
@@ -123,7 +118,7 @@ async def _check_pipeline_startable(
     clusters_repo: ClustersRepository,
 ) -> None:
     assert computation.product_name  # nosec
-    if deprecated_tasks := await find_deprecated_tasks(
+    if deprecated_tasks := await utils.find_deprecated_tasks(
         computation.user_id,
         computation.product_name,
         [
@@ -150,66 +145,6 @@ async def _check_pipeline_startable(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
             ) from exc
-
-
-_UNKNOWN_NODE: Final[str] = "unknown node"
-
-
-async def _get_project_metadata(
-    project_repo: ProjectsRepository,
-    projects_metadata_repo: ProjectsMetadataRepository,
-    computation: ComputationCreate,
-) -> ProjectMetadataDict:
-    try:
-        project_ancestors = await projects_metadata_repo.get_project_ancestors(
-            computation.project_id
-        )
-        if project_ancestors.parent_project_uuid is None:
-            # no parents here
-            return {}
-
-        assert project_ancestors.parent_node_id is not None  # nosec
-        assert project_ancestors.root_project_uuid is not None  # nosec
-        assert project_ancestors.root_node_id is not None  # nosec
-
-        async def _get_project_node_names(
-            project_uuid: ProjectID, node_id: NodeID
-        ) -> tuple[str, str]:
-            prj = await project_repo.get_project(project_uuid)
-            node_id_str = NodeIDStr(f"{node_id}")
-            if node_id_str not in prj.workbench:
-                _logger.error(
-                    "%s not found in %s. it is an ancestor of %s. Please check!",
-                    f"{node_id=}",
-                    f"{prj.uuid=}",
-                    f"{computation.project_id=}",
-                )
-                return prj.name, _UNKNOWN_NODE
-            return prj.name, prj.workbench[node_id_str].label
-
-        parent_project_name, parent_node_name = await _get_project_node_names(
-            project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
-        )
-        root_parent_project_name, root_parent_node_name = await _get_project_node_names(
-            project_ancestors.root_project_uuid, project_ancestors.root_node_id
-        )
-        return ProjectMetadataDict(
-            parent_node_id=project_ancestors.parent_node_id,
-            parent_node_name=parent_node_name,
-            parent_project_id=project_ancestors.parent_project_uuid,
-            parent_project_name=parent_project_name,
-            root_parent_node_id=project_ancestors.root_node_id,
-            root_parent_node_name=root_parent_node_name,
-            root_parent_project_id=project_ancestors.root_project_uuid,
-            root_parent_project_name=root_parent_project_name,
-        )
-
-    except DBProjectNotFoundError:
-        _logger.exception("Could not find project: %s", f"{computation.project_id=}")
-    except ProjectNotFoundError as exc:
-        _logger.exception("Could not find parent project: %s", f"{exc.project_id=}")
-
-    return {}
 
 
 async def _try_start_pipeline(
@@ -258,8 +193,8 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=await _get_project_metadata(
-                project_repo, projects_metadata_repo, computation
+            project_metadata=await db_utils.get_project_metadata(
+                computation.project_id, project_repo, projects_metadata_repo
             ),
         )
         or {},
@@ -371,7 +306,7 @@ async def create_computation(  # noqa: PLR0913
             for t in comp_tasks
             if f"{t.node_id}" in set(minimal_computational_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
+        pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
 
         # get run details if any
         last_run: CompRunsAtDB | None = None
@@ -468,7 +403,9 @@ async def get_computation(
         project_id, comp_pipelines_repo, comp_tasks_repo
     )
 
-    pipeline_state: RunningState = get_pipeline_state_from_task_states(filtered_tasks)
+    pipeline_state: RunningState = utils.get_pipeline_state_from_task_states(
+        filtered_tasks
+    )
 
     _logger.debug(
         "Computational task status by %s for %s has %s",
@@ -553,9 +490,9 @@ async def stop_computation(
         filtered_tasks = [
             t for t in tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
         ]
-        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
+        pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
 
-        if is_pipeline_running(pipeline_state):
+        if utils.is_pipeline_running(pipeline_state):
             await scheduler.stop_pipeline(computation_stop.user_id, project_id)
 
         # get run details if any
@@ -614,8 +551,8 @@ async def delete_computation(
         comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             project_id
         )
-        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        if is_pipeline_running(pipeline_state):
+        pipeline_state = utils.get_pipeline_state_from_task_states(comp_tasks)
+        if utils.is_pipeline_running(pipeline_state):
             if not computation_stop.force:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -647,10 +584,10 @@ async def delete_computation(
                 comp_tasks: list[
                     CompTaskAtDB
                 ] = await comp_tasks_repo.list_computational_tasks(project_id)
-                pipeline_state = get_pipeline_state_from_task_states(
+                pipeline_state = utils.get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
-                return is_pipeline_stopped(pipeline_state)
+                return utils.is_pipeline_stopped(pipeline_state)
 
             # wait for the pipeline to be stopped
             if not await check_pipeline_stopped():
