@@ -10015,10 +10015,11 @@ components:
       - project_name
       - node_id
       - node_name
+      - root_parent_project_id
+      - root_parent_project_name
       - service_key
       - service_version
       - service_type
-      - service_resources
       - started_at
       - service_run_status
       type: object
@@ -10053,6 +10054,13 @@ components:
         node_name:
           title: Node Name
           type: string
+        root_parent_project_id:
+          title: Root Parent Project Id
+          type: string
+          format: uuid
+        root_parent_project_name:
+          title: Root Parent Project Name
+          type: string
         service_key:
           title: Service Key
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -10064,9 +10072,6 @@ components:
         service_type:
           title: Service Type
           type: string
-        service_resources:
-          title: Service Resources
-          type: object
         started_at:
           title: Started At
           type: string
