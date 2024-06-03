@@ -3,9 +3,11 @@
 # pylint: disable=unused-variable
 
 
+import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_envs import delenvs_from_dict, load_dotenv, setenvs_from_dict
@@ -66,5 +68,42 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
         assert envfile.is_file()
 
         envs = load_dotenv(envfile)
+
+    return envs
+
+
+@pytest.fixture
+def docker_compose_service_environment_dict(
+    services_docker_compose_file: Path, env_devel_dict: EnvVarsDict, service_name: str
+) -> EnvVarsDict:
+    """Returns env vars dict from the docker-compose `environment` section
+
+    - services_docker_compose_file in repository_paths plugin
+    - env_devel_dict in environment_configs plugin
+    - service_name needs to be defined
+    """
+    service = yaml.safe_load(services_docker_compose_file.read_text())["services"][
+        service_name
+    ]
+
+    def _substitute(key, value):
+        if m := re.match(r"\${([^{}:-]\w+)", value):
+            expected_env_var = m.group(1)
+            try:
+                # NOTE: if this raises, then the RHS env-vars in the docker-compose are
+                # not defined in the env-devel
+                if value := env_devel_dict[expected_env_var]:
+                    return key, value
+            except KeyError:
+                pytest.fail(
+                    f"{expected_env_var} is not defined in .env-devel but used in docker-compose services[{service}].environment[{key}]"
+                )
+        return None
+
+    envs: EnvVarsDict = {}
+    for key, value in service.get("environment", {}).items():
+        if found := _substitute(key, value):
+            _, new_value = found
+            envs[key] = new_value
 
     return envs
