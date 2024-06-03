@@ -25,6 +25,7 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
+from ...services.jobs import replace_custom_metadata, start_project, stop_project
 from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -35,7 +36,6 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 
@@ -255,13 +255,12 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    project_metadata = await webserver_api.update_project_metadata(
-        project_id=job_id, metadata=update.metadata
-    )
-    return JobMetadata(
+    return await replace_custom_metadata(
+        job_name=job_name,
         job_id=job_id,
-        metadata=project_metadata.custom,
-        url=url_for(
+        update=update,
+        webserver_api=webserver_api,
+        self_url=url_for(
             "replace_job_custom_metadata",
             solver_key=solver_key,
             version=version,

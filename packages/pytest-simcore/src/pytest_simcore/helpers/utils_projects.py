@@ -1,6 +1,7 @@
 """ helpers to manage the projects's database and produce fixtures/mockup data for testing
 
 """
+
 # pylint: disable=no-value-for-parameter
 
 import json
@@ -111,7 +112,6 @@ class NewProject:
         self,
         params_override: dict | None = None,
         app: web.Application | None = None,
-        clear_all: bool = True,
         user_id: int | None = None,
         *,
         product_name: str,
@@ -126,19 +126,12 @@ class NewProject:
         self.product_name = product_name
         self.app = app
         self.prj = {}
-        self.clear_all = clear_all
         self.force_uuid = force_uuid
         self.tests_data_dir = tests_data_dir
         self.as_template = as_template
 
         assert tests_data_dir.exists()
         assert tests_data_dir.is_dir()
-
-        if not self.clear_all:
-            # TODO: add delete_project. Deleting a single project implies having to delete as well all dependencies created
-            raise ValueError(
-                "UNDER DEVELOPMENT: Currently can only delete all projects "
-            )
 
     async def __aenter__(self) -> ProjectDict:
         assert self.app  # nosec
@@ -156,8 +149,7 @@ class NewProject:
 
     async def __aexit__(self, *args):
         assert self.app  # nosec
-        if self.clear_all:
-            await delete_all_projects(self.app)
+        await delete_all_projects(self.app)
 
 
 async def assert_get_same_project(
