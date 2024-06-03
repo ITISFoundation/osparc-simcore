@@ -632,10 +632,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
-      const resourceFilter = new osparc.dashboard.ResourceFilter();
+      const resourceFilter = new osparc.dashboard.ResourceFilter("study");
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
-        this._searchBarFilter.setSharedWithActiveFilter(sharedWith, "hello");
+        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
       this._addToLeftColumn(resourceFilter);
 

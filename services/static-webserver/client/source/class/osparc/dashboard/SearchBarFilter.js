@@ -48,12 +48,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       return [{
         id: "show-all",
         label: qx.locale.Manager.tr("All ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+          firstUpperCase: true,
           plural: true
         }),
         icon: "@FontAwesome5Solid/home/20"
       }, {
         id: "my-resources",
         label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+          firstUpperCase: true,
           plural: true
         }),
         icon: "@FontAwesome5Solid/user/20"

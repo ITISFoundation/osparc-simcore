@@ -19,8 +19,10 @@
 qx.Class.define("osparc.dashboard.ResourceFilter", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(resourceType) {
     this.base(arguments);
+
+    this.__resourceType = resourceType;
 
     this._setLayout(new qx.ui.layout.VBox(10));
     this.set({
@@ -36,15 +38,16 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       check: ["show-all", "my-resources", "shared-with-me", "shared-with-everyone"],
       init: "all",
       nullable: false,
-      event: "changeSharedWith",
       apply: "__applySharedWith"
     }
   },
 
+  events: {
+    "changeSharedWith": "qx.event.type.Data"
+  },
+
   members: {
-    __applyFilterBy: function(filterBy) {
-      console.log("filterBy", filterBy);
-    },
+    __resourceType: null,
 
     __buildLayout: function() {
       this.__buildSharedWithFilter();
@@ -54,7 +57,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const radioGroup = new qx.ui.form.RadioGroup();
 
-      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions("study");
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
         const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
         button.id = option.id;
@@ -75,12 +78,19 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         layout.add(button);
         radioGroup.add(button);
 
-        button.addListener("execute", () => this.setSharedWith(option.id), this);
+        button.addListener("execute", () => this.fireDataEvent("changeSharedWith", {
+          id: option.id,
+          label: option.label
+        }), this);
       });
 
       radioGroup.setAllowEmptySelection(false);
 
       this._add(layout);
+    },
+
+    __applySharedWith: function(sharedWith) {
+      console.log("SharedWith", sharedWith);
     }
   }
 });
