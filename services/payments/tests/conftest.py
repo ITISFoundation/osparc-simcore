@@ -61,7 +61,7 @@ def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
     return external_envfile_dict
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
