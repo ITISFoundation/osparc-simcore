@@ -251,9 +251,12 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         if copy_data is not None:
             url = url.update_query(copy_data=f"{copy_data}")
         headers = {}
-        if parent_project_uuid is not None or parent_node_id is not None:
+        if parent_project_uuid is not None:
             headers |= {
                 X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
+            }
+        if parent_node_id is not None:
+            headers |= {
                 X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
             }
         return url, project_data, expected_data, headers
