@@ -290,12 +290,10 @@ class AuthSession:
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
-        _headers = (
-            {
-                X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
-                X_SIMCORE_PARENT_NODE_ID: parent_node_id,
-            },
-        )
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
 
         response = await self.client.post(
             "/projects",
