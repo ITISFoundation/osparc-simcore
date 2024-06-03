@@ -206,10 +206,8 @@ async def _get_project_metadata(
 
     except DBProjectNotFoundError:
         _logger.exception("Could not find project: %s", f"{computation.project_id=}")
-    except ProjectNotFoundError:
-        _logger.exception(
-            "Could not find parent project: %s", f"{parent_project_uuid=}"
-        )
+    except ProjectNotFoundError as exc:
+        _logger.exception("Could not find parent project: %s", f"{exc.project_id=}")
 
     return {}
 
