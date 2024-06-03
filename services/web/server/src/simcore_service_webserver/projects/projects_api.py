@@ -124,6 +124,8 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectLockError,
+    ProjectNodeConnectionsMissingError,
+    ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInvalidError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
@@ -487,16 +489,15 @@ async def _check_project_node_has_all_required_inputs(
 
     node_with_required_inputs = node.label
     if unset_required_inputs:
-        msg = f"Missing '{', '.join(unset_required_inputs)}' connection(s) to '{node_with_required_inputs}'"
-        raise ProjectNodeRequiredInputsNotSetError(msg)
+        raise ProjectNodeConnectionsMissingError(
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+        )
 
     if unset_outputs_in_upstream:
-        start_messages = [
-            f"'{input_key}' of '{service_name}'"
-            for input_key, service_name in unset_outputs_in_upstream
-        ]
-        msg = f"Missing: {', '.join(start_messages)}"
-        raise ProjectNodeRequiredInputsNotSetError(msg)
+        raise ProjectNodeOutputPortMissingValueError(
+            unset_outputs_in_upstream=unset_outputs_in_upstream
+        )
 
 
 async def _start_dynamic_service(
