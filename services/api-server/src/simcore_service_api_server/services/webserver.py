@@ -46,6 +46,10 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -253,12 +257,22 @@ class AuthSession:
 
     @_exception_mapper({})
     async def create_project(
-        self, project: ProjectCreateNew, *, is_hidden: bool
+        self,
+        project: ProjectCreateNew,
+        *,
+        is_hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
         response = await self.client.post(
             "/projects",
             params={"hidden": is_hidden},
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
@@ -267,10 +281,25 @@ class AuthSession:
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
+    async def clone_project(
+        self,
+        *,
+        project_id: UUID,
+        hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
+    ) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
+
         response = await self.client.post(
-            "/projects", cookies=self.session_cookies, params=query
+            "/projects",
+            cookies=self.session_cookies,
+            params=query,
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
