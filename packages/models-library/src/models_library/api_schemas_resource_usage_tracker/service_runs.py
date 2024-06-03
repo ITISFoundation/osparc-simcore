@@ -22,10 +22,11 @@ class ServiceRunGet(BaseModel):
     project_name: str
     node_id: NodeID
     node_name: str
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: str
-    service_resources: dict
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
