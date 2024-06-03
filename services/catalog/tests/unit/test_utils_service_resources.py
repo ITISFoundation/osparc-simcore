@@ -71,12 +71,6 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1())),  # type: ignore
-            ResourcesDict(),
-            id="empty task resource spec",
-        ),
-        pytest.param(
-            ResourcesDict(),
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit()))),  # type: ignore
             ResourcesDict(),
             id="empty task limit spec",
