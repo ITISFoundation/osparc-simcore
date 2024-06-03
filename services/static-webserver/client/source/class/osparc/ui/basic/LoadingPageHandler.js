@@ -38,16 +38,16 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
     stack.add(this.__mainLayoutWithSides);
 
-    const leftSpace = new qx.ui.core.Widget();
-    this.__mainLayoutWithSides.add(leftSpace, {
+    this.__leftColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__mainLayoutWithSides.add(this.__leftColum, {
       flex: 1
     });
 
     this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__mainLayoutWithSides.add(this._mainLayout);
 
-    const rightSpace = new qx.ui.core.Widget();
-    this.__mainLayoutWithSides.add(rightSpace, {
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__mainLayoutWithSides.add(rightColum, {
       flex: 1
     });
 
@@ -76,6 +76,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     __stack: null,
     _loadingPage: null,
     __mainLayoutWithSides: null,
+    __leftColum: null,
     _mainLayout: null,
 
     _showLoadingPage: function(label) {
@@ -91,6 +92,10 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
 
     _hideLoadingPage: function() {
       this._showMainLayout();
+    },
+
+    _addToLeftColumn: function(widget, props = {}) {
+      this.__leftColum.add(widget, props);
     },
 
     _addToMainLayout: function(widget, props = {}) {
