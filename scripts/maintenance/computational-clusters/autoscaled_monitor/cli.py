@@ -123,7 +123,7 @@ def summary(
 
     """
 
-    asyncio.run(api.summary(user_id or None, wallet_id or None))
+    asyncio.run(api.summary(state, user_id or None, wallet_id or None))
 
 
 @app.command()
@@ -146,7 +146,7 @@ def cancel_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    asyncio.run(api.cancel_jobs(user_id, wallet_id, force=force))
+    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, force=force))
 
 
 @app.command()
@@ -161,7 +161,7 @@ def trigger_cluster_termination(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    asyncio.run(api.trigger_cluster_termination(user_id, wallet_id))
+    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id))
 
 
 if __name__ == "__main__":

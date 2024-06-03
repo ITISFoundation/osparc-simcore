@@ -416,7 +416,7 @@ async def _parse_dynamic_instances(
     instances: ServiceResourceInstancesCollection,
     ssh_key_path: Path | None,
     user_id: int | None,
-    wallet_id: int | None,
+    wallet_id: int | None,  # noqa: ARG001
 ) -> list[DynamicInstance]:
     dynamic_instances = [
         dyn_instance
