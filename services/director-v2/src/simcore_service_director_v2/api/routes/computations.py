@@ -11,6 +11,7 @@ Therefore,
  - the task ID is the same as the associated node uuid
 
 """
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 
@@ -37,7 +38,10 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFound
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodesNodeNotFoundError,
+    ProjectNodesNonUniqueNodeFoundError,
+)
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -156,7 +160,7 @@ async def _get_project_metadata(
     projects_metadata_repo: ProjectsMetadataRepository,
     computation: ComputationCreate,
 ) -> ProjectMetadataDict:
-    current_project_metadata = await projects_metadata_repo.get_metadata(
+    current_project_metadata = await projects_metadata_repo.get_custom_metadata(
         computation.project_id
     )
 
@@ -177,8 +181,12 @@ async def _get_project_metadata(
             parent_project_id=parent_project_id,
             parent_project_name=parent_project.name,
         )
-    except (ProjectNotFoundError, ProjectNodesNodeNotFound) as exc:
-        _logger.exception("Could not find project/node: %s", exc)
+    except (
+        ProjectNotFoundError,
+        ProjectNodesNodeNotFoundError,
+        ProjectNodesNonUniqueNodeFoundError,
+    ):
+        _logger.exception("Could not find project/node: %s", f"{parent_node_id=}")
         return {}
 
 
@@ -360,12 +368,14 @@ async def create_computation(  # noqa: PLR0913
                 AnyHttpUrl,
                 f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
             ),
-            stop_url=parse_obj_as(
-                AnyHttpUrl,
-                f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
-            )
-            if computation.start_pipeline
-            else None,
+            stop_url=(
+                parse_obj_as(
+                    AnyHttpUrl,
+                    f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
+                )
+                if computation.start_pipeline
+                else None
+            ),
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
@@ -462,9 +472,11 @@ async def get_computation(
         state=pipeline_state,
         pipeline_details=pipeline_details,
         url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
-        stop_url=parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
-        if pipeline_state.is_running()
-        else None,
+        stop_url=(
+            parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
+            if pipeline_state.is_running()
+            else None
+        ),
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
         result=None,
