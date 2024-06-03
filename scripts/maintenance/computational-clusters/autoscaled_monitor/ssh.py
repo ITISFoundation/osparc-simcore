@@ -4,9 +4,9 @@ import json
 import logging
 import re
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final
+from typing import Any, Final
 
 import arrow
 import paramiko
