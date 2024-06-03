@@ -1,34 +1,20 @@
 import asyncio
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Final
+from typing import Annotated
 
 import boto3
 import parse
 import rich
 import typer
 from dotenv import dotenv_values
-from mypy_boto3_ec2 import EC2ServiceResource
 
-from . import osparc_clusters as api
-
-DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
-    str
-] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
-DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
-DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
-
-
-@dataclass(kw_only=True)
-class AppState:
-    environment: dict[str, str | None] = field(default_factory=dict)
-    ec2_resource_autoscaling: EC2ServiceResource | None = None
-    ec2_resource_clusters_keeper: EC2ServiceResource | None = None
-    dynamic_parser: parse.Parser
-    computational_parser: parse.Parser
-    deploy_config: Path | None = None
-    ssh_key_path: Path | None = None
-
+from . import core as api
+from .constants import (
+    DEFAULT_COMPUTATIONAL_EC2_FORMAT,
+    DEFAULT_DYNAMIC_EC2_FORMAT,
+    DEPLOY_SSH_KEY_PARSER,
+)
+from .models import AppState
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),

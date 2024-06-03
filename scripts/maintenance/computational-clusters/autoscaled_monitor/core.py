@@ -5,169 +5,43 @@ import contextlib
 import datetime
 import json
 import re
-import uuid
-from collections import defaultdict, namedtuple
-from collections.abc import AsyncGenerator, Awaitable, Coroutine, Generator
-from dataclasses import dataclass, replace
-from enum import Enum
+from collections import defaultdict
+from dataclasses import replace
 from pathlib import Path
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 
 import arrow
 import distributed
 import paramiko
 import parse
 import rich
-import sqlalchemy as sa
 import typer
-from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
-from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
-from paramiko import Ed25519Key
-from pydantic import BaseModel, ByteSize, PostgresDsn, TypeAdapter, ValidationError
+from mypy_boto3_ec2.type_defs import TagTypeDef
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from sshtunnel import SSHTunnelForwarder
 
-### Objects
-
-
-@dataclass(slots=True, kw_only=True)
-class AutoscaledInstance:
-    name: str
-    ec2_instance: Instance
-    disk_space: ByteSize
-
-
-class InstanceRole(str, Enum):
-    manager = "manager"
-    worker = "worker"
-
-
-@dataclass(slots=True, kw_only=True)
-class ComputationalInstance(AutoscaledInstance):
-    role: InstanceRole
-    user_id: int
-    wallet_id: int
-    last_heartbeat: datetime.datetime | None
-    dask_ip: str
-
-
-@dataclass
-class DynamicService:
-    node_id: str
-    user_id: int
-    project_id: str
-    service_name: str
-    service_version: str
-    created_at: datetime.datetime
-    needs_manual_intervention: bool
-    containers: list[str]
-
-
-@dataclass(slots=True, kw_only=True)
-class DynamicInstance(AutoscaledInstance):
-    running_services: list[DynamicService]
-
-
-TaskId: TypeAlias = str
-TaskState: TypeAlias = str
-
-
-@dataclass(slots=True, kw_only=True, frozen=True)
-class ComputationalTask:
-    project_id: uuid.UUID
-    node_id: uuid.UUID
-    job_id: TaskId | None
-    service_name: str
-    service_version: str
-    state: str
-
-
-@dataclass(slots=True, kw_only=True, frozen=True)
-class DaskTask:
-    job_id: TaskId
-    state: TaskState
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ComputationalCluster:
-    primary: ComputationalInstance
-    workers: list[ComputationalInstance]
-
-    scheduler_info: dict[str, Any]
-    datasets: tuple[str, ...]
-    processing_jobs: dict[str, str]
-    task_states_to_tasks: dict[str, list[TaskState]]
-
-
-MINUTE: Final[int] = 60
-HOUR: Final[int] = 60 * MINUTE
-
-
-SSH_USER_NAME: Final[str] = "ubuntu"
-UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
-TASK_CANCEL_EVENT_NAME_TEMPLATE: Final[str] = "cancel_event_{}"
-
-# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
-DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
-    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
+from .dask import (
+    dask_client,
+    remove_job_from_scheduler,
+    trigger_job_cancellation_in_scheduler,
 )
-
-DockerContainer = namedtuple(  # noqa: PYI024
-    "docker_container",
-    [
-        "node_id",
-        "user_id",
-        "project_id",
-        "created_at",
-        "name",
-        "service_name",
-        "service_version",
-    ],
+from .db import abort_job_in_db, list_computational_tasks_from_db
+from .ec2 import list_computational_instances_from_ec2, list_dynamic_instances_from_ec2
+from .models import (
+    AppState,
+    ComputationalCluster,
+    ComputationalInstance,
+    ComputationalTask,
+    DaskTask,
+    DynamicInstance,
+    DynamicService,
+    InstanceRole,
+    TaskId,
+    TaskState,
 )
-
-
-class PostgresDB(BaseModel):
-    dsn: PostgresDsn
-
-
-def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
-    assert isinstance(called_fct, Coroutine)
-    return called_fct
-
-
-@contextlib.asynccontextmanager
-async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
-    engine = None
-    try:
-        for env in [
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_ENDPOINT",
-            "POSTGRES_DB",
-        ]:
-            assert state.environment[env]
-        postgres_db = PostgresDB(
-            dsn=TypeAdapter(PostgresDsn).validate_python(
-                f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
-            )
-        )
-
-        engine = create_async_engine(
-            f"{postgres_db.dsn}",
-            connect_args={
-                "server_settings": {
-                    "application_name": "osparc-clusters-monitoring-script"
-                }
-            },
-        )
-        yield engine
-    finally:
-        if engine:
-            await engine.dispose()
 
 
 def _get_instance_name(instance) -> str:
@@ -705,69 +579,6 @@ async def _dask_list_tasks(
 _SCHEDULER_PORT: Final[int] = 8786
 
 
-_BASTION_HOST: Final[str] = "18.218.251.214"
-_DEFAULT_SSH_PORT: Final[int] = 22
-_LOCAL_BIND_ADDRESS: Final[str] = "127.0.0.1"
-
-
-@contextlib.contextmanager
-def _ssh_tunnel(
-    *,
-    ssh_host: str,
-    username: str,
-    private_key_path: Path,
-    remote_bind_host: str,
-    remote_bind_port: int,
-) -> Generator[SSHTunnelForwarder | None, Any, None]:
-    try:
-        with SSHTunnelForwarder(
-            (ssh_host, _DEFAULT_SSH_PORT),
-            ssh_username=username,
-            ssh_pkey=Ed25519Key(filename=private_key_path),
-            remote_bind_address=(remote_bind_host, remote_bind_port),
-            local_bind_address=(_LOCAL_BIND_ADDRESS, 0),
-            set_keepalive=10,
-        ) as tunnel:
-            yield tunnel
-    finally:
-        pass
-
-
-@contextlib.asynccontextmanager
-async def _dask_client(ip_address: str) -> AsyncGenerator[distributed.Client, None]:
-    security = distributed.Security()
-    assert state.deploy_config
-    dask_certificates = state.deploy_config / "assets" / "dask-certificates"
-    if dask_certificates.exists():
-        security = distributed.Security(
-            tls_ca_file=f"{dask_certificates / 'dask-cert.pem'}",
-            tls_client_cert=f"{dask_certificates / 'dask-cert.pem'}",
-            tls_client_key=f"{dask_certificates / 'dask-key.pem'}",
-            require_encryption=True,
-        )
-    try:
-        assert state.ssh_key_path  # nosec
-        with _ssh_tunnel(
-            ssh_host=_BASTION_HOST,
-            username=SSH_USER_NAME,
-            private_key_path=state.ssh_key_path,
-            remote_bind_host=ip_address,
-            remote_bind_port=_SCHEDULER_PORT,
-        ) as tunnel:
-            assert tunnel  # nosec
-            host, port = tunnel.local_bind_address
-            forward_url = f"tls://{host}:{port}"
-            async with distributed.Client(
-                forward_url,
-                security=security,
-                timeout="5",
-                asynchronous=True,
-            ) as client:
-                yield client
-    finally:
-        pass
-
-
 async def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
@@ -819,7 +630,7 @@ async def _analyze_computational_instances(
             all_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
                 assert ssh_key_path
-                async with _dask_client(
+                async with dask_client(
                     instance.ec2_instance.private_dns_name
                 ) as client:
                     scheduler_info = client.scheduler_info()
@@ -898,88 +709,10 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
-def _list_running_ec2_instances(
-    ec2_resource: EC2ServiceResource,
-    key_name: str,
-    custom_tags: dict[str, str],
-    user_id: int | None,
-    wallet_id: int | None,
-) -> ServiceResourceInstancesCollection:
-    # get all the running instances
-
-    ec2_filters: list[FilterTypeDef] = [
-        {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [key_name]},
-    ]
-    if custom_tags:
-        ec2_filters.extend(
-            [
-                {"Name": f"tag:{key}", "Values": [f"{value}"]}
-                for key, value in custom_tags.items()
-            ]
-        )
-
-    if user_id:
-        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-    if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-
-    return ec2_resource.instances.filter(Filters=ec2_filters)
-
-
-async def _list_dynamic_instances_from_ec2(
-    user_id: int | None,
-    wallet_id: int | None,
-) -> ServiceResourceInstancesCollection:
-    assert state.environment["EC2_INSTANCES_KEY_NAME"]
-    custom_tags = {}
-    if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
-        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
-    assert state.ec2_resource_autoscaling
-    return await asyncio.get_event_loop().run_in_executor(
-        None,
-        _list_running_ec2_instances,
-        state.ec2_resource_autoscaling,
-        state.environment["EC2_INSTANCES_KEY_NAME"],
-        custom_tags,
-        user_id,
-        wallet_id,
-    )
-
-
-async def _list_computational_instances_from_ec2(
-    user_id: int | None,
-    wallet_id: int | None,
-) -> ServiceResourceInstancesCollection:
-    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
-    assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
-    assert (
-        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
-        == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
-    ), "key name is different on primary and workers. TIP: adjust this code now"
-    custom_tags = {}
-    if state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]:
-        assert (
-            state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]
-            == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
-        ), "custom tags are different on primary and workers. TIP: adjust this code now"
-        custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
-    assert state.ec2_resource_clusters_keeper
-    return await asyncio.get_event_loop().run_in_executor(
-        None,
-        _list_running_ec2_instances,
-        state.ec2_resource_clusters_keeper,
-        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
-        custom_tags,
-        user_id,
-        wallet_id,
-    )
-
-
-async def summary(user_id: int | None, wallet_id: int | None) -> None:
+async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> None:
     # get all the running instances
     assert state.ec2_resource_autoscaling
-    dynamic_instances = await _list_dynamic_instances_from_ec2(user_id, wallet_id)
+    dynamic_instances = await list_dynamic_instances_from_ec2(state, user_id, wallet_id)
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         dynamic_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -990,8 +723,8 @@ async def summary(user_id: int | None, wallet_id: int | None) -> None:
     )
 
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await _list_computational_instances_from_ec2(
-        user_id, wallet_id
+    computational_instances = await list_computational_instances_from_ec2(
+        state, user_id, wallet_id
     )
     computational_clusters = await _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
@@ -1001,69 +734,6 @@ async def summary(user_id: int | None, wallet_id: int | None) -> None:
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
-
-
-async def _abort_job_in_db(project_id: uuid.UUID, node_id: uuid.UUID) -> None:
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine())
-        db_connection = await stack.enter_async_context(engine.begin())
-
-        await db_connection.execute(
-            sa.text(
-                f"UPDATE comp_tasks SET state = 'ABORTED' WHERE project_id='{project_id}' AND node_id='{node_id}'"
-            )
-        )
-        rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
-
-
-async def _list_computational_tasks_from_db(user_id: int) -> list[ComputationalTask]:
-    async with contextlib.AsyncExitStack() as stack:
-        engine = await stack.enter_async_context(db_engine())
-        db_connection = await stack.enter_async_context(engine.begin())
-
-        # Get the list of running project UUIDs with a subquery
-        subquery = (
-            sa.select(sa.column("project_uuid"))
-            .select_from(sa.table("comp_runs"))
-            .where(
-                sa.and_(
-                    sa.column("user_id") == user_id,
-                    sa.cast(sa.column("result"), sa.VARCHAR) != "SUCCESS",
-                    sa.cast(sa.column("result"), sa.VARCHAR) != "FAILED",
-                    sa.cast(sa.column("result"), sa.VARCHAR) != "ABORTED",
-                )
-            )
-        )
-
-        # Now select comp_tasks rows where project_id is one of the project_uuids
-        query = (
-            sa.select("*")
-            .select_from(sa.table("comp_tasks"))
-            .where(
-                sa.column("project_id").in_(subquery)
-                & (sa.cast(sa.column("state"), sa.VARCHAR) != "SUCCESS")
-                & (sa.cast(sa.column("state"), sa.VARCHAR) != "FAILED")
-                & (sa.cast(sa.column("state"), sa.VARCHAR) != "ABORTED")
-            )
-        )
-
-        result = await db_connection.execute(query)
-        comp_tasks_list = result.fetchall()
-        return [
-            TypeAdapter(ComputationalTask).validate_python(
-                {
-                    "project_id": row.project_id,
-                    "node_id": row.node_id,
-                    "job_id": row.job_id,
-                    "service_name": row.image["name"].split("/")[-1],
-                    "service_version": row.image["tag"],
-                    "state": row.state,
-                }
-            )
-            for row in comp_tasks_list
-        ]
-    msg = "unable to access database!"
-    raise RuntimeError(msg)
 
 
 def _print_computational_tasks(
@@ -1107,53 +777,27 @@ def _print_computational_tasks(
 
 
 async def _list_computational_clusters(
-    user_id: int, wallet_id: int
+    state: AppState, user_id: int, wallet_id: int
 ) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await _list_computational_instances_from_ec2(
-        user_id, wallet_id
+        state, user_id, wallet_id
     )
     return await _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
 
 
-async def _trigger_job_cancellation_in_scheduler(
-    cluster: ComputationalCluster,
-    task_id: TaskId,
-) -> None:
-    async with _dask_client(
-        cluster.primary.ec2_instance.private_dns_name
-    ) as dask_client:
-        task_future = distributed.Future(task_id)
-        cancel_event = distributed.Event(
-            name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
-            client=dask_client,
-        )
-        await _wrap_dask_async_call(cancel_event.set())
-        await _wrap_dask_async_call(task_future.cancel())
-        rich.print(f"cancelled {task_id} in scheduler/workers")
-
-
-async def _remove_job_from_scheduler(
-    cluster: ComputationalCluster,
-    task_id: TaskId,
-) -> None:
-    async with _dask_client(
-        cluster.primary.ec2_instance.private_dns_name,
-    ) as dask_client:
-        await _wrap_dask_async_call(dask_client.unpublish_dataset(task_id))
-        rich.print(f"unpublished {task_id} from scheduler")
-
-
 async def cancel_jobs(  # noqa: C901, PLR0912
-    user_id: int, wallet_id: int, *, force: bool
+    state: AppState, user_id: int, wallet_id: int, *, force: bool
 ) -> None:
     # get the theory
-    computational_tasks = await _list_computational_tasks_from_db(user_id)
+    computational_tasks = await list_computational_tasks_from_db(state, user_id)
 
     # get the reality
-    computational_clusters = await _list_computational_clusters(user_id, wallet_id)
+    computational_clusters = await _list_computational_clusters(
+        state, user_id, wallet_id
+    )
     job_id_to_dask_state: dict[TaskId, TaskState] = {}
     if computational_clusters:
         assert (
@@ -1196,42 +840,52 @@ async def cancel_jobs(  # noqa: C901, PLR0912
             elif response == "all":
                 for comp_task, dask_task in task_to_dask_job:
                     if dask_task is not None and dask_task.state != "unknown":
-                        await _trigger_job_cancellation_in_scheduler(
+                        await trigger_job_cancellation_in_scheduler(
+                            state,
                             the_cluster,
                             dask_task.job_id,
                         )
                         if comp_task is None:
                             # we need to clear it of the cluster
-                            await _remove_job_from_scheduler(
+                            await remove_job_from_scheduler(
+                                state,
                                 the_cluster,
                                 dask_task.job_id,
                             )
                     if comp_task is not None and force:
-                        await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
+                        await abort_job_in_db(
+                            state, comp_task.project_id, comp_task.node_id
+                        )
 
                 rich.print("cancelled all tasks")
             else:
                 selected_index = TypeAdapter(int).validate_python(response)
                 comp_task, dask_task = task_to_dask_job[selected_index]
                 if dask_task is not None and dask_task.state != "unknown":
-                    await _trigger_job_cancellation_in_scheduler(
-                        the_cluster, dask_task.job_id
+                    await trigger_job_cancellation_in_scheduler(
+                        state, the_cluster, dask_task.job_id
                     )
                     if comp_task is None:
                         # we need to clear it of the cluster
-                        await _remove_job_from_scheduler(the_cluster, dask_task.job_id)
+                        await remove_job_from_scheduler(
+                            state, the_cluster, dask_task.job_id
+                        )
 
                 if comp_task is not None and force:
-                    await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
+                    await abort_job_in_db(
+                        state, comp_task.project_id, comp_task.node_id
+                    )
 
     except ValidationError:
         rich.print("[yellow]wrong index, not cancelling anything[/yellow]")
 
 
-async def trigger_cluster_termination(user_id: int, wallet_id: int) -> None:
+async def trigger_cluster_termination(
+    state: AppState, user_id: int, wallet_id: int
+) -> None:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await _list_computational_instances_from_ec2(
-        user_id, wallet_id
+        state, user_id, wallet_id
     )
     computational_clusters = await _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
