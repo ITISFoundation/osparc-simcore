@@ -22,3 +22,5 @@ TASK_CANCEL_EVENT_NAME_TEMPLATE: Final[str] = "cancel_event_{}"
 DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
     r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
 )
+
+DANGER = "[red]{}[/red]"

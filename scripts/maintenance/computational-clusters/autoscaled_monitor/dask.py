@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import AsyncGenerator, Awaitable, Coroutine
-from typing import Any
+from typing import Any, Final
 
 import distributed
 import rich
@@ -8,6 +8,8 @@ from pydantic import AnyUrl
 
 from .constants import SSH_USER_NAME, TASK_CANCEL_EVENT_NAME_TEMPLATE
 from .models import AppState, ComputationalCluster, TaskId, TaskState
+
+_SCHEDULER_PORT: Final[int] = 8786
 
 
 def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
@@ -123,3 +125,13 @@ async def get_scheduler_details(state: AppState, url: AnyUrl):
             all_tasks = await _list_all_tasks(client)
 
     return scheduler_info, datasets_on_cluster, processing_jobs, all_tasks
+
+
+def get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:
+    worker_metrics = {}
+    for worker_name, worker_data in scheduler_info.get("workers", {}).items():
+        worker_metrics[worker_name] = {
+            "resources": worker_data["resources"],
+            "tasks": worker_data["metrics"].get("task_counts", {}),
+        }
+    return worker_metrics

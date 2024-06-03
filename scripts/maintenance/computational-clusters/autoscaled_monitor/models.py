@@ -21,6 +21,7 @@ class AppState:
     computational_parser: parse.Parser
     deploy_config: Path | None = None
     ssh_key_path: Path | None = None
+    use_bastion: bool = True
 
 
 @dataclass(slots=True, kw_only=True)
