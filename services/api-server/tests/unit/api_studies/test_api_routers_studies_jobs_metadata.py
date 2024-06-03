@@ -43,8 +43,6 @@ def mocked_backend(
         )
     }
 
-    # NOTE: This code should move to `create_respx_mock_from_capture`
-
     # group captures based on manually adjusted capture names (see assert below)
     names = list(captures)
     groups = {}
