@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
   },
 
   members: {
-    // overrriden
+    // overridden
     sortByColumn(columnIndex, ascending) {
       this.setOrderBy({
         field: COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
