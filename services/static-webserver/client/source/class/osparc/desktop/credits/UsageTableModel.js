@@ -19,33 +19,20 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
   extend: qx.ui.table.model.Remote,
 
   construct(walletId, filters) {
-    this.base(arguments)
-    this.setColumns([
-      osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
-      qx.locale.Manager.tr("Node"),
-      qx.locale.Manager.tr("Service"),
-      qx.locale.Manager.tr("Start"),
-      qx.locale.Manager.tr("Duration"),
-      qx.locale.Manager.tr("Status"),
-      qx.locale.Manager.tr("Credits"),
-      qx.locale.Manager.tr("User")
-    ], [
-      "project",
-      "node",
-      "service",
-      "start",
-      "duration",
-      "status",
-      "cost",
-      "user"
-    ])
+    this.base(arguments);
+
+    const usageCols = osparc.desktop.credits.UsageTable.COLS;
+    const colLabels = Object.values(usageCols).map(col => col.label);
+    const colIDs = Object.values(usageCols).map(col => col.id);
+
+    this.setColumns(colLabels, colIDs);
     this.setWalletId(walletId)
     if (filters) {
       this.setFilters(filters)
     }
-    this.setSortColumnIndexWithoutSortingData(3)
+    this.setSortColumnIndexWithoutSortingData(usageCols.START.column);
     this.setSortAscendingWithoutSortingData(false)
-    this.setColumnSortable(4, false)
+    this.setColumnSortable(usageCols.DURATION.column, false);
   },
 
   properties: {

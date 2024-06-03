@@ -71,19 +71,19 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         id: "project",
         column: 0,
         label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
-        width: 130
+        width: 140
       },
       NODE: {
         id: "node",
         column: 1,
         label: qx.locale.Manager.tr("Node"),
-        width: 130
+        width: 140
       },
       SERVICE: {
         id: "service",
         column: 2,
         label: qx.locale.Manager.tr("Service"),
-        width: 130
+        width: 140
       },
       START: {
         id: "start",
@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         id: "project",
         column: 7,
         label: qx.locale.Manager.tr("User"),
-        width: 130
+        width: 140
       }
     }
   }
