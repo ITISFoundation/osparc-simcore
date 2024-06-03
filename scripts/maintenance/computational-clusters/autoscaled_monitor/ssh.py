@@ -55,13 +55,14 @@ def ssh_tunnel(
 
 @contextlib.contextmanager
 def _ssh_client(
-    url: str, *, username: str, private_key_path: Path
+    hostname: str, port: int, *, username: str, private_key_path: Path
 ) -> Generator[paramiko.SSHClient, Any, None]:
     try:
         with paramiko.SSHClient() as client:
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             client.connect(
-                f"{url}",
+                hostname,
+                port,
                 username=username,
                 key_filename=f"{private_key_path}",
                 timeout=5,
@@ -83,7 +84,8 @@ async def ssh_instance(
     try:
         async with contextlib.AsyncExitStack() as stack:
             if instance.public_ip_address:
-                url = instance.public_ip_address
+                hostname = instance.public_ip_address
+                port = _DEFAULT_SSH_PORT
             else:
                 assert state.environment
                 bastion_instance = await get_bastion_instance_from_remote_instance(
@@ -99,11 +101,13 @@ async def ssh_instance(
                     )
                 )
                 assert tunnel  # nosec
-                host, port = tunnel.local_bind_address
-                url = f"{host}:{port}"
+                hostname, port = tunnel.local_bind_address
                 ssh_client = stack.enter_context(
                     _ssh_client(
-                        url, username=username, private_key_path=private_key_path
+                        hostname,
+                        port,
+                        username=username,
+                        private_key_path=private_key_path,
                     )
                 )
                 yield ssh_client
