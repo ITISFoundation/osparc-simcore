@@ -35,13 +35,53 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     this._loadingPage = new osparc.ui.message.Loading();
     stack.add(this._loadingPage);
 
+    this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
+    stack.add(this.__mainLayoutWithSides);
+
+    const leftSpace = new qx.ui.core.Widget().set({
+      maxWidth: 150
+    });
+    this.__mainLayoutWithSides.add(leftSpace, {
+      flex: 1
+    });
+
     this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    stack.add(this._mainLayout);
+    this.__mainLayoutWithSides.add(this._mainLayout, {
+      flex: 1
+    });
+
+    const rightSpace = new qx.ui.core.Widget().set({
+      maxWidth: 150
+    });
+    this.__mainLayoutWithSides.add(rightSpace, {
+      flex: 1
+    });
+
+    const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
+    const sideMaxWidth = 150;
+    this._mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
+    const fitResourceCards = () => {
+      const w = document.documentElement.clientWidth;
+      const nStudies = Math.floor((w - 2*sideMaxWidth - 8) / itemWidth);
+      const newWidth = nStudies * itemWidth + 8;
+      if (newWidth > this._mainLayout.getMinWidth()) {
+        this._mainLayout.setMaxWidth(newWidth);
+      } else {
+        this._mainLayout.setMaxWidth(this._mainLayout.getMinWidth());
+      }
+    };
+    fitResourceCards();
+    window.addEventListener("resize", () => fitResourceCards());
+  },
+
+  statics: {
+    MIN_STUDIES_PER_ROW: 4
   },
 
   members: {
     __stack: null,
     _loadingPage: null,
+    __mainLayoutWithSides: null,
     _mainLayout: null,
 
     _showLoadingPage: function(label) {
@@ -52,7 +92,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     },
 
     _showMainLayout: function() {
-      this.__stack.setSelection([this._mainLayout]);
+      this.__stack.setSelection([this.__mainLayoutWithSides]);
     },
 
     _hideLoadingPage: function() {
