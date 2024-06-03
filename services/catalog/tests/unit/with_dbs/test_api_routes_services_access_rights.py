@@ -30,14 +30,14 @@ async def test_get_service_access_rights(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
     client: TestClient,
-    user_db: Callable,
+    user: dict[str, Any],
     products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ):
     target_product = products_names[0]  # osparc
-    user_id = user_db["id"]
-    user_primary_gid = user_db["primary_gid"]
+    user_id = user["id"]
+    user_primary_gid = user["primary_gid"]
 
     # create some fake services
     NUM_SERVICES = 3
@@ -77,15 +77,15 @@ async def test_get_service_access_rights_with_more_gids(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
     client: TestClient,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     user_groups_ids: list[int],
 ):
     target_product = products_names[1]  # s4l
-    user_id = user_db["id"]
-    user_primary_gid = user_db["primary_gid"]
+    user_id = user["id"]
+    user_primary_gid = user["primary_gid"]
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     fake_service = service_catalog_faker(

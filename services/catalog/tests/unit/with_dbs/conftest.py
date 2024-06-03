@@ -18,12 +18,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.models.users import users
 from simcore_service_catalog.core.settings import ApplicationSettings
 from simcore_service_catalog.db.tables import (
     groups,
@@ -137,34 +138,37 @@ def mocked_director_service_api(
 
 
 @pytest.fixture()
-def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
+def user(
+    postgres_db: sa.engine.Engine, user: dict[str, Any]
+) -> Iterator[dict[str, Any]]:
+
     with postgres_db.connect() as con:
         # removes all users before continuing
         con.execute(users.delete())
-        con.execute(
-            users.insert()
-            .values(
-                id=user_id,
-                name="test user",
-                email="test@user.com",
-                password_hash="testhash",
-                status=UserStatus.ACTIVE,
-                role=UserRole.USER,
-            )
-            .returning(sa.literal_column("*"))
-        )
+
+        result = con.execute(users.insert().values(**user).returning(users.c.id))
+        row = result.first()
+        assert row
+
         # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select(users).where(users.c.id == user_id))
-        user = result.first()
-        assert user
-        yield dict(user)
+        result = con.execute(sa.select(users).where(users.c.id == row.id))
+        row = result.first()
+        assert row
+
+        yield dict(row)
 
         con.execute(users.delete().where(users.c.id == user_id))
 
 
+@pytest.fixture
+def user_id(user: dict[str, Any]) -> UserID:
+    # Enforces user to be in database
+    return parse_obj_as(UserID, user["id"])
+
+
 @pytest.fixture()
 async def user_groups_ids(
-    sqlalchemy_async_engine: AsyncEngine, user_db: dict[str, Any]
+    sqlalchemy_async_engine: AsyncEngine, user: dict[str, Any]
 ) -> AsyncIterator[list[int]]:
     """Inits groups table and returns group identifiers"""
 
@@ -187,7 +191,7 @@ async def user_groups_ids(
                 groups.insert().values(**dict(zip(cols, row, strict=False)))
             )
 
-    gids = [1, user_db["primary_gid"]] + [items[0] for items in data]
+    gids = [1, user["primary_gid"]] + [items[0] for items in data]
 
     yield gids
 

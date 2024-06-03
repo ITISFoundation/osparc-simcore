@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import pytest
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.services import ServiceDockerData
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from respx.router import MockRouter
 from starlette import status
@@ -35,7 +36,7 @@ async def test_list_services_with_details(
     mock_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
     client: TestClient,
-    user_id: int,
+    user_id: UserID,
     products_names: list[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,

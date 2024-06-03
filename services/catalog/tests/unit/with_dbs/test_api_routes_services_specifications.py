@@ -142,7 +142,7 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     faker: Faker,
 ):
     service_key = (
@@ -166,7 +166,7 @@ async def test_get_service_specifications(
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     user_groups_ids: list[int],
     products_names: list[str],
     service_catalog_faker: Callable,
@@ -259,7 +259,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     user_groups_ids: list[int],
     products_names: list[str],
     service_catalog_faker: Callable,
