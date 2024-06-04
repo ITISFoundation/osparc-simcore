@@ -23,9 +23,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.base(arguments);
 
     this.__resourceType = resourceType;
+    this.__sharedWithButtons = [];
+    this.__tagButtons = [];
 
     this._setLayout(new qx.ui.layout.VBox());
-
     this.__buildLayout();
   },
 
@@ -52,6 +53,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   members: {
     __resourceType: null,
+    __sharedWithButtons: null,
+    __tagButtons: null,
 
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
@@ -71,7 +74,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
-        const button = new qx.ui.toolbar.RadioButton(option.label, option.icon).set({
+        const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
+        button.id = option.id;
+        button.set({
           appearance: "filter-toggle-button"
         });
 
@@ -82,6 +87,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           id: option.id,
           label: option.label
         }), this);
+
+        this.__sharedWithButtons.push(button);
       });
 
       radioGroup.setAllowEmptySelection(false);
@@ -94,6 +101,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       osparc.store.Store.getInstance().getTags().forEach(tag => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
+        button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",
           gap: 8
@@ -103,11 +111,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           scale: true,
           textColor: tag.color
         });
+
         layout.add(button);
+
         button.addListener("execute", () => this.fireDataEvent("changeSelectedTags", {
           id: tag.id,
           label: tag.label
         }), this);
+
+        this.__tagButtons.push(button);
       });
 
       return layout;
@@ -122,7 +134,17 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     },
 
     filterChanged: function(filterData) {
-      console.log(filterData);
+      if ("sharedWith" in filterData) {
+        const foundBtn = this.__sharedWithButtons.find(btn => btn.id === filterData["sharedWith"]);
+        if (foundBtn) {
+          foundBtn.setValue(true);
+        }
+      }
+      if ("tags" in filterData) {
+        this.__tagButtons.forEach(btn => {
+          btn.setValue(filterData["tags"].includes(btn.id));
+        });
+      }
     }
   }
 });
