@@ -687,9 +687,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
-        const selectedTags = e.getData();
-        console.log(selectedTags);
-        // this._searchBarFilter.addTagActiveFilter(selectedTags);
+        const selectedTagIds = e.getData();
+        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
       }, this);
 
       this._searchBarFilter.addListener("filterChanged", e => {

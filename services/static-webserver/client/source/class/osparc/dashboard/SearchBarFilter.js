@@ -250,6 +250,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__addChip("tag", tag.id, tag.name);
     },
 
+    setTagsActiveFilter: function(tagIds) {
+      const tags = osparc.store.Store.getInstance().getTags();
+      tags.forEach(tag => {
+        if (tagIds.includes(tag.id)) {
+          this.__addChip("tag", tag.id, tag.name);
+        } else {
+          this.__removeChip("tag", tag.id, tag.name);
+        }
+      });
+    },
+
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");
       if (optionId === "show-all") {

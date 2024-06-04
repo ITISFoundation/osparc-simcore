@@ -30,22 +30,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__buildLayout();
   },
 
-  properties: {
-    sharedWith: {
-      check: ["show-all", "my-resources", "shared-with-me", "shared-with-everyone"],
-      init: "all",
-      nullable: false,
-      apply: "__applySharedWith"
-    },
-
-    selectedTags: {
-      check: "Array",
-      init: [],
-      nullable: false,
-      apply: "__applySelectedTags"
-    }
-  },
-
   events: {
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data"
@@ -83,10 +67,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         layout.add(button);
         radioGroup.add(button);
 
-        button.addListener("execute", () => this.fireDataEvent("changeSharedWith", {
-          id: option.id,
-          label: option.label
-        }), this);
+        button.addListener("execute", () => {
+          this.fireDataEvent("changeSharedWith", {
+            id: option.id,
+            label: option.label
+          });
+        }, this);
 
         this.__sharedWithButtons.push(button);
       });
@@ -103,34 +89,23 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
         button.id = tag.id;
         button.set({
-          appearance: "filter-toggle-button",
-          gap: 8
+          appearance: "filter-toggle-button"
         });
         button.getChildControl("icon").set({
-          width: 25, // align all icons
-          scale: true,
           textColor: tag.color
         });
 
         layout.add(button);
 
-        button.addListener("execute", () => this.fireDataEvent("changeSelectedTags", {
-          id: tag.id,
-          label: tag.label
-        }), this);
+        button.addListener("execute", () => {
+          const selectedTagIds = this.__tagButtons.filter(btn => btn.getValue()).map(btn => btn.id);
+          this.fireDataEvent("changeSelectedTags", selectedTagIds);
+        }, this);
 
         this.__tagButtons.push(button);
       });
 
       return layout;
-    },
-
-    __applySharedWith: function(sharedWith) {
-      console.log("sharedWith", sharedWith);
-    },
-
-    __applySelectedTags: function(selectedTags) {
-      console.log("selectedTags", selectedTags);
     },
 
     filterChanged: function(filterData) {
