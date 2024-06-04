@@ -62,17 +62,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
         button.id = option.id;
         button.set({
-          font: "text-14",
-          gap: 6,
-          backgroundColor: "transparent",
-          padding: 8
+          appearance: "filter-toggle-button",
+          gap: 8
         });
         button.getChildControl("icon").set({
           width: 25, // align all icons
           scale: true
-        })
-        button.getContentElement().setStyles({
-          "border-radius": "8px"
         });
 
         layout.add(button);

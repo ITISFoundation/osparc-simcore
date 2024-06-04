@@ -1154,6 +1154,17 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "filter-toggle-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: states => ({
+        font: "text-14",
+        textColor: "text",
+        padding: 8,
+        decorator: (states.hovered || states.pressed || states.checked) ? "filter-toggle-button-selected" : "filter-toggle-button"
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       virtual overrides

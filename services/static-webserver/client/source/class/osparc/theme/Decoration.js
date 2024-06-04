@@ -314,6 +314,21 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "filter-toggle-button": {
+      style: {
+        width: 1,
+        radius: 8,
+        color: "strong-main"
+      }
+    },
+
+    "filter-toggle-button-selected": {
+      include: "filter-toggle-button",
+      style: {
+        color: "text"
+      }
+    },
+
     "pb-listitem": {
       style: {
         radius: 5
