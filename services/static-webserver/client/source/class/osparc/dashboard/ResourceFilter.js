@@ -43,7 +43,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
       layout.add(this.__createSharedWithFilterLayout());
-      layout.add(this.__createTagsFilterLayout());
+      if (this.__resourceType !== "service") {
+        layout.add(this.__createTagsFilterLayout());
+      }
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(layout);
@@ -58,6 +60,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
+        if (this.__resourceType === "study" && option.id === "shared-with-everyone") {
+          return;
+        }
         const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
         button.id = option.id;
         button.set({

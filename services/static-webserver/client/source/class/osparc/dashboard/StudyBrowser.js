@@ -604,6 +604,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__addShowSharedWithButton();
       this._addViewModeButton();
 
+      this._addResourceFilter();
 
       this.__addNewStudyButtons();
 
@@ -631,8 +632,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
-
-      this._addResourceFilter();
 
       return this._resourcesContainer;
     },
