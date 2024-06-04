@@ -1,7 +1,11 @@
 from typing import Final
 
 from fastapi import FastAPI
-from servicelib.redis import RedisClientSDKHealthChecked, RedisClientsManager
+from servicelib.redis import (
+    RedisClientSDKHealthChecked,
+    RedisClientsManager,
+    RedisManagerDBConfig,
+)
 from settings_library.redis import RedisDatabase, RedisSettings
 
 _REDIS_DATABASES: Final[set[RedisDatabase]] = {
@@ -15,7 +19,8 @@ def setup_redis(app: FastAPI) -> None:
 
     async def on_startup() -> None:
         app.state.redis_clients_manager = manager = RedisClientsManager(
-            _REDIS_DATABASES, settings
+            {RedisManagerDBConfig(x, decode_responses=False) for x in _REDIS_DATABASES},
+            settings,
         )
         await manager.setup()
 
