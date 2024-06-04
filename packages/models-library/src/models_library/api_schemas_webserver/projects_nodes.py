@@ -92,7 +92,7 @@ class NodeGet(OutputSchema):
                 "published_port": 30000,
                 "entrypoint": "/the/entry/point/is/here",
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_key": "simcore/services/comp/itis/sleeper",
+                "service_key": "simcore/services/dynamic/some-dynamic-service",
                 "service_version": "1.2.3",
                 "service_host": "jupyter_E1O2E-LAH",
                 "service_port": 8081,
