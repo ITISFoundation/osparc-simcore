@@ -13,7 +13,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Final, TypeAlias, cast
+from typing import Any, Final, NewType, TypeAlias, cast
 
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import iter_service_docker_data
@@ -32,8 +32,8 @@ from ..services import access_rights
 _logger = logging.getLogger(__name__)
 
 # NOTE: by PC I tried to unify with models_library.services but there are other inconsistencies so I leave if for another time!
-ServiceKey: TypeAlias = str
-ServiceVersion: TypeAlias = str
+ServiceKey = NewType("ServiceKey", str)
+ServiceVersion = NewType("ServiceVersion", str)
 ServiceDockerDataMap: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceDockerData
 ]
