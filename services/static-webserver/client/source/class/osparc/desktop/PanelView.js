@@ -14,7 +14,6 @@
      * Ignacio Pascual (ignapas)
 
 ************************************************************************ */
-/* eslint-disable no-use-before-define */
 
 /**
  * Display widget with a title bar and collapsible content.
@@ -43,7 +42,7 @@ qx.Class.define("osparc.desktop.PanelView", {
     _applyContent: function(content, oldContent) {
       this.base(arguments, content, oldContent);
 
-      this._innerContainer.set({
+      this.getInnerContainer().set({
         appearance: "panelview-content"
       });
     }

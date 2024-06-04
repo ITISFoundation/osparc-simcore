@@ -409,7 +409,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return openButton;
     },
 
-    _openDetailsView: function(resourceData) {
+    _openResourceDetails: function(resourceData) {
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));

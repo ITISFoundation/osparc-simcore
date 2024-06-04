@@ -313,8 +313,8 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceDockerData.Config.schema_extra["examples"][::-1]
-        if "boot" in e["description"]
+        for e in ServiceDockerData.Config.schema_extra["examples"]
+        if "boot-options" in e
     )
 
     mocked_catalog_service_api.get(

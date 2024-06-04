@@ -10,6 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 from unittest import mock
+from unittest.mock import MagicMock
 
 import aiohttp.test_utils
 import httpx
@@ -19,6 +20,7 @@ import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from httpx import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -32,7 +34,6 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, parse_obj_as
@@ -90,12 +91,18 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
 def app(
     mock_missing_plugins: EnvVarsDict,
     create_httpx_async_client_spy_if_enabled: Callable,
+    patch_lrt_response_urls: Callable,
+    spy_httpx_calls_enabled: bool,
 ) -> FastAPI:
     """Inits app on a light environment"""
 
-    create_httpx_async_client_spy_if_enabled(
-        "simcore_service_api_server.utils.client_base.AsyncClient"
-    )
+    if spy_httpx_calls_enabled:
+        create_httpx_async_client_spy_if_enabled(
+            "simcore_service_api_server.utils.client_base.AsyncClient"
+        )
+
+        patch_lrt_response_urls()
+
     return init_app()
 
 
@@ -428,6 +435,37 @@ def mocked_solver_job_outputs(mocker) -> None:
         autospec=True,
         return_value=result,
     )
+
+
+@pytest.fixture
+def patch_lrt_response_urls(mocker: MockerFixture):
+    """
+    Callable that patches webserver._get_lrt_urls helper
+    when running in spy mode
+    """
+
+    def _() -> MagicMock:
+        def _get_lrt_urls(lrt_response: httpx.Response):
+            # NOTE: this function is needed to mock
+            data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+            assert data is not None  # nosec
+
+            def _patch(href):
+                return lrt_response.request.url.copy_with(
+                    raw_path=httpx.URL(href).raw_path
+                )
+
+            data.status_href = _patch(data.status_href)
+            data.result_href = _patch(data.result_href)
+
+            return data.status_href, data.result_href
+
+        return mocker.patch(
+            "simcore_service_api_server.services.webserver._get_lrt_urls",
+            side_effect=_get_lrt_urls,
+        )
+
+    return _
 
 
 @pytest.fixture

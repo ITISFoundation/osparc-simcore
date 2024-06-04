@@ -43,7 +43,7 @@ exceptiongroup==1.2.1
     # via anyio
 fast-depends==2.4.2
     # via faststream
-faststream==0.5.4
+faststream==0.5.10
     # via -r requirements/_base.in
 frozenlist==1.4.1
     # via

@@ -5,6 +5,5 @@
 #
 #
 
-raise NotImplementedError(
-    "SEE prototype in packages/service-integration/tests/test_osparc_runtime_specs.py"
-)
+msg = "SEE prototype in packages/service-integration/tests/test_osparc_runtime_specs.py"
+raise NotImplementedError(msg)

@@ -70,6 +70,7 @@ jobs:
       director: ${{ steps.filter.outputs.director }}
       director-v2: ${{ steps.filter.outputs.director-v2 }}
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
+      efs-guardian: ${{ steps.filter.outputs.efs-guardian }}
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
       osparc-gateway-server: ${{ steps.filter.outputs.osparc-gateway-server }}
@@ -196,6 +197,12 @@ jobs:
             dynamic-sidecar:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            efs-guardian:
+              - 'packages/**'
+              - 'services/efs-guardian/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
@@ -1207,6 +1214,58 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-efs-guardian:
+    needs: changes
+    if: ${{ needs.changes.outputs.efs-guardian == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] efs-guardian"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: yezz123/setup-uv@v4
+      - uses: actions/cache@v4
+        id: cache-uv
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv
+          source .venv/bin/activate && \
+          pushd services/efs-guardian && \
+          make install-ci
+      - name: typecheck
+        run: |
+          source .venv/bin/activate && \
+          pushd services/efs-guardian && \
+          make mypy
+      - name: test
+        if: always()
+        run: |
+          source .venv/bin/activate && \
+          pushd services/efs-guardian && \
+          make test-ci-unit
+      - uses: codecov/codecov-action@v4.4.1
+        with:
+          flags: unittests #optional
+
   unit-test-frontend:
     needs: changes
     if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' }}
@@ -1638,6 +1697,7 @@ jobs:
         unit-test-director-v2,
         unit-test-director,
         unit-test-dynamic-sidecar,
+        unit-test-efs-guardian,
         unit-test-frontend,
         unit-test-models-library,
         unit-test-notifications-library,

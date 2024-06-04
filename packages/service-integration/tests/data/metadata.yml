@@ -1,9 +1,11 @@
-name: oSparc Python Runner
+name: Sim4Life Python Runner
 key: simcore/services/dynamic/osparc-python-runner
 type: computational
 integration-version: 1.0.0
 version: 1.1.0
-description: oSparc Python Runner
+version_display: "Sim4Life Release V7.2"
+release_date: "2024-05-31T13:45:30"
+description: Python Runner with Sim4Life
 contact: sylvain@foo.com
 authors:
   - name: Mr X

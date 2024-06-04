@@ -9,7 +9,12 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from ..osparc_config import (
+    OSPARC_CONFIG_DIRNAME,
+    DockerComposeOverwriteConfig,
+    MetadataConfig,
+    RuntimeConfig,
+)
 
 
 def create_osparc_specs(
@@ -53,17 +58,18 @@ def create_osparc_specs(
                         labels = dict(item.strip().split("=") for item in build_labels)
                     elif isinstance(build_labels, dict):
                         labels = build_labels
-                    elif labels__root__ := getattr(build_labels, "__root__"):
+                    elif labels__root__ := build_labels.__root__:
                         assert isinstance(labels__root__, dict)  # nosec
                         labels = labels__root__
                     else:
-                        raise ValueError(f"Invalid build labels {build_labels}")
+                        msg = f"Invalid build labels {build_labels}"
+                        raise ValueError(msg)
 
-                    meta_cfg = MetaConfig.from_labels_annotations(labels)
+                    meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
 
                     docker_compose_overwrite_cfg = (
-                        DockerComposeOverwriteCfg.create_default(
+                        DockerComposeOverwriteConfig.create_default(
                             service_name=meta_cfg.service_name()
                         )
                     )
@@ -94,7 +100,7 @@ def main(
 ):
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
-    config_dir = from_spec_file.parent / ".osparc"
+    config_dir = from_spec_file.parent / OSPARC_CONFIG_DIRNAME
     project_cfg_path = config_dir / "docker-compose.overwrite.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
