@@ -632,7 +632,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
-      this.__addResourceFilter();
+      this._addResourceFilter();
 
       return this._resourcesContainer;
     },
@@ -653,7 +653,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addShowSharedWithButton: function() {
       const sharedWithButton = new osparc.dashboard.SharedWithMenuButton("study");
       sharedWithButton.set({
-        appearance: "form-button-outlined"
+        appearance: "form-button-outlined",
+        visibility: "excluded" // OM make it responsive
       });
       osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
 
@@ -672,31 +673,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       this._toolbar.add(sharedWithButton);
-    },
-
-    __addResourceFilter: function() {
-      const resourceFilter = new osparc.dashboard.ResourceFilter("study").set({
-        marginTop: 46, // aligned with toolbar buttons
-        maxWidth: 200,
-        width: 200
-      });
-
-      resourceFilter.addListener("changeSharedWith", e => {
-        const sharedWith = e.getData();
-        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
-      }, this);
-
-      resourceFilter.addListener("changeSelectedTags", e => {
-        const selectedTagIds = e.getData();
-        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
-      }, this);
-
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        resourceFilter.filterChanged(filterData);
-      });
-
-      this._addToLeftColumn(resourceFilter);
     },
 
     __createLoadMoreButton: function() {
