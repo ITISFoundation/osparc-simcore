@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Final
+from typing import Annotated, Final
 
 import rich
 import typer
@@ -17,7 +17,11 @@ from ..osparc_config import (
 )
 
 
-def create_osparc_specs(
+class InvalidLabelsError(ValueError):
+    template_msg = "Invalid build labels {build_labels}"
+
+
+def create_config_from_compose_spec(
     compose_spec_path: Path,
     docker_compose_overwrite_path: Path = Path("docker-compose.overwrite.yml"),
     metadata_path: Path = Path("metadata.yml"),
@@ -62,8 +66,7 @@ def create_osparc_specs(
                         assert isinstance(labels__root__, dict)  # nosec
                         labels = labels__root__
                     else:
-                        msg = f"Invalid build labels {build_labels}"
-                        raise ValueError(msg)
+                        raise InvalidLabelsError(build_labels=build_labels)
 
                     meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
@@ -82,7 +85,12 @@ def create_osparc_specs(
                     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
                     _save(service_name, service_specs_path, runtime_cfg)
 
-            except (AttributeError, ValidationError, TypeError, ValueError) as err:
+            except (  # noqa: PERF203
+                AttributeError,
+                ValidationError,
+                TypeError,
+                ValueError,
+            ) as err:
                 rich.print(
                     f"WARNING: failure producing specs for {service_name}: {err}"
                 )
@@ -91,14 +99,16 @@ def create_osparc_specs(
 
 
 def main(
-    from_spec_file: Path = typer.Option(
-        Path("docker-compose.yml"),
-        "-f",
-        "--from-spec-file",
-        help="docker-compose used to deduce osparc config",
-    ),
+    from_spec_file: Annotated[
+        Path,
+        typer.Option(
+            "-f",
+            "--from-spec-file",
+            help="docker-compose used to deduce osparc config",
+        ),
+    ] = Path("docker-compose.yml"),
 ):
-    """Creates osparc config from complete docker compose-spec"""
+    """Creates osparc configuration folder from a complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
     config_dir = from_spec_file.parent / OSPARC_CONFIG_DIRNAME
     project_cfg_path = config_dir / "docker-compose.overwrite.yml"
@@ -109,7 +119,7 @@ def main(
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     rich.print(f"Creating {config_dir} from {from_spec_file} ...")
 
-    create_osparc_specs(
+    create_config_from_compose_spec(
         from_spec_file, project_cfg_path, meta_cfg_path, runtime_cfg_path
     )
 

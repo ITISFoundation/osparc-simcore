@@ -1,5 +1,6 @@
 # Allows entrypoint via python -m as well
 
+from typing import Annotated
 
 import rich
 import typer
@@ -11,8 +12,8 @@ from .settings import AppSettings
 app = typer.Typer()
 
 
-def _version_callback(value: bool):
-    if value:
+def _version_callback(enabled):
+    if enabled:
         rich.print(__version__)
         raise typer.Exit
 
@@ -20,22 +21,28 @@ def _version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: bool = typer.Option(
-        False,
-        "--version",
-        callback=_version_callback,
-        is_eager=True,
-    ),
-    registry_name: str = typer.Option(
-        None,
-        "--REGISTRY_NAME",
-        help="image registry name. Full url or prefix used as prefix in an image name",
-    ),
-    compose_version: str = typer.Option(
-        None,
-        "--COMPOSE_VERSION",
-        help="version used for docker compose specification",
-    ),
+    registry_name: Annotated[
+        str,
+        typer.Option(
+            "--REGISTRY_NAME",
+            help="image registry name. Full url or prefix used as prefix in an image name",
+        ),
+    ],
+    compose_version: Annotated[
+        str,
+        typer.Option(
+            "--COMPOSE_VERSION",
+            help="version used for docker compose specification",
+        ),
+    ] = None,
+    version: Annotated[  # noqa: FBT002
+        bool,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+        ),
+    ] = False,
 ):
     """o2s2parc service integration library"""
     assert isinstance(version, bool | None)  # nosec

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
+from typing import Annotated
 
 import rich
 import typer
@@ -24,14 +25,16 @@ class UpgradeTags(str, Enum):
 
 
 def bump_version(
-    target_version: TargetVersionChoices = typer.Argument(
-        TargetVersionChoices.SEMANTIC_VERSION
-    ),
-    upgrade: UpgradeTags = typer.Option(..., case_sensitive=False),
-    metadata_file: Path = typer.Option(
-        "metadata/metadata.yml",
-        help="The metadata yaml file",
-    ),
+    upgrade: Annotated[UpgradeTags, typer.Option(case_sensitive=False)],
+    metadata_file: Annotated[
+        Path,
+        typer.Option(
+            help="The metadata yaml file",
+        ),
+    ] = Path("metadata/metadata.yml"),
+    target_version: Annotated[
+        TargetVersionChoices, typer.Argument()
+    ] = TargetVersionChoices.SEMANTIC_VERSION,
 ):
     """Bumps target version in metadata  (legacy)"""
     # load
@@ -54,13 +57,15 @@ def bump_version(
 
 
 def get_version(
-    target_version: TargetVersionChoices = typer.Argument(
-        TargetVersionChoices.SEMANTIC_VERSION
-    ),
-    metadata_file: Path = typer.Option(
-        f"{OSPARC_CONFIG_DIRNAME}/metadata.yml",
-        help="The metadata yaml file",
-    ),
+    target_version: Annotated[
+        TargetVersionChoices, typer.Argument()
+    ] = TargetVersionChoices.SEMANTIC_VERSION,
+    metadata_file: Annotated[
+        Path,
+        typer.Option(
+            help="The metadata yaml file",
+        ),
+    ] = Path(f"{OSPARC_CONFIG_DIRNAME}/metadata.yml"),
 ):
     """Prints to output requested version (legacy)"""
 

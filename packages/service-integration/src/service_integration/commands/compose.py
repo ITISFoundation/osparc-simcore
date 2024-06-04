@@ -1,6 +1,7 @@
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import Annotated
 
 import rich
 import typer
@@ -132,19 +133,23 @@ def create_docker_compose_image_spec(
 
 def main(
     ctx: typer.Context,
-    config_path: Path = typer.Option(
-        OSPARC_CONFIG_DIRNAME,
-        "-m",
-        "--metadata",
-        help="osparc config file or folder. "
-        "If the latter, it will scan for configs using the glob pattern 'config_path/**/metadata.yml' ",
-    ),
-    to_spec_file: Path = typer.Option(
-        Path("docker-compose.yml"),
-        "-f",
-        "--to-spec-file",
-        help="Output docker-compose image spec",
-    ),
+    config_path: Annotated[
+        Path,
+        typer.Option(
+            "-m",
+            "--metadata",
+            help="osparc config file or folder. "
+            "If the latter, it will scan for configs using the glob pattern 'config_path/**/metadata.yml' ",
+        ),
+    ] = Path(OSPARC_CONFIG_DIRNAME),
+    to_spec_file: Annotated[
+        Path,
+        typer.Option(
+            "-f",
+            "--to-spec-file",
+            help="Output docker-compose image spec",
+        ),
+    ] = Path("docker-compose.yml"),
 ):
     """create docker image/runtime compose-specs from an osparc config"""
 

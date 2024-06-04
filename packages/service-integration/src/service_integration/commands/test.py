@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Annotated
 
 import rich
 import typer
@@ -7,9 +8,9 @@ from ..service import pytest_runner
 
 
 def main(
-    service_dir: Path = typer.Argument(
-        ..., help="Root directory of the service under test"
-    ),
+    service_dir: Annotated[
+        Path, typer.Argument(help="Root directory of the service under test")
+    ],
 ):
     """Runs tests against service directory"""
 

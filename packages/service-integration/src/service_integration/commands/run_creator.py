@@ -1,5 +1,6 @@
 import stat
 from pathlib import Path
+from typing import Annotated
 
 import typer
 import yaml
@@ -17,16 +18,20 @@ def get_input_config(metadata_file: Path) -> dict:
 
 
 def main(
-    metadata_file: Path = typer.Option(
-        f"{OSPARC_CONFIG_DIRNAME}/metadata.yml",
-        "--metadata",
-        help="The metadata yaml of the node",
-    ),
-    run_script_file_path: Path = typer.Option(
-        ...,
-        "--runscript",
-        help="Path to the run script ",
-    ),
+    run_script_file_path: Annotated[
+        Path,
+        typer.Option(
+            "--runscript",
+            help="Path to the run script ",
+        ),
+    ],
+    metadata_file: Annotated[
+        Path,
+        typer.Option(
+            "--metadata",
+            help="The metadata yaml of the node",
+        ),
+    ] = Path(f"{OSPARC_CONFIG_DIRNAME}/metadata.yml"),
 ):
     """Creates a sh script that uses jq tool to retrieve variables
     to use in sh from a json file for use in an osparc service (legacy).
