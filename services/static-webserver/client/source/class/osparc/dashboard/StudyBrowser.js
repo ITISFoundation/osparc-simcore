@@ -637,6 +637,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
+      resourceFilter.addListener("changeSelectedTags", e => {
+        const selectedTags = e.getData();
+        console.log(selectedTags);
+        // this._searchBarFilter.addTagActiveFilter(selectedTags);
+      }, this);
       this._addToLeftColumn(resourceFilter);
 
       return this._resourcesContainer;

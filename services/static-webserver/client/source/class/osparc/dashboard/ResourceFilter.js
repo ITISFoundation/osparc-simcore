@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(20));
     this.set({
       padding: 10,
       allowGrowX: false
@@ -39,11 +39,19 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       init: "all",
       nullable: false,
       apply: "__applySharedWith"
+    },
+
+    selectedTags: {
+      check: "Array",
+      init: [],
+      nullable: false,
+      apply: "__applySelectedTags"
     }
   },
 
   events: {
-    "changeSharedWith": "qx.event.type.Data"
+    "changeSharedWith": "qx.event.type.Data",
+    "changeSelectedTags": "qx.event.type.Data"
   },
 
   members: {
@@ -51,6 +59,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __buildLayout: function() {
       this.__buildSharedWithFilter();
+      this.__buildTagsFilter();
     },
 
     __buildSharedWithFilter: function() {
@@ -60,7 +69,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
         const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
-        button.id = option.id;
         button.set({
           appearance: "filter-toggle-button",
           gap: 8
@@ -84,8 +92,41 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       this._add(layout);
     },
 
+    __buildTagsFilter: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const tagsHeader = new qx.ui.basic.Label(this.tr("Tags")).set({
+        font: "text-14"
+      });
+      layout.add(tagsHeader);
+
+      osparc.store.Store.getInstance().getTags().forEach(tag => {
+        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
+        button.set({
+          appearance: "filter-toggle-button",
+          gap: 8
+        });
+        button.getChildControl("icon").set({
+          width: 25, // align all icons
+          scale: true,
+          textColor: tag.color
+        });
+        layout.add(button);
+        button.addListener("execute", () => this.fireDataEvent("changeSelectedTags", {
+          id: tag.id,
+          label: tag.label
+        }), this);
+      });
+
+      this._add(layout);
+    },
+
     __applySharedWith: function(sharedWith) {
-      console.log("SharedWith", sharedWith);
+      console.log("sharedWith", sharedWith);
+    },
+
+    __applySelectedTags: function(selectedTags) {
+      console.log("selectedTags", selectedTags);
     }
   }
 });
