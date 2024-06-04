@@ -34,8 +34,8 @@ from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.errors import ErrorDict
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
-from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes import Node, OutputsDict
+from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -124,6 +124,9 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectLockError,
+    ProjectNodeConnectionsMissingError,
+    ProjectNodeOutputPortMissingValueError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInvalidError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
@@ -447,6 +450,56 @@ async def update_project_node_resources_from_hardware_info(
         raise ClustersKeeperNotAvailableError from exc
 
 
+async def _check_project_node_has_all_required_inputs(
+    db: ProjectDBAPI, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+) -> None:
+
+    project_dict, _ = await db.get_project(user_id, f"{project_uuid}")
+
+    nodes_map: dict[NodeID, Node] = {
+        NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
+    }
+    node = nodes_map[node_id]
+
+    unset_required_inputs: list[str] = []
+    unset_outputs_in_upstream: list[tuple[str, str]] = []
+
+    def _check_required_input(required_input_key: str) -> None:
+        input_entry: PortLink | None = None
+        if node.inputs:
+            input_entry = node.inputs.get(required_input_key, None)
+        if input_entry is None:
+            # NOT linked to any node connect service or set value manually(whichever applies)
+            unset_required_inputs.append(required_input_key)
+            return
+
+        source_node_id: NodeID = input_entry.node_uuid
+        source_output_key = input_entry.output
+
+        source_node = nodes_map[source_node_id]
+
+        output_entry: OutputsDict | None = None
+        if source_node.outputs:
+            output_entry = source_node.outputs.get(source_output_key, None)
+        if output_entry is None:
+            unset_outputs_in_upstream.append((source_output_key, source_node.label))
+
+    for required_input in node.inputs_required:
+        _check_required_input(required_input)
+
+    node_with_required_inputs = node.label
+    if unset_required_inputs:
+        raise ProjectNodeConnectionsMissingError(
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+        )
+
+    if unset_outputs_in_upstream:
+        raise ProjectNodeOutputPortMissingValueError(
+            unset_outputs_in_upstream=unset_outputs_in_upstream
+        )
+
+
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -456,6 +509,7 @@ async def _start_dynamic_service(
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
+    graceful_start: bool = False,
 ) -> None:
     if not _is_node_dynamic(service_key):
         return
@@ -463,6 +517,20 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+
+    try:
+        await _check_project_node_has_all_required_inputs(
+            db, user_id, project_uuid, node_uuid
+        )
+    except ProjectNodeRequiredInputsNotSetError as e:
+        if graceful_start:
+            log.info(
+                "Did not start '%s' because of missing required inputs: %s",
+                node_uuid,
+                e,
+            )
+            return
+        raise
 
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
@@ -1464,6 +1532,7 @@ async def run_project_dynamic_services(
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
+                graceful_start=True,
             )
             for service_uuid, is_deprecated in zip(
                 services_to_start_uuids, deprecated_services, strict=True

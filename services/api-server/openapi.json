@@ -2038,6 +2038,26 @@
             },
             "name": "hidden",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Project-Uuid"
+            },
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Node-Id"
+            },
+            "name": "x-simcore-parent-node-id",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -3254,6 +3274,26 @@
             },
             "name": "study_id",
             "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Project-Uuid"
+            },
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Node-Id"
+            },
+            "name": "x-simcore-parent-node-id",
+            "in": "header"
           }
         ],
         "responses": {
@@ -3382,6 +3422,26 @@
             },
             "name": "hidden",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Project-Uuid"
+            },
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "X-Simcore-Parent-Node-Id"
+            },
+            "name": "x-simcore-parent-node-id",
+            "in": "header"
           }
         ],
         "requestBody": {
