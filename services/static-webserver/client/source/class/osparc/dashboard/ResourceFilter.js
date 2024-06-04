@@ -90,7 +90,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      osparc.store.Store.getInstance().getTags().forEach(tag => {
+      const maxTags = 5;
+      osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
         button.id = tag.id;
         button.set({
@@ -107,8 +108,32 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           this.fireDataEvent("changeSelectedTags", selectedTagIds);
         }, this);
 
+        button.setVisibility(idx >= maxTags ? "excluded" : "visible");
+
         this.__tagButtons.push(button);
       });
+
+      // OM Todo reload when tags change
+
+      if (this.__tagButtons.length >= maxTags) {
+        const showAllButton = new qx.ui.form.Button(this.tr("Show all Tags..."), "@FontAwesome5Solid/tags/20");
+        showAllButton.set({
+          appearance: "filter-toggle-button"
+        });
+        showAllButton.showingAll = false;
+        showAllButton.addListener("execute", () => {
+          if (showAllButton.showingAll) {
+            this.__tagButtons.forEach((btn, idx) => btn.setVisibility(idx >= maxTags ? "excluded" : "visible"));
+            showAllButton.setLabel(this.tr("Show all Tags..."));
+            showAllButton.showingAll = false;
+          } else {
+            this.__tagButtons.forEach(btn => btn.setVisibility("visible"));
+            showAllButton.setLabel(this.tr("Show less Tags..."));
+            showAllButton.showingAll = true;
+          }
+        });
+        layout.add(showAllButton);
+      }
 
       return layout;
     },
