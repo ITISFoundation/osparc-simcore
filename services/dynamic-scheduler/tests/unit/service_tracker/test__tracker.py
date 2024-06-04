@@ -17,10 +17,7 @@ from simcore_service_dynamic_scheduler.services.service_tracker._models import (
 from simcore_service_dynamic_scheduler.services.service_tracker._setup import (
     get_tracker,
 )
-from simcore_service_dynamic_scheduler.services.service_tracker._tracker import (
-    Tracker,
-    _get_key,
-)
+from simcore_service_dynamic_scheduler.services.service_tracker._tracker import Tracker
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -76,7 +73,10 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
         *[tracker.save(k, v) for k, v in data_to_insert.items()], max_concurrency=100
     )
 
-    assert await tracker.all() == {_get_key(k): v for k, v in data_to_insert.items()}
+    response = await tracker.all()
+    for key in response.keys():
+        assert isinstance(key, NodeID)
+    assert response == data_to_insert
 
 
 async def test_remove_missing_key_does_not_raise_error(tracker: Tracker):
