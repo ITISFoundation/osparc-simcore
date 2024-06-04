@@ -1154,6 +1154,20 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "chip-button": {
+      include: "material-button",
+      style: () => ({
+        iconPosition: "right",
+        textColor: "text",
+        alignY: "middle",
+        paddingRight: 6,
+        paddingLeft: 6,
+        maxHeight: 26,
+        maxWidth: 260,
+        decorator: "chip-button"
+      })
+    },
+
     "filter-toggle-button": {
       include: "material-button",
       alias: "material-button",

@@ -274,14 +274,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chipButton = new qx.ui.form.Button().set({
         label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
         icon: "@MaterialIcons/close/12",
-        iconPosition: "right",
-        paddingRight: 6,
-        paddingLeft: 6,
-        alignY: "middle",
         toolTipText: chipLabel,
-        maxHeight: 26,
-        maxWidth: 260,
-        decorator: "chip-button"
+        appearance: "chip-button"
       });
       chipButton.type = chipType;
       chipButton.id = chipId;
