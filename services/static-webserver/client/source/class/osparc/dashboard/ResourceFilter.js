@@ -25,10 +25,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__resourceType = resourceType;
 
     this._setLayout(new qx.ui.layout.VBox(40));
-    this.set({
-      padding: 10,
-      allowGrowX: false
-    });
 
     this.__buildLayout();
   },

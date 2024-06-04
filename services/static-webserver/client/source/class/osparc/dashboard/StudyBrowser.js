@@ -633,6 +633,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       const resourceFilter = new osparc.dashboard.ResourceFilter("study");
+      resourceFilter.set({
+        marginTop: 50,
+        maxWidth: 200,
+        width: 200
+      });
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
