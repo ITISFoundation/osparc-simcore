@@ -26,6 +26,12 @@ _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 _DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 
 
+_DEFAULT_DECODE_RESPONSES: Final[bool] = True
+_DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=5
+)
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -44,6 +50,7 @@ class CouldNotConnectToRedisError(BaseRedisError):
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
+    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
     _client: aioredis.Redis = field(init=False)
 
     @property
@@ -63,7 +70,7 @@ class RedisClientSDK:
             socket_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
-            decode_responses=True,
+            decode_responses=self.decode_responses,
         )
 
     @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
@@ -178,9 +185,11 @@ class RedisClientSDKHealthChecked(RedisClientSDK):
     def __init__(
         self,
         redis_dsn: str,
-        health_check_interval: datetime.timedelta = datetime.timedelta(seconds=5),
+        *,
+        decode_responses: bool = _DEFAULT_DECODE_RESPONSES,
+        health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL,
     ) -> None:
-        super().__init__(redis_dsn)
+        super().__init__(redis_dsn, decode_responses)
         self.health_check_interval: datetime.timedelta = health_check_interval
         self._health_check_task: Task | None = None
         self._is_healthy: bool = True
@@ -205,13 +214,20 @@ class RedisClientSDKHealthChecked(RedisClientSDK):
         self._health_check_task = start_periodic_task(
             self._check_health,
             interval=self.health_check_interval,
-            task_name="redis_service_health_check",
+            task_name=f"redis_service_health_check_{self.redis_dsn}",
         )
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(self._health_check_task)
+            await stop_periodic_task(self._health_check_task, timeout=1)
         await super().shutdown()
+
+
+@dataclass(frozen=True)
+class RedisManagerDBConfig:
+    database: RedisDatabase
+    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
+    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
 
 
 @dataclass
@@ -220,7 +236,7 @@ class RedisClientsManager:
     Manages the lifetime of redis client sdk connections
     """
 
-    databases: set[RedisDatabase]
+    db_configs: set[RedisManagerDBConfig]
     settings: RedisSettings
 
     _client_sdks: dict[RedisDatabase, RedisClientSDKHealthChecked] = field(
@@ -228,9 +244,11 @@ class RedisClientsManager:
     )
 
     async def setup(self) -> None:
-        for db in self.databases:
-            self._client_sdks[db] = RedisClientSDKHealthChecked(
-                redis_dsn=self.settings.build_redis_dsn(db)
+        for config in self.db_configs:
+            self._client_sdks[config.database] = RedisClientSDKHealthChecked(
+                redis_dsn=self.settings.build_redis_dsn(config.database),
+                decode_responses=config.decode_responses,
+                health_check_interval=config.health_check_interval,
             )
 
         await logged_gather(*(c.setup() for c in self._client_sdks.values()))

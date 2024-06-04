@@ -20,6 +20,7 @@ from servicelib.redis import (
     RedisClientSDK,
     RedisClientSDKHealthChecked,
     RedisClientsManager,
+    RedisManagerDBConfig,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -249,13 +250,15 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
-    all_redis_databases: set[RedisDatabase] = set(RedisDatabase)
-    manager = RedisClientsManager(databases=all_redis_databases, settings=redis_service)
+    all_redis_configs: set[RedisManagerDBConfig] = {
+        RedisManagerDBConfig(x) for x in RedisDatabase
+    }
+    manager = RedisClientsManager(db_configs=all_redis_configs, settings=redis_service)
 
     await manager.setup()
 
-    for database in all_redis_databases:
-        assert manager.client(database)
+    for config in all_redis_configs:
+        assert manager.client(config.database)
 
     await manager.shutdown()
 
