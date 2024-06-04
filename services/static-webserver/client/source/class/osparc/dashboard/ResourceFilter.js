@@ -54,11 +54,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __resourceType: null,
 
     __buildLayout: function() {
-      this.__buildSharedWithFilter();
-      this.__buildTagsFilter();
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(this.__createSharedWithFilterLayout());
+      scrollContainer.add(this.__createTagsFilterLayout());
+      this.add(scrollContainer, {
+        flex: 1
+      });
     },
 
-    __buildSharedWithFilter: function() {
+    __createSharedWithFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const radioGroup = new qx.ui.form.RadioGroup();
 
@@ -79,10 +83,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       radioGroup.setAllowEmptySelection(false);
 
-      this._add(layout);
+      return layout;
     },
 
-    __buildTagsFilter: function() {
+    __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       osparc.store.Store.getInstance().getTags().forEach(tag => {
@@ -103,7 +107,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         }), this);
       });
 
-      this._add(layout);
+      return layout;
     },
 
     __applySharedWith: function(sharedWith) {
