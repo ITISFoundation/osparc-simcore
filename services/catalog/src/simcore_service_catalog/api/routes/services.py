@@ -76,11 +76,11 @@ router = APIRouter()
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
 @router.get("", response_model=list[ServiceGet], **RESPONSE_MODEL_POLICY)
+@cancel_on_disconnect
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
     key_builder=_build_cache_key,
 )
-@cancel_on_disconnect
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
