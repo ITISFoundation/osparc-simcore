@@ -17,7 +17,7 @@ class ProjectsRepository(BaseRepository):
             async for row in await conn.stream(
                 sa.select(projects).where(
                     (projects.c.type == ProjectType.TEMPLATE)
-                    & (projects.c.published is True)
+                    & (projects.c.published.is_(True))
                 )
             ):
                 project_workbench = row.workbench
