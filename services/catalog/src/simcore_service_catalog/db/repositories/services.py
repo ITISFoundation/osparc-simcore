@@ -69,7 +69,7 @@ def _make_list_services_query(
 def _is_newer(
     old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
-):
+) -> bool:
     return old is None or (
         packaging.version.parse(old.service_version)
         < packaging.version.parse(new.service_version)

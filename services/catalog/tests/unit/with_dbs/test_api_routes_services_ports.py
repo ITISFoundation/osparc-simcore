@@ -23,11 +23,6 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
-
-
-@pytest.fixture
 def service_key() -> str:
     return "simcore/services/comp/itis/fake_sleeper"
 

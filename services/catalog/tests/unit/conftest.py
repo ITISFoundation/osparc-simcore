@@ -100,3 +100,8 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield the_test_app
+
+
+@pytest.fixture
+def disable_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")

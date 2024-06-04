@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Awaitable, Callable
+from typing import TypeAlias
 
 from fastapi import FastAPI
 from servicelib.db_async_engine import close_db_connection, connect_to_db
@@ -11,8 +13,11 @@ from .background_tasks import start_registry_sync_task, stop_registry_sync_task
 _logger = logging.getLogger(__name__)
 
 
-def create_on_startup(app: FastAPI):
-    async def _():
+EventCallable: TypeAlias = Callable[[], Awaitable[None]]
+
+
+def create_on_startup(app: FastAPI) -> EventCallable:
+    async def _() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
         # setup connection to pg db
@@ -33,8 +38,8 @@ def create_on_startup(app: FastAPI):
     return _
 
 
-def create_on_shutdown(app: FastAPI):
-    async def _():
+def create_on_shutdown(app: FastAPI) -> EventCallable:
+    async def _() -> None:
         _logger.info("Application stopping")
 
         if app.state.settings.CATALOG_DIRECTOR:

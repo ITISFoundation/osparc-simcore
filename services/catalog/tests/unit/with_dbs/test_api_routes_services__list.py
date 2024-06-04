@@ -9,7 +9,6 @@ import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-import pytest
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
 from models_library.services import ServiceDockerData
@@ -26,11 +25,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
 
 
 async def test_list_services_with_details(

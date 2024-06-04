@@ -30,7 +30,7 @@ def run():
 
 
 @main.command()
-def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
+def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
     """Generates and displays a valid environment variables file (also known as dot-envfile)
 
     Usage:
