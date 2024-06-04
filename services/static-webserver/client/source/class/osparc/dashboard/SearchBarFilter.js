@@ -247,7 +247,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     addTagActiveFilter: function(tag) {
-      this.__addChip("tag", tag.name, tag.name);
+      this.__addChip("tag", tag.id, tag.name);
     },
 
     setSharedWithActiveFilter: function(optionId, optionLabel) {
