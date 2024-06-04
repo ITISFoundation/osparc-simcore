@@ -10,6 +10,7 @@ from models_library.basic_types import (
 )
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -22,7 +23,8 @@ class AwsEfsSettings(BaseCustomSettings):
         description="AWS Elastic File System DNS name",
         example="fs-xxx.efs.us-east-1.amazonaws.com",
     )
-    EFS_BASE_DIRECTORY: str = Field(default="project-specific-data")
+    EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: str = Field(default="project-specific-data")
+    EFS_MOUNTED_PATH: str = Field(default="/data/efs")
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -69,6 +71,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings | None = Field(
         auto_default_from_env=True
     )
+    EFS_GUARDIAN_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
