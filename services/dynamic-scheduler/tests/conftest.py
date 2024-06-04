@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from servicelib.redis import RedisClientsManager
+from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
@@ -121,7 +121,9 @@ async def app(
 
 @pytest.fixture
 async def remove_redis_data(redis_service: RedisSettings) -> None:
-    async with RedisClientsManager(set(RedisDatabase), redis_service) as manager:
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(x) for x in RedisDatabase}, redis_service
+    ) as manager:
         await logged_gather(
             *[manager.client(d).redis.flushall() for d in RedisDatabase]
         )
