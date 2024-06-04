@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
 
-    this._setLayout(new qx.ui.layout.VBox(40));
+    this._setLayout(new qx.ui.layout.VBox());
 
     this.__buildLayout();
   },
@@ -54,10 +54,13 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __resourceType: null,
 
     __buildLayout: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
+      layout.add(this.__createSharedWithFilterLayout());
+      layout.add(this.__createTagsFilterLayout());
+
       const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(this.__createSharedWithFilterLayout());
-      scrollContainer.add(this.__createTagsFilterLayout());
-      this.add(scrollContainer, {
+      scrollContainer.add(layout);
+      this._add(scrollContainer, {
         flex: 1
       });
     },
