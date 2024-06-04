@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(40));
     this.set({
       padding: 10,
       allowGrowX: false
@@ -68,14 +68,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
-        const button = new qx.ui.toolbar.RadioButton(option.label, option.icon);
-        button.set({
-          appearance: "filter-toggle-button",
-          gap: 8
-        });
-        button.getChildControl("icon").set({
-          width: 25, // align all icons
-          scale: true
+        const button = new qx.ui.toolbar.RadioButton(option.label, option.icon).set({
+          appearance: "filter-toggle-button"
         });
 
         layout.add(button);
@@ -94,11 +88,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __buildTagsFilter: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const tagsHeader = new qx.ui.basic.Label(this.tr("Tags")).set({
-        font: "text-14"
-      });
-      layout.add(tagsHeader);
 
       osparc.store.Store.getInstance().getTags().forEach(tag => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");

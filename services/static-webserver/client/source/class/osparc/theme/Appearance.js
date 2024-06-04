@@ -1161,7 +1161,23 @@ qx.Theme.define("osparc.theme.Appearance", {
         font: "text-14",
         textColor: "text",
         padding: 8,
+        gap: 8,
         decorator: (states.hovered || states.pressed || states.checked) ? "filter-toggle-button-selected" : "filter-toggle-button"
+      })
+    },
+
+    "filter-toggle-button/label": {
+      include: "material-button/label",
+      style: () => ({
+        textColor: "text"
+      })
+    },
+
+    "filter-toggle-button/icon": {
+      include: "material-button/icon",
+      style: () => ({
+        width: 25,
+        scale: true
       })
     },
 
