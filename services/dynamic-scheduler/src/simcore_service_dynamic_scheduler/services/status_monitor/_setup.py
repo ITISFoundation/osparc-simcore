@@ -18,3 +18,8 @@ def setup_status_monitor(app: FastAPI) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+def get_monitor(app: FastAPI) -> Monitor:
+    monitor: Monitor = app.state.status_monitor
+    return monitor
