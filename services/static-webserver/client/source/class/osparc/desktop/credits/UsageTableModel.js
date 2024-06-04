@@ -3,49 +3,28 @@
  * Copyright: 2024 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
-const SERVER_MAX_LIMIT = 49
-const COLUMN_ID_TO_DB_COLUMN_MAP = {
-  0: "project_name",
-  1: "node_name",
-  2: "service_key",
-  3: "started_at",
-  5: "service_run_status",
-  6: "credit_cost",
-  7: "user_email"
-}
+
 
 qx.Class.define("osparc.desktop.credits.UsageTableModel", {
   extend: qx.ui.table.model.Remote,
 
   construct(walletId, filters) {
-    this.base(arguments)
-    this.setColumns([
-      osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
-      qx.locale.Manager.tr("Node"),
-      qx.locale.Manager.tr("Service"),
-      qx.locale.Manager.tr("Start"),
-      qx.locale.Manager.tr("Duration"),
-      qx.locale.Manager.tr("Status"),
-      qx.locale.Manager.tr("Credits"),
-      qx.locale.Manager.tr("User")
-    ], [
-      "project",
-      "node",
-      "service",
-      "start",
-      "duration",
-      "status",
-      "cost",
-      "user"
-    ])
+    this.base(arguments);
+
+    const usageCols = osparc.desktop.credits.UsageTable.COLS;
+    const colLabels = Object.values(usageCols).map(col => col.label);
+    const colIDs = Object.values(usageCols).map(col => col.id);
+
+    this.setColumns(colLabels, colIDs);
     this.setWalletId(walletId)
     if (filters) {
       this.setFilters(filters)
     }
-    this.setSortColumnIndexWithoutSortingData(3)
+    this.setSortColumnIndexWithoutSortingData(usageCols.START.column);
     this.setSortAscendingWithoutSortingData(false)
-    this.setColumnSortable(4, false)
+    this.setColumnSortable(usageCols.DURATION.column, false);
   },
 
   properties: {
@@ -71,15 +50,30 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     }
   },
 
+  statics: {
+    SERVER_MAX_LIMIT: 49,
+    COLUMN_ID_TO_DB_COLUMN_MAP: {
+      0: "root_parent_project_name",
+      1: "node_name",
+      2: "service_key",
+      3: "started_at",
+      // 4: (not used) SORTING BY DURATION
+      5: "service_run_status",
+      6: "credit_cost",
+      7: "user_email"
+    }
+  },
+
   members: {
-    // overrriden
+    // overridden
     sortByColumn(columnIndex, ascending) {
       this.setOrderBy({
-        field: COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
+        field: this.self().COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
         direction: ascending ? "asc" : "desc"
       })
       this.base(arguments, columnIndex, ascending)
     },
+
     // overridden
     _loadRowCount() {
       const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
@@ -105,13 +99,14 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
           this._onRowCountLoaded(null)
         })
     },
+
     // overridden
     _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true)
       // Please Qloocloox don't ask for more rows than there are
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
-      const getFetchPromise = (offset, limit=SERVER_MAX_LIMIT) => {
+      const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
         const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
         return osparc.data.Resources.fetch("resourceUsage", endpoint, {
           url: {
@@ -128,6 +123,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
         })
           .then(rawData => {
             const data = []
+            const usageCols = osparc.desktop.credits.UsageTable.COLS;
             rawData.forEach(rawRow => {
               let service = ""
               if (rawRow["service_key"]) {
@@ -143,14 +139,15 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
                 }
               }
               data.push({
-                project: rawRow["project_name"] || rawRow["project_id"],
-                node: rawRow["node_name"] || rawRow["node_id"],
-                service,
-                start,
-                duration,
-                status: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
-                cost: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
-                user: rawRow["user_email"]
+                // root_parent_project is the same as project if it has no parent
+                [usageCols.PROJECT.id]: rawRow["root_parent_project_name"] || rawRow["root_parent_project_id"] || rawRow["project_name"] || rawRow["project_id"],
+                [usageCols.NODE.id]: rawRow["node_name"] || rawRow["node_id"],
+                [usageCols.SERVICE.id]: service,
+                [usageCols.START.id]: start,
+                [usageCols.DURATION.id]: duration,
+                [usageCols.STATUS.id]: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
+                [usageCols.COST.id]: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
+                [usageCols.USER.id]: rawRow["user_email"]
               })
             })
             return data
@@ -158,11 +155,11 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       }
       // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1 // Number of requested rows
-      const nRequests = Math.ceil(reqLimit / SERVER_MAX_LIMIT)
+      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT)
       if (nRequests > 1) {
         let requests = []
-        for (let i=firstRow; i <= lastRow; i += SERVER_MAX_LIMIT) {
-          requests.push(getFetchPromise(i, i > lastRow - SERVER_MAX_LIMIT + 1 ? reqLimit % SERVER_MAX_LIMIT : SERVER_MAX_LIMIT))
+        for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
+          requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
         }
         Promise.all(requests)
           .then(responses => {

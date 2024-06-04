@@ -5,6 +5,7 @@
 
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -58,6 +59,11 @@ def mock_env_devel_environment(
     return setenvs_from_dict(monkeypatch, {**env_devel_dict})
 
 
+#
+# ENVIRONMENT IN A SERVICE
+#
+
+
 @pytest.fixture(scope="session")
 def service_name(project_slug_dir: Path) -> str:
     """
@@ -67,21 +73,28 @@ def service_name(project_slug_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def docker_compose_service_environment_dict(
-    services_docker_compose_file: Path, env_devel_dict: EnvVarsDict, service_name: str
-) -> EnvVarsDict:
-    """Returns env vars dict from the docker-compose `environment` section
-
-    - services_docker_compose_file in repository_paths plugin
-    - env_devel_dict in environment_configs plugin
-    - service_name needs to be defined
-    """
+def services_docker_compose_dict(services_docker_compose_file: Path) -> EnvVarsDict:
     # NOTE: By keeping import here, this library is ONLY required when the fixture is used
     import yaml
 
-    service = yaml.safe_load(services_docker_compose_file.read_text())["services"][
-        service_name
-    ]
+    content = yaml.safe_load(services_docker_compose_file.read_text())
+    assert "services" in content
+    return content
+
+
+@pytest.fixture
+def docker_compose_service_environment_dict(
+    services_docker_compose_dict: dict[str, Any],
+    env_devel_dict: EnvVarsDict,
+    service_name: str,
+    env_devel_file: Path,
+) -> EnvVarsDict:
+    """Returns env vars dict from the docker-compose `environment` section
+
+    - env_devel_dict in environment_configs plugin
+    - service_name needs to be defined
+    """
+    service = services_docker_compose_dict["services"][service_name]
 
     def _substitute(key, value):
         if m := re.match(r"\${([^{}:-]\w+)", value):
@@ -93,7 +106,7 @@ def docker_compose_service_environment_dict(
                     return key, value
             except KeyError:
                 pytest.fail(
-                    f"{expected_env_var} is not defined in .env-devel but used in docker-compose services[{service}].environment[{key}]"
+                    f"{expected_env_var} is not defined in {env_devel_file} but used in docker-compose services[{service}].environment[{key}]"
                 )
         return None
 
