@@ -119,6 +119,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __applySelectedTags: function(selectedTags) {
       console.log("selectedTags", selectedTags);
+    },
+
+    filterChanged: function(filterData) {
+      console.log(filterData);
     }
   }
 });

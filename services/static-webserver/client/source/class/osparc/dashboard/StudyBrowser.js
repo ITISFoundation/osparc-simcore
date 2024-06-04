@@ -632,22 +632,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
-      const resourceFilter = new osparc.dashboard.ResourceFilter("study");
-      resourceFilter.set({
-        marginTop: 46, // aligned with toolbar buttons
-        maxWidth: 200,
-        width: 200
-      });
-      resourceFilter.addListener("changeSharedWith", e => {
-        const sharedWith = e.getData();
-        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
-      }, this);
-      resourceFilter.addListener("changeSelectedTags", e => {
-        const selectedTags = e.getData();
-        console.log(selectedTags);
-        // this._searchBarFilter.addTagActiveFilter(selectedTags);
-      }, this);
-      this._addToLeftColumn(resourceFilter);
+      this.__addResourceFilter();
 
       return this._resourcesContainer;
     },
@@ -687,6 +672,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       this._toolbar.add(sharedWithButton);
+    },
+
+    __addResourceFilter: function() {
+      const resourceFilter = new osparc.dashboard.ResourceFilter("study").set({
+        marginTop: 46, // aligned with toolbar buttons
+        maxWidth: 200,
+        width: 200
+      });
+
+      resourceFilter.addListener("changeSharedWith", e => {
+        const sharedWith = e.getData();
+        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+      }, this);
+
+      resourceFilter.addListener("changeSelectedTags", e => {
+        const selectedTags = e.getData();
+        console.log(selectedTags);
+        // this._searchBarFilter.addTagActiveFilter(selectedTags);
+      }, this);
+
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        resourceFilter.filterChanged(filterData);
+      });
+
+      this._addToLeftColumn(resourceFilter);
     },
 
     __createLoadMoreButton: function() {
