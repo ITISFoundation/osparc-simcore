@@ -12,8 +12,8 @@ from .settings import AppSettings
 app = typer.Typer()
 
 
-def _version_callback(enabled):
-    if enabled:
+def _version_callback(value: bool):  # noqa: FBT002
+    if value:
         rich.print(__version__)
         raise typer.Exit
 
@@ -27,7 +27,7 @@ def main(
             "--REGISTRY_NAME",
             help="image registry name. Full url or prefix used as prefix in an image name",
         ),
-    ],
+    ] = None,
     compose_version: Annotated[
         str,
         typer.Option(
@@ -62,6 +62,8 @@ def main(
 app.command("compose")(compose.main)
 app.command("config")(config.main)
 app.command("test")(test.main)
+
+
 # legacy
 app.command("bump-version")(metadata.bump_version)
 app.command("get-version")(metadata.get_version)

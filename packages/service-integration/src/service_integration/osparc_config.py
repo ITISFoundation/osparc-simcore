@@ -94,7 +94,7 @@ class MetadataConfig(ServiceDockerData):
 
     @validator("contact")
     @classmethod
-    def check_contact_in_authors(cls, v, values):
+    def _check_contact_in_authors(cls, v, values):
         """catalog service relies on contact and author to define access rights"""
         authors_emails = {author.email for author in values["authors"]}
         if v not in authors_emails:

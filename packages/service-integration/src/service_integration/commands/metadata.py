@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -5,10 +6,8 @@ from typing import Annotated
 
 import rich
 import typer
-import yaml
-from models_library.services import ServiceDockerData
 
-from ..osparc_config import OSPARC_CONFIG_DIRNAME
+from ..osparc_config import OSPARC_CONFIG_DIRNAME, MetadataConfig
 from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
@@ -41,7 +40,7 @@ def bump_version(
     raw_data: OrderedDict = ordered_safe_load(metadata_file.read_text())
 
     # parse and validate
-    metadata = ServiceDockerData(**raw_data)
+    metadata = MetadataConfig(**raw_data)
 
     # get + bump + set
     attrname = target_version.replace("-", "_")
@@ -70,7 +69,7 @@ def get_version(
     """Prints to output requested version (legacy)"""
 
     # parse and validate
-    metadata = ServiceDockerData(**yaml.safe_load(metadata_file.read_text()))
+    metadata = MetadataConfig.from_yaml(metadata_file)
 
     attrname = target_version.replace("-", "_")
     current_version: str = getattr(metadata, attrname)
@@ -79,3 +78,4 @@ def get_version(
     # VERSION: $(METADATA)
     #    @simcore-service-integrator get-version --metadata-file $< > $@
     rich.print(current_version, end="")
+
