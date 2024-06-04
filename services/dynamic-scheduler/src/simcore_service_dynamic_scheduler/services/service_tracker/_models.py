@@ -1,9 +1,9 @@
+import pickle
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import auto
 
 import arrow
-import orjson
 from models_library.utils.enums import StrAutoEnum
 from servicelib.deferred_tasks import TaskUID
 
@@ -41,9 +41,8 @@ class TrackedServiceModel:
         self.check_status_after = (arrow.utcnow() + delay).timestamp()
 
     def to_bytes(self) -> bytes:
-        result: bytes = orjson.dumps(self)
-        return result
+        return pickle.dumps(self)
 
     @classmethod
-    def from_bytes(cls, json: bytes) -> "TrackedServiceModel":
-        return cls(**orjson.loads(json))
+    def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
+        return pickle.loads(data)  # noqa: S301

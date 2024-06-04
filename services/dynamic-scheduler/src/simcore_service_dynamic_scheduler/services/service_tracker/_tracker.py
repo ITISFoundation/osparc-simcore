@@ -38,7 +38,7 @@ class Tracker:
         found_values = await self.redis_client_sdk.redis.mget(found_keys)
 
         return {
-            k: TrackedServiceModel.from_bytes(v)
+            NodeID(k.decode().lstrip(_KEY_PREFIX)): TrackedServiceModel.from_bytes(v)
             for k, v in zip(found_keys, found_values, strict=True)
             if v is not None
         }
