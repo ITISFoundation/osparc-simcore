@@ -280,13 +280,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         alignY: "middle",
         toolTipText: chipLabel,
         maxHeight: 26,
-        maxWidth: 210
+        maxWidth: 260,
+        decorator: "chip-button"
       });
       chipButton.type = chipType;
       chipButton.id = chipId;
-      chipButton.getContentElement().setStyles({
-        "border-radius": "6px"
-      });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       return chipButton;
     },
