@@ -634,7 +634,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const resourceFilter = new osparc.dashboard.ResourceFilter("study");
       resourceFilter.set({
-        marginTop: 50,
+        marginTop: 46, // aligned with toolbar buttons
         maxWidth: 200,
         width: 200
       });
