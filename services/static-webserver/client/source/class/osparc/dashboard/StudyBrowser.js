@@ -601,7 +601,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this.__addSortByButton();
-      this.__addShowSharedWithButton();
       this._addViewModeButton();
 
       this._addResourceFilter();
@@ -652,8 +651,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addShowSharedWithButton: function() {
       const sharedWithButton = new osparc.dashboard.SharedWithMenuButton("study");
       sharedWithButton.set({
-        appearance: "form-button-outlined",
-        visibility: "excluded" // OM make it responsive
+        appearance: "form-button-outlined"
       });
       osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
 
