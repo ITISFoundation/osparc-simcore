@@ -43,7 +43,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     this.set({
       contentPaddingTop: 15,
-      contentPaddingLeft: 0,
+      contentPaddingLeft: 15,
+      contentPaddingRight: 15,
       barPosition: "top"
     });
 
