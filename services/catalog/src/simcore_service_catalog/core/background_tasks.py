@@ -245,6 +245,3 @@ async def stop_registry_sync_task(app: FastAPI) -> None:
             await task
         app.state.registry_sync_task = None
     _logger.info("registry syncing task stopped")
-
-
-# TODO: move this to services
