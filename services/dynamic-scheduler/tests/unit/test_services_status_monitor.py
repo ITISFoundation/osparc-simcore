@@ -4,6 +4,8 @@
 import json
 import re
 from collections.abc import AsyncIterable
+from copy import deepcopy
+from typing import Any
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -52,23 +54,105 @@ def app_environment(
 # create service pattern for start & stop with the appropriate type of message types
 # including idle and the ones for legacy services
 
+_DEFAULT_NODE_ID: NodeID = uuid4()
 
-class _StatusResponseTimeline:
-    # TODO: use to generate a future timeline of responses in order to properly test
-    # how the status wil behave with time
-    pass
+
+def _add_to_dict(dict_data: dict, entries: list[tuple[str, Any]]) -> None:
+    for key, data in entries:
+        assert key in dict_data
+        dict_data[key] = data
+
+
+def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGet:
+    dict_data = deepcopy(NodeGet.Config.schema_extra["example"])
+    _add_to_dict(
+        dict_data,
+        [
+            ("service_state", state),
+            ("service_uuid", f"{node_id}"),
+        ],
+    )
+    return NodeGet.parse_obj(dict_data)
+
+
+def __get_dynamic_service_get_legacy_with(
+    state: str, node_id: NodeID = _DEFAULT_NODE_ID
+) -> DynamicServiceGet:
+    dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][0])
+    _add_to_dict(
+        dict_data,
+        [
+            ("state", state),
+            ("uuid", f"{node_id}"),
+            ("node_uuid", f"{node_id}"),
+        ],
+    )
+    return DynamicServiceGet.parse_obj(dict_data)
+
+
+def __get_dynamic_service_get_new_style_with(
+    state: str, node_id: NodeID = _DEFAULT_NODE_ID
+) -> DynamicServiceGet:
+    dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][1])
+    _add_to_dict(
+        dict_data,
+        [
+            ("state", state),
+            ("uuid", f"{node_id}"),
+            ("node_uuid", f"{node_id}"),
+        ],
+    )
+    return DynamicServiceGet.parse_obj(dict_data)
+
+
+def __get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
+    dict_data = NodeGetIdle.Config.schema_extra["example"]
+    _add_to_dict(
+        dict_data,
+        [
+            ("service_uuid", f"{node_id}"),
+        ],
+    )
+    return NodeGetIdle.parse_obj(dict_data)
+
+
+class _ResponseTimeline:
+    def __init__(
+        self, timeline: list[NodeGet | DynamicServiceGet | NodeGetIdle]
+    ) -> None:
+        self._timeline = timeline
+
+        self._client_access_history: dict[NodeID, NonNegativeInt] = {}
+
+    @property
+    def entries(self) -> list[NodeGet | DynamicServiceGet | NodeGetIdle]:
+        return self._timeline
+
+    def __len__(self) -> int:
+        return len(self._timeline)
+
+    def get_status(self, node_id: NodeID) -> NodeGet | DynamicServiceGet | NodeGetIdle:
+        if node_id not in self._client_access_history:
+            self._client_access_history[node_id] = 0
+
+        # always return node idle when timeline finished playing
+        if self._client_access_history[node_id] >= len(self._timeline):
+            return __get_node_get_idle()
+
+        status = self._timeline[self._client_access_history[node_id]]
+        self._client_access_history[node_id] += 1
+        return status
 
 
 @pytest.fixture
 async def mock_director_v2_status(
-    app: FastAPI,
-    service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
+    app: FastAPI, response_timeline: _ResponseTimeline
 ) -> AsyncIterable[None]:
     def _side_effect_node_status_response(request: Request) -> Response:
         node_id = NodeID(f"{request.url}".split("/")[-1])
-        print("<<<<<<<<", node_id, request.url)
 
-        # fetch `node_id` from request and then compose sequence of events which which it should respond
+        service_status = response_timeline.get_status(node_id)
+
         if isinstance(service_status, NodeGet):
             return Response(
                 status.HTTP_200_OK,
@@ -79,7 +163,7 @@ async def mock_director_v2_status(
         if isinstance(service_status, NodeGetIdle):
             return Response(status.HTTP_404_NOT_FOUND)
 
-    # Not moced http://director-v2:8000/v2/dynamic_services/87a2a7c6-7166-4ffe-8a03-e4e947753ed3
+        raise TypeError()
 
     with respx.mock(
         base_url=app.state.settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
@@ -112,8 +196,8 @@ def deferred_status_spies(mocker: MockerFixture) -> dict[str, AsyncMock]:
     return results
 
 
-async def _wait_for_result(
-    deferred_status_spies: dict[str, AsyncMock], *, key: str, count: NonNegativeInt
+async def _assert_call_to(
+    deferred_status_spies: dict[str, AsyncMock], *, method: str, count: NonNegativeInt
 ) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -122,34 +206,70 @@ async def _wait_for_result(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            assert deferred_status_spies[key].call_count == count
+            assert deferred_status_spies[method].call_count == count
+
+
+async def _assert_result(
+    deferred_status_spies: dict[str, AsyncMock],
+    *,
+    timeline: list[NodeGet | DynamicServiceGet | NodeGetIdle],
+) -> None:
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(5),
+        wait=wait_fixed(0.01),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+
+            assert deferred_status_spies["on_result"].call_count == len(timeline)
+            assert [
+                x.args[0] for x in deferred_status_spies["on_result"].call_args_list
+            ] == timeline
+
+
+@pytest.fixture
+def node_id() -> NodeID:
+    return _DEFAULT_NODE_ID
 
 
 @pytest.mark.parametrize(
-    "service_status",
+    "response_timeline",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
-        *(
-            DynamicServiceGet.parse_obj(x)
-            for x in DynamicServiceGet.Config.schema_extra["examples"]
+        _ResponseTimeline([_get_node_get_with("running")]),
+        _ResponseTimeline(
+            [
+                __get_dynamic_service_get_legacy_with("running"),
+                __get_dynamic_service_get_legacy_with("running"),
+            ]
         ),
-        NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
+        _ResponseTimeline([__get_dynamic_service_get_new_style_with("running")]),
+        _ResponseTimeline([__get_node_get_idle()]),
     ],
 )
 async def test_basic_examples(
     deferred_status_spies: dict[str, AsyncMock],
     app: FastAPI,
     monitor: Monitor,
-    service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
+    response_timeline: _ResponseTimeline,
+    node_id: NodeID,
 ):
-    mode_id = uuid4()
-    await set_request_as_running(app, mode_id)
+    await set_request_as_running(app, node_id)
 
     # ADD some service to monitor, then mock the API to director-v2 to returns different
     # statuses based on the times when it is called
 
-    await monitor._worker_start_get_status_requests()
+    entries_in_timeline = len(response_timeline)
 
-    await _wait_for_result(deferred_status_spies, key="run", count=1)
-    await _wait_for_result(deferred_status_spies, key="on_result", count=1)
-    await _wait_for_result(deferred_status_spies, key="on_finished_with_error", count=0)
+    for i in range(entries_in_timeline):
+        await monitor._worker_start_get_status_requests()
+        await _assert_call_to(deferred_status_spies, method="on_result", count=i + 1)
+
+    await _assert_call_to(
+        deferred_status_spies, method="run", count=entries_in_timeline
+    )
+    await _assert_call_to(
+        deferred_status_spies, method="on_finished_with_error", count=0
+    )
+
+    await _assert_result(deferred_status_spies, timeline=response_timeline.entries)
