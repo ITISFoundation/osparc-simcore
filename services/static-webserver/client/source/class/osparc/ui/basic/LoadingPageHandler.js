@@ -35,13 +35,18 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     this._loadingPage = new osparc.ui.message.Loading();
     stack.add(this._loadingPage);
 
-    this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
+    const padding = osparc.dashboard.Dashboard.PADDING;
+    const leftColumnWidth = 200;
+    const rightColumnMinWidth = 50;
+    const spacing = 20;
+
+    this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     stack.add(this.__mainLayoutWithSides);
 
-    this.__leftColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__mainLayoutWithSides.add(this.__leftColum, {
-      flex: 1
+    this.__leftColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      width: leftColumnWidth
     });
+    this.__mainLayoutWithSides.add(this.__leftColum);
 
     this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__mainLayoutWithSides.add(this._mainLayout);
@@ -52,11 +57,10 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     });
 
     const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-    const sideMaxWidth = 200;
     this._mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
     const fitResourceCards = () => {
       const w = document.documentElement.clientWidth;
-      const nStudies = Math.floor((w - 2*sideMaxWidth - 8) / itemWidth);
+      const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - rightColumnMinWidth) / itemWidth);
       const newWidth = nStudies * itemWidth + 8;
       if (newWidth > this._mainLayout.getMinWidth()) {
         this._mainLayout.setMaxWidth(newWidth);
