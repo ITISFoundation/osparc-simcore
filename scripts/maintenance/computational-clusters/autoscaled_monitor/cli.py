@@ -78,6 +78,8 @@ def main(
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
+        if "license" in file_path.name:
+            continue
         # very bad HACK
         if (
             any(_ in f"{file_path}" for _ in ("sim4life.io", "osparc-master"))
