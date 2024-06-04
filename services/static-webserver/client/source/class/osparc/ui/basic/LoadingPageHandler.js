@@ -36,7 +36,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     stack.add(this._loadingPage);
 
     const padding = osparc.dashboard.Dashboard.PADDING;
-    const leftColumnWidth = 200;
+    const leftColumnWidth = this.self().SIDE_SPACER_WIDTH;
     const rightColumnMinWidth = 50;
     const spacing = 20;
 
@@ -73,7 +73,8 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
   },
 
   statics: {
-    MIN_STUDIES_PER_ROW: 4
+    MIN_STUDIES_PER_ROW: 4,
+    SIDE_SPACER_WIDTH: 180
   },
 
   members: {

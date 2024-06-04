@@ -1172,9 +1172,9 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "material-button",
       alias: "material-button",
       style: states => ({
-        font: "text-14",
+        font: "text-13",
         textColor: "text",
-        padding: 8,
+        padding: 6,
         gap: 8,
         decorator: (states.hovered || states.pressed || states.checked) ? "filter-toggle-button-selected" : "filter-toggle-button"
       })

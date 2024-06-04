@@ -321,8 +321,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _addResourceFilter: function() {
       const resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
         marginTop: 46, // aligned with toolbar buttons
-        maxWidth: 200,
-        width: 200
+        maxWidth: osparc.ui.basic.LoadingPageHandler.SIDE_SPACER_WIDTH,
+        width: osparc.ui.basic.LoadingPageHandler.SIDE_SPACER_WIDTH
       });
 
       resourceFilter.addListener("changeSharedWith", e => {
