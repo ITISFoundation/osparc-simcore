@@ -10,7 +10,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 pytest_simcore_ops_services_selection = []
 
 
-async def test_rpc_pricing_plans_workflow(
+async def test_rpc_create_project_specific_data_dir(
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
     app: FastAPI,
