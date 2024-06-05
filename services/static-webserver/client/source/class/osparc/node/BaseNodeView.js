@@ -257,7 +257,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
         const width = 500;
         const height = 500;
-        const win = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
           modal: false,
           clickAwayClose: false
         });
@@ -265,7 +265,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
         win.addListener("close", () => this.__instructionsWindow = null, this);
-        this.__instructionsWindow = win;
       }
     },
 
