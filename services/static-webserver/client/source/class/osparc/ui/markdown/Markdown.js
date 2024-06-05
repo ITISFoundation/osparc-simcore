@@ -80,6 +80,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     _applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         const renderer = new marked.Renderer();
+
         const linkRenderer = renderer.link;
         renderer.link = (href, title, text) => {
           const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
@@ -88,16 +89,18 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ linkColor + ' !important"');
           return linkWithRightColor;
         };
-        // eslint-disable-next-line object-curly-spacing
+
         const html = marked(value, { renderer });
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
+
         // for some reason the content is not immediately there
         qx.event.Timer.once(() => {
           this.__parseImages();
           this.__resizeMe();
         }, this, 100);
+
         this.__resizeMe();
       }).catch(error => console.error(error));
     },
