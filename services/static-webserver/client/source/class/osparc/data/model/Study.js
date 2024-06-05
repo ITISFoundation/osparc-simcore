@@ -609,14 +609,16 @@ qx.Class.define("osparc.data.model.Study", {
           delete studyChanges["workbench"];
         }
         console.log("studyChanges", studyChanges);
-        console.log("workbenchChanges", workbenchChanges);
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: studyChanges
-        };
-        osparc.data.Resources.fetch("studies", "patch", params)
+        if (Object.keys(studyChanges).length) {
+          const params = {
+            url: {
+              "studyId": this.getUuid()
+            },
+            data: studyChanges
+          };
+          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+        }
+        Promise.all()
           .then(() => {
             Object.keys(studyChanges).forEach(fieldKey => {
               const upKey = qx.lang.String.firstUp(fieldKey);

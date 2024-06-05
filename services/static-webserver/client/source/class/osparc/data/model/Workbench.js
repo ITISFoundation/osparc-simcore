@@ -750,15 +750,12 @@ qx.Class.define("osparc.data.model.Workbench", {
               "studyId": this.getStudy().getUuid(),
               "nodeId": nodeId
             },
-            data: workbenchChanges
+            data: workbenchChanges[nodeId]
           };
           promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
         })
         Promise.all(promises)
-          .then(() => {
-            const workbenchData = this.serialize();
-            resolve(workbenchData);
-          })
+          .then(() => resolve())
           .catch(err => reject(err));
       });
     }
