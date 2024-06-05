@@ -155,7 +155,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __backToDashboard: async function() {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
-      if (this.__studyEditor.didStudyChange()) {
+      if (this.__studyEditor.getStudyChanges().length) {
         // make sure very latest changes are saved
         await this.__studyEditor.updateStudyDocument(false);
       }

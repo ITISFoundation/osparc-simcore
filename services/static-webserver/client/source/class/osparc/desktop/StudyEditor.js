@@ -717,7 +717,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    didStudyChange: function() {
+    getStudyChanges: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
@@ -734,13 +734,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
 
-        return deltaKeys.length;
+        return deltaKeys;
       }
-      return false;
+      return [];
     },
 
     __checkStudyChanges: function() {
-      if (this.didStudyChange()) {
+      if (this.getStudyChanges().length) {
         if (this.__updatingStudy > 0) {
           // throttle update
           this.__updateThrottled = true;
