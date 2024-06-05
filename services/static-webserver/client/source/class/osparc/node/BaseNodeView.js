@@ -144,7 +144,10 @@ qx.Class.define("osparc.node.BaseNodeView", {
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
         backgroundColor: "background-main-3"
       });
-      instructionsBtn.addListener("appear", () => osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3));
+      instructionsBtn.addListener("appear", () => {
+        osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3);
+        this.__openInstructions();
+      });
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
 
