@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Final
 
 from models_library.api_schemas_efs_guardian import EFS_GUARDIAN_RPC_NAMESPACE
@@ -17,16 +18,17 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_pricing_plan(
+async def create_project_specific_data_dir(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     project_id: ProjectID,
     node_id: NodeID,
-) -> None:
-    await rabbitmq_rpc_client.request(
+) -> Path:
+    output: Path = await rabbitmq_rpc_client.request(
         EFS_GUARDIAN_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "create_project_specific_data_dir"),
         project_id=project_id,
         node_id=node_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
+    return output
