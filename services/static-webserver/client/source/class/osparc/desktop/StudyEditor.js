@@ -725,7 +725,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
-        Object.entries((key, val) => {
+        Object.entries(delta).forEach(([key, val]) => {
           // keep only the new value
           // JsonDiffPatch returns {key: [old_value, ney_value]}
           if (val.length > 1) {
