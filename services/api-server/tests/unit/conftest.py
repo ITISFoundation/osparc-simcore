@@ -408,7 +408,7 @@ def mocked_catalog_service_api_base(
             text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
         )
         respx_mock.get("/v0/meta").respond(
-            status.HTTP_200_OK, json=schemas["Meta"]["example"]
+            status.HTTP_200_OK, json=schemas["BaseMeta"]["example"]
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py

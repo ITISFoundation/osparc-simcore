@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header
 from models_library.api_schemas_catalog.service_access_rights import (
@@ -12,12 +13,9 @@ from ..dependencies.database import get_repository
 from ..dependencies.services import AccessInfo, check_service_read_access
 from ._constants import RESPONSE_MODEL_POLICY
 
-#
-# Routes -----------------------------------------------------------------------------------------------
-#
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 
 @router.get(
@@ -29,9 +27,11 @@ logger = logging.getLogger(__name__)
 async def get_service_access_rights(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    _user: AccessInfo = Depends(check_service_read_access),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    x_simcore_products_name: str = Header(...),
+    _user: Annotated[AccessInfo, Depends(check_service_read_access)],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    x_simcore_products_name: Annotated[str, Header(...)],
 ):
     service_access_rights: list[
         ServiceAccessRightsAtDB

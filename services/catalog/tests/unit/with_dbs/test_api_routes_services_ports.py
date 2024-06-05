@@ -4,7 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import urllib.parse
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from pytest_mock.plugin import MockerFixture
@@ -19,20 +20,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def disable_service_caching(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
-
-
-@pytest.fixture
-def product_name(
-    products_names: list[str],
-) -> str:
-    target_product = products_names[-1]
-    assert target_product
-    return target_product
 
 
 @pytest.fixture
@@ -72,13 +59,13 @@ async def mock_check_service_read_access(
 
 @pytest.fixture
 async def mock_director_service_api(
-    director_mockup: MockRouter,
+    mocked_director_service_api: MockRouter,
     service_key: str,
     service_version: str,
     service_metadata: dict[str, Any],
 ):
     # SEE services/director/src/simcore_service_director/api/v0/openapi.yaml
-    director_mockup.get(
+    mocked_director_service_api.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
         name="services_by_key_version_get",
     ).respond(
@@ -93,7 +80,7 @@ async def mock_director_service_api(
 
 async def test_list_service_ports(
     disable_service_caching: None,
-    mock_catalog_background_task: None,
+    mocked_catalog_background_task: None,
     mock_check_service_read_access: None,
     mock_director_service_api: None,
     client: TestClient,
