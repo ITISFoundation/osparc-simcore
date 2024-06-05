@@ -90,12 +90,29 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
+      this.__populateTags(layout, []);
+      osparc.store.Store.getInstance().addListener("changeTags", () => {
+        this.__populateTags(layout, this.__getSelectedTagIds());
+      }, this);
+
+      return layout;
+    },
+
+    __getSelectedTagIds: function() {
+      const selectedTagIds = this.__tagButtons.filter(btn => btn.getValue()).map(btn => btn.id);
+      return selectedTagIds;
+    },
+
+    __populateTags: function(layout, selectedTagIds) {
       const maxTags = 5;
+      this.__tagButtons = [];
+      layout.removeAll();
       osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
         button.id = tag.id;
         button.set({
-          appearance: "filter-toggle-button"
+          appearance: "filter-toggle-button",
+          value: selectedTagIds.includes(tag.id)
         });
         button.getChildControl("icon").set({
           textColor: tag.color
@@ -104,8 +121,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         layout.add(button);
 
         button.addListener("execute", () => {
-          const selectedTagIds = this.__tagButtons.filter(btn => btn.getValue()).map(btn => btn.id);
-          this.fireDataEvent("changeSelectedTags", selectedTagIds);
+          const selection = this.__getSelectedTagIds();
+          this.fireDataEvent("changeSelectedTags", selection);
         }, this);
 
         button.setVisibility(idx >= maxTags ? "excluded" : "visible");
@@ -113,7 +130,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         this.__tagButtons.push(button);
       });
 
-      // OM Todo reload when tags change
 
       if (this.__tagButtons.length >= maxTags) {
         const showAllButton = new qx.ui.form.Button(this.tr("Show all Tags..."), "@FontAwesome5Solid/tags/20");
@@ -134,8 +150,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         });
         layout.add(showAllButton);
       }
-
-      return layout;
     },
 
     filterChanged: function(filterData) {
