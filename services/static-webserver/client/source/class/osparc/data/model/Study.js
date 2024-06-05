@@ -323,6 +323,30 @@ qx.Class.define("osparc.data.model.Study", {
       this.setUi(new osparc.data.model.StudyUI(studyData.ui));
     },
 
+    serialize: function(clean = true) {
+      let jsonObject = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
+          return;
+        }
+        if (key === "workbench") {
+          jsonObject[key] = this.getWorkbench().serialize(clean);
+          return;
+        }
+        if (key === "ui") {
+          jsonObject[key] = this.getUi().serialize();
+          return;
+        }
+        const value = this.get(key);
+        if (value !== null) {
+          // only put the value in the payload if there is a value
+          jsonObject[key] = value;
+        }
+      });
+      return jsonObject;
+    },
+
     __buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
@@ -558,48 +582,6 @@ qx.Class.define("osparc.data.model.Study", {
 
     hasSlideshow: function() {
       return !this.getUi().getSlideshow().isEmpty();
-    },
-
-    serializeStudyData: function() {
-      let studyData = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (key === "workbench") {
-          studyData[key] = this.getWorkbench().serialize();
-          return;
-        }
-        if (key === "ui") {
-          studyData[key] = this.getUi().serialize();
-          return;
-        }
-        const value = this.get(key);
-        studyData[key] = value;
-      });
-      return studyData;
-    },
-
-    serialize: function(clean = true) {
-      let jsonObject = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().IgnoreSerializationProps.includes(key)) {
-          return;
-        }
-        if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize(clean);
-          return;
-        }
-        if (key === "ui") {
-          jsonObject[key] = this.getUi().serialize();
-          return;
-        }
-        const value = this.get(key);
-        if (value !== null) {
-          // only put the value in the payload if there is a value
-          jsonObject[key] = value;
-        }
-      });
-      return jsonObject;
     },
 
     patchStudy: function(studyChanges) {
