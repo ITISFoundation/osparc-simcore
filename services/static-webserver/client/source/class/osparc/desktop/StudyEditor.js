@@ -453,7 +453,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.getStudy().setPipelineRunning(true);
-      this.updateStudyDocument(true)
+      this.updateStudyDocument()
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
@@ -565,7 +565,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     // ------------------ START/STOP PIPELINE ------------------
 
     __updatePipelineAndRetrieve: function(node, portKey = null) {
-      this.updateStudyDocument(false)
+      this.updateStudyDocument()
         .then(() => {
           if (node) {
             this.getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
@@ -740,12 +740,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // throttle update
           this.__updateThrottled = true;
         } else {
-          this.updateStudyDocument(false);
+          this.updateStudyDocument();
         }
       }
     },
 
-    updateStudyDocument: function(run = false) {
+    updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
@@ -754,7 +754,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__updatingStudy++;
       const newObj = this.getStudy().serialize();
-      return this.getStudy().updateStudy(newObj, run)
+      return this.getStudy().updateStudy(newObj)
         .then(() => {
           this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(newObj);
         })
@@ -773,7 +773,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
-            this.updateStudyDocument(false);
+            this.updateStudyDocument();
           }
         });
     },

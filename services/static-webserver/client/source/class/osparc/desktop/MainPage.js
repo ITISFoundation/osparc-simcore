@@ -157,7 +157,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboardBtn.setFetching(true);
       if (this.__studyEditor.getStudyChanges().length) {
         // make sure very latest changes are saved
-        await this.__studyEditor.updateStudyDocument(false);
+        await this.__studyEditor.updateStudyDocument();
       }
       this.closeEditor();
       this.__showDashboard();
