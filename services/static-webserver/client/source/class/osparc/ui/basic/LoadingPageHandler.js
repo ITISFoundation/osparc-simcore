@@ -64,9 +64,9 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
       const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - emptyColumnMinWidth) / itemWidth);
       const newWidth = nStudies * itemWidth + 8;
       if (newWidth > this._mainLayout.getMinWidth()) {
-        this._mainLayout.setMaxWidth(newWidth);
+        this._mainLayout.setWidth(newWidth);
       } else {
-        this._mainLayout.setMaxWidth(this._mainLayout.getMinWidth());
+        this._mainLayout.setWidth(this._mainLayout.getMinWidth());
       }
 
       const compactVersion = w < this._mainLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
