@@ -732,7 +732,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             delta[key] = data[1];
           }
         });
-        console.log("delta", delta);
         return delta;
       }
       return [];
@@ -763,10 +762,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__updatingStudy++;
       const studyChanges = this.__getStudyChanges();
-      const newObj = this.getStudy().serialize();
-      return this.getStudy().updateStudy(newObj)
-        .then(() => {
-          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(newObj);
+      console.log("studyChanges", studyChanges);
+      return this.getStudy().patchStudy(studyChanges)
+        .then(studyData => {
+          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
