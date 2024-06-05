@@ -10,7 +10,7 @@ from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
-from ..errors import UndefinedOciImageSpec
+from ..errors import UndefinedOciImageSpecError
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import (
     OSPARC_CONFIG_DIRNAME,
@@ -63,10 +63,10 @@ def create_docker_compose_image_spec(
 
     config_basedir = meta_config_path.parent
 
-    # required
+    # REQUIRED
     meta_cfg = MetadataConfig.from_yaml(meta_config_path)
 
-    # required
+    # REQUIRED
     if docker_compose_overwrite_path:
         docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
             docker_compose_overwrite_path
@@ -76,7 +76,7 @@ def create_docker_compose_image_spec(
             service_name=meta_cfg.service_name()
         )
 
-    # optional
+    # OPTIONAL
     runtime_cfg = None
     if service_config_path:
         try:
@@ -91,11 +91,11 @@ def create_docker_compose_image_spec(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
         )
         if not oci_spec:
-            raise UndefinedOciImageSpec
+            raise UndefinedOciImageSpecError
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
         extra_labels.update(oci_labels)
-    except (FileNotFoundError, UndefinedOciImageSpec):
+    except (FileNotFoundError, UndefinedOciImageSpecError):
         try:
             # if not OCI, try label-schema
             ls_spec = yaml.safe_load(

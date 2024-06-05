@@ -49,6 +49,9 @@ from .yaml_utils import yaml_safe_load
 _logger = logging.getLogger(__name__)
 
 OSPARC_CONFIG_DIRNAME = ".osparc"
+OSPARC_CONFIG_COMPOSE_SPEC_NAME = "docker-compose.overwrite.yml"
+OSPARC_CONFIG_METADATA_NAME = "metadata.yml"
+OSPARC_CONFIG_RUNTIME_NAME = "runtime.yml"
 
 
 SERVICE_KEY_FORMATS = {

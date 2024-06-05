@@ -5,27 +5,37 @@ from typing import Annotated, Final
 import rich
 import typer
 import yaml
-from pydantic import ValidationError
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
+from ..errors import InvalidLabelsError
 from ..osparc_config import (
+    OSPARC_CONFIG_COMPOSE_SPEC_NAME,
     OSPARC_CONFIG_DIRNAME,
+    OSPARC_CONFIG_METADATA_NAME,
+    OSPARC_CONFIG_RUNTIME_NAME,
     DockerComposeOverwriteConfig,
     MetadataConfig,
     RuntimeConfig,
 )
 
 
-class InvalidLabelsError(ValueError):
-    template_msg = "Invalid build labels {build_labels}"
+def _get_labels_or_raise(build_labels) -> dict[str, str]:
+    if isinstance(build_labels, list):
+        return dict(item.strip().split("=") for item in build_labels)
+    if isinstance(build_labels, dict):
+        return build_labels
+    if labels__root__ := build_labels.__root__:
+        assert isinstance(labels__root__, dict)  # nosec
+        return labels__root__
+    raise InvalidLabelsError(build_labels=build_labels)
 
 
 def _create_config_from_compose_spec(
     compose_spec_path: Path,
-    docker_compose_overwrite_path: Path = Path("docker-compose.overwrite.yml"),
-    metadata_path: Path = Path("metadata.yml"),
-    service_specs_path: Path = Path("runtime-spec.yml"),
+    docker_compose_overwrite_path: Path,
+    metadata_path: Path,
+    service_specs_path: Path,
 ):
     rich.print(f"Creating osparc config files from {compose_spec_path}")
 
@@ -58,16 +68,8 @@ def _create_config_from_compose_spec(
                 if build_labels := compose_spec.services[
                     service_name
                 ].build.labels:  # AttributeError if build is str
-                    if isinstance(build_labels, list):
-                        labels = dict(item.strip().split("=") for item in build_labels)
-                    elif isinstance(build_labels, dict):
-                        labels = build_labels
-                    elif labels__root__ := build_labels.__root__:
-                        assert isinstance(labels__root__, dict)  # nosec
-                        labels = labels__root__
-                    else:
-                        raise InvalidLabelsError(build_labels=build_labels)
 
+                    labels: dict[str, str] = _get_labels_or_raise(build_labels)
                     meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
 
@@ -87,7 +89,6 @@ def _create_config_from_compose_spec(
 
             except (  # noqa: PERF203
                 AttributeError,
-                ValidationError,
                 TypeError,
                 ValueError,
             ) as err:
@@ -113,11 +114,10 @@ def create_config(
     ] = Path("docker-compose.yml"),
 ):
     """Creates osparc configuration folder from a complete docker compose-spec"""
-    # TODO: sync defaults among CLI commands
     config_dir = from_spec_file.parent / OSPARC_CONFIG_DIRNAME
-    project_cfg_path = config_dir / "docker-compose.overwrite.yml"
-    meta_cfg_path = config_dir / "metadata.yml"
-    runtime_cfg_path = config_dir / "runtime.yml"
+    project_cfg_path = config_dir / OSPARC_CONFIG_COMPOSE_SPEC_NAME
+    meta_cfg_path = config_dir / OSPARC_CONFIG_METADATA_NAME
+    runtime_cfg_path = config_dir / OSPARC_CONFIG_RUNTIME_NAME
 
     meta_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)

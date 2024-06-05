@@ -9,5 +9,9 @@ class ConfigNotFoundError(ServiceIntegrationError):
     msg_template = "could not find any osparc config under {basedir}"
 
 
-class UndefinedOciImageSpec(ServiceIntegrationError):
+class UndefinedOciImageSpecError(ServiceIntegrationError):
     ...
+
+
+class InvalidLabelsError(PydanticErrorMixin, ValueError):
+    template_msg = "Invalid build labels {build_labels}"
