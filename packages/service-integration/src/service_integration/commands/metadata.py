@@ -1,4 +1,3 @@
-import json
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -78,4 +77,3 @@ def get_version(
     # VERSION: $(METADATA)
     #    @simcore-service-integrator get-version --metadata-file $< > $@
     rich.print(current_version, end="")
-

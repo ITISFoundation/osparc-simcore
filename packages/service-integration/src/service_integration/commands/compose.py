@@ -131,7 +131,11 @@ def create_docker_compose_image_spec(
     )
 
 
-def main(
+compose_spec_app = typer.Typer()
+
+
+@compose_spec_app.command(name="create")
+def create_compose(
     ctx: typer.Context,
     config_path: Annotated[
         Path,

@@ -98,7 +98,11 @@ def create_config_from_compose_spec(
         rich.print("osparc config files created")
 
 
-def main(
+config_app = typer.Typer()
+
+
+@config_app.command(name="create")
+def create_config(
     from_spec_file: Annotated[
         Path,
         typer.Option(
@@ -124,6 +128,17 @@ def main(
     )
 
 
-if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()
+@config_app.command(name="init")
+def init_config(
+    template: Annotated[
+        str, typer.Option(help="github repo or path to the template")
+    ] = "gh:pcrespov/cookiecutter-osparc-service",
+):
+    """runs cookie-cutter"""
+    from cookiecutter.main import cookiecutter
+
+    # The context or checkout value
+    checkout = "is1404/new-version_display"
+
+    # Execute the cookiecutter command
+    cookiecutter(template, checkout=checkout)

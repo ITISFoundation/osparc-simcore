@@ -6,7 +6,8 @@ import rich
 import typer
 
 from ._meta import __version__
-from .commands import compose, config, metadata, run_creator, test
+from .commands import compose, metadata, run_creator, test
+from .commands.config import config_app
 from .settings import AppSettings
 
 app = typer.Typer()
@@ -58,13 +59,19 @@ def main(
     ctx.settings = AppSettings.parse_obj(overrides)
 
 
-# new
-app.command("compose")(compose.main)
-app.command("config")(config.main)
-app.command("test")(test.main)
+app.command("compose")(compose.create_compose)
+app.add_typer(config_app, name="config")
+app.command("test")(test.run_tests)
 
 
 # legacy
+
 app.command("bump-version")(metadata.bump_version)
 app.command("get-version")(metadata.get_version)
 app.command("run-creator")(run_creator.main)
+
+# Display help message for compose as an alias
+@app.callback(invoke_without_command=True)
+def callback(ctx: typer.Context):
+    if ctx.invoked_subcommand is None:
+        typer.echo("Use --help for more information on specific commands.")

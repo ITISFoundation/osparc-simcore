@@ -6,8 +6,11 @@ import typer
 
 from ..service import pytest_runner
 
+test_app = typer.Typer()
 
-def main(
+
+@test_app.command("run")
+def run_tests(
     service_dir: Annotated[
         Path, typer.Argument(help="Root directory of the service under test")
     ],
