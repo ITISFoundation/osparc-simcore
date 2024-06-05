@@ -595,10 +595,16 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
-    patchStudy: function(fieldKey, value) {
+    patchStudy: function(studyChanges) {
       return new Promise((resolve, reject) => {
         const patchData = {};
-        patchData[fieldKey] = value;
+        studyChanges.forEach(studyChange => {
+          const {
+            fieldKey,
+            value
+          } = studyChange;
+          patchData[fieldKey] = value;
+        });
         const params = {
           url: {
             "studyId": this.getUuid()
@@ -607,9 +613,15 @@ qx.Class.define("osparc.data.model.Study", {
         };
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
-            const upKey = qx.lang.String.firstUp(fieldKey);
-            const setter = "set" + upKey;
-            this[setter](value);
+            studyChanges.forEach(studyChange => {
+              const {
+                fieldKey,
+                value
+              } = studyChange;
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const setter = "set" + upKey;
+              this[setter](value);
+            });
             // A bit hacky, but it's not sent back to the backend
             this.set({
               lastChangeDate: new Date()
