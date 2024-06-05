@@ -128,17 +128,17 @@ def create_config(
     )
 
 
+_COOKIECUTTER_GITHUB_URL = "gh:itisfoundation/cookiecutter-osparc-service"
+
+
 @config_app.command(name="init")
 def init_config(
     template: Annotated[
-        str, typer.Option(help="github repo or path to the template")
-    ] = "gh:pcrespov/cookiecutter-osparc-service",
+        str, typer.Option(help="Github repo or path to the template")
+    ] = _COOKIECUTTER_GITHUB_URL,
+    checkout: Annotated[str, typer.Option(help="Branch if different from main")] = None,
 ):
     """runs cookie-cutter"""
     from cookiecutter.main import cookiecutter
 
-    # The context or checkout value
-    checkout = "is1404/new-version_display"
-
-    # Execute the cookiecutter command
     cookiecutter(template, checkout=checkout)
