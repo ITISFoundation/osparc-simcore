@@ -144,10 +144,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
         backgroundColor: "background-main-3"
       });
-      instructionsBtn.addListener("appear", () => {
-        osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3);
-        this.__openInstructions();
-      });
+      instructionsBtn.addListener("appear", () => this.__openInstructions(), this);
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
 
@@ -264,7 +261,10 @@ qx.Class.define("osparc.node.BaseNodeView", {
         win.getContentElement().setStyles({
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
-        win.addListener("close", () => this.__instructionsWindow = null, this);
+        win.addListener("close", () => {
+          this.__instructionsWindow = null;
+          osparc.utils.Utils.makeButtonBlink(this.__instructionsBtn, 2);
+        }, this);
       }
     },
 
