@@ -44,6 +44,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     this.__studyDataToModel(studyData);
 
+    this.getWorkbench().setStudy(this);
+
     this.__buildWorkbench();
   },
 
@@ -298,29 +300,42 @@ qx.Class.define("osparc.data.model.Study", {
      * @param studyData {Object} Object containing the (total or partial) serialized Study Data
      */
     __studyDataToModel: function(studyData) {
-      this.set({
-        uuid: studyData.uuid || this.getUuid(),
-        name: studyData.name || this.getName(),
-        description: studyData.description || this.getDescription(),
-        thumbnail: studyData.thumbnail || this.getThumbnail(),
-        prjOwner: studyData.prjOwner || this.getPrjOwner(),
-        accessRights: studyData.accessRights || this.getAccessRights(),
-        creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
-        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
-        classifiers: studyData.classifiers || this.getClassifiers(),
-        tags: studyData.tags || this.getTags(),
-        state: studyData.state || this.getState(),
-        quality: studyData.quality || this.getQuality(),
-        permalink: studyData.permalink || this.getPermalink(),
-        dev: studyData.dev || this.getDev()
+      [
+        "uuid",
+        "name",
+        "description",
+        "thumbnail",
+        "accessRights",
+        "classifiers",
+        "tags",
+        "state",
+        "quality",
+        "permalink",
+        "dev"
+      ].forEach(sameKey => {
+        if (sameKey in studyData) {
+          this.set({
+            [sameKey]: studyData[sameKey],
+          });
+        }
       });
 
-      const wbData = studyData.workbench || this.getWorkbench();
-      const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
-      this.setWorkbench(workbench);
-      workbench.setStudy(this);
+      if ("creationDate" in studyData) {
+        this.set({
+          "creationDate": new Date(studyData.creationDate)
+        });
+      }
+      if ("lastChangeDate" in studyData) {
+        this.set({
+          "lastChangeDate": new Date(studyData.lastChangeDate)
+        });
+      }
 
-      this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+      const workbench = new osparc.data.model.Workbench(studyData.workbench, studyData.ui);
+      this.setWorkbench(workbench);
+
+      const workbenchUi = new osparc.data.model.StudyUI(studyData.ui);
+      this.setUi(workbenchUi);
     },
 
     serialize: function(clean = true) {
