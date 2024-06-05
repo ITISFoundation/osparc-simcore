@@ -21,7 +21,7 @@ class InvalidLabelsError(ValueError):
     template_msg = "Invalid build labels {build_labels}"
 
 
-def create_config_from_compose_spec(
+def _create_config_from_compose_spec(
     compose_spec_path: Path,
     docker_compose_overwrite_path: Path = Path("docker-compose.overwrite.yml"),
     metadata_path: Path = Path("metadata.yml"),
@@ -123,7 +123,7 @@ def create_config(
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     rich.print(f"Creating {config_dir} from {from_spec_file} ...")
 
-    create_config_from_compose_spec(
+    _create_config_from_compose_spec(
         from_spec_file, project_cfg_path, meta_cfg_path, runtime_cfg_path
     )
 

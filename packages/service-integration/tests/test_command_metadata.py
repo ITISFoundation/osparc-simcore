@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from service_integration.cli.metadata import TargetVersionChoices
+from service_integration.cli._metadata import TargetVersionChoices
 
 
 @pytest.fixture

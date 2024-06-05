@@ -151,7 +151,7 @@ def create_compose(
         ),
     ] = Path("docker-compose.yml"),
 ):
-    """create docker image/runtime compose-specs from an osparc config"""
+    """Creates the docker image/runtime compose-spec file from an .osparc config"""
 
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
