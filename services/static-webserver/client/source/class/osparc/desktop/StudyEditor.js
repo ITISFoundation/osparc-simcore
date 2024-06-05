@@ -756,7 +756,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__updatingStudy++;
       const studyChanges = this.__getStudyChanges();
-      return this.getStudy().patchStudy(studyChanges)
+      return this.getStudy().patchStudyDelayed(studyChanges)
         .then(studyData => {
           this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
         })

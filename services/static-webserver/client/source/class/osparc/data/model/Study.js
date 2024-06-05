@@ -625,7 +625,7 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
-    patchStudy2: function(studyChanges) {
+    patchStudyDelayed: function(studyChanges) {
       return new Promise((resolve, reject) => {
         const promises = [];
         let workbenchChanges = {};
