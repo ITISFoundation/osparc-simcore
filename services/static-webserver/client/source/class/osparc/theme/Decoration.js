@@ -318,7 +318,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         width: 1,
         radius: 8,
-        color: "strong-main"
+        color: "transparent"
       }
     },
 
