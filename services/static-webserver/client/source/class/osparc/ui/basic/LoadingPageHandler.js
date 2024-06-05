@@ -37,8 +37,9 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
 
     const padding = osparc.dashboard.Dashboard.PADDING;
     const leftColumnWidth = this.self().SIDE_SPACER_WIDTH;
-    const rightColumnMinWidth = 50;
+    const emptyColumnMinWidth = 50;
     const spacing = 20;
+    const mainLayoutsScroll = 8;
 
     this.__mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     stack.add(this.__mainLayoutWithSides);
@@ -57,16 +58,20 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     });
 
     const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-    this._mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
+    this._mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + mainLayoutsScroll);
     const fitResourceCards = () => {
       const w = document.documentElement.clientWidth;
-      const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - rightColumnMinWidth) / itemWidth);
+      const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - emptyColumnMinWidth) / itemWidth);
       const newWidth = nStudies * itemWidth + 8;
       if (newWidth > this._mainLayout.getMinWidth()) {
         this._mainLayout.setMaxWidth(newWidth);
       } else {
         this._mainLayout.setMaxWidth(this._mainLayout.getMinWidth());
       }
+
+      const compactVersion = w < this._mainLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
+      this.__leftColum.setVisibility(compactVersion ? "excluded" : "visible");
+      rightColum.setVisibility(compactVersion ? "excluded" : "visible");
     };
     fitResourceCards();
     window.addEventListener("resize", () => fitResourceCards());
