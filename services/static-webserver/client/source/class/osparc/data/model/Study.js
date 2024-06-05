@@ -42,29 +42,7 @@ qx.Class.define("osparc.data.model.Study", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this.set({
-      uuid: studyData.uuid || this.getUuid(),
-      name: studyData.name || this.getName(),
-      description: studyData.description || this.getDescription(),
-      thumbnail: studyData.thumbnail || this.getThumbnail(),
-      prjOwner: studyData.prjOwner || this.getPrjOwner(),
-      accessRights: studyData.accessRights || this.getAccessRights(),
-      creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
-      lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
-      classifiers: studyData.classifiers || this.getClassifiers(),
-      tags: studyData.tags || this.getTags(),
-      state: studyData.state || this.getState(),
-      quality: studyData.quality || this.getQuality(),
-      permalink: studyData.permalink || this.getPermalink(),
-      dev: studyData.dev || this.getDev()
-    });
-
-    const wbData = studyData.workbench || this.getWorkbench();
-    const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
-    this.setWorkbench(workbench);
-    workbench.setStudy(this);
-
-    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+    this.__studyDataToModel(studyData);
 
     this.__buildWorkbench();
   },
@@ -316,6 +294,35 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
+    /**
+     * @param studyData {Object} Object containing the (total or partial) serialized Study Data
+     */
+    __studyDataToModel: function(studyData) {
+      this.set({
+        uuid: studyData.uuid || this.getUuid(),
+        name: studyData.name || this.getName(),
+        description: studyData.description || this.getDescription(),
+        thumbnail: studyData.thumbnail || this.getThumbnail(),
+        prjOwner: studyData.prjOwner || this.getPrjOwner(),
+        accessRights: studyData.accessRights || this.getAccessRights(),
+        creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
+        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
+        classifiers: studyData.classifiers || this.getClassifiers(),
+        tags: studyData.tags || this.getTags(),
+        state: studyData.state || this.getState(),
+        quality: studyData.quality || this.getQuality(),
+        permalink: studyData.permalink || this.getPermalink(),
+        dev: studyData.dev || this.getDev()
+      });
+
+      const wbData = studyData.workbench || this.getWorkbench();
+      const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
+      this.setWorkbench(workbench);
+      workbench.setStudy(this);
+
+      this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+    },
+
     __buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
