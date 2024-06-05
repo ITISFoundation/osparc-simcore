@@ -601,9 +601,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this.__addSortByButton();
-      this.__addShowSharedWithButton();
       this._addViewModeButton();
 
+      this._addResourceFilter();
 
       this.__addNewStudyButtons();
 
