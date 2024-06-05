@@ -400,10 +400,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __patchStudy: function(fieldKey, value) {
-      this.getStudy().patchStudy([{
-        fieldKey,
-        value
-      }])
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);

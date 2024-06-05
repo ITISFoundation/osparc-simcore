@@ -597,14 +597,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     patchStudy: function(studyChanges) {
       return new Promise((resolve, reject) => {
-        const patchData = {};
-        studyChanges.forEach(studyChange => {
-          const {
-            fieldKey,
-            value
-          } = studyChange;
-          patchData[fieldKey] = value;
-        });
+        const patchData = studyChanges;
         const params = {
           url: {
             "studyId": this.getUuid()

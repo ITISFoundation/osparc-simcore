@@ -197,10 +197,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         const newVal = e.getData();
         const devObjCopy = osparc.utils.Utils.deepCloneObject(devObj);
         devObjCopy["disableServiceAutoStart"] = !newVal;
-        study.patchStudy([{
-          fieldKey: "dev",
-          value: devObjCopy
-        }]);
+        study.patchStudy({"dev": devObjCopy});
       });
       return cb;
     },
