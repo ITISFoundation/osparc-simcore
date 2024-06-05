@@ -11,13 +11,16 @@ class ServiceBootType(str, Enum):
 @functools.total_ordering
 @unique
 class ServiceState(Enum):
+    FAILED = "failed"
+
     PENDING = "pending"
     PULLING = "pulling"
     STARTING = "starting"
     RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
+
     STOPPING = "stopping"
+
+    COMPLETE = "complete"
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
