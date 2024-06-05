@@ -5,10 +5,10 @@ from typing import Annotated
 import rich
 import typer
 
-from ._meta import __version__
-from .commands import compose, metadata, run_creator, test
-from .commands.config import config_app
-from .settings import AppSettings
+from .._meta import __version__
+from ..settings import AppSettings
+from . import compose, metadata, run_creator, test
+from .config import config_app
 
 app = typer.Typer()
 
