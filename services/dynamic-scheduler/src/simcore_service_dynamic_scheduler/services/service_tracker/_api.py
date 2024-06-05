@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from typing import Final
 
+import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
@@ -9,7 +10,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from servicelib.deferred_tasks import TaskUID
 
-from ._models import TrackedServiceModel, UserRequestedState
+from ._models import SchedulerServiceState, TrackedServiceModel, UserRequestedState
 from ._setup import get_tracker
 from ._tracker import Tracker
 
@@ -18,6 +19,7 @@ _logger = logging.getLogger(__name__)
 
 _LOW_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _NORMAL_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=5)
+_MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES: Final[timedelta] = timedelta(seconds=60)
 
 
 async def _set_requested_state(
@@ -42,7 +44,7 @@ async def set_request_as_stopped(app: FastAPI, node_id: NodeID) -> None:
     await _set_requested_state(app, node_id, UserRequestedState.STOPPED)  # type: ignore
 
 
-def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
+def __get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
     # Attributes where to find the state
     # NodeGet -> service_state
     # DynamicServiceGet -> state
@@ -50,14 +52,52 @@ def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> tim
     state_key = "state" if isinstance(status, DynamicServiceGet) else "service_state"
 
     state: ServiceState | str = getattr(status, state_key)
-    state_str: str = state.value if isinstance(state, ServiceState) else state
+    return state.value if isinstance(state, ServiceState) else state
 
-    if state_str != "running":
+
+def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
+    if __get_state_str(status) != "running":
         return _LOW_RATE_POLL_INTERVAL
 
     return _NORMAL_RATE_POLL_INTERVAL
 
 
+def _get_current_state(
+    requested_sate: UserRequestedState,
+    status: NodeGet | DynamicServiceGet | NodeGetIdle,
+) -> SchedulerServiceState:
+    """
+    Computes the `SchedulerServiceState` used internally by the scheduler
+    to decide about a service's future.
+    """
+
+    if isinstance(status, NodeGetIdle):
+        return SchedulerServiceState.IDLE
+
+    service_state: ServiceState = ServiceState(__get_state_str(status))
+
+    if requested_sate == UserRequestedState.RUNNING:
+        if service_state == ServiceState.RUNNING:
+            return SchedulerServiceState.RUNNING
+
+        if ServiceState.PENDING <= service_state <= ServiceState.STARTING:
+            return SchedulerServiceState.STARTING
+
+        if service_state < ServiceState.PENDING or service_state > ServiceState.RUNNING:
+            return SchedulerServiceState.UNEXPECTED_OUTCOME
+
+    if requested_sate == UserRequestedState.STOPPED:
+        if service_state >= ServiceState.RUNNING:
+            return SchedulerServiceState.STOPPING
+
+        if service_state < ServiceState.RUNNING:
+            return SchedulerServiceState.UNEXPECTED_OUTCOME
+
+    msg = f"Could not determine current_state from: '{requested_sate=}', '{status=}'"
+    raise TypeError(msg)
+
+
+# TODO: remove below, not used
 async def set_new_status(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> None:
@@ -75,6 +115,65 @@ async def set_new_status(
     model.set_check_status_after_to(_get_poll_interval(status))
     model.service_status_task_uid = None
     await tracker.save(node_id, model)
+
+
+async def set_if_status_changed(
+    app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
+) -> bool:
+    tracker: Tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    if model is None:
+        _logger.info(
+            "Could not find a %s entry for node_id %s: skipping set_new_status",
+            TrackedServiceModel.__name__,
+            node_id,
+        )
+        return False
+
+    # set new polling interval in the future
+    model.set_check_status_after_to(_get_poll_interval(status))
+    model.service_status_task_uid = None
+
+    # check if model changed
+    json_status = status.json()
+    if model.service_status != json_status:
+        model.service_status = json_status
+        model.current_state = _get_current_state(model.requested_sate, status)
+        await tracker.save(node_id, model)
+        return True
+
+    return False
+
+
+async def can_notify_frontend(
+    app: FastAPI, node_id: NodeID, *, status_changed: bool
+) -> bool:
+    """
+    Checks if it's time to notify the frontend.
+    The frontend will be notified at regular intervals and on changes
+    Avoids sending too many updates.
+    """
+    tracker: Tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    if model is None:
+        _logger.info(
+            "Could not find a %s entry for node_id %s: skipping set_new_status",
+            TrackedServiceModel.__name__,
+            node_id,
+        )
+        return False
+
+    if status_changed:
+        return True
+
+    # check if too much time has passed since the last time an update was sent
+    current_timestamp = arrow.utcnow().timestamp()
+    if (
+        current_timestamp - model.last_status_notification
+    ) > _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES.total_seconds():
+        return True
+
+    return False
 
 
 async def set_check_status_after_to(
