@@ -601,6 +601,32 @@ qx.Class.define("osparc.data.model.Study", {
 
     patchStudy: function(studyChanges) {
       return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: studyChanges
+        };
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            Object.keys(studyChanges).forEach(fieldKey => {
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const setter = "set" + upKey;
+              this[setter](studyChanges[fieldKey]);
+            })
+            // A bit hacky, but it's not sent back to the backend
+            this.set({
+              lastChangeDate: new Date()
+            });
+            const studyData = this.serialize();
+            resolve(studyData);
+          })
+          .catch(err => reject(err));
+      });
+    },
+
+    patchStudy2: function(studyChanges) {
+      return new Promise((resolve, reject) => {
         const promises = [];
         let workbenchChanges = {};
         if ("workbench" in studyChanges) {
