@@ -64,8 +64,6 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
 
         _logger.debug("Received status for service '%s': '%s'", node_id, result)
 
-        # TODO: figure out if this needs to be an atomic change in the Redis DB
-        # set & notify
         status_changed: bool = await set_if_status_changed(app, node_id, result)
         if await can_notify_frontend(app, node_id, status_changed=status_changed):
             await notify_frontend(app, node_id, result)

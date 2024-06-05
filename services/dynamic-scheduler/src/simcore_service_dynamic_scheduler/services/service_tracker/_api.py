@@ -100,11 +100,12 @@ def _get_current_state(
 async def set_if_status_changed(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> bool:
+    """returns ``True`` if the tracker detected a status change"""
     tracker: Tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_new_status",
+            "Could not find a %s entry for node_id %s: skipping set_if_status_changed",
             TrackedServiceModel.__name__,
             node_id,
         )
@@ -136,11 +137,6 @@ async def can_notify_frontend(
     tracker: Tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_new_status",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
         return False
 
     if status_changed:
@@ -163,7 +159,7 @@ async def set_check_status_after_to(
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_new_status",
+            "Could not find a %s entry for node_id %s: skipping set_check_status_after_to",
             TrackedServiceModel.__name__,
             node_id,
         )
