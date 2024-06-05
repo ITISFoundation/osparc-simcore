@@ -38,8 +38,35 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
     deltaToPatchObj: function(delta) {
       // keep only the new value
-      // JsonDiffPatch returns {key: key2: key3: [old_value, ney_value]}
-      // And we want {key: key2: key3: ney_value}
+      /**
+       * JsonDiffPatch returns something like
+       * {
+       *  key1: {
+       *    key2: {
+       *      key3: [old_value, new_value]
+       *    }
+       *  },
+       *  key4: {
+       *    key5: {
+       *      key6: [old_value, new_value]
+       *    }
+       *  }
+       * }
+       *
+       * While we want {key: key2: key3: ney_value}
+       * {
+       *  key1: {
+       *    key2: {
+       *      key3: new_value
+       *    }
+       *  },
+       *  key4: {
+       *    key5: {
+       *      key6: new_value
+       *    }
+       *  }
+       * }
+       */
       Object.entries(delta).forEach(([key, data]) => {
         if (data.length > 1) {
           delta[key] = data[1];
