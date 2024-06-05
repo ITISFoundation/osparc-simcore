@@ -247,7 +247,8 @@ qx.Class.define("osparc.node.BaseNodeView", {
         const descView = new osparc.ui.markdown.Markdown().set({
           value: desc,
           padding: 3,
-          noMargin: true
+          noMargin: true,
+          font: "text-14"
         });
         const scrollContainer = new qx.ui.container.Scroll();
         scrollContainer.add(descView);
