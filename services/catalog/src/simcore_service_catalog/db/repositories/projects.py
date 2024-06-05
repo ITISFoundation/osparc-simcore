@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from ..tables import ProjectType, projects
 from ._base import BaseRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ProjectsRepository(BaseRepository):
@@ -17,7 +17,7 @@ class ProjectsRepository(BaseRepository):
             async for row in await conn.stream(
                 sa.select(projects).where(
                     (projects.c.type == ProjectType.TEMPLATE)
-                    & (projects.c.published == True)
+                    & (projects.c.published.is_(True))
                 )
             ):
                 project_workbench = row.workbench
@@ -32,7 +32,7 @@ class ProjectsRepository(BaseRepository):
                             continue
                         list_of_published_services.append(ServiceKeyVersion(**service))
                     except ValidationError:
-                        logger.warning(
+                        _logger.warning(
                             "service %s could not be validated", service, exc_info=True
                         )
                         continue
