@@ -1154,6 +1154,47 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "chip-button": {
+      include: "material-button",
+      style: () => ({
+        iconPosition: "right",
+        textColor: "text",
+        alignY: "middle",
+        paddingRight: 6,
+        paddingLeft: 6,
+        maxHeight: 26,
+        maxWidth: 260,
+        decorator: "chip-button"
+      })
+    },
+
+    "filter-toggle-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: states => ({
+        font: "text-13",
+        textColor: "text",
+        padding: 6,
+        gap: 8,
+        decorator: (states.hovered || states.pressed || states.checked) ? "filter-toggle-button-selected" : "filter-toggle-button"
+      })
+    },
+
+    "filter-toggle-button/label": {
+      include: "material-button/label",
+      style: () => ({
+        textColor: "text"
+      })
+    },
+
+    "filter-toggle-button/icon": {
+      include: "material-button/icon",
+      style: () => ({
+        width: 25,
+        scale: true
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       virtual overrides
