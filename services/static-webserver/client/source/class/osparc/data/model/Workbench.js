@@ -694,21 +694,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __getAveragePosition: function(nodes) {
-      let avgX = 0;
-      let avgY = 0;
-      nodes.forEach(node => {
-        avgX += node.getPosition().x;
-        avgY += node.getPosition().y;
-      });
-      avgX /= nodes.length;
-      avgY /= nodes.length;
-      return {
-        x: avgX,
-        y: avgY
-      };
-    },
-
     serialize: function(clean = true) {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
@@ -745,6 +730,29 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       }
       return workbenchUI;
+    },
+
+    patchWorkbench: function(workbenchChanges) {
+      return new Promise((resolve, reject) => {
+        console.log("workbenchChanges", workbenchChanges);
+        const promises = [];
+        Object.keys(workbenchChanges).forEach(nodeId => {
+          const params = {
+            url: {
+              "studyId": this.getStudy().getUuid(),
+              "nodeId": nodeId
+            },
+            data: workbenchChanges
+          };
+          promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+        })
+        Promise.all(promises)
+          .then(() => {
+            const workbenchData = this.serialize();
+            resolve(workbenchData);
+          })
+          .catch(err => reject(err));
+      });
     }
   }
 });

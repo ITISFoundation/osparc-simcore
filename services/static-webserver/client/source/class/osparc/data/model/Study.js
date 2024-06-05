@@ -601,12 +601,20 @@ qx.Class.define("osparc.data.model.Study", {
 
     patchStudy: function(studyChanges) {
       return new Promise((resolve, reject) => {
-        const patchData = studyChanges;
+        const promises = [];
+        let workbenchChanges = {};
+        if ("workbench" in studyChanges) {
+          workbenchChanges = studyChanges["workbench"];
+          promises.push(this.getWorkbench().patchWorkbench(workbenchChanges));
+          delete studyChanges["workbench"];
+        }
+        console.log("studyChanges", studyChanges);
+        console.log("workbenchChanges", workbenchChanges);
         const params = {
           url: {
             "studyId": this.getUuid()
           },
-          data: patchData
+          data: studyChanges
         };
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
