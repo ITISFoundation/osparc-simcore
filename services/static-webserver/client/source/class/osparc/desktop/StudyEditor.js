@@ -722,19 +722,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
       if (delta) {
-        let deltaKeys = Object.keys(delta);
         // lastChangeDate and creationDate should not be taken into account as data change
-        [
-          "creationDate",
-          "lastChangeDate"
-        ].forEach(prop => {
-          const index = deltaKeys.indexOf(prop);
-          if (index > -1) {
-            deltaKeys.splice(index, 1);
-          }
-        });
-
-        return deltaKeys;
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        const deltaKeys = Object.keys(delta);
+        if (deltaKeys.length) {
+          console.log("delta", delta);
+          return deltaKeys;
+        }
       }
       return [];
     },
