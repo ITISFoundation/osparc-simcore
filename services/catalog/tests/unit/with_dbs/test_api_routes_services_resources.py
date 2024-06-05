@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import urllib.parse
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from random import choice, randint
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -37,15 +38,13 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mock_director_service_labels(
-    director_mockup: respx.MockRouter, app: FastAPI
+    mocked_director_service_api: respx.MockRouter, app: FastAPI
 ) -> Route:
     slash = urllib.parse.quote_plus("/")
-    mock_route = director_mockup.get(
+    return mocked_director_service_api.get(
         url__regex=rf"v0/services/simcore{slash}services{slash}(comp|dynamic|frontend)({slash}[\w{slash}-]+)+/[0-9]+.[0-9]+.[0-9]+/labels",
         name="get_service_labels",
     ).respond(200, json={"data": {}})
-
-    return mock_route
 
 
 @pytest.fixture
@@ -183,7 +182,7 @@ class _ServiceResourceParams:
     ],
 )
 async def test_get_service_resources(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
@@ -209,7 +208,7 @@ async def test_get_service_resources(
 
 @pytest.fixture
 def create_mock_director_service_labels(
-    director_mockup: respx.MockRouter, app: FastAPI
+    mocked_director_service_api: respx.MockRouter, app: FastAPI
 ) -> Callable:
     def factory(services_labels: dict[str, dict[str, Any]]) -> None:
         for service_name, data in services_labels.items():
@@ -217,7 +216,7 @@ def create_mock_director_service_labels(
                 f"simcore/services/dynamic/{service_name}"
             )
             for k, mock_key in enumerate((encoded_key, service_name)):
-                director_mockup.get(
+                mocked_director_service_api.get(
                     url__regex=rf"v0/services/{mock_key}/[\w/.]+/labels",
                     name=f"get_service_labels_for_{service_name}_{k}",
                 ).respond(200, json={"data": data})
@@ -287,7 +286,7 @@ def create_mock_director_service_labels(
     ],
 )
 async def test_get_service_resources_sim4life_case(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
@@ -307,7 +306,7 @@ async def test_get_service_resources_sim4life_case(
 
 
 async def test_get_service_resources_raises_errors(
-    mock_catalog_background_task,
+    mocked_catalog_background_task,
     mock_director_service_labels: Route,
     client: TestClient,
 ) -> None:
