@@ -24,7 +24,6 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
     remove_tracked,
     set_check_status_after_to,
     set_if_status_changed,
-    set_new_status,
     set_request_as_running,
     set_request_as_stopped,
     set_service_status_task_uid,
@@ -97,30 +96,6 @@ async def test_services_tracer_workflow(
         max_concurrency=100,
     )
     assert len(await get_all_tracked(app)) == item_count * 2
-
-
-@pytest.mark.parametrize(
-    "status",
-    [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
-        *[
-            DynamicServiceGet.parse_obj(x)
-            for x in DynamicServiceGet.Config.schema_extra["examples"]
-        ],
-        NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
-    ],
-)
-async def test_set_new_status(
-    app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
-):
-    await set_request_as_running(app, node_id)
-
-    await set_new_status(app, node_id, status)
-
-    model = await get_tracked(app, node_id)
-    assert model
-
-    assert model.service_status == status.json()
 
 
 @pytest.mark.parametrize(

@@ -97,26 +97,6 @@ def _get_current_state(
     raise TypeError(msg)
 
 
-# TODO: remove below, not used
-async def set_new_status(
-    app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
-) -> None:
-    tracker: Tracker = get_tracker(app)
-    model: TrackedServiceModel | None = await tracker.load(node_id)
-    if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_new_status",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
-        return
-
-    model.service_status = status.json()
-    model.set_check_status_after_to(_get_poll_interval(status))
-    model.service_status_task_uid = None
-    await tracker.save(node_id, model)
-
-
 async def set_if_status_changed(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> bool:
