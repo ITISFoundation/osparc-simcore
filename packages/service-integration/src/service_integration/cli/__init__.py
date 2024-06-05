@@ -7,7 +7,7 @@ import typer
 
 from .._meta import __version__
 from ..settings import AppSettings
-from . import _compose, _metadata, _run_creator, _test
+from . import _compose_spec, _metadata, _run_creator, _test
 from ._config import config_app
 
 app = typer.Typer()
@@ -63,7 +63,7 @@ def main(
 # REGISTER commands and/or sub-apps
 #
 
-app.command("compose")(_compose.create_compose)
+app.command("compose")(_compose_spec.create_compose)
 app.add_typer(config_app, name="config", help="Manage osparc config files")
 app.command("test")(_test.run_tests)
 # legacy

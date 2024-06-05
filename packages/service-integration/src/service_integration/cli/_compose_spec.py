@@ -1,5 +1,5 @@
+import datetime
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -10,6 +10,7 @@ from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
+from ..errors import UndefinedOciImageSpec
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import (
     OSPARC_CONFIG_DIRNAME,
@@ -79,7 +80,6 @@ def create_docker_compose_image_spec(
     runtime_cfg = None
     if service_config_path:
         try:
-            # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
         except FileNotFoundError:
             rich.print("No runtime config found (optional), using default.")
@@ -91,13 +91,11 @@ def create_docker_compose_image_spec(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
         )
         if not oci_spec:
-            msg = "Undefined OCI image spec"
-            raise ValueError(msg)
+            raise UndefinedOciImageSpec
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
         extra_labels.update(oci_labels)
-    except (FileNotFoundError, ValueError):
-
+    except (FileNotFoundError, UndefinedOciImageSpec):
         try:
             # if not OCI, try label-schema
             ls_spec = yaml.safe_load(
@@ -110,9 +108,9 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.datetime.now(
+        datetime.timezone.utc
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
@@ -153,7 +151,6 @@ def create_compose(
 ):
     """Creates the docker image/runtime compose-spec file from an .osparc config"""
 
-    # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
         msg = "Invalid path to metadata file or folder"
         raise typer.BadParameter(msg)
@@ -173,10 +170,10 @@ def create_compose(
         config_name = meta_config.parent.name
         configs_kwargs_map[config_name] = {}
 
-        # load meta [required]
+        # load meta REQUIRED
         configs_kwargs_map[config_name]["meta_config_path"] = meta_config
 
-        # others [optional]
+        # others OPTIONAL
         for file_name, arg_name in (
             ("docker-compose.overwrite.yml", "docker_compose_overwrite_path"),
             ("runtime.yml", "service_config_path"),
@@ -199,7 +196,6 @@ def create_compose(
             settings, **configs_kwargs_map[config_name]
         ).dict(exclude_unset=True)
 
-        # FIXME: shaky! why first decides ??
         if n == 0:
             compose_spec_dict = nth_compose_spec
         else:
