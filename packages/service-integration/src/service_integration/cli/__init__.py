@@ -69,4 +69,4 @@ app.command("test")(_test.run_tests)
 # legacy
 app.command("bump-version")(_metadata.bump_version)
 app.command("get-version")(_metadata.get_version)
-app.command("run-creator")(_run_creator.main)
+app.command("run-creator")(_run_creator.run_creator)

@@ -5,7 +5,7 @@ from typing import Annotated
 import typer
 import yaml
 
-from ..osparc_config import OSPARC_CONFIG_DIRNAME
+from ..osparc_config import OSPARC_CONFIG_DIRNAME, OSPARC_CONFIG_METADATA_NAME
 
 
 def get_input_config(metadata_file: Path) -> dict:
@@ -17,7 +17,7 @@ def get_input_config(metadata_file: Path) -> dict:
     return inputs
 
 
-def main(
+def run_creator(
     run_script_file_path: Annotated[
         Path,
         typer.Option(
@@ -31,7 +31,7 @@ def main(
             "--metadata",
             help="The metadata yaml of the node",
         ),
-    ] = Path(f"{OSPARC_CONFIG_DIRNAME}/metadata.yml"),
+    ] = Path(f"{OSPARC_CONFIG_DIRNAME}/{OSPARC_CONFIG_METADATA_NAME}"),
 ):
     """Creates a sh script that uses jq tool to retrieve variables
     to use in sh from a json file for use in an osparc service (legacy).
@@ -84,8 +84,3 @@ exec execute.sh
     run_script_file_path.write_text(shell_script)
     st = run_script_file_path.stat()
     run_script_file_path.chmod(st.st_mode | stat.S_IEXEC)
-
-
-if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()
