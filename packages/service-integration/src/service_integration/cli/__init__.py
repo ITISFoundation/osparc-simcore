@@ -45,7 +45,7 @@ def main(
         ),
     ] = False,
 ):
-    """o2s2parc service integration library"""
+    """o2s2parc service Integration Library (OOIL in short)"""
     assert isinstance(version, bool | None)  # nosec
 
     overrides = {}
@@ -59,19 +59,14 @@ def main(
     ctx.settings = AppSettings.parse_obj(overrides)
 
 
+#
+# REGISTER commands and/or sub-apps
+#
+
 app.command("compose")(compose.create_compose)
 app.add_typer(config_app, name="config")
 app.command("test")(test.run_tests)
-
-
 # legacy
-
 app.command("bump-version")(metadata.bump_version)
 app.command("get-version")(metadata.get_version)
 app.command("run-creator")(run_creator.main)
-
-# Display help message for compose as an alias
-@app.callback(invoke_without_command=True)
-def callback(ctx: typer.Context):
-    if ctx.invoked_subcommand is None:
-        typer.echo("Use --help for more information on specific commands.")
