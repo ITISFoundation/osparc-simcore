@@ -717,7 +717,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    getStudyChanges: function() {
+    __getStudyChanges: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       const delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
@@ -732,17 +732,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             delta[key] = val[1];
           }
         });
-        const deltaKeys = Object.keys(delta);
-        if (deltaKeys.length) {
-          console.log("delta", delta);
-          return deltaKeys;
-        }
+        console.log("delta", delta);
+        return delta;
       }
       return [];
     },
 
+    didStudyChange: function() {
+      const studyChanges = this.__getStudyChanges();
+      return Boolean(studyChanges.length);
+    },
+
     __checkStudyChanges: function() {
-      if (this.getStudyChanges().length) {
+      if (this.didStudyChange()) {
         if (this.__updatingStudy > 0) {
           // throttle update
           this.__updateThrottled = true;
@@ -760,6 +762,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
+      const studyChanges = this.__getStudyChanges();
       const newObj = this.getStudy().serialize();
       return this.getStudy().updateStudy(newObj)
         .then(() => {
