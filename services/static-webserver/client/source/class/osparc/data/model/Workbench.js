@@ -636,7 +636,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      this.__populateNodesData(workbenchData, workbenchUIData);
+      this.__populateNodesData(workbenchData);
+      this.__populateNodesUIData(workbenchUIData);
 
       nodeIds.forEach(nodeId => {
         const node = this.getNode(nodeId);
@@ -657,16 +658,23 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __populateNodesData: function(workbenchData, workbenchUIData) {
+    __populateNodesData: function(workbenchData) {
       Object.entries(workbenchData).forEach(([nodeId, nodeData]) => {
         this.getNode(nodeId).populateNodeData(nodeData);
+
         if ("position" in nodeData) {
+          // old way for storing the position
           this.getNode(nodeId).populateNodeUIData(nodeData);
         }
-        if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
-          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
-        }
       });
+    },
+
+    __populateNodesUIData: function(workbenchUIData) {
+      if ("workbench" in workbenchUIData) {
+        Object.keys(workbenchUIData["workbench"]).forEach(nodeId => {
+          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
+        });
+      }
     },
 
     __deserializeEdges: function(workbenchData) {
