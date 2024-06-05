@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __slideshowView: null,
     __autoSaveTimer: null,
     __studyEditorIdlingTracker: null,
-    __lastSavedStudy: null,
+    __studyDataInBackend: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -169,7 +169,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(() => {
-          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(study.serialize());
+          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(study.serialize());
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -720,7 +720,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     didStudyChange: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
-      const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
+      const delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
       if (delta) {
         let deltaKeys = Object.keys(delta);
         // lastChangeDate and creationDate should not be taken into account as data change
@@ -761,7 +761,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const newObj = this.getStudy().serialize();
       return this.getStudy().updateStudy(newObj, run)
         .then(() => {
-          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(newObj);
+          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(newObj);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
