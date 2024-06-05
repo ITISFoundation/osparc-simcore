@@ -34,7 +34,19 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
   statics: {
     NAME: "jsondiffpatch",
     VERSION: "0.3.11",
-    URL: "https://github.com/benjamine/jsondiffpatch"
+    URL: "https://github.com/benjamine/jsondiffpatch",
+
+    deltaToPatchObj: function(delta) {
+      // keep only the new value
+      // JsonDiffPatch returns {key: key2: key3: [old_value, ney_value]}
+      // And we want {key: key2: key3: ney_value}
+      Object.entries(delta).forEach(([key, data]) => {
+        if (data.length > 1) {
+          delta[key] = data[1];
+        }
+      });
+      return delta;
+    }
   },
 
   construct: function() {

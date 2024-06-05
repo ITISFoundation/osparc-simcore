@@ -618,7 +618,7 @@ qx.Class.define("osparc.data.model.Study", {
           };
           promises.push(osparc.data.Resources.fetch("studies", "patch", params))
         }
-        Promise.all()
+        Promise.all(promises)
           .then(() => {
             Object.keys(studyChanges).forEach(fieldKey => {
               const upKey = qx.lang.String.firstUp(fieldKey);
