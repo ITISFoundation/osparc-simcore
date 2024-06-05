@@ -9,9 +9,11 @@ from servicelib.deferred_tasks import BaseDeferredHandler, TaskUID
 from servicelib.deferred_tasks._base_deferred_handler import DeferredContext
 
 from ..director_v2 import DirectorV2Client
+from ..notifier import notify_frontend
 from ..service_tracker import (
+    can_notify_frontend,
     remove_tracked,
-    set_new_status,
+    set_if_status_changed,
     set_service_status_task_uid,
 )
 
@@ -60,16 +62,13 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         app: FastAPI = context["app"]
         node_id: NodeID = context["node_id"]
 
-        _logger.debug("CALLED ON RESULT %s %s", node_id, result)
+        _logger.debug("Received status for service '%s': '%s'", node_id, result)
 
-        # TOOD: maybe move all this logic tot the service_tracker
-
-        # TODO: this should be transformed in set_new_status_if_changed
-        # also this should return a "bool" if the status changed form the previous
-        # this allows us to figure out when to send to the FE notifications
-        # TODO: from here we need to add an integration with the module sending via webseocket
-        # the status to the fronted
-        await set_new_status(app, node_id, result)
+        # TODO: figure out if this needs to be an atomic change in the Redis DB
+        # set & notify
+        status_changed: bool = await set_if_status_changed(app, node_id, result)
+        if await can_notify_frontend(app, node_id, status_changed=status_changed):
+            await notify_frontend(app, node_id, result)
 
         # remove service if no longer running
         if isinstance(result, NodeGetIdle):
