@@ -2,10 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB
+from models_library.products import ProductName
 from models_library.services import ServiceDockerData, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB
 from pydantic import parse_obj_as
@@ -83,13 +84,13 @@ def test_reduce_access_rights():
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
+    other_product: ProductName,
     services_db_tables_injector: Callable,
     service_catalog_faker: Callable,
     mocker,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
-    target_product = products_names[0]
 
     # Avoids calls to director API
     mocker.patch(
@@ -146,7 +147,7 @@ async def test_auto_upgrade_policy(
                 "1.0.10",
                 team_access="x",
                 everyone_access=None,
-                product=products_names[-1],
+                product=other_product,
             ),
         ]
     )
@@ -185,7 +186,7 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in inherited_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in inherited_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }
 
     # ALL
@@ -196,5 +197,5 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in service_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }

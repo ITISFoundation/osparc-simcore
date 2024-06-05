@@ -5,8 +5,9 @@
 
 
 import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable
 from random import choice, randint
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import respx
@@ -29,6 +30,7 @@ from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
 )
 from models_library.generated_models.docker_rest_api import ServiceSpec
+from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
@@ -121,8 +123,8 @@ def create_service_specifications(
 
 
 async def test_get_service_specifications_returns_403_if_user_does_not_exist(
-    mock_catalog_background_task,
-    director_mockup: respx.MockRouter,
+    mocked_catalog_background_task,
+    mocked_director_service_api: respx.MockRouter,
     client: TestClient,
     user_id: UserID,
 ):
@@ -136,12 +138,12 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
 
 
 async def test_get_service_specifications_of_unknown_service_returns_default_specs(
-    mock_catalog_background_task,
-    director_mockup: respx.MockRouter,
+    mocked_catalog_background_task,
+    mocked_director_service_api: respx.MockRouter,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     faker: Faker,
 ):
     service_key = (
@@ -160,21 +162,20 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
 
 
 async def test_get_service_specifications(
-    mock_catalog_background_task,
-    director_mockup: respx.MockRouter,
+    mocked_catalog_background_task,
+    mocked_director_service_api: respx.MockRouter,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     sqlalchemy_async_engine: AsyncEngine,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
-    target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     SERVICE_VERSION = "0.0.1"
     await services_db_tables_injector(
@@ -253,20 +254,19 @@ async def test_get_service_specifications(
 
 
 async def test_get_service_specifications_are_passed_to_newer_versions_of_service(
-    mock_catalog_background_task,
-    director_mockup: respx.MockRouter,
+    mocked_catalog_background_task,
+    mocked_director_service_api: respx.MockRouter,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
-    user_db: dict[str, Any],
+    user: dict[str, Any],
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
-    target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     sorted_versions = [
         "0.0.1",

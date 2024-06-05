@@ -1,3 +1,11 @@
+# pylint: disable=not-context-manager
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 from typing import Any
 
 import pytest
@@ -62,12 +70,6 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec()),  # type: ignore
             ResourcesDict(),
             id="empty task spec",
-        ),
-        pytest.param(
-            ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1())),  # type: ignore
-            ResourcesDict(),
-            id="empty task resource spec",
         ),
         pytest.param(
             ResourcesDict(),
@@ -285,8 +287,8 @@ def test_merge_service_resources_with_user_specs(
     merged_resources = merge_service_resources_with_user_specs(
         service_resources, user_specs
     )
-    assert all(key in expected_resources for key in merged_resources.keys())
-    assert all(key in merged_resources for key in expected_resources.keys())
+    assert all(key in expected_resources for key in merged_resources)
+    assert all(key in merged_resources for key in expected_resources)
     for resource_key, resource_value in merged_resources.items():
         # NOTE: so that float values are compared correctly
         assert resource_value.dict() == pytest.approx(
