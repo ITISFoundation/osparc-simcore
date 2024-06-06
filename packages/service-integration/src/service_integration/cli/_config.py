@@ -63,7 +63,6 @@ def _create_config_from_compose_spec(
 
         for service_name in compose_spec.services:
             try:
-                labels: dict[str, str] = {}
 
                 if build_labels := compose_spec.services[
                     service_name
