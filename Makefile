@@ -459,14 +459,13 @@ push-version: tag-version
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				printf "\033[31mError: 'uv' is not installed.\033[0m\n"; \
-				printf "To install 'uv', run the following command:\n"; \
-				printf "\033[34mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m\n"; \
-				exit 1; \
+				curl -LsSf https://astral.sh/uv/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
+		# upgrading uv
+		@uv self --quiet update
 
 
 .venv: .check-uv-installed
