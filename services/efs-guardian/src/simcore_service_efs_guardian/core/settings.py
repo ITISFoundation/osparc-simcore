@@ -25,7 +25,7 @@ class AwsEfsSettings(BaseCustomSettings):
         example="fs-xxx.efs.us-east-1.amazonaws.com",
     )
     EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: str = Field(default="project-specific-data")
-    EFS_MOUNTED_PATH: Path = Field(default="/data/efs")
+    EFS_MOUNTED_PATH: Path = Field(default=Path("/data/efs"))
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
