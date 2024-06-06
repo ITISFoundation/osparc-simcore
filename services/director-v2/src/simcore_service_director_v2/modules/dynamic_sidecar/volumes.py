@@ -7,9 +7,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import S3Provider
 
-from ...core.dynamic_services_settings.sidecar import EfsSettings, RCloneSettings
+from ...core.dynamic_services_settings.sidecar import RCloneSettings
 from .errors import DynamicSidecarError
 
 DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
@@ -76,7 +77,7 @@ def _get_s3_volume_driver_config(
 
 
 def _get_efs_volume_driver_config(
-    efs_settings: EfsSettings,
+    efs_settings: AwsEfsSettings,
     project_id: ProjectID,
     node_uuid: NodeID,
     storage_directory_name: str,
@@ -86,7 +87,7 @@ def _get_efs_volume_driver_config(
         "Options": {
             "type": "nfs",
             "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport",
-            "device": f":/{efs_settings.EFS_BASE_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
         },
     }
     return driver_config
@@ -248,7 +249,7 @@ class DynamicSidecarVolumesPathsResolver:
         run_id: RunID,
         project_id: ProjectID,
         user_id: UserID,
-        efs_settings: EfsSettings,
+        efs_settings: AwsEfsSettings,
     ) -> dict[str, Any]:
         return {
             "Source": cls.source(path, node_uuid, run_id),
