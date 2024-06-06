@@ -113,6 +113,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def volume_name(cls, path: Path) -> str:
+        """Returns a volume name created from path. There is not possibility to go back to the original path from the volume name"""
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
