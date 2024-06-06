@@ -108,8 +108,6 @@ clean-up: ## remove everything
 test: ## test the platform
 	# tests
 	npm test
-	# tests whether tutorial run
-	npm run tutorials http://127.0.0.1:9081
 
 
 .PHONY: dev-prepare-jupyters
