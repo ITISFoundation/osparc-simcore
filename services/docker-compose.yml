@@ -354,6 +354,13 @@ services:
       - default
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
+      EFS_DNS_NAME: ${EFS_DNS_NAME}
+      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
