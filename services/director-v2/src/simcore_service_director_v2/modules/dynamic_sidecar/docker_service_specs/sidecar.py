@@ -260,7 +260,6 @@ async def _get_mounts(
     _mount_efs_enabled = False
     efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
     if efs_settings and scheduler_data.user_id in efs_settings.EFS_ENABLED_FOR_USERS:
-        # Ask guardian to create directory
         await efs_manager.create_project_specific_data_dir(
             rpc_client,
             project_id=scheduler_data.project_id,
