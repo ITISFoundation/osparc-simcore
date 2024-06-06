@@ -10,9 +10,8 @@ class AwsEfsSettings(BaseCustomSettings):
         description="AWS Elastic File System DNS name",
         example="fs-xxx.efs.us-east-1.amazonaws.com",
     )
-    EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: str = Field(default="project-specific-data")
+    EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: str
     EFS_MOUNTED_PATH: Path = Field(
-        default=Path("/data/efs"),
         description="This is the path where EFS is mounted to the EC2 machine",
     )
     EFS_ONLY_ENABLED_FOR_USERIDS: list[int] = Field(

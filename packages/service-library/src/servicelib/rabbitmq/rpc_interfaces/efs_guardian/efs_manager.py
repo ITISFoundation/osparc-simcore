@@ -30,6 +30,7 @@ async def create_project_specific_data_dir(
         parse_obj_as(RPCMethodName, "create_project_specific_data_dir"),
         project_id=project_id,
         node_id=node_id,
+        storage_directory_name=storage_directory_name,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     return output
