@@ -16,7 +16,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
@@ -313,7 +313,7 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceDockerData.Config.schema_extra["examples"]
+        for e in ServiceMetaDataPublished.Config.schema_extra["examples"]
         if "boot-options" in e
     )
 

@@ -118,9 +118,13 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
 }
 
 
-class ServiceDockerData(ServiceKeyVersion, BaseServiceCommonDataModel):
+class ServiceMetaDataPublished(ServiceKeyVersion, BaseServiceCommonDataModel):
     """
-    Static metadata for a service injected in the image labels
+    Service metadata at publication time
+
+    - read-only (can only be changed overwriting the image labels in the registry)
+    - base metaddata
+    - injected in the image labels
 
     NOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image
     """

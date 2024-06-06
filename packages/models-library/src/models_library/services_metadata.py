@@ -15,7 +15,7 @@ assert ServiceType  # nosec
 assert ServiceVersion  # nosec
 
 
-class BaseServiceMetaData(BaseServiceCommonDataModel):
+class ServiceMetaDataEditable(BaseServiceCommonDataModel):
     # Overrides all fields of BaseServiceCommonDataModel:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),

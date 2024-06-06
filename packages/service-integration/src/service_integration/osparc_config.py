@@ -28,7 +28,7 @@ from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     BootOptions,
-    ServiceDockerData,
+    ServiceMetaDataPublished,
     ServiceType,
 )
 from models_library.utils.labels_annotations import (
@@ -88,7 +88,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
         return model
 
 
-class MetadataConfig(ServiceDockerData):
+class MetadataConfig(ServiceMetaDataPublished):
     """Content of metadata.yml configuration file
 
     Details about general info and I/O configuration of the service

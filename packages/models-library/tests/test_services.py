@@ -13,7 +13,7 @@ from models_library.basic_regex import VERSION_RE
 from models_library.services import (
     BaseServiceCommonDataModel,
     BootOption,
-    ServiceDockerData,
+    ServiceMetaDataPublished,
 )
 from models_library.services_constants import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -205,7 +205,7 @@ def test_service_docker_data_labels_convesion():
     convension_breaking_fields: set[tuple[str, str]] = set()
 
     fiedls_with_aliases: list[tuple[str, str]] = [
-        (x.name, x.alias) for x in ServiceDockerData.__fields__.values()
+        (x.name, x.alias) for x in ServiceMetaDataPublished.__fields__.values()
     ]
 
     for name, alias in fiedls_with_aliases:

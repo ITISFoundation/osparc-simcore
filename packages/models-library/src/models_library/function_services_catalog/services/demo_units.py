@@ -1,7 +1,7 @@
 from ...services import (
     LATEST_INTEGRATION_VERSION,
-    ServiceDockerData,
     ServiceInput,
+    ServiceMetaDataPublished,
     ServiceOutput,
     ServiceType,
 )
@@ -15,7 +15,7 @@ from .._utils import OM, PC, FunctionServices, create_fake_thumbnail_url
 #       If this assumption cannot be guaranteed anymore the test must be updated.
 #
 
-META = ServiceDockerData.parse_obj(
+META = ServiceMetaDataPublished.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/demo-units",

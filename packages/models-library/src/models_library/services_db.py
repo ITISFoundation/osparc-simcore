@@ -11,7 +11,7 @@ from pydantic.types import PositiveInt
 
 from .services_access import ServiceGroupAccessRights
 from .services_base import ServiceKeyVersion
-from .services_metadata import BaseServiceMetaData
+from .services_metadata import ServiceMetaDataEditable
 
 # -------------------------------------------------------------------
 # Databases models
@@ -19,7 +19,7 @@ from .services_metadata import BaseServiceMetaData
 #  - table services_access_rights
 
 
-class ServiceMetaDataAtDB(ServiceKeyVersion, BaseServiceMetaData):
+class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
     # for a partial update all members must be Optional
     classifiers: list[str] | None = Field(default_factory=list)
     owner: PositiveInt | None
