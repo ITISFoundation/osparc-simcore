@@ -742,12 +742,13 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     /**
      * Call patch Node, but the changes were already applied on the frontend
+     * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      */
-    patchWorkbenchDelayed: function(workbenchChanges) {
+    patchWorkbenchDelayed: function(workbenchDiffs) {
       return new Promise((resolve, reject) => {
-        console.log("workbenchChanges", workbenchChanges);
+        console.log("workbenchChanges", workbenchDiffs);
         const promises = [];
-        Object.keys(workbenchChanges).forEach(nodeId => {
+        Object.keys(workbenchDiffs).forEach(nodeId => {
           const params = {
             url: {
               "studyId": this.getStudy().getUuid(),

@@ -627,18 +627,19 @@ qx.Class.define("osparc.data.model.Study", {
 
     /**
      * Call patch Study, but the changes were already applied on the frontend
+     * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      */
-    patchStudyDelayed: function(studyChanges) {
+    patchStudyDelayed: function(studyDiffs) {
       return new Promise((resolve, reject) => {
         const promises = [];
-        let workbenchChanges = {};
-        if ("workbench" in studyChanges) {
-          workbenchChanges = studyChanges["workbench"];
-          promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchChanges));
-          delete studyChanges["workbench"];
+        let workbenchDiffs = {};
+        if ("workbench" in studyDiffs) {
+          workbenchDiffs = studyDiffs["workbench"];
+          promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchDiffs));
+          delete studyDiffs["workbench"];
         }
-        console.log("studyChanges", studyChanges);
-        const fieldKeys = Object.keys(studyChanges);
+        console.log("studyChanges", studyDiffs);
+        const fieldKeys = Object.keys(studyDiffs);
         if (fieldKeys.length) {
           const params = {
             url: {
@@ -652,7 +653,7 @@ qx.Class.define("osparc.data.model.Study", {
             } else {
               const upKey = qx.lang.String.firstUp(fieldKey);
               const getter = "get" + upKey;
-              params["data"][fieldKey] = this[getter](studyChanges[fieldKey]);
+              params["data"][fieldKey] = this[getter](studyDiffs[fieldKey]);
             }
             promises.push(osparc.data.Resources.fetch("studies", "patch", params))
           });

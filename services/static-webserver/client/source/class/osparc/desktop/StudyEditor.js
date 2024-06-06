@@ -717,7 +717,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    __getStudyChanges: function() {
+    __getStudyDiffs: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       let delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
@@ -732,8 +732,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     didStudyChange: function() {
-      const studyChanges = this.__getStudyChanges();
-      return Boolean(Object.keys(studyChanges).length);
+      const studyDiffs = this.__getStudyDiffs();
+      return Boolean(Object.keys(studyDiffs).length);
     },
 
     __checkStudyChanges: function() {
@@ -755,8 +755,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
-      const studyChanges = this.__getStudyChanges();
-      return this.getStudy().patchStudyDelayed(studyChanges)
+      const studyDiffs = this.__getStudyDiffs();
+      return this.getStudy().patchStudyDelayed(studyDiffs)
         .then(studyData => {
           this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
         })
