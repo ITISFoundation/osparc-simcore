@@ -1,7 +1,7 @@
 import re
 from typing import ItemsView, Iterator, KeysView, ValuesView
 
-from models_library.services import PROPERTY_KEY_RE
+from models_library.basic_regex import PROPERTY_KEY_RE
 from pydantic import BaseModel, ConstrainedStr
 
 from ..node_ports_common.exceptions import UnboundPortError

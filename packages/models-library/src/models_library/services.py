@@ -11,25 +11,30 @@ from .services_base import BaseServiceCommonDataModel, ServiceKeyVersion
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_constrained_types import (
     DynamicServiceKey,
+    RunID,
     ServiceKey,
     ServicePortKey,
     ServiceVersion,
 )
 from .services_enums import ServiceType
-from .services_io import ServiceInput, ServiceOutput
+from .services_io import BaseServiceIOModel, ServiceInput, ServiceOutput
 
+# NOTE: these asserts are here to avoid pre-commit to prune these imports
+assert BaseServiceIOModel  # nsoec
 assert DynamicServiceKey  # nosec
 assert LATEST_INTEGRATION_VERSION  # nosec
+assert RunID  # nosec
 assert ServiceKey  # nosec
 assert ServiceType  # nosec
 assert ServiceVersion  # nosec
 
-
 __all__: tuple[str, ...] = (
     "Author",
     "Badge",
+    "BaseServiceIOModel",
     "DynamicServiceKey",
     "LATEST_INTEGRATION_VERSION",
+    "RunID",
     "ServiceInput",
     "ServiceKey",
     "ServiceOutput",
