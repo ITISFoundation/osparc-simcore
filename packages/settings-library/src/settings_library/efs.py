@@ -15,7 +15,7 @@ class AwsEfsSettings(BaseCustomSettings):
         default=Path("/data/efs"),
         description="This is the path where EFS is mounted to the EC2 machine",
     )
-    EFS_ENABLED_FOR_USERS: set[int] = Field(
+    EFS_ONLY_ENABLED_FOR_USERIDS: set[int] = Field(
         description="This is temporary solution so we can enable it for specific users for testing purpose",
         example={1},
     )
