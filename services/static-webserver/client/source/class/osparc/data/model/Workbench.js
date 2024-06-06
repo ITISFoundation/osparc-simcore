@@ -749,12 +749,19 @@ qx.Class.define("osparc.data.model.Workbench", {
         console.log("workbenchChanges", workbenchDiffs);
         const promises = [];
         Object.keys(workbenchDiffs).forEach(nodeId => {
+          // serialize the whole node
+          const nodeData = this.getNode(nodeId).serialize();
+          // patch only what changed
+          const patchData = {};
+          Object.keys(workbenchDiffs[nodeId]).forEach(fieldKey => {
+            patchData[fieldKey] = nodeData[fieldKey];
+          });
           const params = {
             url: {
               "studyId": this.getStudy().getUuid(),
               "nodeId": nodeId
             },
-            data: this.getNode(nodeId).serialize()
+            data: patchData
           };
           promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
         })
