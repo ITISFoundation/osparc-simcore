@@ -2,19 +2,19 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Union
+from typing import TypeAlias
 
 import packaging.version
 from packaging.version import Version
 
-_VersionT = Union[Version, str]
+_VersionOrStr: TypeAlias = Version | str
 
 
-def as_version(v: _VersionT) -> Version:
+def as_version(v: _VersionOrStr) -> Version:
     return packaging.version.Version(v) if isinstance(v, str) else v
 
 
-def is_patch_release(version: _VersionT, reference: _VersionT) -> bool:
+def is_patch_release(version: _VersionOrStr, reference: _VersionOrStr) -> bool:
     """Returns True if version is a patch release from reference"""
     v: Version = as_version(version)
     r: Version = as_version(reference)
