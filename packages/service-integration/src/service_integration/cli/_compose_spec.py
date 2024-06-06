@@ -1,8 +1,8 @@
-import datetime
 import subprocess
 from pathlib import Path
 from typing import Annotated
 
+import arrow
 import rich
 import typer
 import yaml
@@ -108,9 +108,11 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.datetime.now(
-        datetime.timezone.utc
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+    # Format the datetime object as a string following RFC-3339
+    rfc3339_format = arrow.now().format("YYYY-MM-DDTHH:mm:ssZ")
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = rfc3339_format
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
