@@ -28,7 +28,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.set({
       backgroundColor: "input_background",
       paddingLeft: 6,
-      height: 36
+      height: this.self().HEIGHT
     });
     this.getContentElement().setStyles({
       "border-radius": "5px"
@@ -44,23 +44,31 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   statics: {
+    HEIGHT: 36,
+
     getSharedWithOptions: function(resourceType) {
       return [{
         id: "show-all",
         label: qx.locale.Manager.tr("All ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+          firstUpperCase: true,
           plural: true
-        })
+        }),
+        icon: "@FontAwesome5Solid/home/20"
       }, {
-        id: "my-studies",
+        id: "my-resources",
         label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
+          firstUpperCase: true,
           plural: true
-        })
+        }),
+        icon: "@FontAwesome5Solid/user/20"
       }, {
         id: "shared-with-me",
-        label: qx.locale.Manager.tr("Shared with Me")
+        label: qx.locale.Manager.tr("Shared with Me"),
+        icon: "@FontAwesome5Solid/users/20"
       }, {
         id: "shared-with-everyone",
-        label: qx.locale.Manager.tr("Shared with Everyone")
+        label: qx.locale.Manager.tr("Shared with Everyone"),
+        icon: "@FontAwesome5Solid/globe/20"
       }];
     }
   },
@@ -241,7 +249,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     addTagActiveFilter: function(tag) {
-      this.__addChip("tag", tag.name, tag.name);
+      this.__addChip("tag", tag.id, tag.name);
+    },
+
+    setTagsActiveFilter: function(tagIds) {
+      const tags = osparc.store.Store.getInstance().getTags();
+      tags.forEach(tag => {
+        if (tagIds.includes(tag.id)) {
+          this.__addChip("tag", tag.id, tag.name);
+        } else {
+          this.__removeChip("tag", tag.id, tag.name);
+        }
+      });
     },
 
     setSharedWithActiveFilter: function(optionId, optionLabel) {
@@ -268,19 +287,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chipButton = new qx.ui.form.Button().set({
         label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
         icon: "@MaterialIcons/close/12",
-        iconPosition: "right",
-        paddingRight: 6,
-        paddingLeft: 6,
-        alignY: "middle",
         toolTipText: chipLabel,
-        maxHeight: 26,
-        maxWidth: 210
+        appearance: "chip-button"
       });
       chipButton.type = chipType;
       chipButton.id = chipId;
-      chipButton.getContentElement().setStyles({
-        "border-radius": "6px"
-      });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       return chipButton;
     },

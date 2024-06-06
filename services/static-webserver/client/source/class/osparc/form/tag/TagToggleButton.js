@@ -52,14 +52,17 @@ qx.Class.define("osparc.form.tag.TagToggleButton", {
           control = new qx.ui.basic.Label(this.getLabel()).set({
             allowStretchX: true
           });
-          control.setAnonymous(true);
-          control.setRich(this.getRich());
-          this._add(control, {
-            flex: 1
+          control.set({
+            textColor: "text",
+            anonymous: true,
+            rich: this.getRich()
           });
           if (this.getLabel() == null || this.getShow() === "icon") {
             control.exclude();
           }
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "check":
           control = new qx.ui.basic.Image();

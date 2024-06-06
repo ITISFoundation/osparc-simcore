@@ -358,6 +358,13 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
         raise web.HTTPUnauthorized from exc
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+        if project_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(
+                app=request.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                simcore_user_agent=simcore_user_agent,
+            )
         raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     except asyncio.CancelledError:

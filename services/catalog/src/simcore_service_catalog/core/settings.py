@@ -13,7 +13,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class DirectorSettings(BaseCustomSettings):
@@ -29,7 +29,10 @@ class DirectorSettings(BaseCustomSettings):
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
     ResourcesDict,
     {
-        "CPU": {"limit": 0.1, "reservation": 0.1},
+        "CPU": {
+            "limit": 0.1,
+            "reservation": 0.1,
+        },
         "RAM": {
             "limit": parse_obj_as(ByteSize, "2Gib"),
             "reservation": parse_obj_as(ByteSize, "2Gib"),
