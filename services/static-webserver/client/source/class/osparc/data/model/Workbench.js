@@ -746,7 +746,6 @@ qx.Class.define("osparc.data.model.Workbench", {
      */
     patchWorkbenchDelayed: function(workbenchDiffs) {
       return new Promise((resolve, reject) => {
-        console.log("workbenchChanges", workbenchDiffs);
         const promises = [];
         Object.keys(workbenchDiffs).forEach(nodeId => {
           // serialize the whole node
