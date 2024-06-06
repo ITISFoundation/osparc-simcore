@@ -25,7 +25,7 @@ async def test_rpc_create_project_specific_data_dir(
     )
     assert isinstance(result, Path)
     _expected_path = (
-        Path(aws_efs_settings.EFS_MOUNTED_PATH)
+        aws_efs_settings.EFS_MOUNTED_PATH
         / aws_efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY
         / _project_id
         / _node_id
