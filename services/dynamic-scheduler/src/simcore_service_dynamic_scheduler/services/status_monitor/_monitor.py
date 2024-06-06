@@ -9,13 +9,19 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.utils import logged_gather
 
-from ..service_tracker import TrackedServiceModel, get_all_tracked, set_scheduled_to_run
+from ..service_tracker import (
+    NORMAL_RATE_POLL_INTERVAL,
+    TrackedServiceModel,
+    get_all_tracked,
+    remove_tracked,
+    set_scheduled_to_run,
+)
+from ..service_tracker._models import SchedulerServiceState, UserRequestedState
 from ._deferred_get_status import DeferredGetStatus
 
 _logger = logging.getLogger(__name__)
 
 _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
-_NEXT_STATUS_CHECK_AFTER: Final[timedelta] = timedelta(seconds=0.1)
 
 
 async def _start_get_status_deferred(
@@ -39,11 +45,19 @@ class Monitor:
 
         models: dict[NodeID, TrackedServiceModel] = await get_all_tracked(self.app)
 
+        to_remove: list[NodeID] = []
         to_start: list[NodeID] = []
 
         current_timestamp = arrow.utcnow().timestamp()
 
         for node_id, model in models.items():
+            # check if service is idle and status polling should stop
+            if (
+                model.current_state == SchedulerServiceState.IDLE
+                and model.requested_sate == UserRequestedState.STOPPED
+            ):
+                to_remove.append(node_id)
+                continue
 
             job_not_running = not (
                 model.scheduled_to_run
@@ -65,11 +79,17 @@ class Monitor:
                     ),
                 )
 
-        _logger.debug("DeferredGetStatus to start: '%s'", to_start)
+        _logger.debug("Removing tracked services: '%s'", to_remove)
+        await logged_gather(
+            *(remove_tracked(self.app, node_id) for node_id in to_remove),
+            max_concurrency=_MAX_CONCURRENCY,
+        )
+
+        _logger.debug("Poll status for tracked services: '%s'", to_start)
         await logged_gather(
             *(
                 _start_get_status_deferred(
-                    self.app, node_id, next_check_delay=_NEXT_STATUS_CHECK_AFTER
+                    self.app, node_id, next_check_delay=NORMAL_RATE_POLL_INTERVAL
                 )
                 for node_id in to_start
             ),

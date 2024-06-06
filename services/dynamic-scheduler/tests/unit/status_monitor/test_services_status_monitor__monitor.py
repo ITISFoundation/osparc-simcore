@@ -26,6 +26,7 @@ from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     _api,
     set_request_as_running,
+    set_request_as_stopped,
 )
 from simcore_service_dynamic_scheduler.services.status_monitor import _monitor
 from simcore_service_dynamic_scheduler.services.status_monitor._deferred_get_status import (
@@ -247,6 +248,12 @@ def deferred_status_spies(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 
 @pytest.fixture
+def remove_tracked_spy(mocker: MockerFixture) -> AsyncMock:
+    mock_method = mocker.AsyncMock(wraps=_monitor.remove_tracked)
+    return mocker.patch.object(_monitor, "remove_tracked", mock_method)
+
+
+@pytest.fixture
 def node_id() -> NodeID:
     return _DEFAULT_NODE_ID
 
@@ -266,27 +273,49 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
 
 
 @pytest.mark.parametrize(
-    "response_timeline, expected_notification_count",
+    "user_requests_running, response_timeline, expected_notification_count, remove_tracked_count",
     [
-        (_ResponseTimeline([_get_node_get_with("running")]), 1),
-        (
+        pytest.param(
+            True,
+            _ResponseTimeline([_get_node_get_with("running")]),
+            1,
+            0,
+            id="requested_running_state_changes_1_no_task_removal",
+        ),
+        pytest.param(
+            True,
             _ResponseTimeline(
                 [__get_dynamic_service_get_legacy_with("running") for _ in range(10)]
             ),
             1,
+            0,
+            id="requested_running_state_changes_1_for_multiple_same_state_no_task_removal",
         ),
-        (_ResponseTimeline([__get_dynamic_service_get_new_style_with("running")]), 1),
-        (_ResponseTimeline([__get_node_get_idle()]), 1),
-        (
+        pytest.param(
+            True,
+            _ResponseTimeline([__get_node_get_idle()]),
+            1,
+            0,
+            id="requested_running_state_idle_no_removal",
+        ),
+        pytest.param(
+            False,
+            _ResponseTimeline([__get_node_get_idle()]),
+            1,
+            1,
+            id="requested_stopped_state_idle_is_removed",
+        ),
+        pytest.param(
+            True,
             _ResponseTimeline(
                 [
-                    __get_node_get_idle(),
+                    *[__get_node_get_idle() for _ in range(10)],
                     __get_dynamic_service_get_new_style_with("pending"),
                     __get_dynamic_service_get_new_style_with("pulling"),
-                    __get_dynamic_service_get_new_style_with("starting"),
-                    __get_dynamic_service_get_new_style_with("starting"),
-                    __get_dynamic_service_get_new_style_with("starting"),
-                    __get_dynamic_service_get_new_style_with("starting"),
+                    *[
+                        __get_dynamic_service_get_new_style_with("starting")
+                        for _ in range(10)
+                    ],
                     __get_dynamic_service_get_new_style_with("running"),
                     __get_dynamic_service_get_new_style_with("stopping"),
                     __get_dynamic_service_get_new_style_with("complete"),
@@ -294,20 +323,48 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
                 ]
             ),
             8,
+            0,
+            id="requested_running_state_changes_8_no_removal",
+        ),
+        pytest.param(
+            False,
+            _ResponseTimeline(
+                [
+                    __get_dynamic_service_get_new_style_with("pending"),
+                    __get_dynamic_service_get_new_style_with("pulling"),
+                    *[
+                        __get_dynamic_service_get_new_style_with("starting")
+                        for _ in range(10)
+                    ],
+                    __get_dynamic_service_get_new_style_with("running"),
+                    __get_dynamic_service_get_new_style_with("stopping"),
+                    __get_dynamic_service_get_new_style_with("complete"),
+                    __get_node_get_idle(),
+                ]
+            ),
+            7,
+            1,
+            id="requested_stopped_state_changes_7_is_removed",
         ),
     ],
 )
-async def test_expected_calls_to_notify_frontend(
+async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arguments
     mock_poll_rate_intervals: None,
     mocked_notify_frontend: AsyncMock,
     deferred_status_spies: dict[str, AsyncMock],
+    remove_tracked_spy: AsyncMock,
     app: FastAPI,
     monitor: Monitor,
     node_id: NodeID,
+    user_requests_running: bool,
     response_timeline: _ResponseTimeline,
     expected_notification_count: NonNegativeInt,
+    remove_tracked_count: NonNegativeInt,
 ):
-    await set_request_as_running(app, node_id)
+    if user_requests_running:
+        await set_request_as_running(app, node_id)
+    else:
+        await set_request_as_stopped(app, node_id)
 
     entries_in_timeline = len(response_timeline)
 
@@ -335,3 +392,11 @@ async def test_expected_calls_to_notify_frontend(
     await _assert_notification_count(
         mocked_notify_frontend, expected_notification_count
     )
+
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(1), wait=wait_fixed(0.1)
+    ):
+        with attempt:
+            # pylint:disable=protected-access
+            await monitor._worker_start_get_status_requests()  # noqa: SLF001
+            assert remove_tracked_spy.call_count == remove_tracked_count

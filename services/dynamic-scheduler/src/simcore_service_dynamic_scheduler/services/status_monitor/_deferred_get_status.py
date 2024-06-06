@@ -12,7 +12,6 @@ from ..director_v2 import DirectorV2Client
 from ..notifier import notify_frontend
 from ..service_tracker import (
     can_notify_frontend,
-    remove_tracked,
     set_if_status_changed,
     set_service_status_task_uid,
 )
@@ -67,7 +66,3 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         status_changed: bool = await set_if_status_changed(app, node_id, result)
         if await can_notify_frontend(app, node_id, status_changed=status_changed):
             await notify_frontend(app, node_id, result)
-
-        # remove service if no longer running
-        if isinstance(result, NodeGetIdle):
-            await remove_tracked(app, node_id)
