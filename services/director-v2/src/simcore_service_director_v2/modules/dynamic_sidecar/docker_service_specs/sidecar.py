@@ -260,17 +260,22 @@ async def _get_mounts(
     _mount_efs_enabled = False
     efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
     if efs_settings and scheduler_data.user_id in efs_settings.EFS_ENABLED_FOR_USERS:
-        await efs_manager.create_project_specific_data_dir(
-            rpc_client,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-        )
         _mount_efs_enabled = True
 
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
         if _mount_efs_enabled:
             assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
+
+            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
+                path_to_mount
+            ).strip("_")
+            await efs_manager.create_project_specific_data_dir(
+                rpc_client,
+                project_id=scheduler_data.project_id,
+                node_id=scheduler_data.node_uuid,
+                storage_directory_name=_storage_directory_name,
+            )
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_efs(
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
@@ -280,6 +285,7 @@ async def _get_mounts(
                     project_id=scheduler_data.project_id,
                     user_id=scheduler_data.user_id,
                     efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
+                    storage_directory_name=_storage_directory_name,
                 )
             )
         # for now only enable this with dev features enabled

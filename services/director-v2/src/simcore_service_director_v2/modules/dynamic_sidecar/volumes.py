@@ -87,7 +87,7 @@ def _get_efs_volume_driver_config(
         "Options": {
             "type": "nfs",
             "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport",
-            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}",
+            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
         },
     }
     return driver_config
@@ -103,7 +103,7 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{target_path}"
 
     @classmethod
-    def _volume_name(cls, path: Path) -> str:
+    def volume_name(cls, path: Path) -> str:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
@@ -122,7 +122,7 @@ class DynamicSidecarVolumesPathsResolver:
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
         # Reversing volume name to prevent these issues from happening.
-        reversed_volume_name = cls._volume_name(path)[::-1]
+        reversed_volume_name = cls.volume_name(path)[::-1]
         unique_name = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}_{reversed_volume_name}"
         return unique_name[:255]
 
@@ -235,7 +235,7 @@ class DynamicSidecarVolumesPathsResolver:
                     r_clone_settings=r_clone_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
-                    storage_directory_name=cls._volume_name(path).strip("_"),
+                    storage_directory_name=cls.volume_name(path).strip("_"),
                 ),
             },
         }
@@ -250,6 +250,7 @@ class DynamicSidecarVolumesPathsResolver:
         project_id: ProjectID,
         user_id: UserID,
         efs_settings: AwsEfsSettings,
+        storage_directory_name: str,
     ) -> dict[str, Any]:
         return {
             "Source": cls.source(path, node_uuid, run_id),
@@ -268,7 +269,7 @@ class DynamicSidecarVolumesPathsResolver:
                     efs_settings=efs_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
-                    storage_directory_name=cls._volume_name(path).strip("_"),
+                    storage_directory_name=storage_directory_name,
                 ),
             },
         }

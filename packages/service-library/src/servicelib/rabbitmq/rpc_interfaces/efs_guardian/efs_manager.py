@@ -23,6 +23,7 @@ async def create_project_specific_data_dir(
     *,
     project_id: ProjectID,
     node_id: NodeID,
+    storage_directory_name: str,
 ) -> Path:
     output: Path = await rabbitmq_rpc_client.request(
         EFS_GUARDIAN_RPC_NAMESPACE,
