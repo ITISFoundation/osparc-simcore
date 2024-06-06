@@ -144,7 +144,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
         backgroundColor: "background-main-3"
       });
-      instructionsBtn.addListener("appear", () => osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3));
+      instructionsBtn.addListener("appear", () => this.__openInstructions(), this);
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
 
@@ -247,22 +247,25 @@ qx.Class.define("osparc.node.BaseNodeView", {
         const descView = new osparc.ui.markdown.Markdown().set({
           value: desc,
           padding: 3,
-          noMargin: true
+          noMargin: true,
+          font: "text-14"
         });
         const scrollContainer = new qx.ui.container.Scroll();
         scrollContainer.add(descView);
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
         const width = 500;
         const height = 500;
-        const win = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
           modal: false,
           clickAwayClose: false
         });
         win.getContentElement().setStyles({
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
-        win.addListener("close", () => this.__instructionsWindow = null, this);
-        this.__instructionsWindow = win;
+        win.addListener("close", () => {
+          this.__instructionsWindow = null;
+          osparc.utils.Utils.makeButtonBlink(this.__instructionsBtn, 2);
+        }, this);
       }
     },
 

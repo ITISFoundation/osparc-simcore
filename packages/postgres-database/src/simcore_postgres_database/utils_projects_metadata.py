@@ -65,6 +65,11 @@ class ProjectMetadata(BaseModel):
 
 
 async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetadata:
+    """
+    Raises:
+        DBProjectNotFoundError: project not found
+
+    """
     # JOIN LEFT OUTER
     get_stmt = (
         sa.select(
