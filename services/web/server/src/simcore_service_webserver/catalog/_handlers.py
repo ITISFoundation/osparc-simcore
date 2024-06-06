@@ -63,6 +63,13 @@ class ServicePathParams(BaseModel):
         return v
 
 
+@routes.get(f"{VTAG}-dev/catalog/services", name="list_services")
+@login_required
+@permission_required("services.catalog.*")
+async def _dev_list_services(request: Request):
+    raise NotImplementedError(f"response for {request=} still under development")
+
+
 @routes.get(f"{VTAG}/catalog/services", name="list_services")
 @login_required
 @permission_required("services.catalog.*")
