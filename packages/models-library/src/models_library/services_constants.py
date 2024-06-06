@@ -1,7 +1,3 @@
-#
-# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3486
-#
-
 import re
 from typing import Final
 

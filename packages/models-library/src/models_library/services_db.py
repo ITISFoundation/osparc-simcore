@@ -21,7 +21,7 @@ from .services_metadata import BaseServiceMetaData
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, BaseServiceMetaData):
     # for a partial update all members must be Optional
-    classifiers: list[str] | None = Field([])
+    classifiers: list[str] | None = Field(default_factory=list)
     owner: PositiveInt | None
 
     class Config:
