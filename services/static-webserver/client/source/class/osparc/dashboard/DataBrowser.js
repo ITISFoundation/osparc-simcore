@@ -53,7 +53,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
             icon: "@FontAwesome5Solid/sync-alt/14",
             allowGrowX: false
           });
-          this._addToMainLayout(control);
+          this._addToLayout(control);
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
             width: 2,
             backgroundColor: "scrollbar-passive"
           });
-          this._addToMainLayout(control, {
+          this._addToLayout(control, {
             flex: 1
           });
           break;
@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           break;
         case "actions-toolbar":
           control = new qx.ui.toolbar.ToolBar();
-          this._addToMainLayout(control);
+          this._addToLayout(control);
           break;
       }
 
