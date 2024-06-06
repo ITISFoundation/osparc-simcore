@@ -87,7 +87,7 @@ def _get_efs_volume_driver_config(
         "Options": {
             "type": "nfs",
             "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport",
-            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}",
         },
     }
     return driver_config
