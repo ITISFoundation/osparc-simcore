@@ -106,18 +106,3 @@ async def test_get_undefined_service_resources_raises_not_found_error(
     )
     response = await client.get(f"{url}")
     await assert_status(response, expected)
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.USER,
-    ],
-)
-async def test_list_services(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    mock_catalog_service_api_responses_not_found: AioResponsesMock,
-):
-    assert client.app
-    assert client.app.router
