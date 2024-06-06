@@ -27,7 +27,6 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import WalletInfo
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
@@ -120,16 +119,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
     return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
-
-
-@pytest.fixture
-def mocked_setup_rabbitmq(mocker: MockerFixture):
-    return (
-        mocker.patch(
-            "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
-            autospec=True,
-        ),
-    )
 
 
 @pytest.fixture
