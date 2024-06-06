@@ -357,6 +357,7 @@ services:
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
       EFS_DNS_NAME: ${EFS_DNS_NAME}
+      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
