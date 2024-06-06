@@ -10,11 +10,7 @@ from typing import Any
 
 import pytest
 from models_library.basic_regex import VERSION_RE
-from models_library.services import (
-    BaseServiceCommonDataModel,
-    BootOption,
-    ServiceMetaDataPublished,
-)
+from models_library.services import BootOption, ServiceBase, ServiceMetaDataPublished
 from models_library.services_constants import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
@@ -34,7 +30,7 @@ def minimal_service_common_data() -> dict[str, Any]:
 def test_create_minimal_service_common_data(
     minimal_service_common_data: dict[str, Any]
 ):
-    service = BaseServiceCommonDataModel(**minimal_service_common_data)
+    service = ServiceBase(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
@@ -45,7 +41,7 @@ def test_node_with_empty_thumbnail(minimal_service_common_data: dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update({"thumbnail": ""})
 
-    service = BaseServiceCommonDataModel(**minimal_service_common_data)
+    service = ServiceBase(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
@@ -60,7 +56,7 @@ def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
         }
     )
 
-    service = BaseServiceCommonDataModel(**minimal_service_common_data)
+    service = ServiceBase(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]

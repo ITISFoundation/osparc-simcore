@@ -7,7 +7,7 @@ from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_authoring import Author, Badge
-from .services_base import BaseServiceCommonDataModel, ServiceKeyVersion
+from .services_base import ServiceBase, ServiceKeyVersion
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_constrained_types import (
     DynamicServiceKey,
@@ -118,7 +118,7 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
 }
 
 
-class ServiceMetaDataPublished(ServiceKeyVersion, BaseServiceCommonDataModel):
+class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
     """
     Service metadata at publication time
 

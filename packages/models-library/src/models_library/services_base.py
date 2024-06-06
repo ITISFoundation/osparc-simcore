@@ -20,10 +20,10 @@ class ServiceKeyVersion(BaseModel):
         frozen = True
 
 
-class BaseServiceCommonDataModel(BaseModel):
+class ServiceBase(BaseModel):
     name: str = Field(
         ...,
-        description="short, human readable name for the node",
+        description="Display name: short, human readable name for the node",
         example="Fast Counter",
     )
     thumbnail: HttpUrl | None = Field(

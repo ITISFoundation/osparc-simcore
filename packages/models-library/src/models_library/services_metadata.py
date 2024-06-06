@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from pydantic import Field, HttpUrl
 
-from .services_base import BaseServiceCommonDataModel
+from .services_base import ServiceBase
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_constrained_types import DynamicServiceKey, ServiceKey, ServiceVersion
 from .services_enums import ServiceType
@@ -15,7 +15,7 @@ assert ServiceType  # nosec
 assert ServiceVersion  # nosec
 
 
-class ServiceMetaDataEditable(BaseServiceCommonDataModel):
+class ServiceMetaDataEditable(ServiceBase):
     # Overrides all fields of BaseServiceCommonDataModel:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
