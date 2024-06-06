@@ -268,9 +268,6 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
 @pytest.mark.parametrize(
     "response_timeline, expected_notification_count",
     [
-        # TODO: below
-        # create service pattern for start & stop with the appropriate type of message types
-        # including idle and the ones for legacy services
         (_ResponseTimeline([_get_node_get_with("running")]), 1),
         (
             _ResponseTimeline(
@@ -280,6 +277,24 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
         ),
         (_ResponseTimeline([__get_dynamic_service_get_new_style_with("running")]), 1),
         (_ResponseTimeline([__get_node_get_idle()]), 1),
+        (
+            _ResponseTimeline(
+                [
+                    __get_node_get_idle(),
+                    __get_dynamic_service_get_new_style_with("pending"),
+                    __get_dynamic_service_get_new_style_with("pulling"),
+                    __get_dynamic_service_get_new_style_with("starting"),
+                    __get_dynamic_service_get_new_style_with("starting"),
+                    __get_dynamic_service_get_new_style_with("starting"),
+                    __get_dynamic_service_get_new_style_with("starting"),
+                    __get_dynamic_service_get_new_style_with("running"),
+                    __get_dynamic_service_get_new_style_with("stopping"),
+                    __get_dynamic_service_get_new_style_with("complete"),
+                    __get_node_get_idle(),
+                ]
+            ),
+            8,
+        ),
     ],
 )
 async def test_expected_calls_to_notify_frontend(
