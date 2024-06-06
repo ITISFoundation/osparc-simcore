@@ -39,24 +39,24 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const spacing = 20;
     const mainLayoutsScroll = 8;
 
-    const mainLayoutWithSides = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
-    this._addToMainLayout(mainLayoutWithSides);
+    const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
+    this._addToMainLayout(mainLayoutWithSideSpacers);
 
     this.__leftColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: leftColumnWidth
     });
-    mainLayoutWithSides.add(this.__leftColum);
+    mainLayoutWithSideSpacers.add(this.__leftColum);
 
     this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    mainLayoutWithSides.add(this.__mainLayout);
+    mainLayoutWithSideSpacers.add(this.__mainLayout);
 
     const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    mainLayoutWithSides.add(rightColum, {
+    mainLayoutWithSideSpacers.add(rightColum, {
       flex: 1
     });
 
     const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-    this.__mainLayout.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + mainLayoutsScroll);
+    this.__mainLayout.setMinWidth(this.self().MIN_GRID_CARDS_PER_ROW * itemWidth + mainLayoutsScroll);
     const fitResourceCards = () => {
       const w = document.documentElement.clientWidth;
       const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - emptyColumnMinWidth) / itemWidth);
@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   statics: {
     PAGINATED_STUDIES: 10,
-    MIN_STUDIES_PER_ROW: 4,
+    MIN_GRID_CARDS_PER_ROW: 4,
     SIDE_SPACER_WIDTH: 180,
 
     checkLoggedIn: function() {
