@@ -10,6 +10,7 @@ Once the scheduler determines a task shall run, its state is set to PENDING, so 
 The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 
 """
+
 import asyncio
 import datetime
 import logging
@@ -413,15 +414,21 @@ class BaseCompScheduler(ABC):
                     ),
                     wallet_id=run_metadata.get("wallet_id"),
                     wallet_name=run_metadata.get("wallet_name"),
-                    pricing_plan_id=t.pricing_info.get("pricing_plan_id")
-                    if t.pricing_info
-                    else None,
-                    pricing_unit_id=t.pricing_info.get("pricing_unit_id")
-                    if t.pricing_info
-                    else None,
-                    pricing_unit_cost_id=t.pricing_info.get("pricing_unit_cost_id")
-                    if t.pricing_info
-                    else None,
+                    pricing_plan_id=(
+                        t.pricing_info.get("pricing_plan_id")
+                        if t.pricing_info
+                        else None
+                    ),
+                    pricing_unit_id=(
+                        t.pricing_info.get("pricing_unit_id")
+                        if t.pricing_info
+                        else None
+                    ),
+                    pricing_unit_cost_id=(
+                        t.pricing_info.get("pricing_unit_cost_id")
+                        if t.pricing_info
+                        else None
+                    ),
                     product_name=run_metadata.get(
                         "product_name", UNDEFINED_STR_METADATA
                     ),
@@ -431,16 +438,27 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get("project_metadata", {}).get(
-                        "parent_project_name",
-                        run_metadata.get("project_name", UNDEFINED_STR_METADATA),
+                    project_name=run_metadata.get("project_metadata", {}).get(  # type: ignore[arg-type]
+                        "project_name", UNDEFINED_STR_METADATA
                     ),
                     node_id=t.node_id,
-                    node_name=run_metadata.get("project_metadata", {}).get(
-                        "parent_node_name",
-                        run_metadata.get("node_id_names_map", {}).get(
-                            t.node_id, UNDEFINED_STR_METADATA
-                        ),
+                    node_name=run_metadata.get("node_id_names_map", {}).get(
+                        t.node_id, UNDEFINED_STR_METADATA
+                    ),
+                    parent_project_id=run_metadata.get("project_metadata", {}).get(
+                        "parent_project_id"
+                    ),
+                    parent_node_id=run_metadata.get("project_metadata", {}).get(
+                        "parent_node_id"
+                    ),
+                    root_parent_project_id=run_metadata.get("project_metadata", {}).get(
+                        "root_parent_project_id"
+                    ),
+                    root_parent_project_name=run_metadata.get(
+                        "project_metadata", {}
+                    ).get("root_parent_project_name"),
+                    root_parent_node_id=run_metadata.get("project_metadata", {}).get(
+                        "root_parent_node_id"
                     ),
                     service_key=ServiceKey(t.image.name),
                     service_version=ServiceVersion(t.image.tag),
