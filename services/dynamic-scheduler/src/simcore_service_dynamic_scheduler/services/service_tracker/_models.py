@@ -42,6 +42,7 @@ class TrackedServiceModel:
     ### SERVICE STATSU UPDATE ###
     #############################
 
+    # set when a job will be immediately scheduled
     scheduled_to_run: bool = False
 
     # stored for debug mainly this is used to compute ``current_state``
