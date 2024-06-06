@@ -1,5 +1,4 @@
 from functools import cached_property
-from pathlib import Path
 from typing import Final, cast
 
 from fastapi import FastAPI
@@ -19,7 +18,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 EFS_GUARDIAN_ENV_PREFIX: Final[str] = "EFS_GUARDIAN_"
 
-  
+
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
