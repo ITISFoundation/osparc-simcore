@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, HttpUrl, validator
 
 from .services_constrained_types import ServiceKey, ServiceVersion
+from .utils.common_validators import empty_str_to_none_pre_validator
 
 
 class ServiceKeyVersion(BaseModel):
@@ -41,9 +42,6 @@ class BaseServiceCommonDataModel(BaseModel):
         ],
     )
 
-    @validator("thumbnail", pre=True, always=False)
-    @classmethod
-    def validate_thumbnail(cls, value):  # pylint: disable=no-self-argument,no-self-use
-        if value == "":
-            return None
-        return value
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True, always=False)(
+        empty_str_to_none_pre_validator
+    )

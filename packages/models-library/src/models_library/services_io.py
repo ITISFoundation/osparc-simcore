@@ -88,7 +88,7 @@ class BaseServiceIOModel(BaseModel):
 
     @validator("content_schema")
     @classmethod
-    def check_type_is_set_to_schema(cls, v, values):
+    def _check_type_is_set_to_schema(cls, v, values):
         if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
             msg = f"content_schema is defined but set the wrong type.Expected type=ref_contentSchema but got ={ptype}."
             raise ValueError(msg)
@@ -96,7 +96,7 @@ class BaseServiceIOModel(BaseModel):
 
     @validator("content_schema")
     @classmethod
-    def check_valid_json_schema(cls, v):
+    def _check_valid_json_schema(cls, v):
         if v is not None:
             try:
                 jsonschema_validate_schema(schema=v)
