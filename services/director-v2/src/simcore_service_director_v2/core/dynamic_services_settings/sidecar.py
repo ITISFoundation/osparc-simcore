@@ -5,13 +5,13 @@ from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerPlacementConstraint
-from models_library.users import UserID
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -52,18 +52,6 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
         return v
-
-
-class EfsSettings(BaseCustomSettings):
-    EFS_DNS_NAME: str = Field(
-        description="AWS Elastic File System DNS name",
-        example="fs-xxx.efs.us-east-1.amazonaws.com",
-    )
-    EFS_ENABLED_FOR_USERS: list[UserID] = Field(
-        default_factory=list,
-        example='["1", "2"]',
-    )
-    EFS_BASE_DIRECTORY: str = Field(default="project-specific-data")
 
 
 class PlacementSettings(BaseCustomSettings):
@@ -137,7 +125,9 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SIDECAR_EFS_SETTINGS: EfsSettings | None = Field(auto_default_from_env=True)
+    DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
+        auto_default_from_env=True
+    )
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
         auto_default_from_env=True
