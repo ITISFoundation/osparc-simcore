@@ -27,7 +27,7 @@ from .basic_regex import (
     SIMCORE_S3_FILE_ID_RE,
     UUID_RE,
 )
-from .services import PROPERTY_KEY_RE
+from .services_constants import PROPERTY_KEY_RE
 
 if TYPE_CHECKING:
     pass

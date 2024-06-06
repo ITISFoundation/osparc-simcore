@@ -29,7 +29,8 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
+from .services import ServiceKey, ServiceVersion
+from .services_constants import PROPERTY_KEY_RE
 
 # NOTE: WARNING the order here matters
 
