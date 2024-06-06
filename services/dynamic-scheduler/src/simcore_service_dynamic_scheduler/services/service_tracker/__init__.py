@@ -1,4 +1,5 @@
 from ._api import (
+    NORMAL_RATE_POLL_INTERVAL,
     can_notify_frontend,
     get_all_tracked,
     get_tracked,
@@ -16,6 +17,7 @@ __all__: tuple[str, ...] = (
     "can_notify_frontend",
     "get_all_tracked",
     "get_tracked",
+    "NORMAL_RATE_POLL_INTERVAL",
     "remove_tracked",
     "set_if_status_changed",
     "set_request_as_running",

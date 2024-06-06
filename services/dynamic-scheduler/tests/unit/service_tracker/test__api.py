@@ -28,7 +28,7 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
 )
 from simcore_service_dynamic_scheduler.services.service_tracker._api import (
     _LOW_RATE_POLL_INTERVAL,
-    _NORMAL_RATE_POLL_INTERVAL,
+    NORMAL_RATE_POLL_INTERVAL,
     _get_current_state,
     _get_poll_interval,
 )
@@ -142,7 +142,7 @@ async def test_set_service_status_task_uid(app: FastAPI, node_id: NodeID, faker:
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
-            (DynamicServiceGet.parse_obj(x), _NORMAL_RATE_POLL_INTERVAL)
+            (DynamicServiceGet.parse_obj(x), NORMAL_RATE_POLL_INTERVAL)
             for x in DynamicServiceGet.Config.schema_extra["examples"]
         ],
         (

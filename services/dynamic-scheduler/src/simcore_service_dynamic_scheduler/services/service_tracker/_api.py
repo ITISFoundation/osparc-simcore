@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 _LOW_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
-_NORMAL_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=5)
+NORMAL_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES: Final[timedelta] = timedelta(seconds=60)
 
 
@@ -59,7 +59,7 @@ def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> tim
     if __get_state_str(status) != "running":
         return _LOW_RATE_POLL_INTERVAL
 
-    return _NORMAL_RATE_POLL_INTERVAL
+    return NORMAL_RATE_POLL_INTERVAL
 
 
 def _get_current_state(
