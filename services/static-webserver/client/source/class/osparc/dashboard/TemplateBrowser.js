@@ -190,6 +190,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._addGroupByButton();
       this._addViewModeButton();
 
+      this._addResourceFilter();
+
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
       return this._resourcesContainer;

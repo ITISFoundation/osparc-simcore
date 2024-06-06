@@ -318,6 +318,31 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._toolbar.add(viewModeLayout);
     },
 
+    _addResourceFilter: function() {
+      const resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
+        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10, // aligned with toolbar buttons: search bar + spacing
+        maxWidth: osparc.ui.basic.LoadingPageHandler.SIDE_SPACER_WIDTH,
+        width: osparc.ui.basic.LoadingPageHandler.SIDE_SPACER_WIDTH
+      });
+
+      resourceFilter.addListener("changeSharedWith", e => {
+        const sharedWith = e.getData();
+        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+      }, this);
+
+      resourceFilter.addListener("changeSelectedTags", e => {
+        const selectedTagIds = e.getData();
+        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
+      }, this);
+
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        resourceFilter.filterChanged(filterData);
+      });
+
+      this._addToLeftColumn(resourceFilter);
+    },
+
     /**
      * Function that resets the selected item
      */

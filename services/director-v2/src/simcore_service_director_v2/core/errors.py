@@ -19,7 +19,6 @@ translate into something like
 }
 """
 
-
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -90,6 +89,7 @@ class ProjectNotFoundError(DirectorError):
 
     def __init__(self, project_id: ProjectID):
         super().__init__(f"project {project_id} not found")
+        self.project_id = project_id
 
 
 class PricingPlanUnitNotFoundError(DirectorError):

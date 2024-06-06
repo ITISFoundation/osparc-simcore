@@ -305,6 +305,30 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "chip-button": {
+      style: {
+        width: 1,
+        radius: 6,
+        color: "text",
+        backgroundColor: "transparent"
+      }
+    },
+
+    "filter-toggle-button": {
+      style: {
+        width: 1,
+        radius: 8,
+        color: "transparent"
+      }
+    },
+
+    "filter-toggle-button-selected": {
+      include: "filter-toggle-button",
+      style: {
+        color: "text"
+      }
+    },
+
     "pb-listitem": {
       style: {
         radius: 5
