@@ -69,10 +69,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings | None = Field(
-        auto_default_from_env=True
-    )
-    EFS_GUARDIAN_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802

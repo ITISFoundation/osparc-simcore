@@ -1,13 +1,31 @@
 from pathlib import Path
 
+import pytest
 from faker import Faker
 from fastapi import FastAPI
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from simcore_service_efs_guardian.core.settings import AwsEfsSettings
 
 pytest_simcore_core_services_selection = ["rabbit"]
 pytest_simcore_ops_services_selection = []
+
+
+@pytest.fixture
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+    rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            **rabbit_env_vars_dict,
+        },
+    )
 
 
 async def test_rpc_create_project_specific_data_dir(

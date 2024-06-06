@@ -139,3 +139,17 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
+
+
+# @pytest.fixture
+# def mocked_setup_rabbitmq(mocker: MockerFixture):
+#     return (
+#         mocker.patch(
+#             "simcore_service_efs_guardian.core.application.setup_rabbitmq",
+#             autospec=True,
+#         ),
+#         mocker.patch(
+#             "simcore_service_efs_guardian.core.application.setup_rpc_routes",
+#             autospec=True,
+#         ),
+#     )
