@@ -7,7 +7,16 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from settings_library.efs import AwsEfsSettings
+from settings_library.efs import (
+    NFS_PROTOCOL,
+    NFS_REQUEST_TIMEOUT,
+    NUMBER_OF_RETRANSMISSIONS,
+    PORT_MODE,
+    READ_SIZE,
+    RECOVERY_MODE,
+    WRITE_SIZE,
+    AwsEfsSettings,
+)
 from settings_library.r_clone import S3Provider
 
 from ...core.dynamic_services_settings.sidecar import RCloneSettings
@@ -86,7 +95,7 @@ def _get_efs_volume_driver_config(
     driver_config: dict[str, Any] = {
         "Options": {
             "type": "nfs",
-            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport",
+            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}",
             "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
         },
     }
