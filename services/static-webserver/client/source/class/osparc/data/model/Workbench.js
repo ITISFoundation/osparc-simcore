@@ -740,7 +740,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       return workbenchUI;
     },
 
-    patchWorkbench: function(workbenchChanges) {
+    /**
+     * Call patch Node, but the changes were already applied on the frontend
+     */
+    patchWorkbenchDelayed: function(workbenchChanges) {
       return new Promise((resolve, reject) => {
         console.log("workbenchChanges", workbenchChanges);
         const promises = [];
@@ -750,7 +753,7 @@ qx.Class.define("osparc.data.model.Workbench", {
               "studyId": this.getStudy().getUuid(),
               "nodeId": nodeId
             },
-            data: workbenchChanges[nodeId]
+            data: this.getNode(nodeId).serialize()
           };
           promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
         })

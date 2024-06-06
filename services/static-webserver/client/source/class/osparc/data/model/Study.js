@@ -625,32 +625,40 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    /**
+     * Call patch Study, but the changes were already applied on the frontend
+     */
     patchStudyDelayed: function(studyChanges) {
       return new Promise((resolve, reject) => {
         const promises = [];
         let workbenchChanges = {};
         if ("workbench" in studyChanges) {
           workbenchChanges = studyChanges["workbench"];
-          promises.push(this.getWorkbench().patchWorkbench(workbenchChanges));
+          promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchChanges));
           delete studyChanges["workbench"];
         }
         console.log("studyChanges", studyChanges);
-        if (Object.keys(studyChanges).length) {
+        const fieldKeys = Object.keys(studyChanges);
+        if (fieldKeys.length) {
           const params = {
             url: {
               "studyId": this.getUuid()
             },
-            data: studyChanges
+            data: {}
           };
-          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+          fieldKeys.forEach(fieldKey => {
+            if (fieldKey === "ui") {
+              params["data"][fieldKey] = this.getUi.serialize();
+            } else {
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const getter = "get" + upKey;
+              params["data"][fieldKey] = this[getter](studyChanges[fieldKey]);
+            }
+            promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+          });
         }
         Promise.all(promises)
           .then(() => {
-            Object.keys(studyChanges).forEach(fieldKey => {
-              const upKey = qx.lang.String.firstUp(fieldKey);
-              const setter = "set" + upKey;
-              this[setter](studyChanges[fieldKey]);
-            })
             // A bit hacky, but it's not sent back to the backend
             this.set({
               lastChangeDate: new Date()
