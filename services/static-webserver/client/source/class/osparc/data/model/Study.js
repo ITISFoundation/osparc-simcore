@@ -649,7 +649,7 @@ qx.Class.define("osparc.data.model.Study", {
           };
           fieldKeys.forEach(fieldKey => {
             if (fieldKey === "ui") {
-              params["data"][fieldKey] = this.getUi.serialize();
+              params["data"][fieldKey] = this.getUi().serialize();
             } else {
               const upKey = qx.lang.String.firstUp(fieldKey);
               const getter = "get" + upKey;
