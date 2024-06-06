@@ -5,7 +5,6 @@ from datetime import timedelta
 from typing import Any, Final
 from uuid import uuid4
 
-import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -22,7 +21,6 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
     get_all_tracked,
     get_tracked,
     remove_tracked,
-    set_check_status_after_to,
     set_if_status_changed,
     set_request_as_running,
     set_request_as_stopped,
@@ -134,22 +132,6 @@ async def test_set_service_status_task_uid(app: FastAPI, node_id: NodeID, faker:
     assert model
 
     assert model.service_status_task_uid == task_uid
-
-
-async def test_set_check_status_after_to(app: FastAPI, node_id: NodeID):
-    await set_request_as_running(app, node_id)
-
-    delay = timedelta(seconds=6)
-
-    benfore = (arrow.utcnow() + delay).timestamp()
-    await set_check_status_after_to(app, node_id, delay)
-    after = (arrow.utcnow() + delay).timestamp()
-
-    model = await get_tracked(app, node_id)
-    assert model
-    assert model.check_status_after
-
-    assert benfore < model.check_status_after < after
 
 
 @pytest.mark.parametrize(

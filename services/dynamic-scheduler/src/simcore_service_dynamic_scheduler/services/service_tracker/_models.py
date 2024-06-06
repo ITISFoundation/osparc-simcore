@@ -1,5 +1,5 @@
 import pickle
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import auto
 
@@ -42,16 +42,20 @@ class TrackedServiceModel:
     ### SERVICE STATSU UPDATE ###
     #############################
 
+    scheduled_to_run: bool = False
+
     # stored for debug mainly this is used to compute ``current_state``
     service_status: str = ""
     # uid of the job currently fetching the status
     service_status_task_uid: TaskUID | None = None
 
     # used to determine when to poll the status again
-    check_status_after: float | None = None
+    check_status_after: float = field(
+        default_factory=lambda: arrow.utcnow().timestamp()
+    )
 
-    def set_check_status_after_to(self, delay: timedelta) -> None:
-        self.check_status_after = (arrow.utcnow() + delay).timestamp()
+    def set_check_status_after_to(self, delay_from_now: timedelta) -> None:
+        self.check_status_after = (arrow.utcnow() + delay_from_now).timestamp()
 
     # used to determine when was the last time the status was notified
     last_status_notification: float = 0

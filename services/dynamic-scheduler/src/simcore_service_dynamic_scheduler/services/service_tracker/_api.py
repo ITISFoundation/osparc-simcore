@@ -114,6 +114,7 @@ async def set_if_status_changed(
     # set new polling interval in the future
     model.set_check_status_after_to(_get_poll_interval(status))
     model.service_status_task_uid = None
+    model.scheduled_to_run = False
 
     # check if model changed
     json_status = status.json()
@@ -136,36 +137,38 @@ async def can_notify_frontend(
     """
     tracker: Tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
+
     if model is None:
         return False
 
-    if status_changed:
-        return True
-
     # check if too much time has passed since the last time an update was sent
-    current_timestamp = arrow.utcnow().timestamp()
     if (
-        current_timestamp - model.last_status_notification
-    ) > _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES.total_seconds():
+        status_changed
+        or (arrow.utcnow().timestamp() - model.last_status_notification)
+        > _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES.total_seconds()
+    ):
+        model.set_last_status_notification_to_now()
+        await tracker.save(node_id, model)
         return True
 
     return False
 
 
-async def set_check_status_after_to(
-    app: FastAPI, node_id: NodeID, delay: timedelta
+async def set_scheduled_to_run(
+    app: FastAPI, node_id: NodeID, delay_from_now: timedelta
 ) -> None:
     tracker: Tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_check_status_after_to",
+            "Could not find a %s entry for node_id %s: skipping set_scheduled_to_start",
             TrackedServiceModel.__name__,
             node_id,
         )
         return
 
-    model.set_check_status_after_to(delay)
+    model.scheduled_to_run = True
+    model.set_check_status_after_to(delay_from_now)
     await tracker.save(node_id, model)
 
 
