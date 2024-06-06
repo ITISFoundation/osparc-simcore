@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from copy import deepcopy
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -36,7 +36,7 @@ from ..dependencies.user_groups import list_user_groups
 from ._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
 _DEPRECATED_RESOURCES: Final[list[str]] = ["MPI"]
@@ -59,7 +59,7 @@ def _compute_service_available_boot_modes(
     generic_resources: ResourcesDict = {}
     for entry in resource_entries:
         if not isinstance(entry.value, dict):
-            logger.warning(
+            _logger.warning(
                 "resource %s for %s got invalid type",
                 f"{entry.dict()!r}",
                 f"{service_key}:{service_version}",
@@ -97,7 +97,7 @@ def _resources_from_settings(
     service_resources = deepcopy(default_service_resources)
     for entry in resource_entries:
         if not isinstance(entry.value, dict):
-            logger.warning(
+            _logger.warning(
                 "resource %s for %s got invalid type",
                 f"{entry.dict()!r}",
                 f"{service_key}:{service_version}",
@@ -137,7 +137,7 @@ async def _get_service_labels(
                 f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
             ),
         )
-        logger.debug(
+        _logger.debug(
             "received for %s %s",
             f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
             f"{service_labels=}",
@@ -150,7 +150,7 @@ async def _get_service_labels(
         # and will fail validating the key or the version
         if err.status_code == status.HTTP_400_BAD_REQUEST:
             return None
-        raise err
+        raise
 
 
 def _get_service_settings(
@@ -160,7 +160,7 @@ def _get_service_settings(
         list[SimcoreServiceSettingLabelEntry],
         labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
     )
-    logger.debug("received %s", f"{service_settings=}")
+    _logger.debug("received %s", f"{service_settings=}")
     return service_settings
 
 
@@ -172,10 +172,14 @@ def _get_service_settings(
 async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: DirectorApi = Depends(get_director_api),
-    default_service_resources: ResourcesDict = Depends(get_default_service_resources),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    user_groups: list[GroupAtDB] = Depends(list_user_groups),
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+    default_service_resources: Annotated[
+        ResourcesDict, Depends(get_default_service_resources)
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    user_groups: Annotated[list[GroupAtDB], Depends(list_user_groups)],
 ) -> ServiceResourcesDict:
     image_version = parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}")
     if is_function_service(service_key):
@@ -196,7 +200,7 @@ async def get_service_resources(
         ComposeSpecLabelDict | None,
         service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
     )
-    logger.debug("received %s", f"{service_spec=}")
+    _logger.debug("received %s", f"{service_spec=}")
 
     if service_spec is None:
         # no compose specifications -> single service

@@ -4,9 +4,11 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -23,6 +25,7 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
+from ...services.jobs import replace_custom_metadata, start_project, stop_project
 from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -33,7 +36,6 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 
@@ -86,6 +88,9 @@ async def create_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
+    hidden: Annotated[bool, Query()] = True,
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ):
     """Creates a job in a specific release with given inputs.
 
@@ -105,7 +110,12 @@ async def create_job(
     _logger.debug("Creating Job '%s'", pre_job.name)
 
     project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
-    new_project: ProjectGet = await webserver_api.create_project(project_in)
+    new_project: ProjectGet = await webserver_api.create_project(
+        project_in,
+        is_hidden=hidden,
+        parent_project_uuid=x_simcore_parent_project_uuid,
+        parent_node_id=x_simcore_parent_node_id,
+    )
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
 
@@ -245,13 +255,12 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    project_metadata = await webserver_api.update_project_metadata(
-        project_id=job_id, metadata=update.metadata
-    )
-    return JobMetadata(
+    return await replace_custom_metadata(
+        job_name=job_name,
         job_id=job_id,
-        metadata=project_metadata.custom,
-        url=url_for(
+        update=update,
+        webserver_api=webserver_api,
+        self_url=url_for(
             "replace_job_custom_metadata",
             solver_key=solver_key,
             version=version,

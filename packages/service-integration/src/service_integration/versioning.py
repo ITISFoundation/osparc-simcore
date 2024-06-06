@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
-from typing import Pattern
+from re import Pattern
+from typing import Any, ClassVar
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
@@ -20,7 +21,8 @@ def bump_version_string(current_version: str, bump: str) -> str:
 
     # CAN ONLY bump releases not pre/post/dev releases
     if version.is_devrelease or version.is_postrelease or version.is_prerelease:
-        raise NotImplementedError("Can only bump released versions")
+        msg = "Can only bump released versions"
+        raise NotImplementedError(msg)
 
     major, minor, patch = version.major, version.minor, version.micro
     if bump == "major":
@@ -32,7 +34,6 @@ def bump_version_string(current_version: str, bump: str) -> str:
     return new_version
 
 
-# TODO: from https://github.com/ITISFoundation/osparc-simcore/issues/2409
 # ### versioning
 # a single version number does not suffice. Instead we should have a set of versions that describes "what is inside the container"
 # - service version (following semantic versioning): for the published service
@@ -40,6 +41,7 @@ def bump_version_string(current_version: str, bump: str) -> str:
 # - executable name: the public name of the wrapped program (e.g. matlab)
 # - executable version: the version of the program (e.g. matlab 2020b)
 # - further libraries version dump (e.g. requirements.txt, etc)
+# SEE from https://github.com/ITISFoundation/osparc-simcore/issues/2409
 
 
 class ExecutableVersionInfo(BaseModel):
@@ -51,7 +53,7 @@ class ExecutableVersionInfo(BaseModel):
     released: datetime
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "display_name": "SEMCAD X",
                 "display_version": "Matterhorn Student Edition 1",
@@ -71,7 +73,7 @@ class ServiceVersionInfo(BaseModel):
     released: datetime = Field(..., description="Publication/release date")
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "version": "1.0.0",  # e.g. first time released as an osparc
                 "integration_version": "2.1.0",

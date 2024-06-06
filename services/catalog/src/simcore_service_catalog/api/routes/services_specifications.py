@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from models_library.api_schemas_catalog.services_specifications import (
@@ -28,15 +29,22 @@ async def get_service_specifications(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    strict: bool = Query(
-        False,
-        description="if True only the version specs will be retrieved, if False the latest version will be used instead",
-    ),
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    default_service_specifications: ServiceSpecifications = Depends(
-        get_default_service_specifications
-    ),
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
+    default_service_specifications: Annotated[
+        ServiceSpecifications, Depends(get_default_service_specifications)
+    ],
+    *,
+    strict: Annotated[
+        bool,
+        Query(
+            description="if True only the version specs will be retrieved, if False the latest version will be used instead",
+        ),
+    ] = False,
 ):
     _logger.debug("getting specifications for '%s:%s'", service_key, service_version)
 

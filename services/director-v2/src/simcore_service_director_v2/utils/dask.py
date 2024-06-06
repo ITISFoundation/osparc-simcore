@@ -52,7 +52,7 @@ from ..core.errors import (
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskJobID
-from ..modules.osparc_variables_substitutions import (
+from ..modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -601,7 +601,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         json_dumps(task_resources, indent=2),
     )
 
-    if can_a_worker_run_task:
+    if can_a_worker_run_task:  # OsparcErrorMixin
         return
 
     # check if we have missing resources

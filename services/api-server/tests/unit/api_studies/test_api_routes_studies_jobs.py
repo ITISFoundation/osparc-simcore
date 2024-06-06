@@ -20,9 +20,15 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     HttpApiCallCaptureModel,
 )
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import Study, StudyID
+
+_faker = Faker()
 
 
 @pytest.mark.xfail(reason="Still not implemented")
@@ -188,6 +194,11 @@ async def test_start_stop_delete_study_job(
     _check_response(response, status.HTTP_204_NO_CONTENT)
 
 
+@pytest.mark.parametrize(
+    "parent_node_id, parent_project_id",
+    [(_faker.uuid4(), _faker.uuid4()), (None, None)],
+)
+@pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
@@ -196,6 +207,9 @@ async def test_create_study_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
+    hidden: bool,
+    parent_project_id: UUID | None,
+    parent_node_id: UUID | None,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -213,9 +227,28 @@ async def test_create_study_job(
             project_id = path_params.get("project_id")
             assert project_id is not None
             assert project_id in name
+        if capture.method == "POST":
+            # test hidden boolean
+            _default_side_effect.post_called = True
+            query_dict = dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            )
+            _hidden = query_dict.get("hidden")
+            assert _hidden == ("true" if hidden else "false")
+
+            # test parent project and node ids
+            if parent_project_id is not None:
+                assert f"{parent_project_id}" == dict(request.headers).get(
+                    X_SIMCORE_PARENT_PROJECT_UUID.lower()
+                )
+            if parent_node_id is not None:
+                assert f"{parent_node_id}" == dict(request.headers).get(
+                    X_SIMCORE_PARENT_NODE_ID.lower()
+                )
         return capture.response_body
 
     _default_side_effect.patch_called = False
+    _default_side_effect.post_called = False
 
     create_respx_mock_from_capture(
         respx_mocks=[
@@ -226,13 +259,21 @@ async def test_create_study_job(
         side_effects_callbacks=[_default_side_effect] * 5,
     )
 
+    header_dict = {}
+    if parent_project_id is not None:
+        header_dict[X_SIMCORE_PARENT_PROJECT_UUID] = f"{parent_project_id}"
+    if parent_node_id is not None:
+        header_dict[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
+        headers=header_dict,
+        params={"hidden": f"{hidden}"},
         json={"values": {}},
     )
     assert response.status_code == 200
     assert _default_side_effect.patch_called
+    assert _default_side_effect.post_called
 
 
 async def test_get_study_job_outputs(

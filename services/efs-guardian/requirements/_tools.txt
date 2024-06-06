@@ -1,0 +1,74 @@
+astroid==3.2.2
+    # via pylint
+black==24.4.2
+build==1.2.1
+    # via pip-tools
+bump2version==1.0.1
+cfgv==3.4.0
+    # via pre-commit
+click==8.1.7
+    # via
+    #   black
+    #   pip-tools
+dill==0.3.8
+    # via pylint
+distlib==0.3.8
+    # via virtualenv
+filelock==3.14.0
+    # via virtualenv
+identify==2.5.36
+    # via pre-commit
+isort==5.13.2
+    # via pylint
+mccabe==0.7.0
+    # via pylint
+mypy-extensions==1.0.0
+    # via black
+nodeenv==1.8.0
+    # via pre-commit
+packaging==24.0
+    # via
+    #   black
+    #   build
+pathspec==0.12.1
+    # via black
+pip==24.0
+    # via pip-tools
+pip-tools==7.4.1
+platformdirs==4.2.2
+    # via
+    #   black
+    #   pylint
+    #   virtualenv
+pre-commit==3.7.1
+pylint==3.2.2
+pyproject-hooks==1.1.0
+    # via
+    #   build
+    #   pip-tools
+pyyaml==6.0.1
+    # via
+    #   pre-commit
+    #   watchdog
+ruff==0.4.5
+setuptools==70.0.0
+    # via
+    #   nodeenv
+    #   pip-tools
+tomli==2.0.1
+    # via
+    #   black
+    #   build
+    #   pip-tools
+    #   pylint
+tomlkit==0.12.5
+    # via pylint
+typing-extensions==4.11.0
+    # via
+    #   astroid
+    #   black
+virtualenv==20.26.2
+    # via pre-commit
+watchdog==4.0.1
+wheel==0.43.0
+    # via pip-tools

@@ -20,13 +20,11 @@ def test_pep404_compare_versions():
     assert Version("0.6a9dev") < Version("0.6a9")
 
     # same release but one is pre-release
-    assert (
-        Version("2.1-rc2").release == Version("2.1").release
-        and Version("2.1-rc2").is_prerelease
-    )
+    assert Version("2.1-rc2").release == Version("2.1").release
+    assert Version("2.1-rc2").is_prerelease
 
 
-BUMP_PARAMS = [
+_BUMP_PARAMS = [
     # "upgrade,current_version,new_version",
     ("patch", "1.1.1", "1.1.2"),
     ("minor", "1.1.1", "1.2.0"),
@@ -36,7 +34,7 @@ BUMP_PARAMS = [
 
 @pytest.mark.parametrize(
     "bump,current_version,new_version",
-    BUMP_PARAMS,
+    _BUMP_PARAMS,
 )
 def test_bump_version_string(
     bump: str,
@@ -48,7 +46,7 @@ def test_bump_version_string(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (ExecutableVersionInfo, ServiceVersionInfo),
+    [ExecutableVersionInfo, ServiceVersionInfo],
 )
 def test_version_info_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():

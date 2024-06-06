@@ -4,12 +4,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import re
 from pathlib import Path
 
 import pytest
 import simcore_service_payments
-import yaml
 from faker import Faker
 from models_library.users import GroupID
 from pydantic import parse_obj_as
@@ -55,80 +53,34 @@ def secret_key() -> str:
     return generate_token_secret_key(32)
 
 
-def pytest_addoption(parser: pytest.Parser):
-    group = parser.getgroup("simcore")
-
-    group.addoption(
-        "--external-email",
-        action="store",
-        type=str,
-        default=None,
-        help="An email for test_services_notifier_email",
-    )
+@pytest.fixture(scope="session")
+def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
+    if external_envfile_dict:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_envfile_dict
+        assert "PAYMENTS_GATEWAY_URL" in external_envfile_dict
+    return external_envfile_dict
 
 
 @pytest.fixture(scope="session")
-def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
-    if external_environment:
-        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
-        assert "PAYMENTS_GATEWAY_URL" in external_environment
-    return external_environment
-
-
-@pytest.fixture
 def env_devel_dict(
-    env_devel_dict: EnvVarsDict, external_environment: EnvVarsDict
+    env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
-    if external_environment:
-        return external_environment
+    if external_envfile_dict:
+        return external_envfile_dict
     return env_devel_dict
-
-
-@pytest.fixture
-def docker_compose_service_payments_env_vars(
-    services_docker_compose_file: Path,
-    env_devel_dict: EnvVarsDict,
-) -> EnvVarsDict:
-    """env vars injected at the docker-compose"""
-
-    payments = yaml.safe_load(services_docker_compose_file.read_text())["services"][
-        "payments"
-    ]
-
-    def _substitute(key, value):
-        if m := re.match(r"\${([^{}:-]\w+)", value):
-            expected_env_var = m.group(1)
-            try:
-                # NOTE: if this raises, then the RHS env-vars in the docker-compose are
-                # not defined in the env-devel
-                if value := env_devel_dict[expected_env_var]:
-                    return key, value
-            except KeyError:
-                pytest.fail(
-                    f"{expected_env_var} is not defined in .env-devel but used in docker-compose services[{payments}].environment[{key}]"
-                )
-        return None
-
-    envs: EnvVarsDict = {}
-    for key, value in payments.get("environment", {}).items():
-        if found := _substitute(key, value):
-            _, new_value = found
-            envs[key] = new_value
-
-    return envs
 
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    docker_compose_service_payments_env_vars: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     secret_key: str,
     faker: Faker,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_env_vars,
+            **docker_compose_service_environment_dict,
             "PAYMENTS_ACCESS_TOKEN_SECRET_KEY": secret_key,
             "PAYMENTS_USERNAME": faker.user_name(),
             "PAYMENTS_PASSWORD": faker.password(),

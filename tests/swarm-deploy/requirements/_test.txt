@@ -112,7 +112,7 @@ exceptiongroup==1.2.1
     #   pytest
 fast-depends==2.4.2
     # via faststream
-faststream==0.5.4
+faststream==0.5.10
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in

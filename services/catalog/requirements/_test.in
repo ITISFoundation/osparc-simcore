@@ -12,8 +12,8 @@
 --constraint _base.txt
 
 
-
 alembic # migration due to pytest_simcore.postgres_service
+asgi_lifespan
 click
 docker
 Faker

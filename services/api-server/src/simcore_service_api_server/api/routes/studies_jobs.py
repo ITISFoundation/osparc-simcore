@@ -2,13 +2,15 @@ import logging
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
+from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
+from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 
@@ -28,6 +30,12 @@ from ...models.schemas.jobs import (
 )
 from ...models.schemas.studies import Study, StudyID
 from ...services.director_v2 import DirectorV2Api
+from ...services.jobs import (
+    get_custom_metadata,
+    replace_custom_metadata,
+    start_project,
+    stop_project,
+)
 from ...services.solver_job_models_converters import create_jobstatus_from_task
 from ...services.storage import StorageApi
 from ...services.study_job_models_converters import (
@@ -38,16 +46,9 @@ from ...services.study_job_models_converters import (
 from ...services.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-#
-# - Study maps to project
-# - study-job maps to run??
-#
 
 
 def _compose_job_resource_name(study_key, job_id) -> str:
@@ -81,8 +82,19 @@ async def create_study_job(
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    hidden: Annotated[bool, Query()] = True,
+    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
+    x_simcore_parent_node_id: NodeID | None = Header(default=None),
 ) -> Job:
-    project = await webserver_api.clone_project(project_id=study_id, hidden=True)
+    """
+    hidden -- if True (default) hides project from UI
+    """
+    project = await webserver_api.clone_project(
+        project_id=study_id,
+        hidden=hidden,
+        parent_project_uuid=x_simcore_parent_project_uuid,
+        parent_node_id=x_simcore_parent_node_id,
+    )
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
     )
@@ -270,25 +282,56 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
     job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets custom metadata from a job"""
-    msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+    msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    _logger.debug(msg)
+
+    return await get_custom_metadata(
+        job_name=job_name,
+        job_id=job_id,
+        webserver_api=webserver_api,
+        self_url=url_for(
+            "get_study_job_custom_metadata",
+            study_id=study_id,
+            job_id=job_id,
+        ),
+    )
 
 
 @router.put(
     "/{study_id}/jobs/{job_id}/metadata",
+    response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def replace_study_job_custom_metadata(
-    study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate
+    study_id: StudyID,
+    job_id: JobID,
+    replace: JobMetadataUpdate,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Changes job's custom metadata"""
-    msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+
+    msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    _logger.debug(msg)
+
+    return await replace_custom_metadata(
+        job_name=job_name,
+        job_id=job_id,
+        update=replace,
+        webserver_api=webserver_api,
+        self_url=url_for(
+            "replace_study_job_custom_metadata",
+            study_id=study_id,
+            job_id=job_id,
+        ),
+    )

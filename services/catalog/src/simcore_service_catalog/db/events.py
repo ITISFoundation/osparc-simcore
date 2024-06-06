@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from .repositories.products import ProductsRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def setup_default_product(app: FastAPI):

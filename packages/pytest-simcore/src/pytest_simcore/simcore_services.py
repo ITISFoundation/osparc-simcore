@@ -46,6 +46,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "dynamic-schdlr": "/",
+    "efs-guardian": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",
@@ -173,7 +174,6 @@ def simcore_services_ready(
         env_prefix = service.upper().replace("-", "_")
 
         assert endpoint.host
-
         monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
         monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
 

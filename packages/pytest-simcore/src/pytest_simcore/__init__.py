@@ -16,14 +16,6 @@ def pytest_addoption(parser: pytest.Parser):
         help="Keep stack/registry up after fixtures closes",
     )
 
-    simcore_group.addoption(
-        "--external-envfile",
-        action="store",
-        type=Path,
-        default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
-    )
-
     # DUMMY
     parser.addini("HELLO", "Dummy pytest.ini setting")
 

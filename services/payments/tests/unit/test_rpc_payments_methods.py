@@ -52,7 +52,7 @@ def app_environment(
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
@@ -64,7 +64,7 @@ def app_environment(
             **app_environment,
             **rabbit_env_vars_dict,
             **postgres_env_vars_dict,
-            **external_environment,
+            **external_envfile_dict,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )

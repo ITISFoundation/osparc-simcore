@@ -36,6 +36,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.pytest_socketio",
@@ -108,11 +109,6 @@ def state_paths_dirs(container_base_dir: Path) -> list[Path]:
 @pytest.fixture
 def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
     return [container_base_dir / f"exclude_{i}" for i in range(4)]
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

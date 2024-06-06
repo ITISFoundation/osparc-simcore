@@ -131,7 +131,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
+      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
       CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
       CATALOG_PROFILING: ${CATALOG_PROFILING}
@@ -345,6 +345,15 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
     secrets: *dask_tls_secrets
+
+  efs-guardian:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -904,8 +913,6 @@ services:
           cpus: "1.0"
           memory: 1024M
 
-    networks:
-      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

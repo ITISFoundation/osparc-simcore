@@ -3,12 +3,12 @@ from typing import Any, ClassVar
 from pydantic import Extra
 
 from ..emails import LowerCaseEmailStr
-from ..services import ServiceDockerData, ServiceMetaData
+from ..services import BaseServiceMetaData, ServiceDockerData
 from ..services_access import ServiceAccessRights
 from ..services_resources import ServiceResourcesDict
 
 
-class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
+class ServiceUpdate(BaseServiceMetaData, ServiceAccessRights):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
@@ -61,7 +61,7 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
 
 
 class ServiceGet(
-    ServiceDockerData, ServiceAccessRights, ServiceMetaData
+    ServiceDockerData, ServiceAccessRights, BaseServiceMetaData
 ):  # pylint: disable=too-many-ancestors
     owner: LowerCaseEmailStr | None
 
