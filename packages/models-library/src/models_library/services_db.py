@@ -9,8 +9,9 @@ from typing import Any, ClassVar
 from pydantic import Field
 from pydantic.types import PositiveInt
 
-from .services import BaseServiceMetaData, ServiceKeyVersion
 from .services_access import ServiceGroupAccessRights
+from .services_base import ServiceKeyVersion
+from .services_metadata import BaseServiceMetaData
 
 # -------------------------------------------------------------------
 # Databases models

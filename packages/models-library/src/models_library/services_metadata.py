@@ -1,5 +1,22 @@
-class BaseServiceMetaData(_BaseServiceCommonDataModel):
-    # Overrides all fields of _BaseServiceCommonDataModel:
+from datetime import datetime
+from typing import Any, ClassVar
+
+from pydantic import Field, HttpUrl
+
+from .services_base import BaseServiceCommonDataModel
+from .services_constants import LATEST_INTEGRATION_VERSION
+from .services_constrained_types import DynamicServiceKey, ServiceKey, ServiceVersion
+from .services_enums import ServiceType
+
+assert DynamicServiceKey  # nosec
+assert LATEST_INTEGRATION_VERSION  # nosec
+assert ServiceKey  # nosec
+assert ServiceType  # nosec
+assert ServiceVersion  # nosec
+
+
+class BaseServiceMetaData(BaseServiceCommonDataModel):
+    # Overrides all fields of BaseServiceCommonDataModel:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
     #        it should be implemented with a different model e.g. ServiceMetaDataUpdate

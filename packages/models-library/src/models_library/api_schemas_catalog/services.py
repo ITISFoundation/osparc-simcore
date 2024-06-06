@@ -3,8 +3,9 @@ from typing import Any, ClassVar
 from pydantic import Extra
 
 from ..emails import LowerCaseEmailStr
-from ..services import BaseServiceMetaData, ServiceDockerData
+from ..services import ServiceDockerData
 from ..services_access import ServiceAccessRights
+from ..services_metadata import BaseServiceMetaData
 from ..services_resources import ServiceResourcesDict
 
 

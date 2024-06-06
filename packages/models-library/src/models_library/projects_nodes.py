@@ -18,6 +18,7 @@ from pydantic import (
     validator,
 )
 
+from .basic_regex import PROPERTY_KEY_RE
 from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -30,7 +31,6 @@ from .projects_nodes_io import (
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
-from .services_constants import PROPERTY_KEY_RE
 
 # NOTE: WARNING the order here matters
 

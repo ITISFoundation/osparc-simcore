@@ -19,7 +19,7 @@ class ServiceKeyVersion(BaseModel):
         frozen = True
 
 
-class _BaseServiceCommonDataModel(BaseModel):
+class BaseServiceCommonDataModel(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
