@@ -42,13 +42,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: leftColumnWidth
     });
-    mainLayoutWithSideSpacers.add(this.__leftColum);
+    mainLayoutWithSideSpacers.add(this.__leftLayout);
 
-    this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    mainLayoutWithSideSpacers.add(this.__mainLayout);
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    mainLayoutWithSideSpacers.add(this.__centerLayout);
 
     const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayoutWithSideSpacers.add(rightColum, {
@@ -56,19 +56,19 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     });
 
     const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-    this.__mainLayout.setMinWidth(this.self().MIN_GRID_CARDS_PER_ROW * itemWidth + mainLayoutsScroll);
+    this.__centerLayout.setMinWidth(this.self().MIN_GRID_CARDS_PER_ROW * itemWidth + mainLayoutsScroll);
     const fitResourceCards = () => {
       const w = document.documentElement.clientWidth;
       const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - emptyColumnMinWidth) / itemWidth);
       const newWidth = nStudies * itemWidth + 8;
-      if (newWidth > this.__mainLayout.getMinWidth()) {
-        this.__mainLayout.setWidth(newWidth);
+      if (newWidth > this.__centerLayout.getMinWidth()) {
+        this.__centerLayout.setWidth(newWidth);
       } else {
-        this.__mainLayout.setWidth(this.__mainLayout.getMinWidth());
+        this.__centerLayout.setWidth(this.__centerLayout.getMinWidth());
       }
 
-      const compactVersion = w < this.__mainLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
-      this.__leftColum.setVisibility(compactVersion ? "excluded" : "visible");
+      const compactVersion = w < this.__centerLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
+      this.__leftLayout.setVisibility(compactVersion ? "excluded" : "visible");
       rightColum.setVisibility(compactVersion ? "excluded" : "visible");
     };
     fitResourceCards();
@@ -208,8 +208,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
-    __leftColum: null,
-    __mainLayout: null,
+    __leftLayout: null,
+    __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
     _topBar: null,
@@ -237,7 +237,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addToLayout: function(widget, props = {}) {
-      this.__mainLayout.add(widget, props)
+      this.__centerLayout.add(widget, props)
     },
 
     initResources: function() {
@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceFilter.filterChanged(filterData);
       });
 
-      this.__leftColum.add(resourceFilter);
+      this.__leftLayout.add(resourceFilter);
     },
 
     /**
