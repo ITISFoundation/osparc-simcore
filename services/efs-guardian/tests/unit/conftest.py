@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
+from typing import Awaitable
 
 import httpx
 import pytest
@@ -14,13 +15,24 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.rabbit import RabbitSettings
 from simcore_service_efs_guardian.core.application import create_app
 from simcore_service_efs_guardian.core.settings import ApplicationSettings
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.aws_s3_service",
+    "pytest_simcore.aws_server",
 ]
 
 
@@ -83,6 +95,9 @@ def app_environment(
         monkeypatch,
         {
             **docker_compose_service_efs_guardian_env_vars,
+            "EFS_DNS_NAME": "fs-xxx.efs.us-east-1.amazonaws.com",
+            "EFS_MOUNTED_PATH": "/tmp/efs",
+            "EFS_PROJECT_SPECIFIC_DATA_DIRECTORY": "project-specific-data",
         },
     )
 
@@ -115,3 +130,26 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
             client._transport, ASGITransport  # pylint: disable=protected-access
         )
         yield client
+
+
+@pytest.fixture
+async def rpc_client(
+    rabbit_service: RabbitSettings,
+    app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("client")
+
+
+# @pytest.fixture
+# def mocked_setup_rabbitmq(mocker: MockerFixture):
+#     return (
+#         mocker.patch(
+#             "simcore_service_efs_guardian.core.application.setup_rabbitmq",
+#             autospec=True,
+#         ),
+#         mocker.patch(
+#             "simcore_service_efs_guardian.core.application.setup_rpc_routes",
+#             autospec=True,
+#         ),
+#     )
