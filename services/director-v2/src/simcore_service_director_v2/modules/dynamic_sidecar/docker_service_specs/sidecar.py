@@ -257,14 +257,14 @@ async def _get_mounts(
         )
 
     # We check whether user has access to EFS feature
-    _mount_efs_enabled = False
+    use_efs = False
     efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
     if efs_settings and scheduler_data.user_id in efs_settings.EFS_ENABLED_FOR_USERS:
-        _mount_efs_enabled = True
+        use_efs = True
 
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        if _mount_efs_enabled:
+        if use_efs:
             assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
 
             _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
