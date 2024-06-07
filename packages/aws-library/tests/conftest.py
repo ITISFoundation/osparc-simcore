@@ -10,6 +10,7 @@ pytest_plugins = [
     "pytest_simcore.aws_ec2_service",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
+    "pytest_simcore.aws_ssm_service",
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.pydantic_models",
