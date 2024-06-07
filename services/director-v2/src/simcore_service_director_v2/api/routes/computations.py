@@ -114,7 +114,7 @@ async def _check_pipeline_not_running(
     )
     if is_pipeline_running(pipeline_state):
         raise HTTPException(
-            status_code=status.HTTP_304_NOT_MODIFIED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
         )
 
@@ -250,11 +250,6 @@ async def _try_start_pipeline(
     summary="Create and optionally start a new computation",
     response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
-    responses={
-        status.HTTP_304_NOT_MODIFIED: {
-            "description": "Project already started",
-        },
-    },
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
