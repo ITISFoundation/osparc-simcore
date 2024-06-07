@@ -36,8 +36,7 @@ async def simcore_ssm_api(
     await ec2.close()
 
 
-async def test_ssm_client_lifespan(simcore_ssm_api: SimcoreSSMAPI):
-    ...
+async def test_ssm_client_lifespan(simcore_ssm_api: SimcoreSSMAPI): ...
 
 
 async def test_aiobotocore_ssm_client_when_ssm_server_goes_up_and_down(
