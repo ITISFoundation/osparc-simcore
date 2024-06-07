@@ -572,7 +572,7 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes, decimals = 2, isDecimalColapsed = true) {
+    bytesToSize: function(bytes, decimals = 2, isDecimalCollapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
       }
@@ -581,7 +581,7 @@ qx.Class.define("osparc.utils.Utils", {
       const dm = decimals < 0 ? 0 : decimals;
 
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return `${isDecimalColapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
+      return `${isDecimalCollapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {
