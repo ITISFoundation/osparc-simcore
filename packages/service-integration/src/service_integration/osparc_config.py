@@ -14,7 +14,7 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
@@ -48,7 +48,10 @@ from .yaml_utils import yaml_safe_load
 
 _logger = logging.getLogger(__name__)
 
-OSPARC_CONFIG_DIRNAME = ".osparc"
+OSPARC_CONFIG_DIRNAME: Final[str] = ".osparc"
+OSPARC_CONFIG_COMPOSE_SPEC_NAME: Final[str] = "docker-compose.overwrite.yml"
+OSPARC_CONFIG_METADATA_NAME: Final[str] = "metadata.yml"
+OSPARC_CONFIG_RUNTIME_NAME: Final[str] = "runtime.yml"
 
 
 SERVICE_KEY_FORMATS = {
@@ -94,7 +97,7 @@ class MetadataConfig(ServiceDockerData):
 
     @validator("contact")
     @classmethod
-    def check_contact_in_authors(cls, v, values):
+    def _check_contact_in_authors(cls, v, values):
         """catalog service relies on contact and author to define access rights"""
         authors_emails = {author.email for author in values["authors"]}
         if v not in authors_emails:

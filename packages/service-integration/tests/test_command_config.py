@@ -27,6 +27,7 @@ def test_create_new_osparc_config(
 
     result = run_program_with_args(
         "config",
+        "create",
         "--from-spec-file",
         str(tmp_compose_spec),
     )
