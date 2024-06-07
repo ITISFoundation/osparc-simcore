@@ -1,3 +1,4 @@
+from collections import Counter, defaultdict
 from typing import Final
 
 from aws_library.ec2.models import AWSTagKey, AWSTagValue, EC2Tags
@@ -35,26 +36,47 @@ async def monitor_buffer_machines(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> None:
     """Buffer machine creation works like so:
-    1. a cheap EC2 is created with an EBS attached volume
-    2. once running, a AWS SSM task is started to pull the necessary images
+    1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
+    2. once running, a AWS SSM task is started to pull the necessary images in a controlled way
     3. once the task is completed, the EC2 is stopped and is made available as a buffer EC2
-
-
-    Arguments:
-        app -- _description_
-        auto_scaling_mode -- _description_
+    4. once needed the buffer machine is started, and as it is up a SSM task is sent to connect to the swarm,
+    5. the usual then happens
     """
     ec2_client = get_ec2_client(app)
     ssm_client = get_ssm_client(app)
     app_settings = get_application_settings(app)
-    # observe current state:
-    # list currently available buffer machines
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ready_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped"],
     )
+    num_of_buffer_instances_by_type = Counter(_.type for _ in ready_buffer_instances)
+
+    buffer_instances_to_terminate_by_type = defaultdict()
+    for (
+        instance_type,
+        instance_type_boot,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
+        if (
+            num_of_buffer_instances_by_type[instance_type]
+            > instance_type_boot.buffer_count
+        ):
+            buffer_instances_to_terminate_by_type[instance_type] = (
+                num_of_buffer_instances_by_type[instance_type]
+                - instance_type_boot.buffer_count
+            )
+    # find the instance ids
+    instance_ids_to_terminate = []
+    for instance in ready_buffer_instances:
+        if buffer_instances_to_terminate_by_type[instance.type]:
+            instance_ids_to_terminate.append(instance.id)
+            buffer_instances_to_terminate_by_type[instance.type] -= 1
+
+    # observe current state:
+    # list currently available buffer machines
+
     pending_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
