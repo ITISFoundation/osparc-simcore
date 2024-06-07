@@ -52,6 +52,6 @@ class RPCDynamicServiceStop(BaseModel):
                 "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                 "node_id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "simcore_user_agent": "",
-                "can_save": True,
+                "save_state": True,
             }
         }
