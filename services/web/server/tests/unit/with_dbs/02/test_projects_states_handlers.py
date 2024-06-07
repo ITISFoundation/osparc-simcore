@@ -23,6 +23,7 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
@@ -798,6 +799,8 @@ async def test_close_project(
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
+    user_id = logged_user["id"]
+
     assert client.app
     # open project
     client_id = client_session_id_factory()
@@ -809,7 +812,7 @@ async def test_close_project(
             client.app, ProjectID(user_project["uuid"])
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
-            client.app, logged_user["id"], user_project["uuid"]
+            client.app, user_id, user_project["uuid"]
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
     else:
@@ -830,7 +833,7 @@ async def test_close_project(
         calls = [
             call(
                 client.app,
-                user_id=logged_user["id"],
+                user_id=user_id,
                 project_id=user_project["uuid"],
             ),
         ]
@@ -841,9 +844,13 @@ async def test_close_project(
         calls = [
             call(
                 app=client.app,
-                node_id=service.node_uuid,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=True,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=user_id,
+                    project_id=service.project_id,
+                    node_id=service.node_uuid,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=True,
+                ),
                 progress=mock.ANY,
             )
             for service in fake_dynamic_services
