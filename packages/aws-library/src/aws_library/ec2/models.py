@@ -12,6 +12,7 @@ from pydantic import (
     ConstrainedStr,
     Field,
     NonNegativeFloat,
+    NonNegativeInt,
     validator,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -138,6 +139,9 @@ class EC2InstanceBootSpecific(BaseModel):
         default=datetime.timedelta(minutes=30),
         description="time interval between pulls of images (minimum is 1 minute) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+    buffer_count: NonNegativeInt = Field(
+        default=0, description="number of buffer EC2s to keep"
     )
 
     class Config:
