@@ -27,12 +27,29 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.ssm import SSMSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
+
+
+class AutoscalingSSMSettings(SSMSettings):
+    class Config(SSMSettings.Config):
+        env_prefix = AUTOSCALING_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    f"{AUTOSCALING_ENV_PREFIX}SSM_ACCESS_KEY_ID": "my_access_key_id",
+                    f"{AUTOSCALING_ENV_PREFIX}SSM_ENDPOINT": "https://my_ssm_endpoint.com",
+                    f"{AUTOSCALING_ENV_PREFIX}SSM_REGION_NAME": "us-east-1",
+                    f"{AUTOSCALING_ENV_PREFIX}SSM_SECRET_ACCESS_KEY": "my_secret_access_key",
+                }
+            ],
+        }
 
 
 class AutoscalingEC2Settings(EC2Settings):
@@ -225,6 +242,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AUTOSCALING_EC2_ACCESS: AutoscalingEC2Settings | None = Field(
+        auto_default_from_env=True
+    )
+
+    AUTOSCALING_SSM_ACCESS: AutoscalingSSMSettings | None = Field(
         auto_default_from_env=True
     )
 
