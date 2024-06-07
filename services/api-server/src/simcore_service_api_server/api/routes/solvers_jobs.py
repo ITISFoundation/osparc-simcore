@@ -10,6 +10,9 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedException,
+)
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -193,13 +196,16 @@ async def start_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    await start_project(
-        request=request,
-        job_id=job_id,
-        expected_job_name=job_name,
-        webserver_api=webserver_api,
-        cluster_id=cluster_id,
-    )
+    try:
+        await start_project(
+            request=request,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=webserver_api,
+            cluster_id=cluster_id,
+        )
+    except ProjectAlreadyStartedException:
+        pass
     return await inspect_job(
         solver_key=solver_key,
         version=version,

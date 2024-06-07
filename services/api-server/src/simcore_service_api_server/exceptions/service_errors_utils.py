@@ -7,6 +7,7 @@ from typing import Any, NamedTuple, TypeAlias
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from simcore_service_api_server.exceptions.backend_errors import BackEndException
 
 from ..models.schemas.errors import ErrorGet
 
@@ -48,7 +49,7 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, ToApiTuple]
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, ToApiTuple | BackEndException]
 
 
 def _get_http_exception_kwargs(
@@ -61,15 +62,18 @@ def _get_http_exception_kwargs(
     headers: dict[str, str] = {}
 
     if mapped := http_status_map.get(service_error.response.status_code):
-        in_api = ToApiTuple(*mapped)
-        status_code = in_api.status_code
-        if in_api.detail:
-            if callable(in_api.detail):
-                detail = f"{in_api.detail(detail_kwargs)}."
-            else:
-                detail = in_api.detail
+        if isinstance(mapped, BackEndException):
+            raise mapped
         else:
-            detail = f"{service_error}."
+            in_api = ToApiTuple(*mapped)
+            status_code = in_api.status_code
+            if in_api.detail:
+                if callable(in_api.detail):
+                    detail = f"{in_api.detail(detail_kwargs)}."
+                else:
+                    detail = in_api.detail
+            else:
+                detail = f"{service_error}."
 
     elif service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,

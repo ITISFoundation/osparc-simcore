@@ -50,6 +50,9 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedException,
+)
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -451,10 +454,7 @@ class AuthSession:
     @_exception_mapper(
         _JOB_STATUS_MAP
         | {
-            status.HTTP_409_CONFLICT: (
-                status.HTTP_200_OK,
-                lambda kwargs: "Job/study already started",
-            ),
+            status.HTTP_409_CONFLICT: ProjectAlreadyStartedException(),
             status.HTTP_406_NOT_ACCEPTABLE: (
                 status.HTTP_406_NOT_ACCEPTABLE,
                 lambda kwargs: "Cluster not found",
