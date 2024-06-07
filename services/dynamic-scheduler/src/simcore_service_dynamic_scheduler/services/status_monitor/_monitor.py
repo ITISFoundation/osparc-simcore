@@ -54,7 +54,7 @@ class Monitor:
             # check if service is idle and status polling should stop
             if (
                 model.current_state == SchedulerServiceState.IDLE
-                and model.requested_sate == UserRequestedState.STOPPED
+                and model.requested_state == UserRequestedState.STOPPED
             ):
                 to_remove.append(node_id)
                 continue
