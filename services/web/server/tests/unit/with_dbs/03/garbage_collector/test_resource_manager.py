@@ -21,7 +21,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
@@ -521,7 +521,7 @@ async def test_interactive_services_removed_after_logout(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_awaited_with(
                 app=client.app,
-                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                dynamic_service_stop=DynamicServiceStop(
                     user_id=user_id,
                     project_id=service.project_id,
                     node_id=service.node_uuid,
@@ -642,7 +642,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     calls = [
         call(
             app=client.app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=service.project_id,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -726,7 +726,7 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=service1.project_id,
                 node_id=service1.node_uuid,
@@ -755,7 +755,7 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.server.app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=service2.project_id,
                 node_id=service2.node_uuid,
@@ -766,7 +766,7 @@ async def test_interactive_services_removed_per_project(
         ),
         call(
             app=client.server.app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=service3.project_id,
                 node_id=service3.node_uuid,
@@ -888,7 +888,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     calls = [
         call(
             app=client.server.app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=service.project_id,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,

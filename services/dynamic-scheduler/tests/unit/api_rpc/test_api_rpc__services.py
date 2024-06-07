@@ -11,8 +11,8 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
     RPCDynamicServiceCreate,
-    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
@@ -367,8 +367,8 @@ async def test_stop_dynamic_service(
     simcore_user_agent: str,
     save_state: bool,
 ):
-    def _get_rpc_stop(with_node_id: NodeID) -> RPCDynamicServiceStop:
-        return RPCDynamicServiceStop(
+    def _get_rpc_stop(with_node_id: NodeID) -> DynamicServiceStop:
+        return DynamicServiceStop(
             user_id=user_id,
             project_id=project_id,
             node_id=with_node_id,
@@ -379,7 +379,7 @@ async def test_stop_dynamic_service(
     # service was stopped
     result = await services.stop_dynamic_service(
         rpc_client,
-        rpc_dynamic_service_stop=_get_rpc_stop(node_id),
+        dynamic_service_stop=_get_rpc_stop(node_id),
         timeout_s=5,
     )
     assert result is None
@@ -388,7 +388,7 @@ async def test_stop_dynamic_service(
     with pytest.raises(ServiceWasNotFoundError):
         await services.stop_dynamic_service(
             rpc_client,
-            rpc_dynamic_service_stop=_get_rpc_stop(node_id_not_found),
+            dynamic_service_stop=_get_rpc_stop(node_id_not_found),
             timeout_s=5,
         )
 
@@ -396,7 +396,7 @@ async def test_stop_dynamic_service(
     with pytest.raises(ServiceWaitingForManualInterventionError):
         await services.stop_dynamic_service(
             rpc_client,
-            rpc_dynamic_service_stop=_get_rpc_stop(node_id_manual_intervention),
+            dynamic_service_stop=_get_rpc_stop(node_id_manual_intervention),
             timeout_s=5,
         )
 
@@ -430,7 +430,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     ):
         await services.stop_dynamic_service(
             rpc_client,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,

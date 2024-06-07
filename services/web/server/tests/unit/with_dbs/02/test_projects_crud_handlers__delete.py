@@ -17,7 +17,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
@@ -96,7 +96,7 @@ async def test_delete_project(
         expected_calls = [
             call(
                 app=client.app,
-                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                dynamic_service_stop=DynamicServiceStop(
                     user_id=user_id,
                     project_id=service.project_id,
                     node_id=service.node_uuid,

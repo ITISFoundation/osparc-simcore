@@ -5,8 +5,8 @@ from functools import partial
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
     RPCDynamicServiceCreate,
-    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
@@ -54,7 +54,7 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: web.Application,
     *,
-    rpc_dynamic_service_stop: RPCDynamicServiceStop,
+    dynamic_service_stop: DynamicServiceStop,
     progress: ProgressBarData | None = None,
 ) -> None:
     async with AsyncExitStack() as stack:
@@ -64,7 +64,7 @@ async def stop_dynamic_service(
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
-            rpc_dynamic_service_stop=rpc_dynamic_service_stop,
+            dynamic_service_stop=dynamic_service_stop,
             timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
 
@@ -115,7 +115,7 @@ async def stop_dynamic_services_in_project(
         services_to_stop = [
             stop_dynamic_service(
                 app=app,
-                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                dynamic_service_stop=DynamicServiceStop(
                     user_id=user_id,
                     project_id=service.project_id,
                     node_id=service.node_uuid,

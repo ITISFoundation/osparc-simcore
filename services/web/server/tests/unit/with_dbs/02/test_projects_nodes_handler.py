@@ -22,7 +22,7 @@ from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
@@ -685,7 +685,7 @@ async def test_delete_node(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
-                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                dynamic_service_stop=DynamicServiceStop(
                     user_id=logged_user["id"],
                     project_id=user_project["uuid"],
                     node_id=NodeID(node_id),

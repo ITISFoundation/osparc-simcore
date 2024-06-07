@@ -4,8 +4,8 @@ from typing import Final
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
     RPCDynamicServiceCreate,
-    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -61,13 +61,13 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    rpc_dynamic_service_stop: RPCDynamicServiceStop,
+    dynamic_service_stop: DynamicServiceStop,
     timeout_s: NonNegativeInt,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "stop_dynamic_service"),
-        rpc_dynamic_service_stop=rpc_dynamic_service_stop,
+        dynamic_service_stop=dynamic_service_stop,
         timeout_s=timeout_s,
     )
     assert result is None  # nosec

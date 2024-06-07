@@ -12,7 +12,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
@@ -329,12 +329,12 @@ async def _stop_dynamic_service_task(
     _task_progress: TaskProgress,
     *,
     app: web.Application,
-    rpc_dynamic_service_stop: RPCDynamicServiceStop,
+    dynamic_service_stop: DynamicServiceStop,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_api.stop_dynamic_service(
-            app, rpc_dynamic_service_stop=rpc_dynamic_service_stop
+            app, dynamic_service_stop=dynamic_service_stop
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -374,7 +374,7 @@ async def stop_node(request: web.Request) -> web.Response:
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
-        rpc_dynamic_service_stop=RPCDynamicServiceStop(
+        dynamic_service_stop=DynamicServiceStop(
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
             node_id=path_params.node_id,

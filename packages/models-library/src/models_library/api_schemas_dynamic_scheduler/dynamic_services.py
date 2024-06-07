@@ -38,7 +38,7 @@ class RPCDynamicServiceCreate(DynamicServiceCreate):
         }
 
 
-class RPCDynamicServiceStop(BaseModel):
+class DynamicServiceStop(BaseModel):
     user_id: UserID
     project_id: ProjectID
     node_id: NodeID

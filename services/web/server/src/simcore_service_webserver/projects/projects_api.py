@@ -27,8 +27,8 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
     RPCDynamicServiceCreate,
-    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
@@ -801,7 +801,7 @@ async def _remove_service_and_its_data_folders(
         # no need to save the state of the node when deleting it
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=project_uuid,
                 node_id=NodeID(node_uuid),

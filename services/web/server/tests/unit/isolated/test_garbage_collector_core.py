@@ -10,7 +10,7 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -207,7 +207,7 @@ async def test_remove_orphaned_services(
 
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
-        rpc_dynamic_service_stop=RPCDynamicServiceStop(
+        dynamic_service_stop=DynamicServiceStop(
             user_id=fake_running_service.user_id,
             project_id=fake_running_service.project_id,
             node_id=fake_running_service.node_uuid,
@@ -247,7 +247,7 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
     mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
-        rpc_dynamic_service_stop=RPCDynamicServiceStop(
+        dynamic_service_stop=DynamicServiceStop(
             user_id=fake_running_service.user_id,
             project_id=fake_running_service.project_id,
             node_id=fake_running_service.node_uuid,

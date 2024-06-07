@@ -4,7 +4,7 @@ from typing import Final
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceStop,
+    DynamicServiceStop,
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -54,7 +54,7 @@ async def _remove_service(
     ):
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            rpc_dynamic_service_stop=RPCDynamicServiceStop(
+            dynamic_service_stop=DynamicServiceStop(
                 user_id=service.user_id,
                 project_id=service.project_id,
                 node_id=service.node_uuid,
