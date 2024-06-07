@@ -55,7 +55,8 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings, port: int) -> None:
         self.redis_sdk = RedisClientSDK(
-            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
+            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+            decode_responses=True,
         )
         self.port = port
 
@@ -80,7 +81,8 @@ class ExampleApp:
         max_workers: NonNegativeInt,
     ) -> None:
         self._redis_client = RedisClientSDKHealthChecked(
-            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
+            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+            decode_responses=False,
         )
         self._manager = DeferredManager(
             rabbit_settings,
