@@ -1040,6 +1040,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ComputationStarted_'
+        '404':
+          description: Project/wallet/pricing details not found
+        '402':
+          description: Payment required
+        '406':
+          description: Cluster not found
+        '503':
+          description: Service not available
+        '422':
+          description: Configuration error
+        '409':
+          description: Project already started
   /v0/computations/{project_id}:stop:
     post:
       tags:
@@ -2991,7 +3003,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
