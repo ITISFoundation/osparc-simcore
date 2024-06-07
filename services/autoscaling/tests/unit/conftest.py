@@ -241,7 +241,9 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def enabled_dynamic_mode(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    fake_ssm_settings: SSMSettings,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -254,6 +256,7 @@ def enabled_dynamic_mode(
             "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
                 ["pytest.fake-new-node-label"]
             ),
+            "AUTOSCALING_SSM_ACCESS": f"{fake_ssm_settings.json()}",
         },
     )
 
