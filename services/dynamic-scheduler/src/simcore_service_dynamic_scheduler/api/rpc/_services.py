@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
+    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -40,13 +41,13 @@ async def run_dynamic_service(
     )
 )
 async def stop_dynamic_service(
-    app: FastAPI, *, node_id: NodeID, simcore_user_agent: str, save_state: bool
+    app: FastAPI, *, rpc_dynamic_service_stop: RPCDynamicServiceStop
 ) -> NodeGet | DynamicServiceGet:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
     return await director_v2_client.stop_dynamic_service(
-        node_id=node_id,
-        simcore_user_agent=simcore_user_agent,
-        save_state=save_state,
+        node_id=rpc_dynamic_service_stop.node_id,
+        simcore_user_agent=rpc_dynamic_service_stop.simcore_user_agent,
+        save_state=rpc_dynamic_service_stop.save_state,
         timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
     )

@@ -5,6 +5,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
+    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -60,17 +61,13 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    rpc_dynamic_service_stop: RPCDynamicServiceStop,
     timeout_s: NonNegativeInt,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "stop_dynamic_service"),
-        node_id=node_id,
-        simcore_user_agent=simcore_user_agent,
-        save_state=save_state,
+        rpc_dynamic_service_stop=rpc_dynamic_service_stop,
         timeout_s=timeout_s,
     )
     assert result is None  # nosec

@@ -6,6 +6,7 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
+    RPCDynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
@@ -53,9 +54,7 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: web.Application,
     *,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    rpc_dynamic_service_stop: RPCDynamicServiceStop,
     progress: ProgressBarData | None = None,
 ) -> None:
     async with AsyncExitStack() as stack:
@@ -65,9 +64,7 @@ async def stop_dynamic_service(
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            save_state=save_state,
+            rpc_dynamic_service_stop=rpc_dynamic_service_stop,
             timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
 
@@ -118,9 +115,13 @@ async def stop_dynamic_services_in_project(
         services_to_stop = [
             stop_dynamic_service(
                 app=app,
-                node_id=service.node_uuid,
-                simcore_user_agent=simcore_user_agent,
-                save_state=save_state,
+                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                    user_id=user_id,
+                    project_id=service.project_id,
+                    node_id=service.node_uuid,
+                    simcore_user_agent=simcore_user_agent,
+                    save_state=save_state,
+                ),
                 progress=progress_bar.sub_progress(
                     1, description=f"{service.node_uuid}"
                 ),
