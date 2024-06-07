@@ -44,6 +44,7 @@ async def monitor_buffer_machines(
     app_settings = get_application_settings(app)
     # observe current state:
     # list currently available buffer machines
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ready_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
