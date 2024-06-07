@@ -8,10 +8,16 @@ from servicelib.redis import (
 )
 from settings_library.redis import RedisDatabase, RedisSettings
 
-_REDIS_DATABASES: Final[set[RedisDatabase]] = {
+_DECODE_DBS: Final[set[RedisDatabase]] = {
+    RedisDatabase.LOCKS,
+}
+
+_BINARY_DBS: Final[set[RedisDatabase]] = {
     RedisDatabase.DEFERRED_TASKS,
     RedisDatabase.DYNAMIC_SERVICES,
 }
+
+_ALL_REDIS_DATABASES: Final[set[RedisDatabase]] = _DECODE_DBS | _BINARY_DBS
 
 
 def setup_redis(app: FastAPI) -> None:
@@ -19,7 +25,8 @@ def setup_redis(app: FastAPI) -> None:
 
     async def on_startup() -> None:
         app.state.redis_clients_manager = manager = RedisClientsManager(
-            {RedisManagerDBConfig(x, decode_responses=False) for x in _REDIS_DATABASES},
+            {RedisManagerDBConfig(x, decode_responses=False) for x in _BINARY_DBS}
+            | {RedisManagerDBConfig(x, decode_responses=True) for x in _DECODE_DBS},
             settings,
         )
         await manager.setup()
@@ -42,4 +49,4 @@ def get_redis_client(
 def get_all_redis_clients(
     app: FastAPI,
 ) -> dict[RedisDatabase, RedisClientSDKHealthChecked]:
-    return {d: get_redis_client(app, d) for d in _REDIS_DATABASES}
+    return {d: get_redis_client(app, d) for d in _ALL_REDIS_DATABASES}

@@ -1,14 +1,17 @@
 from datetime import timedelta
+from typing import Final
 
 from fastapi import FastAPI
 
 from ._monitor import Monitor
 
+_STATUS_WORKER_DEFAULT_INTERVAL: Final[timedelta] = timedelta(seconds=1)
+
 
 def setup_status_monitor(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.status_monitor = monitor = Monitor(
-            app, check_threshold=timedelta(seconds=1)
+            app, status_worker_interval=_STATUS_WORKER_DEFAULT_INTERVAL
         )
         await monitor.setup()
 

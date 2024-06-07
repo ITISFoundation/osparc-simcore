@@ -7,9 +7,13 @@ import arrow
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
+from servicelib.background_task import stop_periodic_task
+from servicelib.redis_utils import start_exclusive_periodic_task
 from servicelib.utils import logged_gather
+from settings_library.redis import RedisDatabase
 
 from .. import service_tracker
+from ..redis import get_redis_client
 from ..service_tracker import NORMAL_RATE_POLL_INTERVAL, TrackedServiceModel
 from ..service_tracker._models import SchedulerServiceState, UserRequestedState
 from ._deferred_get_status import DeferredGetStatus
@@ -97,8 +101,14 @@ class Monitor:
         )
 
     async def setup(self) -> None:
-        # TODO: finish uniquely run across all processes
-        pass
+        self.app.state.status_monitor_background_task = start_exclusive_periodic_task(
+            get_redis_client(self.app, RedisDatabase.LOCKS),
+            self._worker_start_get_status_requests,
+            task_period=timedelta(seconds=1),
+            retry_after=timedelta(seconds=1),
+            task_name="periodic_service_status_update",
+        )
 
     async def shutdown(self) -> None:
-        pass
+        if self.app.state.status_monitor_background_task:
+            await stop_periodic_task(self.app.state.status_monitor_background_task)
