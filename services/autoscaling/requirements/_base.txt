@@ -449,6 +449,8 @@ types-aiobotocore-ec2==2.13.0
     # via types-aiobotocore
 types-aiobotocore-s3==2.13.0
     # via types-aiobotocore
+types-aiobotocore-ssm==2.13.0
+    # via types-aiobotocore
 types-awscrt==0.20.9
     # via botocore-stubs
 types-python-dateutil==2.9.0.20240316
@@ -465,6 +467,7 @@ typing-extensions==4.11.0
     #   types-aiobotocore
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
     #   uvicorn
 urllib3==2.2.1
     # via
