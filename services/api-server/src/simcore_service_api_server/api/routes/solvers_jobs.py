@@ -67,7 +67,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "model": ErrorGet,
     },
     status.HTTP_404_NOT_FOUND: {
-        "description": "Job not found",
+        "description": "Job/wallet/pricing details not found",
         "model": ErrorGet,
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -157,8 +157,23 @@ async def delete_job(
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=JobStatus,
-    responses=JOBS_STATUS_CODES,
+    responses=JOBS_STATUS_CODES
+    | {
+        status.HTTP_200_OK: {
+            "description": "Job already started",
+            "model": JobStatus,
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+            "model": ErrorGet,
+        },
+    },
 )
 async def start_job(
     request: Request,
