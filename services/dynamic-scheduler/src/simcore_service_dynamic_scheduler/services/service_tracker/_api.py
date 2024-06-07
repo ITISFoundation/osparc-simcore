@@ -12,6 +12,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
+from models_library.users import UserID
 from servicelib.deferred_tasks import TaskUID
 
 from ._models import SchedulerServiceState, TrackedServiceModel, UserRequestedState
@@ -234,3 +235,10 @@ async def get_all_tracked(app: FastAPI) -> dict[NodeID, TrackedServiceModel]:
     """Returns all tracked services"""
     tracker: Tracker = get_tracker(app)
     return await tracker.all()
+
+
+async def get_user_id(app: FastAPI, node_id: NodeID) -> UserID | None:
+    """returns user_id for the user"""
+    tracker: Tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    return model.user_id if model else None

@@ -7,7 +7,11 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetIdle,
+    NodeGetUnknown,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, parse_obj_as
@@ -71,3 +75,14 @@ async def stop_dynamic_service(
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
+
+
+def get_dict_from_status(
+    status: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet,
+) -> dict:
+    """shared between different backend services to guarantee same result to frontend"""
+    return (
+        status.dict(by_alias=True)
+        if isinstance(status, DynamicServiceGet)
+        else status.dict()
+    )

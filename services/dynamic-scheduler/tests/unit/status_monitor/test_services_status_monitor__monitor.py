@@ -254,8 +254,8 @@ def deferred_status_spies(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def remove_tracked_spy(mocker: MockerFixture) -> AsyncMock:
-    mock_method = mocker.AsyncMock(wraps=_monitor.remove_tracked)
-    return mocker.patch.object(_monitor, "remove_tracked", mock_method)
+    mock_method = mocker.AsyncMock(wraps=_monitor.service_tracker.remove_tracked)
+    return mocker.patch.object(_monitor.service_tracker, "remove_tracked", mock_method)
 
 
 @pytest.fixture

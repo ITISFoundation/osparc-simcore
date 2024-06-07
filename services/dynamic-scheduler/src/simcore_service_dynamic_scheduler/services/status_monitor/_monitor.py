@@ -9,13 +9,8 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.utils import logged_gather
 
-from ..service_tracker import (
-    NORMAL_RATE_POLL_INTERVAL,
-    TrackedServiceModel,
-    get_all_tracked,
-    remove_tracked,
-    set_scheduled_to_run,
-)
+from .. import service_tracker
+from ..service_tracker import NORMAL_RATE_POLL_INTERVAL, TrackedServiceModel
 from ..service_tracker._models import SchedulerServiceState, UserRequestedState
 from ._deferred_get_status import DeferredGetStatus
 
@@ -27,7 +22,7 @@ _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 async def _start_get_status_deferred(
     app: FastAPI, node_id: NodeID, *, next_check_delay: timedelta
 ) -> None:
-    await set_scheduled_to_run(app, node_id, next_check_delay)
+    await service_tracker.set_scheduled_to_run(app, node_id, next_check_delay)
     await DeferredGetStatus.start(node_id=node_id)
 
 
@@ -43,7 +38,9 @@ class Monitor:
     async def _worker_start_get_status_requests(self) -> None:
         # NOTE: this worker runs on only once across all instances of the scheduler
 
-        models: dict[NodeID, TrackedServiceModel] = await get_all_tracked(self.app)
+        models: dict[
+            NodeID, TrackedServiceModel
+        ] = await service_tracker.get_all_tracked(self.app)
 
         to_remove: list[NodeID] = []
         to_start: list[NodeID] = []
@@ -81,7 +78,10 @@ class Monitor:
 
         _logger.debug("Removing tracked services: '%s'", to_remove)
         await logged_gather(
-            *(remove_tracked(self.app, node_id) for node_id in to_remove),
+            *(
+                service_tracker.remove_tracked(self.app, node_id)
+                for node_id in to_remove
+            ),
             max_concurrency=_MAX_CONCURRENCY,
         )
 
@@ -97,7 +97,7 @@ class Monitor:
         )
 
     async def setup(self) -> None:
-        # TODO: run uniquely across all processes
+        # TODO: finish uniquely run across all processes
         pass
 
     async def shutdown(self) -> None:
