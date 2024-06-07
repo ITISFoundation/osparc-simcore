@@ -29,6 +29,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     _api,
+    get_all_tracked,
     set_request_as_running,
     set_request_as_stopped,
 )
@@ -367,7 +368,8 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-    # ensure it does not exist before running this
+    assert await get_all_tracked(app) == {}
+
     if user_requests_running:
         await set_request_as_running(app, get_dynamic_service_start(node_id))
     else:
