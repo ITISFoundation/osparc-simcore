@@ -4,9 +4,9 @@ from typing import TypeAlias
 import aiopg
 from fastapi import status
 from fastapi.exceptions import HTTPException
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import BaseFileLink
+from models_library.projects_nodes_io import BaseFileLink, NodeIDStr
 from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
@@ -32,8 +32,8 @@ async def get_solver_output_results(
     try:
         solver: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=f"{project_uuid}",
-            node_uuid=f"{node_uuid}",
+            project_id=ProjectIDStr(f"{project_uuid}"),
+            node_uuid=NodeIDStr(f"{node_uuid}"),
             db_manager=db_manager,
         )
         solver_output_results = {}

@@ -78,7 +78,7 @@ _JOB_STATUS_MAP: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        lambda kwargs: f"The job/study {kwargs['project_id']} could not be found",
+        lambda kwargs: f"The job/study/wallet/pricing details {kwargs['project_id']} could not be found",
     ),
 }
 
@@ -345,7 +345,7 @@ class AuthSession:
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"The ports for the job/study {kwargs['project_id']} could not be found",
             )
@@ -370,7 +370,7 @@ class AuthSession:
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
             )
@@ -397,7 +397,7 @@ class AuthSession:
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
             )
@@ -416,7 +416,9 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(
+        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
+    )
     async def get_project_node_pricing_unit(
         self, project_id: UUID, node_id: UUID
     ) -> PricingUnitGet | None:
@@ -430,7 +432,9 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(
+        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
+    )
     async def connect_pricing_unit_to_project_node(
         self,
         project_id: UUID,
@@ -494,7 +498,9 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(
+        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
+    )
     async def get_project_outputs(
         self, project_id: ProjectID
     ) -> dict[NodeID, dict[str, Any]]:
@@ -559,7 +565,9 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(
+        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
+    )
     async def get_product_price(self) -> NonNegativeDecimal | None:
         response = await self.client.get(
             "/credits-price",
@@ -572,7 +580,9 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(
+        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
+    )
     async def get_service_pricing_plan(
         self, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:

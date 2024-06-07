@@ -13,7 +13,7 @@ from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
-from ..exceptions.service_errors_utils import service_exception_mapper
+from ..exceptions.service_errors_utils import ToApiTuple, service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -122,7 +122,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
@@ -143,7 +143,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
@@ -164,7 +164,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
@@ -183,7 +183,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper(
         {
-            status.HTTP_404_NOT_FOUND: (
+            status.HTTP_404_NOT_FOUND: ToApiTuple(
                 status.HTTP_404_NOT_FOUND,
                 lambda kwargs: f"Could not get logfile for solver/study job {kwargs['project_id']}",
             )
