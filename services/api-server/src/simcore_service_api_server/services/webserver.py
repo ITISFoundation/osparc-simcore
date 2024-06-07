@@ -78,7 +78,19 @@ _JOB_STATUS_MAP: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        lambda kwargs: f"The job/study/wallet/pricing details {kwargs['project_id']} could not be found",
+        lambda kwargs: "The job/study/wallet/pricing details could not be found",
+    ),
+    status.HTTP_409_CONFLICT: (
+        status.HTTP_200_OK,
+        lambda kwargs: "Job/study already started",
+    ),
+    status.HTTP_406_NOT_ACCEPTABLE: (
+        status.HTTP_406_NOT_ACCEPTABLE,
+        lambda kwargs: "Cluster not found",
+    ),
+    status.HTTP_422_UNPROCESSABLE_ENTITY: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        lambda kwargs: "Configuration error",
     ),
 }
 
