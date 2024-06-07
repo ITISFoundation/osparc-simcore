@@ -80,18 +80,6 @@ _JOB_STATUS_MAP: Mapping = {
         status.HTTP_404_NOT_FOUND,
         lambda kwargs: "The job/study/wallet/pricing details could not be found",
     ),
-    status.HTTP_409_CONFLICT: (
-        status.HTTP_200_OK,
-        lambda kwargs: "Job/study already started",
-    ),
-    status.HTTP_406_NOT_ACCEPTABLE: (
-        status.HTTP_406_NOT_ACCEPTABLE,
-        lambda kwargs: "Cluster not found",
-    ),
-    status.HTTP_422_UNPROCESSABLE_ENTITY: (
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
-        lambda kwargs: "Configuration error",
-    ),
 }
 
 _PROFILE_STATUS_MAP: Mapping = {
@@ -460,7 +448,23 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(_JOB_STATUS_MAP)
+    @_exception_mapper(
+        _JOB_STATUS_MAP
+        | {
+            status.HTTP_409_CONFLICT: (
+                status.HTTP_200_OK,
+                lambda kwargs: "Job/study already started",
+            ),
+            status.HTTP_406_NOT_ACCEPTABLE: (
+                status.HTTP_406_NOT_ACCEPTABLE,
+                lambda kwargs: "Cluster not found",
+            ),
+            status.HTTP_422_UNPROCESSABLE_ENTITY: (
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                lambda kwargs: "Configuration error",
+            ),
+        }
+    )
     async def start_project(
         self, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
