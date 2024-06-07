@@ -18,5 +18,6 @@ arrow
 fastapi
 httpx
 packaging
+python-socketio
 typer[all]
 uvicorn[standard]
