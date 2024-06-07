@@ -31,6 +31,10 @@ class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
     msg_template: str = "Invalid EC2 private DNS name {aws_private_dns_name}"
 
 
+class SSMNotConnectedError(AutoscalingRuntimeError):
+    msg_template: str = "Cannot connect with ec2 server"
+
+
 class DaskSchedulerNotFoundError(AutoscalingRuntimeError):
     msg_template: str = "Scheduler in {url} was not found!"
 
