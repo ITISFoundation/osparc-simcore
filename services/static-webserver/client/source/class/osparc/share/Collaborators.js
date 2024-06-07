@@ -148,12 +148,12 @@ qx.Class.define("osparc.share.Collaborators", {
       return vBox;
     },
 
-    getEveryoneObj: function() {
+    getEveryoneObj: function(thumbnailSize=32) {
       return {
         "gid": 1,
         "label": qx.locale.Manager.tr("Public"),
         "description": "",
-        "thumbnail": null,
+        "thumbnail": "@FontAwesome5Solid/globe/"+thumbnailSize,
         "collabType": 0
       }
     }
@@ -380,6 +380,9 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
+          } else if (gid === this.self().getEveryoneObj()["gid"]) {
+            collaborator["name"] = collaborator["label"].toLocaleString();
+            delete collaborator["label"];
           }
           collaborator["accessRights"] = accessRights[gid];
           collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
