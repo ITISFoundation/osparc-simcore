@@ -754,8 +754,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
-      const studyDiffs = this.__getStudyDiffs();
-      return this.getStudy().patchStudyDelayed(studyDiffs)
+      let updatePromise = null;
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        const studyDiffs = this.__getStudyDiffs();
+        updatePromise = this.getStudy().patchStudyDelayed(studyDiffs)
+      } else {
+        const newObj = this.getStudy().serialize();
+        updatePromise = this.getStudy().updateStudy(newObj);
+      }
+      updatePromise
         .then(studyData => {
           this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
         })
