@@ -25,11 +25,11 @@ class RedisTaskTracker(BaseTaskTracker):
     async def get_new_unique_identifier(self) -> TaskUID:
         candidate_already_exists = True
         while candidate_already_exists:
-            candidate = f"{uuid4()}"
+            candidate = TaskUID(f"{uuid4()}")
             candidate_already_exists = (
                 await self.redis_sdk.redis.get(_get_key(candidate)) is not None
             )
-        return TaskUID(candidate)
+        return candidate
 
     async def _get_raw(self, redis_key: str) -> TaskScheduleModel | None:
         found_data = await self.redis_sdk.redis.get(redis_key)
