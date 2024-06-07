@@ -3,7 +3,7 @@
 
 import json
 import re
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from copy import deepcopy
 from datetime import timedelta
 from typing import Any
@@ -17,7 +17,8 @@ from fastapi.encoders import jsonable_encoder
 from httpx import Request, Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -363,15 +364,14 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
     response_timeline: _ResponseTimeline,
     expected_notification_count: NonNegativeInt,
     remove_tracked_count: NonNegativeInt,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+    get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-    # request started (and also tracks service)
-    data_dict = deepcopy(RPCDynamicServiceCreate.Config.schema_extra["example"])
-    data_dict["service_uuid"] = f"{node_id}"
-    await set_request_as_running(app, RPCDynamicServiceCreate.parse_obj(data_dict))
-
-    # request stopping only if tracked
-    if not user_requests_running:
-        await set_request_as_stopped(app, node_id)
+    # ensure it does not exist before running this
+    if user_requests_running:
+        await set_request_as_running(app, get_dynamic_service_start(node_id))
+    else:
+        await set_request_as_stopped(app, get_dynamic_service_stop(node_id))
 
     entries_in_timeline = len(response_timeline)
 
