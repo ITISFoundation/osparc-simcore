@@ -21,6 +21,9 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    RPCDynamicServiceStop,
+)
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import NodeID
@@ -634,6 +637,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_node(
     client: TestClient,
+    logged_user: dict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
@@ -681,9 +685,13 @@ async def test_delete_node(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
-                node_id=NodeID(node_id),
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=False,
+                rpc_dynamic_service_stop=RPCDynamicServiceStop(
+                    user_id=logged_user["id"],
+                    project_id=user_project["uuid"],
+                    node_id=NodeID(node_id),
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=False,
+                ),
             )
             mocked_director_v2_api[
                 "dynamic_scheduler.api.stop_dynamic_service"
