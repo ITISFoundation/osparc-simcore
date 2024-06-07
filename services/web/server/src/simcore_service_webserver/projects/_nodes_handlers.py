@@ -11,6 +11,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -326,17 +329,12 @@ async def _stop_dynamic_service_task(
     _task_progress: TaskProgress,
     *,
     app: web.Application,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    dynamic_service_stop: DynamicServiceStop,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_api.stop_dynamic_service(
-            app,
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            save_state=save_state,
+            app, dynamic_service_stop=dynamic_service_stop
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -376,11 +374,15 @@ async def stop_node(request: web.Request) -> web.Response:
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
-        node_id=path_params.node_id,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        dynamic_service_stop=DynamicServiceStop(
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
+            save_state=save_state,
         ),
-        save_state=save_state,
         fire_and_forget=True,
     )
 

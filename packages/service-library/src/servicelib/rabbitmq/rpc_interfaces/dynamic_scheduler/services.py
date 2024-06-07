@@ -4,7 +4,8 @@ from typing import Final
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -44,12 +45,12 @@ async def get_service_status(
 async def run_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    rpc_dynamic_service_create: RPCDynamicServiceCreate,
+    dynamic_service_start: DynamicServiceStart,
 ) -> DynamicServiceGet | NodeGet:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "run_dynamic_service"),
-        rpc_dynamic_service_create=rpc_dynamic_service_create,
+        dynamic_service_start=dynamic_service_start,
         timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, DynamicServiceGet | NodeGet)  # nosec
@@ -60,17 +61,13 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    dynamic_service_stop: DynamicServiceStop,
     timeout_s: NonNegativeInt,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "stop_dynamic_service"),
-        node_id=node_id,
-        simcore_user_agent=simcore_user_agent,
-        save_state=save_state,
+        dynamic_service_stop=dynamic_service_stop,
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
