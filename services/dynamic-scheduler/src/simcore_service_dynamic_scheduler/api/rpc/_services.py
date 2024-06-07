@@ -30,10 +30,11 @@ async def get_service_status(
 async def run_dynamic_service(
     app: FastAPI, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
 ) -> NodeGet | DynamicServiceGet:
-    await set_request_as_running(app, rpc_dynamic_service_create.node_uuid)
-
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    return await director_v2_client.run_dynamic_service(rpc_dynamic_service_create)
+    result = await director_v2_client.run_dynamic_service(rpc_dynamic_service_create)
+
+    await set_request_as_running(app, rpc_dynamic_service_create)
+    return result
 
 
 @router.expose(
@@ -43,15 +44,21 @@ async def run_dynamic_service(
     )
 )
 async def stop_dynamic_service(
-    app: FastAPI, *, node_id: NodeID, simcore_user_agent: str, save_state: bool
+    app: FastAPI, *, rpc_dynamic_service_stop: RPCDynamicServiceStop
 ) -> NodeGet | DynamicServiceGet:
-    await set_request_as_stopped(app, node_id)
-
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
-    return await director_v2_client.stop_dynamic_service(
-        node_id=node_id,
-        simcore_user_agent=simcore_user_agent,
-        save_state=save_state,
+    result = await director_v2_client.stop_dynamic_service(
+        node_id=rpc_dynamic_service_stop.node_id,
+        simcore_user_agent=rpc_dynamic_service_stop.simcore_user_agent,
+        save_state=rpc_dynamic_service_stop.save_state,
         timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
     )
+
+    await set_request_as_stopped(
+        app,
+        user_id=rpc_dynamic_service_stop.user_id,
+        project_id=rpc_dynamic_service_stop.project_id,
+        node_id=rpc_dynamic_service_stop.node_id,
+    )
+    return result
