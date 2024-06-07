@@ -88,9 +88,6 @@
               }
             }
           },
-          "304": {
-            "description": "Project already started"
-          },
           "422": {
             "description": "Validation Error",
             "content": {
