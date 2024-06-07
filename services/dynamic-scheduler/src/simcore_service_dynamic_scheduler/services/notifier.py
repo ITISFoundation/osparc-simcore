@@ -4,8 +4,8 @@ import socketio
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_dynamic_sidecar.socketio import (
-    SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
+from models_library.api_schemas_dynamic_scheduler.socketio import (
+    SOCKET_IO_SERVICE_STATUS_EVENT,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
@@ -26,7 +26,7 @@ class Notifier(SingletonInAppStateMixin):
         self, user_id: UserID, status: NodeGet | DynamicServiceGet | NodeGetIdle
     ) -> None:
         await self._sio_manager.emit(
-            SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
+            SOCKET_IO_SERVICE_STATUS_EVENT,
             data=jsonable_encoder(get_dict_from_status(status)),
             room=SocketIORoomStr.from_user_id(user_id),
         )
