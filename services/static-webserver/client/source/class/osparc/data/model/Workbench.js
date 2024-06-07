@@ -745,42 +745,38 @@ qx.Class.define("osparc.data.model.Workbench", {
      * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      */
     patchWorkbenchDelayed: function(workbenchDiffs) {
-      return new Promise((resolve, reject) => {
-        const promises = [];
-        Object.keys(workbenchDiffs).forEach(nodeId => {
-          const node = this.getNode(nodeId);
-          if (node === null) {
-            // the node was removed
-            return;
-          }
+      const promises = [];
+      Object.keys(workbenchDiffs).forEach(nodeId => {
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          // the node was removed
+          return;
+        }
 
-          const nodeData = node.serialize();
-          let patchData = {};
-          if (workbenchDiffs[nodeId] instanceof Array) {
-            // if workbenchDiffs is an array means that the node was either added or removed
-            // the node was added
-            patchData = nodeData;
-            // key can't be patched
-            delete patchData["key"];
-          } else {
-            // patch only what was changed
-            Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-              patchData[changedFieldKey] = nodeData[changedFieldKey];
-            });
-          }
-          const params = {
-            url: {
-              "studyId": this.getStudy().getUuid(),
-              "nodeId": nodeId
-            },
-            data: patchData
-          };
-          promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
-        })
-        Promise.all(promises)
-          .then(() => resolve())
-          .catch(err => reject(err));
-      });
+        const nodeData = node.serialize();
+        let patchData = {};
+        if (workbenchDiffs[nodeId] instanceof Array) {
+          // if workbenchDiffs is an array means that the node was either added or removed
+          // the node was added
+          patchData = nodeData;
+          // key can't be patched
+          delete patchData["key"];
+        } else {
+          // patch only what was changed
+          Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
+          });
+        }
+        const params = {
+          url: {
+            "studyId": this.getStudy().getUuid(),
+            "nodeId": nodeId
+          },
+          data: patchData
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+      })
+      return Promise.all(promises);
     }
   }
 });
