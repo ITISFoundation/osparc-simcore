@@ -746,21 +746,28 @@ qx.Class.define("osparc.data.model.Workbench", {
      */
     patchWorkbenchDelayed: function(workbenchDiffs) {
       return new Promise((resolve, reject) => {
-        const changedNodeIds = Object.keys(workbenchDiffs);
         const promises = [];
-        changedNodeIds.forEach(nodeId => {
+        Object.keys(workbenchDiffs).forEach(nodeId => {
           const node = this.getNode(nodeId);
           if (node === null) {
-            // the change was that it was deleted
+            // the node was removed
             return;
           }
-          // serialize the whole node
+
           const nodeData = node.serialize();
-          // patch only what changed
-          const patchData = {};
-          changedNodeIds.forEach(fieldKey => {
-            patchData[fieldKey] = nodeData[fieldKey];
-          });
+          let patchData = {};
+          if (workbenchDiffs[nodeId] instanceof Array) {
+            // if workbenchDiffs is an array means that the node was either added or removed
+            // the node was added
+            patchData = nodeData;
+            // key can't be patched
+            delete patchData["key"];
+          } else {
+            // patch only what was changed
+            Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
+              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            });
+          }
           const params = {
             url: {
               "studyId": this.getStudy().getUuid(),

@@ -619,19 +619,20 @@ qx.Class.define("osparc.data.model.Study", {
         }
         const fieldKeys = Object.keys(studyDiffs);
         if (fieldKeys.length) {
+          const patchData = {};
           const params = {
             url: {
               "studyId": this.getUuid()
             },
-            data: {}
+            data: patchData
           };
           fieldKeys.forEach(fieldKey => {
             if (fieldKey === "ui") {
-              params["data"][fieldKey] = this.getUi().serialize();
+              patchData[fieldKey] = this.getUi().serialize();
             } else {
               const upKey = qx.lang.String.firstUp(fieldKey);
               const getter = "get" + upKey;
-              params["data"][fieldKey] = this[getter](studyDiffs[fieldKey]);
+              patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
             }
             promises.push(osparc.data.Resources.fetch("studies", "patch", params))
           });
