@@ -4,6 +4,11 @@ from datetime import timedelta
 from enum import auto
 
 import arrow
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
+)
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from servicelib.deferred_tasks import TaskUID
 
@@ -32,6 +37,14 @@ class SchedulerServiceState(StrAutoEnum):
 
 @dataclass
 class TrackedServiceModel:
+    # used to create the service in any given moment if the requested_state is RUNNING
+    # can be set to None only when stopping the service
+    dynamic_service_start: DynamicServiceStart | None
+
+    # required for propagating status changes to the frontend
+    user_id: UserID | None
+    project_id: ProjectID | None
+
     # what the user desires (RUNNING or STOPPED)
     requested_sate: UserRequestedState
 
@@ -39,7 +52,7 @@ class TrackedServiceModel:
     current_state: SchedulerServiceState = SchedulerServiceState.UNKNOWN  # type: ignore
 
     #############################
-    ### SERVICE STATSU UPDATE ###
+    ### SERVICE STATUS UPDATE ###
     #############################
 
     # set when a job will be immediately scheduled

@@ -5,6 +5,10 @@ from typing import Final
 import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
+    DynamicServiceStop,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
@@ -22,26 +26,52 @@ NORMAL_RATE_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES: Final[timedelta] = timedelta(seconds=60)
 
 
-async def _set_requested_state(
-    app: FastAPI, node_id: NodeID, requested_state: UserRequestedState
+async def set_request_as_running(
+    app: FastAPI,
+    dynamic_service_start: DynamicServiceStart,
 ) -> None:
-    tracker: Tracker = get_tracker(app)
-    model: TrackedServiceModel | None = await tracker.load(node_id)
-    if model is None:
-        model = TrackedServiceModel(requested_sate=requested_state)
-    else:
-        model.requested_sate = requested_state
-    await tracker.save(node_id, model)
-
-
-async def set_request_as_running(app: FastAPI, node_id: NodeID) -> None:
     """Stores the intention fo the user: ``start`` requested"""
-    await _set_requested_state(app, node_id, UserRequestedState.RUNNING)  # type: ignore
+    tracker: Tracker = get_tracker(app)
+
+    node_id: NodeID = dynamic_service_start.node_uuid
+
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    if model is not None:
+        _logger.info(
+            "Could track as running %s since an entry node_id %s already exists",
+            TrackedServiceModel.__name__,
+            node_id,
+        )
+        return
+
+    await tracker.save(
+        node_id,
+        TrackedServiceModel(
+            dynamic_service_start=dynamic_service_start,
+            requested_sate=UserRequestedState.RUNNING,
+            project_id=dynamic_service_start.project_id,
+            user_id=dynamic_service_start.user_id,
+        ),
+    )
 
 
-async def set_request_as_stopped(app: FastAPI, node_id: NodeID) -> None:
+async def set_request_as_stopped(
+    app: FastAPI, dynamic_service_stop: DynamicServiceStop
+) -> None:
     """Stores the intention of the user: ``stop`` requested"""
-    await _set_requested_state(app, node_id, UserRequestedState.STOPPED)  # type: ignore
+    tracker: Tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(dynamic_service_stop.node_id)
+
+    if model is None:
+        model = TrackedServiceModel(
+            dynamic_service_start=None,
+            user_id=dynamic_service_stop.user_id,
+            project_id=dynamic_service_stop.project_id,
+            requested_sate=UserRequestedState.STOPPED,
+        )
+
+    model.requested_sate = UserRequestedState.STOPPED
+    await tracker.save(dynamic_service_stop.node_id, model)
 
 
 def __get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
