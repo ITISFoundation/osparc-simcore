@@ -609,45 +609,42 @@ qx.Class.define("osparc.data.model.Study", {
      * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      */
     patchStudyDelayed: function(studyDiffs) {
-      return new Promise((resolve, reject) => {
-        const promises = [];
-        let workbenchDiffs = {};
-        if ("workbench" in studyDiffs) {
-          workbenchDiffs = studyDiffs["workbench"];
-          promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchDiffs));
-          delete studyDiffs["workbench"];
-        }
-        const fieldKeys = Object.keys(studyDiffs);
-        if (fieldKeys.length) {
-          const patchData = {};
-          const params = {
-            url: {
-              "studyId": this.getUuid()
-            },
-            data: patchData
-          };
-          fieldKeys.forEach(fieldKey => {
-            if (fieldKey === "ui") {
-              patchData[fieldKey] = this.getUi().serialize();
-            } else {
-              const upKey = qx.lang.String.firstUp(fieldKey);
-              const getter = "get" + upKey;
-              patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
-            }
-            promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+      const promises = [];
+      let workbenchDiffs = {};
+      if ("workbench" in studyDiffs) {
+        workbenchDiffs = studyDiffs["workbench"];
+        promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchDiffs));
+        delete studyDiffs["workbench"];
+      }
+      const fieldKeys = Object.keys(studyDiffs);
+      if (fieldKeys.length) {
+        const patchData = {};
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: patchData
+        };
+        fieldKeys.forEach(fieldKey => {
+          if (fieldKey === "ui") {
+            patchData[fieldKey] = this.getUi().serialize();
+          } else {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const getter = "get" + upKey;
+            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+          }
+          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+        });
+      }
+      return Promise.all(promises)
+        .then(() => {
+          // A bit hacky, but it's not sent back to the backend
+          this.set({
+            lastChangeDate: new Date()
           });
-        }
-        Promise.all(promises)
-          .then(() => {
-            // A bit hacky, but it's not sent back to the backend
-            this.set({
-              lastChangeDate: new Date()
-            });
-            const studyData = this.serialize();
-            resolve(studyData);
-          })
-          .catch(err => reject(err));
-      });
+          const studyData = this.serialize();
+          return studyData;
+        });
     },
 
     updateStudy: function(params) {
