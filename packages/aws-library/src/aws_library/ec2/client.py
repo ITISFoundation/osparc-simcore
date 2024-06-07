@@ -274,6 +274,24 @@ class SimcoreEC2API:
         )
         return all_instances
 
+    async def stop_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
+        try:
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"stopping instances {[i.id for i in instance_datas]}",
+            ):
+                await self.client.stop_instances(
+                    InstanceIds=[i.id for i in instance_datas]
+                )
+        except botocore.exceptions.ClientError as exc:
+            if (
+                exc.response.get("Error", {}).get("Code", "")
+                == "InvalidInstanceID.NotFound"
+            ):
+                raise EC2InstanceNotFoundError from exc
+            raise  # pragma: no cover
+
     async def terminate_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> None:
