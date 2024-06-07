@@ -27,7 +27,8 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
@@ -679,7 +680,7 @@ async def _start_dynamic_service(
         )
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            rpc_dynamic_service_create=RPCDynamicServiceCreate(
+            dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
                 can_save=save_state,
                 project_id=project_uuid,
@@ -800,9 +801,13 @@ async def _remove_service_and_its_data_folders(
         # no need to save the state of the node when deleting it
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            node_id=NodeID(node_uuid),
-            simcore_user_agent=user_agent,
-            save_state=False,
+            dynamic_service_stop=DynamicServiceStop(
+                user_id=user_id,
+                project_id=project_uuid,
+                node_id=NodeID(node_uuid),
+                simcore_user_agent=user_agent,
+                save_state=False,
+            ),
         )
 
     # remove the node's data if any

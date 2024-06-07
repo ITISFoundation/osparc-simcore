@@ -3,6 +3,9 @@ from typing import Final
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -51,9 +54,13 @@ async def _remove_service(
     ):
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            node_id=node_id,
-            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            save_state=save_service_state,
+            dynamic_service_stop=DynamicServiceStop(
+                user_id=service.user_id,
+                project_id=service.project_id,
+                node_id=service.node_uuid,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                save_state=save_service_state,
+            ),
         )
 
 
