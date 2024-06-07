@@ -762,7 +762,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const newObj = this.getStudy().serialize();
         updatePromise = this.getStudy().updateStudy(newObj);
       }
-      updatePromise
+      return updatePromise
         .then(studyData => {
           this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
         })
