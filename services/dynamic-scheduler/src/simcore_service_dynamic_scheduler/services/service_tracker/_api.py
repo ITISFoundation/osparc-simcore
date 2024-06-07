@@ -37,18 +37,16 @@ async def set_request_as_running(
 
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is not None:
-        _logger.info(
-            "Could track as running %s since an entry node_id %s already exists",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
-        return
+        model.dynamic_service_start = dynamic_service_start
+        model.requested_state = UserRequestedState.RUNNING
+        model.project_id = dynamic_service_start.project_id
+        model.user_id = dynamic_service_start.user_id
 
     await tracker.save(
         node_id,
         TrackedServiceModel(
             dynamic_service_start=dynamic_service_start,
-            requested_sate=UserRequestedState.RUNNING,
+            requested_state=UserRequestedState.RUNNING,
             project_id=dynamic_service_start.project_id,
             user_id=dynamic_service_start.user_id,
         ),
@@ -67,10 +65,10 @@ async def set_request_as_stopped(
             dynamic_service_start=None,
             user_id=dynamic_service_stop.user_id,
             project_id=dynamic_service_stop.project_id,
-            requested_sate=UserRequestedState.STOPPED,
+            requested_state=UserRequestedState.STOPPED,
         )
 
-    model.requested_sate = UserRequestedState.STOPPED
+    model.requested_state = UserRequestedState.STOPPED
     await tracker.save(dynamic_service_stop.node_id, model)
 
 
@@ -150,7 +148,7 @@ async def set_if_status_changed(
     json_status = status.json()
     if model.service_status != json_status:
         model.service_status = json_status
-        model.current_state = _get_current_state(model.requested_sate, status)
+        model.current_state = _get_current_state(model.requested_state, status)
         await tracker.save(node_id, model)
         return True
 

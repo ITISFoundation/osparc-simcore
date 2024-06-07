@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+from collections.abc import Callable
 from datetime import timedelta
 from typing import Any, Final
 from uuid import uuid4
@@ -9,6 +10,10 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
+    DynamicServiceStop,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
@@ -58,42 +63,57 @@ def node_id() -> NodeID:
     return uuid4()
 
 
+async def test_services_tracer_set_as_running_set_as_stopped(
+    app: FastAPI,
+    node_id: NodeID,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+    get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
+):
+    async def _remove_service() -> None:
+        await remove_tracked(app, node_id)
+        assert await get_tracked(app, node_id) is None
+        assert await get_all_tracked(app) == {}
+
+    async def _set_as_running() -> None:
+        await set_request_as_running(app, get_dynamic_service_start(node_id))
+        tracked_model = await get_tracked(app, node_id)
+        assert tracked_model
+        assert tracked_model.requested_state == UserRequestedState.RUNNING
+
+    async def _set_as_stopped() -> None:
+        await set_request_as_stopped(app, get_dynamic_service_stop(node_id))
+        tracked_model = await get_tracked(app, node_id)
+        assert tracked_model
+        assert tracked_model.requested_state == UserRequestedState.STOPPED
+
+    # request as running then as stopped
+    await _remove_service()
+    await _set_as_running()
+    await _set_as_stopped()
+
+    # request as stopped then as running
+    await _remove_service()
+    await _set_as_stopped()
+    await _set_as_running()
+
+
 @pytest.mark.parametrize("item_count", [100])
 async def test_services_tracer_workflow(
-    app: FastAPI, node_id: NodeID, item_count: NonNegativeInt
+    app: FastAPI,
+    node_id: NodeID,
+    item_count: NonNegativeInt,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+    get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-
-    # service does not exist
-    assert await get_tracked(app, node_id) is None
-
-    # service requested as to be in RUNNING
-    await set_request_as_running(app, node_id)
-    tracked_model = await get_tracked(app, node_id)
-    assert tracked_model
-    assert tracked_model.requested_sate == UserRequestedState.RUNNING
-
-    # service requested as to be in STOPPED
-    await set_request_as_stopped(app, node_id)
-    tracked_model = await get_tracked(app, node_id)
-    assert tracked_model
-    assert tracked_model.requested_sate == UserRequestedState.STOPPED
-
-    # remove service
-    await remove_tracked(app, node_id)
-    assert await get_tracked(app, node_id) is None
-
-    # check listing services
-    assert await get_all_tracked(app) == {}
-
+    # ensure more than one service can be tracked
     await logged_gather(
-        *[set_request_as_stopped(app, uuid4()) for _ in range(item_count)],
+        *[
+            set_request_as_stopped(app, get_dynamic_service_stop(uuid4()))
+            for _ in range(item_count)
+        ],
         max_concurrency=100,
     )
-    await logged_gather(
-        *[set_request_as_running(app, uuid4()) for _ in range(item_count)],
-        max_concurrency=100,
-    )
-    assert len(await get_all_tracked(app)) == item_count * 2
+    assert len(await get_all_tracked(app)) == item_count
 
 
 @pytest.mark.parametrize(
@@ -108,9 +128,12 @@ async def test_services_tracer_workflow(
     ],
 )
 async def test_set_if_status_changed(
-    app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
+    app: FastAPI,
+    node_id: NodeID,
+    status: NodeGet | DynamicServiceGet | NodeGetIdle,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
 ):
-    await set_request_as_running(app, node_id)
+    await set_request_as_running(app, get_dynamic_service_start(node_id))
 
     assert await set_if_status_changed(app, node_id, status) is True
 
@@ -122,8 +145,13 @@ async def test_set_if_status_changed(
     assert model.service_status == status.json()
 
 
-async def test_set_service_status_task_uid(app: FastAPI, node_id: NodeID, faker: Faker):
-    await set_request_as_running(app, node_id)
+async def test_set_service_status_task_uid(
+    app: FastAPI,
+    node_id: NodeID,
+    faker: Faker,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+):
+    await set_request_as_running(app, get_dynamic_service_start(node_id))
 
     task_uid = TaskUID(faker.uuid4())
     await set_service_status_task_uid(app, node_id, task_uid)
@@ -186,37 +214,37 @@ _EXPECTED_TEST_CASES: list[list[tuple]] = [
         # UserRequestedState.RUNNING
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.PENDING),
+            status_generator(ServiceState.PENDING),
             SchedulerServiceState.STARTING,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.PULLING),
+            status_generator(ServiceState.PULLING),
             SchedulerServiceState.STARTING,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.STARTING),
+            status_generator(ServiceState.STARTING),
             SchedulerServiceState.STARTING,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.RUNNING),
+            status_generator(ServiceState.RUNNING),
             SchedulerServiceState.RUNNING,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.COMPLETE),
+            status_generator(ServiceState.COMPLETE),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.FAILED),
+            status_generator(ServiceState.FAILED),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.RUNNING,
-            get_status(ServiceState.STOPPING),
+            status_generator(ServiceState.STOPPING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
@@ -227,37 +255,37 @@ _EXPECTED_TEST_CASES: list[list[tuple]] = [
         # UserRequestedState.STOPPED
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.PENDING),
+            status_generator(ServiceState.PENDING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.PULLING),
+            status_generator(ServiceState.PULLING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.STARTING),
+            status_generator(ServiceState.STARTING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.RUNNING),
+            status_generator(ServiceState.RUNNING),
             SchedulerServiceState.STOPPING,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.COMPLETE),
+            status_generator(ServiceState.COMPLETE),
             SchedulerServiceState.STOPPING,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.FAILED),
+            status_generator(ServiceState.FAILED),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
         (
             UserRequestedState.STOPPED,
-            get_status(ServiceState.STOPPING),
+            status_generator(ServiceState.STOPPING),
             SchedulerServiceState.STOPPING,
         ),
         (
@@ -266,7 +294,7 @@ _EXPECTED_TEST_CASES: list[list[tuple]] = [
             SchedulerServiceState.IDLE,
         ),
     ]
-    for get_status in (
+    for status_generator in (
         _get_node_get_from,
         _get_dynamic_service_get_from,
     )

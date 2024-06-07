@@ -46,7 +46,7 @@ class TrackedServiceModel:
     project_id: ProjectID | None
 
     # what the user desires (RUNNING or STOPPED)
-    requested_sate: UserRequestedState
+    requested_state: UserRequestedState
 
     # set this after parsing the incoming state via the API calls
     current_state: SchedulerServiceState = SchedulerServiceState.UNKNOWN  # type: ignore

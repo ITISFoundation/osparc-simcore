@@ -23,7 +23,10 @@ def test_serialization(
     service_status_task_uid: TaskUID | None,
 ):
     tracked_model = TrackedServiceModel(
-        requested_sate=requested_state,
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=requested_state,
         current_state=current_state,
         service_status=faker.pystr(),
         check_status_after=check_status_after,
@@ -36,7 +39,12 @@ def test_serialization(
 
 
 async def test_set_check_status_after_to():
-    model = TrackedServiceModel(UserRequestedState.RUNNING)
+    model = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=UserRequestedState.RUNNING,
+    )
     assert model.check_status_after < arrow.utcnow().timestamp()
 
     delay = timedelta(seconds=4)

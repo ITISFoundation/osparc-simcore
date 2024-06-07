@@ -48,7 +48,12 @@ async def test_tracker_workflow(tracker: Tracker):
     assert result is None
 
     # node creation
-    model = TrackedServiceModel(requested_sate=UserRequestedState.RUNNING)
+    model = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=UserRequestedState.RUNNING,
+    )
     await tracker.save(node_id, model)
 
     # check if exists
@@ -65,7 +70,12 @@ async def test_tracker_workflow(tracker: Tracker):
 async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> None:
     assert await tracker.all() == {}
 
-    model_to_insert = TrackedServiceModel(requested_sate=UserRequestedState.RUNNING)
+    model_to_insert = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=UserRequestedState.RUNNING,
+    )
 
     data_to_insert = {uuid4(): model_to_insert for _ in range(item_count)}
 
@@ -74,7 +84,7 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
     )
 
     response = await tracker.all()
-    for key in response.keys():
+    for key in response:
         assert isinstance(key, NodeID)
     assert response == data_to_insert
 
