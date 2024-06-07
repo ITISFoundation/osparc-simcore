@@ -48,6 +48,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
+from settings_library.ssm import SSMSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
@@ -142,6 +143,11 @@ def with_labelize_drain_nodes(
             "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
         },
     )
+
+
+@pytest.fixture(scope="session")
+def fake_ssm_settings() -> SSMSettings:
+    return SSMSettings(**SSMSettings.Config.schema_extra["examples"][0])
 
 
 @pytest.fixture
