@@ -10,7 +10,7 @@ from models_library.wallets import WalletInfo
 from pydantic import BaseModel
 
 
-class RPCDynamicServiceCreate(DynamicServiceCreate):
+class DynamicServiceStart(DynamicServiceCreate):
     request_dns: str
     request_scheme: str
     simcore_user_agent: str

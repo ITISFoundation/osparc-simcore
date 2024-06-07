@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
     DynamicServiceStop,
-    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -28,10 +28,10 @@ async def get_service_status(
 
 @router.expose()
 async def run_dynamic_service(
-    app: FastAPI, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
+    app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    return await director_v2_client.run_dynamic_service(rpc_dynamic_service_create)
+    return await director_v2_client.run_dynamic_service(dynamic_service_start)
 
 
 @router.expose(

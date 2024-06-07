@@ -22,7 +22,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
@@ -370,7 +370,7 @@ async def test_open_project(
             calls.append(
                 call(
                     app=client.app,
-                    rpc_dynamic_service_create=RPCDynamicServiceCreate(
+                    dynamic_service_start=DynamicServiceStart(
                         project_id=user_project["uuid"],
                         service_key=service["key"],
                         service_uuid=service_uuid,
@@ -449,7 +449,7 @@ async def test_open_template_project_for_edition(
             calls.append(
                 call(
                     app=client.app,
-                    rpc_dynamic_service_create=RPCDynamicServiceCreate(
+                    dynamic_service_start=DynamicServiceStart(
                         project_id=template_project["uuid"],
                         service_key=service["key"],
                         service_uuid=service_uuid,

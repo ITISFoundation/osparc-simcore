@@ -5,8 +5,8 @@ from functools import partial
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
     DynamicServiceStop,
-    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
@@ -43,11 +43,11 @@ async def get_dynamic_service(
 
 
 async def run_dynamic_service(
-    app: web.Application, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
+    app: web.Application, *, dynamic_service_start: DynamicServiceStart
 ) -> DynamicServiceGet | NodeGet:
     return await services.run_dynamic_service(
         get_rabbitmq_rpc_client(app),
-        rpc_dynamic_service_create=rpc_dynamic_service_create,
+        dynamic_service_start=dynamic_service_start,
     )
 
 

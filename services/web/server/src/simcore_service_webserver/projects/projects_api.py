@@ -27,8 +27,8 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
     DynamicServiceStop,
-    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
@@ -680,7 +680,7 @@ async def _start_dynamic_service(
         )
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            rpc_dynamic_service_create=RPCDynamicServiceCreate(
+            dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
                 can_save=save_state,
                 project_id=project_uuid,
