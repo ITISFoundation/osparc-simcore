@@ -28,7 +28,7 @@ def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC
 
 
 async def monitor_buffer_machines(
-    *, app: FastAPI, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> None:
     """Buffer machine creation works like so:
     1. a cheap EC2 is created with an EBS attached volume
@@ -45,13 +45,20 @@ async def monitor_buffer_machines(
     # observe current state:
     # list currently available buffer machines
     ready_buffer_instances = await ec2_client.get_instances(
-        key_names=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped"],
     )
+    pending_instances = await ec2_client.get_instances(
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+        state_names=["pending"],
+    )
     # list buffer machines being created now
     buffer_instances = await ec2_client.get_instances(
-        key_names=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
-        state_names=["pending", "running"],
+        state_names=["running"],
     )
+
+    # for the running images we should check if image pulling was completed
