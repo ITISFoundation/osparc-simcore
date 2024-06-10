@@ -86,10 +86,11 @@ async def test_monitor_buffer_machines(
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     buffer_count: int,
 ):
-    # we have no instances now
+    # 0. we have no instances now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
+    # 1. run, this will create as many buffer machines as needed
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
@@ -97,8 +98,13 @@ async def test_monitor_buffer_machines(
     # we should have now some buffer machines started
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=buffer_count,
-        instance_type=next(iter(ec2_instances_allowed_types)),
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state="running",
+    )
+
+    # 2. this should now run a SSM command
+    await monitor_buffer_machines(
+        initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
