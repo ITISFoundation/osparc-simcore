@@ -38,15 +38,13 @@ AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
 class AutoscalingSSMSettings(SSMSettings):
     class Config(SSMSettings.Config):
-        env_prefix = AUTOSCALING_ENV_PREFIX
-
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
-                    f"{AUTOSCALING_ENV_PREFIX}SSM_ACCESS_KEY_ID": "my_access_key_id",
-                    f"{AUTOSCALING_ENV_PREFIX}SSM_ENDPOINT": "https://my_ssm_endpoint.com",
-                    f"{AUTOSCALING_ENV_PREFIX}SSM_REGION_NAME": "us-east-1",
-                    f"{AUTOSCALING_ENV_PREFIX}SSM_SECRET_ACCESS_KEY": "my_secret_access_key",
+                    "SSM_ACCESS_KEY_ID": "my_access_key_id",
+                    "SSM_ENDPOINT": "https://my_ssm_endpoint.com",
+                    "SSM_REGION_NAME": "us-east-1",
+                    "SSM_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
             ],
         }
