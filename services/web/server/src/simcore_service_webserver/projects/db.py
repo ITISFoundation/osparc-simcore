@@ -690,7 +690,7 @@ class ProjectDBAPI(BaseProjectDB):
                 user_id=user_id,
                 project_uuid=f"{project_uuid}",
                 product_name=product_name,
-                allow_workbench_changes=False,
+                allow_workbench_changes=False,  # MD: ?
             )
 
     async def update_project_multiple_node_data(

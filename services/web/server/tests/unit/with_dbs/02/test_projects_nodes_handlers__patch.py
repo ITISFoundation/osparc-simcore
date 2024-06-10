@@ -163,3 +163,62 @@ async def test_patch_project_node(
     assert _tested_node["inputsRequired"] == _patch_inputs_required["inputsRequired"]
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
+
+
+@pytest.mark.parametrize(
+    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
+)
+async def test_patch_project_node_inputs_with_data_type_change(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product,
+    mock_project_uses_available_services,
+):
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id
+    )
+    # inputs
+    _patch_inputs = {
+        "inputs": {
+            "input_3": 0.0,
+            "input_2": 3.0,
+            "input_1": {
+                "store": 0,
+                "path": "api/eddb9098-ac99-331e-930e-d77e25ffe633/file_with_number.txt",
+                "label": "file_with_number.txt",
+                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3",
+                "dataset": None,
+            },
+        }
+    }
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_inputs),
+    )
+    await assert_status(resp, expected)
+    assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
+
+    # Change input data type
+    _patch_inputs = {
+        "inputs": {
+            "input_3": {
+                "store": 0,
+                "path": "api/eddb9098-ac99-331e-930e-d77e25ffe633/file_with_number.txt",
+                "label": "file_with_number.txt",
+                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3",
+                "dataset": None,
+            },
+            "input_2": 3.0,
+            "input_1": 5.5,
+        }
+    }
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_inputs),
+    )
+    await assert_status(resp, expected)
+    assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
