@@ -521,7 +521,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment: &webserver_environment
       AIODEBUG_SLOW_DURATION_SECS: ${AIODEBUG_SLOW_DURATION_SECS}
 
@@ -727,7 +727,7 @@ services:
   wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-as-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *webserver_environment
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
@@ -740,7 +740,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-db-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
@@ -824,7 +824,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-gc-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       WEBSERVER_LOGLEVEL: ${WB_GC_LOGLEVEL}
 
