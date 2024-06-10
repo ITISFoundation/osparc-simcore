@@ -32,7 +32,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   events: {
     "changeSharedWith": "qx.event.type.Data",
-    "changeSelectedTags": "qx.event.type.Data"
+    "changeSelectedTags": "qx.event.type.Data",
+    "changeServiceType": "qx.event.type.Data"
   },
 
   members: {
@@ -46,6 +47,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       if (this.__resourceType !== "service") {
         layout.add(this.__createTagsFilterLayout());
       }
+      if (this.__resourceType === "service") {
+        layout.add(this.__createServiceTypeFilterLayout());
+      }
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(layout);
@@ -54,6 +58,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
     },
 
+    /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const radioGroup = new qx.ui.form.RadioGroup();
@@ -86,7 +91,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       return layout;
     },
+    /* /SHARED WITH */
 
+    /* TAGS */
     __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
@@ -151,6 +158,42 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         layout.add(showAllButton);
       }
     },
+    /* /TAGS */
+
+    /* SERVICE TYPE */
+    __createServiceTypeFilterLayout: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const radioGroup = new qx.ui.form.RadioGroup();
+
+      const serviceTypes = osparc.service.Utils.TYPES;
+      Object.keys(serviceTypes).forEach(serviceId => {
+        if (["computational", "dynamic"].includes(serviceId)) {
+          return;
+        }
+        const serviceType = serviceTypes[serviceId];
+        const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon);
+        button.id = serviceId;
+        button.set({
+          appearance: "filter-toggle-button"
+        });
+
+        layout.add(button);
+        radioGroup.add(button);
+
+        button.addListener("execute", () => {
+          this.fireDataEvent("changeServiceType", {
+            id: serviceId
+          });
+        }, this);
+
+        this.__sharedWithButtons.push(button);
+      });
+
+      radioGroup.setAllowEmptySelection(false);
+
+      return layout;
+    },
+    /* /SERVICE TYPE */
 
     filterChanged: function(filterData) {
       if ("sharedWith" in filterData) {
