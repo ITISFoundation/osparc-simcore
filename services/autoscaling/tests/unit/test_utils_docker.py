@@ -1042,7 +1042,7 @@ def test_get_new_node_docker_tags(
     [
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
-            'echo "services:\n  nginx:\n    image: nginx\n  service:23.5.5:\n"    '
+            'echo "services:\n  nginx:\n    image: nginx\n  service:23.5.5:\n    '
             "image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"
             " > /docker-pull.compose.yml"
             " && "
