@@ -448,7 +448,7 @@ def write_compose_file_command(
     write_compose_file_cmd = " ".join(
         ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
-    return " ".join(write_compose_file_cmd)
+    return write_compose_file_cmd
 
 
 def get_docker_pull_images_on_start_bash_command(
