@@ -1,7 +1,8 @@
 import logging
 from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass, field
-from typing import Any, Final, Generator, cast
+from typing import Any, Final, cast
 
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
@@ -16,29 +17,24 @@ from aws_library.ec2.models import (
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
-from simcore_service_autoscaling.utils.auto_scaling_core import (
-    ec2_buffer_startup_script,
-)
-
-#
-# Possible settings to cope with different types
-#
-# g4dn.xlarge: 2 buffers
-# g4dn.8xlarge: 2 buffers
-# it would make sense to share some buffer among compatible types instead of keeping a separation
-# analyse input settings to create a type of dictionary?
-# {g4dn.*: {number:3, prepulling:{s4l-core:3.2.27, jupyter-math:3.4.5}}}
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings, get_application_settings
+from ..utils.auto_scaling_core import ec2_buffer_startup_script
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
 
-_BUFFER_EC2_TAGS: EC2Tags = {
-    parse_obj_as(AWSTagKey, "buffer-machine"): parse_obj_as(AWSTagValue, "true")
+_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "buffer-machine")
+_BUFFER_MACHINE_EC2_TAGS: EC2Tags = {
+    _BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "true")
 }
-
+_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "pulling"
+)
+_BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "ssm-command-id"
+)
 _PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
 
 _logger = logging.getLogger(__name__)
@@ -89,7 +85,7 @@ class WarmBufferPool:
 
 
 def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
-    return auto_scaling_mode.get_ec2_tags(app) | _BUFFER_EC2_TAGS
+    return auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
 
 
 async def _create_buffer_machine(
@@ -144,7 +140,7 @@ async def monitor_buffer_machines(
                     instance
                 )
             case "running":
-                if "pulling" in instance.tags:
+                if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
                     current_warm_buffer_pools[instance.type].pulling_instances.add(
                         instance
                     )
@@ -239,13 +235,15 @@ async def monitor_buffer_machines(
                 [instance],
                 tags=instance.tags
                 | {
-                    AWSTagKey("pulling"): AWSTagValue("true"),
-                    AWSTagKey("ssm-command-id"): ssm_command.command_id,
+                    _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
+                    _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
                 },
             )
 
         for instance in warm_buffer_pool.pulling_instances:
-            if ssm_command_id := instance.tags.get(AWSTagKey("ssm-command-id")):
+            if ssm_command_id := instance.tags.get(
+                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
+            ):
                 ssm_command = await ssm_client.get_command(
                     instance.id, command_id=ssm_command_id
                 )
@@ -264,8 +262,8 @@ async def monitor_buffer_machines(
             "pending buffer instances completed pulling of images, stopping them",
         ):
             new_tags = instance.tags
-            new_tags.pop(AWSTagKey("pulling"), None)
-            new_tags.pop(AWSTagKey("ssm-command-id"), None)
+            new_tags.pop(_BUFFER_MACHINE_PULLING_EC2_TAG_KEY, None)
+            new_tags.pop(_BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY, None)
             await ec2_client.set_instances_tags(
                 [instance],
                 tags=new_tags,
