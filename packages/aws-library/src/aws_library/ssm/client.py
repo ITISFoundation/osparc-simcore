@@ -55,7 +55,7 @@ class SimcoreSSMAPI:
 
     # a function to send a command via ssm
     async def send_command(
-        self, instance_id: str, command: str, command_name: str
+        self, instance_id: str, *, command: str, command_name: str
     ) -> SSMCommand:
         # TODO: evaluate using Targets instead of instances as this is limited to 50 instances
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.send_command
@@ -79,6 +79,19 @@ class SimcoreSSMAPI:
             instance_id=instance_id,
         )
 
+    async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
+
+        response = await self.client.get_command_invocation(
+            CommandId=command_id, InstanceId=instance_id
+        )
+
+        return SSMCommand(
+            name=response["Comment"],
+            command_id=response["CommandId"],
+            instance_id=response["InstanceId"],
+            status=response["Status"] if response["Status"] != "Delayed" else "Pending",
+        )
+
     # a function to list commands on an instance
     async def list_commands_on_instance(self, instance_id: str) -> list[SSMCommand]:
         response = await self.client.list_commands(
@@ -92,5 +105,5 @@ class SimcoreSSMAPI:
                 instance_id=instance_id,
             )
             for command in response["Commands"]
-            if all(_ in command for _ in ("Comment", "CommandId", "Status"))
+            if ("Comment", "CommandId", "Status") in _
         ]
