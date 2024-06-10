@@ -141,7 +141,7 @@ class EC2InstanceBootSpecific(BaseModel):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     buffer_count: NonNegativeInt = Field(
-        default=0, description="number of buffer EC2s to keep"
+        default=0, description="number of buffer EC2s to keep (defaults to 0)"
     )
 
     class Config:
