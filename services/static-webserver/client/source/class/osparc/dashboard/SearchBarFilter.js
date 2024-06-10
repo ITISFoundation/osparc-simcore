@@ -272,6 +272,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    setServiceTypeActiveFilter: function(optionId, optionLabel) {
+      this.__removeChips("service-type");
+      if (optionId === "show-all") {
+        this.__addChip("service-type", optionId, optionLabel);
+      }
+    },
+
     __addChip: function(type, id, label) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
