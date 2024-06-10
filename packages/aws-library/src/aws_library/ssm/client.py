@@ -1,7 +1,7 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-from typing import cast
+from typing import Sequence, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 class SSMCommand:
     name: str
     command_id: str
-    instance_id: str
+    instance_ids: Sequence[str]
     status: CommandStatusType
 
 
@@ -55,14 +55,12 @@ class SimcoreSSMAPI:
 
     # a function to send a command via ssm
     async def send_command(
-        self, instance_id: str, *, command: str, command_name: str
+        self, instance_ids: Sequence[str], *, command: str, command_name: str
     ) -> SSMCommand:
-        # TODO: evaluate using Targets instead of instances as this is limited to 50 instances
+        # NOTE: using Targets instead of instances as this is limited to 50 instances
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.send_command
         response = await self.client.send_command(
-            InstanceIds=tuple(
-                instance_id,
-            ),
+            Targets=[{"Key": "InstanceIds", "Values": instance_ids}],
             DocumentName="AWS-RunShellScript",
             Comment=command_name,
             Parameters={"commands": [command]},
@@ -76,7 +74,7 @@ class SimcoreSSMAPI:
             name=response["Command"]["Comment"],
             command_id=response["Command"]["CommandId"],
             status=response["Command"]["Status"],
-            instance_id=instance_id,
+            instance_ids=instance_ids,
         )
 
     async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
@@ -88,7 +86,7 @@ class SimcoreSSMAPI:
         return SSMCommand(
             name=response["Comment"],
             command_id=response["CommandId"],
-            instance_id=response["InstanceId"],
+            instance_ids=[response["InstanceId"]],
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
         )
 
@@ -102,7 +100,7 @@ class SimcoreSSMAPI:
                 name=command["Comment"],
                 command_id=command["CommandId"],
                 status=command["Status"],
-                instance_id=instance_id,
+                instance_ids=[instance_id],
             )
             for command in response["Commands"]
             if ("Comment", "CommandId", "Status") in _
