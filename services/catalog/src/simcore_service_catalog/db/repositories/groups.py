@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
@@ -6,7 +6,7 @@ from models_library.groups import GroupAtDB
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 
-from ..errors import RepositoryError
+from ...exceptions.db_errors import RepositoryError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
@@ -32,7 +32,8 @@ class GroupsRepository(BaseRepository):
             )
             row = result.first()
         if not row:
-            raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
+            msg = f"{GroupType.EVERYONE} groups was never initialized"
+            raise RepositoryError(msg)
         return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
@@ -40,7 +41,7 @@ class GroupsRepository(BaseRepository):
     ) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(users.c.primary_gid).where(users.c.email == user_email)
                 ),
@@ -49,7 +50,7 @@ class GroupsRepository(BaseRepository):
     async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(groups.c.gid).where(groups.c.name == affiliation)
                 ),

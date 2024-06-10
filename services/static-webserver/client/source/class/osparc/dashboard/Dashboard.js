@@ -42,8 +42,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
     this.set({
-      contentPaddingTop: 15,
-      contentPaddingLeft: 0,
+      contentPadding: this.self().PADDING,
+      contentPaddingBottom: 0,
       barPosition: "top"
     });
 
@@ -69,6 +69,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       init: "dashboard",
       refine: true
     }
+  },
+
+  statics: {
+    PADDING: 15
   },
 
   members: {
