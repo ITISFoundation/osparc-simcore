@@ -37,7 +37,6 @@ async def subscribe_to_rabbitmq(
                 )
                 for p in exchange_to_parser_config
             ),
-            # TODO: figure out why this does not fail the startup!
             reraise=True,
         )
     return {
