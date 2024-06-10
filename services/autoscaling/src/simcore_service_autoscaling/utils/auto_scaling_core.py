@@ -109,11 +109,16 @@ def ec2_buffer_startup_script(
 ) -> str:
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     if ec2_boot_specific.pre_pull_images:
+        assert app_settings.AUTOSCALING_REGISTRY  # nosec
         startup_commands.extend(
-            utils_docker.get_docker_login_on_start_bash_command(
-                app_settings.AUTOSCALING_REGISTRY
-            ),
-            utils_docker.write_compose_file_command(ec2_boot_specific.pre_pull_images),
+            (
+                utils_docker.get_docker_login_on_start_bash_command(
+                    app_settings.AUTOSCALING_REGISTRY
+                ),
+                utils_docker.write_compose_file_command(
+                    ec2_boot_specific.pre_pull_images
+                ),
+            )
         )
     return " && ".join(startup_commands)
 

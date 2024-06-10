@@ -157,7 +157,7 @@ async def monitor_buffer_machines(
                 current_warm_buffer_pools.pop(ec2_type)
 
     # 3 add/remove buffer instances if needed based on needed buffer counts
-    missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict()
+    missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     instances_to_terminate: set[EC2InstanceData] = set()
     for (
         ec2_type,
