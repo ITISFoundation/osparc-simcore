@@ -11,7 +11,9 @@ from .._meta import (
     APP_STARTED_DISABLED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_api_routes
-from ..api.rpc.rpc_routes import setup_rpc_routes
+from ..api.rpc.routes import setup_rpc_routes
+from ..services.efs_manager_setup import setup as setup_efs_manager
+from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -34,10 +36,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
+    setup_rabbitmq(app)
+
     setup_api_routes(app)
     setup_rpc_routes(app)
 
-    # ERROR HANDLERS
+    setup_efs_manager(app)
 
     # EVENTS
     async def _on_startup() -> None:

@@ -10,19 +10,13 @@ from models_library.basic_types import (
 )
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.efs import AwsEfsSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 EFS_GUARDIAN_ENV_PREFIX: Final[str] = "EFS_GUARDIAN_"
-
-
-class AwsEfsSettings(BaseCustomSettings):
-    EFS_DNS_NAME: str = Field(
-        description="AWS Elastic File System DNS name",
-        example="fs-xxx.efs.us-east-1.amazonaws.com",
-    )
-    EFS_BASE_DIRECTORY: str = Field(default="project-specific-data")
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -66,9 +60,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings | None = Field(
-        auto_default_from_env=True
-    )
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802

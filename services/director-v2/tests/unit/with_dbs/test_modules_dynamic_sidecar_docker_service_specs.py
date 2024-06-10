@@ -6,6 +6,7 @@
 import json
 from collections.abc import Mapping
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 import respx
@@ -408,7 +409,7 @@ def expected_dynamic_sidecar_spec(
     }
 
 
-def test_get_dynamic_proxy_spec(
+async def test_get_dynamic_proxy_spec(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
@@ -436,7 +437,7 @@ def test_get_dynamic_proxy_spec(
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
 
-        dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+        dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -448,6 +449,7 @@ def test_get_dynamic_proxy_spec(
             allow_internet_access=False,
             metrics_collection_allowed=True,
             telemetry_enabled=True,
+            rpc_client=Mock(),
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -530,7 +532,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     hardware_info: HardwareInfo,
     fake_service_specifications: dict[str, Any],
 ):
-    dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+    dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -542,6 +544,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         allow_internet_access=False,
         metrics_collection_allowed=True,
         telemetry_enabled=True,
+        rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
