@@ -36,7 +36,7 @@ class SchedulerServiceState(StrAutoEnum):
 
 
 @dataclass
-class TrackedServiceModel:
+class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     # used to create the service in any given moment if the requested_state is RUNNING
     # can be set to None only when stopping the service
     dynamic_service_start: DynamicServiceStart | None
