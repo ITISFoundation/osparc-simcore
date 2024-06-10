@@ -276,18 +276,16 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       this.fireEvent("restartAutoSaveTimer");
       // create the node in the backend first
-      const nodeId = osparc.utils.Utils.uuidV4()
       const params = {
         url: {
           studyId: this.getStudy().getUuid()
         },
         data: {
-          "service_id": nodeId,
           "service_key": key,
           "service_version": version
         }
       };
-      await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
+      const resp = await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
         let errorMsg = qx.locale.Manager.tr("Error creating ") + key + ":" + version;
         if ("status" in err && err.status === 406) {
           errorMsg = key + ":" + version + qx.locale.Manager.tr(" is retired");
@@ -300,6 +298,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         return null;
       });
+      const nodeId = resp["nodeId"];
 
       this.fireEvent("restartAutoSaveTimer");
       const node = this.__createNode(this.getStudy(), key, version, nodeId);
@@ -671,7 +670,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     populateNodesUIData: function(workbenchUIData) {
       if ("workbench" in workbenchUIData) {
         Object.keys(workbenchUIData["workbench"]).forEach(nodeId => {
-          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
+          const node = this.getNode(nodeId);
+          if (node) {
+            node.populateNodeUIData(workbenchUIData.workbench[nodeId]);
+          }
         });
       }
     },
