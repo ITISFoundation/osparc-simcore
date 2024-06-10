@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
 
       if (this.__tagButtons.length >= maxTags) {
-        const showAllButton = new qx.ui.form.Button(this.tr("Show all Tags..."), "@FontAwesome5Solid/tags/20");
+        const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesome5Solid/tags/20");
         showAllButton.set({
           appearance: "filter-toggle-button"
         });
@@ -140,11 +140,11 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         showAllButton.addListener("execute", () => {
           if (showAllButton.showingAll) {
             this.__tagButtons.forEach((btn, idx) => btn.setVisibility(idx >= maxTags ? "excluded" : "visible"));
-            showAllButton.setLabel(this.tr("Show all Tags..."));
+            showAllButton.setLabel(this.tr("All Tags..."));
             showAllButton.showingAll = false;
           } else {
             this.__tagButtons.forEach(btn => btn.setVisibility("visible"));
-            showAllButton.setLabel(this.tr("Show less Tags..."));
+            showAllButton.setLabel(this.tr("Less Tags..."));
             showAllButton.showingAll = true;
           }
         });
