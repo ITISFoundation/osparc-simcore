@@ -9,7 +9,9 @@ from aws_library.ec2.models import (
     AWSTagValue,
     EC2InstanceConfig,
     EC2InstanceData,
+    EC2InstanceType,
     EC2Tags,
+    Resources,
 )
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, parse_obj_as
@@ -37,7 +39,7 @@ _BUFFER_EC2_TAGS: EC2Tags = {
     parse_obj_as(AWSTagKey, "buffer-machine"): parse_obj_as(AWSTagValue, "true")
 }
 
-_PREPULL_COMMAND_NAME: Final[str] = "docker images prepulling"
+_PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
 
 _logger = logging.getLogger(__name__)
 
@@ -117,7 +119,6 @@ async def monitor_buffer_machines(
     5. the usual then happens
     """
     ec2_client = get_ec2_client(app)
-    ssm_client = get_ssm_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -155,13 +156,10 @@ async def monitor_buffer_machines(
                 pass
     _logger.info("Current warm pools: %s", f"{current_warm_buffer_pools!r}")
 
-    # 2. Terminate the instances that we do not need by removing first pending,
-    # then running/pulling, then stopping and after that ready once
-    # and remove all the onces that are not supposed to be there (if EC2_INSTANCES_ALLOWED_TYPES changed)
+    # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
     allowed_instance_types = set(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    # 2.1 remove complete warm pools if needed
     if terminateable_warm_pools := set(current_warm_buffer_pools).difference(
         allowed_instance_types
     ):
@@ -179,7 +177,7 @@ async def monitor_buffer_machines(
             for ec2_type in terminateable_warm_pools:
                 current_warm_buffer_pools.pop(ec2_type)
 
-    # 3 add/remove buffer instances if needed
+    # 3 add/remove buffer instances if needed based on needed buffer counts
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict()
     instances_to_terminate: set[EC2InstanceData] = set()
     for (
@@ -203,7 +201,10 @@ async def monitor_buffer_machines(
         )
         await ec2_client.start_aws_instance(
             EC2InstanceConfig(
-                type=ec2_type,
+                type=EC2InstanceType(
+                    name=ec2_type,
+                    resources=Resources.create_as_empty(),  # fake resources
+                ),
                 tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
@@ -223,28 +224,50 @@ async def monitor_buffer_machines(
         for instance in instances_to_terminate:
             current_warm_buffer_pools[instance.type].remove_instance(instance)
 
-    # for the running images we should check if image pulling was completed
-    # instances_to_send_command_to = []
-    # instances_to_stop = []
-    # for instance in buffer_instances:
-    #     commands = await ssm_client.list_commands_on_instance(instance.id)
-    #     command_found = False
-    #     for command in commands:
-    #         if command.name == _PREPULL_COMMAND_NAME:
-    #             command_found = True
-    #             if command.status == "Success":
-    #                 # the command is completed, we can stop the instance
-    #                 instances_to_stop.append(instance)
-    #                 break
-    #     if not command_found:
-    #         instances_to_send_command_to.append(instance)
+    # 4. pull docker images if needed
+    instances_to_stop: set[EC2InstanceData] = set()
+    broken_instances_to_terminate: set[EC2InstanceData] = set()
+    ssm_client = get_ssm_client(app)
+    for warm_buffer_pool in current_warm_buffer_pools.values():
+        for instance in warm_buffer_pool.waiting_to_pull_instances:
+            ssm_command = await ssm_client.send_command(
+                instance.id,
+                command="docker pull",
+                command_name=_PREPULL_COMMAND_NAME,
+            )
+            await ec2_client.set_instances_tags(
+                [instance],
+                tags=instance.tags
+                | {
+                    AWSTagKey("pulling"): AWSTagValue("true"),
+                    AWSTagKey("ssm-command-id"): ssm_command.command_id,
+                },
+            )
 
-    # if instances_to_stop:
-    #     await ec2_client.stop_instances(instances_to_stop)
+        for instance in warm_buffer_pool.pulling_instances:
+            if ssm_command_id := instance.tags.get(AWSTagKey("ssm-command-id")):
+                ssm_command = await ssm_client.get_command(
+                    instance.id, command_id=ssm_command_id
+                )
+                match ssm_command.status:
+                    case "Success":
+                        instances_to_stop.add(instance)
+                    case "Pending" | "InProgress":
+                        pass
+                    case _:
+                        broken_instances_to_terminate.add(instance)
 
-    # for instance in instances_to_send_command_to:
-    #     await ssm_client.send_command(
-    #         instance.id,
-    #         "docker pull",
-    #         _PREPULL_COMMAND_NAME,
-    #     )
+    if instances_to_stop:
+        with log_context(
+            _logger,
+            logging.INFO,
+            "pending buffer instances completed pulling of images, stopping them",
+        ):
+            await ec2_client.stop_instances(instances_to_stop)
+    if broken_instances_to_terminate:
+        with log_context(
+            _logger,
+            logging.WARNING,
+            "pending buffer instances failed to pull images, terminating them",
+        ):
+            await ec2_client.terminate_instances(broken_instances_to_terminate)
