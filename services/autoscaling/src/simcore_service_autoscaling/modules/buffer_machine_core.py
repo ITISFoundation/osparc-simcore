@@ -139,26 +139,26 @@ async def monitor_buffer_machines(
     allowed_instance_types = set(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    if terminateable_warm_pools := set(current_warm_buffer_pools).difference(
+    if terminateable_warm_pool_types := set(current_warm_buffer_pools).difference(
         allowed_instance_types
     ):
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"removing warm buffer pools: {terminateable_warm_pools}",
+            msg=f"removing warm buffer pools: {terminateable_warm_pool_types}",
         ):
-            instances_to_terminate = set()
-            for ec2_type in terminateable_warm_pools:
+            instances_to_terminate: set[EC2InstanceData] = set()
+            for ec2_type in terminateable_warm_pool_types:
                 instances_to_terminate.union(
                     current_warm_buffer_pools[ec2_type].all_instances()
                 )
             await ec2_client.terminate_instances(instances_to_terminate)
-            for ec2_type in terminateable_warm_pools:
+            for ec2_type in terminateable_warm_pool_types:
                 current_warm_buffer_pools.pop(ec2_type)
 
     # 3 add/remove buffer instances if needed based on needed buffer counts
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
-    instances_to_terminate: set[EC2InstanceData] = set()
+    unneeded_instances: set[EC2InstanceData] = set()
     for (
         ec2_type,
         ec2_boot_config,
@@ -173,7 +173,7 @@ async def monitor_buffer_machines(
             terminateable_instances = set(
                 list(all_pool_instances)[ec2_boot_config.buffer_count :]
             )
-            instances_to_terminate.union(terminateable_instances)
+            unneeded_instances.union(terminateable_instances)
     for ec2_type, num_to_start in missing_instances.items():
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
@@ -198,9 +198,9 @@ async def monitor_buffer_machines(
             number_of_instances=num_to_start,
             max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
         )
-    if instances_to_terminate:
-        await ec2_client.terminate_instances(instances_to_terminate)
-        for instance in instances_to_terminate:
+    if unneeded_instances:
+        await ec2_client.terminate_instances(unneeded_instances)
+        for instance in unneeded_instances:
             current_warm_buffer_pools[instance.type].remove_instance(instance)
 
     # 4. pull docker images if needed
@@ -208,18 +208,25 @@ async def monitor_buffer_machines(
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     ssm_client = get_ssm_client(app)
     for warm_buffer_pool in current_warm_buffer_pools.values():
-        for instance in warm_buffer_pool.waiting_to_pull_instances:
+        if warm_buffer_pool.waiting_to_pull_instances:
+            await ec2_client.set_instances_tags(
+                tuple(warm_buffer_pool.waiting_to_pull_instances),
+                tags={_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true")},
+            )
             ssm_command = await ssm_client.send_command(
-                instance.id,
+                [
+                    instance.id
+                    for instance in warm_buffer_pool.waiting_to_pull_instances
+                ],
                 command="docker pull",
                 command_name=_PREPULL_COMMAND_NAME,
             )
             await ec2_client.set_instances_tags(
-                [instance],
-                tags=instance.tags
-                | {
-                    _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                    _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                tuple(warm_buffer_pool.waiting_to_pull_instances),
+                tags={
+                    _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
+                        ssm_command.command_id
+                    ),
                 },
             )
 
@@ -244,12 +251,14 @@ async def monitor_buffer_machines(
             logging.INFO,
             "pending buffer instances completed pulling of images, stopping them",
         ):
-            new_tags = instance.tags
-            new_tags.pop(_BUFFER_MACHINE_PULLING_EC2_TAG_KEY, None)
-            new_tags.pop(_BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY, None)
-            await ec2_client.set_instances_tags(
-                [instance],
-                tags=new_tags,
+
+            tag_keys_to_remove = (
+                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
+                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+            )
+            await ec2_client.remove_instances_tags(
+                tuple(instances_to_stop),
+                tag_keys=tag_keys_to_remove,
             )
             await ec2_client.stop_instances(instances_to_stop)
     if broken_instances_to_terminate:
