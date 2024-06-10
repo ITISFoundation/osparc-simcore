@@ -536,10 +536,9 @@ qx.Class.define("osparc.data.model.Workbench", {
             delete this.__rootNodes[nodeId];
           }
 
-          // remove it from slideshow
+          // remove it from ui model
           if (this.getStudy()) {
-            this.getStudy().getUi().getSlideshow()
-              .removeNode(nodeId);
+            this.getStudy().getUi().removeNode(nodeId);
           }
 
           this.fireEvent("pipelineChanged");

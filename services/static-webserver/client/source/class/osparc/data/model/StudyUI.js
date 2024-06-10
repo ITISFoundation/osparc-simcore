@@ -103,6 +103,11 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
+    removeNode: function(nodeId) {
+      // remove it from slideshow
+      this.getSlideshow().removeNode(nodeId);
+    },
+
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
