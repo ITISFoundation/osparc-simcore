@@ -18,7 +18,7 @@ from models_library.rabbitmq_messages import (
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
 from models_library.utils.json_serialization import json_dumps
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
@@ -222,9 +222,11 @@ class CreateSidecars(DynamicSchedulerEvent):
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
+        rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
+
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -236,6 +238,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
             telemetry_enabled=is_telemetry_enabled,
+            rpc_client=rpc_client,
         )
 
         catalog_client = CatalogClient.instance(app)

@@ -2,7 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from simcore_service_efs_guardian.core.settings import AwsEfsSettings
+from settings_library.efs import AwsEfsSettings
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
