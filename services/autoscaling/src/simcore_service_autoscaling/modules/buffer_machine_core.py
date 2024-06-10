@@ -263,6 +263,13 @@ async def monitor_buffer_machines(
             logging.INFO,
             "pending buffer instances completed pulling of images, stopping them",
         ):
+            new_tags = instance.tags
+            new_tags.pop(AWSTagKey("pulling"), None)
+            new_tags.pop(AWSTagKey("ssm-command-id"), None)
+            await ec2_client.set_instances_tags(
+                [instance],
+                tags=new_tags,
+            )
             await ec2_client.stop_instances(instances_to_stop)
     if broken_instances_to_terminate:
         with log_context(
