@@ -32,9 +32,9 @@ async def setup_redis_client(app: web.Application):
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
     app[_APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
-        db_configs={
-            RedisManagerDBConfig(x)
-            for x in (
+        databases_configs={
+            RedisManagerDBConfig(db)
+            for db in (
                 RedisDatabase.RESOURCES,
                 RedisDatabase.LOCKS,
                 RedisDatabase.VALIDATION_CODES,

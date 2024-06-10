@@ -20,7 +20,6 @@ from tenacity import retry
 from .background_task import periodic_task, start_periodic_task, stop_periodic_task
 from .logging_utils import log_catch, log_context
 from .retry_policies import RedisRetryPolicyUponInitialization
-from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 _DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
@@ -219,7 +218,7 @@ class RedisClientSDKHealthChecked(RedisClientSDK):
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(self._health_check_task, timeout=1)
+            await stop_periodic_task(self._health_check_task)
         await super().shutdown()
 
 
@@ -236,7 +235,7 @@ class RedisClientsManager:
     Manages the lifetime of redis client sdk connections
     """
 
-    db_configs: set[RedisManagerDBConfig]
+    databases_configs: set[RedisManagerDBConfig]
     settings: RedisSettings
 
     _client_sdks: dict[RedisDatabase, RedisClientSDKHealthChecked] = field(
@@ -244,17 +243,19 @@ class RedisClientsManager:
     )
 
     async def setup(self) -> None:
-        for config in self.db_configs:
+        for config in self.databases_configs:
             self._client_sdks[config.database] = RedisClientSDKHealthChecked(
                 redis_dsn=self.settings.build_redis_dsn(config.database),
                 decode_responses=config.decode_responses,
                 health_check_interval=config.health_check_interval,
             )
 
-        await logged_gather(*(c.setup() for c in self._client_sdks.values()))
+        for client in self._client_sdks.values():
+            await client.setup()
 
     async def shutdown(self) -> None:
-        await logged_gather(*(c.shutdown() for c in self._client_sdks.values()))
+        for client in self._client_sdks.values():
+            await client.shutdown()
 
     def client(self, database: RedisDatabase) -> RedisClientSDKHealthChecked:
         return self._client_sdks[database]
