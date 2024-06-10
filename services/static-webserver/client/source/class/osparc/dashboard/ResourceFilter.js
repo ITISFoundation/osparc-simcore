@@ -25,6 +25,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
     this.__tagButtons = [];
+    this.__serviceTypeButtons = [];
 
     this._setLayout(new qx.ui.layout.VBox());
     this.__buildLayout();
@@ -40,6 +41,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __resourceType: null,
     __sharedWithButtons: null,
     __tagButtons: null,
+    __serviceTypeButtons: null,
 
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
@@ -167,14 +169,16 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
-        if (["computational", "dynamic"].includes(serviceId)) {
+        if (!["computational", "dynamic"].includes(serviceId)) {
           return;
         }
         const serviceType = serviceTypes[serviceId];
-        const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon);
+        const iconSize = 20;
+        const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
         button.id = serviceId;
         button.set({
-          appearance: "filter-toggle-button"
+          appearance: "filter-toggle-button",
+          value: false
         });
 
         layout.add(button);
@@ -186,10 +190,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           });
         }, this);
 
-        this.__sharedWithButtons.push(button);
+        this.__serviceTypeButtons.push(button);
       });
 
-      radioGroup.setAllowEmptySelection(false);
+      radioGroup.setAllowEmptySelection(true);
 
       return layout;
     },
@@ -206,6 +210,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         this.__tagButtons.forEach(btn => {
           btn.setValue(filterData["tags"].includes(btn.id));
         });
+      }
+      if ("serviceType" in filterData) {
+        const foundBtn = this.__serviceTypeButtons.find(btn => btn.id === filterData["serviceType"]);
+        if (foundBtn) {
+          foundBtn.setValue(true);
+        }
       }
     }
   }
