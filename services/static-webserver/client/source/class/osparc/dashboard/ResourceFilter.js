@@ -63,7 +63,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
       const radioGroup = new qx.ui.form.RadioGroup();
+      radioGroup.setAllowEmptySelection(false);
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
@@ -88,8 +90,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
         this.__sharedWithButtons.push(button);
       });
-
-      radioGroup.setAllowEmptySelection(false);
 
       return layout;
     },
@@ -165,7 +165,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* SERVICE TYPE */
     __createServiceTypeFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
       const radioGroup = new qx.ui.form.RadioGroup();
+      radioGroup.setAllowEmptySelection(true);
 
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
@@ -185,15 +187,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         radioGroup.add(button);
 
         button.addListener("execute", () => {
+          const checked = button.getValue();
           this.fireDataEvent("changeServiceType", {
-            id: serviceId
+            id: checked ? serviceId : null,
+            label: checked ? serviceType.label : null
           });
         }, this);
 
         this.__serviceTypeButtons.push(button);
       });
-
-      radioGroup.setAllowEmptySelection(true);
 
       return layout;
     },
