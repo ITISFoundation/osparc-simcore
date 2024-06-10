@@ -55,6 +55,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_num_instances: int,
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
+    expected_additional_tag_keys: list[str],
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -66,6 +67,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
             "buffer-machine",
+            *expected_additional_tag_keys,
         ],
         expected_user_data=[],
     )

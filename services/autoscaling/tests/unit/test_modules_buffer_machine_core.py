@@ -94,17 +94,24 @@ async def test_monitor_buffer_machines(
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-
-    # we should have now some buffer machines started
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state="running",
+        expected_additional_tag_keys=[],
     )
 
-    # 2. this should now run a SSM command
+    # 2. this should now run a SSM command for pulling
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state="running",
+        expected_additional_tag_keys=["pulling", "ssm-command-id"],
     )
