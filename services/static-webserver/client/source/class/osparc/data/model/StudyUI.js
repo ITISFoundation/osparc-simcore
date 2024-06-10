@@ -42,6 +42,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   properties: {
+    // stores position and/or marker
     workbench: {
       check: "Object",
       init: {},
