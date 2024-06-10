@@ -188,6 +188,17 @@ class EC2InstanceBootSpecific(BaseModel):
                     ],
                     "pre_pull_images_cron_interval": "01:00:00",
                 },
+                {
+                    # AMI + pre-pull + buffer count
+                    "ami_id": "ami-123456789abcdef",
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                    "buffer_count": 10,
+                },
             ]
         }
 
