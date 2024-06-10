@@ -1,6 +1,7 @@
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Final, cast
+from typing import Any, Final, Generator, cast
 
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
@@ -12,6 +13,7 @@ from aws_library.ec2.models import (
 )
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, parse_obj_as
+from servicelib.logging_utils import log_context
 
 #
 # Possible settings to cope with different types
@@ -34,6 +36,8 @@ _BUFFER_EC2_TAGS: EC2Tags = {
 
 _PREPULL_COMMAND_NAME: Final[str] = "docker images prepulling"
 
+_logger = logging.getLogger(__name__)
+
 
 @dataclass(kw_only=True, slots=True)
 class WarmBufferPool:
@@ -43,29 +47,40 @@ class WarmBufferPool:
     pulling_instances: set[EC2InstanceData] = field(default_factory=set)
     stopping_instances: set[EC2InstanceData] = field(default_factory=set)
 
-    def all_instances(self) -> set[EC2InstanceData]:
-        """sorted by importance"""
-        return self.ready_instances.union(
+    def __repr__(self) -> str:
+        return (
+            f"WarmBufferPool(ready-count={len(self.ready_instances)}, "
+            f"pending-count={len(self.pending_instances)}, "
+            f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
+            f"pulling-count={len(self.pulling_instances)}, "
+            f"stopping-count={len(self.stopping_instances)})"
+        )
+
+    def _sort_by_readyness(
+        self, *, invert: bool = False
+    ) -> Generator[set[EC2InstanceData], Any, None]:
+        order = (
+            self.ready_instances,
             self.stopping_instances,
             self.pulling_instances,
             self.waiting_to_pull_instances,
             self.pending_instances,
         )
+        if invert:
+            yield from reversed(order)
+        else:
+            yield from order
+
+    def all_instances(self) -> set[EC2InstanceData]:
+        """sorted by importance: READY (stopped) > STOPPING >"""
+        gen = self._sort_by_readyness()
+        return next(gen).union(*(_ for _ in gen))
 
     def remove_instance(self, instance: EC2InstanceData) -> None:
-        for _ in (
-            self.pending_instances,
-            self.waiting_to_pull_instances,
-            self.pulling_instances,
-            self.stopping_instances,
-            self.ready_instances,
-        ):
-            try:
-                _.remove(instance)
-            except KeyError:
-                continue
-            else:
-                return
+        for instances in self._sort_by_readyness(invert=True):
+            if instance in instances:
+                instances.remove(instance)
+                break
 
 
 def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
@@ -135,6 +150,7 @@ async def monitor_buffer_machines(
                     ].waiting_to_pull_instances.add(instance)
             case _:
                 pass
+    _logger.info("Current warm pools: %s", f"{current_warm_buffer_pools!r}")
 
     # 2. Terminate the instances that we do not need by removing first pending,
     # then running/pulling, then stopping and after that ready once
@@ -142,31 +158,44 @@ async def monitor_buffer_machines(
     allowed_instance_types = set(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    if instance_types_to_completely_eliminate := set(
-        current_warm_buffer_pools
-    ).difference(allowed_instance_types):
-        instances_to_terminate = set()
-        for ec2_type in instance_types_to_completely_eliminate:
-            instances_to_terminate.union(
-                current_warm_buffer_pools[ec2_type].all_instances()
-            )
-        await ec2_client.terminate_instances(instances_to_terminate)
-        for ec2_type in instance_types_to_completely_eliminate:
-            current_warm_buffer_pools.pop(ec2_type)
+    # 2.1 remove complete warm pools if needed
+    if terminateable_warm_pools := set(current_warm_buffer_pools).difference(
+        allowed_instance_types
+    ):
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"removing warm buffer pools: {terminateable_warm_pools}",
+        ):
+            instances_to_terminate = set()
+            for ec2_type in terminateable_warm_pools:
+                instances_to_terminate.union(
+                    current_warm_buffer_pools[ec2_type].all_instances()
+                )
+            await ec2_client.terminate_instances(instances_to_terminate)
+            for ec2_type in terminateable_warm_pools:
+                current_warm_buffer_pools.pop(ec2_type)
 
+    # 3 add/remove buffer instances if needed
+    missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict()
     instances_to_terminate: set[EC2InstanceData] = set()
     for (
         ec2_type,
         ec2_boot_config,
     ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
-        terminateable_instances = set(
-            list(
-                current_warm_buffer_pools[
-                    cast(InstanceTypeType, ec2_type)
-                ].all_instances()
-            )[ec2_boot_config.buffer_count :]
-        )
-        instances_to_terminate.union(terminateable_instances)
+        instance_type = cast(InstanceTypeType, ec2_type)
+        all_pool_instances = current_warm_buffer_pools[instance_type].all_instances()
+        if len(all_pool_instances) < ec2_boot_config.buffer_count:
+            missing_instances[instance_type] += ec2_boot_config.buffer_count - len(
+                all_pool_instances
+            )
+        else:
+            terminateable_instances = set(
+                list(all_pool_instances)[ec2_boot_config.buffer_count :]
+            )
+            instances_to_terminate.union(terminateable_instances)
+    for ec2_type, num_to_start in missing_instances.items():
+        ...
     if instances_to_terminate:
         await ec2_client.terminate_instances(instances_to_terminate)
         for instance in instances_to_terminate:
