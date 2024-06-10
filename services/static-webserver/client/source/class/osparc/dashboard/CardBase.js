@@ -117,6 +117,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
+    filterServiceType: function(check, serviceType) {
+      return check === serviceType;
+    },
+
     filterClassifiers: function(checks, classifiers) {
       if (classifiers && classifiers.length) {
         const includesAll = classifiers.every(classifier => checks.includes(classifier));
@@ -901,6 +905,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterSharedWith(checks, sharedWith);
     },
 
+    _filterServiceType: function(serviceType) {
+      if (this.isResourceType("service")) {
+        return this.self().filterServiceType("dynamic", serviceType);
+      }
+      // do not filter out
+      return false;
+    },
+
     _filterClassifiers: function(classifiers) {
       const checks = this.getClassifiers();
       return this.self().filterClassifiers(checks, classifiers);
@@ -919,6 +931,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (this._filterSharedWith(data.sharedWith)) {
+        return true;
+      }
+      if (this._filterServiceType(data.serviceType)) {
         return true;
       }
       if (this._filterClassifiers(data.classifiers)) {
