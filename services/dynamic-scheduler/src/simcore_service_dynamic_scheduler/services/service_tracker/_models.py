@@ -1,7 +1,6 @@
 import pickle
 from dataclasses import dataclass, field
 from datetime import timedelta
-from enum import auto
 
 import arrow
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -9,30 +8,30 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
+from models_library.utils.enums import StrAutoEnum, auto_str
 from servicelib.deferred_tasks import TaskUID
 
 
 class UserRequestedState(StrAutoEnum):
-    RUNNING = auto()
-    STOPPED = auto()
+    RUNNING = auto_str()
+    STOPPED = auto_str()
 
 
 class SchedulerServiceState(StrAutoEnum):
     # service was started and is running as expected
-    RUNNING = auto()
+    RUNNING = auto_str()
     # service is not present
-    IDLE = auto()
+    IDLE = auto_str()
     # something went wrong while starting/stopping service
-    UNEXPECTED_OUTCOME = auto()
+    UNEXPECTED_OUTCOME = auto_str()
 
     # service is being started
-    STARTING = auto()
+    STARTING = auto_str()
     # service is being stopped
-    STOPPING = auto()
+    STOPPING = auto_str()
 
     # service status has not been determined
-    UNKNOWN = auto()
+    UNKNOWN = auto_str()
 
 
 @dataclass
@@ -49,7 +48,7 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     requested_state: UserRequestedState
 
     # set this after parsing the incoming state via the API calls
-    current_state: SchedulerServiceState = SchedulerServiceState.UNKNOWN  # type: ignore
+    current_state: SchedulerServiceState = SchedulerServiceState.UNKNOWN
 
     #############################
     ### SERVICE STATUS UPDATE ###
@@ -86,4 +85,4 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
-        return pickle.loads(data)  # noqa: S301
+        return pickle.loads(data)  # type: ignore # noqa: S301

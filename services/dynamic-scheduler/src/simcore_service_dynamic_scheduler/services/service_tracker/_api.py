@@ -81,7 +81,8 @@ def __get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
     state_key = "state" if isinstance(status, DynamicServiceGet) else "service_state"
 
     state: ServiceState | str = getattr(status, state_key)
-    return state.value if isinstance(state, ServiceState) else state
+    result: str = state.value if isinstance(state, ServiceState) else state
+    return result
 
 
 def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
@@ -101,26 +102,26 @@ def _get_current_state(
     """
 
     if isinstance(status, NodeGetIdle):
-        return SchedulerServiceState.IDLE
+        return SchedulerServiceState.IDLE  # type:ignore
 
     service_state: ServiceState = ServiceState(__get_state_str(status))
 
     if requested_sate == UserRequestedState.RUNNING:
         if service_state == ServiceState.RUNNING:
-            return SchedulerServiceState.RUNNING
+            return SchedulerServiceState.RUNNING  # type:ignore
 
         if ServiceState.PENDING <= service_state <= ServiceState.STARTING:
-            return SchedulerServiceState.STARTING
+            return SchedulerServiceState.STARTING  # type:ignore
 
         if service_state < ServiceState.PENDING or service_state > ServiceState.RUNNING:
-            return SchedulerServiceState.UNEXPECTED_OUTCOME
+            return SchedulerServiceState.UNEXPECTED_OUTCOME  # type:ignore
 
     if requested_sate == UserRequestedState.STOPPED:
         if service_state >= ServiceState.RUNNING:
-            return SchedulerServiceState.STOPPING
+            return SchedulerServiceState.STOPPING  # type:ignore
 
         if service_state < ServiceState.RUNNING:
-            return SchedulerServiceState.UNEXPECTED_OUTCOME
+            return SchedulerServiceState.UNEXPECTED_OUTCOME  # type:ignore
 
     msg = f"Could not determine current_state from: '{requested_sate=}', '{status=}'"
     raise TypeError(msg)
