@@ -251,9 +251,11 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
     all_redis_configs: set[RedisManagerDBConfig] = {
-        RedisManagerDBConfig(x) for x in RedisDatabase
+        RedisManagerDBConfig(db) for db in RedisDatabase
     }
-    manager = RedisClientsManager(db_configs=all_redis_configs, settings=redis_service)
+    manager = RedisClientsManager(
+        databases_configs=all_redis_configs, settings=redis_service
+    )
 
     await manager.setup()
 
@@ -269,6 +271,10 @@ async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
     client = RedisClientSDKHealthChecked(redis_resources_dns)
     assert client
     assert client.redis_dsn == redis_resources_dns
+
+    # ensure nothing happens if shutdown is called before setup
+    await client.shutdown()
+
     await client.setup()
 
     await client._check_health()  # noqa: SLF001
