@@ -7,6 +7,16 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from settings_library.efs import (
+    NFS_PROTOCOL,
+    NFS_REQUEST_TIMEOUT,
+    NUMBER_OF_RETRANSMISSIONS,
+    PORT_MODE,
+    READ_SIZE,
+    RECOVERY_MODE,
+    WRITE_SIZE,
+    AwsEfsSettings,
+)
 from settings_library.r_clone import S3Provider
 
 from ...core.dynamic_services_settings.sidecar import RCloneSettings
@@ -75,6 +85,23 @@ def _get_s3_volume_driver_config(
     return driver_config
 
 
+def _get_efs_volume_driver_config(
+    efs_settings: AwsEfsSettings,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    storage_directory_name: str,
+) -> dict[str, Any]:
+    assert "/" not in storage_directory_name  # nosec
+    driver_config: dict[str, Any] = {
+        "Options": {
+            "type": "nfs",
+            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}",
+            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+        },
+    }
+    return driver_config
+
+
 class DynamicSidecarVolumesPathsResolver:
     BASE_PATH: Path = Path("/dy-volumes")
 
@@ -85,7 +112,8 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{target_path}"
 
     @classmethod
-    def _volume_name(cls, path: Path) -> str:
+    def volume_name(cls, path: Path) -> str:
+        """Returns a volume name created from path. There is not possibility to go back to the original path from the volume name"""
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
@@ -104,7 +132,7 @@ class DynamicSidecarVolumesPathsResolver:
         # NOTE: issues can occur when the paths of the mounted outputs, inputs
         # and state folders are very long and share the same subdirectory path.
         # Reversing volume name to prevent these issues from happening.
-        reversed_volume_name = cls._volume_name(path)[::-1]
+        reversed_volume_name = cls.volume_name(path)[::-1]
         unique_name = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}_{reversed_volume_name}"
         return unique_name[:255]
 
@@ -217,7 +245,41 @@ class DynamicSidecarVolumesPathsResolver:
                     r_clone_settings=r_clone_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
-                    storage_directory_name=cls._volume_name(path).strip("_"),
+                    storage_directory_name=cls.volume_name(path).strip("_"),
+                ),
+            },
+        }
+
+    @classmethod
+    def mount_efs(
+        cls,
+        swarm_stack_name: str,
+        path: Path,
+        node_uuid: NodeID,
+        run_id: RunID,
+        project_id: ProjectID,
+        user_id: UserID,
+        efs_settings: AwsEfsSettings,
+        storage_directory_name: str,
+    ) -> dict[str, Any]:
+        return {
+            "Source": cls.source(path, node_uuid, run_id),
+            "Target": cls.target(path),
+            "Type": "volume",
+            "VolumeOptions": {
+                "Labels": {
+                    "source": cls.source(path, node_uuid, run_id),
+                    "run_id": f"{run_id}",
+                    "node_uuid": f"{node_uuid}",
+                    "study_id": f"{project_id}",
+                    "user_id": f"{user_id}",
+                    "swarm_stack_name": swarm_stack_name,
+                },
+                "DriverConfig": _get_efs_volume_driver_config(
+                    efs_settings=efs_settings,
+                    project_id=project_id,
+                    node_uuid=node_uuid,
+                    storage_directory_name=storage_directory_name,
                 ),
             },
         }

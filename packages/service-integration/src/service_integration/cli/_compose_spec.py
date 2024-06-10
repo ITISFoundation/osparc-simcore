@@ -1,7 +1,8 @@
 import subprocess
-from datetime import datetime
 from pathlib import Path
+from typing import Annotated
 
+import arrow
 import rich
 import typer
 import yaml
@@ -9,6 +10,7 @@ from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
+from ..errors import UndefinedOciImageSpecError
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import (
     OSPARC_CONFIG_DIRNAME,
@@ -61,10 +63,10 @@ def create_docker_compose_image_spec(
 
     config_basedir = meta_config_path.parent
 
-    # required
+    # REQUIRED
     meta_cfg = MetadataConfig.from_yaml(meta_config_path)
 
-    # required
+    # REQUIRED
     if docker_compose_overwrite_path:
         docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
             docker_compose_overwrite_path
@@ -74,11 +76,10 @@ def create_docker_compose_image_spec(
             service_name=meta_cfg.service_name()
         )
 
-    # optional
+    # OPTIONAL
     runtime_cfg = None
     if service_config_path:
         try:
-            # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
         except FileNotFoundError:
             rich.print("No runtime config found (optional), using default.")
@@ -90,13 +91,11 @@ def create_docker_compose_image_spec(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
         )
         if not oci_spec:
-            msg = "Undefined OCI image spec"
-            raise ValueError(msg)
+            raise UndefinedOciImageSpecError
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
         extra_labels.update(oci_labels)
-    except (FileNotFoundError, ValueError):
-
+    except (FileNotFoundError, UndefinedOciImageSpecError):
         try:
             # if not OCI, try label-schema
             ls_spec = yaml.safe_load(
@@ -109,9 +108,11 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+
+    # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+    # Format the datetime object as a string following RFC-3339
+    rfc3339_format = arrow.now().format("YYYY-MM-DDTHH:mm:ssZ")
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = rfc3339_format
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
@@ -130,25 +131,28 @@ def create_docker_compose_image_spec(
     )
 
 
-def main(
+def create_compose(
     ctx: typer.Context,
-    config_path: Path = typer.Option(
-        OSPARC_CONFIG_DIRNAME,
-        "-m",
-        "--metadata",
-        help="osparc config file or folder. "
-        "If the latter, it will scan for configs using the glob pattern 'config_path/**/metadata.yml' ",
-    ),
-    to_spec_file: Path = typer.Option(
-        Path("docker-compose.yml"),
-        "-f",
-        "--to-spec-file",
-        help="Output docker-compose image spec",
-    ),
+    config_path: Annotated[
+        Path,
+        typer.Option(
+            "-m",
+            "--metadata",
+            help="osparc config file or folder. "
+            "If the latter, it will scan for configs using the glob pattern 'config_path/**/metadata.yml' ",
+        ),
+    ] = Path(OSPARC_CONFIG_DIRNAME),
+    to_spec_file: Annotated[
+        Path,
+        typer.Option(
+            "-f",
+            "--to-spec-file",
+            help="Output docker-compose image spec",
+        ),
+    ] = Path("docker-compose.yml"),
 ):
-    """create docker image/runtime compose-specs from an osparc config"""
+    """Creates the docker image/runtime compose-spec file from an .osparc config"""
 
-    # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
         msg = "Invalid path to metadata file or folder"
         raise typer.BadParameter(msg)
@@ -168,10 +172,10 @@ def main(
         config_name = meta_config.parent.name
         configs_kwargs_map[config_name] = {}
 
-        # load meta [required]
+        # load meta REQUIRED
         configs_kwargs_map[config_name]["meta_config_path"] = meta_config
 
-        # others [optional]
+        # others OPTIONAL
         for file_name, arg_name in (
             ("docker-compose.overwrite.yml", "docker_compose_overwrite_path"),
             ("runtime.yml", "service_config_path"),
@@ -194,7 +198,6 @@ def main(
             settings, **configs_kwargs_map[config_name]
         ).dict(exclude_unset=True)
 
-        # FIXME: shaky! why first decides ??
         if n == 0:
             compose_spec_dict = nth_compose_spec
         else:
