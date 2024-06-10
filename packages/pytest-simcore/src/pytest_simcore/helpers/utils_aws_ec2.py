@@ -8,17 +8,17 @@ from types_aiobotocore_ec2.type_defs import InstanceTypeDef
 async def assert_autoscaled_computational_ec2_instances(
     ec2_client: EC2Client,
     *,
-    num_reservations: int,
-    num_instances: int,
-    instance_type: InstanceTypeType,
-    instance_state: InstanceStateNameType,
+    expected_num_reservations: int,
+    expected_num_instances: int,
+    expected_instance_type: InstanceTypeType,
+    expected_instance_state: InstanceStateNameType,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
-        expected_num_reservations=num_reservations,
-        expected_num_instances=num_instances,
-        expected_instance_type=instance_type,
-        expected_instance_state=instance_state,
+        expected_num_reservations=expected_num_reservations,
+        expected_num_instances=expected_num_instances,
+        expected_instance_type=expected_instance_type,
+        expected_instance_state=expected_instance_state,
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.dask-scheduler_url",
         ],
@@ -29,17 +29,17 @@ async def assert_autoscaled_computational_ec2_instances(
 async def assert_autoscaled_dynamic_ec2_instances(
     ec2_client: EC2Client,
     *,
-    num_reservations: int,
-    num_instances: int,
-    instance_type: InstanceTypeType,
-    instance_state: InstanceStateNameType,
+    expected_num_reservations: int,
+    expected_num_instances: int,
+    expected_instance_type: InstanceTypeType,
+    expected_instance_state: InstanceStateNameType,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
-        expected_num_reservations=num_reservations,
-        expected_num_instances=num_instances,
-        expected_instance_type=instance_type,
-        expected_instance_state=instance_state,
+        expected_num_reservations=expected_num_reservations,
+        expected_num_instances=expected_num_instances,
+        expected_instance_type=expected_instance_type,
+        expected_instance_state=expected_instance_state,
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
@@ -51,17 +51,17 @@ async def assert_autoscaled_dynamic_ec2_instances(
 async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     ec2_client: EC2Client,
     *,
-    num_reservations: int,
-    num_instances: int,
-    instance_type: InstanceTypeType,
-    instance_state: InstanceStateNameType,
+    expected_num_reservations: int,
+    expected_num_instances: int,
+    expected_instance_type: InstanceTypeType,
+    expected_instance_state: InstanceStateNameType,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
-        expected_num_reservations=num_reservations,
-        expected_num_instances=num_instances,
-        expected_instance_type=instance_type,
-        expected_instance_state=instance_state,
+        expected_num_reservations=expected_num_reservations,
+        expected_num_instances=expected_num_instances,
+        expected_instance_type=expected_instance_type,
+        expected_instance_state=expected_instance_state,
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
