@@ -14,6 +14,9 @@ from aws_library.ec2.models import (
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
+from simcore_service_autoscaling.utils.auto_scaling_core import (
+    ec2_buffer_startup_script,
+)
 
 #
 # Possible settings to cope with different types
@@ -195,7 +198,26 @@ async def monitor_buffer_machines(
             )
             instances_to_terminate.union(terminateable_instances)
     for ec2_type, num_to_start in missing_instances.items():
-        ...
+        ec2_boot_specific = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
+        )
+        await ec2_client.start_aws_instance(
+            EC2InstanceConfig(
+                type=ec2_type,
+                tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+                startup_script=ec2_buffer_startup_script(
+                    ec2_boot_specific, app_settings
+                ),
+                ami_id=ec2_boot_specific.ami_id,
+                key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                iam_instance_profile="",
+            ),
+            min_number_of_instances=num_to_start,
+            number_of_instances=num_to_start,
+            max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+        )
     if instances_to_terminate:
         await ec2_client.terminate_instances(instances_to_terminate)
         for instance in instances_to_terminate:
