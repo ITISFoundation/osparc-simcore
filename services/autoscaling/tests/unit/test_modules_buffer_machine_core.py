@@ -15,9 +15,11 @@ from simcore_service_autoscaling.modules.buffer_machine_core import (
 
 async def test_monitor_buffer_machines(
     disabled_rabbitmq: None,
-    mocked_ec2_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
+    mocked_ec2_server_envs: EnvVarsDict,
+    enabled_buffer_pools: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
 ):
     await monitor_buffer_machines(
