@@ -317,7 +317,7 @@ def test_update_workbench(faker: Faker):
     assert received_project_with_updated_workbench == expected_updated_project
 
 
-def test_patch_workbench_with_empty_changes(faker: Faker):  # MD: check
+def test_patch_workbench_with_empty_changes(faker: Faker):
     node_id = faker.uuid4()
     project = {"workbench": {node_id: faker.pydict()}}
     patched_project, changed_entries = patch_workbench(
