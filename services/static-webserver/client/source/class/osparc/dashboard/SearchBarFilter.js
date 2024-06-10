@@ -274,7 +274,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     setServiceTypeActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("service-type");
-      if (optionId === "show-all") {
+      if (optionId && optionLabel) {
         this.__addChip("service-type", optionId, optionLabel);
       }
     },
@@ -335,6 +335,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         tags: [],
         classifiers: [],
         sharedWith: null,
+        serviceType: null,
         text: ""
       };
       const textFilter = this.getTextFilterValue();
@@ -349,6 +350,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
           case "shared-with":
             filterData.sharedWith = chip.id === "show-all" ? null : chip.id;
+            break;
+          case "service-type":
+            filterData.serviceType = chip.id;
             break;
         }
       });
