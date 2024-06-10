@@ -435,15 +435,12 @@ _DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 _CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
-def get_docker_pull_images_on_start_bash_command(
+def write_compose_file_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
-    if not docker_tags:
-        return ""
-
     compose = {
         "services": {
-            f"pre-pull-image-{n}": {"image": image_tag}
+            f"{image_tag.split('/')[-1]}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
         },
     }
@@ -451,6 +448,15 @@ def get_docker_pull_images_on_start_bash_command(
     write_compose_file_cmd = " ".join(
         ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
+    return " ".join(write_compose_file_cmd)
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    if not docker_tags:
+        return ""
+
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
@@ -465,7 +471,7 @@ def get_docker_pull_images_on_start_bash_command(
     docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
-            write_compose_file_cmd,
+            write_compose_file_command(docker_tags),
             write_docker_compose_pull_script_cmd,
             make_docker_compose_script_executable,
             docker_compose_pull_cmd,

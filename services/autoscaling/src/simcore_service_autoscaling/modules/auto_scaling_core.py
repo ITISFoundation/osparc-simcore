@@ -652,7 +652,7 @@ async def _start_instances(
         *[
             ec2_client.start_aws_instance(
                 EC2InstanceConfig(
-                    type=instance_type,
+                    type=instance_type.name,
                     tags=new_instance_tags,
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
