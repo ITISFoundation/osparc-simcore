@@ -4,7 +4,6 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from typing import Any, Final, cast
 
-from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
     AWSTagKey,
     AWSTagValue,
@@ -19,7 +18,7 @@ from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..core.settings import ApplicationSettings, get_application_settings
+from ..core.settings import get_application_settings
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
@@ -86,22 +85,6 @@ class WarmBufferPool:
 
 def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
     return auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
-
-
-async def _create_buffer_machine(
-    ec2_client: SimcoreEC2API,
-    app_settings: ApplicationSettings,
-    *,
-    instance_config: EC2InstanceConfig,
-    machines_count: NonNegativeInt,
-) -> list[EC2InstanceData]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    return await ec2_client.start_aws_instance(
-        instance_config,
-        min_number_of_instances=machines_count,
-        number_of_instances=machines_count,
-        max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-    )
 
 
 async def monitor_buffer_machines(
