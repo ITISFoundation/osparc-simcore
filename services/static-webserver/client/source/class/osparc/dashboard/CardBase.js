@@ -117,8 +117,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterServiceType: function(check, serviceType) {
-      return check === serviceType;
+    filterServiceType: function(resourceType, metaData, serviceType) {
+      if (resourceType === "service") {
+        if (metaData && metaData.type) {
+          const matches = metaData.type === serviceType;
+          console.log(metaData.key, matches);
+          return !matches;
+        }
+        return false;
+      }
+      return false;
     },
 
     filterClassifiers: function(checks, classifiers) {
@@ -906,10 +914,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _filterServiceType: function(serviceType) {
-      if (this.isResourceType("service")) {
-        return this.self().filterServiceType("dynamic", serviceType);
+      if (serviceType) {
+        const resourceType = this.getResourceType();
+        const resourceData = this.getResourceData();
+        return this.self().filterServiceType(resourceType, resourceData, serviceType);
       }
-      // do not filter out
       return false;
     },
 
@@ -919,6 +928,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldApplyFilter: function(data) {
+      console.log("_shouldApplyFilter");
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
         filterId += "-" + this.getResourceType();
