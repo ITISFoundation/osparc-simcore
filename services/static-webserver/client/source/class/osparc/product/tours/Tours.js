@@ -27,17 +27,17 @@ qx.Class.define("osparc.product.tours.Tours", {
   statics: {
     TOURS: {
       "s4llite": {
-        fetchTours: () => this.__fetchTours("/resource/osparc/tours/s4llite_tours.json")
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4llite_tours.json")
       },
       "s4l": {
-        fetchTours: () => this.__fetchTours("/resource/osparc/tours/s4l_tours.json")
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
       },
       "tis": {
-        fetchTours: () => this.__fetchTours("/resource/osparc/tours/tis_tours.json")
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tis_tours.json")
       }
     },
 
-    __fetchTours: function(link) {
+    fetchTours: function(link) {
       return new Promise((resolve, reject) => {
         osparc.utils.Utils.fetchJSON(link)
           .then(toursObj => {
