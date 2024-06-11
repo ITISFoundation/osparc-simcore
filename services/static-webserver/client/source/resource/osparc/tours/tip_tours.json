@@ -1,0 +1,79 @@
+{
+  "navbar": {
+    "id": "navbar",
+    "name": "Navigation Bar",
+    "description": "Introduction to the Navigation Bar",
+    "context": "osparc-test-id=navigationBar",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=helpNavigationBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=helpNavigationMenu",
+      "text": "In this menu you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=creditsNavigationBtn",
+      "title": "Credits",
+      "text": "It will open the Billing Center",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuMenu",
+      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "placement": "left"
+    }]
+  },
+  "plans": {
+    "id": "plans",
+    "name": "Plans",
+    "description": "All you need to know about Plan handling",
+    "context": "osparc-test-id=studiesTabBtn",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Plan Filter and Search",
+      "text": "This tool allows you to filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=startS4LButton",
+      "title": "Start Sim4Life",
+      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life plan",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
+      "text": "On the Plan card, you can use the three dots button to access more information and operation on the Plan.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
+      "text": "On the Plan card, you can use the Update button to update the corresponding service to the latest version.",
+      "placement": "bottom"
+    }]
+  },
+  "credits": {
+    "id": "credits",
+    "name": "Buy Credits",
+    "description": "Buy Credits for Personalization",
+    "context": "osparc-test-id=studiesTabBtn",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuMenu",
+      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "placement": "left"
+    }]
+  }
+}
