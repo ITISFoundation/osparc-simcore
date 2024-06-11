@@ -300,6 +300,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__removeChips("service-type");
       if (optionId && optionLabel) {
         this.__addChip("service-type", optionId, optionLabel);
+      } else {
+        this.__filter();
       }
     },
 
