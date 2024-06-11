@@ -61,6 +61,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           break;
         case "billing-center":
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
+          osparc.utils.Utils.setIdToWidget(control, "userMenuBillingCenterBtn");
           control.addListener("execute", () => {
             const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
             if (walletsEnabled) {

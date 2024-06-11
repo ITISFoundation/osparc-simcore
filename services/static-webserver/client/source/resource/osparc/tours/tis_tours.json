@@ -71,9 +71,17 @@
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },
-      "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "anchorEl": "osparc-test-id=userMenuBillingCenterBtn",
+      "text": "From the User menu you can access the Billing Center.",
       "placement": "left"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBillingCenterBtn",
+        "action": "execute"
+      },
+      "anchorEl": "osparc-test-id=walletsList",
+      "text": "This is the list of Credits Account you have access to. You have your own Account, but you could also access Credit Accounts shared with you.",
+      "placement": "top"
     }]
   }
 }

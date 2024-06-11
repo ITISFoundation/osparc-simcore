@@ -23,6 +23,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    osparc.utils.Utils.setIdToWidget(this, "walletsList");
+
     this.__addHeader(this.tr("Personal"), true);
     this.__noPersonalWalletsLabel = new qx.ui.basic.Label().set({
       value: this.tr("No personal Credit Account found"),
