@@ -89,19 +89,3 @@ class SimcoreSSMAPI:
             instance_ids=[response["InstanceId"]],
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
         )
-
-    # a function to list commands on an instance
-    async def list_commands_on_instance(self, instance_id: str) -> list[SSMCommand]:
-        response = await self.client.list_commands(
-            InstanceId=instance_id, MaxResults=100
-        )
-        return [
-            SSMCommand(
-                name=command["Comment"],
-                command_id=command["CommandId"],
-                status=command["Status"],
-                instance_ids=[instance_id],
-            )
-            for command in response["Commands"]
-            if ("Comment", "CommandId", "Status") in _
-        ]
