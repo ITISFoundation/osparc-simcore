@@ -103,12 +103,6 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
-def ec2_instances() -> list[InstanceTypeType]:
-    # these are some examples
-    return ["t2.nano", "m5.12xlarge"]
-
-
 @pytest.fixture
 def mocked_ec2_server_envs(
     mocked_ec2_server_settings: EC2Settings,
@@ -161,7 +155,7 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    ec2_instances: list[InstanceTypeType],
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
 
@@ -182,7 +176,7 @@ def app_environment(
                     ec2_type_name: random.choice(  # noqa: S311
                         EC2InstanceBootSpecific.Config.schema_extra["examples"]
                     )
-                    for ec2_type_name in ec2_instances
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
             "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
