@@ -214,10 +214,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         });
       }
       if ("serviceType" in filterData) {
-        const foundBtn = this.__serviceTypeButtons.find(btn => btn.id === filterData["serviceType"]);
-        if (foundBtn) {
-          foundBtn.setValue(true);
-        }
+        this.__serviceTypeButtons.forEach(btn => {
+          btn.setValue(filterData["serviceType"] === btn.id);
+        });
       }
     }
   }

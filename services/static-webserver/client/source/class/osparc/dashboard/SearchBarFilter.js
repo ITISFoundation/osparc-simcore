@@ -265,9 +265,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           return;
         }
         const serviceType = serviceTypes[serviceId];
-        const serviceTypeButton = new qx.ui.menu.Button(serviceType.label);
+        const iconSize = 12;
+        const serviceTypeButton = new qx.ui.menu.Button(serviceType.label, serviceType.icon+iconSize);
         serviceTypeMenu.add(serviceTypeButton);
-        serviceTypeButton.addListener("execute", () => this.__addChip("service-type", serviceType.id, serviceType.label), this);
+        serviceTypeButton.addListener("execute", () => this.__addChip("service-type", serviceId, serviceType.label), this);
       });
     },
 
