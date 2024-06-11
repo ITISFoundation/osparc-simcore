@@ -50,7 +50,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "In this menu you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other interactive Guides.",
+      "text": "In this menu you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=creditsNavigationBtn",
