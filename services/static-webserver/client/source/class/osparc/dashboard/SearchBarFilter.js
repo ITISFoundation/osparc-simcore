@@ -140,19 +140,27 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
       const menu = this.__filtersMenu;
       menu.removeAll();
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
-      osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
-      this.__addTags(tagsButton);
-      menu.add(tagsButton);
 
       const sharedWithButton = new qx.ui.menu.Button(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
       this.__addSharedWith(sharedWithButton);
       menu.add(sharedWithButton);
 
-      const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
-      osparc.utils.Utils.setIdToWidget(classifiersButton, "searchBarFilter-classifiers");
-      this.__addClassifiers(classifiersButton);
-      menu.add(classifiersButton);
+      if (this.__resourceType !== "service") {
+        const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+        osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
+        this.__addTags(tagsButton);
+        menu.add(tagsButton);
+
+        const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
+        this.__addClassifiers(classifiersButton);
+        menu.add(classifiersButton);
+      }
+
+      if (this.__resourceType === "service") {
+        const serviceTypeButton = new qx.ui.menu.Button(this.tr("Service Type"), "@FontAwesome5Solid/cogs/12");
+        this.__addServiceTypes(serviceTypeButton);
+        menu.add(serviceTypeButton);
+      }
     },
 
     __attachEventHandlers: function() {
@@ -246,6 +254,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         });
         menuButton.setMenu(classifiersMenu);
       }
+    },
+
+    __addServiceTypes: function(menuButton) {
+      const serviceTypeMenu = new qx.ui.menu.Menu();
+      menuButton.setMenu(serviceTypeMenu);
+      const serviceTypes = osparc.service.Utils.TYPES;
+      Object.keys(serviceTypes).forEach(serviceId => {
+        if (!["computational", "dynamic"].includes(serviceId)) {
+          return;
+        }
+        const serviceType = serviceTypes[serviceId];
+        const serviceTypeButton = new qx.ui.menu.Button(serviceType.label);
+        serviceTypeMenu.add(serviceTypeButton);
+        serviceTypeButton.addListener("execute", () => this.__addChip("service-type", serviceType.id, serviceType.label), this);
+      });
     },
 
     addTagActiveFilter: function(tag) {
