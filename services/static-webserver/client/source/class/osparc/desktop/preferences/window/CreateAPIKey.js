@@ -46,8 +46,8 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
       expirationDate.addListener("changeValue", e => {
         const date = e.getData();
         if (date) {
-          // allow only today and future dates
-          if (new Date(date).getDate() < new Date().getDate()) {
+          // allow only future dates
+          if (new Date() > new Date(date)) {
             const msg = this.tr("Choose a future date");
             osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
             expirationDate.resetValue();

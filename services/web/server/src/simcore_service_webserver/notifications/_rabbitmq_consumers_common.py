@@ -37,7 +37,7 @@ async def subscribe_to_rabbitmq(
                 )
                 for p in exchange_to_parser_config
             ),
-            reraise=False,
+            reraise=True,
         )
     return {
         exchange_name: queue_name
