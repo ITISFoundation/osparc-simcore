@@ -92,13 +92,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="e2e-playwright",
         help="defines a specific user agent osparc header",
     )
-    group.addoption(
-        "--service-opening-waiting-timeout",
-        action="store",
-        type=int,
-        default=300000,  # 5 mins
-        help="Defines a waiting timeout in milliseconds for opening a service.",
-    )
 
 
 @pytest.fixture(autouse=True)
@@ -146,14 +139,6 @@ def user_password(
 def product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
-
-
-@pytest.fixture(scope="session")
-def service_opening_waiting_timeout(request: pytest.FixtureRequest) -> int:
-    service_opening_waiting_timeout = request.config.getoption(
-        "--service-opening-waiting-timeout"
-    )
-    return int(service_opening_waiting_timeout)
 
 
 @pytest.fixture(scope="session")
