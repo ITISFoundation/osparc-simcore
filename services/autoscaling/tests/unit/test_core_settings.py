@@ -26,7 +26,7 @@ def instance_type_with_invalid_boot_script(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    ec2_instances: list[InstanceTypeType],
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -37,7 +37,7 @@ def instance_type_with_invalid_boot_script(
                         "ami_id": faker.pystr(),
                         "custom_boot_scripts": ['ls"'],
                     }
-                    for ec2_type_name in ec2_instances
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
         },
