@@ -184,9 +184,9 @@ async def test_patch_project_node_inputs_with_data_type_change(
     # inputs
     _patch_inputs = {
         "inputs": {
-            "input_3": 0.0,
+            "input_3": 0.0,  # <-- Changing type
             "input_2": 3.0,
-            "input_1": {
+            "input_1": {  # <-- Changing type
                 "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
                 "output": "out_1",
             },
@@ -202,15 +202,12 @@ async def test_patch_project_node_inputs_with_data_type_change(
     # Change input data type
     _patch_inputs = {
         "inputs": {
-            "input_3": {
-                "store": 0,
-                "path": "api/eddb9098-ac99-331e-930e-d77e25ffe633/file_with_number.txt",
-                "label": "file_with_number.txt",
-                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3",
-                "dataset": None,
+            "input_3": {  # <-- Changing type
+                "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                "output": "out_1",
             },
             "input_2": 3.0,
-            "input_1": 5.5,
+            "input_1": 5.5,  # <-- Changing type
         }
     }
     resp = await client.patch(
