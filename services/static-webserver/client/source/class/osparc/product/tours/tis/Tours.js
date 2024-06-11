@@ -16,16 +16,16 @@
 ************************************************************************ */
 
 /**
- * @asset(osparc/tours/s4llite_tours.json)
+ * @asset(osparc/tours/tis_tours.json)
  */
 
-qx.Class.define("osparc.product.tours.s4llite.Tours", {
+qx.Class.define("osparc.product.tours.tis.Tours", {
   type: "static",
 
   statics: {
     fetchTours: function() {
       return new Promise((resolve, reject) => {
-        osparc.utils.Utils.fetchJSON("/resource/osparc/tours/s4llite_tours.json")
+        osparc.utils.Utils.fetchJSON("/resource/osparc/tours/tis_tours.json")
           .then(toursObj => {
             const tours = Object.values(toursObj);
             resolve(tours);

@@ -26,8 +26,8 @@ qx.Class.define("osparc.product.tours.Utils", {
       "s4l": {
         fetchTours: () => osparc.product.tours.s4l.Tours.fetchTours()
       },
-      "tip": {
-        fetchTours: () => osparc.product.tours.tip.Tours.fetchTours()
+      "tis": {
+        fetchTours: () => osparc.product.tours.tis.Tours.fetchTours()
       }
     },
 
