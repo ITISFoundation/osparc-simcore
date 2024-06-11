@@ -18,6 +18,7 @@ class SSMCommand:
     command_id: str
     instance_ids: Sequence[str]
     status: CommandStatusType
+    message: str | None = None
 
 
 @dataclass(frozen=True)
@@ -88,4 +89,5 @@ class SimcoreSSMAPI:
             command_id=response["CommandId"],
             instance_ids=[response["InstanceId"]],
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
+            message=response["StatusDetails"],
         )
