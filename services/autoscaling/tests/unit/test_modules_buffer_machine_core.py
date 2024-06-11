@@ -5,16 +5,19 @@
 
 import json
 from typing import Any
+from unittest import mock
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
 )
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_moto import mock_make_api_call
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
@@ -23,6 +26,7 @@ from simcore_service_autoscaling.modules.buffer_machine_core import (
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ssm.client import SSMClient
 
 
 @pytest.fixture
@@ -70,6 +74,25 @@ def ec2_instance_allowed_types_env(
         },
     )
     return app_environment | envs
+
+
+@pytest.fixture
+def mocked_ssm_send_command(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "botocore.client.BaseClient._make_api_call", new=mock_make_api_call
+    )
+
+
+async def test_send_command_is_mocked(
+    mocked_ssm_send_command: mock.Mock, ssm_client: SSMClient, faker: Faker
+):
+    response = await ssm_client.send_command(
+        Targets=[{"Key": "InstanceIds", "Values": faker.pylist(allowed_types=(str,))}],
+        DocumentName="AWS-RunShellScript",
+        Comment=faker.name(),
+        Parameters={"commands": [faker.pystr()]},
+    )
+    assert response["Command"]  # nosec
 
 
 async def test_monitor_buffer_machines(

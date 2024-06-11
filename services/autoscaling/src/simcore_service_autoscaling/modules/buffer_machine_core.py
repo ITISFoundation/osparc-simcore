@@ -209,6 +209,7 @@ async def monitor_buffer_machines(
     ssm_client = get_ssm_client(app)
     for warm_buffer_pool in current_warm_buffer_pools.values():
         if warm_buffer_pool.waiting_to_pull_instances:
+            # trigger the image pulling
             await ec2_client.set_instances_tags(
                 tuple(warm_buffer_pool.waiting_to_pull_instances),
                 tags={_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true")},
@@ -218,7 +219,7 @@ async def monitor_buffer_machines(
                     instance.id
                     for instance in warm_buffer_pool.waiting_to_pull_instances
                 ],
-                command="docker pull",
+                command="docker pull nginx:latest",
                 command_name=_PREPULL_COMMAND_NAME,
             )
             await ec2_client.set_instances_tags(
@@ -229,7 +230,7 @@ async def monitor_buffer_machines(
                     ),
                 },
             )
-
+        # wait for the image pulling to complete
         for instance in warm_buffer_pool.pulling_instances:
             if ssm_command_id := instance.tags.get(
                 _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
@@ -243,6 +244,10 @@ async def monitor_buffer_machines(
                     case "Pending" | "InProgress":
                         pass
                     case _:
+                        _logger.error(
+                            "image pulling on buffer failed: %s",
+                            f"{ssm_command.status}: {ssm_command.message}",
+                        )
                         broken_instances_to_terminate.add(instance)
 
     if instances_to_stop:

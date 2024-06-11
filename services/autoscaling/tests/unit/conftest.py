@@ -77,6 +77,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 pytest_plugins = [
     "pytest_simcore.aws_server",
     "pytest_simcore.aws_ec2_service",
+    "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
