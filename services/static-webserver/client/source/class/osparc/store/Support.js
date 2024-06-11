@@ -42,7 +42,7 @@ qx.Class.define("osparc.store.Support", {
       const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"));
       guidedToursButton.exclude();
       menu.add(guidedToursButton);
-      const fetchTours = osparc.product.tours.Utils.getTours();
+      const fetchTours = osparc.product.tours.Tours.getTours();
       if (fetchTours) {
         fetchTours
           .then(tours => {
