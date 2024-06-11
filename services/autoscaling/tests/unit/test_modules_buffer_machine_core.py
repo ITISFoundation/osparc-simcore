@@ -76,6 +76,20 @@ def ec2_instance_allowed_types_env(
 
 
 @pytest.fixture
+def minimal_configuration(
+    disabled_rabbitmq: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    mocked_ec2_instances_envs: EnvVarsDict,
+    mocked_ec2_server_envs: EnvVarsDict,
+    enabled_buffer_pools: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
+    ec2_instance_allowed_types_env: EnvVarsDict,
+) -> None:
+    pass
+
+
+@pytest.fixture
 def mocked_ssm_send_command(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "aiobotocore.client.AioBaseClient._make_api_call",
@@ -90,14 +104,7 @@ def mocked_ssm_send_command(mocker: MockerFixture) -> mock.Mock:
     " Delete 'mocked_ssm_send_command' fixture if that is the case and remove this test"
 )
 async def test_if_send_command_is_mocked_by_moto(
-    disabled_rabbitmq: None,
-    mocked_redis_server: None,
-    enabled_dynamic_mode: EnvVarsDict,
-    mocked_ec2_instances_envs: EnvVarsDict,
-    mocked_ec2_server_envs: EnvVarsDict,
-    enabled_buffer_pools: EnvVarsDict,
-    mocked_ssm_server_envs: EnvVarsDict,
-    ec2_instance_allowed_types_env: EnvVarsDict,
+    minimal_configuration: None,
     initialized_app: FastAPI,
     ec2_client: EC2Client,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
@@ -127,14 +134,7 @@ async def test_if_send_command_is_mocked_by_moto(
 
 async def test_monitor_buffer_machines(
     mocked_ssm_send_command: mock.Mock,
-    disabled_rabbitmq: None,
-    mocked_redis_server: None,
-    enabled_dynamic_mode: EnvVarsDict,
-    mocked_ec2_instances_envs: EnvVarsDict,
-    mocked_ec2_server_envs: EnvVarsDict,
-    enabled_buffer_pools: EnvVarsDict,
-    mocked_ssm_server_envs: EnvVarsDict,
-    ec2_instance_allowed_types_env: EnvVarsDict,
+    minimal_configuration: None,
     initialized_app: FastAPI,
     ec2_client: EC2Client,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
