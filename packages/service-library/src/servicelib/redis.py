@@ -50,7 +50,11 @@ class CouldNotConnectToRedisError(BaseRedisError):
 class RedisClientSDK:
     redis_dsn: str
     decode_responses: bool = _DEFAULT_DECODE_RESPONSES
+    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
+
     _client: aioredis.Redis = field(init=False)
+    _health_check_task: Task | None = None
+    _is_healthy: bool = False
 
     @property
     def redis(self) -> aioredis.Redis:
@@ -77,6 +81,14 @@ class RedisClientSDK:
         if not await self._client.ping():
             await self.shutdown()
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
+
+        self._is_healthy = True
+        self._health_check_task = start_periodic_task(
+            self._check_health,
+            interval=self.health_check_interval,
+            task_name=f"redis_service_health_check_{self.redis_dsn}",
+        )
+
         _logger.info(
             "Connection to %s succeeded with %s",
             f"redis at {self.redis_dsn=}",
@@ -84,6 +96,9 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
+        if self._health_check_task:
+            await stop_periodic_task(self._health_check_task)
+
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
         await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
@@ -92,6 +107,21 @@ class RedisClientSDK:
             await self._client.ping()
             return True
         return False
+
+    async def _check_health(self) -> None:
+        self._is_healthy = await self.ping()
+
+    @property
+    def is_healthy(self) -> bool:
+        """Provides the status of Redis.
+        If redis becomes available, after being not available,
+        it will once more return ``True``
+
+        Returns:
+            ``False``: if the service is no longer reachable
+            ``True``: when service is reachable
+        """
+        return self._is_healthy
 
     @contextlib.asynccontextmanager
     async def lock_context(
@@ -175,53 +205,6 @@ class RedisClientSDK:
         return output
 
 
-class RedisClientSDKHealthChecked(RedisClientSDK):
-    """
-    Provides access to ``is_healthy`` property, to be used for defining
-    health check handlers.
-    """
-
-    def __init__(
-        self,
-        redis_dsn: str,
-        *,
-        decode_responses: bool = _DEFAULT_DECODE_RESPONSES,
-        health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL,
-    ) -> None:
-        super().__init__(redis_dsn, decode_responses)
-        self.health_check_interval: datetime.timedelta = health_check_interval
-        self._health_check_task: Task | None = None
-        self._is_healthy: bool = True
-
-    @property
-    def is_healthy(self) -> bool:
-        """Provides the status of Redis.
-        If redis becomes available, after being not available,
-        it will once more return ``True``
-
-        Returns:
-            ``False``: if the service is no longer reachable
-            ``True``: when service is reachable
-        """
-        return self._is_healthy
-
-    async def _check_health(self) -> None:
-        self._is_healthy = await self.ping()
-
-    async def setup(self) -> None:
-        await super().setup()
-        self._health_check_task = start_periodic_task(
-            self._check_health,
-            interval=self.health_check_interval,
-            task_name=f"redis_service_health_check_{self.redis_dsn}",
-        )
-
-    async def shutdown(self) -> None:
-        if self._health_check_task:
-            await stop_periodic_task(self._health_check_task)
-        await super().shutdown()
-
-
 @dataclass(frozen=True)
 class RedisManagerDBConfig:
     database: RedisDatabase
@@ -238,13 +221,11 @@ class RedisClientsManager:
     databases_configs: set[RedisManagerDBConfig]
     settings: RedisSettings
 
-    _client_sdks: dict[RedisDatabase, RedisClientSDKHealthChecked] = field(
-        default_factory=dict
-    )
+    _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
 
     async def setup(self) -> None:
         for config in self.databases_configs:
-            self._client_sdks[config.database] = RedisClientSDKHealthChecked(
+            self._client_sdks[config.database] = RedisClientSDK(
                 redis_dsn=self.settings.build_redis_dsn(config.database),
                 decode_responses=config.decode_responses,
                 health_check_interval=config.health_check_interval,
@@ -257,5 +238,5 @@ class RedisClientsManager:
         for client in self._client_sdks.values():
             await client.shutdown()
 
-    def client(self, database: RedisDatabase) -> RedisClientSDKHealthChecked:
+    def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
