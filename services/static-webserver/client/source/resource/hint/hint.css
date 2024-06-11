@@ -11,28 +11,28 @@
     top: 0;
     left: 50%;
     margin-left: -5px;
-    border-top-color: rgba(255, 255, 255, 0.01);
+    border-top-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-small-right:after {
     right: 0;
     top: 50%;
     margin-top: -5px;
-    border-right-color: rgba(255, 255, 255, 0.01);
+    border-right-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-small-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -5px;
-    border-bottom-color: rgba(255, 255, 255, 0.01);
+    border-bottom-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-small-left:after {
     left: 0;
     top: 50%;
     margin-top: -5px;
-    border-left-color: rgba(255, 255, 255, 0.01);
+    border-left-color: rgba(128, 128, 128, 1.0);
 }
 
 
@@ -49,26 +49,26 @@
     top: 0;
     left: 50%;
     margin-left: -10px;
-    border-top-color: rgba(255, 255, 255, 0.01);
+    border-top-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-large-right:after {
     right: 0;
     top: 50%;
     margin-top: -10px;
-    border-right-color: rgba(255, 255, 255, 0.01);
+    border-right-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-large-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -10px;
-    border-bottom-color: rgba(255, 255, 255, 0.01);
+    border-bottom-color: rgba(128, 128, 128, 1.0);
 }
 
 .hint-large-left:after {
     left: 0;
     top: 50%;
     margin-top: -10px;
-    border-left-color: rgba(255, 255, 255, 0.01);
+    border-left-color: rgba(128, 128, 128, 1.0);
 }
