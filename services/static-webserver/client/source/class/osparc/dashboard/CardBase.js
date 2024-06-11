@@ -928,7 +928,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldApplyFilter: function(data) {
-      console.log("_shouldApplyFilter");
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
         filterId += "-" + this.getResourceType();
@@ -965,6 +964,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (data.sharedWith) {
+        return true;
+      }
+      if ("serviceType" in data) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {
