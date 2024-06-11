@@ -98,7 +98,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           control = new qx.ui.container.Composite().set({
             backgroundColor: "transparent"
           });
-          const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+          const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint-small";
           control.getContentElement().addClass(classPrefix);
           break;
         }
@@ -109,7 +109,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     __buildWidget: function() {
       this._removeAll();
 
-      const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+      const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint-small";
 
       const hintContainer = this.getChildControl("hint-container");
       const caret = this.getChildControl("caret");

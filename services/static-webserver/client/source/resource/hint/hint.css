@@ -1,4 +1,4 @@
-.hint:after {
+.hint-small:after {
     border: 5px solid transparent;
     content: " ";
     height: 0;
@@ -7,28 +7,28 @@
     pointer-events: none;
 }
 
-.hint-top:after {
+.hint-small-top:after {
     top: 0;
     left: 50%;
     margin-left: -5px;
     border-top-color: rgba(255, 255, 255, 0.01);
 }
 
-.hint-right:after {
+.hint-small-right:after {
     right: 0;
     top: 50%;
     margin-top: -5px;
     border-right-color: rgba(255, 255, 255, 0.01);
 }
 
-.hint-bottom:after {
+.hint-small-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -5px;
     border-bottom-color: rgba(255, 255, 255, 0.01);
 }
 
-.hint-left:after {
+.hint-small-left:after {
     left: 0;
     top: 50%;
     margin-top: -5px;
