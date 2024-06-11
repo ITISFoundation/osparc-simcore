@@ -25,6 +25,7 @@ def test_tip(
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     product_billable: bool,
+    service_opening_waiting_timeout: int,
 ):
     handler = SocketIOOsparcMessagePrinter()
     # log_in_and_out is the initial websocket
@@ -66,7 +67,7 @@ def test_tip(
         # Electrode Selector
         es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
         expect(es_page.get_by_test_id("TargetStructure_Selector")).to_be_visible(
-            timeout=300000
+            timeout=service_opening_waiting_timeout
         )
         # Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(5000)
@@ -108,7 +109,7 @@ def test_tip(
         # Optimal Configuration Identification
         ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
         expect(ti_page.get_by_role("button", name="Run Optimization")).to_be_visible(
-            timeout=300000
+            timeout=service_opening_waiting_timeout
         )
         run_button = ti_page.get_by_role("button", name="Run Optimization")
         run_button.click()
@@ -162,7 +163,7 @@ def test_tip(
             f'[osparc-test-id="iframe_{node_ids[2]}"]'
         )
         expect(s4l_postpro_page.get_by_test_id("mode-button-postro")).to_be_visible(
-            timeout=300000
+            timeout=service_opening_waiting_timeout
         )
         # click on the postpro mode button
         s4l_postpro_page.get_by_test_id("mode-button-postro").click()
