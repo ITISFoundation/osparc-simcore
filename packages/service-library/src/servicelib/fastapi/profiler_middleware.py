@@ -5,7 +5,11 @@ from pyinstrument import Profiler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
 
-from .._utils_profiling_middleware import append_profile, check_response_headers
+from .._utils_profiling_middleware import (
+    append_profile,
+    check_response_headers,
+    request_profiler,
+)
 
 
 def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
@@ -47,6 +51,7 @@ class ProfilerMiddleware:
             ]
             profiler = Profiler(async_mode="enabled")
             profiler.start()
+            request_profiler.set(profiler)
 
         async def _send_wrapper(message):
             if isinstance(profiler, Profiler):
@@ -57,11 +62,11 @@ class ProfilerMiddleware:
                 elif message["type"] == "http.response.body":
                     if is_last_response(response_headers, message):
                         profiler.stop()
+                        profile_text = profiler.output_text(
+                            unicode=True, color=True, show_all=True
+                        )
                         message["body"] = append_profile(
-                            message["body"].decode(),
-                            profiler.output_text(
-                                unicode=True, color=True, show_all=True
-                            ),
+                            message["body"].decode(), profile_text
                         ).encode()
                     else:
                         message["more_body"] = True

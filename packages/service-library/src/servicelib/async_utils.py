@@ -4,7 +4,11 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
+
+from pyinstrument import Profiler
+
+from ._utils_profiling_middleware import request_profiler
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +32,13 @@ class Context:
     out_queue: asyncio.Queue
     initialized: bool
     task: asyncio.Task | None = None
+
+
+@dataclass
+class QueueElement:
+    profiler: Profiler | None = None
+    input: Awaitable | None = None
+    output: Any | None = None
 
 
 _sequential_jobs_contexts: dict[str, Context] = {}
@@ -138,32 +149,52 @@ def run_sequentially_in_context(
             if not context.initialized:
                 context.initialized = True
 
-                async def worker(in_q: Queue, out_q: Queue) -> None:
+                async def worker(
+                    in_q: Queue[QueueElement], out_q: Queue[QueueElement]
+                ) -> None:
                     while True:
-                        awaitable = await in_q.get()
+                        element = await in_q.get()
                         in_q.task_done()
                         # check if requested to shutdown
+                        awaitable = element.input
                         if awaitable is None:
                             break
-                        try:
-                            result = await awaitable
-                        except Exception as e:  # pylint: disable=broad-except
-                            result = e
-                        await out_q.put(result)
 
-                    logging.info(
-                        "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
-                        decorated_function.__name__,
-                        target_args,
-                    )
+                        async def _(_awaitable):
+                            try:
+                                result = await _awaitable
+                            except Exception as e:  # pylint: disable=broad-except
+                                result = e
+                            await out_q.put(QueueElement(output=result))
+
+                        logging.info(
+                            "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
+                            decorated_function.__name__,
+                            target_args,
+                        )
+                        _profiler = element.profiler
+                        if _profiler:
+                            with _profiler:
+                                await _(awaitable)
+                        else:
+                            await _(awaitable)
 
                 context.task = asyncio.create_task(
                     worker(context.in_queue, context.out_queue)
                 )
 
-            await context.in_queue.put(decorated_function(*args, **kwargs))
+            profiler = request_profiler.get()
+            if profiler is not None:
+                profiler.stop()
+            input = QueueElement(
+                input=decorated_function(*args, **kwargs), profiler=profiler
+            )
+            await context.in_queue.put(input)
 
-            wrapped_result = await context.out_queue.get()
+            element = await context.out_queue.get()
+            if profiler is not None:
+                profiler.start()
+            wrapped_result = element.output
             if isinstance(wrapped_result, Exception):
                 raise wrapped_result
 
