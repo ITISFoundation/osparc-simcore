@@ -41,7 +41,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       marginLeft: 10
     });
     this._add(this.__noSharedWalletsLabel);
-    this.__sharedWalletsModel = this.__addWalletsList("sharedWalletsList", { flex: 1 });
+    this.__sharedWalletsModel = this.__addWalletsList("sharedWalletsList");
 
     this.loadWallets();
   },
@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return filter;
     },
 
-    __addWalletsList: function(widgetId, layoutOpts={}) {
+    __addWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
 
-      this._add(walletsUIList, layoutOpts);
+      this._add(walletsUIList);
       return walletsModel;
     },
 
