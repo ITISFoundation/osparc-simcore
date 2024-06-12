@@ -39,15 +39,15 @@
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
+      "anchorEl": "osparc-test-id=newStudyBtn",
+      "title": "Start A new Plan",
+      "text": "Clicking on this (+) button will pop up a window with all the Plans available.",
+      "placement": "right"
+    }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
-      "title": "Plan Filter and Search",
+      "title": "Filter and Search",
       "text": "This tool allows you to filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
-    }, {
-      "anchorEl": "osparc-test-id=startS4LButton",
-      "title": "Start Sim4Life",
-      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life plan",
-      "placement": "right"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studyItemMenuButton",
