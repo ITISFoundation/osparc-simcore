@@ -37,6 +37,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     });
 
     const notificationsContainer = this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(1));
+    osparc.utils.Utils.setIdToWidget(notificationsContainer, "notificationsContainer");
     const scrollContainer = new qx.ui.container.Scroll();
     scrollContainer.add(notificationsContainer);
     this._add(scrollContainer, {
