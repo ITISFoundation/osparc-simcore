@@ -175,7 +175,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     __buildLayout() {
       this._removeAll();
 
-      this.__autorechargeBtn = new qx.ui.form.ToggleButton("Autorecharge").set({
+      this.__autorechargeBtn = new qx.ui.form.ToggleButton(this.tr("Auto-recharge")).set({
         maxHeight: 30,
         alignX: "center",
         alignY: "middle",
@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         converter: ar => ar ? ar.enabled : false
       });
       this.__autorechargeBtn.bind("value", this.__autorechargeBtn, "label", {
-        converter: value => value ? "Autorecharge: ON" : "Autorecharge: OFF"
+        converter: value => value ? this.tr("Auto-recharge: ON") : this.tr("Auto-recharge: OFF")
       });
       this._add(this.__autorechargeBtn, {
         // Takes the status button place for the moment
@@ -335,7 +335,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
         favouriteButton.set({
-          toolTipText: this.tr("Switch to this credit account"),
+          toolTipText: this.tr("Switch to this Credit Account"),
           icon: "@FontAwesome5Solid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");

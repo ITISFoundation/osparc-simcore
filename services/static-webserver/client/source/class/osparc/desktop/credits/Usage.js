@@ -36,7 +36,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
 
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const lbl = new qx.ui.basic.Label("Select a credit account:");
+      const lbl = new qx.ui.basic.Label("Select a Credit Account:");
       container.add(lbl);
 
       const selectBoxContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
