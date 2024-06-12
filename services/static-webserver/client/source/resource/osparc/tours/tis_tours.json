@@ -88,7 +88,7 @@
       "placement": "top"
     }, {
       "anchorEl": "osparc-test-id=personalWalletsList",
-      "title": "Top up",
+      "title": "Top-up Credits",
       "text": "There are two ways to charge credits into your Credit Account: you can set up an Auto-recharge process or go for a One time payment.",
       "placement": "bottom"
     }, {
