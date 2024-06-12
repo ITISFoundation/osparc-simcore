@@ -18,20 +18,15 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "In this menu you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "text": "Under the question mark, you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
       "placement": "left"
-    }, {
-      "anchorEl": "osparc-test-id=creditsNavigationBtn",
-      "title": "Credits",
-      "text": "It will open the Billing Center",
-      "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User Menu gives you access to Your Account, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
       "placement": "left"
     }]
   },
