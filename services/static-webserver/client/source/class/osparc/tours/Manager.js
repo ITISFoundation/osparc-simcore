@@ -25,7 +25,7 @@ qx.Class.define("osparc.tours.Manager", {
       layout: new qx.ui.layout.VBox(20),
       contentPadding: 15,
       modal: true,
-      width: 300,
+      width: 400,
       height: 300,
       showMaximize: false,
       showMinimize: false
