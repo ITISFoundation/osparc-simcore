@@ -45,8 +45,11 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
+# simcore-efs-user uid=8006(efs) gid=8006(efs) groups=8006(efs)
+# The Guardian has access to the root directory of the EFS distributed file system
+# and can change the permissions if needed. User running services operates as a user with ID 8004.
+ENV SC_USER_ID=8006 \
+  SC_USER_NAME=efs \
   SC_BUILD_TARGET=base \
   SC_BOOT_MODE=default
 
@@ -64,7 +67,7 @@ ENV LANG=C.UTF-8
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/efs/.venv
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
@@ -149,15 +152,15 @@ ENV SC_BUILD_TARGET=production \
 
 ENV PYTHONOPTIMIZE=TRUE
 
-WORKDIR /home/scu
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+WORKDIR /home/efs
+# ensure home folder is read/writable for user efs
+RUN chown -R efs /home/efs
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
-COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=efs:efs --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/efs-guardian/docker services/efs-guardian/docker
+COPY --chown=efs:efs services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 
@@ -187,7 +190,7 @@ ENV SC_BUILD_TARGET=development \
 
 WORKDIR /devel
 
-RUN chown -R scu:scu "${VIRTUAL_ENV}"
+RUN chown -R efs:efs "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
