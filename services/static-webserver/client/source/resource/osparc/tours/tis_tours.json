@@ -23,7 +23,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Preferences, Organizations and more.",
       "placement": "left"
     }]
   },
@@ -65,14 +65,17 @@
     "id": "credits",
     "name": "Buy Credits",
     "description": "Buy Credits for Personalization",
-    "context": "osparc-test-id=studiesTabBtn",
+    "context": "osparc-test-id=userMenuBtn",
     "steps": [{
+      "title": "Credits.",
+      "text": "In order to run Personalized TI Plans, credits are required. These are <br>In the next Guided Tour you will learn how to purchase them."
+    }, {
       "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuBillingCenterBtn",
-      "text": "From the User menu you can access the Billing Center.",
+      "text": "From the User Menu you can access the Billing Center.",
       "placement": "left"
     }, {
       "beforeClick": {
@@ -80,8 +83,24 @@
         "action": "execute"
       },
       "anchorEl": "osparc-test-id=walletsList",
-      "text": "This is the list of Credits Account you have access to. You have your own Account, but you could also access Credit Accounts shared with you.",
+      "title": "Credits Accounts",
+      "text": "This is the list of Credits Accounts you have access to. You have your own Account, but you could also use Credit Accounts that were shared with you.",
       "placement": "top"
+    }, {
+      "anchorEl": "osparc-test-id=personalWalletsList",
+      "title": "Top up",
+      "text": "There are two ways to charge credits into your Credit Account: you can set up an Autorecharge process or one time payment",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=buyCreditsBtn",
+      "title": "One time payment",
+      "text": "For a one-off, non recurring payment, you would go",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=autorechargeBtn",
+      "title": "Autorecharge",
+      "text": "asdf",
+      "placement": "bottom"
     }]
   }
 }

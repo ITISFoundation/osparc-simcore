@@ -63,7 +63,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Preferences, Organizations and more.",
       "placement": "left"
     }]
   },
