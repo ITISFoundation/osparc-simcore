@@ -128,6 +128,8 @@ qx.Class.define("osparc.tours.Manager", {
         const widget = qx.ui.core.Widget.getWidgetByElement(element);
         if (step.beforeClick.action) {
           widget[step.beforeClick.action]();
+        } else if (step.beforeClick.event) {
+          widget.fireEvent(step.beforeClick.event);
         } else {
           widget.execute();
         }

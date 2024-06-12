@@ -46,6 +46,14 @@
     "context": "osparc-test-id=navigationBar",
     "steps": [{
       "beforeClick": {
+        "selector": "osparc-test-id=notificationsButton",
+        "event": "tap"
+      },
+      "anchorEl": "osparc-test-id=notificationsContainer",
+      "text": "By clicking on the Bell, you will you see notifications about what Studies, Credits and Organizations.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",
         "action": "open"
       },
