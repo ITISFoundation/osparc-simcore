@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from fastapi import FastAPI
@@ -6,9 +7,9 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
 
 from .._utils_profiling_middleware import (
+    _request_profiler,
     append_profile,
     check_response_headers,
-    request_profiler,
 )
 
 
@@ -44,14 +45,14 @@ class ProfilerMiddleware:
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
 
-        if request_headers.get(self._profile_header_trigger) is not None:
+        if profiler_kwargs := request_headers.get(self._profile_header_trigger):
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
                 (k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()
             ]
-            profiler = Profiler(async_mode="enabled")
+            profiler = Profiler(**json.loads(profiler_kwargs))
             profiler.start()
-            request_profiler.set(profiler)
+            _request_profiler.set(profiler)
 
         async def _send_wrapper(message):
             if isinstance(profiler, Profiler):

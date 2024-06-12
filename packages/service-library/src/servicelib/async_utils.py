@@ -149,52 +149,44 @@ def run_sequentially_in_context(
             if not context.initialized:
                 context.initialized = True
 
-                async def worker(
-                    in_q: Queue[QueueElement], out_q: Queue[QueueElement]
-                ) -> None:
+                async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
                     while True:
                         element = await in_q.get()
                         in_q.task_done()
                         # check if requested to shutdown
+                        profiler = element.profiler
                         awaitable = element.input
                         if awaitable is None:
                             break
 
-                        async def _(_awaitable):
-                            try:
-                                result = await _awaitable
-                            except Exception as e:  # pylint: disable=broad-except
-                                result = e
-                            await out_q.put(QueueElement(output=result))
+                        try:
+                            if isinstance(profiler, Profiler):
+                                with profiler:
+                                    result = await awaitable
+                            else:
+                                result = await awaitable
+                        except Exception as e:  # pylint: disable=broad-except
+                            result = e
+                        await out_q.put(result)
 
-                        logging.info(
-                            "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
-                            decorated_function.__name__,
-                            target_args,
-                        )
-                        _profiler = element.profiler
-                        if _profiler:
-                            with _profiler:
-                                await _(awaitable)
-                        else:
-                            await _(awaitable)
+                    logging.info(
+                        "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
+                        decorated_function.__name__,
+                        target_args,
+                    )
 
-                context.task = asyncio.create_task(
-                    worker(context.in_queue, context.out_queue)
+                with request_profiler():
+                    context.task = asyncio.create_task(
+                        worker(context.in_queue, context.out_queue)
+                    )
+
+            with request_profiler() as profiler:
+                input = QueueElement(
+                    input=decorated_function(*args, **kwargs), profiler=profiler
                 )
+                await context.in_queue.put(input)
+                wrapped_result = await context.out_queue.get()
 
-            profiler = request_profiler.get()
-            if profiler is not None:
-                profiler.stop()
-            input = QueueElement(
-                input=decorated_function(*args, **kwargs), profiler=profiler
-            )
-            await context.in_queue.put(input)
-
-            element = await context.out_queue.get()
-            if profiler is not None:
-                profiler.start()
-            wrapped_result = element.output
             if isinstance(wrapped_result, Exception):
                 raise wrapped_result
 
