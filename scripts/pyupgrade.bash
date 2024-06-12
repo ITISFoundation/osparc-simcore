@@ -18,7 +18,7 @@ Build() {
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF
-FROM python:${PYTHON_VERSION}-slim-buster
+FROM python:${PYTHON_VERSION}-slim-bookworm
 RUN pip --no-cache-dir install --upgrade \
   pip \
   wheel \
