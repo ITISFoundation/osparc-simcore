@@ -18,8 +18,8 @@ from servicelib import redis as servicelib_redis
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
-    RedisClientSDKHealthChecked,
     RedisClientsManager,
+    RedisManagerDBConfig,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -249,13 +249,17 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
 
 async def test_redis_client_sdks_manager(redis_service: RedisSettings):
-    all_redis_databases: set[RedisDatabase] = set(RedisDatabase)
-    manager = RedisClientsManager(databases=all_redis_databases, settings=redis_service)
+    all_redis_configs: set[RedisManagerDBConfig] = {
+        RedisManagerDBConfig(db) for db in RedisDatabase
+    }
+    manager = RedisClientsManager(
+        databases_configs=all_redis_configs, settings=redis_service
+    )
 
     await manager.setup()
 
-    for database in all_redis_databases:
-        assert manager.client(database)
+    for config in all_redis_configs:
+        assert manager.client(config.database)
 
     await manager.shutdown()
 
@@ -263,9 +267,13 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
 async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
-    client = RedisClientSDKHealthChecked(redis_resources_dns)
+    client = RedisClientSDK(redis_resources_dns)
     assert client
     assert client.redis_dsn == redis_resources_dns
+
+    # ensure nothing happens if shutdown is called before setup
+    await client.shutdown()
+
     await client.setup()
 
     await client._check_health()  # noqa: SLF001
