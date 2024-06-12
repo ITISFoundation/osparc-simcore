@@ -181,6 +181,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         alignY: "middle",
         focusable: false
       });
+      osparc.utils.Utils.setIdToWidget(this.__autorechargeBtn, "autorechargeBtn");
       this.__autorechargeBtn.addListener("execute", () => {
         const autorecharge = new osparc.desktop.credits.AutoRecharge(this.getKey());
         const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Auto-recharge", 400, 550).set({
@@ -252,6 +253,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         alignY: "middle",
         visibility: this.__canIWrite() ? "visible" : "excluded",
       });
+      osparc.utils.Utils.setIdToWidget(this.__buyBtn, "buyCreditsBtn");
       this.bind("accessRights", this.__buyBtn, "enabled", {
         converter: aR => {
           const myAr = osparc.data.model.Wallet.getMyAccessRights(aR);
