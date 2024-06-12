@@ -13,7 +13,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm as base
 LABEL maintainer=sanderegg
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:24.0.5-1~debian.10~buster"
+ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
 
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
