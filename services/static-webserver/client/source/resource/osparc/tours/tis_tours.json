@@ -67,8 +67,8 @@
     "description": "Buy Credits for Personalization",
     "context": "osparc-test-id=userMenuBtn",
     "steps": [{
-      "title": "Credits.",
-      "text": "In order to run Personalized TI Plans, credits are required. These are <br>In the next Guided Tour you will learn how to purchase them."
+      "title": "Credits",
+      "text": "In order to run Personalized TI Plans, credits are required.<br>In the next Guided Tour you will learn how to purchase them."
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
@@ -89,17 +89,17 @@
     }, {
       "anchorEl": "osparc-test-id=personalWalletsList",
       "title": "Top up",
-      "text": "There are two ways to charge credits into your Credit Account: you can set up an Autorecharge process or one time payment",
+      "text": "There are two ways to charge credits into your Credit Account: you can set up an Auto-recharge process or go for a One time payment.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=buyCreditsBtn",
       "title": "One time payment",
-      "text": "For a one-off, non recurring payment, you would go",
+      "text": "For a one-off, non recurring payment. After the payment is made, the available credits will be added to the Credit Account. <br>Also, the Payment Method can saved be for future payments.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=autorechargeBtn",
-      "title": "Autorecharge",
-      "text": "asdf",
+      "title": "Auto-recharge",
+      "text": "Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.<br>Before the auto-recharge function can be activated you need to add your first payment method.",
       "placement": "bottom"
     }]
   }
