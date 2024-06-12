@@ -413,9 +413,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     createReleaseNotesLink: function() {
-      const versionLink = new osparc.ui.basic.LinkLabel().set({
-        textColor: "text-darker"
-      });
+      const versionLink = new osparc.ui.basic.LinkLabel();
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       let text = "osparc-simcore ";
