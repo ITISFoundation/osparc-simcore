@@ -181,10 +181,10 @@ def run_sequentially_in_context(
                     )
 
             with request_profiler() as profiler:
-                input = QueueElement(
+                queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs), profiler=profiler
                 )
-                await context.in_queue.put(input)
+                await context.in_queue.put(queue_input)
                 wrapped_result = await context.out_queue.get()
 
             if isinstance(wrapped_result, Exception):

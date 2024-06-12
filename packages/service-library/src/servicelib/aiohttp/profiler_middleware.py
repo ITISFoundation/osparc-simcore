@@ -41,6 +41,4 @@ async def profiling_middleware(request: Request, handler):
         await stream_response.write_eof()
         return stream_response
 
-    else:
-
-        return await handler(request)
+    return await handler(request)
