@@ -41,7 +41,9 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "fab-background": "rgba(255, 255, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",
     "input_background_disable": "rgba(113, 157, 181, 0.04)",
-    "window-popup-background": "rgba(255,255,255, 1)",
+    "window-popup-background": "rgba(255, 255, 255, 1)",
+    "hint-background": "rgba(255, 255, 255, 1)",
+    "hint-background-2": "rgba(223, 223, 223, 1)",
     "transparent_overlay": "rgba(1, 18, 26, 0.1)",
 
     "flash_message_bg": "input_background",
