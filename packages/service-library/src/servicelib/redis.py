@@ -113,7 +113,7 @@ class RedisClientSDK:
 
     @property
     def is_healthy(self) -> bool:
-        """Provides the status of Redis.
+        """Returns the result of the last health check.
         If redis becomes available, after being not available,
         it will once more return ``True``
 
