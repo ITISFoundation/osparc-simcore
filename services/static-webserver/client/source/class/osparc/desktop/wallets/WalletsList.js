@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       marginLeft: 10
     });
     this._add(this.__noPersonalWalletsLabel);
-    this.__personalWalletsModel = this.__addWalletsList()
+    this.__personalWalletsModel = this.__addWalletsList();
 
     this.__addHeader(this.tr("Shared with me"), false);
     this.__noSharedWalletsLabel = new qx.ui.basic.Label().set({
@@ -41,7 +41,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       marginLeft: 10
     });
     this._add(this.__noSharedWalletsLabel);
-    this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 })
+    this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 });
 
     this.loadWallets();
   },
