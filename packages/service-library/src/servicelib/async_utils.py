@@ -154,12 +154,11 @@ def run_sequentially_in_context(
                         element = await in_q.get()
                         in_q.task_done()
                         # check if requested to shutdown
-                        profiler = element.profiler
-                        awaitable = element.input
-                        if awaitable is None:
-                            break
-
                         try:
+                            profiler = element.profiler
+                            awaitable = element.input
+                            if awaitable is None:
+                                break
                             if isinstance(profiler, Profiler):
                                 with profiler:
                                     result = await awaitable
