@@ -13,8 +13,8 @@ from .._utils_profiling_middleware import _request_profiler, append_profile
 @middleware
 async def profiling_middleware(request: Request, handler):
     if profiler_kwargs := request.headers.get("x-profile"):
-        profiler = Profiler(**json.loads(profiler_kwargs))  # type: ignore
-        _request_profiler.set(profiler)  # type: ignore
+        profiler = Profiler(**json.loads(profiler_kwargs))
+        _request_profiler.set(profiler)
 
         with profiler:
             response = await handler(request)
