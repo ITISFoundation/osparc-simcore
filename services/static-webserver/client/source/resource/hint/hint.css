@@ -1,3 +1,7 @@
+:root {
+    --hint-caret-color: rgba(82, 255, 82, 1); /* Dark caret, override it from javascript for the light them */
+}
+
 .hint-small:after {
     border: 5px solid transparent;
     content: " ";
@@ -11,28 +15,28 @@
     top: 0;
     left: 50%;
     margin-left: -5px;
-    border-top-color: rgba(82, 82, 82, 1);
+    border-top-color: var(--hint-caret-color);
 }
 
 .hint-small-right:after {
     right: 0;
     top: 50%;
     margin-top: -5px;
-    border-right-color: rgba(82, 82, 82, 1);
+    border-right-color: var(--hint-caret-color);
 }
 
 .hint-small-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -5px;
-    border-bottom-color: rgba(82, 82, 82, 1);
+    border-bottom-color: var(--hint-caret-color);
 }
 
 .hint-small-left:after {
     left: 0;
     top: 50%;
     margin-top: -5px;
-    border-left-color: rgba(82, 82, 82, 1);
+    border-left-color: var(--hint-caret-color);
 }
 
 
@@ -49,26 +53,26 @@
     top: 0;
     left: 50%;
     margin-left: -10px;
-    border-top-color: rgba(82, 82, 82, 1);
+    border-top-color: var(--hint-caret-color);
 }
 
 .hint-large-right:after {
     right: 0;
     top: 50%;
     margin-top: -10px;
-    border-right-color: rgba(82, 82, 82, 1);
+    border-right-color: var(--hint-caret-color);
 }
 
 .hint-large-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -10px;
-    border-bottom-color: rgba(82, 82, 82, 1);
+    border-bottom-color: var(--hint-caret-color);
 }
 
 .hint-large-left:after {
     left: 0;
     top: 50%;
     margin-top: -10px;
-    border-left-color: rgba(82, 82, 82, 1);
+    border-left-color: var(--hint-caret-color);
 }
