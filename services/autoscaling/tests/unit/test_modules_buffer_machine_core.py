@@ -90,7 +90,12 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def mocked_ssm_send_command(mocker: MockerFixture) -> mock.Mock:
+def mocked_ssm_send_command(
+    mocker: MockerFixture, external_envfile_dict: EnvVarsDict
+) -> mock.Mock:
+    if external_envfile_dict:
+        # NOTE: we run against AWS. so no need to mock
+        return mock.Mock()
     return mocker.patch(
         "aiobotocore.client.AioBaseClient._make_api_call",
         side_effect=patched_aiobotocore_make_api_call,
