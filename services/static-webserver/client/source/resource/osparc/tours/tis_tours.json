@@ -49,12 +49,12 @@
       },
       "anchorEl": "osparc-test-id=precomputedGroup",
       "title": "Precomputed Plans",
-      "text": "These are free.",
+      "text": "No Credits required.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=personalizedGroup",
       "title": "Personalized Plans",
-      "text": "For these, you need to pay.",
+      "text": "Credits are required.",
       "placement": "top"
     }, {
       "beforeClick": {
