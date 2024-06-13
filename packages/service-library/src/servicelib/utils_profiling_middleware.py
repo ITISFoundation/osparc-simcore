@@ -9,23 +9,39 @@ from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_ND_JSON,
 )
 
-_request_profiler = contextvars.ContextVar("_request_profiler", default=None)
+_profiler = Profiler(async_mode="enabled")
+_is_profiling = contextvars.ContextVar("_is_profiling", default=False)
+
+
+def is_profiling() -> bool:
+    return _is_profiling.get()
 
 
 @contextmanager
-def request_profiler() -> Iterator[Profiler | None]:
+def profile(do_profile: bool | None = None) -> Iterator[None]:
     """Context manager which temporarily removes request profiler from context"""
-    _profiler = _request_profiler.get()
-    if isinstance(_profiler, Profiler):
+    if do_profile is None:
+        do_profile = _is_profiling.get()
+    if do_profile:
         try:
-            _profiler.stop()
-            _request_profiler.set(None)
-            yield _profiler
-        finally:
             _profiler.start()
-            _request_profiler.set(_profiler)
+            yield
+        finally:
+            _profiler.stop()
     else:
         yield None
+
+
+@contextmanager
+def dont_profile() -> Iterator[None]:
+    if _is_profiling.get():
+        try:
+            _profiler.stop()
+            yield
+        finally:
+            _profiler.start()
+    else:
+        yield
 
 
 def append_profile(body: str, profile: str) -> str:

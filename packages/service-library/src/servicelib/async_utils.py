@@ -6,9 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
 
-from pyinstrument import Profiler
-
-from ._utils_profiling_middleware import request_profiler
+from .utils_profiling_middleware import dont_profile, is_profiling, profile
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ class Context:
 
 @dataclass
 class QueueElement:
-    profiler: Profiler | None = None
+    is_profiling: bool = False
     input: Awaitable | None = None
     output: Any | None = None
 
@@ -155,14 +153,11 @@ def run_sequentially_in_context(
                         in_q.task_done()
                         # check if requested to shutdown
                         try:
-                            profiler = element.profiler
+                            is_profiling = element.is_profiling
                             awaitable = element.input
                             if awaitable is None:
                                 break
-                            if isinstance(profiler, Profiler):
-                                with profiler:
-                                    result = await awaitable
-                            else:
+                            with profile(is_profiling):
                                 result = await awaitable
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
@@ -174,14 +169,14 @@ def run_sequentially_in_context(
                         target_args,
                     )
 
-                with request_profiler():
-                    context.task = asyncio.create_task(
-                        worker(context.in_queue, context.out_queue)
-                    )
+                context.task = asyncio.create_task(
+                    worker(context.in_queue, context.out_queue)
+                )
 
-            with request_profiler() as profiler:
+            with dont_profile():
                 queue_input = QueueElement(
-                    input=decorated_function(*args, **kwargs), profiler=profiler
+                    input=decorated_function(*args, **kwargs),
+                    is_profiling=is_profiling(),
                 )
                 await context.in_queue.put(queue_input)
                 wrapped_result = await context.out_queue.get()
