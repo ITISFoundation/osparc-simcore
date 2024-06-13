@@ -21,6 +21,9 @@ qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
   construct: function() {
     this.base(arguments, "credits", this.tr("Billing Center"));
 
+
+    osparc.utils.Utils.setIdToWidget(this, "billingCenterWindow");
+
     const width = 1035;
     const height = 700;
     this.set({

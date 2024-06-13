@@ -131,6 +131,15 @@
       "title": "Auto-recharge",
       "text": "Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.<br>Before the auto-recharge function can be activated you need to add your first payment method.",
       "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=billingCenterWindow",
+        "action": "close"
+      },
+      "anchorEl": "osparc-test-id=sharedWalletsList",
+      "title": "Credit Indicators",
+      "text": "Once the payment is validated, the Credits will be added to the Credit Account. In the User Menu -> Preferences, you will be able to tune the visibility options of the Credits Indicator.",
+      "placement": "bottom"
     }]
   }
 }
