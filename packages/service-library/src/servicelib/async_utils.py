@@ -174,6 +174,7 @@ def run_sequentially_in_context(
                 )
 
             with dont_profile():
+                # ensure profiler is disabled in order to capture profile of endpoint code
                 queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs),
                     is_profiling=is_profiling(),
