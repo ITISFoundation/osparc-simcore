@@ -24,7 +24,7 @@ from servicelib.deferred_tasks._deferred_manager import (
 )
 from servicelib.deferred_tasks._models import TaskResultError, TaskUID
 from servicelib.deferred_tasks._task_schedule import TaskState
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity._asyncio import AsyncRetrying
@@ -49,12 +49,10 @@ class MockKeys(StrAutoEnum):
 
 
 @pytest.fixture
-async def redis_sdk(
+async def redis_client_sdk(
     redis_service: RedisSettings,
-) -> AsyncIterable[RedisClientSDKHealthChecked]:
-    sdk = RedisClientSDKHealthChecked(
-        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
-    )
+) -> AsyncIterable[RedisClientSDK]:
+    sdk = RedisClientSDK(redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS))
     await sdk.setup()
     yield sdk
     await sdk.shutdown()
@@ -68,12 +66,12 @@ def mocked_deferred_globals() -> dict[str, Any]:
 @pytest.fixture
 async def deferred_manager(
     rabbit_service: RabbitSettings,
-    redis_sdk: RedisClientSDKHealthChecked,
+    redis_client_sdk: RedisClientSDK,
     mocked_deferred_globals: dict[str, Any],
 ) -> AsyncIterable[DeferredManager]:
     manager = DeferredManager(
         rabbit_service,
-        redis_sdk,
+        redis_client_sdk,
         globals_context=mocked_deferred_globals,
         max_workers=10,
     )
