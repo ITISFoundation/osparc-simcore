@@ -38,14 +38,6 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   properties: {
-    mode: {
-      check: ["grid", "list"],
-      init: "grid",
-      nullable: false,
-      event: "changeMode",
-      apply: "reloadCards"
-    },
-
     groupBy: {
       check: [null, "category"],
       init: null,
@@ -84,7 +76,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         ].forEach(signalName => {
           flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
         });
-        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+        const spacing = osparc.dashboard.GridButtonBase.SPACING;
         this.__flatList.getLayout().set({
           spacingX: spacing,
           spacingY: spacing
@@ -148,14 +140,9 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     __createCard: function(templateInfo) {
       const title = templateInfo.title;
       const desc = templateInfo.description;
-      const mode = this.getMode();
-      const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+      const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        newPlanButton.setWidth(width);
-      }
       newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
       return newPlanButton;
     },
