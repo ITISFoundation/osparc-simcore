@@ -521,8 +521,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     const winTitle = this.tr("New Plan");
                     const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
                       clickAwayClose: false,
-                      resizable: true,
-                      showClose: true
+                      resizable: true
                     });
                     newStudies.addListener("newStudyClicked", e => {
                       win.close();
@@ -532,6 +531,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                         this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                       }
                     });
+                    osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
                   });
                 }
               });

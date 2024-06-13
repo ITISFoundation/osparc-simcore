@@ -44,9 +44,31 @@
       "text": "Clicking on this (+) button will pop up a window with all the Plans available.",
       "placement": "right"
     }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=newStudyBtn"
+      },
+      "anchorEl": "osparc-test-id=precomputedGroup",
+      "title": "Precomputed Plans",
+      "text": "These are free.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=personalizedGroup",
+      "title": "Personalized Plans",
+      "text": "For these, you need to pay.",
+      "placement": "top"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=newStudiesWindow",
+        "action": "close"
+      },
+      "anchorEl": "osparc-test-id=resourceFilter",
+      "title": "Filters",
+      "text": "These filters allows you to display a better organized Dashboard.<br>You can filter by with with whom the resources is Shared with and also Tags if you assign them.",
+      "placement": "right"
+    }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
-      "title": "Filter and Search",
-      "text": "This tool allows you to filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "title": "Filters and Search",
+      "text": "This tool allows you to search and filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
