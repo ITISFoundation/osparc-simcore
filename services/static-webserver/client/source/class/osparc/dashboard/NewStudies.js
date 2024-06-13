@@ -41,7 +41,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     groupBy: {
       check: [null, "category"],
       init: null,
-      nullable: true
+      nullable: true,
+      apply: "reloadCards"
     }
   },
 
@@ -123,6 +124,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         headerColor,
         visibility: "excluded"
       });
+      osparc.utils.Utils.setIdToWidget(groupContainer, groupId.toString() + "Group");
       const atom = groupContainer.getChildControl("header");
       atom.setFont("text-16");
       this.__groupedContainers.push(groupContainer);
