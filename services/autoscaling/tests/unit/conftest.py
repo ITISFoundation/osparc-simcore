@@ -32,9 +32,8 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
-from models_library.generated_models.docker_rest_api import Availability
-from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
+    Availability,
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -43,10 +42,15 @@ from models_library.generated_models.docker_rest_api import (
     ResourceObject,
     Service,
 )
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import (
+    EnvVarsDict,
+    delenvs_from_dict,
+    setenvs_from_dict,
+)
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
 from simcore_service_autoscaling.core.application import create_app
@@ -156,8 +160,13 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+    external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
+
+    if external_envfile_dict:
+        delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
+        return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
     envs = setenvs_from_dict(
         monkeypatch,
