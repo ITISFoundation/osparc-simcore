@@ -61,6 +61,11 @@
         "selector": "osparc-test-id=newStudiesWindow",
         "action": "close"
       },
+      "anchorEl": "osparc-test-id=studiesList",
+      "title": "Plans",
+      "text": "The Plans you create and the ones shared with you will be listed here.",
+      "placement": "top"
+    }, {
       "anchorEl": "osparc-test-id=resourceFilter",
       "title": "Filters",
       "text": "These filters allows you to display a better organized Dashboard.<br>You can filter by with with whom the resources is Shared with and also Tags if you assign them.",
