@@ -13,7 +13,7 @@ async def profiling_middleware(request: Request, handler):
         try:
             if _profiler.is_running or (_profiler.last_session is not None):
                 raise HTTPInternalServerError(
-                    reason=f"Profiler is already running. Only a single request can be profiled at any given time.",
+                    reason="Profiler is already running. Only a single request can be profiled at any given time.",
                     headers={},
                 )
             _profiler.reset()

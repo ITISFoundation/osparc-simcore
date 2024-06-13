@@ -44,13 +44,13 @@ def dont_profile() -> Iterator[None]:
         yield
 
 
-def append_profile(body: str, profile: str) -> str:
+def append_profile(body: str, profile_text: str) -> str:
     try:
         json.loads(body)
         body += "\n" if not body.endswith("\n") else ""
     except json.decoder.JSONDecodeError:
         pass
-    body += json.dumps({"profile": profile})
+    body += json.dumps({"profile": profile_text})
     return body
 
 

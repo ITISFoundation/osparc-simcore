@@ -34,7 +34,7 @@ class Context:
 
 @dataclass
 class QueueElement:
-    is_profiling: bool = False
+    do_profile: bool = False
     input: Awaitable | None = None
     output: Any | None = None
 
@@ -153,11 +153,11 @@ def run_sequentially_in_context(
                         in_q.task_done()
                         # check if requested to shutdown
                         try:
-                            is_profiling = element.is_profiling
+                            do_profile = element.do_profile
                             awaitable = element.input
                             if awaitable is None:
                                 break
-                            with profile(is_profiling):
+                            with profile(do_profile):
                                 result = await awaitable
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
@@ -177,7 +177,7 @@ def run_sequentially_in_context(
                 # ensure profiler is disabled in order to capture profile of endpoint code
                 queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs),
-                    is_profiling=is_profiling(),
+                    do_profile=is_profiling(),
                 )
                 await context.in_queue.put(queue_input)
                 wrapped_result = await context.out_queue.get()
