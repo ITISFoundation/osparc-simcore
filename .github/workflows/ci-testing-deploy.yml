@@ -1467,7 +1467,7 @@ jobs:
   unit-test-service-library:
     needs: changes
     if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests [67.22s setup    tests/deferred_tasks/test_deferred_tasks.py::test_workflow_with_outages_in_process_running_deferred_manager[0-100-10-1]]
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
