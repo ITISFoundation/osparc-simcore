@@ -149,7 +149,7 @@ async def monitor_buffer_machines(
         ):
             instances_to_terminate: set[EC2InstanceData] = set()
             for ec2_type in terminateable_warm_pool_types:
-                instances_to_terminate.union(
+                instances_to_terminate = instances_to_terminate.union(
                     current_warm_buffer_pools[ec2_type].all_instances()
                 )
             await ec2_client.terminate_instances(instances_to_terminate)
@@ -173,7 +173,7 @@ async def monitor_buffer_machines(
             terminateable_instances = set(
                 list(all_pool_instances)[ec2_boot_config.buffer_count :]
             )
-            unneeded_instances.union(terminateable_instances)
+            unneeded_instances = unneeded_instances.union(terminateable_instances)
     for ec2_type, num_to_start in missing_instances.items():
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
