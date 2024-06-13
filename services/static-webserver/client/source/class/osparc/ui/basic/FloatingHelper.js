@@ -62,6 +62,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
   properties: {
     element: {
       check: "qx.ui.core.Widget",
+      init: null,
       apply: "__applyElement"
     },
 
@@ -156,8 +157,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       }
     },
 
-    __updatePosition: function() {
-      if (this.isPropertyInitialized("element") && this.getElement().getContentElement()) {
+    updatePosition: function() {
+      if (this.getElement() && this.getElement().getContentElement()) {
         const element = this.getElement().getContentElement()
           .getDomElement();
         const {
@@ -195,8 +196,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     moveToTheCenter: function() {
       const properties = {};
       const selfBounds = this.getHintBounds();
-      properties.top = Math.floor((window.innerHeight - selfBounds.width) / 2);
-      properties.left = Math.floor((window.innerWidth - selfBounds.height) / 2);
+      properties.top = Math.floor((window.innerHeight - selfBounds.height) / 2);
+      properties.left = Math.floor((window.innerWidth - selfBounds.width) / 2);
       this.setLayoutProperties(properties);
     },
 
@@ -206,7 +207,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
 
     __applyOrientation: function() {
       this.__buildWidget();
-      this.__updatePosition();
+      this.updatePosition();
     },
 
     // overwritten
@@ -269,7 +270,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           if (this.isActive()) {
             this.show();
           }
-          this.__updatePosition();
+          this.updatePosition();
           break;
         case "disappear":
           this.exclude();
@@ -278,7 +279,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         case "resize":
         case "scrollX":
         case "scrollY":
-          setTimeout(() => this.__updatePosition(), 20); // Hacky: Execute async and give some time for the relevant properties to be set
+          setTimeout(() => this.updatePosition(), 20); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
     },
@@ -286,7 +287,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     // overridden
     _applyVisibility: function(ne, old) {
       this.base(arguments, ne, old);
-      this.__updatePosition();
+      this.updatePosition();
     }
   }
 });

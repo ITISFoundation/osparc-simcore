@@ -170,10 +170,11 @@ qx.Class.define("osparc.tours.Manager", {
         } else {
           // target not found, move to the next step
           this.__toStepCheck(this.__currentIdx+1);
+          return;
         }
       } else {
+        // intro text, it will be centered
         stepWidget.getChildControl("caret").exclude();
-        stepWidget.moveToTheCenter();
       }
       if (step.title) {
         stepWidget.setTitle(step.title);
@@ -189,8 +190,13 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       stepWidget.show();
-      // eslint-disable-next-line no-underscore-dangle
-      setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
+      setTimeout(() => {
+        if (stepWidget.getElement()) {
+          stepWidget.updatePosition();
+        } else {
+          stepWidget.moveToTheCenter();
+        }
+      }, 10);
     }
   }
 });
