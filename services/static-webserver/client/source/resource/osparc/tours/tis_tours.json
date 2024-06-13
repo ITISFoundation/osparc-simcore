@@ -136,10 +136,8 @@
         "selector": "osparc-test-id=billingCenterWindow",
         "action": "close"
       },
-      "anchorEl": "osparc-test-id=sharedWalletsList",
-      "title": "Credit Indicators",
-      "text": "Once the payment is validated, the Credits will be added to the Credit Account. In the User Menu -> Preferences, you will be able to tune the visibility options of the Credits Indicator.",
-      "placement": "bottom"
+      "title": "Credits Indicator",
+      "text": "Once the payment is validated, the Credits will be added to the Credit Account. In the User Menu -> Preferences, you will be able to tune the visibility options of the Credits Indicator."
     }]
   }
 }
