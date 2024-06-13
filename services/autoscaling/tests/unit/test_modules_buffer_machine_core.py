@@ -100,7 +100,7 @@ def mocked_ssm_send_command(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.xfail(
     reason="moto does not handle mocking of SSM SendCommand completely. "
-    "TIP: if this test fails, it will mean Moto now handles it."
+    "TIP: if this test passes, it will mean Moto now handles it."
     " Delete 'mocked_ssm_send_command' fixture if that is the case and remove this test"
 )
 async def test_if_send_command_is_mocked_by_moto(
