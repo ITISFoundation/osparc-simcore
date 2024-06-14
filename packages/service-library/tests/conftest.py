@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterable
 
 import pytest
 import servicelib
@@ -70,7 +70,13 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 @pytest.fixture
 async def get_redis_client_sdk(
     redis_service: RedisSettings,
-) -> Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]:
+) -> AsyncIterable[
+    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
+]:
+    async def _cleanup_redis_data() -> None:
+        for db in RedisDatabase:
+            await RedisClientSDK(redis_service.build_redis_dsn(db)).redis.flushall()
+
     @asynccontextmanager
     async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
@@ -79,12 +85,10 @@ async def get_redis_client_sdk(
         assert client.redis_dsn == redis_resources_dns
         await client.setup()
 
-        await client.redis.flushall()
-
         yield client
 
-        # cleanup, properly close the clients
-        await client.redis.flushall()
         await client.shutdown()
 
-    return _
+    await _cleanup_redis_data()
+    yield _
+    await _cleanup_redis_data()
