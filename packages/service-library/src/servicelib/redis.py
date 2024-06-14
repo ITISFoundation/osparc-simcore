@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
-from pydantic import NonNegativeFloat
+from pydantic import NonNegativeFloat, NonNegativeInt
 from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
@@ -30,6 +30,7 @@ _DEFAULT_DECODE_RESPONSES: Final[bool] = True
 _DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=5
 )
+_PING_TIMEOUT_S: Final[NonNegativeInt] = 5
 
 
 _logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ class RedisClientSDK:
 
     @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
     async def setup(self) -> None:
-        if not await self._client.ping():
+        if not await self.ping():
             await self.shutdown()
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
 
@@ -105,7 +106,7 @@ class RedisClientSDK:
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
-            await asyncio.wait_for(self._client.ping(), timeout=5)
+            await asyncio.wait_for(self._client.ping(), timeout=_PING_TIMEOUT_S)
             return True
         return False
 
