@@ -590,7 +590,6 @@ qx.Class.define("osparc.store.Store", {
 
     getAllGroupsAndMembers: function() {
       return new Promise(resolve => {
-        const reachableMembers = this.getReachableMembers();
         osparc.data.Resources.get("organizations")
           .then(resp => {
             const orgMembersPromises = [];
@@ -605,6 +604,7 @@ qx.Class.define("osparc.store.Store", {
             });
             Promise.all(orgMembersPromises)
               .then(orgMemberss => {
+                const reachableMembers = this.getReachableMembers();
                 orgMemberss.forEach(orgMembers => {
                   orgMembers.forEach(orgMember => {
                     orgMember["label"] = osparc.utils.Utils.firstsUp(
