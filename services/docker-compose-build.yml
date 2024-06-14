@@ -9,7 +9,6 @@
 #
 # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 #
-version: "3.8"
 services:
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
