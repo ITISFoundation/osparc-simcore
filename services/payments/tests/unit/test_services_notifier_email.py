@@ -37,12 +37,12 @@ from simcore_service_payments.services.notifier_email import (
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
-    docker_compose_service_payments_env_vars: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_env_vars,
+            **docker_compose_service_environment_dict,
             **external_envfile_dict,
         },
     )

@@ -127,7 +127,6 @@ async def create_project(request: web.Request):
 
     if not request.can_read_body:
         # request w/o body
-        assert query_params.from_study  # nosec
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})

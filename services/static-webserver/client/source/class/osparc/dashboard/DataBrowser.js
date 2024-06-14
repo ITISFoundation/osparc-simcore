@@ -53,7 +53,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
             icon: "@FontAwesome5Solid/sync-alt/14",
             allowGrowX: false
           });
-          this._add(control);
+          this._addToLayout(control);
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
             width: 2,
             backgroundColor: "scrollbar-passive"
           });
-          this._add(control, {
+          this._addToLayout(control, {
             flex: 1
           });
           break;
@@ -85,6 +85,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
+          break;
+        case "actions-toolbar":
+          control = new qx.ui.toolbar.ToolBar();
+          this._addToLayout(control);
           break;
       }
 
@@ -117,7 +121,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const filesTree = this.getChildControl("files-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
-      const actionsToolbar = new qx.ui.toolbar.ToolBar();
+      const actionsToolbar = this.getChildControl("actions-toolbar");
       const fileActions = new qx.ui.toolbar.Part();
       const addFile = new qx.ui.toolbar.Part();
       actionsToolbar.add(fileActions);
@@ -161,8 +165,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
       }, this);
       fileActions.add(selectedFileLayout);
-
-      this._add(actionsToolbar);
     },
 
     __selectionChanged: function(selectedItem) {

@@ -35,14 +35,14 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     this._loadingPage = new osparc.ui.message.Loading();
     stack.add(this._loadingPage);
 
-    this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    stack.add(this._mainLayout);
+    this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+    stack.add(this.__mainLayout);
   },
 
   members: {
     __stack: null,
     _loadingPage: null,
-    _mainLayout: null,
+    __mainLayout: null,
 
     _showLoadingPage: function(label) {
       if (label) {
@@ -52,7 +52,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     },
 
     _showMainLayout: function() {
-      this.__stack.setSelection([this._mainLayout]);
+      this.__stack.setSelection([this.__mainLayout]);
     },
 
     _hideLoadingPage: function() {
@@ -60,7 +60,7 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
     },
 
     _addToMainLayout: function(widget, props = {}) {
-      this._mainLayout.add(widget, props);
+      this.__mainLayout.add(widget, props);
     }
   }
 });

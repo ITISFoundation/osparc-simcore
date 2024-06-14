@@ -11,7 +11,7 @@ from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange, RabbitRouter
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 
 from ._base_deferred_handler import (
@@ -116,7 +116,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
-        scheduler_redis_sdk: RedisClientSDKHealthChecked,
+        scheduler_redis_sdk: RedisClientSDK,
         *,
         globals_context: GlobalsContext,
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,

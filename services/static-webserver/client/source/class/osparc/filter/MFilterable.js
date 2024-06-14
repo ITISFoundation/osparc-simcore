@@ -31,7 +31,7 @@ qx.Mixin.define("osparc.filter.MFilterable", {
     },
     /**
      * Subscriber function for incoming messages. It implements the common filtering workflow of every
-     * filterable GUI element: If the filter state is appropiate, compare it with the own state and act
+     * filterable GUI element: If the filter state is appropriate, compare it with the own state and act
      * accordingly by applying the filter or removing it.
      *
      * @param {qx.event.message.Message} msg Message dispatched.

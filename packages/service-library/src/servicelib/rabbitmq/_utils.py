@@ -1,5 +1,4 @@
 import logging
-import os
 import socket
 from typing import Any, Final
 
@@ -52,7 +51,7 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{socket.gethostname()}_{os.getpid()}"
+    return f"{base_name}_{socket.gethostname()}"
 
 
 async def declare_queue(

@@ -12,7 +12,7 @@ from ..models.comp_tasks import CompTaskAtDB
 from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
 _RUNNING_STATES = (RunningState.STARTED,)
