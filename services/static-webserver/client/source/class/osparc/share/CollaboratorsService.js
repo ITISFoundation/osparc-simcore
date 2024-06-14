@@ -40,7 +40,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     initCollabs.push(this.self().getEveryoneProductObj());
     initCollabs.push(this.self().getEveryoneObj());
 
-    this.base(arguments, serviceDataCopy, [initCollabs]);
+    this.base(arguments, serviceDataCopy, initCollabs);
   },
 
   events: {
