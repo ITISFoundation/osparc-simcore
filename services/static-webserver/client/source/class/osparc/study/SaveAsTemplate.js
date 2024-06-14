@@ -73,6 +73,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       selectedGroupIDs.forEach(gid => {
         this.__studyDataClone["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight();
       });
+      // Make publisher owner
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       this.__studyDataClone["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
 
