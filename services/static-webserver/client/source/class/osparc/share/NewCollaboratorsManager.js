@@ -82,10 +82,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let includeProductEveryone = false;
       if (this.__showOrganizations === false) {
         includeProductEveryone = false;
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
-        includeProductEveryone = true;
-      } else {
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
+        // studies can't be shared with ProductEveryone
+        includeProductEveryone = false;
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
+        // only users with permissions can share templates with ProductEveryone
         includeProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
+        // all users can share services with ProductEveryone
+        includeProductEveryone = true;
       }
       osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
