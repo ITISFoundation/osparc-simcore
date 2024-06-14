@@ -17,7 +17,7 @@ from redis.backoff import ExponentialBackoff
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 
-from .background_task import periodic_task, start_periodic_task, stop_periodic_task
+from .background_task import periodic_task, stop_periodic_task
 from .logging_utils import log_catch, log_context
 from .retry_policies import RedisRetryPolicyUponInitialization
 
@@ -54,7 +54,9 @@ class RedisClientSDK:
 
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
-    _is_healthy: bool = False
+    _is_healthy: bool = (
+        True  # revert back to False when stop_periodic_task issue is fixed
+    )
 
     @property
     def redis(self) -> aioredis.Redis:
@@ -83,11 +85,12 @@ class RedisClientSDK:
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
 
         self._is_healthy = True
-        self._health_check_task = start_periodic_task(
-            self._check_health,
-            interval=self.health_check_interval,
-            task_name=f"redis_service_health_check_{self.redis_dsn}",
-        )
+        # Disabled till issue with stop_periodic_task is fixed
+        # self._health_check_task = start_periodic_task(
+        #     self._check_health,
+        #     interval=self.health_check_interval,
+        #     task_name=f"redis_service_health_check_{self.redis_dsn}",
+        # )
 
         _logger.info(
             "Connection to %s succeeded with %s",
