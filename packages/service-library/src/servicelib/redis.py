@@ -29,7 +29,7 @@ _DEFAULT_DECODE_RESPONSES: Final[bool] = True
 _DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=5
 )
-
+_PING_TIMEOUT_S: Final[NonNegativeInt] = 5
 _SHUTDOWN_TIMEOUT_S: Final[NonNegativeInt] = 5
 
 
@@ -88,7 +88,7 @@ class RedisClientSDK:
         self._health_check_task = start_periodic_task(
             self._check_health,
             interval=self.health_check_interval,
-            task_name=f"redis_service_health_check_{self.redis_dsn}",
+            task_name=f"redis_service_health_check_{self.redis_dsn}_{uuid4()}",
         )
 
         _logger.info(
