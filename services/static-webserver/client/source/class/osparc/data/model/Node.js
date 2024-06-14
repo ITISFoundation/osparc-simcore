@@ -1246,10 +1246,10 @@ qx.Class.define("osparc.data.model.Node", {
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
             // this.__waitForServiceReady(srvUrl);
-            // instead of waiting of waiting for
+            // instead of waiting for
             // - the service to be ready (pings) and
             // - request its frontend to make sure it is ready
-            // we will directly switch its iframe
+            // we will skip those two steps and directly switch its iframe
             this.__serviceReadyIn(srvUrl);
           }
           break;
