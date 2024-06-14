@@ -1,7 +1,6 @@
 #
 # Used in development to compile source code using a running qooxdoo-kit container
 #
-version: "3.8"
 services:
   qooxdoo-kit:
     image: itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
