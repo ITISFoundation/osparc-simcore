@@ -54,13 +54,25 @@ ENV SC_USER_ID=8006 \
   SC_BOOT_MODE=default
 
 RUN adduser \
-  --uid ${SC_USER_ID} \
+  --uid 8004 \
   --disabled-password \
   --gecos "" \
   --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
+  --home /home/scu \
+  scu
 
+RUN adduser \
+  --uid 8006 \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/efs \
+  efs
+
+# we create efs-group which is then used in efs guardian when he is creating a directory for user services.
+RUN groupadd -g 8106 efs-group
+RUN usermod -a -G efs-group efs
+RUN usermod -a -G efs-group scu
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
@@ -191,6 +203,8 @@ ENV SC_BUILD_TARGET=development \
 WORKDIR /devel
 
 RUN chown -R efs:efs "${VIRTUAL_ENV}"
+
+# RUN mkdir -p /data/efs
 
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]

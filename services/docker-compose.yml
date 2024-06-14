@@ -365,6 +365,8 @@ services:
       EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
       EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
       EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
+    # volumes:
+    #   - efs_volume:/data/efs
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -1206,6 +1208,8 @@ volumes:
     name: ${SWARM_STACK_NAME}_redis-data
   rabbit_data:
     name: ${SWARM_STACK_NAME}_rabbit_data
+  efs_volume:
+    name: ${SWARM_STACK_NAME}_efs_volume
 
 networks:
   default:
