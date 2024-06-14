@@ -541,7 +541,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
-        promises.push(this.getVisibleMembers());
+        promises.push(this.getReachableMembers());
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
@@ -588,13 +588,9 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getVisibleMembers: function(reload = false) {
+    getVisibleMembers: function() {
       return new Promise(resolve => {
         const reachableMembers = this.getReachableMembers();
-        if (!reload && Object.keys(reachableMembers).length) {
-          resolve(reachableMembers);
-          return;
-        }
         osparc.data.Resources.get("organizations")
           .then(resp => {
             const orgMembersPromises = [];
@@ -628,7 +624,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
-        promises.push(this.getVisibleMembers());
+        promises.push(this.getReachableMembers());
         promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
         Promise.all(promises)
@@ -696,7 +692,7 @@ qx.Class.define("osparc.store.Store", {
     getUser: function(uid) {
       return new Promise(resolve => {
         if (uid) {
-          this.getVisibleMembers()
+          this.getReachableMembers()
             .then(visibleMembers => {
               resolve(Object.values(visibleMembers).find(member => member.id === uid));
             })
