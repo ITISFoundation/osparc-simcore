@@ -204,7 +204,5 @@ WORKDIR /devel
 
 RUN chown -R efs:efs "${VIRTUAL_ENV}"
 
-# RUN mkdir -p /data/efs
-
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
