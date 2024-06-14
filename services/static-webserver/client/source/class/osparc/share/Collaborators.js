@@ -355,6 +355,11 @@ qx.Class.define("osparc.share.Collaborators", {
     _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
+      const store = osparc.store.Store.getInstance();
+      const everyoneGIds = [
+        store.getEveryoneProductGroup()["gid"],
+        store.getEveryoneGroup()["gid"]
+      ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       Object.keys(accessRights).forEach(gid => {
@@ -363,6 +368,7 @@ qx.Class.define("osparc.share.Collaborators", {
           // Do not override collaborator object
           const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
+            // user
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(
               `${"first_name" in collaborator && collaborator["first_name"] != null ?
@@ -370,9 +376,11 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
-          } else if (parseInt(gid) === osparc.store.Store.getInstance().getEveryoneGroup()["gid"]) {
-            collaborator["name"] = collaborator["label"];
-            delete collaborator["label"];
+          } else if (everyoneGIds.includes(parseInt(gid))) {
+            // everyone product or everyone
+            if (collaborator["thumbnail"] === null) {
+              collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            }
           }
           collaborator["accessRights"] = accessRights[gid];
           collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
