@@ -77,7 +77,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
       },
       "productAll": {
         contextId: 2,
-        label: "Public for Product users"
+        label: "Available to all users"
       }
     }
   },
