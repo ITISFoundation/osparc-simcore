@@ -40,6 +40,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       }
     }
 
+    // override the css
+
     this.setLayout(new qx.ui.layout.Basic());
   },
 
