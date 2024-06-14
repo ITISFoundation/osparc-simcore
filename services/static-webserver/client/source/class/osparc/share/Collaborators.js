@@ -151,7 +151,7 @@ qx.Class.define("osparc.share.Collaborators", {
     getEveryoneObj: function(thumbnailSize=32) {
       return {
         "gid": 1,
-        "label": qx.locale.Manager.tr("Public"),
+        "label": "Public",
         "description": "",
         "thumbnail": "@FontAwesome5Solid/globe/"+thumbnailSize,
         "collabType": 0
@@ -380,8 +380,8 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
-          } else if (gid === this.self().getEveryoneObj()["gid"]) {
-            collaborator["name"] = collaborator["label"].toLocaleString();
+          } else if (parseInt(gid) === osparc.share.Collaborators.getEveryoneObj()["gid"]) {
+            collaborator["name"] = collaborator["label"];
             delete collaborator["label"];
           }
           collaborator["accessRights"] = accessRights[gid];
