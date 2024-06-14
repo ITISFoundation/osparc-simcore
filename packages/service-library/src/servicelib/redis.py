@@ -97,7 +97,7 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(self._health_check_task)
+            await stop_periodic_task(self._health_check_task, timeout=5)
 
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
         await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
