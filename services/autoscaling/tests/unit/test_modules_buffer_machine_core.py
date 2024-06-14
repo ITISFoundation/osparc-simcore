@@ -103,6 +103,10 @@ def mocked_ssm_send_command(
     )
 
 
+async def test_external_env_setup(app_environment: EnvVarsDict, ec2_client: EC2Client):
+    print(await ec2_client.describe_account_attributes())
+
+
 @pytest.mark.xfail(
     reason="moto does not handle mocking of SSM SendCommand completely. "
     "TIP: if this test passes, it will mean Moto now handles it."
