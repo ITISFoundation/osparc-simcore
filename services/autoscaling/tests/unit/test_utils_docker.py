@@ -1043,7 +1043,7 @@ def test_get_new_node_docker_tags(
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
             'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
-            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
             " > /docker-pull.compose.yml"
             " && "
             'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'

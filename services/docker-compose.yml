@@ -1,4 +1,3 @@
-version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}

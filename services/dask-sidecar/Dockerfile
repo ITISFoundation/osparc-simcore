@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.10.10"
-FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-bookworm as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
