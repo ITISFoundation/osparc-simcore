@@ -10,7 +10,7 @@ class ConfigurationError(AutoscalingRuntimeError):
 
 
 class Ec2NotConnectedError(AutoscalingRuntimeError):
-    msg_template: str = "Cannot connect with ec2 server"
+    msg_template: str = "Cannot connect with EC2 server"
 
 
 class Ec2InstanceNotFoundError(AutoscalingRuntimeError):
@@ -32,7 +32,7 @@ class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
 
 
 class SSMNotConnectedError(AutoscalingRuntimeError):
-    msg_template: str = "Cannot connect with ec2 server"
+    msg_template: str = "Cannot connect with SSM server"
 
 
 class DaskSchedulerNotFoundError(AutoscalingRuntimeError):
