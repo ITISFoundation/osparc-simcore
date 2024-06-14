@@ -63,7 +63,6 @@ def ec2_instances_allowed_types(
 def ec2_instance_allowed_types_env(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
@@ -78,13 +77,13 @@ def ec2_instance_allowed_types_env(
 @pytest.fixture
 def minimal_configuration(
     disabled_rabbitmq: None,
-    mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
-    mocked_ec2_instances_envs: EnvVarsDict,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ec2_instances_envs: EnvVarsDict,
     enabled_buffer_pools: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     ec2_instance_allowed_types_env: EnvVarsDict,
+    mocked_redis_server: None,
 ) -> None:
     pass
 
@@ -103,7 +102,7 @@ def mocked_ssm_send_command(
     )
 
 
-async def test_external_env_setup(app_environment: EnvVarsDict, ec2_client: EC2Client):
+async def test_external_env_setup(minimal_configuration: None, ec2_client: EC2Client):
     print(await ec2_client.describe_account_attributes())
 
 
@@ -191,3 +190,16 @@ async def test_monitor_buffer_machines(
         expected_instance_state="stopped",
         expected_additional_tag_keys=[],
     )
+
+
+async def test_monitor_buffer_machines_against_aws(
+    external_envfile_dict: EnvVarsDict,
+    app_environment: EnvVarsDict,
+    ec2_client: EC2Client,
+):
+    if not external_envfile_dict:
+        pytest.skip("This test is only for AWS, please define --external-envfile")
+
+    # 0. we have no instances now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
