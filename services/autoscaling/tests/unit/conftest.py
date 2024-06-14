@@ -150,17 +150,6 @@ def fake_ssm_settings() -> SSMSettings:
 
 
 @pytest.fixture
-def mocked_ec2_server_settings(
-    mocked_ec2_server_settings: EC2Settings,
-) -> EC2Settings:
-    return EC2Settings(
-        EC2_ACCESS_KEY_ID="xxx",
-        EC2_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
-        EC2_SECRET_ACCESS_KEY="xxx",  # noqa: S106
-    )
-
-
-@pytest.fixture
 def ec2_settings() -> EC2Settings:
     return AutoscalingEC2Settings.create_from_envs()
 
@@ -226,7 +215,6 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_KEY_NAME": "osparc-pytest",
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps([aws_security_group_id]),
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "EC2_INSTANCES_AMI_ID": aws_ami_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
