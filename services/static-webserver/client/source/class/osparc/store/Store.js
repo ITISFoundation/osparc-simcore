@@ -614,7 +614,7 @@ qx.Class.define("osparc.store.Store", {
                     reachableMembers[orgMember["gid"]] = orgMember;
                   });
                 });
-                resolve(reachableMembers);
+                resolve();
               });
           });
       });
