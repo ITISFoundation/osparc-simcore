@@ -140,8 +140,9 @@ qx.Class.define("osparc.share.PublishTemplate", {
 
     getSelectedGroups: function() {
       let groupIDs = [];
-      const selection = this.__rbManager.getSelection()[0];
-      if (selection.length) {
+      const selections = this.__rbManager.getSelection();
+      if (selections.length) {
+        const selection = selections[0];
         switch (selection.contextId) {
           case this.self().SharingOpts["me"].contextId:
           case this.self().SharingOpts["productAll"].contextId:
