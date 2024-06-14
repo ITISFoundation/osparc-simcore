@@ -31,6 +31,7 @@ _DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=5
 )
 _PING_TIMEOUT_S: Final[NonNegativeInt] = 5
+_SHUTDOWN_TIMEOUT_S: Final[NonNegativeInt] = 5
 
 
 _logger = logging.getLogger(__name__)
@@ -99,7 +100,9 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(self._health_check_task)
+            await stop_periodic_task(
+                self._health_check_task, timeout=_SHUTDOWN_TIMEOUT_S
+            )
 
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
         await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
