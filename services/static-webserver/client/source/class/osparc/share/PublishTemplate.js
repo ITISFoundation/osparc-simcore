@@ -36,13 +36,11 @@ qx.Class.define("osparc.share.PublishTemplate", {
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getGroupsMe(),
-      store.getProductEveryone(),
-      store.getGroupEveryone()
+      store.getProductEveryone()
     ])
       .then(values => {
         const groupMe = values[0];
         const groupProductEveryone = values[1];
-        const groupEveryone = values[2];
         this.__rbManager.getChildren().forEach(rb => {
           if (rb.contextId === this.self().SharingOpts["me"].contextId) {
             rb.gid = groupMe["gid"];
@@ -51,12 +49,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
             // Only users  the product group can share for everyone
             if (osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll")) {
               rb.gid = groupProductEveryone["gid"];
-              rb.show();
-            }
-          }
-          if (rb.contextId === this.self().SharingOpts["all"].contextId) {
-            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.all")) {
-              rb.gid = groupEveryone["gid"];
               rb.show();
             }
           }
@@ -86,10 +78,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
       "productAll": {
         contextId: 2,
         label: "Public for Product users"
-      },
-      "all": {
-        contextId: 3,
-        label: "Public"
       }
     }
   },
@@ -124,7 +112,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
             break;
           }
           case "productAll":
-          case "all":
             rb.exclude();
             this._add(rb);
             break;
@@ -167,7 +154,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
           case this.self().SharingOpts["orgs"].contextId:
             groupIDs = this.__getSelectedOrgIDs();
             break;
-          case this.self().SharingOpts["all"].contextId:
+          case this.self().SharingOpts["productAll"].contextId:
             groupIDs = [selection[0].gid];
             break;
         }
