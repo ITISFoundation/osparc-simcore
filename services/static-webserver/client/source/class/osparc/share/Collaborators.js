@@ -146,16 +146,6 @@ qx.Class.define("osparc.share.Collaborators", {
       }
 
       return vBox;
-    },
-
-    getEveryoneObj: function(thumbnailSize=32) {
-      return {
-        "gid": 1,
-        "label": "Public",
-        "description": "",
-        "thumbnail": "@FontAwesome5Solid/globe/"+thumbnailSize,
-        "collabType": 0
-      }
     }
   },
 
@@ -380,7 +370,7 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
-          } else if (parseInt(gid) === osparc.share.Collaborators.getEveryoneObj()["gid"]) {
+          } else if (parseInt(gid) === osparc.store.Store.getEveryoneGroup()["gid"]) {
             collaborator["name"] = collaborator["label"];
             delete collaborator["label"];
           }

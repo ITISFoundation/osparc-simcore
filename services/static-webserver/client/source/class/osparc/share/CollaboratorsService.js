@@ -72,7 +72,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     getEveryoneObj: function() {
-      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      const everyone = osparc.utils.Utils.deepCloneObject(osparc.store.Store.getEveryoneGroup());
       everyone["accessRights"] = this.getCollaboratorAccessRight();
       return everyone;
     }

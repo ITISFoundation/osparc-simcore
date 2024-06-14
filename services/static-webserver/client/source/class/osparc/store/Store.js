@@ -176,6 +176,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    everyoneProductGroup: {
+      check: "Object",
+      init: {}
+    },
+    everyoneGroup: {
+      check: "Object",
+      init: {}
+    },
     clusters: {
       check: "Array",
       init: [],
@@ -592,6 +600,8 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
           .then(resp => {
+            this.setEveryoneGroup(resp["all"]);
+            this.setEveryoneProductGroup(resp["product"]);
             const orgMembersPromises = [];
             const orgs = resp["organizations"];
             orgs.forEach(org => {
