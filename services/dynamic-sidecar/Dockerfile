@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM python:${PYTHON_VERSION}-slim-bookworm as base
 #
 #  USAGE:
 #     cd sercices/dynamic-sidecar
@@ -12,8 +12,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:24.0.5-1~debian.10~buster"
-ENV DOCKER_COMPOSE_APT_VERSION="2.20.2-1~debian.10~buster"
+ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
+ENV DOCKER_COMPOSE_APT_VERSION="2.27.1-1~debian.12~bookworm"
 
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
