@@ -138,13 +138,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
       return false;
     },
 
-    __getSelectedOrgIDs: function() {
-      if (this.__isGroupSelected("orgs")) {
-        return this.__myOrgs.getSelectedOrgIDs();
-      }
-      return [];
-    },
-
     getSelectedGroups: function() {
       let groupIDs = [];
       const selection = this.__rbManager.getSelection();
@@ -155,7 +148,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
             groupIDs = [selection[0].gid];
             break;
           case this.self().SharingOpts["orgs"].contextId:
-            groupIDs = this.__getSelectedOrgIDs();
+            groupIDs = this.__myOrgs.getSelectedOrgIDs();
             break;
         }
       }
