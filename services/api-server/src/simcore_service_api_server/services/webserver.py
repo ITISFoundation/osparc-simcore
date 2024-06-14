@@ -454,7 +454,7 @@ class AuthSession:
     @_exception_mapper(
         _JOB_STATUS_MAP
         | {
-            status.HTTP_409_CONFLICT: ProjectAlreadyStartedException(),
+            status.HTTP_409_CONFLICT: ProjectAlreadyStartedException,
             status.HTTP_406_NOT_ACCEPTABLE: (
                 status.HTTP_406_NOT_ACCEPTABLE,
                 lambda kwargs: "Cluster not found",

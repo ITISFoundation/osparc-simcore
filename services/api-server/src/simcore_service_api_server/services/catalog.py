@@ -11,6 +11,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
+from simcore_service_api_server.exceptions.backend_errors import SolverNotFoundError
 
 from ..exceptions.service_errors_utils import ToApiTuple, service_exception_mapper
 from ..models.basic_types import VersionStr
@@ -123,14 +124,7 @@ class CatalogApi(BaseServiceClientApi):
                 )
         return solvers
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get solver/study {kwargs['name']}:{kwargs['version']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverNotFoundError})
     async def get_service(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ) -> Solver:
