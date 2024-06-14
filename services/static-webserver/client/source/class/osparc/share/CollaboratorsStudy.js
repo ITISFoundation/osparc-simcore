@@ -37,7 +37,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
+      initCollabs.push(osparc.share.CollaboratorsStudy.getEveryoneObj(this._resourceType === "study"));
     }
     if (studyData.resourceType === "study" || studyData.resourceType === "template") {
       osparc.data.Roles.createRolesStudyResourceInfo();
