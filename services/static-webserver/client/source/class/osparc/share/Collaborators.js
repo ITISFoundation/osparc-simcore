@@ -370,7 +370,7 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
-          } else if (parseInt(gid) === osparc.store.Store.getEveryoneGroup()["gid"]) {
+          } else if (parseInt(gid) === osparc.store.Store.getInstance().getEveryoneGroup()["gid"]) {
             collaborator["name"] = collaborator["label"];
             delete collaborator["label"];
           }
