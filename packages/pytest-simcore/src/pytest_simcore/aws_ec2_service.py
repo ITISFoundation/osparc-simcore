@@ -19,7 +19,9 @@ from types_aiobotocore_ec2.client import EC2Client
 
 
 @pytest.fixture
-async def ec2_client(ec2_settings: EC2Settings) -> AsyncIterator[EC2Client]:
+async def ec2_client(
+    ec2_settings: EC2Settings,
+) -> AsyncIterator[EC2Client]:
     session = aioboto3.Session()
     exit_stack = contextlib.AsyncExitStack()
     session_client = session.client(

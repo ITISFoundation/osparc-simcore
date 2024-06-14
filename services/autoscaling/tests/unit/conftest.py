@@ -150,6 +150,17 @@ def fake_ssm_settings() -> SSMSettings:
 
 
 @pytest.fixture
+def mocked_ec2_server_settings(
+    mocked_ec2_server_settings: EC2Settings,
+) -> EC2Settings:
+    return EC2Settings(
+        EC2_ACCESS_KEY_ID="xxx",
+        EC2_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        EC2_SECRET_ACCESS_KEY="xxx",  # noqa: S106
+    )
+
+
+@pytest.fixture
 def ec2_settings() -> EC2Settings:
     return AutoscalingEC2Settings.create_from_envs()
 
