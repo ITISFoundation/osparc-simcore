@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import datetime
 import logging
@@ -30,7 +29,7 @@ _DEFAULT_DECODE_RESPONSES: Final[bool] = True
 _DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=5
 )
-_PING_TIMEOUT_S: Final[NonNegativeInt] = 5
+
 _SHUTDOWN_TIMEOUT_S: Final[NonNegativeInt] = 5
 
 
@@ -109,7 +108,7 @@ class RedisClientSDK:
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
-            await asyncio.wait_for(self._client.ping(), timeout=_PING_TIMEOUT_S)
+            await self._client.ping()
             return True
         return False
 
