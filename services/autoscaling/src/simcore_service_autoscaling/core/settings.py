@@ -37,17 +37,7 @@ AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
 
 class AutoscalingSSMSettings(SSMSettings):
-    class Config(SSMSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "SSM_ACCESS_KEY_ID": "my_access_key_id",
-                    "SSM_ENDPOINT": "https://my_ssm_endpoint.com",
-                    "SSM_REGION_NAME": "us-east-1",
-                    "SSM_SECRET_ACCESS_KEY": "my_secret_access_key",
-                }
-            ],
-        }
+    ...
 
 
 class AutoscalingEC2Settings(EC2Settings):
