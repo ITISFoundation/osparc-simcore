@@ -103,7 +103,7 @@ class RedisClientSDK:
             )
 
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
-        await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
+        await self._client.aclose()  # type: ignore[attr-defined]
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
