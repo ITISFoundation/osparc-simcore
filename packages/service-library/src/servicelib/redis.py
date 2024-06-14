@@ -87,7 +87,7 @@ class RedisClientSDK:
         self._health_check_task = start_periodic_task(
             self._check_health,
             interval=self.health_check_interval,
-            task_name=f"redis_service_health_check_{self.redis_dsn}_{uuid4()}",
+            task_name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
         _logger.info(
