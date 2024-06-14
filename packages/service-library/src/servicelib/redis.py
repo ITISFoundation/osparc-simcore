@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import datetime
 import logging
@@ -97,14 +98,14 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(self._health_check_task, timeout=5)
+            await stop_periodic_task(self._health_check_task)
 
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
         await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
-            await self._client.ping()
+            await asyncio.wait_for(self._client.ping(), timeout=5)
             return True
         return False
 
