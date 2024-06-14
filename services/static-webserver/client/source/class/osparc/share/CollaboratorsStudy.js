@@ -35,13 +35,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     this._resourceType = studyData["resourceType"]; // study or template
     const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
+    osparc.data.Roles.createRolesStudyResourceInfo();
+
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      const everyoneObj = this.self().getEveryoneObj(this._resourceType === "study");
-      initCollabs.push(everyoneObj);
-    }
-    if (studyData.resourceType === "study" || studyData.resourceType === "template") {
-      osparc.data.Roles.createRolesStudyResourceInfo();
+      initCollabs.push(this.self().getEveryoneProductObj(this._resourceType === "study"));
+      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
     }
 
     this.base(arguments, studyDataCopy, initCollabs);
@@ -111,6 +110,13 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return ownerGids.length > 1;
       }
       return true;
+    },
+
+    getEveryoneProductObj: function(isStudy) {
+      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
+      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+      return everyone;
     },
 
     getEveryoneObj: function(isStudy) {
