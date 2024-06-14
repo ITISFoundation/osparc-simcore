@@ -49,12 +49,12 @@
       },
       "anchorEl": "osparc-test-id=precomputedGroup",
       "title": "Precomputed Plans",
-      "text": "No Credits required.",
+      "text": "These plans have been available in prior versions and continue to be free of charge. They utilize pre-installed models and do not support personalization. Please select these for basic stimulation optimization.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=personalizedGroup",
       "title": "Personalized Plans",
-      "text": "Credits are required.",
+      "text": "These plans support personalization and allow for customized models. Running the simulations required for personalized optimization will incur charges. Choose these plans for advanced stimulation optimization.",
       "placement": "top"
     }, {
       "beforeClick": {
