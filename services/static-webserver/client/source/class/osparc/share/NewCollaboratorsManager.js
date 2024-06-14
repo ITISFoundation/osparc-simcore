@@ -79,15 +79,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __reloadCollaborators: function() {
-      let includeEveryone = false;
+      let includeProductEveryone = false;
       if (this.__showOrganizations === false) {
-        includeEveryone = false;
+        includeProductEveryone = false;
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
-        includeEveryone = true;
+        includeProductEveryone = true;
       } else {
-        includeEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+        includeProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
       }
-      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeEveryone)
+      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addEditors();

@@ -630,13 +630,12 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getPotentialCollaborators: function(includeMe = false, includeGlobalEveryone = false) {
+    getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getReachableMembers());
-        promises.push(this.getProductEveryone());
-        promises.push(this.getGroupEveryone());
+        promises.push(this.getEveryoneProductGroup());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -663,14 +662,9 @@ qx.Class.define("osparc.store.Store", {
               };
             }
             const productEveryone = values[2]; // entry
-            if (productEveryone && productEveryone["accessRights"]["read"]) {
+            if (includeProductEveryone && productEveryone) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
-            }
-            const groupEveryone = values[3];
-            if (includeGlobalEveryone && groupEveryone) {
-              groupEveryone["collabType"] = 0;
-              potentialCollaborators[groupEveryone["gid"]] = groupEveryone;
             }
             resolve(potentialCollaborators);
           })
