@@ -42,7 +42,7 @@ def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
         AWSTagKey("Name"): AWSTagValue(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
-    }
+    } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
 
 
 def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
@@ -57,7 +57,7 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
         AWSTagKey("Name"): AWSTagValue(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
-    }
+    } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
 
 
 def compose_user_data(docker_join_bash_command: str) -> str:
