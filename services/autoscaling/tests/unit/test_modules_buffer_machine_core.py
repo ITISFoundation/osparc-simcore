@@ -26,6 +26,7 @@ from simcore_service_autoscaling.modules.buffer_machine_core import (
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 
 @pytest.fixture
@@ -192,14 +193,49 @@ async def test_monitor_buffer_machines(
     )
 
 
-async def test_monitor_buffer_machines_against_aws(
-    external_envfile_dict: EnvVarsDict,
+@pytest.fixture
+def ec2_pytest_tag_key() -> str:
+    return "pytest"
+
+
+@pytest.fixture
+def with_ec2_pytest_tag_key_as_custom_tag(
     app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    ec2_pytest_tag_key: str,
+) -> EnvVarsDict:
+    monkeypatch.setenv(
+        "EC2_INSTANCES_CUSTOM_TAGS",
+        json.dumps({ec2_pytest_tag_key: "true"}),
+    )
+    return app_environment
+
+
+async def test_monitor_buffer_machines_against_aws(
+    mocked_redis_server: None,
+    external_envfile_dict: EnvVarsDict,
+    with_ec2_pytest_tag_key_as_custom_tag: EnvVarsDict,
     ec2_client: EC2Client,
+    ec2_pytest_tag_key: str,
+    initialized_app: FastAPI,
 ):
     if not external_envfile_dict:
         pytest.skip("This test is only for AWS, please define --external-envfile")
 
     # 0. we have no instances now
-    all_instances = await ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances(
+        Filters=[
+            FilterTypeDef(
+                Name="tag-key",
+                Values=[
+                    ec2_pytest_tag_key,
+                ],
+            ),
+        ]
+    )
     assert not all_instances["Reservations"]
+
+    # 1. run, this will create as many buffer machines as needed
+    await monitor_buffer_machines(
+        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
