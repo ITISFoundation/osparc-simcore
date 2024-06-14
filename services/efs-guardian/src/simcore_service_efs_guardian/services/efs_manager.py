@@ -30,13 +30,6 @@ class EfsManager:
         _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory
         Path.mkdir(_dir_path, parents=True, exist_ok=True)
 
-        # Temporary
-        await self.create_project_specific_data_dir(
-            project_id="24acabca-e57e-428b-aa69-7aaf33c5425f",
-            node_id="24acabca-e57e-428b-aa69-7aaf33c5425f",
-            storage_directory_name="matus",
-        )
-
     async def create_project_specific_data_dir(
         self, project_id: ProjectID, node_id: NodeID, storage_directory_name: str
     ) -> Path:
