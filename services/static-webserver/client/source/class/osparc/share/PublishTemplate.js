@@ -151,11 +151,11 @@ qx.Class.define("osparc.share.PublishTemplate", {
       if (selection.length) {
         switch (selection[0].contextId) {
           case this.self().SharingOpts["me"].contextId:
-          case this.self().SharingOpts["orgs"].contextId:
-            groupIDs = this.__getSelectedOrgIDs();
-            break;
           case this.self().SharingOpts["productAll"].contextId:
             groupIDs = [selection[0].gid];
+            break;
+          case this.self().SharingOpts["orgs"].contextId:
+            groupIDs = this.__getSelectedOrgIDs();
             break;
         }
       }
