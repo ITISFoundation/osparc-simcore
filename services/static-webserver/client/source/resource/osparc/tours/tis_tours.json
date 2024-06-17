@@ -54,7 +54,7 @@
     }, {
       "anchorEl": "osparc-test-id=personalizedGroup",
       "title": "Personalized Plans",
-      "text": "These plans support personalization and allow for customized models. Running the simulations required for personalized optimization will incur charges. Choose these plans for advanced stimulation optimization.",
+      "text": "These plans support personalization and allow for customized models. Running the simulations required for personalized optimization will incur charges. Choose these plans for advanced stimulation optimization. If you want to learn how to purchase credits, follow the 'Buy Credits' Guided Tour.",
       "placement": "top"
     }, {
       "beforeClick": {
@@ -87,7 +87,7 @@
     }, {
       "anchorEl": "osparc-test-id=updateStudyBtn",
       "title": "Update Services",
-      "text": "On the Plan card, you can use the Update button to update the corresponding service to the latest version.",
+      "text": "On the Plan card, you can use the Update button to update the corresponding service to its latest version.",
       "placement": "bottom"
     }]
   },

@@ -40,8 +40,6 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       }
     }
 
-    // override the css
-
     this.setLayout(new qx.ui.layout.Basic());
   },
 
@@ -103,6 +101,14 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           });
           const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint-small";
           control.getContentElement().addClass(classPrefix);
+          const colorManager = qx.theme.manager.Color.getInstance();
+          // override the css defined caret color depending on theme
+          const overrideCaretColor = () => {
+            const hintBg = colorManager.resolve("hint-background");
+            document.documentElement.style.setProperty("--hint-caret-color", hintBg);
+          };
+          colorManager.addListener("changeTheme", () => overrideCaretColor(), this);
+          overrideCaretColor();
           break;
         }
       }
