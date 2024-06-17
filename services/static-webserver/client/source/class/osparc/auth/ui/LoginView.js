@@ -96,7 +96,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
         if (config["invitation_required"]) {
-          if (osparc.product.Utils.isS4LProduct()) {
+          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
             this.fireEvent("toRequestAccount");
           } else {
             osparc.store.Support.openInvitationRequiredDialog();
