@@ -32,7 +32,7 @@ async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
 
 @pytest.fixture
 def lock_name(faker: Faker) -> str:
-    return faker.uuid4()
+    return faker.uuid4()  # type: ignore
 
 
 async def _contained_client(
