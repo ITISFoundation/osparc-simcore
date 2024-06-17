@@ -30,7 +30,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose spec version used in the compose-specs"
+        "3.8", description="docker-compose spec version used in the compose-specs", deprecated=True
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(

@@ -3,7 +3,6 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-version: "3.8"
 x-common-environment: &common-environment
   # Enforces *_DEBUG option in all services. ONLY allowed in devel-mode!
   DEBUG : "true"

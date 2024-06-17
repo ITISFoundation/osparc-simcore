@@ -15,7 +15,7 @@ from servicelib.deferred_tasks import (
     StartContext,
     TaskUID,
 )
-from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -54,7 +54,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 
 class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings, port: int) -> None:
-        self.redis_sdk = RedisClientSDK(
+        self.redis_client_sdk = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
         )
         self.port = port
@@ -63,10 +63,10 @@ class InMemoryLists:
         return f"in_memory_lists::{queue_name}.{self.port}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
-        await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
+        await self.redis_client_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
 
     async def get_all_from(self, queue_name: str) -> list:
-        return await self.redis_sdk.redis.lrange(
+        return await self.redis_client_sdk.redis.lrange(
             self._get_queue_name(queue_name), 0, -1
         )  # type: ignore
 
@@ -79,18 +79,18 @@ class ExampleApp:
         in_memory_lists: InMemoryLists,
         max_workers: NonNegativeInt,
     ) -> None:
-        self._redis_client = RedisClientSDKHealthChecked(
+        self._redis_client_sdk = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
         )
         self._manager = DeferredManager(
             rabbit_settings,
-            self._redis_client,
+            self._redis_client_sdk,
             globals_context={"in_memory_lists": in_memory_lists},
             max_workers=max_workers,
         )
 
     async def setup(self) -> None:
-        await self._redis_client.setup()
+        await self._redis_client_sdk.setup()
         await self._manager.setup()
 
 

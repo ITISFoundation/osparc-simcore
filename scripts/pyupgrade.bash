@@ -8,7 +8,7 @@ IFS=$'\n\t'
 #
 #
 # NOTE: check --py* flag in CLI when PYTHON_VERSION is modified
-PYTHON_VERSION=3.10.10
+PYTHON_VERSION=3.10.14
 IMAGE_NAME="local/pyupgrade-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
@@ -18,7 +18,7 @@ Build() {
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF
-FROM python:${PYTHON_VERSION}-slim-buster
+FROM python:${PYTHON_VERSION}-slim-bookworm
 RUN pip --no-cache-dir install --upgrade \
   pip \
   wheel \
