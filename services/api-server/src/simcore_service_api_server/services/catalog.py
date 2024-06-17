@@ -11,9 +11,12 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
-from simcore_service_api_server.exceptions.backend_errors import SolverNotFoundError
+from simcore_service_api_server.exceptions.backend_errors import (
+    CannotListSolversOrStudies,
+    SolverOrStudyNotFoundError,
+)
 
-from ..exceptions.service_errors_utils import ToApiTuple, service_exception_mapper
+from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
@@ -77,14 +80,7 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: "Could not list solvers/studies",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: CannotListSolversOrStudies})
     async def list_solvers(
         self,
         *,
@@ -124,7 +120,7 @@ class CatalogApi(BaseServiceClientApi):
                 )
         return solvers
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverNotFoundError})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError})
     async def get_service(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ) -> Solver:
@@ -153,14 +149,7 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get ports for solver/study {kwargs['name']}:{kwargs['version']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError})
     async def get_service_ports(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ):

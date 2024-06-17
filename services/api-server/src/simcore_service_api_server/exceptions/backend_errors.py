@@ -7,7 +7,11 @@ class BackEndException(ApiServerBaseError):
     pass
 
 
-class SolverNotFoundError(BackEndException):
+class CannotListSolversOrStudies(BackEndException):
+    msg_template = "Cannot list solvers/studies"
+
+
+class SolverOrStudyNotFoundError(BackEndException):
     msg_template = "Could not get solver/study {name}:{version}"
 
 
