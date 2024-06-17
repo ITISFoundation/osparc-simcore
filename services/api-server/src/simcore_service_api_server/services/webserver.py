@@ -52,6 +52,7 @@ from servicelib.common_headers import (
 )
 from simcore_service_api_server.exceptions.backend_errors import (
     ConfigurationError,
+    ProductPriceNotFoundError,
     ProjectAlreadyStartedException,
     SolverOutputNotFoundError,
 )
@@ -576,9 +577,7 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper(
-        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
     async def get_product_price(self) -> NonNegativeDecimal | None:
         response = await self.client.get(
             "/credits-price",

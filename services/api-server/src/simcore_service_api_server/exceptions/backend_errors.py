@@ -44,5 +44,10 @@ class ConfigurationError(BackEndException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class ProductPriceNotFoundError(BackEndException):
+    msg_template = "Product price not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
 class ProjectAlreadyStartedException(BackEndException):
     pass
