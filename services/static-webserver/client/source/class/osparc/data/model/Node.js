@@ -1329,8 +1329,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
+      console.log("__waitForServiceReady");
       fetch(srvUrl)
         .then(request => {
+          console.log("request", request);
           /*
           if (request.status >= 200 || request.status < 300) {
             this.__waitForServiceWebsite(srvUrl)
@@ -1338,9 +1340,9 @@ qx.Class.define("osparc.data.model.Node", {
           */
           // instead of
           // - requesting its frontend to make sure it is ready and ...
-          // - wait for the "load" event triggered by the content of the iframe
+          // - waiting for the "load" event triggered by the content of the iframe
           // we will skip those steps and directly switch its iframe
-          this.__waitForServiceWebsite(srvUrl);
+          this.__serviceReadyIn(srvUrl);
         })
         .catch(err => {
           this.getStatus().setInteractive("connecting");
