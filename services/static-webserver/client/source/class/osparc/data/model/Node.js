@@ -1245,13 +1245,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
-            // this.__waitForServiceReady(srvUrl);
-            // instead of
-            // - waiting for the service to be ready (pings) and ...
-            // - request its frontend to make sure it is ready and ...
-            // - wait for the "load" event triggered by the content of the iframe
-            // we will skip those steps and directly switch its iframe
-            this.__serviceReadyIn(srvUrl);
+            this.__waitForServiceReady(srvUrl);
           }
           break;
         }
@@ -1337,9 +1331,16 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really ready
       fetch(srvUrl)
         .then(request => {
+          /*
           if (request.status >= 200 || request.status < 300) {
             this.__waitForServiceWebsite(srvUrl)
           }
+          */
+          // instead of
+          // - requesting its frontend to make sure it is ready and ...
+          // - wait for the "load" event triggered by the content of the iframe
+          // we will skip those steps and directly switch its iframe
+          this.__waitForServiceWebsite(srvUrl);
         })
         .catch(err => {
           this.getStatus().setInteractive("connecting");
