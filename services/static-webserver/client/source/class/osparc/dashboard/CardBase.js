@@ -758,7 +758,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       Promise.all([
         store.getGroupEveryone(),
         store.getProductEveryone(),
-        store.getVisibleMembers(),
+        store.getReachableMembers(),
         store.getGroupsOrganizations()
       ])
         .then(values => {
