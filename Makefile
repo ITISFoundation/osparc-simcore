@@ -465,7 +465,7 @@ push-version: tag-version
 				uv --version; \
 		fi
 		# upgrading uv
-		@uv self --quiet update
+		-@uv self --quiet update
 
 
 .venv: .check-uv-installed
