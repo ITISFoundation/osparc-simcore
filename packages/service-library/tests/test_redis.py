@@ -119,7 +119,7 @@ async def test_redis_lock_context_manager(
         same_lock = redis_client_sdk.redis.lock(lock_name, blocking_timeout=1)
         assert await same_lock.locked()
         assert not await same_lock.owned()
-        assert await same_lock.acquire() == False
+        assert await same_lock.acquire() is False
         with pytest.raises(LockError):
             async with same_lock:
                 ...
@@ -134,7 +134,7 @@ async def test_redis_lock_with_ttl(
     )
     assert not await ttl_lock.locked()
 
-    with pytest.raises(LockNotOwnedError):
+    with pytest.raises(LockNotOwnedError):  # noqa: PT012
         # this raises as the lock is lost
         async with ttl_lock:
             assert await ttl_lock.locked()
@@ -204,10 +204,11 @@ async def test_lock_context_released_after_error(
 
     assert await redis_client_sdk.lock_value(lock_name) is None
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError):  # noqa: PT012
         async with redis_client_sdk.lock_context(lock_name):
             assert await redis_client_sdk.redis.get(lock_name) is not None
-            raise RuntimeError("Expected error")
+            msg = "Expected error"
+            raise RuntimeError(msg)
 
     assert await redis_client_sdk.lock_value(lock_name) is None
 
@@ -230,14 +231,18 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             current_value = self.value
             current_value += by
             # most likely situation which creates issues
-            await asyncio.sleep(servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2)
+            await asyncio.sleep(
+                servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2  # noqa: SLF001
+            )
             self.value = current_value
 
     counter = RaceConditionCounter()
     lock_name: str = faker.pystr()
     # ensures it does nto time out before acquiring the lock
     time_for_all_inc_counter_calls_to_finish_s: float = (
-        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
+        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds()  # noqa: SLF001
+        * INCREASE_OPERATIONS
+        * 10
     )
 
     async def _inc_counter() -> None:
