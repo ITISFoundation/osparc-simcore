@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management

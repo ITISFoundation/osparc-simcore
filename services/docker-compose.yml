@@ -1,4 +1,3 @@
-version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
@@ -300,6 +299,11 @@ services:
       R_CLONE_OPTION_TRANSFERS: ${R_CLONE_OPTION_TRANSFERS}
       R_CLONE_PROVIDER: ${R_CLONE_PROVIDER}
 
+      EFS_DNS_NAME: ${EFS_DNS_NAME}
+      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
+      EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
+      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
+
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -358,6 +362,8 @@ services:
       RABBIT_USER: ${RABBIT_USER}
       EFS_DNS_NAME: ${EFS_DNS_NAME}
       EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
+      EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
+      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -521,7 +527,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
       AIODEBUG_SLOW_DURATION_SECS: ${AIODEBUG_SLOW_DURATION_SECS}
 
@@ -727,7 +733,7 @@ services:
   wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<: *webserver_environment
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
@@ -740,7 +746,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
@@ -824,7 +830,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_GC_LOGLEVEL}
 

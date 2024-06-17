@@ -1,5 +1,3 @@
-version: '3.8'
-services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
   api-server:

@@ -98,6 +98,7 @@ def app_environment(
             "EFS_DNS_NAME": "fs-xxx.efs.us-east-1.amazonaws.com",
             "EFS_MOUNTED_PATH": "/tmp/efs",
             "EFS_PROJECT_SPECIFIC_DATA_DIRECTORY": "project-specific-data",
+            "EFS_ONLY_ENABLED_FOR_USERIDS": "[]",
         },
     )
 
@@ -139,17 +140,3 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
-
-
-# @pytest.fixture
-# def mocked_setup_rabbitmq(mocker: MockerFixture):
-#     return (
-#         mocker.patch(
-#             "simcore_service_efs_guardian.core.application.setup_rabbitmq",
-#             autospec=True,
-#         ),
-#         mocker.patch(
-#             "simcore_service_efs_guardian.core.application.setup_rpc_routes",
-#             autospec=True,
-#         ),
-#     )

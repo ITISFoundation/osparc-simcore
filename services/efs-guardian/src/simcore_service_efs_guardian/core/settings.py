@@ -1,5 +1,4 @@
 from functools import cached_property
-from pathlib import Path
 from typing import Final, cast
 
 from fastapi import FastAPI
@@ -11,24 +10,13 @@ from models_library.basic_types import (
 )
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 EFS_GUARDIAN_ENV_PREFIX: Final[str] = "EFS_GUARDIAN_"
-
-
-class AwsEfsSettings(BaseCustomSettings):
-    EFS_DNS_NAME: str = Field(
-        description="AWS Elastic File System DNS name",
-        example="fs-xxx.efs.us-east-1.amazonaws.com",
-    )
-    EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: str = Field(default="project-specific-data")
-    EFS_MOUNTED_PATH: Path = Field(
-        default=Path("/data/efs"),
-        description="This is the path where EFS is mounted to the EC2 machine",
-    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
