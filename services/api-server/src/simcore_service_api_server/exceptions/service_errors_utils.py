@@ -64,7 +64,7 @@ def _get_http_exception_kwargs(
 
     if mapped := http_status_map.get(service_error.response.status_code):
         raise mapped(**detail_kwargs)
-    elif service_error.response.status_code in {
+    if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,
         status.HTTP_504_GATEWAY_TIMEOUT,
