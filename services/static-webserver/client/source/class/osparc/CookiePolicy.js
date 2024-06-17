@@ -72,8 +72,8 @@ qx.Class.define("osparc.CookiePolicy", {
       let control;
       switch (id) {
         case "cookie-text": {
-          const textLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
-          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink + ".";
+          const link = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
@@ -84,8 +84,8 @@ qx.Class.define("osparc.CookiePolicy", {
           break;
         }
         case "cookie-text-s4l": {
-          const textLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("Privacy Policy");
-          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink + ".";
+          const link = osparc.CookiePolicy.getS4LPrivacyPolicyLink("Privacy Policy");
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
