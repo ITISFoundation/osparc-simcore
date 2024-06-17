@@ -12,7 +12,7 @@ import random
 import re
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from faker import Faker
@@ -298,7 +298,7 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[tuple[RunningState]], str]]:
+) -> Iterator[Callable[[tuple[RunningState]], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -306,7 +306,7 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-    ) -> str:
+    ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
@@ -335,7 +335,7 @@ def create_new_project_and_delete(
             )
 
             created_project_uuids.append(project_uuid)
-            return project_uuid
+            return project_data["data"]
 
     yield _
 
@@ -378,7 +378,7 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
-def find_service_in_dashboard(
+def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
     def _(
@@ -400,13 +400,15 @@ def find_service_in_dashboard(
 
 @pytest.fixture
 def create_project_from_service_dashboard(
-    find_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], str],
-) -> Callable[[ServiceType, str, str | None], str]:
+    find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
     def _(
         service_type: ServiceType, service_name: str, service_key_prefix: str | None
-    ) -> str:
-        find_service_in_dashboard(service_type, service_name, service_key_prefix)
+    ) -> dict[str, Any]:
+        find_and_start_service_in_dashboard(
+            service_type, service_name, service_key_prefix
+        )
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)

@@ -6,21 +6,51 @@
 # pylint: disable=unnecessary-lambda
 
 import logging
-import re
 from http import HTTPStatus
+from typing import Any, Callable
 
+import pytest
 from playwright.sync_api import APIRequestContext, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import SocketIOOsparcMessagePrinter
+from pytest_simcore.playwright_utils import RunningState, SocketIOOsparcMessagePrinter
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 
+@pytest.fixture
+def find_and_start_tip_plan_in_dashboard(
+    page: Page,
+) -> Callable[[str], None]:
+    def _(
+        plan_name_test_id: str,
+    ) -> None:
+        with log_context(logging.INFO, f"Finding {plan_name_test_id=} in dashboard"):
+            page.get_by_test_id("servicesTabBtn").click()
+            page.get_by_test_id("newStudyBtn").click()
+            page.get_by_test_id(plan_name_test_id).click()
+
+    return _
+
+
+@pytest.fixture
+def create_tip_plan_from_dashboard(
+    find_and_start_tip_plan_in_dashboard: Callable[[str], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+) -> Callable[[str], dict[str, Any]]:
+    def _(plan_name_test_id: str) -> dict[str, Any]:
+        find_and_start_tip_plan_in_dashboard(plan_name_test_id)
+        expected_states = (RunningState.UNKNOWN,)
+        return create_new_project_and_delete(expected_states)
+
+    return _
+
+
 def test_tip(
     page: Page,
+    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
@@ -32,34 +62,17 @@ def test_tip(
     log_in_and_out.on("framereceived", handler)
 
     # open studies tab and filter
-    page.get_by_test_id("studiesTabBtn").click()
-    _textbox = page.get_by_test_id("searchBarFilter-textField-study")
-    _textbox.fill("Classic TI")
-    _textbox.press("Enter")
+    project_data = create_tip_plan_from_dashboard("newTIPlanButton")
+    assert "uuid" in project_data
+    assert isinstance(project_data["uuid"], str)
+    project_uuid = project_data["uuid"]
 
-    with page.expect_response(re.compile(r"/projects/[^:]+:open")) as response_info:
-        page.get_by_test_id("newStudyBtn").click()
-        page.get_by_test_id("newTIPlanButton").click()
-        if product_billable:
-            # Open project with default resources
-            page.get_by_test_id("openWithResources").click()
-        page.wait_for_timeout(1000)
-
-    project_data = response_info.value.json()
-    assert project_data
-    project_uuid = project_data["data"]["uuid"]
-    print("project uuid: ", project_uuid)
-    node_ids = []
-    workbench = project_data["data"]["workbench"]
-    for node_id in workbench.keys():
-        print("node_id: ", node_id)
-        print("key: ", workbench[node_id]["key"])
-        print("version: ", workbench[node_id]["version"])
-        node_ids.append(node_id)
+    assert "workbench" in project_data
+    assert isinstance(project_data["workbench"], dict)
+    node_ids: list[str] = list(project_data["workbench"])
 
     # let it start or force
     with log_context(logging.INFO, "Starting with Electrode Selector"):
-        page.wait_for_timeout(5000)
         start_button = page.get_by_test_id("Start_" + node_ids[0])
         if start_button.is_visible() and start_button.is_enabled():
             start_button.click()
