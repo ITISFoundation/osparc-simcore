@@ -195,7 +195,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // accept links
       // Privacy Policy link
-      const ppLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("our privacy policy");
+      let ppLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("our privacy policy");
+      if (osparc.product.Utils.isProduct("tis")) {
+        ppLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("our privacy policy");
+      }
       const ppText = this.tr("I acknowledge that data will be processed in accordance with ") + ppLink;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
