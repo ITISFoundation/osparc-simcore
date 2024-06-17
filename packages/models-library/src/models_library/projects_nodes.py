@@ -32,13 +32,12 @@ from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 
-# NOTE: WARNING the order here matters
-
 InputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
+    Json,
     str,
     PortLink,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
@@ -46,10 +45,11 @@ InputTypes = Union[
     list[Any] | dict[str, Any],  # arrays | object
 ]
 OutputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # TODO: remove when OM sends object/array instead of json-formatted strings
+    Json,
     str,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
     DownloadLink,
