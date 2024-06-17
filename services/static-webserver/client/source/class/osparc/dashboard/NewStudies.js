@@ -18,10 +18,11 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudies) {
+  construct: function(newStudies, groups) {
     this.base(arguments);
 
     this.__newStudies = newStudies;
+    this.__groups = groups || [];
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -52,6 +53,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
   members: {
     __newStudies: null,
+    __groups: null,
     __flatList: null,
     __groupedContainers: null,
 
@@ -62,10 +64,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
 
-        const categories = new Set([]);
-        this.__newStudies.forEach(newStudy => newStudy.category && categories.add(newStudy.category));
-        Array.from(categories).forEach(category => {
-          const groupContainer = this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent");
+        Array.from(this.__groups).forEach(group => {
+          const groupContainer = this.__createGroupContainer(group.id, group.label, "transparent");
           this._add(groupContainer);
         });
       } else {

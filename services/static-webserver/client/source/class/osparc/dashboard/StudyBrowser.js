@@ -516,7 +516,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     newStudyBtn.setValue(false);
 
                     const foundTemplates = newButtonsInfo.filter(newButtonInfo => templates.find(t => t.name === newButtonInfo.expectedTemplateLabel));
-                    const newStudies = new osparc.dashboard.NewStudies(foundTemplates);
+                    const groups = newStudiesData[product].categories;
+                    const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
                     const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
