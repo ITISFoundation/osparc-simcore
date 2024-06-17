@@ -5,11 +5,8 @@ from typing import Any
 from pydantic import schema_of
 
 from ...projects_nodes import OutputID, OutputsDict
-from ...services import (
-    LATEST_INTEGRATION_VERSION,
-    ServiceMetaDataPublished,
-    ServiceType,
-)
+from ...services import ServiceMetaDataPublished, ServiceType
+from ...services_constants import LATEST_INTEGRATION_VERSION
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
 

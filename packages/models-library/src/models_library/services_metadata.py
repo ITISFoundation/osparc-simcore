@@ -4,8 +4,8 @@ from typing import Any, ClassVar
 from pydantic import Field, HttpUrl
 
 from .services_base import ServiceBase
+from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_enums import ServiceType
-from .services_regex import LATEST_INTEGRATION_VERSION
 from .services_types import DynamicServiceKey, ServiceKey, ServiceVersion
 
 assert DynamicServiceKey  # nosec

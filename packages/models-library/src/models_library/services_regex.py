@@ -34,17 +34,11 @@ DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
 )
 DYNAMIC_SERVICE_KEY_FORMAT = "simcore/services/dynamic/{service_name}"
 
+
+# Computational regex & format
 COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/comp/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
-
-
 COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = "simcore/services/comp/{service_name}"
-
-
-LATEST_INTEGRATION_VERSION: Final[str] = "1.0.0"
-
-
-ANY_FILETYPE: Final[str] = "data:*/*"
