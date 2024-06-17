@@ -94,5 +94,35 @@ class PricingPlanNotFoundError(BackEndException):
     status_code = status.HTTP_404_NOT_FOUND
 
 
+class SolverNotFoundError(BackEndException):
+    msg_template = "Solver not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class TooManyRequestsError(BackEndException):
+    msg_template = "Too many requests"
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+
+
+class InternalServerError(BackEndException):
+    msg_template = "Internal server error"
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class BadGatewayError(BackEndException):
+    msg_template = "Unexpected error when communicating with backend service"
+    status_code = status.HTTP_502_BAD_GATEWAY
+
+
+class ServiceUnavailableError(BackEndException):
+    msg_template = "Service unavailable"
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+class GatewayTimeOutError(BackEndException):
+    msg_template = "Request to a backend service timed out"
+    status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
+
 class ProjectAlreadyStartedException(BackEndException):
     pass

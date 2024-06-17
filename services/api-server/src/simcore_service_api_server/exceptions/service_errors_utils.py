@@ -1,56 +1,40 @@
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, NamedTuple, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 import httpx
+from asyncpg import InternalServerError
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from simcore_service_api_server.exceptions.backend_errors import BackEndException
-
-from ..models.schemas.errors import ErrorGet
+from simcore_service_api_server.exceptions.backend_errors import (
+    BackEndException,
+    BadGatewayError,
+    GatewayTimeOutError,
+    ServiceUnavailableError,
+    TooManyRequestsError,
+)
 
 _logger = logging.getLogger(__name__)
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
 
-DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
-    status.HTTP_429_TOO_MANY_REQUESTS: {
-        "description": "Too many requests",
-        "model": ErrorGet,
-    },
-    status.HTTP_500_INTERNAL_SERVER_ERROR: {
-        "description": "Internal server error",
-        "model": ErrorGet,
-    },
-    status.HTTP_502_BAD_GATEWAY: {
-        "description": "Unexpected error when communicating with backend service",
-        "model": ErrorGet,
-    },
-    status.HTTP_503_SERVICE_UNAVAILABLE: {
-        "description": "Service unavailable",
-        "model": ErrorGet,
-    },
-    status.HTTP_504_GATEWAY_TIMEOUT: {
-        "description": "Request to a backend service timed out.",
-        "model": ErrorGet,
-    },
-}
-
-
 ServiceHTTPStatus: TypeAlias = int
 ApiHTTPStatus: TypeAlias = int
-
-
-class ToApiTuple(NamedTuple):
-    status_code: ApiHTTPStatus
-    detail: Callable[[Any], str] | str | None = None
-
 
 # service to public-api status maps
 E = TypeVar("E", bound=BackEndException)
 HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, E]
+
+
+DEFAULT_BACKEND_SERVICE_STATUS_CODES: HttpStatusMap = {
+    status.HTTP_429_TOO_MANY_REQUESTS: TooManyRequestsError,
+    status.HTTP_500_INTERNAL_SERVER_ERROR: InternalServerError,
+    status.HTTP_502_BAD_GATEWAY: BadGatewayError,
+    status.HTTP_503_SERVICE_UNAVAILABLE: ServiceUnavailableError,
+    status.HTTP_504_GATEWAY_TIMEOUT: GatewayTimeOutError,
+}
 
 
 def _get_http_exception_kwargs(
