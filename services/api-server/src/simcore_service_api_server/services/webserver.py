@@ -53,7 +53,6 @@ from servicelib.common_headers import (
 from simcore_service_api_server.exceptions.backend_errors import (
     ConfigurationError,
     ForbiddenWalletError,
-    JobNotFoundError,
     ListJobsError,
     PaymentRequiredError,
     PricingPlanNotFoundError,
@@ -92,7 +91,10 @@ _exception_mapper = partial(service_exception_mapper, "Webserver")
 
 _JOB_STATUS_MAP: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
-    status.HTTP_404_NOT_FOUND: JobNotFoundError,
+    status.HTTP_404_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        lambda kwargs: "The job/study/wallet/pricing details could not be found",
+    ),
 }
 
 _PROFILE_STATUS_MAP: Mapping = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}

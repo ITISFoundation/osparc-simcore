@@ -1,21 +1,18 @@
 import logging
 from collections.abc import Callable
 from operator import attrgetter
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
-from simcore_service_api_server.exceptions.backend_errors import SolverNotFoundError
 
-from ...exceptions.service_errors_utils import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-    HttpStatusMap,
-)
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -26,8 +23,11 @@ from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 
-_SOLVER_STATUS_CODES: HttpStatusMap = {
-    status.HTTP_404_NOT_FOUND: SolverNotFoundError
+_SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Not found",
+        "model": ErrorGet,
+    }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 router = APIRouter()
