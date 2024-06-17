@@ -8,7 +8,9 @@ from models_library.projects_nodes_io import BaseFileLink, NodeIDStr
 from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
-from simcore_service_api_server.exceptions.backend_errors import SolverOutputNotFound
+from simcore_service_api_server.exceptions.backend_errors import (
+    SolverOutputNotFoundError,
+)
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +46,4 @@ async def get_solver_output_results(
         return solver_output_results
 
     except node_ports_v2.exceptions.NodeNotFound as err:
-        raise SolverOutputNotFound(
-            node_uuid=node_uuid, project_uuid=project_uuid
-        ) from err
+        raise SolverOutputNotFoundError(project_uuid=project_uuid) from err

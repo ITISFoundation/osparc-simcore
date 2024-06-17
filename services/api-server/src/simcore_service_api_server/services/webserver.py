@@ -51,8 +51,11 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from simcore_service_api_server.exceptions.backend_errors import (
+    ConfigurationError,
     ProjectAlreadyStartedException,
+    SolverOutputNotFoundError,
 )
+from simcore_service_director_v2.core.errors import ClusterNotFoundError
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -455,14 +458,8 @@ class AuthSession:
         _JOB_STATUS_MAP
         | {
             status.HTTP_409_CONFLICT: ProjectAlreadyStartedException,
-            status.HTTP_406_NOT_ACCEPTABLE: (
-                status.HTTP_406_NOT_ACCEPTABLE,
-                lambda kwargs: "Cluster not found",
-            ),
-            status.HTTP_422_UNPROCESSABLE_ENTITY: (
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                lambda kwargs: "Configuration error",
-            ),
+            status.HTTP_406_NOT_ACCEPTABLE: ClusterNotFoundError,
+            status.HTTP_422_UNPROCESSABLE_ENTITY: ConfigurationError,
         }
     )
     async def start_project(
@@ -514,9 +511,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError})
     async def get_project_outputs(
         self, project_id: ProjectID
     ) -> dict[NodeID, dict[str, Any]]:

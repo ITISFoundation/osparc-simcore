@@ -11,7 +11,7 @@ from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
 from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
-    LogFileNotFound,
+    LogFileNotFoundError,
 )
 from starlette import status
 
@@ -164,7 +164,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFound})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:

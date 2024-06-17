@@ -24,14 +24,24 @@ class JobNotFoundError(BackEndException):
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class LogFileNotFound(BackEndException):
+class LogFileNotFoundError(BackEndException):
     msg_template = "Could not get logfile for solver/study job {project_id}"
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class SolverOutputNotFound(BackEndException):
-    msg_template = "Solver {node_uuid} output of project {project_uuid} not found"
+class SolverOutputNotFoundError(BackEndException):
+    msg_template = "Solver output of project {project_uuid} not found"
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class ClusterNotFoundError(BackEndException):
+    msg_template = "Cluster not found"
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+
+
+class ConfigurationError(BackEndException):
+    msg_template = "Configuration error"
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 class ProjectAlreadyStartedException(BackEndException):
