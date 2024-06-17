@@ -12,7 +12,7 @@ from models_library.services import ServiceDockerData, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 from simcore_service_api_server.exceptions.backend_errors import (
-    CannotListSolversOrStudies,
+    ListSolversOrStudiesError,
     SolverOrStudyNotFoundError,
 )
 
@@ -80,7 +80,7 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: CannotListSolversOrStudies})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError})
     async def list_solvers(
         self,
         *,
