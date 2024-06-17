@@ -72,15 +72,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-      preResourcePromises.push(this.__getActiveStudy());
-      Promise.all(preResourcePromises)
+      this.__getActiveStudy()
         .then(() => {
           this.getChildControl("resources-layout");
           this.__attachEventHandlers();
@@ -100,23 +92,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getActiveStudy: function() {
-      return new Promise(resolve => {
-        const params = {
-          url: {
-            tabId: osparc.utils.Utils.getClientSessionID()
+      const params = {
+        url: {
+          tabId: osparc.utils.Utils.getClientSessionID()
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getActive", params)
+        .then(studyData => {
+          if (studyData) {
+            osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
           }
-        };
-        osparc.data.Resources.fetch("studies", "getActive", params)
-          .then(studyData => {
-            if (studyData) {
-              osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
-              resolve(studyData["uuid"]);
-            } else {
-              resolve(null);
-            }
-          })
-          .catch(err => console.error(err));
-      });
+        })
+        .catch(err => console.error(err));
     },
 
     reloadResources: function() {

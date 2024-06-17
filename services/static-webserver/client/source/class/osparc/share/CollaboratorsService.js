@@ -34,13 +34,13 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this._resourceType = "service";
     const serviceDataCopy = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    if (serviceData.resourceType === "service") {
-      osparc.data.Roles.createServicesRolesResourceInfo();
-    }
+    osparc.data.Roles.createServicesRolesResourceInfo();
 
-    const initCollabs = this.self().getEveryoneObj();
+    const initCollabs = [];
+    initCollabs.push(this.self().getEveryoneProductObj());
+    initCollabs.push(this.self().getEveryoneObj());
 
-    this.base(arguments, serviceDataCopy, [initCollabs]);
+    this.base(arguments, serviceDataCopy, initCollabs);
   },
 
   events: {
@@ -71,8 +71,16 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       };
     },
 
+    getEveryoneProductObj: function() {
+      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
+      everyone["accessRights"] = this.getCollaboratorAccessRight();
+      return everyone;
+    },
+
     getEveryoneObj: function() {
-      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
       everyone["accessRights"] = this.getCollaboratorAccessRight();
       return everyone;
     }
