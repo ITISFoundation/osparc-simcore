@@ -32,6 +32,7 @@ __all__: tuple[str, ...] = (
     "Author",
     "Badge",
     "BaseServiceIOModel",
+    "BootOptions",
     "DynamicServiceKey",
     "LATEST_INTEGRATION_VERSION",
     "RunID",
