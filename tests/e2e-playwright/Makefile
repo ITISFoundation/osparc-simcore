@@ -164,3 +164,28 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_USER_INPUT_FILE) ## test 
 clean:
 	@rm -rf $(USER_INPUT_FILE)
 	@rm -rf $(JUPYTER_USER_INPUT_FILE)
+
+
+# Define the file where user input will be saved
+CLASSIC_TIP_USER_INPUT_FILE := .e2e-playwright-classictip-env.txt
+$(CLASSIC_TIP_USER_INPUT_FILE): ## Prompt the user for input and store it into variables
+		@read -p "Enter your product URL: " PRODUCT_URL; \
+		read -p "Is the product billable [y/n]: " BILLABLE; \
+		read -p "Enter your username: " USER_NAME; \
+		read -s -p "Enter your password: " PASSWORD; echo ""; \
+		echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD $$BILLABLE" > $(CLASSIC_TIP_USER_INPUT_FILE)
+
+test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_USER_INPUT_FILE) ## test tip anywhere and keeps a cache as to where
+	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD BILLABLE < $(CLASSIC_TIP_USER_INPUT_FILE); \
+	BILLABLE_FLAG=""; \
+    if [ "$$BILLABLE" = "y" ]; then \
+        BILLABLE_FLAG="--product-billable"; \
+    fi; \
+	pytest -s tests/ti_plan/ti_plan.py \
+		--color=yes \
+		--product-url=$$PRODUCT_URL \
+		--user-name=$$USER_NAME \
+		--password=$$PASSWORD \
+		$$BILLABLE_FLAG \
+		--browser chromium \
+		--headed
