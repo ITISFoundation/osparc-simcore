@@ -7,7 +7,7 @@ from typing import Any, NamedTuple, TypeAlias, TypeVar
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from simcore_service_api_server.exceptions.backend_errors import BackEndException
+from simcore_service_api_server.exceptions.backend_errors import BackEndError
 
 from ..models.schemas.errors import ErrorGet
 
@@ -49,7 +49,7 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-E = TypeVar("E", bound=BackEndException)
+E = TypeVar("E", bound=BackEndError)
 HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, E]
 
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
-from simcore_service_api_server.exceptions.backend_errors import BackEndException
+from simcore_service_api_server.exceptions.backend_errors import BackEndError
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -24,7 +24,7 @@ def setup(app: FastAPI, *, is_debug: bool = False):
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     app.add_exception_handler(LogStreamingBaseError, log_handling_error_handler)
     app.add_exception_handler(CustomBaseError, custom_error_handler)
-    app.add_exception_handler(BackEndException, backend_error_handler)
+    app.add_exception_handler(BackEndError, backend_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
