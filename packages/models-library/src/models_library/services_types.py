@@ -5,7 +5,7 @@ import arrow
 from pydantic import ConstrainedStr
 
 from .basic_regex import PROPERTY_KEY_RE, VERSION_RE
-from .services_constants import (
+from .services_regex import (
     COMPUTATIONAL_SERVICE_KEY_RE,
     DYNAMIC_SERVICE_KEY_RE,
     FILENAME_RE,

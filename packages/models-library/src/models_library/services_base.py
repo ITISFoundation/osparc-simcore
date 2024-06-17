@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, HttpUrl, validator
 
-from .services_constrained_types import ServiceKey, ServiceVersion
+from .services_types import ServiceKey, ServiceVersion
 from .utils.common_validators import empty_str_to_none_pre_validator
 
 

@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from models_library.basic_regex import VERSION_RE
 from models_library.services import BootOption, ServiceBase, ServiceMetaDataPublished
-from models_library.services_constants import (
+from models_library.services_regex import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_ENCODED_KEY_RE,

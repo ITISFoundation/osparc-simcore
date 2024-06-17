@@ -10,8 +10,8 @@ from pydantic import (
     validator,
 )
 
-from .services_constants import ANY_FILETYPE, PROPERTY_TYPE_RE
-from .services_constrained_types import FileName, ServicePortKey
+from .services_regex import ANY_FILETYPE, PROPERTY_TYPE_RE
+from .services_types import FileName, ServicePortKey
 from .services_ui import Widget
 from .utils.json_schema import (
     InvalidJsonSchema,
