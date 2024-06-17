@@ -49,7 +49,7 @@ class ServiceType(str, Enum):
     BACKEND = "backend"
 
 
-# TODO: create a flags enum that accounts for every column
+# NOTE on services:
 #
 # | service name    | defininition | implementation | runs                    | ``ServiceType``               |                 |
 # | --------------- | ------------ | -------------- | ----------------------- | ----------------------------- | --------------- |
