@@ -75,6 +75,7 @@ class RedisClientSDK:
             socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
             decode_responses=self.decode_responses,
+            auto_close_connection_pool=True,
         )
 
     @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
@@ -103,7 +104,7 @@ class RedisClientSDK:
             )
 
         # NOTE: redis-py does not yet completely fill all the needed types for mypy
-        await self._client.aclose()  # type: ignore[attr-defined]
+        await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):

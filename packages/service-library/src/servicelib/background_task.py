@@ -85,11 +85,11 @@ async def cancel_task(
         up the cancellation. If None it waits forever.
     :raises TryAgain: raised if cannot cancel the task.
     """
-    task.cancel()
     async for attempt in AsyncRetrying(
         stop=stop_after_attempt(cancellation_attempts), reraise=True
     ):
         with attempt:
+            task.cancel()
             _, pending = await asyncio.wait((task,), timeout=timeout)
             if pending:
                 task_name = task.get_name()

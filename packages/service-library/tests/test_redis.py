@@ -213,7 +213,11 @@ async def test_lock_context_released_after_error(
 
 
 async def test_lock_acquired_in_parallel_to_update_same_resource(
-    mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
+    mock_default_lock_ttl: None,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    faker: Faker,
 ):
     INCREASE_OPERATIONS: Final[int] = 250
     INCREASE_BY: Final[int] = 10
@@ -237,12 +241,15 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     )
 
     async def _inc_counter() -> None:
-        async with redis_client_sdk.lock_context(
-            lock_key=lock_name,
-            blocking=True,
-            blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
-        ):
-            await counter.race_condition_increase(INCREASE_BY)
+        async with get_redis_client_sdk(  # noqa: SIM117
+            RedisDatabase.RESOURCES
+        ) as redis_client_sdk:
+            async with redis_client_sdk.lock_context(
+                lock_key=lock_name,
+                blocking=True,
+                blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
+            ):
+                await counter.race_condition_increase(INCREASE_BY)
 
     await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
