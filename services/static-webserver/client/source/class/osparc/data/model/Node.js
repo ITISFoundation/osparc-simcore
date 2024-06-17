@@ -1329,10 +1329,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
-      console.log("__waitForServiceReady");
       fetch(srvUrl)
         .then(request => {
-          console.log("request", request);
           /*
           if (request.status >= 200 || request.status < 300) {
             this.__waitForServiceWebsite(srvUrl)
