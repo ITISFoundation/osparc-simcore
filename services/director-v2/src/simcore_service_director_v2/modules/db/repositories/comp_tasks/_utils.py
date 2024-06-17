@@ -89,7 +89,10 @@ async def _get_service_details(
         node.version,
         product_name,
     )
-    return ServiceMetaDataPublished.construct(**service_details)
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.construct(
+        **service_details
+    )
+    return obj
 
 
 def _compute_node_requirements(

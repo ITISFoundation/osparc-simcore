@@ -10,7 +10,7 @@ from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
 def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
-    return ServiceMetaDataPublished.parse_obj(
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.parse_obj(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/{type_name}",
@@ -34,6 +34,7 @@ def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
             "outputs": {},
         }
     )
+    return obj
 
 
 META_NUMBER: Final = _create_metadata("number")

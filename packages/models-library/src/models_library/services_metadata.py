@@ -16,11 +16,7 @@ assert ServiceVersion  # nosec
 
 
 class ServiceMetaDataEditable(ServiceBase):
-    # Overrides all fields of BaseServiceCommonDataModel:
-    #    - for a partial update all members must be Optional
-    #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
-    #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
-    #
+    # Overrides all fields of ServiceBase for a partial update all members must be Optional
 
     name: str | None
     thumbnail: HttpUrl | None
@@ -32,7 +28,7 @@ class ServiceMetaDataEditable(ServiceBase):
 
     # user-defined metatada
     classifiers: list[str] | None
-    quality: dict[str, Any] = {}
+    quality: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

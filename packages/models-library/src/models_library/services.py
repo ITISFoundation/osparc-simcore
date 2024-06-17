@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias
 
 from pydantic import Extra, Field, NonNegativeInt
 
@@ -8,7 +8,7 @@ from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_authoring import Author, Badge
 from .services_base import ServiceBase, ServiceKeyVersion
-from .services_constants import LATEST_INTEGRATION_VERSION
+from .services_constants import ANY_FILETYPE, LATEST_INTEGRATION_VERSION
 from .services_constrained_types import (
     DynamicServiceKey,
     RunID,
@@ -49,7 +49,7 @@ ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]
 ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]
 
 
-_EXAMPLE = {
+_EXAMPLE: Final = {
     "name": "oSparc Python Runner",
     "key": "simcore/services/comp/osparc-python-runner",
     "type": "computational",
@@ -75,7 +75,7 @@ _EXAMPLE = {
             "displayOrder": 1,
             "label": "Input data",
             "description": "Any code, requirements or data file",
-            "type": "data:*/*",
+            "type": ANY_FILETYPE,
         }
     },
     "outputs": {
@@ -83,7 +83,7 @@ _EXAMPLE = {
             "displayOrder": 1,
             "label": "Output data",
             "description": "All data produced by the script is zipped as output_data.zip",
-            "type": "data:*/*",
+            "type": ANY_FILETYPE,
             "fileToKeyMap": {"output_data.zip": "output_1"},
         }
     },
@@ -96,14 +96,14 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
         "input_1": {
             "label": "Input data",
             "description": "Any code, requirements or data file",
-            "type": "data:*/*",
+            "type": ANY_FILETYPE,
         }
     },
     "outputs": {
         "output_1": {
             "label": "Output data",
             "description": "All data produced by the script is zipped as output_data.zip",
-            "type": "data:*/*",
+            "type": ANY_FILETYPE,
             "fileToKeyMap": {"output_data.zip": "output_1"},
         }
     },

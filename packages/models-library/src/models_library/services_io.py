@@ -10,7 +10,7 @@ from pydantic import (
     validator,
 )
 
-from .services_constants import PROPERTY_TYPE_RE
+from .services_constants import ANY_FILETYPE, PROPERTY_TYPE_RE
 from .services_constrained_types import FileName, ServicePortKey
 from .services_ui import Widget
 from .utils.json_schema import (
@@ -50,7 +50,7 @@ class BaseServiceIOModel(BaseModel):
         examples=[
             "number",
             "boolean",
-            "data:*/*",
+            ANY_FILETYPE,
             "data:text/*",
             "data:[image/jpeg,image/png]",
             "data:application/json",
@@ -148,7 +148,7 @@ class ServiceInput(BaseServiceIOModel):
                     "displayOrder": 1,
                     "label": "Input files - file-wo-widget",
                     "description": "Files downloaded from service connected at the input",
-                    "type": "data:*/*",
+                    "type": ANY_FILETYPE,
                 },
                 # v2
                 {
@@ -223,13 +223,13 @@ class ServiceOutput(BaseServiceIOModel):
                 {
                     "displayOrder": 2,
                     "label": "Time Slept - units",
-                    "description": "Time the service waited before completion",
+                    "description": "Time with units",
                     "type": "number",
                     "unit": "second",
                 },
                 {
                     "label": "Time Slept - w/o displayorder",
-                    "description": "Time the service waited before completion",
+                    "description": "Time without display order",
                     "type": "number",
                     "unit": "second",
                 },
@@ -237,7 +237,7 @@ class ServiceOutput(BaseServiceIOModel):
                     "label": "Output file 1",
                     "displayOrder": 4.0,
                     "description": "Output file uploaded from the outputs folder",
-                    "type": "data:*/*",
+                    "type": ANY_FILETYPE,
                 },
             ]
         }
