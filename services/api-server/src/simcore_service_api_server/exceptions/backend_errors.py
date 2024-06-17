@@ -95,4 +95,5 @@ class PricingPlanNotFoundError(BackEndException):
 
 
 class ProjectAlreadyStartedException(BackEndException):
-    pass
+    msg_template = "Project already started"
+    status_code = status.HTTP_200_OK
