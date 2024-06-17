@@ -220,7 +220,9 @@ async def test_monitor_buffer_machines_against_aws(
     initialized_app: FastAPI,
 ):
     if not external_envfile_dict:
-        pytest.skip("This test is only for AWS, please define --external-envfile")
+        pytest.skip(
+            "This test is only for use directly with AWS server, please define --external-envfile"
+        )
 
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(
