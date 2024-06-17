@@ -41,7 +41,7 @@
       },
       "anchorEl": "osparc-test-id=newStudyBtn",
       "title": "Start A new Plan",
-      "text": "Clicking on this (+) button will pop up a window with all the Plans available.",
+      "text": "Clicking on this (+) button a window with all the Plans available will pop up.",
       "placement": "right"
     }, {
       "beforeClick": {
@@ -124,7 +124,7 @@
     }, {
       "anchorEl": "osparc-test-id=buyCreditsBtn",
       "title": "One time payment",
-      "text": "For a one-off, non recurring payment. After the payment is made, the available credits will be added to the Credit Account. <br>Also, the Payment Method can saved be for future payments.",
+      "text": "For a one-off, non recurring payment. After the payment is made, the available credits will be added to the Credit Account. <br>Also, the Payment Method can be saved for future payments.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=autorechargeBtn",
