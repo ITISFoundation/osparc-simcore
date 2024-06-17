@@ -12,7 +12,7 @@ from typing import Any, AsyncIterable
 import pytest
 import servicelib
 from faker import Faker
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
@@ -73,10 +73,6 @@ async def get_redis_client_sdk(
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
-    async def _cleanup_redis_data() -> None:
-        for db in RedisDatabase:
-            await RedisClientSDK(redis_service.build_redis_dsn(db)).redis.flushall()
-
     @asynccontextmanager
     async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
@@ -89,6 +85,13 @@ async def get_redis_client_sdk(
 
         await client.shutdown()
 
-    await _cleanup_redis_data()
-    yield _
-    await _cleanup_redis_data()
+    async def _cleanup_redis_data(clients_manager: RedisClientsManager) -> None:
+        for db in RedisDatabase:
+            await clients_manager.client(db).redis.flushall()
+
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(db) for db in RedisDatabase}, redis_service
+    ) as clients_manager:
+        await _cleanup_redis_data(clients_manager)
+        yield _
+        await _cleanup_redis_data(clients_manager)
