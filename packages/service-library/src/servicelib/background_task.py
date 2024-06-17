@@ -89,7 +89,8 @@ async def cancel_task(
         stop=stop_after_attempt(cancellation_attempts), reraise=True
     ):
         with attempt:
-            task.cancel()
+            if not task.cancelled():
+                task.cancel()
             _, pending = await asyncio.wait((task,), timeout=timeout)
             if pending:
                 task_name = task.get_name()
