@@ -670,7 +670,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs:
     get:
       tags:
@@ -698,7 +698,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs/{output_key}:
     get:
       tags:
@@ -782,7 +782,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/resources:
     get:
       tags:
@@ -5277,7 +5277,6 @@ components:
           title: Affiliation
           type: string
           description: Affiliation of the author
-      additionalProperties: false
     Badge:
       title: Badge
       required:
@@ -5304,7 +5303,6 @@ components:
           type: string
           description: Link to the status
           format: uri
-      additionalProperties: false
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -6648,8 +6646,8 @@ components:
             $ref: '#/components/schemas/ProjectsCommentsAPI'
         error:
           title: Error
-    Envelope_list_models_library.services.ServicePortKey__:
-      title: Envelope[list[models_library.services.ServicePortKey]]
+    Envelope_list_models_library.services_constrained_types.ServicePortKey__:
+      title: Envelope[list[models_library.services_constrained_types.ServicePortKey]]
       type: object
       properties:
         data:
@@ -10146,7 +10144,6 @@ components:
         quality:
           title: Quality
           type: object
-          default: {}
       example:
         accessRights:
           1:
@@ -11443,7 +11440,7 @@ components:
         name:
           title: Name
           type: string
-          description: short, human readable name for the node
+          description: 'Display name: short, human readable name for the node'
           example: Fast Counter
         thumbnail:
           title: Thumbnail
@@ -11470,7 +11467,6 @@ components:
         quality:
           title: Quality
           type: object
-          default: {}
         accessRights:
           title: Accessrights
           type: object
@@ -11557,7 +11553,14 @@ components:
           title: Owner
           type: string
           format: email
-      description: 'Static metadata for a service injected in the image labels
+      description: 'Service metadata at publication time
+
+
+        - read-only (can only be changed overwriting the image labels in the registry)
+
+        - base metaddata
+
+        - injected in the image labels
 
 
         NOTE: This model is serialized in .osparc/metadata.yml and in the labels of

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 
 from .emails import LowerCaseEmailStr
 
@@ -28,9 +28,6 @@ class Badge(BaseModel):
         ],
     )
 
-    class Config:
-        extra = Extra.forbid
-
 
 class Author(BaseModel):
     name: str = Field(..., description="Name of the author", example="Jim Knopf")
@@ -42,6 +39,3 @@ class Author(BaseModel):
     affiliation: str | None = Field(
         None, examples=["Sense8", "Babylon 5"], description="Affiliation of the author"
     )
-
-    class Config:
-        extra = Extra.forbid
