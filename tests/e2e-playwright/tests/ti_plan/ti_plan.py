@@ -72,20 +72,22 @@ def test_tip(
     node_ids: list[str] = list(project_data["workbench"])
 
     # let it start or force
-    with log_context(logging.INFO, "Starting with Electrode Selector"):
+    with log_context(logging.INFO, "Start Electrode Selector"):
         start_button = page.get_by_test_id("Start_" + node_ids[0])
         if start_button.is_visible() and start_button.is_enabled():
             start_button.click()
 
         # Electrode Selector
-        es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
-        expect(es_page.get_by_test_id("TargetStructure_Selector")).to_be_visible(
-            timeout=service_opening_waiting_timeout
+        electrode_selector_iframe = page.frame_locator(
+            f'[osparc-test-id="iframe_{node_ids[0]}"]'
         )
+        expect(
+            electrode_selector_iframe.get_by_test_id("TargetStructure_Selector")
+        ).to_be_visible(timeout=service_opening_waiting_timeout)
         # Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(5000)
-        es_page.get_by_test_id("TargetStructure_Selector").click()
-        es_page.get_by_test_id(
+        electrode_selector_iframe.get_by_test_id("TargetStructure_Selector").click()
+        electrode_selector_iframe.get_by_test_id(
             "TargetStructure_Target_(Targets_combined) Hypothalamus"
         ).click()
         electrode_selections = [
@@ -97,17 +99,15 @@ def test_tip(
         for selection in electrode_selections:
             group_id = "ElectrodeGroup_" + selection[0] + "_Start"
             electrode_id = "Electrode_" + selection[1]
-            es_page.get_by_test_id(group_id).click()
-            es_page.get_by_test_id(electrode_id).click()
+            electrode_selector_iframe.get_by_test_id(group_id).click()
+            electrode_selector_iframe.get_by_test_id(electrode_id).click()
         # configuration done, push output
-        page.wait_for_timeout(1000)
-        es_page.get_by_test_id("FinishSetUp").click()
-        page.wait_for_timeout(10000)
-        # check outputs
-        expected_outputs = ["output.json"]
-        text_on_output_button = f"Outputs ({len(expected_outputs)})"
-        page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
-        page.wait_for_timeout(5000)
+        electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
+
+        with log_context(logging.INFO, "check outputs"):
+            expected_outputs = ["output.json"]
+            text_on_output_button = f"Outputs ({len(expected_outputs)})"
+            page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
         # Move to next step
         page.get_by_test_id("AppMode_NextBtn").click()
