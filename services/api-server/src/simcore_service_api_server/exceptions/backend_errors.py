@@ -14,6 +14,21 @@ class ListSolversOrStudiesError(BackEndException):
     status_code = status.HTTP_404_NOT_FOUND
 
 
+class ListJobsError(BackEndException):
+    msg_template = "Cannot list jobs"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class PaymentRequiredError(BackEndException):
+    msg_template = "Payment required"
+    status_code = status.HTTP_402_PAYMENT_REQUIRED
+
+
+class ProfileNotFoundError(BackEndException):
+    msg_template = "Profile not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
 class SolverOrStudyNotFoundError(BackEndException):
     msg_template = "Could not get solver/study {name}:{version}"
     status_code = status.HTTP_404_NOT_FOUND
@@ -46,6 +61,36 @@ class ConfigurationError(BackEndException):
 
 class ProductPriceNotFoundError(BackEndException):
     msg_template = "Product price not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class WalletNotFoundError(BackEndException):
+    msg_template = "Wallet not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class ForbiddenWalletError(BackEndException):
+    msg_template = "User does not have access to wallet"
+    status_code = status.HTTP_403_FORBIDDEN
+
+
+class ProjectPortsNotFoundError(BackEndException):
+    msg_template = "The ports for the job/study {project_id} could not be found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class ProjectMetadataNotFoundError(BackEndException):
+    msg_template = "The metadata for the job/study {project_id} could not be found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class PricingUnitNotFoundError(BackEndException):
+    msg_template = "The pricing unit could not be found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class PricingPlanNotFoundError(BackEndException):
+    msg_template = "The pricing plan could not be found"
     status_code = status.HTTP_404_NOT_FOUND
 
 

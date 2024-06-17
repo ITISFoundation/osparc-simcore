@@ -52,9 +52,18 @@ from servicelib.common_headers import (
 )
 from simcore_service_api_server.exceptions.backend_errors import (
     ConfigurationError,
+    ForbiddenWalletError,
+    ListJobsError,
+    PaymentRequiredError,
+    PricingPlanNotFoundError,
+    PricingUnitNotFoundError,
     ProductPriceNotFoundError,
+    ProfileNotFoundError,
     ProjectAlreadyStartedException,
+    ProjectMetadataNotFoundError,
+    ProjectPortsNotFoundError,
     SolverOutputNotFoundError,
+    WalletNotFoundError,
 )
 from simcore_service_director_v2.core.errors import ClusterNotFoundError
 from tenacity import TryAgain
@@ -65,7 +74,6 @@ from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..exceptions.service_errors_utils import (
-    ToApiTuple,
     service_exception_handler,
     service_exception_mapper,
 )
@@ -82,23 +90,18 @@ _logger = logging.getLogger(__name__)
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
 _JOB_STATUS_MAP: Mapping = {
-    status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
+    status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         lambda kwargs: "The job/study/wallet/pricing details could not be found",
     ),
 }
 
-_PROFILE_STATUS_MAP: Mapping = {
-    status.HTTP_404_NOT_FOUND: (
-        status.HTTP_404_NOT_FOUND,
-        lambda kwargs: "Could not find profile",
-    )
-}
+_PROFILE_STATUS_MAP: Mapping = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
 
 _WALLET_STATUS_MAP: Mapping = {
-    status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
-    status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
+    status.HTTP_404_NOT_FOUND: WalletNotFoundError,
+    status.HTTP_403_FORBIDDEN: ForbiddenWalletError,
 }
 
 
@@ -191,11 +194,7 @@ class AuthSession:
 
         with service_exception_handler(
             service_name="Webserver",
-            http_status_map={
-                status.HTTP_404_NOT_FOUND: ToApiTuple(
-                    status.HTTP_404_NOT_FOUND, "Could not list jobs"
-                )
-            },
+            http_status_map={status.HTTP_404_NOT_FOUND: ListJobsError},
         ):
             resp = await self.client.get(
                 "/projects",
@@ -350,14 +349,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The ports for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError})
     async def get_project_metadata_ports(
         self, project_id: ProjectID
     ) -> list[StudyPort]:
@@ -375,14 +367,7 @@ class AuthSession:
         assert isinstance(data, list)  # nosec
         return data
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
     async def get_project_metadata(self, project_id: ProjectID) -> ProjectMetadataGet:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
@@ -402,14 +387,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: ToApiTuple(
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
     async def update_project_metadata(
         self, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
@@ -423,9 +401,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
         self, project_id: UUID, node_id: UUID
     ) -> PricingUnitGet | None:
@@ -439,9 +415,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(
-        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def connect_pricing_unit_to_project_node(
         self,
         project_id: UUID,
@@ -590,9 +564,7 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper(
-        {status.HTTP_404_NOT_FOUND: ToApiTuple(status.HTTP_404_NOT_FOUND, None)}
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError})
     async def get_service_pricing_plan(
         self, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
