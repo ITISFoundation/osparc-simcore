@@ -62,8 +62,8 @@ def _get_http_exception_kwargs(
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if mapped := http_status_map.get(service_error.response.status_code):
-        raise mapped(**detail_kwargs)
+    if exception_type := http_status_map.get(service_error.response.status_code):
+        raise exception_type(**detail_kwargs)
     if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,
