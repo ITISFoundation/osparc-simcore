@@ -12,7 +12,6 @@ from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
-NODE_START_TIME_MS: Final[int] = 5 * MINUTE
 NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/projects/[^/]+/nodes/[^:]+:start"
 )
@@ -294,9 +293,10 @@ def wait_or_force_start_service(
     node_id: str,
     press_next: bool,
     websocket: WebSocket,
+    timeout: int,
 ) -> None:
     waiter = SocketIONodeProgressCompleteWaiter()
     with log_context(
         logging.INFO, msg="Waiting for node to start"
-    ), websocket.expect_event("framereceived", waiter, timeout=NODE_START_TIME_MS):
+    ), websocket.expect_event("framereceived", waiter, timeout=timeout):
         _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
