@@ -310,6 +310,41 @@ async def test_get_solver_job_pricing_unit_no_payment(
     assert response.json()["job_id"] == _job_id
 
 
+async def test_start_solver_job_conflict(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    mocked_groups_extra_properties,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    assert mocked_groups_extra_properties
+    _solver_key: str = "simcore/services/comp/isolve"
+    _version: str = "2.1.24"
+    _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_solver_job.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+            get_inspect_job_side_effect(job_id=_job_id),
+        ],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.json()["job_id"] == _job_id
+
+
 async def test_stop_job(
     client: AsyncClient,
     mocked_directorv2_service_api_base,
