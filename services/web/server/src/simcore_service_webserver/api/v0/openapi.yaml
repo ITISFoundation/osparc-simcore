@@ -670,7 +670,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs:
     get:
       tags:
@@ -698,7 +698,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs/{output_key}:
     get:
       tags:
@@ -782,7 +782,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services_constrained_types.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/resources:
     get:
       tags:
@@ -6646,8 +6646,8 @@ components:
             $ref: '#/components/schemas/ProjectsCommentsAPI'
         error:
           title: Error
-    Envelope_list_models_library.services_constrained_types.ServicePortKey__:
-      title: Envelope[list[models_library.services_constrained_types.ServicePortKey]]
+    Envelope_list_models_library.services_types.ServicePortKey__:
+      title: Envelope[list[models_library.services_types.ServicePortKey]]
       type: object
       properties:
         data:
@@ -9840,6 +9840,7 @@ components:
           title: Unit
           type: string
           description: Units, when it refers to a physical quantity
+          deprecated: true
         defaultValue:
           title: Defaultvalue
           anyOf:
@@ -9847,6 +9848,7 @@ components:
           - type: integer
           - type: number
           - type: string
+          deprecated: true
         widget:
           title: Widget
           allOf:
@@ -9944,6 +9946,7 @@ components:
           title: Unit
           type: string
           description: Units, when it refers to a physical quantity
+          deprecated: true
         widget:
           title: Widget
           allOf:

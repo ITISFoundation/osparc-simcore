@@ -78,10 +78,10 @@ class BaseServiceIOModel(BaseModel):
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
 
-    # TODO: should deprecate since content_schema include units
     unit: str | None = Field(
         None,
         description="Units, when it refers to a physical quantity",
+        deprecated=True,  # add x_unit in content_schema instead
     )
 
     class Config:
@@ -91,7 +91,7 @@ class BaseServiceIOModel(BaseModel):
     @classmethod
     def _check_type_is_set_to_schema(cls, v, values):
         if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
-            msg = f"content_schema is defined but set the wrong type.Expected type=ref_contentSchema but got ={ptype}."
+            msg = f"content_schema is defined but set the wrong type. Expected type=ref_contentSchema but got ={ptype}."
             raise ValueError(msg)
         return v
 
@@ -131,9 +131,11 @@ class ServiceInput(BaseServiceIOModel):
     Metadata on a service input port
     """
 
-    # TODO: should deprecate since content_schema include defaults as well
     default_value: StrictBool | StrictInt | StrictFloat | str | None = Field(
-        None, alias="defaultValue", examples=["Dog", True]
+        None,
+        alias="defaultValue",
+        examples=["Dog", True],
+        deprecated=True,  # Use content_schema defaults instead
     )
 
     widget: Widget | None = Field(
