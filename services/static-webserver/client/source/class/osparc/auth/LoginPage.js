@@ -212,7 +212,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       const registration = this.getChildControl("registration-view");
       const config = osparc.store.Store.getInstance().get("config");
       let requestAccount = null;
-      if (config["invitation_required"] && osparc.product.Utils.isS4LProduct()) {
+      if (config["invitation_required"] && osparc.desktop.credits.Utils.areWalletsEnabled()) {
         requestAccount = this.getChildControl("request-account");
       }
       const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");
