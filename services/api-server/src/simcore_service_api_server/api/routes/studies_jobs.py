@@ -16,7 +16,7 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.routes.solvers_jobs import JOBS_STATUS_CODES
 from simcore_service_api_server.exceptions.backend_errors import (
-    ProjectAlreadyStartedException,
+    ProjectAlreadyStartedError,
 )
 
 from ...api.dependencies.authentication import get_current_user_id
@@ -223,7 +223,7 @@ async def start_study_job(
                 webserver_api=webserver_api,
                 cluster_id=cluster_id,
             )
-        except ProjectAlreadyStartedException:
+        except ProjectAlreadyStartedError:
             job_status: JobStatus = await inspect_study_job(
                 study_id=study_id,
                 job_id=job_id,

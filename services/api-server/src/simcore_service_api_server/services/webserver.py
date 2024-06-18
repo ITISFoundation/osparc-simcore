@@ -59,13 +59,12 @@ from simcore_service_api_server.exceptions.backend_errors import (
     PricingUnitNotFoundError,
     ProductPriceNotFoundError,
     ProfileNotFoundError,
-    ProjectAlreadyStartedException,
+    ProjectAlreadyStartedError,
     ProjectMetadataNotFoundError,
     ProjectPortsNotFoundError,
     SolverOutputNotFoundError,
     WalletNotFoundError,
 )
-from simcore_service_director_v2.core.errors import ClusterNotFoundError
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -73,6 +72,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
+from ..exceptions.backend_errors import ClusterNotFoundError
 from ..exceptions.service_errors_utils import (
     service_exception_handler,
     service_exception_mapper,
@@ -432,7 +432,7 @@ class AuthSession:
     @_exception_mapper(
         _JOB_STATUS_MAP
         | {
-            status.HTTP_409_CONFLICT: ProjectAlreadyStartedException,
+            status.HTTP_409_CONFLICT: ProjectAlreadyStartedError,
             status.HTTP_406_NOT_ACCEPTABLE: ClusterNotFoundError,
             status.HTTP_422_UNPROCESSABLE_ENTITY: ConfigurationError,
         }

@@ -94,6 +94,6 @@ class PricingPlanNotFoundError(BackEndError):
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class ProjectAlreadyStartedException(BackEndError):
+class ProjectAlreadyStartedError(BackEndError):
     msg_template = "Project already started"
     status_code = status.HTTP_200_OK

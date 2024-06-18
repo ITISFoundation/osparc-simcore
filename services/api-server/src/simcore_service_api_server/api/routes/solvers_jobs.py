@@ -13,7 +13,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 from simcore_service_api_server.exceptions.backend_errors import (
-    ProjectAlreadyStartedException,
+    ProjectAlreadyStartedError,
 )
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -206,7 +206,7 @@ async def start_job(
             webserver_api=webserver_api,
             cluster_id=cluster_id,
         )
-    except ProjectAlreadyStartedException:
+    except ProjectAlreadyStartedError:
         job_status = await inspect_job(
             solver_key=solver_key,
             version=version,
