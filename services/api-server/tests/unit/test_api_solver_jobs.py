@@ -320,9 +320,9 @@ async def test_start_solver_job_conflict(
     project_tests_dir: Path,
 ):
     assert mocked_groups_extra_properties
-    _solver_key: str = "simcore/services/comp/isolve"
-    _version: str = "2.1.24"
-    _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+    _solver_key: str = "simcore/services/comp/itis/sleeper"
+    _version: str = "2.0.2"
+    _job_id: str = "b9faf8d8-4928-4e50-af40-3690712c5481"
 
     create_respx_mock_from_capture(
         respx_mocks=[
@@ -341,7 +341,7 @@ async def test_start_solver_job_conflict(
         auth=auth,
     )
 
-    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["job_id"] == _job_id
 
 
