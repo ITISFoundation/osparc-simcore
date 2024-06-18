@@ -303,7 +303,7 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
     )
 
 
-async def test_regression_fails_if_on_redis_service_outage(
+async def test_regression_fails_on_redis_service_outage(
     mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
