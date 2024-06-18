@@ -2991,7 +2991,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10147,6 +10147,7 @@ components:
         quality:
           title: Quality
           type: object
+          default: {}
       example:
         accessRights:
           1:
@@ -11470,6 +11471,7 @@ components:
         quality:
           title: Quality
           type: object
+          default: {}
         accessRights:
           title: Accessrights
           type: object
