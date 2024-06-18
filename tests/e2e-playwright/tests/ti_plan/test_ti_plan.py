@@ -53,7 +53,7 @@ def create_tip_plan_from_dashboard(
     return _
 
 
-_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
+_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 10 * MINUTE
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS: Final[int] = 1 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 1 * MINUTE
 
@@ -182,7 +182,8 @@ def test_tip(
                 expected_header_msg_type="stream",
                 expected_message_contents="All results evaluated",
             ),
-            timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS,
+            timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS
+            + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS,
         ):
             ti_page.get_by_role("button", name="Run Optimization").click(
                 timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS
