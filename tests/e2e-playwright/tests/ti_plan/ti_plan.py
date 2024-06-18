@@ -46,7 +46,8 @@ def create_tip_plan_from_dashboard(
     def _(plan_name_test_id: str) -> dict[str, Any]:
         find_and_start_tip_plan_in_dashboard(plan_name_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, confirm_open=False)
+        confirm_open = False
+        return create_new_project_and_delete(expected_states, confirm_open)
 
     return _
 
