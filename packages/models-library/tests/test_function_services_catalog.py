@@ -15,14 +15,14 @@ from models_library.function_services_catalog.api import (
     is_function_service,
     iter_service_docker_data,
 )
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 
 
 @pytest.mark.parametrize(
     "image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name
 )
 def test_create_frontend_services_metadata(image_metadata):
-    assert isinstance(image_metadata, ServiceDockerData)
+    assert isinstance(image_metadata, ServiceMetaDataPublished)
 
     assert is_function_service(image_metadata.key)
 
