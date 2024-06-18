@@ -298,7 +298,7 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[tuple[RunningState]], dict[str, Any]]]:
+) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -306,8 +306,7 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-        *,
-        confirm_open: bool = True,
+        press_open: bool = True,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
@@ -323,7 +322,7 @@ def create_new_project_and_delete(
                 re.compile(r"/projects/[^:]+:open")
             ) as response_info:
                 # Project detail view pop-ups shows
-                if confirm_open:
+                if press_open:
                     page.get_by_test_id("openResource").click()
                 if product_billable:
                     # Open project with default resources

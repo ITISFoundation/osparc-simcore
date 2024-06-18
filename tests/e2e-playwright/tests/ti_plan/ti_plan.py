@@ -45,8 +45,7 @@ def create_tip_plan_from_dashboard(
     def _(plan_name_test_id: str) -> dict[str, Any]:
         find_and_start_tip_plan_in_dashboard(plan_name_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        confirm_open = False
-        return create_new_project_and_delete(expected_states, confirm_open)
+        return create_new_project_and_delete(expected_states, press_open=False)
 
     return _
 
@@ -58,7 +57,7 @@ _NODE_START_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class _RequestPredicate:
     url_pattern: re.Pattern[str] | str
     method: str
@@ -71,16 +70,15 @@ class _RequestPredicate:
 
     def __post_init__(self) -> None:
         if not isinstance(self.url_pattern, re.Pattern):
-            object.__setattr__(self, "url_pattern", re.compile(self.url_pattern))
+            self.url_pattern = re.compile(self.url_pattern)
 
 
 def _wait_or_force_start_service(
     page: Page, logger: logging.Logger, node_id: str, *, press_next: bool
 ) -> None:
     try:
-        with page.expect_request(
-            _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
-        ):
+        predicate = _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
+        with page.expect_request(predicate):
             # Move to next step (this auto starts the next service)
             if press_next:
                 next_button_locator = page.get_by_test_id("AppMode_NextBtn")
@@ -94,9 +92,7 @@ def _wait_or_force_start_service(
             "Request to start service not received after %sms, forcing start",
             _LET_IT_START_OR_FORCE_WAIT_TIME_MS,
         )
-        with page.expect_request(
-            _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
-        ):
+        with page.expect_request(predicate):
             page.get_by_test_id(f"Start_{node_id}").click()
 
 
