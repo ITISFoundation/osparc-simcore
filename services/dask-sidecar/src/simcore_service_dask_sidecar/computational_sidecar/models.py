@@ -1,7 +1,7 @@
 import re
 
 from models_library.basic_types import VERSION_RE
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from packaging import version
 from pydantic import BaseModel, ByteSize, Extra, Field, validator
 
@@ -105,5 +105,5 @@ class ImageLabels(BaseModel):
 
 
 assert set(ImageLabels.__fields__).issubset(
-    ServiceDockerData.__fields__
+    ServiceMetaDataPublished.__fields__
 ), "ImageLabels must be compatible with ServiceDockerData"
