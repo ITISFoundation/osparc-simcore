@@ -2,7 +2,6 @@
 
 import logging
 import urllib.parse
-from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -89,14 +88,14 @@ _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
-_JOB_STATUS_MAP: Mapping = {
+_JOB_STATUS_MAP = {
     status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
     status.HTTP_404_NOT_FOUND: JobNotFoundError,
 }
 
-_PROFILE_STATUS_MAP: Mapping = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
+_PROFILE_STATUS_MAP = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
 
-_WALLET_STATUS_MAP: Mapping = {
+_WALLET_STATUS_MAP = {
     status.HTTP_404_NOT_FOUND: WalletNotFoundError,
     status.HTTP_403_FORBIDDEN: ForbiddenWalletError,
 }
