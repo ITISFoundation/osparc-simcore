@@ -38,7 +38,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from faker import Faker
 from models_library.basic_types import EnvVarKey
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import AnyUrl, SecretStr, parse_obj_as
@@ -438,7 +438,7 @@ def mocked_get_image_labels(
     integration_version: version.Version, mocker: MockerFixture
 ) -> mock.Mock:
     labels: ImageLabels = parse_obj_as(
-        ImageLabels, ServiceDockerData.Config.schema_extra["examples"][0]
+        ImageLabels, ServiceMetaDataPublished.Config.schema_extra["examples"][0]
     )
     labels.integration_version = f"{integration_version}"
     return mocker.patch(

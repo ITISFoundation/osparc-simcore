@@ -17,7 +17,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from models_library.products import ProductName
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -369,7 +369,9 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceDockerData.parse_obj(data), "Invalid fake data. Out of sync!"
+        assert ServiceMetaDataPublished.parse_obj(
+            data
+        ), "Invalid fake data. Out of sync!"
         return data
 
     return _fake_factory
