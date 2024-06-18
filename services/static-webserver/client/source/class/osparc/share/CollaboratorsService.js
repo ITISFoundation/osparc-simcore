@@ -100,7 +100,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       gids.forEach(gid => {
         newAccessRights[gid] = this.self().getCollaboratorAccessRight();
       });
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy)
+      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
@@ -111,7 +111,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding editor(s)"), "ERROR");
         })
         .finally(() => cb());
     },
