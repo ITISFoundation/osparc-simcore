@@ -72,6 +72,7 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
+    # lowered to allow CI to properly shutdown RedisClientSDK instances
     mocker.patch.object(
         servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2)
     )
