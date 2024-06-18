@@ -23,11 +23,11 @@ from pydantic import (
 
 from .basic_regex import (
     DATCORE_FILE_ID_RE,
+    PROPERTY_KEY_RE,
     SIMCORE_S3_DIRECTORY_ID_RE,
     SIMCORE_S3_FILE_ID_RE,
     UUID_RE,
 )
-from .services import PROPERTY_KEY_RE
 
 if TYPE_CHECKING:
     pass

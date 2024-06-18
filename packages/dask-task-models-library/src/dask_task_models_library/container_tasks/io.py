@@ -3,9 +3,8 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar, Union, cast
 
-from models_library.basic_regex import MIME_TYPE_RE
+from models_library.basic_regex import MIME_TYPE_RE, PROPERTY_KEY_RE
 from models_library.generics import DictModel
-from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
     AnyUrl,
     BaseModel,

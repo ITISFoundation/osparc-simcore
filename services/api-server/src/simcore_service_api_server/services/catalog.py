@@ -8,7 +8,7 @@ from operator import attrgetter
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
-from models_library.services import ServiceDockerData, ServiceType
+from models_library.services import ServiceMetaDataPublished, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 
@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 SolverNameVersionPair = tuple[SolverKeyId, str]
 
 
-class TruncatedCatalogServiceOut(ServiceDockerData):
+class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
     """
     This model is used to truncate the response of the catalog, whose schema is
     in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
