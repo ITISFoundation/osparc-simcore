@@ -5,6 +5,8 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
+import contextlib
+import json
 import logging
 import re
 from collections.abc import Callable
@@ -16,10 +18,6 @@ from playwright.sync_api import APIRequestContext, Page, Request, WebSocket, exp
 from pydantic import AnyUrl
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import RunningState
-from tenacity import Retrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
@@ -102,7 +100,9 @@ def _wait_or_force_start_service(
             page.get_by_test_id(f"Start_{node_id}").click()
 
 
-_JLAB_STARTUP_MAX_TIME: Final[int] = 60 * 1000
+_SECOND_MS: Final[int] = 1000
+_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 60 * _SECOND_MS
+_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 60 * _SECOND_MS
 
 
 @dataclass
@@ -116,17 +116,19 @@ class _JLabWaitForWebSocket:
 
 @dataclass
 class _JLabWebSocketWaiter:
-    # expected_message_type: Literal["stdout", "stdin"]
-    # expected_message_contents: str
+    expected_header_msg_type: str
+    expected_message_contents: str
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.INFO, msg=f"handling websocket {message=}"):
-            # decoded_message = json.loads(message)
-            # if (
-            #     self.expected_message_type == decoded_message[0]
-            #     and self.expected_message_contents in decoded_message[1]
-            # ):
-            #     return True
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            with contextlib.suppress(json.JSONDecodeError):
+                decoded_message = json.loads(message)
+                msg_type: str = decoded_message.get("header", {}).get("msg_type", "")
+                msg_contents: str = decoded_message.get("content", {}).get("text", "")
+                if (msg_type == self.expected_header_msg_type) and (
+                    self.expected_message_contents in msg_contents
+                ):
+                    return True
 
             return False
 
@@ -154,6 +156,7 @@ def test_tip(
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
+        # TODO: use the websocket to wait for service running state...
         _wait_or_force_start_service(page, ctx.logger, node_ids[0], press_next=False)
 
         # Electrode Selector
@@ -180,7 +183,7 @@ def test_tip(
             electrode_id = "Electrode_" + selection[1]
             electrode_selector_iframe.get_by_test_id(group_id).click()
             electrode_selector_iframe.get_by_test_id(electrode_id).click()
-        # configuration done, push output
+        # configuration done, push and wait for output
         with page.expect_request(
             _RequestPredicate(
                 method="GET", url_pattern=r"/storage/locations/[^/]+/files"
@@ -195,44 +198,22 @@ def test_tip(
 
     with log_context(logging.INFO, "Classic TI step") as ctx:
         with page.expect_websocket(
-            _JLabWaitForWebSocket(), timeout=_JLAB_STARTUP_MAX_TIME
+            _JLabWaitForWebSocket(), timeout=_JLAB_MAX_STARTUP_TIME_MS
         ) as ws_info:
             _wait_or_force_start_service(page, ctx.logger, node_ids[1], press_next=True)
         jlab_websocket = ws_info.value
 
         # Optimal Configuration Identification
         ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
-        run_button_locator = ti_page.get_by_role("button", name="Run Optimization")
-        try:
-            expect(run_button_locator).to_be_visible()
-        except AssertionError:
-            ctx.error("Classic TI failed to start, trying to restart the iFrame...")
-            with page.expect_websocket(
-                _JLabWaitForWebSocket(), timeout=_JLAB_STARTUP_MAX_TIME
-            ) as ws_info:
-                page.get_by_test_id("iFrameRestartBtn").click()
-            jlab_websocket = ws_info.value
-
-        with jlab_websocket.expect_event("framereceived", _JLabWebSocketWaiter()):
-            run_button = ti_page.get_by_role(
-                "button", name=re.compile("Run Optimization", re.IGNORECASE)
-            ).click()
-
-        # TODO: we can wait here for the wssocket msg["header"]["msg_type"] == "stream" that msg["content"]["text"] contains "All results evaluated"
-        for attempt in Retrying(
-            wait=wait_fixed(5),
-            stop=stop_after_attempt(20),  # 5*20= 100 seconds
-            retry=retry_if_exception_type(AssertionError),
-            reraise=True,
+        with jlab_websocket.expect_event(
+            "framereceived",
+            _JLabWebSocketWaiter(
+                expected_header_msg_type="stream",
+                expected_message_contents="All results evaluated",
+            ),
+            timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS,
         ):
-            with attempt:
-                # When optimization finishes, the button changes color.
-                _run_button_style = run_button.evaluate(
-                    "el => window.getComputedStyle(el)"
-                )
-                assert (
-                    _run_button_style["backgroundColor"] == "rgb(0, 128, 0)"
-                )  # initial color: rgb(0, 144, 208)
+            ti_page.get_by_role("button", name="Run Optimization").click()
 
         ti_page.get_by_role("button", name="Load Analysis").click()
         page.wait_for_timeout(20000)
