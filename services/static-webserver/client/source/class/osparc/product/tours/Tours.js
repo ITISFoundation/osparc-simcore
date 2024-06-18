@@ -38,17 +38,9 @@ qx.Class.define("osparc.product.tours.Tours", {
     },
 
     fetchTours: function(link) {
-      return new Promise((resolve, reject) => {
-        osparc.utils.Utils.fetchJSON(link)
-          .then(toursObj => {
-            const tours = Object.values(toursObj);
-            resolve(tours);
-          })
-          .catch(err => {
-            console.error(err);
-            reject();
-          });
-      });
+      return osparc.utils.Utils.fetchJSON(link)
+        .then(Object.values)
+        .catch(console.error);
     },
 
     // it returns a promise
