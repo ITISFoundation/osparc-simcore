@@ -71,16 +71,20 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 
 @pytest.fixture
+def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2)
+    )
+
+
+@pytest.fixture
 async def get_redis_client_sdk(
+    mock_redis_socket_timeout: None,
     mocker: MockerFixture,
     redis_service: RedisSettings,
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
-    mocker.patch.object(
-        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2)
-    )
-
     @asynccontextmanager
     async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)

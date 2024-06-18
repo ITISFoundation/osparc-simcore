@@ -260,7 +260,10 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
-async def test_redis_client_sdks_manager(redis_service: RedisSettings):
+async def test_redis_client_sdks_manager(
+    mock_redis_socket_timeout: None, redis_service: RedisSettings
+):
+
     all_redis_configs: set[RedisManagerDBConfig] = {
         RedisManagerDBConfig(db) for db in RedisDatabase
     }
@@ -273,7 +276,9 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
             assert manager.client(config.database)
 
 
-async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
+async def test_redis_client_sdk_setup_shutdown(
+    mock_redis_socket_timeout: None, redis_service: RedisSettings
+):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
     client = RedisClientSDK(redis_resources_dns)
