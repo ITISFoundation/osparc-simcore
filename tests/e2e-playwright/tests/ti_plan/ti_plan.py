@@ -7,11 +7,12 @@
 
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Final
+from typing import Any, Final
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page, WebSocket, expect
+from playwright.sync_api import APIRequestContext, Page, Request, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import RunningState
@@ -54,6 +55,25 @@ def create_tip_plan_from_dashboard(
 
 _LET_IT_START_OR_FORCE_WAIT_TIME_MS: Final[int] = 5000
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5000
+_NODE_START_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"/projects/[^/]+/nodes/[^:]+:start"
+)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _RequestPredicate:
+    url_pattern: re.Pattern[str] | str
+    method: str
+
+    def __call__(self, request: Request) -> bool:
+        return bool(
+            re.search(self.url_pattern, request.url)
+            and request.method.upper() == self.method.upper()
+        )
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.url_pattern, re.Pattern):
+            object.__setattr__(self, "url_pattern", re.compile(self.url_pattern))
 
 
 def _wait_or_force_start_service(
@@ -61,8 +81,7 @@ def _wait_or_force_start_service(
 ) -> None:
     try:
         with page.expect_request(
-            lambda r: re.search(r"/projects/[^/]+/nodes/[^:]+:start", r.url)
-            and r.method.upper() == "POST"
+            _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
         ):
             # Move to next step (this auto starts the next service)
             if press_next:
@@ -78,8 +97,7 @@ def _wait_or_force_start_service(
             _LET_IT_START_OR_FORCE_WAIT_TIME_MS,
         )
         with page.expect_request(
-            lambda r: re.search(r"/projects/[^/]+/nodes/[^:]+:start", r.url)
-            and r.method.upper() == "POST"
+            _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
         ):
             page.get_by_test_id(f"Start_{node_id}").click()
 
@@ -164,8 +182,9 @@ def test_tip(
             electrode_selector_iframe.get_by_test_id(electrode_id).click()
         # configuration done, push output
         with page.expect_request(
-            lambda r: re.search(r"/storage/locations/[^/]+/files", r.url)
-            and r.method.upper() == "GET"
+            _RequestPredicate(
+                method="GET", url_pattern=r"/storage/locations/[^/]+/files"
+            )
         ) as request_info:
             electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
         response = request_info.value.response()
