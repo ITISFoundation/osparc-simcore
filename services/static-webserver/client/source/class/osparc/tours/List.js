@@ -56,8 +56,8 @@ qx.Class.define("osparc.tours.List", {
       return control || this.base(arguments, id);
     },
 
-    __isSelectorVisible: function(selector) {
-      const element = document.querySelector(`[${selector}]`);
+    __isSelectorVisible: function(contextSelector) {
+      const element = document.querySelector(`[${contextSelector}]`);
       if (element) {
         const widget = qx.ui.core.Widget.getWidgetByElement(element);
         if (qx.ui.core.queue.Visibility.isVisible(widget)) {

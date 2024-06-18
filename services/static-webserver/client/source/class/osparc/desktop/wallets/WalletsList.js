@@ -23,6 +23,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    osparc.utils.Utils.setIdToWidget(this, "walletsList");
+
     this.__addHeader(this.tr("Personal"), true);
     this.__noPersonalWalletsLabel = new qx.ui.basic.Label().set({
       value: this.tr("No personal Credit Account found"),
@@ -30,7 +32,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       marginLeft: 10
     });
     this._add(this.__noPersonalWalletsLabel);
-    this.__personalWalletsModel = this.__addWalletsList()
+    this.__personalWalletsModel = this.__addWalletsList("personalWalletsList");
 
     this.__addHeader(this.tr("Shared with me"), false);
     this.__noSharedWalletsLabel = new qx.ui.basic.Label().set({
@@ -39,7 +41,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       marginLeft: 10
     });
     this._add(this.__noSharedWalletsLabel);
-    this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 })
+    this.__sharedWalletsModel = this.__addWalletsList("sharedWalletsList");
 
     this.loadWallets();
   },
@@ -78,7 +80,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return filter;
     },
 
-    __addWalletsList: function(layoutOpts={}) {
+    __addWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -86,6 +88,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         height: null,
         focusable: false
       });
+      osparc.utils.Utils.setIdToWidget(walletsUIList, widgetId);
       const walletsModel = new qx.data.Array();
       const walletsCtrl = new qx.data.controller.List(walletsModel, walletsUIList, "name");
       walletsCtrl.setDelegate({
@@ -117,7 +120,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
 
-      this._add(walletsUIList, layoutOpts);
+      this._add(walletsUIList);
       return walletsModel;
     },
 
