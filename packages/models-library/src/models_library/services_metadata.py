@@ -28,7 +28,7 @@ class ServiceMetaDataEditable(ServiceBase):
 
     # user-defined metatada
     classifiers: list[str] | None
-    quality: dict[str, Any] = Field(default_factory=dict)
+    quality: dict[str, Any] = {}
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

@@ -596,7 +596,6 @@
             "description": "Affiliation of the author"
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
           "name",
@@ -628,7 +627,6 @@
             "description": "Link to the status"
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
           "name",
@@ -2053,7 +2051,7 @@
           "name": {
             "type": "string",
             "title": "Name",
-            "description": "short, human readable name for the node",
+            "description": "Display name: short, human readable name for the node",
             "example": "Fast Counter"
           },
           "thumbnail": {
@@ -2207,7 +2205,7 @@
           "outputs"
         ],
         "title": "ServiceGet",
-        "description": "Static metadata for a service injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image",
+        "description": "Service metadata at publication time\n\n- read-only (can only be changed overwriting the image labels in the registry)\n- base metaddata\n- injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image",
         "example": {
           "name": "File Picker",
           "description": "description",
@@ -2306,7 +2304,8 @@
           "unit": {
             "type": "string",
             "title": "Unit",
-            "description": "Units, when it refers to a physical quantity"
+            "description": "Units, when it refers to a physical quantity",
+            "deprecated": true
           },
           "defaultValue": {
             "anyOf": [
@@ -2323,7 +2322,8 @@
                 "type": "string"
               }
             ],
-            "title": "Defaultvalue"
+            "title": "Defaultvalue",
+            "deprecated": true
           },
           "widget": {
             "allOf": [
@@ -2388,7 +2388,8 @@
           "unit": {
             "type": "string",
             "title": "Unit",
-            "description": "Units, when it refers to a physical quantity"
+            "description": "Units, when it refers to a physical quantity",
+            "deprecated": true
           },
           "widget": {
             "allOf": [
