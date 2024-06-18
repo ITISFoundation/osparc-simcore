@@ -7,9 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final, TypeAlias
 
-from playwright.sync_api import Page, Request
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import WebSocket
+from playwright.sync_api import Page, Request, WebSocket
 from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
@@ -214,7 +212,8 @@ class SocketIONodeProgressCompleteWaiter:
                         progress_type in self._current_progress
                         for progress_type in NodeProgressType.required_service_started()
                     ) and all(
-                        progress == 1.0 for progress in self._current_progress.values()
+                        round(progress) == 1.0
+                        for progress in self._current_progress.values()
                     )
 
             return False
@@ -277,10 +276,16 @@ def _node_start_predicate(request: Request) -> bool:
     )
 
 
-def _wait_or_trigger_service_start(
-    page: Page, node_id: str, press_next: bool, *, logger: logging.Logger
-) -> None:
-    """3 use-cases:
+def _trigger_next_app(page: Page) -> None:
+    with page.expect_request(_node_start_predicate):
+        # Move to next step (this auto starts the next service)
+        next_button_locator = page.get_by_test_id("AppMode_NextBtn")
+        if next_button_locator.is_visible() and next_button_locator.is_enabled():
+            page.get_by_test_id("AppMode_NextBtn").click()
+
+
+def _wait_or_trigger_service_start(page: Page, node_id: str) -> None:
+    """2 use-cases:
     1. The service will auto-start, the start button might show a while --> no need to press
     2. The service does not auto-start, we need to press the button after waiting a little bit
 
@@ -290,37 +295,27 @@ def _wait_or_trigger_service_start(
         press_next -- _description_
         logger -- _description_
     """
-    try:
-
+    # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
+    page.wait_for_timeout(5000)
+    start_button_locator = page.get_by_test_id(f"Start_{node_id}")
+    if start_button_locator.is_visible() and start_button_locator.is_enabled():
         with page.expect_request(_node_start_predicate):
-            # Move to next step (this auto starts the next service)
-            if press_next:
-                next_button_locator = page.get_by_test_id("AppMode_NextBtn")
-                if (
-                    next_button_locator.is_visible()
-                    and next_button_locator.is_enabled()
-                ):
-                    page.get_by_test_id("AppMode_NextBtn").click()
-    except PlaywrightTimeoutError:
-        logger.warning(
-            "Request to start service not received after %sms, forcing start",
-            LET_IT_START_OR_FORCE_WAIT_TIME_MS,
-        )
-        with page.expect_request(_node_start_predicate):
-            page.get_by_test_id(f"Start_{node_id}").click()
+            start_button_locator.click()
 
 
 def wait_or_force_start_service(
     *,
     page: Page,
-    logger: logging.Logger,
     node_id: str,
     press_next: bool,
     websocket: WebSocket,
     timeout: int,
 ) -> None:
     waiter = SocketIONodeProgressCompleteWaiter()
-    with log_context(logging.INFO, msg="Waiting for node to run"), page.expect_request(
-        _node_start_predicate, timeout=timeout + 10
+    with log_context(
+        logging.INFO, msg="Waiting for node to run"
     ), websocket.expect_event("framereceived", waiter, timeout=timeout):
-        _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
+        if press_next:
+            _trigger_next_app(page)
+        # else:
+        #     _wait_or_trigger_service_start(page, node_id)

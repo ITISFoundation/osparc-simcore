@@ -88,7 +88,6 @@ def test_tip(
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
         wait_or_force_start_service(
             page=page,
-            logger=ctx.logger,
             node_id=node_ids[0],
             press_next=False,
             websocket=log_in_and_out,
@@ -137,7 +136,6 @@ def test_tip(
         ) as ws_info:
             wait_or_force_start_service(
                 page=page,
-                logger=ctx.logger,
                 node_id=node_ids[1],
                 press_next=True,
                 websocket=log_in_and_out,
@@ -185,7 +183,6 @@ def test_tip(
     with log_context(logging.INFO, "Exposure Analysis step"):
         wait_or_force_start_service(
             page=page,
-            logger=ctx.logger,
             node_id=node_ids[2],
             press_next=True,
             websocket=log_in_and_out,
