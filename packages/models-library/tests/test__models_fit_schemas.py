@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 import pytest
 from models_library.projects import Project
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from pydantic.main import BaseModel
 
 
@@ -15,7 +15,7 @@ from pydantic.main import BaseModel
 @pytest.mark.parametrize(
     "pydantic_model, original_json_schema",
     [
-        (ServiceDockerData, "node-meta-v0.0.1-pydantic.json"),
+        (ServiceMetaDataPublished, "node-meta-v0.0.1-pydantic.json"),
         (Project, "project-v0.0.1-pydantic.json"),
     ],
 )

@@ -5,7 +5,7 @@ from typing import Any, Literal
 from pydantic import schema_of
 
 from ..services import ServiceInput, ServiceOutput
-from ..services_constants import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
+from ..services_regex import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
 
 PortKindStr = Literal["input", "output"]
 JsonSchemaDict = dict[str, Any]

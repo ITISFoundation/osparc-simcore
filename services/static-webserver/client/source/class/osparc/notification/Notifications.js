@@ -101,7 +101,7 @@ qx.Class.define("osparc.notification.Notifications", {
         "category": "WALLET_SHARED",
         "actionable_path": "wallet/"+walletId,
         "title": "Credits shared",
-        "text": "A Credit account was shared with you"
+        "text": "A Credit Account was shared with you"
       };
       return {
         ...baseNotification,

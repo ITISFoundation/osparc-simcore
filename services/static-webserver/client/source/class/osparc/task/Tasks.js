@@ -24,7 +24,7 @@ qx.Class.define("osparc.task.Tasks", {
     this.__tasks = new qx.data.Array();
 
     const tasksContainer = this.__tasksContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(3)).set({
-      zIndex: 110000,
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       visibility: "excluded"
     });
     osparc.utils.Utils.setIdToWidget(tasksContainer, "tasks");

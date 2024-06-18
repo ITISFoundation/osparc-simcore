@@ -15,17 +15,32 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tours.Utils", {
+/**
+ * @asset(osparc/tours/s4llite_tours.json)
+ * @asset(osparc/tours/s4l_tours.json)
+ * @asset(osparc/tours/tis_tours.json)
+ */
+
+qx.Class.define("osparc.product.tours.Tours", {
   type: "static",
 
   statics: {
     TOURS: {
       "s4llite": {
-        fetchTours: () => osparc.product.tours.s4llite.Tours.fetchTours()
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4llite_tours.json")
       },
       "s4l": {
-        fetchTours: () => osparc.product.tours.s4l.Tours.fetchTours()
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
+      },
+      "tis": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tis_tours.json")
       }
+    },
+
+    fetchTours: function(link) {
+      return osparc.utils.Utils.fetchJSON(link)
+        .then(Object.values)
+        .catch(console.error);
     },
 
     // it returns a promise
