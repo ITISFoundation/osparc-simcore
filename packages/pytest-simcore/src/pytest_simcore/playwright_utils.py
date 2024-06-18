@@ -316,6 +316,6 @@ def wait_or_force_start_service(
 ) -> None:
     waiter = SocketIONodeProgressCompleteWaiter()
     with log_context(
-        logging.INFO, msg="Waiting for node to start"
+        logging.INFO, msg="Waiting for node to run"
     ), websocket.expect_event("framereceived", waiter, timeout=timeout):
         _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
