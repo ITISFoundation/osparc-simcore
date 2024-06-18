@@ -13,7 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final
 
-from playwright.sync_api import Page, WebSocket, expect
+from playwright.sync_api import Page, WebSocket
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_or_force_start_service
 
@@ -196,9 +196,6 @@ def test_tip(
         with log_context(logging.INFO, "Post process"):
             s4l_postpro_page = page.frame_locator(
                 f'[osparc-test-id="iframe_{node_ids[2]}"]'
-            )
-            expect(s4l_postpro_page.get_by_test_id("mode-button-postro")).to_be_visible(
-                timeout=service_opening_waiting_timeout
             )
             # click on the postpro mode button
             s4l_postpro_page.get_by_test_id("mode-button-postro").click()

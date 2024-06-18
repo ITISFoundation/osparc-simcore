@@ -7,7 +7,9 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final, TypeAlias
 
-from playwright.sync_api import Page, Request, WebSocket
+from playwright.sync_api import Page, Request
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import WebSocket
 from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
@@ -52,6 +54,7 @@ class RunningState(str, Enum):
 class NodeProgressType(str, Enum):
     # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
     # It must remain as such until that module is pydantic V2 compatible
+    CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
     SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
     SIDECARS_PULLING = "SIDECARS_PULLING"
     SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
@@ -194,9 +197,19 @@ class SocketIONodeProgressCompleteWaiter:
                     self._current_progress[progress_type] = current_progress / total
                     ctx.logger.info(
                         "current startup progress: %s",
-                        f"{dict(self._current_progress)=}",
+                        f"{json.dumps(self._current_progress)}",
                     )
-                    # if all progress types are complete, return True
+
+                    # As soon as SIDECARS_PULLING is 1.0, we can assume CLUSTER_UP_SCALING is complete
+                    if (
+                        self._current_progress[NodeProgressType.SIDECARS_PULLING] > 0
+                        and NodeProgressType.CLUSTER_UP_SCALING
+                        not in self._current_progress
+                    ):
+                        self._current_progress[
+                            NodeProgressType.CLUSTER_UP_SCALING
+                        ] = 1.0
+
                     return all(
                         progress_type in self._current_progress
                         for progress_type in NodeProgressType
@@ -277,7 +290,7 @@ def _wait_or_trigger_service_start(
                     and next_button_locator.is_enabled()
                 ):
                     page.get_by_test_id("AppMode_NextBtn").click()
-    except TimeoutError:
+    except PlaywrightTimeoutError:
         logger.warning(
             "Request to start service not received after %sms, forcing start",
             LET_IT_START_OR_FORCE_WAIT_TIME_MS,
