@@ -89,6 +89,8 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    FLOATING_Z_INDEX: 110000,
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,

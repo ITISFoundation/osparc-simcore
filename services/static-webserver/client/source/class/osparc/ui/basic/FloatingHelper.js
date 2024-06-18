@@ -19,7 +19,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     this.set({
       backgroundColor: "transparent",
       visibility: "excluded",
-      zIndex: 110000
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX
     });
 
     if (caretSize) {

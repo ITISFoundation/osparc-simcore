@@ -24,7 +24,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
-      zIndex: 110000,
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
       maxHeight: 250,
       backgroundColor: "background-main-3"
