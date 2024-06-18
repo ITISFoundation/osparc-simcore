@@ -3,15 +3,18 @@
 # pylint: disable=unused-import
 
 import sys
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
-from typing import Any, AsyncIterable
+from typing import Any
 
 import pytest
 import servicelib
+import servicelib.redis as servicelib_redis
 from faker import Faker
+from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -69,10 +72,15 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 async def get_redis_client_sdk(
+    mocker: MockerFixture,
     redis_service: RedisSettings,
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
+    mocker.patch.object(
+        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2)
+    )
+
     @asynccontextmanager
     async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
