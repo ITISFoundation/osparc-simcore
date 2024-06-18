@@ -3,7 +3,8 @@ from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse, RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
@@ -13,6 +14,10 @@ from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.routes.solvers_jobs import JOBS_STATUS_CODES
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedException,
+)
 
 from ...api.dependencies.authentication import get_current_user_id
 from ...api.dependencies.services import get_api_client
@@ -181,7 +186,23 @@ async def delete_study_job(
 
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=JobStatus,
+    responses=JOBS_STATUS_CODES
+    | {
+        status.HTTP_200_OK: {
+            "description": "Job already started",
+            "model": JobStatus,
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+            "model": ErrorGet,
+        },
+    },
 )
 async def start_study_job(
     request: Request,
@@ -191,23 +212,33 @@ async def start_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
-) -> JobStatus:
+) -> JobStatus | JSONResponse:
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
-        await start_project(
-            request=request,
-            job_id=job_id,
-            expected_job_name=job_name,
-            webserver_api=webserver_api,
-            cluster_id=cluster_id,
-        )
-        job_status: JobStatus = await inspect_study_job(
+        try:
+            await start_project(
+                request=request,
+                job_id=job_id,
+                expected_job_name=job_name,
+                webserver_api=webserver_api,
+                cluster_id=cluster_id,
+            )
+        except ProjectAlreadyStartedException:
+            job_status: JobStatus = await inspect_study_job(
+                study_id=study_id,
+                job_id=job_id,
+                user_id=user_id,
+                director2_api=director2_api,
+            )
+            return JSONResponse(
+                content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
+            )
+        return await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
-        return job_status
 
 
 @router.post(
