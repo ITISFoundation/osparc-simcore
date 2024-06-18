@@ -87,6 +87,19 @@ qx.Class.define("osparc.file.FileDrop", {
       return {
         "border-width": "0px"
       };
+    },
+
+    getFilesFromEvent: function(e) {
+      if ("dataTransfer" in e) {
+        const files = e.dataTransfer.files;
+        if (files.length === 1) {
+          const fileList = e.dataTransfer.files;
+          if (fileList.length) {
+            return fileList;
+          }
+        }
+      }
+      return [];
     }
   },
 

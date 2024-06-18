@@ -1939,14 +1939,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       if ("dataTransfer" in e) {
         this.__isDraggingFile = false;
-        const files = e.dataTransfer.files;
-        if (files.length === 1) {
-          const pos = {
-            x: e.offsetX,
-            y: e.offsetY
-          };
-          const fileList = e.dataTransfer.files;
-          if (fileList.length) {
+        osparc.file.FileDrop.getFilesFromEvent(e)
+        const fileList = e.dataTransfer.files;
+        if (fileList.length > 0) {
+          if (fileList.length === 1) {
+            const pos = {
+              x: e.offsetX,
+              y: e.offsetY
+            };
             const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
             const nodeUI = await this.__addNode(service, pos);
             if (nodeUI) {
@@ -1954,9 +1954,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.uploadPendingFiles(fileList);
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
+          } else {
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted"), "ERROR");
         }
       }
     },
