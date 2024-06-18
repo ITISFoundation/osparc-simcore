@@ -9,7 +9,7 @@ from typing import Any, cast
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.services_db import ServiceAccessRightsAtDB
 from packaging.version import Version
 from pydantic.types import PositiveInt
@@ -25,11 +25,11 @@ _logger = logging.getLogger(__name__)
 OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
 
-def _is_frontend_service(service: ServiceDockerData) -> bool:
+def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
     return "/frontend/" in service.key
 
 
-async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
+async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
     # get service build date
     client = get_director_api(app)
     data = cast(
@@ -48,7 +48,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
 
 
 async def evaluate_default_policy(
-    app: FastAPI, service: ServiceDockerData
+    app: FastAPI, service: ServiceMetaDataPublished
 ) -> tuple[PositiveInt | None, list[ServiceAccessRightsAtDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
     default access-rights policies
@@ -101,7 +101,7 @@ async def evaluate_default_policy(
 
 
 async def evaluate_auto_upgrade_policy(
-    service_metadata: ServiceDockerData, services_repo: ServicesRepository
+    service_metadata: ServiceMetaDataPublished, services_repo: ServicesRepository
 ) -> list[ServiceAccessRightsAtDB]:
     # AUTO-UPGRADE PATCH policy:
     #
