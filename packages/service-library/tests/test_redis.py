@@ -276,7 +276,7 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
     await manager.shutdown()
 
 
-async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
+async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
     client = RedisClientSDK(redis_resources_dns)
