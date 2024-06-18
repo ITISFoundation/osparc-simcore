@@ -181,7 +181,7 @@ test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_USER_INPUT_FILE) ## test tip
     if [ "$$BILLABLE" = "y" ]; then \
         BILLABLE_FLAG="--product-billable"; \
     fi; \
-	pytest -s tests/ti_plan/ti_plan.py \
+	pytest -s tests/ti_plan/ \
 		--color=yes \
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \

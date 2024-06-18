@@ -1,16 +1,22 @@
 import json
 import logging
+import re
 from collections import defaultdict
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final, TypeAlias
 
-from playwright.sync_api import WebSocket
+from playwright.sync_api import Page, Request, WebSocket
 from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
+NODE_START_TIME_MS: Final[int] = 5 * MINUTE
+NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"/projects/[^/]+/nodes/[^:]+:start"
+)
+LET_IT_START_OR_FORCE_WAIT_TIME_MS: Final[int] = 5 * SECOND
 
 
 @unique
@@ -45,6 +51,8 @@ class RunningState(str, Enum):
 
 @unique
 class NodeProgressType(str, Enum):
+    # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
+    # It must remain as such until that module is pydantic V2 compatible
     SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
     SIDECARS_PULLING = "SIDECARS_PULLING"
     SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
@@ -248,3 +256,47 @@ def on_web_socket_default_handler(ws) -> None:
     ws.on("framesent", lambda payload: ctx.logger.info("⬇️ %s", payload))
     ws.on("framereceived", lambda payload: ctx.logger.info("⬆️ %s", payload))
     ws.on("close", lambda payload: stack.close())  # noqa: ARG005
+
+
+def _node_start_predicate(request: Request) -> bool:
+    return bool(
+        re.search(NODE_START_REQUEST_PATTERN, request.url)
+        and request.method.upper() == "POST"
+    )
+
+
+def _wait_or_trigger_service_start(
+    page: Page, node_id: str, press_next: bool, *, logger: logging.Logger
+) -> None:
+    try:
+        with page.expect_request(_node_start_predicate):
+            # Move to next step (this auto starts the next service)
+            if press_next:
+                next_button_locator = page.get_by_test_id("AppMode_NextBtn")
+                if (
+                    next_button_locator.is_visible()
+                    and next_button_locator.is_enabled()
+                ):
+                    page.get_by_test_id("AppMode_NextBtn").click()
+    except TimeoutError:
+        logger.warning(
+            "Request to start service not received after %sms, forcing start",
+            LET_IT_START_OR_FORCE_WAIT_TIME_MS,
+        )
+        with page.expect_request(_node_start_predicate):
+            page.get_by_test_id(f"Start_{node_id}").click()
+
+
+def wait_or_force_start_service(
+    *,
+    page: Page,
+    logger: logging.Logger,
+    node_id: str,
+    press_next: bool,
+    websocket: WebSocket,
+) -> None:
+    waiter = SocketIONodeProgressCompleteWaiter()
+    with log_context(
+        logging.INFO, msg="Waiting for node to start"
+    ), websocket.expect_event("framereceived", waiter, timeout=NODE_START_TIME_MS):
+        _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)

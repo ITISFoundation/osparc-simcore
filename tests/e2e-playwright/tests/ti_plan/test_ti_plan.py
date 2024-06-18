@@ -14,11 +14,12 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import Page, Request, WebSocket, expect
+from playwright.sync_api import Page, WebSocket, expect
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
+    MINUTE,
     RunningState,
-    SocketIONodeProgressCompleteWaiter,
+    wait_or_force_start_service,
 )
 
 
@@ -52,64 +53,16 @@ def create_tip_plan_from_dashboard(
     return _
 
 
-_SECOND_MS: Final[int] = 1000
-_MINUTE_MS: Final[int] = 60 * _SECOND_MS
-_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 60 * _SECOND_MS
-_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 60 * _SECOND_MS
+_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
+_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS: Final[int] = 1 * MINUTE
+_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 1 * MINUTE
 
-_LET_IT_START_OR_FORCE_WAIT_TIME_MS: Final[int] = 5000
+
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5000
-_NODE_START_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"/projects/[^/]+/nodes/[^:]+:start"
-)
+
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
 )
-
-_NODE_START_TIME_MS: Final[int] = 5 * _MINUTE_MS
-
-
-def _node_start_predicate(request: Request) -> bool:
-    return bool(
-        re.search(_NODE_START_PATTERN, request.url) and request.method.upper() == "POST"
-    )
-
-
-def _wait_or_trigger_service_start(
-    page: Page, node_id: str, press_next: bool, *, logger: logging.Logger
-) -> None:
-    try:
-        with page.expect_request(_node_start_predicate):
-            # Move to next step (this auto starts the next service)
-            if press_next:
-                next_button_locator = page.get_by_test_id("AppMode_NextBtn")
-                if (
-                    next_button_locator.is_visible()
-                    and next_button_locator.is_enabled()
-                ):
-                    page.get_by_test_id("AppMode_NextBtn").click()
-    except TimeoutError:
-        logger.warning(
-            "Request to start service not received after %sms, forcing start",
-            _LET_IT_START_OR_FORCE_WAIT_TIME_MS,
-        )
-        with page.expect_request(_node_start_predicate):
-            page.get_by_test_id(f"Start_{node_id}").click()
-
-
-def _wait_or_force_start_service(
-    *,
-    page: Page,
-    logger: logging.Logger,
-    node_id: str,
-    press_next: bool,
-    websocket: WebSocket,
-) -> None:
-    waiter = SocketIONodeProgressCompleteWaiter()
-    with log_context(
-        logging.INFO, msg="Waiting for node to start"
-    ), websocket.expect_event("framereceived", waiter, timeout=_NODE_START_TIME_MS):
-        _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
 
 
 @dataclass
@@ -161,7 +114,8 @@ def test_tip(
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
-        _wait_or_force_start_service(
+
+        wait_or_force_start_service(
             page=page,
             logger=ctx.logger,
             node_id=node_ids[0],
@@ -211,7 +165,7 @@ def test_tip(
         with page.expect_websocket(
             _JLabWaitForWebSocket(), timeout=_JLAB_MAX_STARTUP_TIME_MS
         ) as ws_info:
-            _wait_or_force_start_service(
+            wait_or_force_start_service(
                 page=page,
                 logger=ctx.logger,
                 node_id=node_ids[1],
@@ -230,7 +184,9 @@ def test_tip(
             ),
             timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS,
         ):
-            ti_page.get_by_role("button", name="Run Optimization").click()
+            ti_page.get_by_role("button", name="Run Optimization").click(
+                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS
+            )
 
         ti_page.get_by_role("button", name="Load Analysis").click()
         page.wait_for_timeout(20000)
@@ -252,7 +208,7 @@ def test_tip(
         page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        _wait_or_force_start_service(
+        wait_or_force_start_service(
             page=page,
             logger=ctx.logger,
             node_id=node_ids[2],
