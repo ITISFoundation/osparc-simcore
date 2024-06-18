@@ -202,9 +202,15 @@ class SocketIONodeProgressCompleteWaiter:
 
                     # As soon as SIDECARS_PULLING is 1.0, we can assume CLUSTER_UP_SCALING is complete
                     if (
-                        self._current_progress[NodeProgressType.SIDECARS_PULLING] > 0
-                        and NodeProgressType.CLUSTER_UP_SCALING
-                        not in self._current_progress
+                        (NodeProgressType.SIDECARS_PULLING in self._current_progress)
+                        and (
+                            self._current_progress[NodeProgressType.SIDECARS_PULLING]
+                            > 0
+                        )
+                        and (
+                            NodeProgressType.CLUSTER_UP_SCALING
+                            not in self._current_progress
+                        )
                     ):
                         self._current_progress[
                             NodeProgressType.CLUSTER_UP_SCALING
