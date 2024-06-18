@@ -5,6 +5,8 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
@@ -205,7 +207,16 @@ async def start_job(
             cluster_id=cluster_id,
         )
     except ProjectAlreadyStartedException:
-        pass
+        job_status = await inspect_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+            user_id=user_id,
+            director2_api=director2_api,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
+        )
     return await inspect_job(
         solver_key=solver_key,
         version=version,
