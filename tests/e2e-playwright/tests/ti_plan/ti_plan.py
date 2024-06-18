@@ -39,12 +39,14 @@ def find_and_start_tip_plan_in_dashboard(
 @pytest.fixture
 def create_tip_plan_from_dashboard(
     find_and_start_tip_plan_in_dashboard: Callable[[str], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool], dict[str, Any]
+    ],
 ) -> Callable[[str], dict[str, Any]]:
     def _(plan_name_test_id: str) -> dict[str, Any]:
         find_and_start_tip_plan_in_dashboard(plan_name_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, confirm_open=False)
 
     return _
 
