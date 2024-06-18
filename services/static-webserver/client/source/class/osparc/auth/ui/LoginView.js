@@ -125,19 +125,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       if (osparc.product.Utils.isProduct("tis")) {
         const text = `
-          Disclaimer:
-          </br>
-          </br>
-          1) The TIP tool is designed exclusively for research purposes and it is not intended for clinical use.
-          </br>
-          </br>
-          2) Users are responsible for ensuring the anonymization and protection of privacy of medical data.
+        1) The TIP tool is designed exclusively for research purposes and it is not intended for clinical use.
+        </br>
+        </br>
+        2) Users are responsible for ensuring the anonymization and protection of privacy of medical data.
         `;
-        const disclaimer = new qx.ui.basic.Label(text).set({
-          rich: true,
-          padding: 20,
-          font: "text-13"
-        });
+        const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
         this.add(disclaimer);
       }
     },
