@@ -14,10 +14,12 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page, Request, WebSocket, expect
-from pydantic import AnyUrl
+from playwright.sync_api import Page, Request, WebSocket, expect
 from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import RunningState
+from pytest_simcore.playwright_utils import (
+    RunningState,
+    SocketIONodeProgressCompleteWaiter,
+)
 
 
 @pytest.fixture
@@ -50,35 +52,34 @@ def create_tip_plan_from_dashboard(
     return _
 
 
+_SECOND_MS: Final[int] = 1000
+_MINUTE_MS: Final[int] = 60 * _SECOND_MS
+_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 60 * _SECOND_MS
+_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 60 * _SECOND_MS
+
 _LET_IT_START_OR_FORCE_WAIT_TIME_MS: Final[int] = 5000
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5000
 _NODE_START_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/projects/[^/]+/nodes/[^:]+:start"
 )
+_GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"/storage/locations/[^/]+/files"
+)
+
+_NODE_START_TIME_MS: Final[int] = 5 * _MINUTE_MS
 
 
-@dataclass(slots=True, kw_only=True)
-class _RequestPredicate:
-    url_pattern: re.Pattern[str] | str
-    method: str
-
-    def __call__(self, request: Request) -> bool:
-        return bool(
-            re.search(self.url_pattern, request.url)
-            and request.method.upper() == self.method.upper()
-        )
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.url_pattern, re.Pattern):
-            self.url_pattern = re.compile(self.url_pattern)
+def _node_start_predicate(request: Request) -> bool:
+    return bool(
+        re.search(_NODE_START_PATTERN, request.url) and request.method.upper() == "POST"
+    )
 
 
-def _wait_or_force_start_service(
-    page: Page, logger: logging.Logger, node_id: str, *, press_next: bool
+def _wait_or_trigger_service_start(
+    page: Page, node_id: str, press_next: bool, *, logger: logging.Logger
 ) -> None:
     try:
-        predicate = _RequestPredicate(url_pattern=_NODE_START_PATTERN, method="POST")
-        with page.expect_request(predicate):
+        with page.expect_request(_node_start_predicate):
             # Move to next step (this auto starts the next service)
             if press_next:
                 next_button_locator = page.get_by_test_id("AppMode_NextBtn")
@@ -92,13 +93,23 @@ def _wait_or_force_start_service(
             "Request to start service not received after %sms, forcing start",
             _LET_IT_START_OR_FORCE_WAIT_TIME_MS,
         )
-        with page.expect_request(predicate):
+        with page.expect_request(_node_start_predicate):
             page.get_by_test_id(f"Start_{node_id}").click()
 
 
-_SECOND_MS: Final[int] = 1000
-_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 60 * _SECOND_MS
-_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 60 * _SECOND_MS
+def _wait_or_force_start_service(
+    *,
+    page: Page,
+    logger: logging.Logger,
+    node_id: str,
+    press_next: bool,
+    websocket: WebSocket,
+) -> None:
+    waiter = SocketIONodeProgressCompleteWaiter()
+    with log_context(
+        logging.INFO, msg="Waiting for node to start"
+    ), websocket.expect_event("framereceived", waiter, timeout=_NODE_START_TIME_MS):
+        _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
 
 
 @dataclass
@@ -117,7 +128,7 @@ class _JLabWebSocketWaiter:
 
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
-            with contextlib.suppress(json.JSONDecodeError):
+            with contextlib.suppress(json.JSONDecodeError, UnicodeDecodeError):
                 decoded_message = json.loads(message)
                 msg_type: str = decoded_message.get("header", {}).get("msg_type", "")
                 msg_contents: str = decoded_message.get("content", {}).get("text", "")
@@ -133,8 +144,6 @@ def test_tip(
     page: Page,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    api_request_context: APIRequestContext,
-    product_url: AnyUrl,
     product_billable: bool,
     service_opening_waiting_timeout: int,
 ):
@@ -152,8 +161,13 @@ def test_tip(
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
-        # TODO: use the websocket to wait for service running state...
-        _wait_or_force_start_service(page, ctx.logger, node_ids[0], press_next=False)
+        _wait_or_force_start_service(
+            page=page,
+            logger=ctx.logger,
+            node_id=node_ids[0],
+            press_next=False,
+            websocket=log_in_and_out,
+        )
 
         # Electrode Selector
         electrode_selector_iframe = page.frame_locator(
@@ -181,8 +195,9 @@ def test_tip(
             electrode_selector_iframe.get_by_test_id(electrode_id).click()
         # configuration done, push and wait for output
         with page.expect_request(
-            _RequestPredicate(
-                method="GET", url_pattern=r"/storage/locations/[^/]+/files"
+            lambda r: bool(
+                re.search(_GET_NODE_OUTPUTS_REQUEST_PATTERN, r.url)
+                and r.method.upper() == "GET"
             )
         ) as request_info:
             electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
@@ -196,7 +211,13 @@ def test_tip(
         with page.expect_websocket(
             _JLabWaitForWebSocket(), timeout=_JLAB_MAX_STARTUP_TIME_MS
         ) as ws_info:
-            _wait_or_force_start_service(page, ctx.logger, node_ids[1], press_next=True)
+            _wait_or_force_start_service(
+                page=page,
+                logger=ctx.logger,
+                node_id=node_ids[1],
+                press_next=True,
+                websocket=log_in_and_out,
+            )
         jlab_websocket = ws_info.value
 
         # Optimal Configuration Identification
@@ -231,7 +252,13 @@ def test_tip(
         page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        _wait_or_force_start_service(page, ctx.logger, node_ids[2], press_next=True)
+        _wait_or_force_start_service(
+            page=page,
+            logger=ctx.logger,
+            node_id=node_ids[2],
+            press_next=True,
+            websocket=log_in_and_out,
+        )
 
         # Sim4Life PostPro
         s4l_postpro_page = page.frame_locator(

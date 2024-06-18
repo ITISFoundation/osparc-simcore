@@ -1,9 +1,10 @@
 import json
 import logging
+from collections import defaultdict
 from contextlib import ExitStack
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, unique
-from typing import Any, Final
+from typing import Any, Final, TypeAlias
 
 from playwright.sync_api import WebSocket
 from pytest_simcore.logging_utils import log_context
@@ -40,6 +41,15 @@ class RunningState(str, Enum):
             RunningState.STARTED,
             RunningState.WAITING_FOR_CLUSTER,
         )
+
+
+@unique
+class NodeProgressType(str, Enum):
+    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
+    SIDECARS_PULLING = "SIDECARS_PULLING"
+    SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
+    SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
+    SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
 
 
 class ServiceType(str, Enum):
@@ -82,6 +92,23 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     assert "state" in event.obj["data"]
     assert "value" in event.obj["data"]["state"]
     return RunningState(event.obj["data"]["state"]["value"])
+
+
+CurrentProgress: TypeAlias = float
+TotalProgress: TypeAlias = float
+
+
+def retrieve_node_progress_from_decoded_message(
+    event: SocketIOEvent,
+) -> tuple[NodeProgressType, CurrentProgress, TotalProgress]:
+    assert event.name == _OSparcMessages.NODE_PROGRESS.value
+    assert "progress_type" in event.obj
+    assert "progress_report" in event.obj
+    return (
+        NodeProgressType(event.obj["progress_type"]),
+        float(event.obj["progress_report"]["actual_value"]),
+        float(event.obj["progress_report"]["total"]),
+    )
 
 
 @dataclass
@@ -137,6 +164,40 @@ class SocketIOOsparcMessagePrinter:
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
             if decoded_message.name in osparc_messages:
                 print("WS Message:", decoded_message.name, decoded_message.obj)
+
+
+@dataclass
+class SocketIONodeProgressCompleteWaiter:
+    _current_progress: dict[NodeProgressType, float] = field(
+        default_factory=defaultdict
+    )
+
+    def __call__(self, message: str) -> bool:
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
+                    (
+                        progress_type,
+                        current_progress,
+                        total,
+                    ) = retrieve_node_progress_from_decoded_message(decoded_message)
+                    self._current_progress[progress_type] = current_progress / total
+                    ctx.logger.info(
+                        "current startup progress: %s",
+                        f"{dict(self._current_progress)=}",
+                    )
+                    # if all progress types are complete, return True
+                    return all(
+                        progress_type in self._current_progress
+                        for progress_type in NodeProgressType
+                    ) and all(
+                        progress == 1.0 for progress in self._current_progress.values()
+                    )
+
+            return False
 
 
 def wait_for_pipeline_state(
