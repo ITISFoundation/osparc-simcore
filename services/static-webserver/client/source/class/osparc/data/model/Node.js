@@ -1331,9 +1331,16 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really ready
       fetch(srvUrl)
         .then(request => {
+          /*
           if (request.status >= 200 || request.status < 300) {
             this.__waitForServiceWebsite(srvUrl)
           }
+          */
+          // instead of
+          // - requesting its frontend to make sure it is ready and ...
+          // - waiting for the "load" event triggered by the content of the iframe
+          // we will skip those steps and directly switch its iframe
+          this.__serviceReadyIn(srvUrl);
         })
         .catch(err => {
           this.getStatus().setInteractive("connecting");
