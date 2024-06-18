@@ -87,6 +87,21 @@ qx.Class.define("osparc.file.FileDrop", {
       return {
         "border-width": "0px"
       };
+    },
+
+    getFilesFromEvent: function(e) {
+      const files = [];
+      if (e.dataTransfer.items) {
+        const items = e.dataTransfer.items;
+        for (let i = 0; i < items.length; i++) {
+          // If dropped items aren't files, reject them
+          if (items[i].webkitGetAsEntry()["isFile"]) {
+            const file = items[i].getAsFile();
+            files.push(file);
+          }
+        }
+      }
+      return files;
     }
   },
 
@@ -276,17 +291,18 @@ qx.Class.define("osparc.file.FileDrop", {
 
       this.__isDraggingFile = false;
       if ("dataTransfer" in e) {
-        const files = e.dataTransfer.files;
-        if (files.length === 1) {
-          const fileList = e.dataTransfer.files;
-          if (fileList.length) {
+        const files = osparc.file.FileDrop.getFilesFromEvent(e);
+        if (files.length) {
+          if (files.length === 1) {
             this.fireDataEvent("localFileDropped", {
               data: files,
               pos: this.__pointerFileEventToScreenPos(e)
             });
+          } else {
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file at a time is accepted."), "ERROR");
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
         }
       }
     },
