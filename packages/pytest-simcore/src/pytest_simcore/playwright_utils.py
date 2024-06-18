@@ -61,6 +61,16 @@ class NodeProgressType(str, Enum):
     SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
     SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
 
+    @classmethod
+    def required_service_started(cls) -> set["NodeProgressType"]:
+        return {
+            NodeProgressType.SERVICE_INPUTS_PULLING,
+            NodeProgressType.SIDECARS_PULLING,
+            NodeProgressType.SERVICE_OUTPUTS_PULLING,
+            NodeProgressType.SERVICE_STATE_PULLING,
+            NodeProgressType.SERVICE_IMAGES_PULLING,
+        }
+
 
 class ServiceType(str, Enum):
     DYNAMIC = "DYNAMIC"
@@ -200,25 +210,9 @@ class SocketIONodeProgressCompleteWaiter:
                         f"{json.dumps(self._current_progress)}",
                     )
 
-                    # As soon as SIDECARS_PULLING is 1.0, we can assume CLUSTER_UP_SCALING is complete
-                    if (
-                        (NodeProgressType.SIDECARS_PULLING in self._current_progress)
-                        and (
-                            self._current_progress[NodeProgressType.SIDECARS_PULLING]
-                            > 0
-                        )
-                        and (
-                            NodeProgressType.CLUSTER_UP_SCALING
-                            not in self._current_progress
-                        )
-                    ):
-                        self._current_progress[
-                            NodeProgressType.CLUSTER_UP_SCALING
-                        ] = 1.0
-
                     return all(
                         progress_type in self._current_progress
-                        for progress_type in NodeProgressType
+                        for progress_type in NodeProgressType.required_service_started()
                     ) and all(
                         progress == 1.0 for progress in self._current_progress.values()
                     )
@@ -286,7 +280,18 @@ def _node_start_predicate(request: Request) -> bool:
 def _wait_or_trigger_service_start(
     page: Page, node_id: str, press_next: bool, *, logger: logging.Logger
 ) -> None:
+    """3 use-cases:
+    1. The service will auto-start, the start button might show a while --> no need to press
+    2. The service does not auto-start, we need to press the button after waiting a little bit
+
+    Arguments:
+        page -- _description_
+        node_id -- _description_
+        press_next -- _description_
+        logger -- _description_
+    """
     try:
+
         with page.expect_request(_node_start_predicate):
             # Move to next step (this auto starts the next service)
             if press_next:
@@ -315,7 +320,7 @@ def wait_or_force_start_service(
     timeout: int,
 ) -> None:
     waiter = SocketIONodeProgressCompleteWaiter()
-    with log_context(
-        logging.INFO, msg="Waiting for node to run"
+    with log_context(logging.INFO, msg="Waiting for node to run"), page.expect_request(
+        _node_start_predicate, timeout=timeout + 10
     ), websocket.expect_event("framereceived", waiter, timeout=timeout):
         _wait_or_trigger_service_start(page, node_id, press_next, logger=logger)
