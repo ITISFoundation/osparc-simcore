@@ -306,6 +306,8 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
+        *,
+        confirm_open: bool = True,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
@@ -321,7 +323,8 @@ def create_new_project_and_delete(
                 re.compile(r"/projects/[^:]+:open")
             ) as response_info:
                 # Project detail view pop-ups shows
-                page.get_by_test_id("openResource").click()
+                if confirm_open:
+                    page.get_by_test_id("openResource").click()
                 if product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
