@@ -365,7 +365,7 @@ async def test_run_solver_job(
         auth=auth,
         params={"cluster_id": 1},
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_202_ACCEPTED
     assert mocked_directorv2_service_api["inspect_computation"].called
 
     job_status = JobStatus.parse_obj(resp.json())
