@@ -92,15 +92,14 @@ qx.Class.define("osparc.file.FileDrop", {
     getFilesFromEvent: function(e) {
       const files = [];
       if (e.dataTransfer.items) {
-        // Use DataTransferItemList interface to access the file(s)
-        [...e.dataTransfer.items].forEach((item, i) => {
+        const items = e.dataTransfer.items;
+        for (let i = 0; i < items.length; i++) {
           // If dropped items aren't files, reject them
-          if (item.kind === "file") {
-            const file = item.getAsFile();
-            console.log(`… file[${i}].name = ${file.name}`);
+          if (items[i].webkitGetAsEntry()["isFile"]) {
+            const file = items[i].getAsFile();
             files.push(file);
           }
-        });
+        }
       }
       return files;
     }
