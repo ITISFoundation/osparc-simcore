@@ -176,6 +176,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    everyoneProductGroup: {
+      check: "Object",
+      init: {}
+    },
+    everyoneGroup: {
+      check: "Object",
+      init: {}
+    },
     clusters: {
       check: "Array",
       init: [],
@@ -541,7 +549,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
-        promises.push(this.getVisibleMembers());
+        promises.push(this.getReachableMembers());
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
@@ -588,15 +596,12 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getVisibleMembers: function(reload = false) {
+    getAllGroupsAndMembers: function() {
       return new Promise(resolve => {
-        const reachableMembers = this.getReachableMembers();
-        if (!reload && Object.keys(reachableMembers).length) {
-          resolve(reachableMembers);
-          return;
-        }
         osparc.data.Resources.get("organizations")
           .then(resp => {
+            this.setEveryoneGroup(resp["all"]);
+            this.setEveryoneProductGroup(resp["product"]);
             const orgMembersPromises = [];
             const orgs = resp["organizations"];
             orgs.forEach(org => {
@@ -609,6 +614,7 @@ qx.Class.define("osparc.store.Store", {
             });
             Promise.all(orgMembersPromises)
               .then(orgMemberss => {
+                const reachableMembers = this.getReachableMembers();
                 orgMemberss.forEach(orgMembers => {
                   orgMembers.forEach(orgMember => {
                     orgMember["label"] = osparc.utils.Utils.firstsUp(
@@ -618,19 +624,18 @@ qx.Class.define("osparc.store.Store", {
                     reachableMembers[orgMember["gid"]] = orgMember;
                   });
                 });
-                resolve(reachableMembers);
+                resolve();
               });
           });
       });
     },
 
-    getPotentialCollaborators: function(includeMe = false, includeGlobalEveryone = false) {
+    getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
-        promises.push(this.getVisibleMembers());
-        promises.push(this.getProductEveryone());
-        promises.push(this.getGroupEveryone());
+        promises.push(this.getReachableMembers());
+        promises.push(this.getEveryoneProductGroup());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -657,14 +662,9 @@ qx.Class.define("osparc.store.Store", {
               };
             }
             const productEveryone = values[2]; // entry
-            if (productEveryone && productEveryone["accessRights"]["read"]) {
+            if (includeProductEveryone && productEveryone) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
-            }
-            const groupEveryone = values[3];
-            if (includeGlobalEveryone && groupEveryone) {
-              groupEveryone["collabType"] = 0;
-              potentialCollaborators[groupEveryone["gid"]] = groupEveryone;
             }
             resolve(potentialCollaborators);
           })
@@ -696,7 +696,7 @@ qx.Class.define("osparc.store.Store", {
     getUser: function(uid) {
       return new Promise(resolve => {
         if (uid) {
-          this.getVisibleMembers()
+          this.getReachableMembers()
             .then(visibleMembers => {
               resolve(Object.values(visibleMembers).find(member => member.id === uid));
             })
