@@ -46,24 +46,27 @@
     "context": "osparc-test-id=navigationBar",
     "steps": [{
       "beforeClick": {
+        "selector": "osparc-test-id=notificationsButton",
+        "event": "tap"
+      },
+      "anchorEl": "osparc-test-id=notificationsContainer",
+      "text": "By clicking on the Bell, you will you see notifications about what Studies, Credits and Organizations.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "In this menu you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other interactive Guides.",
+      "text": "Under the question mark, you find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
       "placement": "left"
-    }, {
-      "anchorEl": "osparc-test-id=creditsNavigationBtn",
-      "title": "Credits",
-      "text": "It will open the Billing Center",
-      "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User menu gives you access to Your Account, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
       "placement": "left"
     }]
   },
@@ -76,15 +79,15 @@
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
-      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
-      "title": "Project Filter and Search",
-      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
-      "placement": "bottom"
-    }, {
       "anchorEl": "osparc-test-id=startS4LButton",
       "title": "Start Sim4Life",
       "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
       "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Filter and Search",
+      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studyItemMenuButton",

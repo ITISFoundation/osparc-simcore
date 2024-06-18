@@ -51,6 +51,11 @@ qx.Class.define("osparc.About", {
     __buildLayout: function() {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
 
+      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink().set({
+        font: "link-label-14"
+      });
+      this.add(createReleaseNotesLink);
+
       const poweredByLabel = new qx.ui.basic.Label().set({
         font: "text-14",
         maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,

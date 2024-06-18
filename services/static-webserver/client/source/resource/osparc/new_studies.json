@@ -43,6 +43,13 @@
       "newStudyLabel": "Personalized Phase-Modulation TI",
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton"
+    }],
+    "categories": [{
+      "id": "precomputed",
+      "label": "Precomputed"
+    }, {
+      "id": "personalized",
+      "label": "Personalized: Credits are required to run simulations."
     }]
   },
   "s4l": {
