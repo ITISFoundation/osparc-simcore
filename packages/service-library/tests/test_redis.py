@@ -268,12 +268,9 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
         databases_configs=all_redis_configs, settings=redis_service
     )
 
-    await manager.setup()
-
-    for config in all_redis_configs:
-        assert manager.client(config.database)
-
-    await manager.shutdown()
+    async with manager:
+        for config in all_redis_configs:
+            assert manager.client(config.database)
 
 
 async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
