@@ -90,6 +90,7 @@ class RedisClientSDK:
             self._check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
+        self._is_healthy = True
 
         _logger.info(
             "Connection to %s succeeded with %s",
