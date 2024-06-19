@@ -278,11 +278,7 @@ def log_in_and_out(
         logging.INFO,
         f"Logging out of {product_url=} using {user_name=}/{user_password=}",
     ):
-        # click anywher to remove modal windows
-        page.click(
-            "body",
-            position={"x": 0, "y": 0},
-        )
+        page.keyboard.press("Escape")
         page.get_by_test_id("userMenuBtn").click()
         with page.expect_response(re.compile(r"/auth/logout")) as response_info:
             page.get_by_test_id("userMenuLogoutBtn").click()
@@ -316,11 +312,12 @@ def create_new_project_and_delete(
             f"Opening project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            with log_in_and_out.expect_event(
-                "framereceived", waiter
-            ), page.expect_response(
-                re.compile(r"/projects/[^:]+:open")
-            ) as response_info:
+            with (
+                log_in_and_out.expect_event("framereceived", waiter),
+                page.expect_response(
+                    re.compile(r"/projects/[^:]+:open")
+                ) as response_info,
+            ):
                 # Project detail view pop-ups shows
                 if press_open:
                     page.get_by_test_id("openResource").click()
@@ -365,7 +362,6 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
         ):
-
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
@@ -445,15 +441,18 @@ def start_and_stop_pipeline(
 
             # NOTE: Keep expect_request as an inner context. In case of timeout, we want
             # to know whether the POST was requested or not.
-            with log_in_and_out.expect_event(
-                "framereceived",
-                waiter,
-                timeout=_OUTER_CONTEXT_TIMEOUT_MS,
-            ) as event, page.expect_request(
-                lambda r: re.search(r"/computations", r.url)
-                and r.method.upper() == "POST",  # type: ignore
-                timeout=_INNER_CONTEXT_TIMEOUT_MS,
-            ) as request_info:
+            with (
+                log_in_and_out.expect_event(
+                    "framereceived",
+                    waiter,
+                    timeout=_OUTER_CONTEXT_TIMEOUT_MS,
+                ) as event,
+                page.expect_request(
+                    lambda r: re.search(r"/computations", r.url)
+                    and r.method.upper() == "POST",  # type: ignore
+                    timeout=_INNER_CONTEXT_TIMEOUT_MS,
+                ) as request_info,
+            ):
                 page.get_by_test_id("runStudyBtn").click()
 
             response = request_info.value.response()
