@@ -32,8 +32,8 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
+    _NEW_ENVIRONMENTS,
     OsparcSessionVariablesTable,
-    _new_environments,
     auto_inject_environments,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -262,7 +262,7 @@ def test_auto_inject_environments_added_to_all_services_in_compose():
     assert before != after
     assert after == model
 
-    auto_injected_envs = set(_new_environments.keys())
+    auto_injected_envs = set(_NEW_ENVIRONMENTS.keys())
     for name, service in model.compose_spec.get("services", {}).items():
 
         # all services have environment specs
@@ -278,6 +278,6 @@ def test_auto_inject_environments_are_registered():
     table = OsparcSessionVariablesTable.create(app)
 
     registered_osparc_variables = set(table.variables_names())
-    auto_injected_osparc_variables = {_.lstrip("$") for _ in _new_environments.values()}
+    auto_injected_osparc_variables = {_.lstrip("$") for _ in _NEW_ENVIRONMENTS.values()}
 
     assert auto_injected_osparc_variables.issubset(registered_osparc_variables)

@@ -4,7 +4,7 @@
 import functools
 import logging
 from copy import deepcopy
-from typing import Any
+from typing import Any, Final
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -138,8 +138,7 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
         return table
 
 
-# TODO: test that these osparc_variable are always defined
-_new_environments = {
+_NEW_ENVIRONMENTS: Final = {
     "OSPARC_API_URL": "$OSPARC_VARIABLE_API_HOST",
     "OSPARC_API_KEY": "$OSPARC_VARIABLE_API_KEY",
     "OSPARC_API_SECRET": "$OSPARC_VARIABLE_API_SECRET",
@@ -158,13 +157,13 @@ def auto_inject_environments(simcore_service_labels: SimcoreServiceLabels):
 
             if isinstance(current_environment, dict):
                 service["environment"] = {
-                    **_new_environments,
+                    **_NEW_ENVIRONMENTS,
                     **current_environment,
                 }
             elif isinstance(current_environment, list):
                 service["environment"] = [
                     f"{name}={value}"
-                    for name, value in _new_environments.items()
+                    for name, value in _NEW_ENVIRONMENTS.items()
                     if not any(_.startswith(name) for _ in current_environment)
                 ]
 
