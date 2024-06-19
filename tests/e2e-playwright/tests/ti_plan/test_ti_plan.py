@@ -88,7 +88,6 @@ def test_tip(  # noqa: PLR0915
             websocket=log_in_and_out,
             timeout=_ELECTRODE_SELECTOR_MAX_STARTUP_TIME
             + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
-            iframe_selector=f'[osparc-test-id="iframe_{node_ids[0]}"]',
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS)
@@ -137,7 +136,6 @@ def test_tip(  # noqa: PLR0915
                 websocket=log_in_and_out,
                 timeout=_JLAB_MAX_STARTUP_TIME_MS
                 + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
-                iframe_selector=f'[osparc-test-id="iframe_{node_ids[1]}"]',
             )
         jlab_websocket = ws_info.value
 
@@ -184,7 +182,6 @@ def test_tip(  # noqa: PLR0915
             websocket=log_in_and_out,
             timeout=_POST_PRO_MAX_STARTUP_TIME_MS
             + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
-            iframe_selector=f'[osparc-test-id="iframe_{node_ids[2]}"]',
         )
 
         with log_context(logging.INFO, "Post process"):

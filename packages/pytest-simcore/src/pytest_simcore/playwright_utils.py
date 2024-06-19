@@ -318,7 +318,6 @@ def wait_or_force_start_service(
     press_next: bool,
     websocket: WebSocket,
     timeout: int,
-    iframe_selector: str,
 ) -> FrameLocator:
     # The service might have started already or not
     # If the service is running, we have a iframe present
@@ -335,4 +334,4 @@ def wait_or_force_start_service(
             _trigger_next_app(page)
         # else:
         #     _wait_or_trigger_service_start(page, node_id)
-    return page.frame_locator(iframe_selector)
+    return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
