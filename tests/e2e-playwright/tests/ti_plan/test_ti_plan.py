@@ -17,29 +17,40 @@ from playwright.sync_api import Page, WebSocket
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_or_force_start_service
 
-_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
-
-_ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
-_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + 3 * MINUTE
-)
-_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5 * SECOND
-
-
-_JLAB_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
-_JLAB_BILLABLE_MAX_STARTUP_TIME_MS: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + 15 * MINUTE
-)
-_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS: Final[int] = 1 * MINUTE
-_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 1 * MINUTE
-_JLAB_REPORTING_MAX_TIME_MS: Final[int] = 20 * SECOND
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
 )
 
-_POST_PRO_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
-_POST_PRO_BILLABLE_MAX_STARTUP_TIME_MS: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + 15 * MINUTE
+_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
+
+_ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME: Final[int] = 3 * MINUTE
+_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME
+    + _ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME
+    + _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
+)
+_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
+
+
+_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 2 * MINUTE
+_JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_JLAB_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME
+    + _JLAB_DOCKER_PULLING_MAX_TIME
+    + _JLAB_MAX_STARTUP_MAX_TIME
+)
+_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 1 * MINUTE
+_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 1 * MINUTE
+_JLAB_REPORTING_MAX_TIME: Final[int] = 20 * SECOND
+
+
+_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
+_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_POST_PRO_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME
+    + _POST_PRO_DOCKER_PULLING_MAX_TIME
+    + _POST_PRO_MAX_STARTUP_TIME
 )
 
 
@@ -96,7 +107,7 @@ def test_tip(  # noqa: PLR0915
             else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
-        page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS)
+        page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
 
         with log_context(logging.INFO, "Configure selector"):
             electrode_selector_iframe.get_by_test_id("TargetStructure_Selector").click()
@@ -133,16 +144,21 @@ def test_tip(  # noqa: PLR0915
 
     with log_context(logging.INFO, "Classic TI step") as ctx:
         with page.expect_websocket(
-            _JLabWaitForWebSocket(), timeout=_JLAB_MAX_STARTUP_TIME_MS
+            _JLabWaitForWebSocket(),
+            timeout=(
+                _JLAB_BILLABLE_MAX_STARTUP_TIME
+                if product_billable
+                else _JLAB_MAX_STARTUP_MAX_TIME
+            ),
         ) as ws_info:
             ti_iframe = wait_or_force_start_service(
                 page=page,
                 node_id=node_ids[1],
                 press_next=True,
                 websocket=log_in_and_out,
-                timeout=_JLAB_BILLABLE_MAX_STARTUP_TIME_MS
+                timeout=_JLAB_BILLABLE_MAX_STARTUP_TIME
                 if product_billable
-                else _JLAB_MAX_STARTUP_TIME_MS,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+                else _JLAB_MAX_STARTUP_MAX_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
             )
         jlab_websocket = ws_info.value
 
@@ -154,27 +170,27 @@ def test_tip(  # noqa: PLR0915
                     expected_header_msg_type="stream",
                     expected_message_contents="All results evaluated",
                 ),
-                timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS
-                + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS,
+                timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME
+                + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
             ),
         ):
             ti_iframe.get_by_role("button", name="Run Optimization").click(
-                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS
+                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME
             )
 
         with log_context(logging.INFO, "Create report"):
             ti_iframe.get_by_role("button", name="Load Analysis").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Load").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         with log_context(logging.INFO, "Check outputs"):
             expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
@@ -187,9 +203,9 @@ def test_tip(  # noqa: PLR0915
             node_id=node_ids[2],
             press_next=True,
             websocket=log_in_and_out,
-            timeout=_POST_PRO_BILLABLE_MAX_STARTUP_TIME_MS
+            timeout=_POST_PRO_BILLABLE_MAX_STARTUP_TIME
             if product_billable
-            else _POST_PRO_MAX_STARTUP_TIME_MS,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+            else _POST_PRO_MAX_STARTUP_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
 
         with log_context(logging.INFO, "Post process"):

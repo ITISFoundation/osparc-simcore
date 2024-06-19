@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import re
@@ -7,7 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final
 
-from playwright.sync_api import FrameLocator, Page, Request, WebSocket
+from playwright.sync_api import FrameLocator, Page, Request, WebSocket, expect
 from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
@@ -296,22 +297,14 @@ def _trigger_next_app(page: Page) -> None:
 
 
 def _wait_or_trigger_service_start(page: Page, node_id: str) -> None:
-    """2 use-cases:
-    1. The service will auto-start, the start button might show a while --> no need to press
-    2. The service does not auto-start, we need to press the button after waiting a little bit
-
-    Arguments:
-        page -- _description_
-        node_id -- _description_
-        press_next -- _description_
-        logger -- _description_
-    """
     # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
-    page.wait_for_timeout(5000)
-    start_button_locator = page.get_by_test_id(f"Start_{node_id}")
-    if start_button_locator.is_visible() and start_button_locator.is_enabled():
-        with page.expect_request(_node_start_predicate):
-            start_button_locator.click()
+    with log_context(logging.INFO, msg="trigger start button if needed"):
+        start_button_locator = page.get_by_test_id(f"Start_{node_id}")
+        with contextlib.suppress(AssertionError):
+            expect(start_button_locator).to_be_visible(timeout=5000)
+            expect(start_button_locator).to_be_enabled(timeout=5000)
+            with page.expect_request(_node_start_predicate):
+                start_button_locator.click()
 
 
 def wait_or_force_start_service(
@@ -327,6 +320,7 @@ def wait_or_force_start_service(
     # If the service is starting, we might have websocket events such as NodeProgress
     # If the service is running but the frontend did not connect yet, a call to /project/{project_id}/nodes{node_id} will return 200 at some point
     # If the service is not running, we need to press the start button
+
     waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
     with (
         log_context(logging.INFO, msg="Waiting for node to run"),
@@ -334,6 +328,6 @@ def wait_or_force_start_service(
     ):
         if press_next:
             _trigger_next_app(page)
-        # else:
-        #     _wait_or_trigger_service_start(page, node_id)
+        else:
+            _wait_or_trigger_service_start(page, node_id)
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
