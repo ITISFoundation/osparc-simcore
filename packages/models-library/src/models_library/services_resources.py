@@ -42,7 +42,7 @@ class ResourceValue(BaseModel):
 
     @root_validator()
     @classmethod
-    def ensure_limits_are_equal_or_above_reservations(cls, values):
+    def _ensure_limits_are_equal_or_above_reservations(cls, values):
         if isinstance(values["reservation"], str):
             # in case of string, the limit is the same as the reservation
             values["limit"] = values["reservation"]

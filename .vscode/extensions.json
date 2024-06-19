@@ -2,6 +2,7 @@
   "recommendations": [
     "42Crunch.vscode-openapi",
     "charliermarsh.ruff",
+    "DevSoft.svg-viewer-vscode",
     "eamodio.gitlens",
     "exiasr.hadolint",
     "hediet.vscode-drawio",

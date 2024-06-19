@@ -50,6 +50,11 @@ DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
 # utils
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
+IGNORE_DIR=.ignore
+
+$(IGNORE_DIR): # Used to produce .ignore folders which are auto excluded from version control (see .gitignore)
+	mkdir -p $(IGNORE_DIR)
+
 #
 # SHORTCUTS
 #
@@ -135,6 +140,19 @@ pyupgrade: ## upgrades python syntax for newer versions of the language (SEE htt
 pylint: $(REPO_BASE_DIR)/.pylintrc ## runs pylint (python linter) on src and tests folders
 	@pylint --rcfile="$(REPO_BASE_DIR)/.pylintrc" -v $(CURDIR)/src $(CURDIR)/tests
 
+
+.PHONY: doc-uml
+doc-uml: $(IGNORE_DIR) ## Create UML diagrams for classes and modules in current package. e.g. (export DOC_UML_PATH_SUFFIX="services*"; export DOC_UML_CLASS=models_library.api_schemas_catalog.services.ServiceGet; make doc-uml)
+	@pyreverse \
+		--verbose \
+		--output=svg \
+		--output-directory=$(IGNORE_DIR) \
+		--project=$(if ${PACKAGE_NAME},${PACKAGE_NAME},${SERVICE_NAME})${DOC_UML_PATH_SUFFIX} \
+		$(if ${DOC_UML_CLASS},--class=${DOC_UML_CLASS},) \
+		${SRC_DIR}$(if ${DOC_UML_PATH_SUFFIX},/${DOC_UML_PATH_SUFFIX},)
+	@echo Outputs in $(realpath $(IGNORE_DIR))
+
+
 .PHONY: ruff
 ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and tests folders
 	@ruff check \
@@ -156,6 +174,7 @@ codestyle codestyle-ci: ## enforces codestyle (isort & black) finally runs pylin
 github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
 	# running job "${job}"
 	$(SCRIPTS_DIR)/act.bash ../.. ${job}
+
 
 
 .PHONY: version-patch version-minor version-major

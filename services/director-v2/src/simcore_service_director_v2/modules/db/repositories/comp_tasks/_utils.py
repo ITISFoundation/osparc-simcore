@@ -22,9 +22,9 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import (
-    ServiceDockerData,
     ServiceKey,
     ServiceKeyVersion,
+    ServiceMetaDataPublished,
     ServiceVersion,
 )
 from models_library.services_resources import (
@@ -72,7 +72,7 @@ _logger = logging.getLogger(__name__)
 #
 # Examples are nodes like file-picker or parameter/*
 #
-_FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
+_FRONTEND_SERVICES_CATALOG: dict[str, ServiceMetaDataPublished] = {
     meta.key: meta for meta in iter_service_docker_data()
 }
 
@@ -82,14 +82,17 @@ async def _get_service_details(
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> ServiceDockerData:
+) -> ServiceMetaDataPublished:
     service_details = await catalog_client.get_service(
         user_id,
         node.key,
         node.version,
         product_name,
     )
-    return ServiceDockerData.construct(**service_details)
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.construct(
+        **service_details
+    )
+    return obj
 
 
 def _compute_node_requirements(
@@ -133,7 +136,9 @@ async def _get_node_infos(
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[ServiceDockerData | None, ServiceExtras | None, SimcoreServiceLabels | None]:
+) -> tuple[
+    ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None
+]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
@@ -142,7 +147,7 @@ async def _get_node_infos(
         )
 
     result: tuple[
-        ServiceDockerData, ServiceExtras, SimcoreServiceLabels
+        ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels
     ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
         director_client.get_service_extras(node.key, node.version),

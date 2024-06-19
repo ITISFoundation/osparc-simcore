@@ -24,7 +24,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
-      zIndex: 110000,
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
       maxHeight: 250,
       backgroundColor: "background-main-3"
@@ -37,6 +37,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     });
 
     const notificationsContainer = this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(1));
+    osparc.utils.Utils.setIdToWidget(notificationsContainer, "notificationsContainer");
     const scrollContainer = new qx.ui.container.Scroll();
     scrollContainer.add(notificationsContainer);
     this._add(scrollContainer, {
