@@ -336,5 +336,4 @@ def wait_or_force_start_service(
             _trigger_next_app(page)
         # else:
         #     _wait_or_trigger_service_start(page, node_id)
-        with log_context(logging.INFO, msg="Waiting for node iframe"):
-            return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
+    return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')

@@ -17,11 +17,19 @@ from playwright.sync_api import Page, WebSocket
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_or_force_start_service
 
+_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
+
 _ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + 3 * MINUTE
+)
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5 * SECOND
 
 
 _JLAB_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
+_JLAB_BILLABLE_MAX_STARTUP_TIME_MS: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + 15 * MINUTE
+)
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS: Final[int] = 1 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 1 * MINUTE
 _JLAB_REPORTING_MAX_TIME_MS: Final[int] = 20 * SECOND
@@ -30,11 +38,8 @@ _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 
 _POST_PRO_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
-
-_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
-_IMAGE_PULLING_MAX_WAIT_TIME: Final[int] = 10 * MINUTE
-_BILLABLE_PRODUCT_ADDITIONAL_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + _IMAGE_PULLING_MAX_WAIT_TIME
+_POST_PRO_BILLABLE_MAX_STARTUP_TIME_MS: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + 15 * MINUTE
 )
 
 
@@ -86,8 +91,9 @@ def test_tip(  # noqa: PLR0915
             node_id=node_ids[0],
             press_next=False,
             websocket=log_in_and_out,
-            timeout=_ELECTRODE_SELECTOR_MAX_STARTUP_TIME
-            + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+            timeout=_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME
+            if product_billable
+            else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS)
@@ -134,8 +140,9 @@ def test_tip(  # noqa: PLR0915
                 node_id=node_ids[1],
                 press_next=True,
                 websocket=log_in_and_out,
-                timeout=_JLAB_MAX_STARTUP_TIME_MS
-                + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+                timeout=_JLAB_BILLABLE_MAX_STARTUP_TIME_MS
+                if product_billable
+                else _JLAB_MAX_STARTUP_TIME_MS,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
             )
         jlab_websocket = ws_info.value
 
@@ -180,8 +187,9 @@ def test_tip(  # noqa: PLR0915
             node_id=node_ids[2],
             press_next=True,
             websocket=log_in_and_out,
-            timeout=_POST_PRO_MAX_STARTUP_TIME_MS
-            + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+            timeout=_POST_PRO_BILLABLE_MAX_STARTUP_TIME_MS
+            if product_billable
+            else _POST_PRO_MAX_STARTUP_TIME_MS,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
 
         with log_context(logging.INFO, "Post process"):
