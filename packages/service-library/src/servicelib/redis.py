@@ -48,6 +48,17 @@ class CouldNotConnectToRedisError(BaseRedisError):
     msg_template: str = "Connection to '{dsn}' failed"
 
 
+async def __cancel_or_raise(task: Task) -> None:
+    if not task.cancelled():
+        task.cancel()
+    _, pending = await asyncio.wait((task,), timeout=5)
+    if pending:
+        task_name = task.get_name()
+        _logger.info("tried to cancel '%s' but timed-out! %s", task_name, pending)
+        msg = f"Could not cancel {task_name=} {pending=}"
+        raise RuntimeError(msg)
+
+
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
@@ -101,16 +112,7 @@ class RedisClientSDK:
     async def shutdown(self) -> None:
         if self._health_check_task:
             self._continue_health_checking = False
-            if not self._health_check_task.cancelled():
-                self._health_check_task.cancel()
-            _, pending = await asyncio.wait((self._health_check_task,), timeout=5)
-            if pending:
-                task_name = self._health_check_task.get_name()
-                _logger.info(
-                    "tried to cancel '%s' but timed-out! %s", task_name, pending
-                )
-                msg = f"Could not cancel {task_name=} {pending=}"
-                raise RuntimeError(msg)
+            await __cancel_or_raise(self._health_check_task)
             self._health_check_task = None
 
         await self._client.aclose()  # type: ignore[attr-defined]
