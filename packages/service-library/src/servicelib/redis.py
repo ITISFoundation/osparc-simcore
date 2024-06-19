@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import datetime
 import logging
@@ -17,7 +18,7 @@ from redis.backoff import ExponentialBackoff
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 
-from .background_task import periodic_task, start_periodic_task, stop_periodic_task
+from .background_task import periodic_task
 from .logging_utils import log_catch, log_context
 from .retry_policies import RedisRetryPolicyUponInitialization
 
@@ -56,6 +57,7 @@ class RedisClientSDK:
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
     _is_healthy: bool = False
+    _continue_health_checking: bool = True
 
     @property
     def redis(self) -> aioredis.Redis:
@@ -85,10 +87,9 @@ class RedisClientSDK:
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
 
         self._is_healthy = True
-        self._health_check_task = start_periodic_task(
-            self._check_health,
-            interval=self.health_check_interval,
-            task_name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
+        self._health_check_task = asyncio.create_task(
+            self._check_health(),
+            name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
         _logger.info(
@@ -99,13 +100,19 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await stop_periodic_task(
-                self._health_check_task, timeout=_SHUTDOWN_TIMEOUT_S
-            )
+            if not self._health_check_task.cancelled():
+                self._health_check_task.cancel()
+            _, pending = await asyncio.wait((self._health_check_task,), timeout=5)
+            if pending:
+                task_name = self._health_check_task.get_name()
+                _logger.info(
+                    "tried to cancel '%s' but timed-out! %s", task_name, pending
+                )
+                msg = f"Could not cancel {task_name=} {pending=}"
+                raise RuntimeError(msg)
             self._health_check_task = None
 
-        # NOTE: redis-py does not yet completely fill all the needed types for mypy
-        await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
+        await self._client.aclose()
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
@@ -114,7 +121,11 @@ class RedisClientSDK:
         return False
 
     async def _check_health(self) -> None:
-        self._is_healthy = await self.ping()
+        sleep_for = self.health_check_interval.total_seconds()
+        while self._continue_health_checking:
+            with log_catch(_logger, reraise=False):
+                self._is_healthy = await self.ping()
+            await asyncio.sleep(sleep_for)
 
     @property
     def is_healthy(self) -> bool:
