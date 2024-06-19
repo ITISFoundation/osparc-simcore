@@ -48,7 +48,7 @@ class CouldNotConnectToRedisError(BaseRedisError):
     msg_template: str = "Connection to '{dsn}' failed"
 
 
-async def __cancel_or_raise(task: Task) -> None:
+async def _cancel_or_raise(task: Task) -> None:
     if not task.cancelled():
         task.cancel()
     _, pending = await asyncio.wait((task,), timeout=_SHUTDOWN_TIMEOUT_S)
@@ -112,7 +112,7 @@ class RedisClientSDK:
     async def shutdown(self) -> None:
         if self._health_check_task:
             self._continue_health_checking = False
-            await __cancel_or_raise(self._health_check_task)
+            await _cancel_or_raise(self._health_check_task)
             self._health_check_task = None
 
         await self._client.aclose()  # type: ignore[attr-defined]
