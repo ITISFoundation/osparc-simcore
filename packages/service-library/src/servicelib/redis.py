@@ -51,7 +51,7 @@ class CouldNotConnectToRedisError(BaseRedisError):
 async def __cancel_or_raise(task: Task) -> None:
     if not task.cancelled():
         task.cancel()
-    _, pending = await asyncio.wait((task,), timeout=5)
+    _, pending = await asyncio.wait((task,), timeout=_SHUTDOWN_TIMEOUT_S)
     if pending:
         task_name = task.get_name()
         _logger.info("tried to cancel '%s' but timed-out! %s", task_name, pending)
