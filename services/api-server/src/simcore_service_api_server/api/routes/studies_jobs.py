@@ -212,7 +212,7 @@ async def start_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
-) -> JobStatus | JSONResponse:
+):
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         try:
