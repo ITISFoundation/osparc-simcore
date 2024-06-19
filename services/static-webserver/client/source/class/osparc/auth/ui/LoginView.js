@@ -122,6 +122,17 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       });
 
       this.add(grp);
+
+      if (osparc.product.Utils.isProduct("tis")) {
+        const text = `
+        1) The TIP tool is designed exclusively for research purposes and it is not intended for clinical use.
+        </br>
+        </br>
+        2) Users are responsible for ensuring the anonymization and protection of privacy of medical data.
+        `;
+        const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
+        this.add(disclaimer);
+      }
     },
 
     getEmail: function() {
