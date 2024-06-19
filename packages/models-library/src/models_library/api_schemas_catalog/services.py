@@ -5,7 +5,7 @@ from pydantic import Extra
 from ..emails import LowerCaseEmailStr
 from ..services import ServiceMetaDataPublished
 from ..services_access import ServiceAccessRights
-from ..services_metadata import ServiceMetaDataEditable
+from ..services_metadata_editable import ServiceMetaDataEditable
 from ..services_resources import ServiceResourcesDict
 
 
