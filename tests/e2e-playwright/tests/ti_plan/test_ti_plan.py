@@ -85,21 +85,19 @@ def test_tip(
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
-        wait_or_force_start_service(
+        electrode_selector_iframe = wait_or_force_start_service(
             page=page,
             node_id=node_ids[0],
             press_next=False,
             websocket=log_in_and_out,
             timeout=_ELECTRODE_SELECTOR_MAX_STARTUP_TIME
             + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+            iframe_selector=f'[osparc-test-id="iframe_{node_ids[0]}"]',
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS)
 
         with log_context(logging.INFO, "Configure selector"):
-            electrode_selector_iframe = page.frame_locator(
-                f'[osparc-test-id="iframe_{node_ids[0]}"]'
-            )
             electrode_selector_iframe.get_by_test_id("TargetStructure_Selector").click()
             electrode_selector_iframe.get_by_test_id(
                 "TargetStructure_Target_(Targets_combined) Hypothalamus"
@@ -136,19 +134,20 @@ def test_tip(
         with page.expect_websocket(
             _JLabWaitForWebSocket(), timeout=_JLAB_MAX_STARTUP_TIME_MS
         ) as ws_info:
-            wait_or_force_start_service(
+            ti_iframe = wait_or_force_start_service(
                 page=page,
                 node_id=node_ids[1],
                 press_next=True,
                 websocket=log_in_and_out,
                 timeout=_JLAB_MAX_STARTUP_TIME_MS
                 + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+                iframe_selector=f'[osparc-test-id="iframe_{node_ids[1]}"]',
             )
         jlab_websocket = ws_info.value
 
-        with log_context(logging.INFO, "Run optimization"):
-            ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
-            with jlab_websocket.expect_event(
+        with (
+            log_context(logging.INFO, "Run optimization"),
+            jlab_websocket.expect_event(
                 "framereceived",
                 _JLabWebSocketWaiter(
                     expected_header_msg_type="stream",
@@ -156,25 +155,26 @@ def test_tip(
                 ),
                 timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME_MS
                 + _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS,
-            ):
-                ti_page.get_by_role("button", name="Run Optimization").click(
-                    timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS
-                )
+            ),
+        ):
+            ti_iframe.get_by_role("button", name="Run Optimization").click(
+                timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS
+            )
 
         with log_context(logging.INFO, "Create report"):
-            ti_page.get_by_role("button", name="Load Analysis").click()
+            ti_iframe.get_by_role("button", name="Load Analysis").click()
             page.wait_for_timeout(20000)
-            ti_page.get_by_role("button", name="Load").nth(
+            ti_iframe.get_by_role("button", name="Load").nth(
                 1
             ).click()  # Load Analysis is first
             page.wait_for_timeout(20000)
-            ti_page.get_by_role("button", name="Add to Report (0)").nth(0).click()
+            ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
             page.wait_for_timeout(20000)
-            ti_page.get_by_role("button", name="Export to S4L").click()
+            ti_iframe.get_by_role("button", name="Export to S4L").click()
             page.wait_for_timeout(20000)
-            ti_page.get_by_role("button", name="Add to Report (1)").nth(1).click()
+            ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
             page.wait_for_timeout(20000)
-            ti_page.get_by_role("button", name="Export Report").click()
+            ti_iframe.get_by_role("button", name="Export Report").click()
             page.wait_for_timeout(20000)
 
         with log_context(logging.INFO, "Check outputs"):
@@ -183,21 +183,19 @@ def test_tip(
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        wait_or_force_start_service(
+        s4l_postpro_iframe = wait_or_force_start_service(
             page=page,
             node_id=node_ids[2],
             press_next=True,
             websocket=log_in_and_out,
             timeout=_POST_PRO_MAX_STARTUP_TIME_MS
             + (_BILLABLE_PRODUCT_ADDITIONAL_TIME if product_billable else 0),
+            iframe_selector=f'[osparc-test-id="iframe_{node_ids[2]}"]',
         )
 
         with log_context(logging.INFO, "Post process"):
-            s4l_postpro_page = page.frame_locator(
-                f'[osparc-test-id="iframe_{node_ids[2]}"]'
-            )
             # click on the postpro mode button
-            s4l_postpro_page.get_by_test_id("mode-button-postro").click()
+            s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
             # click on the surface viewer
-            s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
-            s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
+            s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
+            s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()

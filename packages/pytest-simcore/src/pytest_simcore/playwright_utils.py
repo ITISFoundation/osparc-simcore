@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final
 
-from playwright.sync_api import Page, Request, WebSocket
+from playwright.sync_api import FrameLocator, Page, Request, WebSocket
 from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
@@ -318,8 +318,13 @@ def wait_or_force_start_service(
     press_next: bool,
     websocket: WebSocket,
     timeout: int,
-) -> None:
-    # is the service running? if the iframe is visible, then it is running
+    iframe_selector: str,
+) -> FrameLocator:
+    # The service might have started already or not
+    # If the service is running, we have a iframe present
+    # If the service is starting, we might have websocket events such as NodeProgress
+    # If the service is running but the frontend did not connect yet, a call to /project/{project_id}/nodes{node_id} will return 200 at some point
+    # If the service is not running, we need to press the start button
 
     waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
     with (
@@ -330,3 +335,4 @@ def wait_or_force_start_service(
             _trigger_next_app(page)
         # else:
         #     _wait_or_trigger_service_start(page, node_id)
+    return page.frame_locator(iframe_selector)
