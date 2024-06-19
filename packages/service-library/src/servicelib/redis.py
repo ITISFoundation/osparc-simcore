@@ -54,7 +54,6 @@ async def _cancel_or_raise(task: Task) -> None:
     _, pending = await asyncio.wait((task,), timeout=_SHUTDOWN_TIMEOUT_S)
     if pending:
         task_name = task.get_name()
-        _logger.info("tried to cancel '%s' but timed-out! %s", task_name, pending)
         msg = f"Could not cancel {task_name=} {pending=}"
         raise RuntimeError(msg)
 
