@@ -97,6 +97,7 @@ qx.Class.define("osparc.tours.Manager", {
     stop: function() {
       this.setTour(null);
       this.__removeCurrentBubble();
+      this.__removeBlankets();
     },
 
     __removeCurrentBubble: function() {
@@ -104,6 +105,49 @@ qx.Class.define("osparc.tours.Manager", {
         qx.core.Init.getApplication().getRoot().remove(this.__currentBubble);
         this.__currentBubble.exclude();
         this.__currentBubble = null;
+      }
+    },
+
+    __addBlankets: function(targetWidget) {
+      // the plan is to surround the targetWidget with dark blankets so it gets highlighted
+      const element = targetWidget.getContentElement().getDomElement();
+      const {
+        top,
+        left
+      } = qx.bom.element.Location.get(element);
+      const {
+        width,
+        height
+      } = qx.bom.element.Dimension.getSize(element);
+      const windowW = window.innerWidth;
+      const windowH = window.innerHeight;
+
+      const addBlanket = (w, h, l, t) => {
+        const blanket = new qx.ui.core.Widget().set({
+          width: w,
+          height: h,
+          backgroundColor: "black",
+          opacity: 0.4,
+          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX-1
+        });
+        qx.core.Init.getApplication().getRoot().add(blanket, {
+          left: l,
+          top: t
+        });
+        return blanket;
+      };
+      this.__blankets.push(addBlanket(left, windowH, 0, 0)); // left
+      this.__blankets.push(addBlanket(width, top, left, 0)); // top
+      this.__blankets.push(addBlanket(windowW-left-width, windowH, left+width, 0)); // right
+      this.__blankets.push(addBlanket(width, windowH-top-height, left, top+height)); // bottom
+    },
+
+    __removeBlankets: function() {
+      const nBlankets = this.__blankets.length;
+      for (let i=nBlankets-1; i>=0; i--) {
+        const blanket = this.__blankets[i];
+        qx.core.Init.getApplication().getRoot().remove(blanket);
+        this.__blankets.splice(i, 1);
       }
     },
 
@@ -123,6 +167,7 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       this.__removeCurrentBubble();
+      this.__removeBlankets();
       this.__currentIdx = idx;
       const step = steps[idx];
       if (step.beforeClick && step.beforeClick.selector) {
@@ -158,52 +203,9 @@ qx.Class.define("osparc.tours.Manager", {
       return stepWidget;
     },
 
-    __addBlankets: function(targetWidget) {
-      // the plan is to surround the targetWidget with dark blankets so it gets highlighted
-      const element = targetWidget.getContentElement().getDomElement();
-      const {
-        top,
-        left
-      } = qx.bom.element.Location.get(element);
-      const {
-        width,
-        height
-      } = qx.bom.element.Dimension.getSize(element);
-      const windowW = window.innerWidth;
-      const windowH = window.innerHeight;
-
-      const blankets = this.__blankets;
-      const addBlanket = (w, h, l, t) => {
-        const blanket = new qx.ui.core.Widget().set({
-          width: w,
-          height: h,
-          backgroundColor: "black",
-          opacity: 0.4,
-          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX-1
-        });
-        qx.core.Init.getApplication().getRoot().add(blanket, {
-          left: l,
-          top: t
-        });
-        blankets.push(blanket);
-        return blanket;
-      };
-      addBlanket(left, windowH, 0, 0); // left
-      addBlanket(width, top, left, 0); // top
-      addBlanket(windowW-left-width, windowH, left+width, 0); // right
-      addBlanket(width, windowH-top-height, left, top+height); // bottom
-    },
-
-    __removeBlankets: function() {
-      this.__blankets.forEach(blanket => {
-        qx.core.Init.getApplication().getRoot().remove(blanket);
-      });
-    },
-
     __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBubble = this.__createStep();
-      this.__removeBlankets();
       if (step.anchorEl) {
         const el = document.querySelector(`[${step.anchorEl}]`);
         const targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
