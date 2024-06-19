@@ -1328,8 +1328,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __waitForServiceReady: async function(srvUrl) {
+      this.getStatus().setInteractive("connecting");
       const retry = () => {
-        this.getStatus().setInteractive("connecting");
         // Check if node is still there
         if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
@@ -1340,7 +1340,13 @@ qx.Class.define("osparc.data.model.Node", {
 
       // ping for some time until it is really reachable
       try {
+        if (osparc.utils.Utils.isDevelopmentPlatform()) {
+          console.log("about to fetch ", srvUrl);
+        }
         const response = await fetch(srvUrl);
+        if (osparc.utils.Utils.isDevelopmentPlatform()) {
+          console.log("fetch's response ", response);
+        }
         if (response.ok || response.status === 302) {
           // ok = status in the range 200-299
           // some services might respond with a 302 which is also fine
