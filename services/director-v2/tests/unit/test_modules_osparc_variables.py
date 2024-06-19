@@ -248,7 +248,7 @@ async def test_substitute_vendor_secrets_in_specs(
     assert VENDOR_SECRET_PREFIX not in f"{replaced_specs}"
 
 
-def test_auto_inject_environments():
+def test_auto_inject_environments_added_to_all_services_in_compose():
 
     model = parse_obj_as(
         SimcoreServiceLabels, SimcoreServiceLabels.Config.schema_extra["examples"][2]
@@ -262,8 +262,15 @@ def test_auto_inject_environments():
     assert before != after
     assert after == model
 
+    auto_injected_envs = set(_new_environments.keys())
     for name, service in model.compose_spec.get("services", {}).items():
+
+        # all services have environment specs
         assert service["environment"], f"expected in {name} service"
+
+        # injected?
+        for env_name in auto_injected_envs:
+            assert env_name in str(service["environment"])
 
 
 def test_auto_inject_environments_are_registered():
