@@ -113,7 +113,7 @@ class RedisClientSDK:
                 raise RuntimeError(msg)
             self._health_check_task = None
 
-        await self._client.aclose()
+        await self._client.aclose()  # type: ignore[attr-defined]
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
