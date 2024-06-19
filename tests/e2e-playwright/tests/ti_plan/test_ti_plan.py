@@ -71,11 +71,6 @@ def test_tip(
     log_in_and_out: WebSocket,
     product_billable: bool,
 ):
-    # handler = SocketIOOsparcMessagePrinter()
-    # # log_in_and_out is the initial websocket
-    # log_in_and_out.on("framereceived", handler)
-
-    # open studies tab and filter
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
