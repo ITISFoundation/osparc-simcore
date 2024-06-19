@@ -4,6 +4,8 @@ from ._base import ApiServerBaseError
 
 
 class BaseBackEndError(ApiServerBaseError):
+    """status_code: the default return status which will be returned to the client calling the
+    api-server (in case this exception is raised)"""
 
     status_code = status.HTTP_502_BAD_GATEWAY
 
