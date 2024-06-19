@@ -42,6 +42,7 @@ from .exceptions import DefaultPricingUnitForServiceNotFoundError
 _logger = logging.getLogger(__name__)
 
 VTAG: Final[str] = f"/{API_VTAG}"
+VTAG_DEV: Final[str] = f"{VTAG}/dev"
 
 routes = RouteTableDef()
 
@@ -61,6 +62,49 @@ class ServicePathParams(BaseModel):
         if v is not None:
             return urllib.parse.unquote(v)
         return v
+
+
+@routes.get(
+    f"{VTAG_DEV}/catalog/services",
+    name="dev_list_services",
+)
+@login_required
+@permission_required("services.catalog.*")
+async def _dev_list_services(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    assert ctx  # nosec
+    raise NotImplementedError
+
+
+@routes.get(
+    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
+    name="dev_get_service",
+)
+@login_required
+@permission_required("services.catalog.*")
+async def _dev_get_service(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+
+    assert ctx  # nosec
+    assert path_params  # nosec
+    raise NotImplementedError
+
+
+@routes.patch(
+    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
+    name="dev_update_service",
+)
+@login_required
+@permission_required("services.catalog.*")
+async def _dev_update_service(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+
+    assert ctx  # nosec
+    assert path_params  # nosec
+
+    raise NotImplementedError
 
 
 @routes.get(f"{VTAG}/catalog/services", name="list_services")
@@ -86,7 +130,8 @@ async def list_services(request: Request):
 
 
 @routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}", name="get_service"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
+    name="get_service",
 )
 @login_required
 @permission_required("services.catalog.*")
