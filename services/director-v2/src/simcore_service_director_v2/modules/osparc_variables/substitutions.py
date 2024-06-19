@@ -164,7 +164,7 @@ def auto_inject_environments(
             service["environment"] += [
                 f"{name}={value}"
                 for name, value in _NEW_ENVIRONMENTS.items()
-                if not any(v.startswith(name) for v in current_environment)
+                if not any(e.startswith(name) for e in current_environment)
             ]
     return compose_spec
 
