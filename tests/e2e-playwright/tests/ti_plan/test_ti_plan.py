@@ -70,7 +70,6 @@ def test_tip(
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     product_billable: bool,
-    service_opening_waiting_timeout: int,
 ):
     # handler = SocketIOOsparcMessagePrinter()
     # # log_in_and_out is the initial websocket
@@ -117,12 +116,15 @@ def test_tip(
                 electrode_selector_iframe.get_by_test_id(group_id).click()
                 electrode_selector_iframe.get_by_test_id(electrode_id).click()
         # configuration done, push and wait for output
-        with log_context(logging.INFO, "Check outputs"), page.expect_request(
-            lambda r: bool(
-                re.search(_GET_NODE_OUTPUTS_REQUEST_PATTERN, r.url)
-                and r.method.upper() == "GET"
-            )
-        ) as request_info:
+        with (
+            log_context(logging.INFO, "Check outputs"),
+            page.expect_request(
+                lambda r: bool(
+                    re.search(_GET_NODE_OUTPUTS_REQUEST_PATTERN, r.url)
+                    and r.method.upper() == "GET"
+                )
+            ) as request_info,
+        ):
             electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
             response = request_info.value.response()
             assert response

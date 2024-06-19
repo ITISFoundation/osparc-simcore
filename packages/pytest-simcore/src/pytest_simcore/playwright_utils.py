@@ -5,7 +5,7 @@ from collections import defaultdict
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from enum import Enum, unique
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 
 from playwright.sync_api import Page, Request, WebSocket
 from pytest_simcore.logging_utils import log_context
@@ -112,20 +112,25 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     return RunningState(event.obj["data"]["state"]["value"])
 
 
-CurrentProgress: TypeAlias = float
-TotalProgress: TypeAlias = float
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NodeProgressEvent:
+    node_id: str
+    progress_type: NodeProgressType
+    current_progress: float
+    total_progress: float
 
 
 def retrieve_node_progress_from_decoded_message(
     event: SocketIOEvent,
-) -> tuple[NodeProgressType, CurrentProgress, TotalProgress]:
+) -> NodeProgressEvent:
     assert event.name == _OSparcMessages.NODE_PROGRESS.value
     assert "progress_type" in event.obj
     assert "progress_report" in event.obj
-    return (
-        NodeProgressType(event.obj["progress_type"]),
-        float(event.obj["progress_report"]["actual_value"]),
-        float(event.obj["progress_report"]["total"]),
+    return NodeProgressEvent(
+        node_id=event.obj["node_id"],
+        progress_type=NodeProgressType(event.obj["progress_type"]),
+        current_progress=float(event.obj["progress_report"]["actual_value"]),
+        total_progress=float(event.obj["progress_report"]["total"]),
     )
 
 
@@ -186,6 +191,7 @@ class SocketIOOsparcMessagePrinter:
 
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
+    node_id: str
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
@@ -197,16 +203,18 @@ class SocketIONodeProgressCompleteWaiter:
             if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
-                    (
-                        progress_type,
-                        current_progress,
-                        total,
-                    ) = retrieve_node_progress_from_decoded_message(decoded_message)
-                    self._current_progress[progress_type] = current_progress / total
-                    ctx.logger.info(
-                        "current startup progress: %s",
-                        f"{json.dumps(self._current_progress)}",
+                    node_progress_event = retrieve_node_progress_from_decoded_message(
+                        decoded_message
                     )
+                    if node_progress_event.node_id == self.node_id:
+                        self._current_progress[node_progress_event.progress_type] = (
+                            node_progress_event.current_progress
+                            / node_progress_event.total_progress
+                        )
+                        ctx.logger.info(
+                            "current startup progress: %s",
+                            f"{json.dumps(self._current_progress)}",
+                        )
 
                     return all(
                         progress_type in self._current_progress
@@ -311,10 +319,13 @@ def wait_or_force_start_service(
     websocket: WebSocket,
     timeout: int,
 ) -> None:
-    waiter = SocketIONodeProgressCompleteWaiter()
-    with log_context(
-        logging.INFO, msg="Waiting for node to run"
-    ), websocket.expect_event("framereceived", waiter, timeout=timeout):
+    # is the service running? if the iframe is visible, then it is running
+
+    waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
+    with (
+        log_context(logging.INFO, msg="Waiting for node to run"),
+        websocket.expect_event("framereceived", waiter, timeout=timeout),
+    ):
         if press_next:
             _trigger_next_app(page)
         # else:
