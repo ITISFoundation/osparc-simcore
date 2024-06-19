@@ -9,6 +9,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
+from copy import deepcopy
 from datetime import timedelta
 from unittest.mock import AsyncMock, Mock
 
@@ -18,6 +19,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
@@ -30,6 +32,9 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
+    OsparcSessionVariablesTable,
+    _new_environments,
+    auto_inject_environments,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -241,3 +246,31 @@ async def test_substitute_vendor_secrets_in_specs(
     print("REPLACED SPECS\n", replaced_specs)
 
     assert VENDOR_SECRET_PREFIX not in f"{replaced_specs}"
+
+
+def test_auto_inject_environments():
+
+    model = parse_obj_as(
+        SimcoreServiceLabels, SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    )
+    assert model.compose_spec
+
+    before = deepcopy(model)
+
+    after = auto_inject_environments(model)
+
+    assert before != after
+    assert after == model
+
+    for name, service in model.compose_spec.get("services", {}).items():
+        assert service["environment"], f"expected in {name} service"
+
+
+def test_auto_inject_environments_are_registered():
+    app = FastAPI()
+    table = OsparcSessionVariablesTable.create(app)
+
+    registered_osparc_variables = set(table.variables_names())
+    auto_injected_osparc_variables = {_.lstrip("$") for _ in _new_environments.values()}
+
+    assert auto_injected_osparc_variables.issubset(registered_osparc_variables)

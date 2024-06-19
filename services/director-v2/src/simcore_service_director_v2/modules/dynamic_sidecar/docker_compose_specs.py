@@ -28,6 +28,7 @@ from settings_library.docker_registry import RegistrySettings
 
 from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ..osparc_variables.substitutions import (
+    auto_inject_environments,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_model,
@@ -327,6 +328,8 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         _strip_service_quotas(service_spec)
 
     if not allow_internet_access:
+        simcore_service_labels = auto_inject_environments(simcore_service_labels)
+
         simcore_service_labels = await substitute_vendor_secrets_in_model(
             app=app,
             model=simcore_service_labels,
