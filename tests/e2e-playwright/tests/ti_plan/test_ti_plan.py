@@ -24,6 +24,7 @@ _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME_MS: Final[int] = 5 * SECOND
 _JLAB_MAX_STARTUP_TIME_MS: Final[int] = 2 * MINUTE
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME_MS: Final[int] = 1 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME_MS: Final[int] = 1 * MINUTE
+_JLAB_REPORTING_MAX_TIME_MS: Final[int] = 20 * SECOND
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
 )
@@ -65,7 +66,7 @@ class _JLabWebSocketWaiter:
             return False
 
 
-def test_tip(
+def test_tip(  # noqa: PLR0915
     page: Page,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
@@ -158,19 +159,17 @@ def test_tip(
 
         with log_context(logging.INFO, "Create report"):
             ti_iframe.get_by_role("button", name="Load Analysis").click()
-            page.wait_for_timeout(20000)
-            ti_iframe.get_by_role("button", name="Load").nth(
-                1
-            ).click()  # Load Analysis is first
-            page.wait_for_timeout(20000)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
+            ti_iframe.get_by_role("button", name="Load").nth(1).click()
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
             ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(20000)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
             ti_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(20000)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
             ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(20000)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
             ti_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(20000)
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME_MS)
 
         with log_context(logging.INFO, "Check outputs"):
             expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
