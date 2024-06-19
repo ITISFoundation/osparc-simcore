@@ -1327,31 +1327,36 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __waitForServiceReady: function(srvUrl) {
-      // ping for some time until it is really ready
-      fetch(srvUrl)
-        .then(request => {
-          /*
-          if (request.status >= 200 || request.status < 300) {
-            this.__waitForServiceWebsite(srvUrl)
-          }
-          */
+    __waitForServiceReady: async function(srvUrl) {
+      const retry = () => {
+        this.getStatus().setInteractive("connecting");
+        // Check if node is still there
+        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
+          return;
+        }
+        const interval = 3000;
+        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
+      };
+
+      // ping for some time until it is really reachable
+      try {
+        const response = await fetch(srvUrl);
+        if (response.ok || response.status === 302) {
+          // ok = status in the range 200-299
+          // some services might respond with a 302 which is also fine
           // instead of
           // - requesting its frontend to make sure it is ready and ...
           // - waiting for the "load" event triggered by the content of the iframe
           // we will skip those steps and directly switch its iframe
           this.__serviceReadyIn(srvUrl);
-        })
-        .catch(err => {
-          this.getStatus().setInteractive("connecting");
-          console.log("service not ready yet, waiting... " + err);
-          // Check if node is still there
-          if (this.getWorkbench().getNode(this.getNodeId()) === null) {
-            return;
-          }
-          const interval = 1000;
-          qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
-        })
+        } else {
+          console.log(`${srvUrl} is not reachable. Status: ${response.status}`);
+          retry();
+        }
+      } catch (error) {
+        console.error(`Error while checking ${srvUrl}:`, error);
+        retry();
+      }
     },
 
     __waitForServiceWebsite: function(srvUrl) {
