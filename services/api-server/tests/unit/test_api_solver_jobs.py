@@ -342,7 +342,8 @@ async def test_start_solver_job_conflict(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["job_id"] == _job_id
+    job_status = JobStatus.parse_obj(response.json())
+    assert f"{job_status.job_id}" == _job_id
 
 
 async def test_stop_job(
