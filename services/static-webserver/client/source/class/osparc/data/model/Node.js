@@ -1341,11 +1341,11 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really reachable
       try {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("about to fetch ", srvUrl);
+          console.log("Connecting: about to fetch ", srvUrl);
         }
         const response = await fetch(srvUrl);
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("fetch's response ", response);
+          console.log("Connecting: fetch's response ", response);
         }
         if (response.ok || response.status === 302) {
           // ok = status in the range 200-299
@@ -1356,11 +1356,11 @@ qx.Class.define("osparc.data.model.Node", {
           // we will skip those steps and directly switch its iframe
           this.__serviceReadyIn(srvUrl);
         } else {
-          console.log(`${srvUrl} is not reachable. Status: ${response.status}`);
+          console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
           retry();
         }
       } catch (error) {
-        console.error(`Error while checking ${srvUrl}:`, error);
+        console.error(`Connecting: Error while checking ${srvUrl}:`, error);
         retry();
       }
     },
