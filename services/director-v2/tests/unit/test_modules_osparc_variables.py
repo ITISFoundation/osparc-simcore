@@ -19,7 +19,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
-from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
@@ -248,22 +248,65 @@ async def test_substitute_vendor_secrets_in_specs(
     assert VENDOR_SECRET_PREFIX not in f"{replaced_specs}"
 
 
-def test_auto_inject_environments_added_to_all_services_in_compose():
+@pytest.fixture
+def compose_spec():
+    return {
+        "version": "3.7",
+        "services": {
+            "jupyter-math": {
+                "environment": [
+                    "OSPARC_API_KEY=$OSPARC_VARIABLE_API_KEY",
+                    "OSPARC_API_SECRET=$OSPARC_VARIABLE_API_SECRET",
+                    "FOO=33",
+                ],
+                "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:${SERVICE_VERSION}",
+                "networks": {"dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834": None},
+                "deploy": {
+                    "resources": {
+                        "reservations": {"cpus": "0.1", "memory": "2147483648"},
+                        "limits": {"cpus": "4.0", "memory": "17179869184"},
+                    }
+                },
+                "labels": [
+                    "io.simcore.runtime.cpu-limit=4.0",
+                    "io.simcore.runtime.memory-limit=17179869184",
+                    "io.simcore.runtime.node-id=10e1b317-de62-44ca-979e-09bf15663834",
+                    "io.simcore.runtime.product-name=osparc",
+                    "io.simcore.runtime.project-id=e341df9e-2e38-11ef-894b-0242ac140025",
+                    "io.simcore.runtime.simcore-user-agent=undefined",
+                    "io.simcore.runtime.swarm-stack-name=master-simcore",
+                    "io.simcore.runtime.user-id=1",
+                ],
+            }
+        },
+        "networks": {
+            "dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834": {
+                "name": "dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834",
+                "external": True,
+                "driver": "overlay",
+            },
+            "master-simcore_interactive_services_subnet": {
+                "name": "master-simcore_interactive_services_subnet",
+                "external": True,
+                "driver": "overlay",
+            },
+        },
+    }
 
-    model = parse_obj_as(
-        SimcoreServiceLabels, SimcoreServiceLabels.Config.schema_extra["examples"][2]
-    )
-    assert model.compose_spec
 
-    before = deepcopy(model.compose_spec)
+def test_auto_inject_environments_added_to_all_services_in_compose(
+    compose_spec: ComposeSpecLabelDict,
+):
 
-    after = auto_inject_environments(model.compose_spec)
+    before = deepcopy(compose_spec)
+
+    after = auto_inject_environments(compose_spec)
 
     assert before != after
-    assert after == model.compose_spec
+    assert after == compose_spec
 
     auto_injected_envs = set(_NEW_ENVIRONMENTS.keys())
-    for name, service in model.compose_spec.get("services", {}).items():
+    for name, service in compose_spec.get("services", {}).items():
 
         # all services have environment specs
         assert service["environment"], f"expected in {name} service"

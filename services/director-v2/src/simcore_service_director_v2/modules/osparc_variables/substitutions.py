@@ -161,7 +161,7 @@ def auto_inject_environments(
                 **current_environment,
             }
         elif isinstance(current_environment, list):
-            service["environment"] = [
+            service["environment"] += [
                 f"{name}={value}"
                 for name, value in _NEW_ENVIRONMENTS.items()
                 if not any(_.startswith(name) for _ in current_environment)
