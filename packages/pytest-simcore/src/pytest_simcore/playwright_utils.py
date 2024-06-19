@@ -16,7 +16,6 @@ MINUTE: Final[int] = 60 * SECOND
 NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/projects/[^/]+/nodes/[^:]+:start"
 )
-LET_IT_START_OR_FORCE_WAIT_TIME_MS: Final[int] = 5 * SECOND
 
 
 @unique
@@ -61,7 +60,7 @@ class NodeProgressType(str, Enum):
     SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
 
     @classmethod
-    def required_service_started(cls) -> set["NodeProgressType"]:
+    def required_types_for_started_service(cls) -> set["NodeProgressType"]:
         return {
             NodeProgressType.SERVICE_INPUTS_PULLING,
             NodeProgressType.SIDECARS_PULLING,
@@ -219,7 +218,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                     return all(
                         progress_type in self._current_progress
-                        for progress_type in NodeProgressType.required_service_started()
+                        for progress_type in NodeProgressType.required_types_for_started_service()
                     ) and all(
                         round(progress) == 1.0
                         for progress in self._current_progress.values()
@@ -278,7 +277,7 @@ def on_web_socket_default_handler(ws) -> None:
     ws.on("close", lambda payload: stack.close())  # noqa: ARG005
 
 
-def _node_start_predicate(request: Request) -> bool:
+def _node_started_predicate(request: Request) -> bool:
     return bool(
         re.search(NODE_START_REQUEST_PATTERN, request.url)
         and request.method.upper() == "POST"
@@ -288,7 +287,7 @@ def _node_start_predicate(request: Request) -> bool:
 def _trigger_next_app(page: Page) -> None:
     with (
         log_context(logging.INFO, msg="triggering next app"),
-        page.expect_request(_node_start_predicate),
+        page.expect_request(_node_started_predicate),
     ):
         # Move to next step (this auto starts the next service)
         next_button_locator = page.get_by_test_id("AppMode_NextBtn")
@@ -296,18 +295,18 @@ def _trigger_next_app(page: Page) -> None:
             page.get_by_test_id("AppMode_NextBtn").click()
 
 
-def _wait_or_trigger_service_start(page: Page, node_id: str) -> None:
+def _trigger_service_start_if_button_available(page: Page, node_id: str) -> None:
     # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
     with log_context(logging.INFO, msg="trigger start button if needed"):
         start_button_locator = page.get_by_test_id(f"Start_{node_id}")
         with contextlib.suppress(AssertionError):
             expect(start_button_locator).to_be_visible(timeout=5000)
             expect(start_button_locator).to_be_enabled(timeout=5000)
-            with page.expect_request(_node_start_predicate):
+            with page.expect_request(_node_started_predicate):
                 start_button_locator.click()
 
 
-def wait_or_force_start_service(
+def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
@@ -315,11 +314,8 @@ def wait_or_force_start_service(
     websocket: WebSocket,
     timeout: int,
 ) -> FrameLocator:
-    # The service might have started already or not
-    # If the service is running, we have a iframe present
-    # If the service is starting, we might have websocket events such as NodeProgress
-    # If the service is running but the frontend did not connect yet, a call to /project/{project_id}/nodes{node_id} will return 200 at some point
-    # If the service is not running, we need to press the start button
+    """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
+    In which case this will need further adjutment"""
 
     waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
     with (
@@ -329,5 +325,5 @@ def wait_or_force_start_service(
         if press_next:
             _trigger_next_app(page)
         else:
-            _wait_or_trigger_service_start(page, node_id)
+            _trigger_service_start_if_button_available(page, node_id)
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')

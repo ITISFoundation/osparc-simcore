@@ -15,7 +15,7 @@ from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_or_force_start_service
+from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_for_service_running
 
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
@@ -97,7 +97,7 @@ def test_tip(  # noqa: PLR0915
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
-        electrode_selector_iframe = wait_or_force_start_service(
+        electrode_selector_iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[0],
             press_next=False,
@@ -151,7 +151,7 @@ def test_tip(  # noqa: PLR0915
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
-            ti_iframe = wait_or_force_start_service(
+            ti_iframe = wait_for_service_running(
                 page=page,
                 node_id=node_ids[1],
                 press_next=True,
@@ -198,7 +198,7 @@ def test_tip(  # noqa: PLR0915
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        s4l_postpro_iframe = wait_or_force_start_service(
+        s4l_postpro_iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[2],
             press_next=True,
