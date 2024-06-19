@@ -255,12 +255,12 @@ def test_auto_inject_environments_added_to_all_services_in_compose():
     )
     assert model.compose_spec
 
-    before = deepcopy(model)
+    before = deepcopy(model.compose_spec)
 
-    after = auto_inject_environments(model)
+    after = auto_inject_environments(model.compose_spec)
 
     assert before != after
-    assert after == model
+    assert after == model.compose_spec
 
     auto_injected_envs = set(_NEW_ENVIRONMENTS.keys())
     for name, service in model.compose_spec.get("services", {}).items():

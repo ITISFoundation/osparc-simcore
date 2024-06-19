@@ -328,8 +328,6 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         _strip_service_quotas(service_spec)
 
     if not allow_internet_access:
-        simcore_service_labels = auto_inject_environments(simcore_service_labels)
-
         simcore_service_labels = await substitute_vendor_secrets_in_model(
             app=app,
             model=simcore_service_labels,
@@ -366,6 +364,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         swarm_stack_name=swarm_stack_name,
         assigned_limits=assigned_limits,
     )
+
+    # resolve service-spec
+    service_spec = auto_inject_environments(service_spec)
 
     service_spec = await substitute_vendor_secrets_in_specs(
         app=app,

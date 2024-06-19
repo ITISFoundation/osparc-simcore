@@ -15,7 +15,7 @@ from models_library.osparc_variable_identifier import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
@@ -147,27 +147,26 @@ _NEW_ENVIRONMENTS: Final = {
 }
 
 
-def auto_inject_environments(simcore_service_labels: SimcoreServiceLabels):
+def auto_inject_environments(
+    compose_spec: ComposeSpecLabelDict,
+) -> ComposeSpecLabelDict:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5925
-    if simcore_service_labels.compose_spec:
+    for service in compose_spec.get("services", {}).values():
+        current_environment = deepcopy(service.get("environment", {}))
 
-        for service in simcore_service_labels.compose_spec.get("services", {}).values():
-            # if new_envs are already defined, then do not change them
-            current_environment = deepcopy(service.get("environment", {}))
-
-            if isinstance(current_environment, dict):
-                service["environment"] = {
-                    **_NEW_ENVIRONMENTS,
-                    **current_environment,
-                }
-            elif isinstance(current_environment, list):
-                service["environment"] = [
-                    f"{name}={value}"
-                    for name, value in _NEW_ENVIRONMENTS.items()
-                    if not any(_.startswith(name) for _ in current_environment)
-                ]
-
-    return simcore_service_labels
+        # if _NEW_ENVIRONMENTS are already defined, then do not change them
+        if isinstance(current_environment, dict):
+            service["environment"] = {
+                **_NEW_ENVIRONMENTS,
+                **current_environment,
+            }
+        elif isinstance(current_environment, list):
+            service["environment"] = [
+                f"{name}={value}"
+                for name, value in _NEW_ENVIRONMENTS.items()
+                if not any(_.startswith(name) for _ in current_environment)
+            ]
+    return compose_spec
 
 
 async def resolve_and_substitute_session_variables_in_model(
