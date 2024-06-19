@@ -3,12 +3,13 @@
     Example:
 
     from pydantic import BaseModel, validator
+    from models_library.utils.common_validators import empty_str_to_none_pre_validator
 
     class MyModel(BaseModel):
        thumbnail: str | None
 
        _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-           empty_str_to_none
+           empty_str_to_none_pre_validator
        )
 
 SEE https://docs.pydantic.dev/usage/validators/#reuse-validators

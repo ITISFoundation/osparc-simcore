@@ -3,7 +3,8 @@ from typing import Any, ClassVar, Literal
 
 import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
-from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
+from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
 
@@ -67,7 +68,7 @@ class Solver(BaseModel):
         }
 
     @classmethod
-    def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":
+    def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Solver":
         data = image_meta.dict(
             include={"name", "key", "version", "description", "contact"},
         )
