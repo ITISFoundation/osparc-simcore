@@ -22,6 +22,12 @@ from servicelib.redis import (
     RedisManagerDBConfig,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -290,8 +296,14 @@ async def test_redis_client_sdk_setup_shutdown(
 
     await client.setup()
 
-    await client._check_health()  # noqa: SLF001
-    assert client.is_healthy is True
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert client.is_healthy is True
 
     # cleanup
     await client.redis.flushall()

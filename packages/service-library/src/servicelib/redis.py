@@ -86,7 +86,6 @@ class RedisClientSDK:
             await self.shutdown()
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
 
-        self._is_healthy = True
         self._health_check_task = asyncio.create_task(
             self._check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
@@ -100,6 +99,7 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
+            self._continue_health_checking = False
             if not self._health_check_task.cancelled():
                 self._health_check_task.cancel()
             _, pending = await asyncio.wait((self._health_check_task,), timeout=5)
