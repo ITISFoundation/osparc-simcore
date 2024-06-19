@@ -19,6 +19,7 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.studies import Study, StudyID, StudyPort
 
@@ -80,7 +81,7 @@ async def test_studies_read_workflow(
     study_id = StudyID("25531b1a-2565-11ee-ab43-02420a000031")
 
     # list_studies
-    resp = await client.get("/v0/studies", auth=auth)
+    resp = await client.get("/{API_VTAG}/studies", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     studies = parse_obj_as(list[Study], resp.json()["items"])
@@ -88,18 +89,18 @@ async def test_studies_read_workflow(
     assert studies[0].uid == study_id
 
     # create_study doest NOT exist -> needs to be done via GUI
-    resp = await client.post("/v0/studies", auth=auth)
+    resp = await client.post("/{API_VTAG}/studies", auth=auth)
     assert resp.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     # get_study
-    resp = await client.get(f"/v0/studies/{study_id}", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/studies/{study_id}", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     study = parse_obj_as(Study, resp.json())
     assert study.uid == study_id
 
     # get ports
-    resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     ports = parse_obj_as(list[StudyPort], resp.json()["items"])
@@ -107,12 +108,14 @@ async def test_studies_read_workflow(
 
     # get_study with non-existing uuid
     inexistent_study_id = StudyID("15531b1a-2565-11ee-ab43-02420a000031")
-    resp = await client.get(f"/v0/studies/{inexistent_study_id}", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/studies/{inexistent_study_id}", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     error = parse_obj_as(ErrorGet, resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
 
-    resp = await client.get(f"/v0/studies/{inexistent_study_id}/ports", auth=auth)
+    resp = await client.get(
+        f"/{API_VTAG}/studies/{inexistent_study_id}/ports", auth=auth
+    )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     error = parse_obj_as(ErrorGet, resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
@@ -136,7 +139,7 @@ async def test_list_study_ports(
     )
 
     # list_study_ports
-    resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
@@ -186,7 +189,7 @@ async def test_clone_study(
     if parent_node_id is not None:
         _headers[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     resp = await client.post(
-        f"/v0/studies/{study_id}:clone", headers=_headers, auth=auth
+        f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth
     )
 
     assert mocked_webserver_service_api_base["create_projects"].called
@@ -212,7 +215,7 @@ async def test_clone_study_not_found(
 
     # tests unknown study
     unknown_study_id = faker.uuid4()
-    resp = await client.post(f"/v0/studies/{unknown_study_id}:clone", auth=auth)
+    resp = await client.post(f"/{API_VTAG}/studies/{unknown_study_id}:clone", auth=auth)
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 

@@ -25,6 +25,7 @@ import pytest
 from faker import Faker
 from fastapi import APIRouter, FastAPI, status
 from fastapi.testclient import TestClient
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.solvers import (
     Solver,
     SolverKeyId,
@@ -129,12 +130,14 @@ def test_fastapi_route_name_parsing(client: TestClient, app: FastAPI, faker: Fak
             f"{action}_job", solver_key=solver_key, version=version, job_id=job_id
         )
         resp = client.post(
-            f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:{action}"
+            f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}:{action}"
         )
         assert resp.url.path == expected_path
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["action"] == f"{action}_job"
 
-    resp = client.get(f"/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}")
+    resp = client.get(
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}"
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["action"] == "get_job"

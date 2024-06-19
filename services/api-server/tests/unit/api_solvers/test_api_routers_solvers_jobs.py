@@ -20,6 +20,7 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
@@ -173,13 +174,13 @@ async def test_solver_logs(
     solver_key: str,
     solver_version: str,
 ):
-    resp = await client.get("/v0/meta")
+    resp = await client.get(f"/{API_VTAG}/meta")
     assert resp.status_code == 200
 
     job_id = project_id
 
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/outputs/logfile",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/outputs/logfile",
         auth=auth,
         follow_redirects=True,
     )
@@ -335,12 +336,12 @@ async def test_run_solver_job(
 
     # ---------------------------------------------------------------------------------------------------------
 
-    resp = await client.get("/v0/meta")
+    resp = await client.get(f"/{API_VTAG}/meta")
     assert resp.status_code == 200
 
     # Create Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         json=JobInputs(
             values={
@@ -361,7 +362,7 @@ async def test_run_solver_job(
 
     # Start Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
         auth=auth,
         params={"cluster_id": 1},
     )
