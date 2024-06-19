@@ -233,12 +233,13 @@ async def start_study_job(
             return JSONResponse(
                 content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
             )
-        return await inspect_study_job(
+        job_status = await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
+        return job_status
 
 
 @router.post(
