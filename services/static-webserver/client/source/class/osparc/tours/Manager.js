@@ -31,6 +31,7 @@ qx.Class.define("osparc.tours.Manager", {
       showMinimize: false
     });
 
+    this.__blankets = [];
     this.__buildLayout();
   },
 
@@ -58,6 +59,7 @@ qx.Class.define("osparc.tours.Manager", {
   members: {
     __currentBubble: null,
     __currentIdx: null,
+    __blankets: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -156,9 +158,52 @@ qx.Class.define("osparc.tours.Manager", {
       return stepWidget;
     },
 
+    __addBlankets: function(targetWidget) {
+      // the plan is to surround the targetWidget with dark blankets so it gets highlighted
+      const element = targetWidget.getContentElement().getDomElement();
+      const {
+        top,
+        left
+      } = qx.bom.element.Location.get(element);
+      const {
+        width,
+        height
+      } = qx.bom.element.Dimension.getSize(element);
+      const windowW = window.innerWidth;
+      const windowH = window.innerHeight;
+
+      const blankets = this.__blankets;
+      const addBlanket = (w, h, l, t) => {
+        const blanket = new qx.ui.core.Widget().set({
+          width: w,
+          height: h,
+          backgroundColor: "black",
+          opacity: 0.4,
+          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX-1
+        });
+        qx.core.Init.getApplication().getRoot().add(blanket, {
+          left: l,
+          top: t
+        });
+        blankets.push(blanket);
+        return blanket;
+      };
+      addBlanket(left, windowH, 0, 0); // left
+      addBlanket(width, top, left, 0); // top
+      addBlanket(windowW-left-width, windowH, left+width, 0); // right
+      addBlanket(width, windowH-top-height, left, top+height); // bottom
+    },
+
+    __removeBlankets: function() {
+      this.__blankets.forEach(blanket => {
+        qx.core.Init.getApplication().getRoot().remove(blanket);
+      });
+    },
+
     __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBubble = this.__createStep();
+      this.__removeBlankets();
       if (step.anchorEl) {
         const el = document.querySelector(`[${step.anchorEl}]`);
         const targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
@@ -167,6 +212,7 @@ qx.Class.define("osparc.tours.Manager", {
           if (step.placement) {
             stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
           }
+          this.__addBlankets(targetWidget);
         } else {
           // target not found, move to the next step
           this.__toStepCheck(this.__currentIdx+1);
