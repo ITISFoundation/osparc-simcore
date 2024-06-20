@@ -231,7 +231,7 @@ async def get_job_outputs(
     assert len(node_ids) == 1  # nosec
 
     product_price = await webserver_api.get_product_price()
-    if product_price is not None:
+    if product_price.usd_per_credit is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
             raise MissingWalletError(job_id=project.uuid)
