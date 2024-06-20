@@ -1345,7 +1345,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         const response = await fetch(srvUrl);
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("Connecting: fetch's response ", response);
+          console.log("Connecting: fetch's response ", JSON.stringify(response));
         }
         if (response.ok || response.status === 302) {
           // ok = status in the range 200-299
