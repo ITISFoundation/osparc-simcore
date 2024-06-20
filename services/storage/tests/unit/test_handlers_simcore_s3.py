@@ -6,9 +6,10 @@
 # pylint:disable=too-many-nested-blocks
 
 import sys
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Literal
+from typing import Any, Literal
 
 import pytest
 import sqlalchemy as sa
@@ -192,7 +193,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     aiopg_engine: Engine,
     random_project_with_files: Callable[
-        ...,
+        [int, tuple[ByteSize], tuple[SHA256Str]],
         Awaitable[
             tuple[
                 dict[str, Any],
@@ -206,9 +207,9 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         SHA256Str, "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
     )
     src_project, src_projects_list = await random_project_with_files(
-        num_nodes=1,
-        file_sizes=tuple([parse_obj_as(ByteSize, "210Mib")]),
-        file_checksums=tuple([sha256_checksum]),
+        1,
+        (parse_obj_as(ByteSize, "210Mib"),),
+        (sha256_checksum,),
     )
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)

@@ -188,7 +188,7 @@ async def random_project_with_files(
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
 ) -> Callable[
-    [int, tuple[ByteSize, ...]],
+    [int, tuple[ByteSize, ...], tuple[SHA256Str, ...]],
     Awaitable[
         tuple[
             dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
