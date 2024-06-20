@@ -286,13 +286,14 @@ def _node_started_predicate(request: Request) -> bool:
 
 def _trigger_service_start_if_button_available(page: Page, node_id: str) -> None:
     # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
-    with log_context(logging.INFO, msg="trigger start button if needed"):
+    with log_context(logging.INFO, msg="trigger start button if needed") as ctx:
         start_button_locator = page.get_by_test_id(f"Start_{node_id}")
         with contextlib.suppress(AssertionError):
             expect(start_button_locator).to_be_visible(timeout=5000)
             expect(start_button_locator).to_be_enabled(timeout=5000)
             with page.expect_request(_node_started_predicate):
                 start_button_locator.click()
+                ctx.logger.info("triggered start button")
 
 
 def wait_for_service_running(
