@@ -76,7 +76,7 @@ class ServicePathParams(BaseModel):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
-async def _dev_list_services(request: Request):
+async def dev_list_services(request: Request):
     ctx = CatalogRequestContext.create(request)
     assert ctx  # nosec
 
@@ -94,7 +94,7 @@ async def _dev_list_services(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
-async def _dev_get_service(request: Request):
+async def dev_get_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
@@ -113,7 +113,7 @@ async def _dev_get_service(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
-async def _dev_update_service(request: Request):
+async def dev_update_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)

@@ -26,7 +26,7 @@ class ServiceRelease(BaseModel):
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
-            "example": [
+            "examples": [
                 # minimal
                 {
                     "version": "0.9.0",
