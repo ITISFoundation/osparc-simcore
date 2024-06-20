@@ -25,7 +25,6 @@ from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
@@ -380,16 +379,6 @@ async def _create_and_delete_folders_from_project(
         data, error = await assert_status(resp, status.HTTP_200_OK)
         assert not error
         assert not data
-
-
-@pytest.fixture
-def mock_check_project_exists(mocker: MockerFixture):
-    # NOTE: this avoid having to inject project in database
-    mock = mocker.patch(
-        "simcore_service_storage.dsm._check_project_exists",
-        autospec=True,
-        return_value=None,
-    )
 
 
 @pytest.mark.parametrize(
