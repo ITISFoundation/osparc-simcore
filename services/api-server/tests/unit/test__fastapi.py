@@ -92,7 +92,9 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
 
     # can be raw
     raw_solver_key = solver_key
-    resp = client.get(f"/v0/solvers/{raw_solver_key}/releases/{version}/jobs/{job_id}")
+    resp = client.get(
+        f"/{API_VTAG}/solvers/{raw_solver_key}/releases/{version}/jobs/{job_id}"
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {
         "action": "get_job",
@@ -104,7 +106,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
     # can be quoted
     quoted_solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
     resp = client.get(
-        f"/v0/solvers/{quoted_solver_key}/releases/{version}/jobs/{job_id}"
+        f"/{API_VTAG}/solvers/{quoted_solver_key}/releases/{version}/jobs/{job_id}"
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {
