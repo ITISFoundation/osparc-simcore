@@ -79,6 +79,7 @@ from .utils import (
     is_valid_managed_multipart_upload,
 )
 
+_NO_CONCURRENCY: Final[int] = 1
 _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
 
 _logger = logging.getLogger(__name__)
@@ -808,7 +809,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 len(file_ids_to_remove),
             )
 
-        return cast(list[StorageFileID], file_ids_to_remove)
+        return file_ids_to_remove
 
     async def _clean_pending_upload(
         self, conn: SAConnection, file_id: SimcoreS3FileID
@@ -843,7 +844,6 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
-        # and concurrency set to 1 to be low resource intensive in any case
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
@@ -851,7 +851,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             reraise=False,
             log=_logger,
-            max_concurrency=1,
+            max_concurrency=_NO_CONCURRENCY,
         )
         list_of_fmds_to_delete = [
             expired_fmd
@@ -877,11 +877,12 @@ class SimcoreS3DataManager(BaseDataManager):
 
         s3_client = get_s3_client(self.app)
         async with self.engine.acquire() as conn:
+            # NOTE: no concurrency here as we want to run low resources
             reverted_fmds = await logged_gather(
                 *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
                 reraise=False,
                 log=_logger,
-                max_concurrency=1,
+                max_concurrency=_NO_CONCURRENCY,
             )
         list_of_fmds_to_delete = [
             fmd
@@ -897,15 +898,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 "following unfinished/incomplete uploads will now be deleted : [%s]",
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
-            await logged_gather(
-                *(
-                    self.delete_file(fmd.user_id, fmd.file_id)
-                    for fmd in list_of_fmds_to_delete
-                    if fmd.user_id is not None
-                ),
-                log=_logger,
-                max_concurrency=1,
-            )
+            for fmd in list_of_fmds_to_delete:
+                if fmd.user_id is not None:
+                    await self.delete_file(fmd.user_id, fmd.file_id)
+
             _logger.warning(
                 "pending/incomplete uploads of [%s] removed",
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
