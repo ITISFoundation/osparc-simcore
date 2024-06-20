@@ -213,14 +213,14 @@ class SocketIONodeProgressCompleteWaiter:
                         )
                         ctx.logger.info(
                             "current startup progress: %s",
-                            f"{json.dumps(self._current_progress)}",
+                            f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
                     return all(
                         progress_type in self._current_progress
                         for progress_type in NodeProgressType.required_types_for_started_service()
                     ) and all(
-                        round(progress) == 1.0
+                        round(progress, 1) == 1.0
                         for progress in self._current_progress.values()
                     )
 
@@ -288,7 +288,7 @@ def _trigger_service_start_if_button_available(page: Page, node_id: str) -> None
     # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
     with log_context(logging.INFO, msg="trigger start button if needed") as ctx:
         start_button_locator = page.get_by_test_id(f"Start_{node_id}")
-        with contextlib.suppress(AssertionError):
+        with contextlib.suppress(AssertionError, TimeoutError):
             expect(start_button_locator).to_be_visible(timeout=5000)
             expect(start_button_locator).to_be_enabled(timeout=5000)
             with page.expect_request(_node_started_predicate):
