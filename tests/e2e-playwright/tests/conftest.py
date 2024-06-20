@@ -72,6 +72,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Whether product is billable or not",
     )
     group.addoption(
+        "--autoscaled",
+        action="store_true",
+        default=False,
+        help="Whether test runs against autoscaled  deployment or not",
+    )
+    group.addoption(
         "--service-test-id",
         action="store",
         type=str,
@@ -139,6 +145,12 @@ def user_password(
 def product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
+
+
+@pytest.fixture(scope="session")
+def autoscaled(request: pytest.FixtureRequest) -> bool:
+    autoscaled = request.config.getoption("--autoscaled")
+    return TypeAdapter(bool).validate_python(autoscaled)
 
 
 @pytest.fixture(scope="session")

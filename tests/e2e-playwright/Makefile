@@ -124,7 +124,7 @@ test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE) ## test sleepers a
     if [ "$$BILLABLE" = "y" ]; then \
         BILLABLE_FLAG="--product-billable"; \
     fi; \
-	pytest -s tests/sleepers/sleepers.py \
+	pytest -s tests/sleepers/ \
 		--color=yes \
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \
@@ -132,7 +132,8 @@ test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE) ## test sleepers a
 		--num-sleepers=$$NUM_SLEEPERS \
 		$$BILLABLE_FLAG \
 		--browser chromium \
-		--headed
+		--headed \
+		-k sleepers
 
 # Define the file where user input will be saved
 JUPYTER_USER_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
@@ -181,7 +182,7 @@ test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_USER_INPUT_FILE) ## test tip
     if [ "$$BILLABLE" = "y" ]; then \
         BILLABLE_FLAG="--product-billable"; \
     fi; \
-	pytest -s tests/ti_plan/ \
+	pytest -s tests/tip/ \
 		--color=yes \
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \

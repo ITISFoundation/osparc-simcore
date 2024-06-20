@@ -284,17 +284,6 @@ def _node_started_predicate(request: Request) -> bool:
     )
 
 
-def _trigger_next_app(page: Page) -> None:
-    with (
-        log_context(logging.INFO, msg="triggering next app"),
-        page.expect_request(_node_started_predicate),
-    ):
-        # Move to next step (this auto starts the next service)
-        next_button_locator = page.get_by_test_id("AppMode_NextBtn")
-        if next_button_locator.is_visible() and next_button_locator.is_enabled():
-            page.get_by_test_id("AppMode_NextBtn").click()
-
-
 def _trigger_service_start_if_button_available(page: Page, node_id: str) -> None:
     # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
     with log_context(logging.INFO, msg="trigger start button if needed"):
@@ -310,7 +299,6 @@ def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
-    press_next: bool,
     websocket: WebSocket,
     timeout: int,
 ) -> FrameLocator:
@@ -322,8 +310,16 @@ def wait_for_service_running(
         log_context(logging.INFO, msg="Waiting for node to run"),
         websocket.expect_event("framereceived", waiter, timeout=timeout),
     ):
-        if press_next:
-            _trigger_next_app(page)
-        else:
-            _trigger_service_start_if_button_available(page, node_id)
+        _trigger_service_start_if_button_available(page, node_id)
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
+
+
+def app_mode_trigger_next_app(page: Page) -> None:
+    with (
+        log_context(logging.INFO, msg="triggering next app"),
+        page.expect_request(_node_started_predicate),
+    ):
+        # Move to next step (this auto starts the next service)
+        next_button_locator = page.get_by_test_id("AppMode_NextBtn")
+        if next_button_locator.is_visible() and next_button_locator.is_enabled():
+            page.get_by_test_id("AppMode_NextBtn").click()

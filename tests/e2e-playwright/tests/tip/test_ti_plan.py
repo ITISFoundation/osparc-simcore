@@ -15,7 +15,12 @@ from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import MINUTE, SECOND, wait_for_service_running
+from pytest_simcore.playwright_utils import (
+    MINUTE,
+    SECOND,
+    app_mode_trigger_next_app,
+    wait_for_service_running,
+)
 
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
@@ -86,7 +91,7 @@ def test_tip(  # noqa: PLR0915
     page: Page,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    product_billable: bool,
+    autoscaled: bool,
 ):
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
@@ -100,11 +105,12 @@ def test_tip(  # noqa: PLR0915
         electrode_selector_iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[0],
-            press_next=False,
             websocket=log_in_and_out,
-            timeout=_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME
-            if product_billable
-            else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+            timeout=(
+                _ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME
+                if autoscaled
+                else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
+            ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -147,18 +153,20 @@ def test_tip(  # noqa: PLR0915
             _JLabWaitForWebSocket(),
             timeout=(
                 _JLAB_BILLABLE_MAX_STARTUP_TIME
-                if product_billable
+                if autoscaled
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
+            app_mode_trigger_next_app(page)
             ti_iframe = wait_for_service_running(
                 page=page,
                 node_id=node_ids[1],
-                press_next=True,
                 websocket=log_in_and_out,
-                timeout=_JLAB_BILLABLE_MAX_STARTUP_TIME
-                if product_billable
-                else _JLAB_MAX_STARTUP_MAX_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+                timeout=(
+                    _JLAB_BILLABLE_MAX_STARTUP_TIME
+                    if autoscaled
+                    else _JLAB_MAX_STARTUP_MAX_TIME
+                ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
             )
         jlab_websocket = ws_info.value
 
@@ -198,14 +206,16 @@ def test_tip(  # noqa: PLR0915
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
+        app_mode_trigger_next_app(page)
         s4l_postpro_iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[2],
-            press_next=True,
             websocket=log_in_and_out,
-            timeout=_POST_PRO_BILLABLE_MAX_STARTUP_TIME
-            if product_billable
-            else _POST_PRO_MAX_STARTUP_TIME,  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+            timeout=(
+                _POST_PRO_BILLABLE_MAX_STARTUP_TIME
+                if autoscaled
+                else _POST_PRO_MAX_STARTUP_TIME
+            ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
         )
 
         with log_context(logging.INFO, "Post process"):
