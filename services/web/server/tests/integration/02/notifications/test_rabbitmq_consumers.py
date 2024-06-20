@@ -131,6 +131,7 @@ async def _assert_handler_called_with_json(
 
 @pytest.fixture
 def client(
+    mock_redis_socket_timeout: None,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
@@ -319,7 +320,6 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
     "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_progress_non_computational_workflow(
-    mock_redis_socket_timeout: None,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     socketio_client_factory: Callable[
