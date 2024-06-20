@@ -70,13 +70,13 @@ class ServicePathParams(BaseModel):
 
 
 @routes.get(
-    f"{VTAG_DEV}/catalog/services",
-    name="dev_list_services",
+    f"{VTAG_DEV}/catalog/services/-/latest",
+    name="dev_list_services_latest",
 )
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
-async def dev_list_services(request: Request):
+async def dev_list_services_latest(request: Request):
     ctx = CatalogRequestContext.create(request)
     assert ctx  # nosec
 

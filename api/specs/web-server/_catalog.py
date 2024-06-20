@@ -36,10 +36,10 @@ router = APIRouter(
 
 
 @router.get(
-    "/dev/catalog/services",
+    "/dev/catalog/services/-/latest",
     response_model=Envelope[list[DEVServiceGet]],
 )
-def dev_list_services():
+def dev_list_services_latest():
     pass
 
 

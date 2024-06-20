@@ -485,12 +485,12 @@ paths:
             application/json:
               schema: {}
             image/png: {}
-  /v0/dev/catalog/services:
+  /v0/dev/catalog/services/-/latest:
     get:
       tags:
       - catalog
-      summary: Dev List Services
-      operationId: dev_list_services
+      summary: Dev List Services Latest
+      operationId: dev_list_services_latest
       responses:
         '200':
           description: Successful Response
@@ -3077,7 +3077,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
