@@ -1,5 +1,6 @@
 from .boot_options import BootOptions
 from .services_authoring import Author, Badge
+from .services_base import ServiceKeyVersion
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_enums import ServiceType
 from .services_io import BaseServiceIOModel, ServiceInput, ServiceOutput
@@ -22,10 +23,11 @@ __all__: tuple[str, ...] = (
     "RunID",
     "ServiceInput",
     "ServiceKey",
+    "ServiceKeyVersion",
+    "ServiceMetaDataPublished",
     "ServiceOutput",
     "ServicePortKey",
     "ServiceType",
     "ServiceVersion",
-    "ServiceMetaDataPublished",
 )
 # nopycln: file
