@@ -80,6 +80,7 @@ async def dev_list_services_latest(request: Request):
     ctx = CatalogRequestContext.create(request)
     assert ctx  # nosec
 
+    _logger.debug("Moking response for %s...", request)
     got = [
         parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
     ]
@@ -101,7 +102,10 @@ async def dev_get_service(request: Request):
     assert ctx  # nosec
     assert path_params  # nosec
 
+    _logger.debug("Moking response for %s...", request)
     got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got.version = path_params.service_version
+    got.key = path_params.service_key
 
     return envelope_json_response(got)
 
@@ -122,7 +126,10 @@ async def dev_update_service(request: Request):
     assert path_params  # nosec
     assert update  # nosec
 
+    _logger.debug("Moking response for %s...", request)
     got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got.version = path_params.service_version
+    got.key = path_params.service_key
     updated = got.copy(update=update.dict(exclude_unset=True))
 
     return envelope_json_response(updated)
