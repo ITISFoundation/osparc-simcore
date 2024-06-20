@@ -6,13 +6,11 @@ import sys
 from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from copy import deepcopy
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
 import pytest
 import servicelib
-import servicelib.redis as servicelib_redis
 from faker import Faker
 from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
@@ -68,14 +66,6 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
     }
     data["object"] = deepcopy(data)
     return data
-
-
-@pytest.fixture
-def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
-    # lowered to allow CI to properly shutdown RedisClientSDK instances
-    mocker.patch.object(
-        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2)
-    )
 
 
 @pytest.fixture
