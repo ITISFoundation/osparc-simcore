@@ -38,7 +38,6 @@ from .constants import (
     APP_DB_ENGINE_KEY,
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
-    MAX_CONCURRENT_DB_TASKS,
     MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
@@ -866,6 +865,13 @@ class SimcoreS3DataManager(BaseDataManager):
         async def _revert_file(
             conn: SAConnection, fmd: FileMetaDataAtDB
         ) -> FileMetaDataAtDB:
+            if is_valid_managed_multipart_upload(fmd.upload_id):
+                assert fmd.upload_id  # nosec
+                await s3_client.abort_multipart_upload(
+                    bucket=fmd.bucket_name,
+                    file_id=fmd.file_id,
+                    upload_id=fmd.upload_id,
+                )
             await s3_client.undelete_file(fmd.bucket_name, fmd.file_id)
             return await self._update_database_from_storage(conn, fmd)
 
@@ -875,7 +881,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
                 reraise=False,
                 log=_logger,
-                max_concurrency=MAX_CONCURRENT_DB_TASKS,
+                max_concurrency=1,
             )
         list_of_fmds_to_delete = [
             fmd
@@ -898,7 +904,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     if fmd.user_id is not None
                 ),
                 log=_logger,
-                max_concurrency=MAX_CONCURRENT_DB_TASKS,
+                max_concurrency=1,
             )
             _logger.warning(
                 "pending/incomplete uploads of [%s] removed",
