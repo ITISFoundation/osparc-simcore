@@ -21,6 +21,7 @@ from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
+from pytest import Item
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
     MINUTE,
@@ -117,17 +118,21 @@ _FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def _construct_graylog_url(
-    product_url: str, start_time: datetime.datetime, end_time: datetime.datetime
+    product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime
 ) -> str:
     # Deduce monitoring url
-    scheme, tail = product_url.split("://", 1)
+    if product_url:
+        scheme, tail = product_url.split("://", 1)
+    else:
+        scheme, tail = "https", "<UNDEFINED>"
     monitoring_url = f"{scheme}://monitoring.{tail}"
 
+    # build graylog URL
     query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
     return f"{monitoring_url}/graylog/search?{query}"
 
 
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item: Item, call):
     """
     Hook to add extra information when a test fails.
     """
@@ -136,7 +141,7 @@ def pytest_runtest_makereport(item, call):
     if call.when == "call" and call.excinfo is not None:
         test_name = item.name
         test_location = item.location
-        product_url = item.config.getoption("--product-url")
+        product_url = item.config.getoption("--product-url", default=None)
 
         diagnostics = {
             "test_name": test_name,
