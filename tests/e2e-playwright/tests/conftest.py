@@ -141,7 +141,7 @@ def pytest_runtest_makereport(item: Item, call):
     if call.when == "call" and call.excinfo is not None:
         test_name = item.name
         test_location = item.location
-        product_url = item.config.getoption("--product-url", default=None)
+        product_url = f"{item.config.getoption('--product-url', default=None)}"
 
         diagnostics = {
             "test_name": test_name,
