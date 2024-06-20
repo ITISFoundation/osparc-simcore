@@ -34,7 +34,7 @@ def app_environment(
     "user_role",
     [UserRole.USER],
 )
-async def test_dev_list_get_update_services(
+async def test_dev_list_latest_services(
     client: TestClient,
     logged_user: UserInfoDict,
 ):
@@ -45,12 +45,27 @@ async def test_dev_list_get_update_services(
     url = client.app.router["dev_list_services_latest"].url_for()
     assert url.path.endswith("/catalog/services/-/latest")
 
-    response = await client.get(
-        f"{url}",
-    )
-    await assert_status(response, status.HTTP_200_OK)
+    response = await client.get(f"{url}", params={"offset": "0", "limit": "1"})
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert data
+    assert error is None
+    model = parse_obj_as(list[DEVServiceGet], data)
+    assert model
+    assert len(model) == 1
 
-    # GET
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_dev_get_and_patch_service(
+    client: TestClient,
+    logged_user: UserInfoDict,
+):
+
+    assert client.app
+    assert client.app.router
+
     service_key = "simcore/services/dynamic/someservice"
     service_version = "3.4.5"
 
@@ -58,6 +73,8 @@ async def test_dev_list_get_update_services(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
     )
+
+    # GET
     response = await client.get(
         f"{url}",
     )
