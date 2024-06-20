@@ -123,12 +123,12 @@ class RedisClientSDK:
         return False
 
     async def _check_health(self) -> None:
-        sleep_duration = self.health_check_interval.total_seconds()
+        sleep_s = self.health_check_interval.total_seconds()
 
         while self._continue_health_checking:
             with log_catch(_logger, reraise=False):
                 self._is_healthy = await self.ping()
-            await asyncio.sleep(sleep_duration)
+            await asyncio.sleep(sleep_s)
 
     @property
     def is_healthy(self) -> bool:
