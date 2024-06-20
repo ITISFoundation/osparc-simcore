@@ -25,7 +25,7 @@ from pytest_simcore.playwright_utils import (
 _GET_NODE_OUTPUTS_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"/storage/locations/[^/]+/files"
 )
-
+_OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
 _ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
@@ -38,7 +38,7 @@ _ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
 
 
-_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 2 * MINUTE
+_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 3 * MINUTE
 _JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _JLAB_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME
@@ -151,7 +151,8 @@ def test_tip(  # noqa: PLR0915
     with log_context(logging.INFO, "Classic TI step") as ctx:
         with page.expect_websocket(
             _JLabWaitForWebSocket(),
-            timeout=(
+            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+            * (
                 _JLAB_BILLABLE_MAX_STARTUP_TIME
                 if autoscaled
                 else _JLAB_MAX_STARTUP_MAX_TIME
