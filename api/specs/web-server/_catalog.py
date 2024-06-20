@@ -52,7 +52,7 @@ def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 
 
 @router.patch(
-    "dev/catalog/services/{service_key}/{service_version}",
+    "/dev/catalog/services/{service_key}/{service_version}",
     response_model=Envelope[DEVServiceGet],
 )
 def dev_update_service(
