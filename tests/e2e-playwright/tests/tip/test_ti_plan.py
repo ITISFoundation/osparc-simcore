@@ -157,6 +157,7 @@ def test_tip(  # noqa: PLR0915
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
+            # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
             app_mode_trigger_next_app(page)
             ti_iframe = wait_for_service_running(
                 page=page,
@@ -206,6 +207,7 @@ def test_tip(  # noqa: PLR0915
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
+        # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
         app_mode_trigger_next_app(page)
         s4l_postpro_iframe = wait_for_service_running(
             page=page,
