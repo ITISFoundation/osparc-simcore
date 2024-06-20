@@ -31,6 +31,9 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.application_settings_utils import (
+    requires_dev_feature_enabled,
+)
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -70,6 +73,7 @@ class ServicePathParams(BaseModel):
     f"{VTAG_DEV}/catalog/services",
     name="dev_list_services",
 )
+@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 async def _dev_list_services(request: Request):
@@ -87,6 +91,7 @@ async def _dev_list_services(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_get_service",
 )
+@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 async def _dev_get_service(request: Request):
@@ -105,6 +110,7 @@ async def _dev_get_service(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_update_service",
 )
+@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 async def _dev_update_service(request: Request):
