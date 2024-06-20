@@ -124,8 +124,7 @@ def log_context(
         error_message = (
             f"{ctx_msg.raised} ({_timedelta_as_minute_second_ms(elapsed_time)})"
         )
-        logger.log(
-            logging.ERROR,
+        logger.exception(
             error_message,
             *args,
             **kwargs,
