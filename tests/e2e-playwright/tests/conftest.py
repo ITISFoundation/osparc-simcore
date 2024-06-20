@@ -12,7 +12,7 @@ import random
 import re
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from faker import Faker
@@ -70,6 +70,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         default=False,
         help="Whether product is billable or not",
+    )
+    group.addoption(
+        "--autoscaled",
+        action="store_true",
+        default=False,
+        help="Whether test runs against autoscaled  deployment or not",
     )
     group.addoption(
         "--service-test-id",
@@ -139,6 +145,12 @@ def user_password(
 def product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
+
+
+@pytest.fixture(scope="session")
+def autoscaled(request: pytest.FixtureRequest) -> bool:
+    autoscaled = request.config.getoption("--autoscaled")
+    return TypeAdapter(bool).validate_python(autoscaled)
 
 
 @pytest.fixture(scope="session")
@@ -278,11 +290,7 @@ def log_in_and_out(
         logging.INFO,
         f"Logging out of {product_url=} using {user_name=}/{user_password=}",
     ):
-        # click anywher to remove modal windows
-        page.click(
-            "body",
-            position={"x": 0, "y": 0},
-        )
+        page.keyboard.press("Escape")
         page.get_by_test_id("userMenuBtn").click()
         with page.expect_response(re.compile(r"/auth/logout")) as response_info:
             page.get_by_test_id("userMenuLogoutBtn").click()
@@ -298,7 +306,7 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[tuple[RunningState]], str]]:
+) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -306,7 +314,8 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-    ) -> str:
+        press_open: bool = True,
+    ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
@@ -315,13 +324,15 @@ def create_new_project_and_delete(
             f"Opening project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            with log_in_and_out.expect_event(
-                "framereceived", waiter
-            ), page.expect_response(
-                re.compile(r"/projects/[^:]+:open")
-            ) as response_info:
+            with (
+                log_in_and_out.expect_event("framereceived", waiter),
+                page.expect_response(
+                    re.compile(r"/projects/[^:]+:open")
+                ) as response_info,
+            ):
                 # Project detail view pop-ups shows
-                page.get_by_test_id("openResource").click()
+                if press_open:
+                    page.get_by_test_id("openResource").click()
                 if product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
@@ -335,7 +346,7 @@ def create_new_project_and_delete(
             )
 
             created_project_uuids.append(project_uuid)
-            return project_uuid
+            return project_data["data"]
 
     yield _
 
@@ -363,7 +374,6 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
         ):
-
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
@@ -378,7 +388,7 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
-def find_service_in_dashboard(
+def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
     def _(
@@ -400,13 +410,15 @@ def find_service_in_dashboard(
 
 @pytest.fixture
 def create_project_from_service_dashboard(
-    find_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], str],
-) -> Callable[[ServiceType, str, str | None], str]:
+    find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
     def _(
         service_type: ServiceType, service_name: str, service_key_prefix: str | None
-    ) -> str:
-        find_service_in_dashboard(service_type, service_name, service_key_prefix)
+    ) -> dict[str, Any]:
+        find_and_start_service_in_dashboard(
+            service_type, service_name, service_key_prefix
+        )
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
@@ -441,15 +453,18 @@ def start_and_stop_pipeline(
 
             # NOTE: Keep expect_request as an inner context. In case of timeout, we want
             # to know whether the POST was requested or not.
-            with log_in_and_out.expect_event(
-                "framereceived",
-                waiter,
-                timeout=_OUTER_CONTEXT_TIMEOUT_MS,
-            ) as event, page.expect_request(
-                lambda r: re.search(r"/computations", r.url)
-                and r.method.upper() == "POST",  # type: ignore
-                timeout=_INNER_CONTEXT_TIMEOUT_MS,
-            ) as request_info:
+            with (
+                log_in_and_out.expect_event(
+                    "framereceived",
+                    waiter,
+                    timeout=_OUTER_CONTEXT_TIMEOUT_MS,
+                ) as event,
+                page.expect_request(
+                    lambda r: re.search(r"/computations", r.url)
+                    and r.method.upper() == "POST",  # type: ignore
+                    timeout=_INNER_CONTEXT_TIMEOUT_MS,
+                ) as request_info,
+            ):
                 page.get_by_test_id("runStudyBtn").click()
 
             response = request_info.value.response()
