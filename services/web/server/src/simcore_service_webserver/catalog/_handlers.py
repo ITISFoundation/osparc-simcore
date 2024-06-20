@@ -11,6 +11,7 @@ from typing import Any, Final
 
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
+    DEVServiceGet,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
@@ -25,6 +26,7 @@ from models_library.services_resources import (
 from models_library.utils.json_serialization import json_loads
 from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -73,7 +75,12 @@ class ServicePathParams(BaseModel):
 async def _dev_list_services(request: Request):
     ctx = CatalogRequestContext.create(request)
     assert ctx  # nosec
-    raise NotImplementedError
+
+    got = [
+        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
+    ]
+
+    return envelope_json_response(got)
 
 
 @routes.get(
@@ -88,7 +95,10 @@ async def _dev_get_service(request: Request):
 
     assert ctx  # nosec
     assert path_params  # nosec
-    raise NotImplementedError
+
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+
+    return envelope_json_response(got)
 
 
 @routes.patch(
@@ -100,11 +110,16 @@ async def _dev_get_service(request: Request):
 async def _dev_update_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
+    update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
 
     assert ctx  # nosec
     assert path_params  # nosec
+    assert update  # nosec
 
-    raise NotImplementedError
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    updated = got.copy(update=update.dict(exclude_unset=True))
+
+    return envelope_json_response(updated)
 
 
 @routes.get(f"{VTAG}/catalog/services", name="list_services")

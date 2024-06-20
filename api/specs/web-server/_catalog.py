@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
+    DEVServiceGet,
     ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
@@ -32,6 +33,33 @@ router = APIRouter(
 #
 # /catalog/services/* COLLECTION
 #
+
+
+@router.get(
+    "/dev/catalog/services",
+    response_model=Envelope[list[DEVServiceGet]],
+)
+def dev_list_services():
+    pass
+
+
+@router.get(
+    "/dev/catalog/services/{service_key}/{service_version}",
+    response_model=Envelope[DEVServiceGet],
+)
+def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
+    ...
+
+
+@router.patch(
+    "dev/catalog/services/{service_key}/{service_version}",
+    response_model=Envelope[DEVServiceGet],
+)
+def dev_update_service(
+    _path_params: Annotated[ServicePathParams, Depends()],
+    _update: ServiceUpdate,
+):
+    ...
 
 
 @router.get(
