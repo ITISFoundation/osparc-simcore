@@ -5,7 +5,9 @@ from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
-from ..services import ServiceInput, ServiceOutput, ServicePortKey
+from ..services_history import Compatibility, ServiceRelease
+from ..services_io import ServiceInput, ServiceOutput
+from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
 from ..utils.json_serialization import json_dumps, json_loads
 from ._base import InputSchema, OutputSchema
@@ -133,3 +135,44 @@ class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
 class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
     class Config(OutputSchema.Config):
         ...
+
+
+class DEVServiceGet(ServiceGet):
+    # pylint: disable=too-many-ancestors
+
+    compatibility: Compatibility | None = None
+    history: list[ServiceRelease] = Field(
+        default=[],
+        description="Past history of releases starting from the newest to the oldest",
+    )
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                **_EXAMPLE,  # 1.0.0
+                "compatibility": {
+                    "can_update_to": "1.0.5",
+                },
+                "history": [
+                    {"version": "0.9.11"},
+                    {"version": "0.9.10"},
+                    {
+                        "version": "0.9.8",
+                        "compatibility": {
+                            "can_update_to": "0.9.10",
+                        },
+                    },
+                    {
+                        "version": "0.9.1",
+                        "version_display": "Matterhorn",
+                        "release_date": "2024-06-20T18:49:17",
+                        "compatibility": {
+                            "can_update_to": "0.9.10",
+                        },
+                    },
+                    {"version": "0.9.0"},
+                    {"version": "0.8.0"},
+                    {"version": "0.1.0"},
+                ],
+            }
+        }
