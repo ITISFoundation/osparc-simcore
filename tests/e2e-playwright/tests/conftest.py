@@ -1,9 +1,9 @@
+# pylint: disable=no-name-in-module
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=no-name-in-module
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import datetime
 import json
@@ -15,6 +15,7 @@ from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from typing import Any, Final
 
+import arrow
 import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
@@ -105,26 +106,25 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 _test_start_times = {}
 
 
-def _utc_now() -> datetime.datetime:
-    return datetime.datetime.now(tz=datetime.timezone.utc)
-
-
 def pytest_runtest_setup(item):
     """
     Hook to capture the start time of each test.
     """
-    _test_start_times[item.name] = _utc_now()
+    _test_start_times[item.name] = arrow.now().datetime
+
+
+_FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def _construct_graylog_url(
-    api_host: str, start_time: datetime.datetime, end_time: datetime.datetime
+    product_url: str, start_time: datetime.datetime, end_time: datetime.datetime
 ) -> str:
-    base_url = api_host.replace("api.", "monitoring.", 1).rstrip("/")
-    url = f"{base_url}/graylog/search"
-    start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    end_time_str = end_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    query = f"from={start_time_str}&to={end_time_str}"
-    return f"{url}?{query}"
+    # Deduce monitoring url
+    scheme, tail = product_url.split("://", 1)
+    monitoring_url = f"{scheme}://monitoring.{tail}"
+
+    query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
+    return f"{monitoring_url}/graylog/search?{query}"
 
 
 def pytest_runtest_makereport(item, call):
@@ -136,27 +136,28 @@ def pytest_runtest_makereport(item, call):
     if call.when == "call" and call.excinfo is not None:
         test_name = item.name
         test_location = item.location
-        api_host = os.environ.get("OSPARC_API_HOST", "")
+        product_url = item.config.getoption("--product-url")
 
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
-            "api_host": api_host,
+            "product_url": product_url,
         }
 
         # Get the start and end times of the test
         start_time = _test_start_times.get(test_name)
-        end_time = _utc_now()
+        end_time = arrow.now().datetime
 
         if start_time:
             diagnostics["graylog_url"] = _construct_graylog_url(
-                api_host, start_time, end_time
+                product_url, start_time, end_time
             )
+            diagnostics["duration"] = str(end_time - start_time)
 
-        # Print the diagnostics
-        print(f"\nDiagnostics for {test_name}:")
-        for key, value in diagnostics.items():
-            print("  ", key, ":", value)
+        # Print the diagnostics report
+        print(f"\nDiagnostics repoort for {test_name} ---")
+        print(json.dumps(diagnostics, indent=2))
+        print("---")
 
 
 @pytest.hookimpl(tryfirst=True)
