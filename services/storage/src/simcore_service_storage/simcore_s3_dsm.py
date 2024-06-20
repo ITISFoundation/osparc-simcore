@@ -71,11 +71,7 @@ from .s3 import get_s3_client
 from .s3_client import S3MetaData, StorageS3Client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import (
-    expand_directory,
-    get_directory_file_id,
-    get_simcore_directory,
-)
+from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -906,109 +902,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
 
-    async def _clean_dangling_multipart_uploads(self):
-        """this method removes any dangling multipart upload that
-        was initiated on S3 backend if it does not exist in file_meta_data
-        table.
-        Use-cases:
-            - presigned multipart upload: a multipart upload is created after the entry in the table (
-                if the expiry date is still in the future we do not remove the upload
-            )
-            - S3 external or internal potentially multipart upload (using S3 direct access we do not know
-            if they create multipart uploads and have no control over it, the only thing we know is the upload
-            expiry date)
-            --> we only remove dangling upload IDs which expiry date is in the past or that have no upload in process
-            or no entry at all in the database
-
-        """
-        current_multipart_uploads: list[
-            tuple[UploadID, SimcoreS3FileID]
-        ] = await get_s3_client(self.app).list_ongoing_multipart_uploads(
-            self.simcore_bucket_name
-        )
-        if not current_multipart_uploads:
-            return
-        _logger.debug("found %s", f"{current_multipart_uploads=}")
-
-        # there are some multipart uploads, checking if
-        # there is a counterpart in file_meta_data
-        # NOTE: S3 url encode file uuid with specific characters
-        async with self.engine.acquire() as conn:
-            # files have a 1 to 1 entry in the file_meta_data table
-            file_ids: list[SimcoreS3FileID] = [
-                SimcoreS3FileID(urllib.parse.unquote(f))
-                for _, f in current_multipart_uploads
-            ]
-            # if a file is part of directory, check if this directory is present in
-            # the file_meta_data table; extracting the SimcoreS3DirectoryID from
-            # the file path to find it's equivalent
-            directory_and_file_ids: list[SimcoreS3FileID] = file_ids + [
-                SimcoreS3FileID(get_simcore_directory(file_id)) for file_id in file_ids
-            ]
-
-            list_of_known_metadata_entries: list[
-                FileMetaDataAtDB
-            ] = await db_file_meta_data.list_fmds(
-                conn, file_ids=list(set(directory_and_file_ids))
-            )
-            _logger.debug("metadata entries %s", f"{list_of_known_metadata_entries=}")
-
-        # known uploads do have an expiry date (regardless of upload ID that we do not always know)
-        list_of_known_uploads = [
-            fmd for fmd in list_of_known_metadata_entries if fmd.upload_expires_at
-        ]
-
-        # To compile the list of valid uploads, check that the s3_object is
-        # part of the known uploads.
-        # The known uploads is composed of entries for files or for directories.
-        # checking if the s3_object is part of either one of those
-        list_of_valid_upload_ids: list[str] = []
-        known_directory_names: set[str] = {
-            x.object_name for x in list_of_known_uploads if x.is_directory is True
-        }
-        known_file_names: set[str] = {
-            x.object_name for x in list_of_known_uploads if x.is_directory is False
-        }
-        for upload_id, s3_object_name in current_multipart_uploads:
-            file_id = SimcoreS3FileID(urllib.parse.unquote(s3_object_name))
-            if (
-                file_id in known_file_names
-                or get_simcore_directory(file_id) in known_directory_names
-            ):
-                list_of_valid_upload_ids.append(upload_id)
-
-        _logger.debug("found the following %s", f"{list_of_valid_upload_ids=}")
-        if list_of_invalid_uploads := [
-            (
-                upload_id,
-                file_id,
-            )
-            for upload_id, file_id in current_multipart_uploads
-            if upload_id not in list_of_valid_upload_ids
-        ]:
-            _logger.debug(
-                "the following %s was found and will now be aborted",
-                f"{list_of_invalid_uploads=}",
-            )
-            await logged_gather(
-                *(
-                    get_s3_client(self.app).abort_multipart_upload(
-                        self.simcore_bucket_name, file_id, upload_id
-                    )
-                    for upload_id, file_id in list_of_invalid_uploads
-                ),
-                max_concurrency=MAX_CONCURRENT_S3_TASKS,
-            )
-            _logger.warning(
-                "Dangling multipart uploads '%s', were aborted. "
-                "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
-                "This might indicate that something went wrong in how storage handles multipart uploads!!",
-                f"{list_of_invalid_uploads}",
-            )
-
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()
-        await self._clean_dangling_multipart_uploads()
 
     async def _update_database_from_storage(
         self, conn: SAConnection, fmd: FileMetaDataAtDB
