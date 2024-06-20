@@ -5,7 +5,7 @@ from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
-from ..services_history import Compatibility, ServiceRelease
+from ..services_history import ServiceRelease
 from ..services_io import ServiceInput, ServiceOutput
 from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
@@ -140,20 +140,28 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
 class DEVServiceGet(ServiceGet):
     # pylint: disable=too-many-ancestors
 
-    compatibility: Compatibility | None = None
     history: list[ServiceRelease] = Field(
         default=[],
-        description="Past history of releases starting from the newest to the oldest",
+        description="history of releases for this service at this point in time, starting from the newest to the oldest."
+        " It includes current release.",
     )
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 **_EXAMPLE,  # 1.0.0
-                "compatibility": {
-                    "can_update_to": "1.0.5",
-                },
                 "history": [
+                    {
+                        "version": "1.0.5",
+                        "version_display": "Summer Release",
+                        "release_date": "2024-07-20T15:00:00",
+                    },
+                    {
+                        "version": _EXAMPLE["version"],
+                        "compatibility": {
+                            "can_update_to": "1.0.5",
+                        },
+                    },
                     {"version": "0.9.11"},
                     {"version": "0.9.10"},
                     {
@@ -165,7 +173,7 @@ class DEVServiceGet(ServiceGet):
                     {
                         "version": "0.9.1",
                         "version_display": "Matterhorn",
-                        "release_date": "2024-06-20T18:49:17",
+                        "release_date": "2024-01-20T18:49:17",
                         "compatibility": {
                             "can_update_to": "0.9.10",
                         },

@@ -6044,14 +6044,13 @@ components:
           title: Owner
           type: string
           format: email
-        compatibility:
-          $ref: '#/components/schemas/Compatibility'
         history:
           title: History
           type: array
           items:
             $ref: '#/components/schemas/ServiceRelease'
-          description: Past history of releases starting from the newest to the oldest
+          description: history of releases for this service at this point in time,
+            starting from the newest to the oldest. It includes current release.
           default: []
       description: 'Service metadata at publication time
 
@@ -6107,9 +6106,13 @@ components:
             unitShort: sec
             keyId: output_2
         owner: redpandas@wonderland.com
-        compatibility:
-          can_update_to: 1.0.5
         history:
+        - version: 1.0.5
+          version_display: Summer Release
+          release_date: '2024-07-20T15:00:00'
+        - version: 1.0.0
+          compatibility:
+            can_update_to: 1.0.5
         - version: 0.9.11
         - version: 0.9.10
         - version: 0.9.8
@@ -6117,7 +6120,7 @@ components:
             can_update_to: 0.9.10
         - version: 0.9.1
           version_display: Matterhorn
-          release_date: '2024-06-20T18:49:17'
+          release_date: '2024-01-20T18:49:17'
           compatibility:
             can_update_to: 0.9.10
         - version: 0.9.0
@@ -10353,13 +10356,6 @@ components:
           format: date-time
         compatibility:
           $ref: '#/components/schemas/Compatibility'
-      example:
-      - version: 0.9.0
-      - version: 0.9.1
-        version_display: Matterhorn
-        release_date: '2024-06-20T18:49:17'
-        compatibility:
-          can_update_to: 0.9.10
     ServiceRunGet:
       title: ServiceRunGet
       required:
