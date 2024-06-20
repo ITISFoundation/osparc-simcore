@@ -4,10 +4,11 @@ import asyncio
 import json
 import logging
 import os
+import re
 import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import httpx
@@ -518,6 +519,13 @@ def run_command(command: str) -> str:
     return command_result
 
 
+_SERVICE_CONVERGED_PATTERN: Final[str] = r"verify: Service.+converged$"
+
+
+def _assert_service_converged(string) -> None:
+    assert bool(re.search(_SERVICE_CONVERGED_PATTERN, string)) is True
+
+
 async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
     service_name: str, internal_port: PositiveInt
 ) -> PositiveInt:
@@ -529,13 +537,13 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
     result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
-    assert "verify: Service converged" in result
+    _assert_service_converged(result)
 
     # Finally forward the port on a random assigned port.
     result = run_command(
         f"docker service update {service_name} --publish-add :{internal_port}"
     )
-    assert "verify: Service converged" in result
+    _assert_service_converged(result)
 
     # inspect service and fetch the port
     async with aiodocker.Docker() as docker_client:
