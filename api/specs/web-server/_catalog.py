@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog._handlers import (
+    ListServiceParams,
     ServicePathParams,
     _FromServiceOutputParams,
     _ServiceInputsPathParams,
@@ -39,7 +40,7 @@ router = APIRouter(
     "/dev/catalog/services/-/latest",
     response_model=Envelope[list[DEVServiceGet]],
 )
-def dev_list_services_latest():
+def dev_list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
     pass
 
 

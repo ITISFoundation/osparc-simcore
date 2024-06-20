@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
+from models_library.rest_pagination import PageQueryParameters
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -69,6 +70,10 @@ class ServicePathParams(BaseModel):
         return v
 
 
+class ListServiceParams(PageQueryParameters):
+    ...
+
+
 @routes.get(
     f"{VTAG_DEV}/catalog/services/-/latest",
     name="dev_list_services_latest",
@@ -78,14 +83,19 @@ class ServicePathParams(BaseModel):
 @permission_required("services.catalog.*")
 async def dev_list_services_latest(request: Request):
     ctx = CatalogRequestContext.create(request)
+    query_params = parse_request_query_parameters_as(ListServiceParams, request)
+
     assert ctx  # nosec
+    assert query_params  # nosec
 
     _logger.debug("Moking response for %s...", request)
     got = [
         parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
     ]
 
-    return envelope_json_response(got)
+    return envelope_json_response(
+        got[query_params.offset : query_params.offset + query_params.limit]
+    )
 
 
 @routes.get(

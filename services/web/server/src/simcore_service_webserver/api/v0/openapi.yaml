@@ -491,6 +491,25 @@ paths:
       - catalog
       summary: Dev List Services Latest
       operationId: dev_list_services_latest
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
       responses:
         '200':
           description: Successful Response
