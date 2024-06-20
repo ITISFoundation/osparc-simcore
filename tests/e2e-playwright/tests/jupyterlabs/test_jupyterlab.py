@@ -10,7 +10,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
 from pydantic import ByteSize
@@ -65,7 +65,7 @@ class _JLabWaitForTerminalWebSocket:
 def test_jupyterlab(
     page: Page,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], str
+        [ServiceType, str, str | None], dict[str, Any]
     ],
     service_key: str,
     large_file_size: ByteSize,

@@ -12,7 +12,7 @@ import datetime
 import logging
 import re
 from collections.abc import Callable
-from typing import Final
+from typing import Any, Final
 
 from packaging.version import Version
 from packaging.version import parse as parse_version
@@ -76,13 +76,13 @@ def test_sleepers(
     page: Page,
     log_in_and_out: WebSocket,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], str
+        [ServiceType, str, str | None], dict[str, Any]
     ],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
-    project_uuid = create_project_from_service_dashboard(
+    project_data = create_project_from_service_dashboard(
         ServiceType.COMPUTATIONAL, "sleeper", "itis"
     )
 
@@ -95,7 +95,9 @@ def test_sleepers(
         ),
     ):
         for _ in range(1, num_sleepers):
-            with page.expect_response(re.compile(rf"/projects/{project_uuid}/nodes")):
+            with page.expect_response(
+                re.compile(rf"/projects/{project_data['uuid']}/nodes")
+            ):
                 page.get_by_test_id("newNodeBtn").click()
                 page.get_by_placeholder("Filter").click()
                 page.get_by_placeholder("Filter").fill("sleeper")
