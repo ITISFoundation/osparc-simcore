@@ -194,7 +194,7 @@ async def test_get_solver_job_pricing_unit(
 @pytest.mark.parametrize(
     "capture_name,expected_status_code",
     [
-        ("start_job_with_payment.json", 200),
+        ("start_job_with_payment.json", 202),
         ("start_job_not_enough_credit.json", 402),
     ],
 )
@@ -248,7 +248,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         _put_pricing_plan_and_unit_side_effect,
         _start_job_side_effect,
     ]
-    if expected_status_code == status.HTTP_200_OK:
+    if expected_status_code == status.HTTP_202_ACCEPTED:
         callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
@@ -270,7 +270,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         },
     )
     assert response.status_code == expected_status_code
-    if expected_status_code == status.HTTP_200_OK:
+    if expected_status_code == status.HTTP_202_ACCEPTED:
         assert _put_pricing_plan_and_unit_side_effect.was_called
         assert response.json()["job_id"] == _job_id
 
@@ -306,8 +306,44 @@ async def test_get_solver_job_pricing_unit_no_payment(
         auth=auth,
     )
 
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_202_ACCEPTED
     assert response.json()["job_id"] == _job_id
+
+
+async def test_start_solver_job_conflict(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    mocked_groups_extra_properties,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    assert mocked_groups_extra_properties
+    _solver_key: str = "simcore/services/comp/itis/sleeper"
+    _version: str = "2.0.2"
+    _job_id: str = "b9faf8d8-4928-4e50-af40-3690712c5481"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_solver_job.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+            get_inspect_job_side_effect(job_id=_job_id),
+        ],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    job_status = JobStatus.parse_obj(response.json())
+    assert f"{job_status.job_id}" == _job_id
 
 
 async def test_stop_job(

@@ -10,6 +10,7 @@ import pytest
 import simcore_service_api_server.api.routes.solvers
 from pytest_mock import MockFixture
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
 
@@ -67,7 +68,7 @@ async def test_list_solver_ports(
     auth: httpx.BasicAuth,
 ):
     resp = await client.get(
-        "/v0/solvers/simcore/services/comp/itis/sleeper/releases/2.1.4/ports",
+        f"/{API_VTAG}/solvers/simcore/services/comp/itis/sleeper/releases/2.1.4/ports",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
