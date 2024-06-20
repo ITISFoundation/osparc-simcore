@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, cast
 
+import arrow
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
@@ -573,7 +574,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 self.simcore_bucket_name, project_id, node_id
             )
 
-    async def deep_copy_project_simcore_s3(
+    async def deep_copy_project_simcore_s3(  # noqa: C901
         self,
         user_id: UserID,
         src_project: dict[str, Any],
@@ -784,19 +785,20 @@ class SimcoreS3DataManager(BaseDataManager):
     async def synchronise_meta_data_table(
         self, *, dry_run: bool
     ) -> list[StorageFileID]:
-        file_ids_to_remove = []
+
         async with self.engine.acquire() as conn:
             _logger.warning(
                 "Total number of entries to check %d",
                 await db_file_meta_data.total(conn),
             )
             # iterate over all entries to check if there is a file in the S3 backend
-            async for fmd in db_file_meta_data.list_valid_uploads(conn):
+            file_ids_to_remove = [
+                fmd.file_id
+                async for fmd in db_file_meta_data.list_valid_uploads(conn)
                 if not await get_s3_client(self.app).file_exists(
                     self.simcore_bucket_name, s3_object=fmd.object_name
-                ):
-                    # this file does not exist in S3
-                    file_ids_to_remove.append(fmd.file_id)
+                )
+            ]
 
             if not dry_run:
                 await db_file_meta_data.delete(conn, file_ids_to_remove)
@@ -807,7 +809,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 len(file_ids_to_remove),
             )
 
-        return file_ids_to_remove
+        return cast(list[StorageFileID], file_ids_to_remove)
 
     async def _clean_pending_upload(
         self, conn: SAConnection, file_id: SimcoreS3FileID
@@ -828,7 +830,7 @@ class SimcoreS3DataManager(BaseDataManager):
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.datetime.utcnow()
+        now = arrow.utcnow().datetime
         async with self.engine.acquire() as conn:
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
@@ -842,6 +844,7 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
+        # and concurrency set to 1 to be low resource intensive in any case
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
@@ -849,7 +852,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             reraise=False,
             log=_logger,
-            max_concurrency=MAX_CONCURRENT_DB_TASKS,
+            max_concurrency=1,
         )
         list_of_fmds_to_delete = [
             expired_fmd
@@ -1066,7 +1069,7 @@ class SimcoreS3DataManager(BaseDataManager):
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.utcnow()
+        now = arrow.utcnow().datetime
         upload_expiration_date = now + datetime.timedelta(
             seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )
