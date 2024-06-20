@@ -28,6 +28,7 @@ from settings_library.docker_registry import RegistrySettings
 
 from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ..osparc_variables.substitutions import (
+    auto_inject_environments,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_model,
@@ -363,6 +364,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         swarm_stack_name=swarm_stack_name,
         assigned_limits=assigned_limits,
     )
+
+    # resolve service-spec
+    service_spec = auto_inject_environments(service_spec)
 
     service_spec = await substitute_vendor_secrets_in_specs(
         app=app,
