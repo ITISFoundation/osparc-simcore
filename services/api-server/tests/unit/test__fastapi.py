@@ -80,7 +80,7 @@ def client() -> TestClient:
         }
 
     the_app = FastAPI()
-    the_app.include_router(router, prefix="/v0")
+    the_app.include_router(router, prefix=f"/{API_VTAG}")
 
     return TestClient(the_app)
 

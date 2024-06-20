@@ -81,7 +81,7 @@ async def test_studies_read_workflow(
     study_id = StudyID("25531b1a-2565-11ee-ab43-02420a000031")
 
     # list_studies
-    resp = await client.get("/{API_VTAG}/studies", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/studies", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     studies = parse_obj_as(list[Study], resp.json()["items"])
@@ -89,7 +89,7 @@ async def test_studies_read_workflow(
     assert studies[0].uid == study_id
 
     # create_study doest NOT exist -> needs to be done via GUI
-    resp = await client.post("/{API_VTAG}/studies", auth=auth)
+    resp = await client.post(f"/{API_VTAG}/studies", auth=auth)
     assert resp.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     # get_study
