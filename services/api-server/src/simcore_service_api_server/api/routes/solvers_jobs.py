@@ -193,6 +193,7 @@ async def start_job(
     """Starts job job_id created with the solver solver_key:version
 
     New in *version 0.4.3*: cluster_id
+    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
     """
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)

@@ -213,6 +213,9 @@ async def start_study_job(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
 ):
+    """
+    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
+    """
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         try:
