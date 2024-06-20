@@ -1,4 +1,4 @@
-from .boot_options import BootOptions
+from .boot_options import BootOption, BootOptions
 from .services_authoring import Author, Badge
 from .services_base import ServiceKeyVersion
 from .services_constants import LATEST_INTEGRATION_VERSION
@@ -17,6 +17,7 @@ __all__: tuple[str, ...] = (
     "Author",
     "Badge",
     "BaseServiceIOModel",
+    "BootOption",
     "BootOptions",
     "DynamicServiceKey",
     "LATEST_INTEGRATION_VERSION",
