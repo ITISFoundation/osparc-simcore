@@ -83,15 +83,16 @@ class ProjectListItem(ProjectGet):
     ...
 
 
-# Truncate title and description strings that exceed the specified limit.
-# This ensures the **input** to the API is controlled and prevents exceeding
-# the database's constraints without causing errors.
 class TitleStr(ConstrainedStr):
+    # Truncate title strings that exceed the specified limit.
+    # This ensures the **input** to the API is controlled and prevents exceeding
+    # the database's constraints without causing errors.
     curtail_length = 200
     strip_whitespace = True
 
 
 class DescriptionStr(ConstrainedStr):
+    # Truncate description strings that exceed the specified limit.
     curtail_length = 1000
     strip_whitespace = True
 
