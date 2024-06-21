@@ -85,7 +85,9 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
           bounds.top = parseInt(rect.y);
         }
       }
-      this.__creditsContainer.setPosition(bounds.left+bounds.width-2, bounds.top+bounds.height-2);
+      const bottom = bounds.top+bounds.height+10;
+      const right = bounds.left+bounds.width-4;
+      this.__creditsContainer.setPosition(right, bottom);
       this.__creditsContainer.show();
 
       document.addEventListener("mousedown", tapListener, this);

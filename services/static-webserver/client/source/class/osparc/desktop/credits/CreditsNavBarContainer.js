@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
 
     this.set({
       zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-      maxWidth: 200,
+      maxWidth: this.self().WIDTH,
       backgroundColor: "background-main-2",
       padding: 10
     });
@@ -68,10 +68,14 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
     });
   },
 
+  statics: {
+    WIDTH: 200
+  },
+
   members: {
     setPosition: function(x, y) {
       this.setLayoutProperties({
-        left: x - osparc.notification.NotificationUI.MAX_WIDTH,
+        left: x - this.self().WIDTH,
         top: y
       });
     }

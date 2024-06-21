@@ -238,14 +238,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "credits-button": {
+        case "credits-button":
           control = new osparc.desktop.credits.CreditsIndicatorButton().set({
             maxHeight: 32
+          });
+          control.getChildControl("icon").set({
+            maxHeight: 24,
+            scale: true
           });
           osparc.utils.Utils.setIdToWidget(control, "creditsNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
-        }
         case "tasks-button":
           control = new osparc.task.TasksButton();
           this.getChildControl("right-items").add(control);
