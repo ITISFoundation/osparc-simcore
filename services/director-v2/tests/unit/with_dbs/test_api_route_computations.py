@@ -571,7 +571,7 @@ async def test_create_computation_with_wallet(
     "default_pricing_plan",
     [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
-async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
+async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
@@ -601,7 +601,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
             )
         ),
     )
-    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
 
 
