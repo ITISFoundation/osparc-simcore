@@ -47,9 +47,9 @@ def s3_exception_handler(
 
     def decorator(func: Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]) -> Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]:  # type: ignore  # noqa: F821
         @functools.wraps(func)
-        def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:  # type: ignore # noqa: F821
+        async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore # noqa: F821
             try:
-                return func(self, *args, **kwargs)
+                return await func(self, *args, **kwargs)
             except self.client.exceptions.NoSuchBucket as exc:
                 raise S3BucketInvalidError(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
@@ -60,7 +60,9 @@ def s3_exception_handler(
 
                 match status_code, operation_name:
                     case 404, "HeadObject":
-                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
+                        raise S3KeyNotFoundError(
+                            bucket=kwargs["bucket_name"], key=kwargs["object_key"]
+                        ) from exc
                     case (404, "HeadBucket") | (403, "HeadBucket"):
                         raise S3BucketInvalidError(bucket=args[0]) from exc
                     case _:
