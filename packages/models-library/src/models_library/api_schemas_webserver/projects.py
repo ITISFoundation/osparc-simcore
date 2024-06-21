@@ -122,8 +122,10 @@ ProjectName: TypeAlias = IDStr
 
 
 class DescriptionStr(ConstrainedStr):
-    # Truncates input strings longer than 500 characters to limit the explanation of
-    curtail_length = 500
+    # Truncates description strings when it goes over a limit
+    # Limits the input of the API and bounds the amount of data injected
+    # in the database without erroring.
+    curtail_length = 1000
 
 
 class ProjectPatch(InputSchema):
