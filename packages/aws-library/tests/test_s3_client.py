@@ -81,6 +81,7 @@ async def test_create_bucket(
     ensure_bucket_name_deleted: None,
     region: BucketLocationConstraintType,
 ):
+    assert not await simcore_s3_api.bucket_exists(bucket=bucket_name)
     await simcore_s3_api.create_bucket(bucket=bucket_name, region=region)
     assert await simcore_s3_api.bucket_exists(bucket=bucket_name)
     # calling again works and silently does nothing
