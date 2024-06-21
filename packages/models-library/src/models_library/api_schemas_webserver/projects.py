@@ -10,7 +10,7 @@ from typing import Any, Literal, TypeAlias
 from pydantic import ConstrainedStr, Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import HttpUrlWithCustomMinLength, IDStr
+from ..basic_types import HttpUrlWithCustomMinLength
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
@@ -83,10 +83,23 @@ class ProjectListItem(ProjectGet):
     ...
 
 
+# Truncate title and description strings that exceed the specified limit.
+# This ensures the input to the API is controlled and prevents exceeding
+# the database's constraints without causing errors.
+class TitleStr(ConstrainedStr):
+    curtail_length = 200
+    strip_whitespace = True
+
+
+class DescriptionStr(ConstrainedStr):
+    curtail_length = 1000
+    strip_whitespace = True
+
+
 class ProjectReplace(InputSchema):
     uuid: ProjectID
-    name: str
-    description: str
+    name: TitleStr
+    description: DescriptionStr
     thumbnail: HttpUrlWithCustomMinLength | None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -107,8 +120,8 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectUpdate(InputSchema):
-    name: str = FieldNotRequired()
-    description: str = FieldNotRequired()
+    name: TitleStr = FieldNotRequired()
+    description: DescriptionStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     workbench: NodesDict = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
@@ -118,18 +131,8 @@ class ProjectUpdate(InputSchema):
     quality: dict[str, Any] = FieldNotRequired()
 
 
-ProjectName: TypeAlias = IDStr
-
-
-class DescriptionStr(ConstrainedStr):
-    # Truncate description strings that exceed the specified limit.
-    # This ensures the input to the API is controlled and prevents exceeding
-    # the database's constraints without causing errors.
-    curtail_length = 1000
-
-
 class ProjectPatch(InputSchema):
-    name: ProjectName = FieldNotRequired()
+    name: TitleStr = FieldNotRequired()
     description: DescriptionStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
