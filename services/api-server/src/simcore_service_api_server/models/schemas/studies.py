@@ -4,11 +4,14 @@ import pydantic
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
 
-from ...services.director_v2 import DownloadLink, NodeName
 from .. import api_resources
 from . import solvers
 
 StudyID: typing.TypeAlias = projects.ProjectID
+
+
+NodeName = str
+DownloadLink = pydantic.AnyUrl
 
 
 class Study(pydantic.BaseModel):
@@ -31,4 +34,6 @@ class StudyPort(solvers.SolverPort):
 
 
 class LogLinkMap(pydantic.BaseModel):
-    map: dict[NodeName, DownloadLink]
+    map: typing.Mapping[NodeName, DownloadLink] = pydantic.Field(
+        ..., description="Mapping of node name to download link"
+    )

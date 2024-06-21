@@ -13,13 +13,13 @@ from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
     LogFileNotFoundError,
 )
-from simcore_service_api_server.models.schemas.studies import LogLinkMap
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
+from ..models.schemas.studies import DownloadLink, LogLinkMap, NodeName
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
@@ -60,9 +60,6 @@ class TaskLogFileGet(BaseModel):
         None, description="Presigned link for log file or None if still not available"
     )
 
-
-NodeName = str
-DownloadLink = AnyUrl
 
 # API CLASS ---------------------------------------------
 
@@ -184,7 +181,7 @@ class DirectorV2Api(BaseServiceClientApi):
             if r.download_link:
                 node_to_links[f"{r.task_id}"] = r.download_link
 
-        return LogLinkMap.parse_obj({"map": node_to_links})
+        return LogLinkMap(map=node_to_links)
 
 
 # MODULES APP SETUP -------------------------------------------------------------

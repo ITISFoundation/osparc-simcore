@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
@@ -33,7 +33,7 @@ from ...models.schemas.jobs import (
     JobOutputs,
     JobStatus,
 )
-from ...models.schemas.studies import Study, StudyID
+from ...models.schemas.studies import LogLinkMap, Study, StudyID
 from ...services.director_v2 import DirectorV2Api
 from ...services.jobs import (
     get_custom_metadata,
@@ -303,13 +303,22 @@ async def get_study_job_outputs(
 
 
 @router.get(
-    "/{study_id}/jobs/{job_id}/outputs/logfile",
-    response_class=RedirectResponse,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    "/{study_id}/jobs/{job_id}/outputs/log-links",
+    response_model=LogLinkMap,
+    status_code=status.HTTP_200_OK,
 )
-async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
-    msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+async def get_study_job_output_logfile(
+    study_id: StudyID,
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+):
+    msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}."
+    _logger.debug(msg)
+    log_link_map = await director2_api.get_computation_logs(
+        user_id=user_id, project_id=job_id
+    )
+    return log_link_map
 
 
 @router.get(

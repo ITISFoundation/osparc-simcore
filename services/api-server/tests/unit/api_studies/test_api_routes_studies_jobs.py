@@ -26,7 +26,7 @@ from servicelib.common_headers import (
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
-from simcore_service_api_server.models.schemas.studies import Study, StudyID
+from simcore_service_api_server.models.schemas.studies import LogLinkMap, Study, StudyID
 
 _faker = Faker()
 
@@ -343,17 +343,19 @@ async def test_get_job_logs(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-    _study_id = ""
-    _job_id = ""
+    _study_id = "2ef9a730-299b-449a-acf4-bf14fc39dae8"
+    _job_id = "6544a671-4460-4791-bc40-90111a01a1c3"
 
-    create_respx_mock_from_capture(
-        respx_mocks=[
-            mocked_directorv2_service_api_base,
-        ],
-        capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
-        side_effects_callbacks=[],
-    )
+    # create_respx_mock_from_capture(
+    #     respx_mocks=[
+    #         mocked_directorv2_service_api_base,
+    #     ],
+    #     capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
+    #     side_effects_callbacks=[],
+    # )
 
     response = await client.get(
-        f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/logfile"
+        f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
     )
+    assert response.status_code == status.HTTP_200_OK
+    _ = LogLinkMap.parse_obj(response.json())
