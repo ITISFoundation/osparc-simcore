@@ -1,22 +1,24 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-from typing import TypeAlias, cast
+from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from botocore.client import Config
 from models_library.api_schemas_storage import S3BucketName
 from pydantic import AnyUrl, parse_obj_as
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
+from types_aiobotocore_s3.literals import BucketLocationConstraintType
 
 from .errors import s3_exception_handler
 
 _logger = logging.getLogger(__name__)
 
-_S3_MAX_CONCURRENCY_DEFAULT = 10
-
+_S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
+_DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 S3ObjectKeyName: TypeAlias = str
 
 
@@ -52,16 +54,49 @@ class SimcoreS3API:
         await self.exit_stack.aclose()
 
     async def http_check_bucket_connected(self, bucket: S3BucketName) -> bool:
-        try:
-            _logger.debug("Head bucket: %s", bucket)
+        return await self.bucket_exists(bucket)
+
+    @s3_exception_handler(_logger)
+    async def create_bucket(
+        self, bucket: S3BucketName, region: BucketLocationConstraintType
+    ) -> None:
+        with log_context(
+            _logger, logging.INFO, msg=f"Create bucket {bucket} in {region}"
+        ):
+            try:
+                # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
+                # setting it for the us-east-1 creates issue when creating buckets
+                create_bucket_config: dict[str, Any] = {"Bucket": f"{bucket}"}
+                if region != _DEFAULT_AWS_REGION:
+                    create_bucket_config["CreateBucketConfiguration"] = {
+                        "LocationConstraint": region
+                    }
+
+                await self.client.create_bucket(**create_bucket_config)
+
+            except self.client.exceptions.BucketAlreadyOwnedByYou:
+                _logger.info(
+                    "Bucket %s already exists and is owned by us",
+                    bucket,
+                )
+
+    @s3_exception_handler(_logger)
+    async def bucket_exists(self, bucket: S3BucketName) -> bool:
+        """
+        :raises: S3BucketInvalidError if not existing, not enough rights
+        :raises: S3AccessError for any other error
+        """
+        with log_catch(_logger, reraise=False), log_context(
+            _logger, logging.DEBUG, msg=f"Head bucket: {bucket}"
+        ):
             await self.client.head_bucket(Bucket=bucket)
             return True
-        except Exception:  # pylint: disable=broad-except
-            return False
+        return False
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
         self,
+        *,
         bucket_name: S3BucketName,
         object_key: S3ObjectKeyName,
         expiration_secs: int,
