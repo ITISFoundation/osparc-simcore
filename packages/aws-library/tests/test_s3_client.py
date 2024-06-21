@@ -5,12 +5,14 @@
 # pylint:disable=no-name-in-module
 
 
+import filecmp
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Callable
 
 import botocore.exceptions
 import pytest
+from aiohttp import ClientSession
 from aws_library.s3.client import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
@@ -138,6 +140,8 @@ async def test_create_single_presigned_download_link(
     with_s3_bucket: S3BucketName,
     with_uploaded_file_on_s3: Path,
     simcore_s3_api: SimcoreS3API,
+    tmp_path: Path,
+    faker: Faker,
 ):
     download_url = await simcore_s3_api.create_single_presigned_download_link(
         bucket_name=with_s3_bucket,
@@ -145,3 +149,13 @@ async def test_create_single_presigned_download_link(
         expiration_secs=50,
     )
     assert isinstance(download_url, AnyUrl)
+
+    dest_file = tmp_path / faker.file_name()
+    async with ClientSession() as session:
+        response = await session.get(download_url)
+        response.raise_for_status()
+        with dest_file.open("wb") as fp:
+            fp.write(await response.read())
+    assert dest_file.exists()
+
+    assert filecmp.cmp(dest_file, with_uploaded_file_on_s3) is True
