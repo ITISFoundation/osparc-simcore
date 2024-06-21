@@ -14,7 +14,7 @@ from typing import Final
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging import test_logger
-from pytest_simcore.playwright_utils import on_web_socket_default_handler
+from pytest_simcore.helpers.playwright import on_web_socket_default_handler
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt

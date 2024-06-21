@@ -15,7 +15,7 @@ from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.helpers.logging import log_context
-from pytest_simcore.playwright_utils import (
+from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     app_mode_trigger_next_app,
