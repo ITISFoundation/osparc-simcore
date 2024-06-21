@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import Any, Final, cast
 
@@ -14,6 +15,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
+from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .errors import S3KeyNotFoundError, s3_exception_handler
 from .models import MultiPartUploadLinks, S3MetaData, S3ObjectKey, UploadID
@@ -23,6 +25,7 @@ _logger = logging.getLogger(__name__)
 
 _S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
+_MAX_ITEMS_PER_PAGE: Final[int] = 500
 
 
 @dataclass(frozen=True)
@@ -112,6 +115,48 @@ class SimcoreS3API:
             Bucket=bucket, Key=object_key, ChecksumMode="ENABLED"
         )
         return S3MetaData.from_botocore_head_object(object_key, response)
+
+    # @s3_exception_handler(_logger)
+    async def list_files_paginated(
+        self,
+        bucket: S3BucketName,
+        prefix: str,
+        *,
+        items_per_page: int = _MAX_ITEMS_PER_PAGE,
+    ) -> AsyncGenerator[list[S3MetaData], None]:
+
+        async for page in self.client.get_paginator("list_objects_v2").paginate(
+            Bucket=bucket,
+            Prefix=prefix,
+            PaginationConfig={
+                "PageSize": items_per_page,
+            },
+        ):
+            yield [
+                S3MetaData.from_botocore_list_objects(obj)
+                for obj in page.get("Contents", [])
+            ]
+
+    @s3_exception_handler(_logger)
+    async def delete_file_recursively(
+        self, *, bucket: S3BucketName, prefix: str
+    ) -> None:
+        # NOTE: deletion of objects is done in batches of max 1000 elements,
+        # the maximum accepted by the S3 API
+        with log_context(
+            _logger, logging.DEBUG, f"deleting objects in {prefix=}", log_duration=True
+        ):
+            async for s3_objects in self.list_files_paginated(
+                bucket=bucket, prefix=prefix
+            ):
+
+                objects_to_delete: list[ObjectIdentifierTypeDef] = [
+                    {"Key": _.object_key} for _ in s3_objects
+                ]
+                await self.client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": objects_to_delete},
+                )
 
     @s3_exception_handler(_logger)
     async def delete_file(
