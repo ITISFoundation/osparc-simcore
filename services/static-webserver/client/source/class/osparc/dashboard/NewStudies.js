@@ -143,12 +143,17 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       const title = templateInfo.title;
       const desc = templateInfo.description;
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
-      if (templateInfo.billable) {
-        osparc.desktop.credits.Utils.setCreditsIconToButton(newPlanButton);
-      }
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
+      if (templateInfo.billable) {
+        osparc.desktop.credits.Utils.setCreditsIconToButton(newPlanButton);
+        newPlanButton.addListener("execute", () => {
+          // todo: check first if the user has credits
+          this.fireDataEvent("newStudyClicked", templateInfo);
+        });
+      } else {
+        newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
+      }
       return newPlanButton;
     },
 
