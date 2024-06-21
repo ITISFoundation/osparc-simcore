@@ -146,12 +146,6 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
     client.close()
 
 
-@pytest.fixture(scope="session")
-def keep_docker_up(request: pytest.FixtureRequest) -> bool:
-    flag: bool = request.config.getoption(name="--keep-docker-up", default=False)
-    return flag
-
-
 @pytest.fixture(scope="module")
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: bool
