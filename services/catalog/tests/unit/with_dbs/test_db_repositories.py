@@ -259,3 +259,10 @@ async def test_get_latest_release(
 
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
+
+
+async def test_list_all_services_and_history(
+    services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo
+):
+
+    history = await services_repo.get_service_history()
