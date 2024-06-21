@@ -1245,7 +1245,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
-            this.__retries = 10;
+            this.__retries = 20;
             this.__waitForServiceReady(srvUrl);
           }
           break;
