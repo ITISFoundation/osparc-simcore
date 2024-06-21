@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import Field, validator
+from pydantic import ConstrainedStr, Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import HttpUrlWithCustomMinLength, IDStr
@@ -119,12 +119,16 @@ class ProjectUpdate(InputSchema):
 
 
 ProjectName: TypeAlias = IDStr
-ProjectDescription: TypeAlias = IDStr
+
+
+class DescriptionStr(ConstrainedStr):
+    # Truncates input strings longer than 500 characters to limit the explanation of
+    curtail_length = 500
 
 
 class ProjectPatch(InputSchema):
     name: ProjectName = FieldNotRequired()
-    description: ProjectDescription = FieldNotRequired()
+    description: DescriptionStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
     classifiers: list[ClassifierID] = FieldNotRequired()
