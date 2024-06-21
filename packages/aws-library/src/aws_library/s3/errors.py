@@ -36,9 +36,9 @@ R = TypeVar("R")
 
 def s3_exception_handler(
     logger: logging.Logger,
-) -> Callable[
-    [Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]],  # type: ignore  # noqa: F821
-    Callable[Concatenate["SimcoreS3API", P], Awaitable[R]],  # type: ignore  # noqa: F821
+) -> Callable[  # type: ignore[name-defined]
+    [Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]],
+    Callable[Concatenate["SimcoreS3API", P], Awaitable[R]],
 ]:
     """converts typical aiobotocore/boto exceptions to storage exceptions
     NOTE: this is a work in progress as more exceptions might arise in different
