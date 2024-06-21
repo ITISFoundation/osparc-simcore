@@ -1,21 +1,18 @@
 import contextlib
-import datetime
 import logging
 from dataclasses import dataclass
-from typing import Any, Final, TypeAlias, cast
+from typing import Any, Final, cast
 
 import aioboto3
-import orjson
 from aiobotocore.session import ClientCreatorContext
+from aws_library.s3.models import S3MetaData, S3ObjectKey
 from botocore.client import Config
-from models_library.api_schemas_storage import ETag, S3BucketName
-from models_library.basic_types import SHA256Str
+from models_library.api_schemas_storage import S3BucketName
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
-from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
 from .errors import s3_exception_handler
 
@@ -23,36 +20,6 @@ _logger = logging.getLogger(__name__)
 
 _S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
-S3ObjectKey: TypeAlias = str
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class S3MetaData:
-    object_key: S3ObjectKey
-    last_modified: datetime.datetime
-    e_tag: ETag
-    sha256_checksum: SHA256Str | None
-    size: int
-
-    @staticmethod
-    def from_botocore_object(
-        obj: ObjectTypeDef | HeadObjectOutputTypeDef,
-    ) -> "S3MetaData":
-        assert "Key" in obj  # nosec
-        assert "LastModified" in obj  # nosec
-        assert "ETag" in obj  # nosec
-        assert "Size" in obj  # nosec
-        return S3MetaData(
-            object_key=obj["Key"],
-            last_modified=obj["LastModified"],
-            e_tag=orjson.loads(obj["ETag"]),
-            sha256_checksum=(
-                SHA256Str(obj.get("ChecksumSHA256"))
-                if obj.get("ChecksumSHA256")
-                else None
-            ),
-            size=obj["Size"],
-        )
 
 
 @dataclass(frozen=True)
@@ -160,7 +127,7 @@ class SimcoreS3API:
         response = await self.client.head_object(
             Bucket=bucket, Key=object_key, ChecksumMode="ENABLED"
         )
-        return S3MetaData.from_botocore_object(response)
+        return S3MetaData.from_botocore_head_object(object_key, response)
 
     @s3_exception_handler(_logger)
     async def delete_file(

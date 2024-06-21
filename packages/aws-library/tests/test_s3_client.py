@@ -6,6 +6,7 @@
 
 
 import filecmp
+import json
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -139,10 +140,13 @@ async def with_uploaded_file_on_s3(
     create_file_of_size: Callable[[ByteSize], Path],
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
+    faker: Faker,
 ) -> AsyncIterator[UploadedFile]:
     test_file = create_file_of_size(parse_obj_as(ByteSize, "10Kib"))
     await s3_client.upload_file(
-        Filename=f"{test_file}", Bucket=with_s3_bucket, Key=test_file.name
+        Filename=f"{test_file}",
+        Bucket=with_s3_bucket,
+        Key=test_file.name,
     )
 
     yield UploadedFile(local_path=test_file, s3_key=test_file.name)
@@ -204,6 +208,50 @@ async def test_create_single_presigned_download_link_of_invalid_bucket_raises(
             bucket=non_existing_s3_bucket,
             object_key=with_uploaded_file_on_s3.s3_key,
             expiration_secs=50,
+        )
+
+
+async def test_get_file_metadata(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_file_on_s3: UploadedFile,
+    simcore_s3_api: SimcoreS3API,
+    s3_client: S3Client,
+):
+    s3_metadata = await simcore_s3_api.get_file_metadata(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+    aioboto_s3_object_response = await s3_client.get_object(
+        Bucket=with_s3_bucket, Key=with_uploaded_file_on_s3.s3_key
+    )
+    assert s3_metadata.object_key == with_uploaded_file_on_s3.s3_key
+    assert s3_metadata.last_modified == aioboto_s3_object_response["LastModified"]
+    assert s3_metadata.e_tag == json.loads(aioboto_s3_object_response["ETag"])
+    assert s3_metadata.sha256_checksum is None
+    assert s3_metadata.size == aioboto_s3_object_response["ContentLength"]
+
+
+async def test_get_file_metadata_with_non_existing_bucket_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    non_existing_s3_bucket: S3BucketName,
+    with_uploaded_file_on_s3: UploadedFile,
+    simcore_s3_api: SimcoreS3API,
+):
+    with pytest.raises(S3KeyNotFoundError):
+        await simcore_s3_api.get_file_metadata(
+            bucket=non_existing_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+        )
+
+
+async def test_get_file_metadata_with_non_existing_key_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+    faker: Faker,
+):
+    with pytest.raises(S3KeyNotFoundError):
+        await simcore_s3_api.get_file_metadata(
+            bucket=with_s3_bucket, object_key=faker.pystr()
         )
 
 
