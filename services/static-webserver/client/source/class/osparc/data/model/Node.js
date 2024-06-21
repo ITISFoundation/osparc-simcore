@@ -1245,7 +1245,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
-            this.__retries = 20;
+            this.__retries = 40;
             this.__waitForServiceReady(srvUrl);
           }
           break;
@@ -1342,7 +1342,7 @@ qx.Class.define("osparc.data.model.Node", {
         if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
         }
-        const interval = 3000;
+        const interval = 5000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       };
 
