@@ -3,8 +3,8 @@ from typing import Final
 from fastapi import APIRouter
 
 from ..core.settings import ApplicationSettings
+from .routes import credits as _credits
 from .routes import (
-    credits,
     files,
     health,
     meta,
@@ -39,7 +39,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
-    router.include_router(credits.router, tags=["credits"], prefix="/credits")
+    router.include_router(_credits.router, tags=["credits"], prefix="/credits")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

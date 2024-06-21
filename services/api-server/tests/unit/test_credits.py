@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, status
+from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_webserver.product import GetCreditPrice
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
@@ -8,7 +8,6 @@ from simcore_service_api_server._meta import API_VTAG
 
 
 async def test_get_credits_price(
-    app: FastAPI,
     client: AsyncClient,
     auth: BasicAuth,
     mocked_webserver_service_api_base,
