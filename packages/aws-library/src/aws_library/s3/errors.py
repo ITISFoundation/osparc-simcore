@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import Any, Awaitable, Callable, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 from pydantic.errors import PydanticErrorMixin
@@ -28,17 +29,23 @@ class S3KeyNotFoundError(S3AccessError):
     msg_template: str = "The file {key}  in {bucket} was not found"
 
 
-def s3_exception_handler(log: logging.Logger):
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def s3_exception_handler(
+    log: logging.Logger,
+) -> Callable[..., Callable[P, Awaitable[R]]]:
     """converts typical aiobotocore/boto exceptions to storage exceptions
     NOTE: this is a work in progress as more exceptions might arise in different
     use-cases
     """
 
-    def decorator(func):  # noqa: C901
+    def decorator(func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
         @functools.wraps(func)
-        async def wrapper(self, *args, **kwargs):
+        def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[Any]:
             try:
-                return await func(self, *args, **kwargs)
+                return func(self, *args, **kwargs)
             except self.client.exceptions.NoSuchBucket as exc:
                 raise S3BucketInvalidError(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
