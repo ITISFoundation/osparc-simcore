@@ -39,7 +39,7 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",

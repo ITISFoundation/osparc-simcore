@@ -25,7 +25,7 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.postgres_service",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
 ]
