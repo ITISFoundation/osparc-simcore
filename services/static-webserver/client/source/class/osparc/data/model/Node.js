@@ -1349,12 +1349,12 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really reachable
       try {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("Connecting: about to fetch ", srvUrl);
+          console.log("Connecting: about to fetch", srvUrl);
         }
         fetch(srvUrl)
           .then(response => {
             if (osparc.utils.Utils.isDevelopmentPlatform()) {
-              console.log("Connecting: fetch's response status ", response.status);
+              console.log("Connecting: fetch's response status", response.status);
             }
             if (response.ok || response.status === 302) {
               // ok = status in the range 200-299
