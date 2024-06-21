@@ -485,6 +485,99 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/dev/catalog/services/-/latest:
+    get:
+      tags:
+      - catalog
+      summary: Dev List Services Latest
+      operationId: dev_list_services_latest
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.catalog.DEVServiceGet__'
+  /v0/dev/catalog/services/{service_key}/{service_version}:
+    get:
+      tags:
+      - catalog
+      summary: Dev Get Service
+      operationId: dev_get_service
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_DEVServiceGet_'
+    patch:
+      tags:
+      - catalog
+      summary: Dev Update Service
+      operationId: dev_update_service
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_DEVServiceGet_'
   /v0/catalog/services:
     get:
       tags:
@@ -5692,6 +5785,18 @@ components:
         next_url:
           title: Next Url
           type: string
+    Compatibility:
+      title: Compatibility
+      required:
+      - can_update_to
+      type: object
+      properties:
+        can_update_to:
+          title: Can Update To
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: Latest compatible version at this moment.Current service can
+            update to this version and still work
     ComputationStart:
       title: ComputationStart
       type: object
@@ -5827,6 +5932,219 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    DEVServiceGet:
+      title: DEVServiceGet
+      required:
+      - name
+      - description
+      - key
+      - version
+      - type
+      - authors
+      - contact
+      - inputs
+      - outputs
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+          description: 'Display name: short, human readable name for the node'
+          example: Fast Counter
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: url to the thumbnail
+          format: uri
+        description:
+          title: Description
+          type: string
+          description: human readable description of the purpose of the node
+        deprecated:
+          title: Deprecated
+          type: string
+          description: If filled with a date, then the service is to be deprecated
+            at that date (e.g. cannot start anymore)
+          format: date-time
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+        quality:
+          title: Quality
+          type: object
+          default: {}
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceGroupAccessRights'
+          description: service access rights per group id
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: service version number
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: A user-friendly or marketing name for the release. This can
+            be used to reference the release in a more readable and recognizable format,
+            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
+            name is not used for version comparison but is useful for communication
+            and documentation purposes.
+        releaseDate:
+          title: Releasedate
+          type: string
+          description: "A timestamp when the specific version of the service was released.\
+            \ This field helps in tracking the timeline of releases and understanding\
+            \ the sequence of updates. A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z\
+            \ or [\xB1]HH[:]MM]"
+          format: date-time
+        integration-version:
+          title: Integration-Version
+          pattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+          type: string
+          description: This version is used to maintain backward compatibility when
+            there are changes in the way a service is integrated into the framework
+        type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceType'
+          description: service type
+        badges:
+          title: Badges
+          type: array
+          items:
+            $ref: '#/components/schemas/Badge'
+        authors:
+          title: Authors
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+        contact:
+          title: Contact
+          type: string
+          description: email to correspond to the authors about the node
+          format: email
+        inputs:
+          title: Inputs
+          type: object
+          description: inputs with extended information
+        outputs:
+          title: Outputs
+          type: object
+          description: outputs with extended information
+        boot-options:
+          title: Boot-Options
+          type: object
+          description: Service defined boot options. These get injected in the service
+            as env variables.
+        min-visible-inputs:
+          title: Min-Visible-Inputs
+          minimum: 0
+          type: integer
+          description: The number of 'data type inputs' displayed by default in the
+            UI. When None all 'data type inputs' are displayed.
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
+        owner:
+          title: Owner
+          type: string
+          format: email
+        history:
+          title: History
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceRelease'
+          description: history of releases for this service at this point in time,
+            starting from the newest to the oldest. It includes current release.
+          default: []
+      description: 'Service metadata at publication time
+
+
+        - read-only (can only be changed overwriting the image labels in the registry)
+
+        - base metaddata
+
+        - injected in the image labels
+
+
+        NOTE: This model is serialized in .osparc/metadata.yml and in the labels of
+        the docker image'
+      example:
+        name: File Picker
+        description: description
+        classifiers: []
+        quality: {}
+        accessRights:
+          '1':
+            execute_access: true
+            write_access: false
+          '4':
+            execute_access: true
+            write_access: true
+        key: simcore/services/frontend/file-picker
+        version: 1.0.0
+        type: dynamic
+        authors:
+        - name: Red Pandas
+          email: redpandas@wonderland.com
+        contact: redpandas@wonderland.com
+        inputs:
+          input0:
+            label: Acceleration
+            description: acceleration with units
+            type: ref_contentSchema
+            contentSchema:
+              title: Acceleration
+              type: number
+              x_unit: m/s**2
+            keyId: input_1
+            unitLong: meter/second<sup>3</sup>
+            unitShort: m/s<sup>3</sup>
+        outputs:
+          outFile:
+            displayOrder: 2
+            label: Time Slept
+            description: Time the service waited before completion
+            type: number
+            unit: second
+            unitLong: seconds
+            unitShort: sec
+            keyId: output_2
+        owner: redpandas@wonderland.com
+        history:
+        - version: 1.0.5
+          version_display: Summer Release
+          release_date: '2024-07-20T15:00:00'
+        - version: 1.0.0
+          compatibility:
+            can_update_to: 1.0.5
+        - version: 0.9.11
+        - version: 0.9.10
+        - version: 0.9.8
+          compatibility:
+            can_update_to: 0.9.10
+        - version: 0.9.1
+          version_display: Matterhorn
+          release_date: '2024-01-20T18:49:17'
+          compatibility:
+            can_update_to: 0.9.10
+        - version: 0.9.0
+        - version: 0.8.0
+        - version: 0.1.0
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -6000,6 +6318,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ComputationTaskGet'
+        error:
+          title: Error
+    Envelope_DEVServiceGet_:
+      title: Envelope[DEVServiceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DEVServiceGet'
         error:
           title: Error
     Envelope_Error_:
@@ -6535,6 +6861,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileMetaDataGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.catalog.DEVServiceGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.catalog.DEVServiceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/DEVServiceGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.catalog.ServiceGet__:
@@ -10019,6 +10356,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PricingUnitGet'
+    ServiceRelease:
+      title: ServiceRelease
+      required:
+      - version
+      type: object
+      properties:
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        version_display:
+          title: Version Display
+          type: string
+        release_date:
+          title: Release Date
+          type: string
+          format: date-time
+        compatibility:
+          $ref: '#/components/schemas/Compatibility'
     ServiceRunGet:
       title: ServiceRunGet
       required:

@@ -230,7 +230,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         osparc.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
         extraInfo.push({
-          label: this.tr("QUAILITY"),
+          label: this.tr("QUALITY"),
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getEditButton(),
