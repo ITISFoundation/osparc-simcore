@@ -7,8 +7,9 @@ from typing import Any, Final, TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
+from aws_library.s3.models import MultiPartUploadLinks, S3MetaData
 from boto3.s3.transfer import TransferConfig
-from models_library.api_schemas_storage import UploadedPart
+from models_library.api_schemas_storage import ETag, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -23,7 +24,7 @@ from types_aiobotocore_s3.type_defs import (
 )
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .models import MultiPartUploadLinks, S3BucketName, UploadID
+from .models import S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
@@ -60,20 +61,6 @@ async def _list_objects_v2_paginated_gen(
 
 
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
-    @s3_exception_handler(_logger)
-    async def create_single_presigned_upload_link(
-        self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
-    ) -> AnyUrl:
-        # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        generated_link = await self.client.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": bucket, "Key": file_id},
-            ExpiresIn=expiration_secs,
-        )
-        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
-        return url
-
     @s3_exception_handler(_logger)
     async def create_multipart_upload_links(
         self,
@@ -299,7 +286,7 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             break
 
         return [
-            S3MetaData.from_botocore_object(entry)
+            S3MetaData.from_botocore_list_objects(entry)
             for entry in found_items
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]

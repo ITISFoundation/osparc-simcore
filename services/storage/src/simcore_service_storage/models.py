@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Final, Literal, NamedTuple
 from uuid import UUID
 
+from aws_library.s3.models import UploadID
 from models_library.api_schemas_storage import (
     DatasetMetaDataGet,
     ETag,
@@ -39,8 +40,6 @@ from pydantic import (
 )
 
 UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
-
-UploadID = str
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -113,9 +112,9 @@ class FileMetaData(FileMetaDataGet):
             "object_name": file_id,
             "file_name": parts[-1],
             "user_id": user_id,
-            "project_id": parse_obj_as(ProjectID, parts[0])
-            if is_uuid(parts[0])
-            else None,
+            "project_id": (
+                parse_obj_as(ProjectID, parts[0]) if is_uuid(parts[0]) else None
+            ),
             "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
             "file_id": file_id,
             "created_at": now,
@@ -136,12 +135,6 @@ class FileMetaData(FileMetaDataGet):
 class UploadLinks:
     urls: list[AnyUrl]
     chunk_size: ByteSize
-
-
-class MultiPartUploadLinks(BaseModel):
-    upload_id: UploadID
-    chunk_size: ByteSize
-    urls: list[AnyUrl]
 
 
 class StorageQueryParamsBase(BaseModel):
