@@ -3,19 +3,16 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, TypeAlias
+from typing import Final, TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
-from aws_library.s3.models import MultiPartUploadLinks, S3MetaData
+from aws_library.s3.models import S3MetaData
 from boto3.s3.transfer import TransferConfig
-from models_library.api_schemas_storage import ETag, UploadedPart
-from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
-from servicelib.utils import logged_gather
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -24,8 +21,7 @@ from types_aiobotocore_s3.type_defs import (
 )
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .models import S3BucketName, UploadID
-from .s3_utils import compute_num_file_chunks
+from .models import S3BucketName
 
 _logger = logging.getLogger(__name__)
 
@@ -61,104 +57,6 @@ async def _list_objects_v2_paginated_gen(
 
 
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
-    @s3_exception_handler(_logger)
-    async def create_multipart_upload_links(
-        self,
-        bucket: S3BucketName,
-        file_id: SimcoreS3FileID,
-        file_size: ByteSize,
-        expiration_secs: int,
-        sha256_checksum: SHA256Str | None,
-    ) -> MultiPartUploadLinks:
-        # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        # first initiate the multipart upload
-        create_input: dict[str, Any] = {"Bucket": bucket, "Key": file_id}
-        if sha256_checksum:
-            create_input["Metadata"] = {"sha256_checksum": sha256_checksum}
-        response = await self.client.create_multipart_upload(**create_input)
-        upload_id = response["UploadId"]
-        # compute the number of links, based on the announced file size
-        num_upload_links, chunk_size = compute_num_file_chunks(file_size)
-        # now create the links
-        upload_links = parse_obj_as(
-            list[AnyUrl],
-            await logged_gather(
-                *[
-                    self.client.generate_presigned_url(
-                        "upload_part",
-                        Params={
-                            "Bucket": bucket,
-                            "Key": file_id,
-                            "PartNumber": i + 1,
-                            "UploadId": upload_id,
-                        },
-                        ExpiresIn=expiration_secs,
-                    )
-                    for i in range(num_upload_links)
-                ],
-                log=_logger,
-                max_concurrency=20,
-            ),
-        )
-        return MultiPartUploadLinks(
-            upload_id=upload_id, chunk_size=chunk_size, urls=upload_links
-        )
-
-    @s3_exception_handler(_logger)
-    async def list_ongoing_multipart_uploads(
-        self,
-        bucket: S3BucketName,
-    ) -> list[tuple[UploadID, SimcoreS3FileID]]:
-        """Returns all the currently ongoing multipart uploads
-
-        NOTE: minio does not implement the same behaviour as AWS here and will
-        only return the uploads if a prefix or object name is given [minio issue](https://github.com/minio/minio/issues/7632).
-
-        :return: list of AWS uploads see [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_multipart_uploads)
-        """
-        response = await self.client.list_multipart_uploads(
-            Bucket=bucket,
-        )
-
-        return [
-            (
-                upload.get("UploadId", "undefined-uploadid"),
-                SimcoreS3FileID(upload.get("Key", "undefined-key")),
-            )
-            for upload in response.get("Uploads", [])
-        ]
-
-    @s3_exception_handler(_logger)
-    async def abort_multipart_upload(
-        self, bucket: S3BucketName, file_id: SimcoreS3FileID, upload_id: UploadID
-    ) -> None:
-        await self.client.abort_multipart_upload(
-            Bucket=bucket, Key=file_id, UploadId=upload_id
-        )
-
-    @s3_exception_handler(_logger)
-    async def complete_multipart_upload(
-        self,
-        bucket: S3BucketName,
-        file_id: SimcoreS3FileID,
-        upload_id: UploadID,
-        uploaded_parts: list[UploadedPart],
-    ) -> ETag:
-        inputs: dict[str, Any] = {
-            "Bucket": bucket,
-            "Key": file_id,
-            "UploadId": upload_id,
-            "MultipartUpload": {
-                "Parts": [
-                    {"ETag": part.e_tag, "PartNumber": part.number}
-                    for part in uploaded_parts
-                ]
-            },
-        }
-        response = await self.client.complete_multipart_upload(**inputs)
-        return response["ETag"]
-
     @s3_exception_handler(_logger)
     async def undelete_file(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
