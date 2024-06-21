@@ -31,3 +31,11 @@ def project_slug_dir() -> Path:
     assert folder.exists()
     assert any(folder.glob("src/models_library"))
     return folder
+
+
+@pytest.fixture
+def tests_data_dir(project_tests_dir: Path) -> Path:
+    path = project_tests_dir / "data"
+    assert path.exists()
+    assert path.is_dir()
+    return path
