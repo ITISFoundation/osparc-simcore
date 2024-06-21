@@ -1,5 +1,3 @@
-import datetime
-import json
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
@@ -25,7 +23,7 @@ from types_aiobotocore_s3.type_defs import (
 )
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
+from .models import MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
@@ -35,33 +33,6 @@ _MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 500
 
 
 NextContinuationToken: TypeAlias = str
-
-
-@dataclass(frozen=True)
-class S3MetaData:
-    file_id: SimcoreS3FileID
-    last_modified: datetime.datetime
-    e_tag: ETag
-    sha256_checksum: SHA256Str | None
-    size: int
-
-    @staticmethod
-    def from_botocore_object(obj: ObjectTypeDef) -> "S3MetaData":
-        assert "Key" in obj  # nosec
-        assert "LastModified" in obj  # nosec
-        assert "ETag" in obj  # nosec
-        assert "Size" in obj  # nosec
-        return S3MetaData(
-            file_id=SimcoreS3FileID(obj["Key"]),
-            last_modified=obj["LastModified"],
-            e_tag=json.loads(obj["ETag"]),
-            sha256_checksum=(
-                SHA256Str(obj.get("ChecksumSHA256"))
-                if obj.get("ChecksumSHA256")
-                else None
-            ),
-            size=obj["Size"],
-        )
 
 
 @dataclass(frozen=True)
@@ -264,21 +235,6 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
     ) -> None:
         await self.delete_files_in_path(
             bucket, prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/"
-        )
-
-    @s3_exception_handler(_logger)
-    async def get_file_metadata(
-        self, bucket: S3BucketName, file_id: SimcoreS3FileID
-    ) -> S3MetaData:
-        response = await self.client.head_object(
-            Bucket=bucket, Key=file_id, ChecksumMode="ENABLED"
-        )
-        return S3MetaData(
-            file_id=file_id,
-            last_modified=response["LastModified"],
-            e_tag=json.loads(response["ETag"]),
-            sha256_checksum=response.get("ChecksumSHA256"),
-            size=response["ContentLength"],
         )
 
     async def _list_all_objects(
