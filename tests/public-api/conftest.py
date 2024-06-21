@@ -42,7 +42,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

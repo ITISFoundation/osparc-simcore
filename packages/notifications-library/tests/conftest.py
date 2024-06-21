@@ -25,7 +25,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.postgres_service",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

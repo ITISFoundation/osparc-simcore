@@ -88,8 +88,9 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
     testing_environ_vars: dict[str, str],
-    temp_folder: Path,
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
@@ -99,6 +100,11 @@ def env_file_for_testing(
     # SEE:
     #   https://docs.docker.com/compose/env-file/
     #   https://docs.docker.com/compose/environment-variables/#the-env-file
+
+    prefix = __name__.replace(".", "_")
+    temp_folder = tmp_path_factory.mktemp(
+        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
+    )
 
     env_test_path = temp_folder / ".env.test"
     with env_test_path.open("wt") as fh:

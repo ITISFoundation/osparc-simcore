@@ -71,7 +71,6 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
     "tests.fixtures.data_models",
     "tests.fixtures.datcore_adapter",
 ]
