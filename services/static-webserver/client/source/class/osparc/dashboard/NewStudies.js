@@ -140,6 +140,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
+      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+
       const title = templateInfo.title;
       const desc = templateInfo.description;
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
@@ -148,11 +150,30 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       if (templateInfo.billable) {
         osparc.desktop.credits.Utils.setCreditsIconToButton(newPlanButton);
         newPlanButton.addListener("execute", () => {
-          // todo: check first if the user has credits
-          this.fireDataEvent("newStudyClicked", templateInfo);
+          const store = osparc.store.Store.getInstance();
+          const credits = store.getContextWallet().getCreditsAvailable()
+          const preferencesSettings = osparc.Preferences.getInstance();
+          const warningThreshold = preferencesSettings.getCreditsWarningThreshold();
+          if (credits <= warningThreshold) {
+            const msg = this.tr("This Plan requires Credits to run Sim4Life powered simulations. You can top up in the Billing Center.");
+            const win = new osparc.ui.window.Confirmation(msg).set({
+              caption: this.tr("Credits required"),
+              confirmText: this.tr("Start, I'll get them later"),
+              confirmAction: "create"
+            });
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                this.fireDataEvent("newStudyClicked", templateInfo);
+              }
+            });
+          } else {
+            newStudyClicked();
+          }
         });
       } else {
-        newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
+        newPlanButton.addListener("execute", () => newStudyClicked());
       }
       return newPlanButton;
     },
