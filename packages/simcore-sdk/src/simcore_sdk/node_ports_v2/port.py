@@ -1,12 +1,14 @@
 import logging
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable
+from typing import Any
 
 from models_library.api_schemas_storage import LinkType
-from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
+from models_library.basic_regex import PROPERTY_KEY_RE
+from models_library.services_io import BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData

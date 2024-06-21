@@ -1035,7 +1035,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
         },
     )
     assert (
-        response.status_code == status.HTTP_403_FORBIDDEN
+        response.status_code == status.HTTP_409_CONFLICT
     ), f"response code is {response.status_code}, error: {response.text}"
 
     # still this pipeline shall be createable if we do not want to start it

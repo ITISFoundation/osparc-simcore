@@ -9,15 +9,14 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from copy import deepcopy
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.auth import ApiKeyGet
-from models_library.products import ProductName
+from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
@@ -30,6 +29,9 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.modules.osparc_variables.substitutions import (
+    _NEW_ENVIRONMENTS,
+    OsparcSessionVariablesTable,
+    auto_inject_environments,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -139,35 +141,6 @@ def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
 
 
 @pytest.fixture
-def mock_api_key_manager(mocker: MockerFixture) -> None:
-
-    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
-
-    async def _create(
-        app: FastAPI,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        name: str,
-        expiration: timedelta,
-    ):
-        assert app
-        assert product_name
-        assert user_id
-        assert expiration is None
-
-        fake_data.display_name = name
-        return fake_data
-
-    # mocks RPC interface
-    mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
-        side_effect=_create,
-        autospec=True,
-    )
-
-
-@pytest.fixture
 async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     app = FastAPI()
     app.state.engine = AsyncMock()
@@ -183,7 +156,10 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
 
 
 async def test_resolve_and_substitute_session_variables_in_specs(
-    mock_user_repo: None, mock_api_key_manager: None, fake_app: FastAPI, faker: Faker
+    mock_user_repo: None,
+    mock_osparc_variables_api_auth_rpc: None,
+    fake_app: FastAPI,
+    faker: Faker,
 ):
     specs = {
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
@@ -241,3 +217,81 @@ async def test_substitute_vendor_secrets_in_specs(
     print("REPLACED SPECS\n", replaced_specs)
 
     assert VENDOR_SECRET_PREFIX not in f"{replaced_specs}"
+
+
+@pytest.fixture
+def compose_spec():
+    return {
+        "version": "3.7",
+        "services": {
+            "jupyter-math": {
+                "environment": [
+                    "OSPARC_API_KEY=$OSPARC_VARIABLE_API_KEY",
+                    "OSPARC_API_SECRET=$OSPARC_VARIABLE_API_SECRET",
+                    "FOO=33",
+                ],
+                "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:${SERVICE_VERSION}",
+                "networks": {"dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834": None},
+                "deploy": {
+                    "resources": {
+                        "reservations": {"cpus": "0.1", "memory": "2147483648"},
+                        "limits": {"cpus": "4.0", "memory": "17179869184"},
+                    }
+                },
+                "labels": [
+                    "io.simcore.runtime.cpu-limit=4.0",
+                    "io.simcore.runtime.memory-limit=17179869184",
+                    "io.simcore.runtime.node-id=10e1b317-de62-44ca-979e-09bf15663834",
+                    "io.simcore.runtime.product-name=osparc",
+                    "io.simcore.runtime.project-id=e341df9e-2e38-11ef-894b-0242ac140025",
+                    "io.simcore.runtime.simcore-user-agent=undefined",
+                    "io.simcore.runtime.swarm-stack-name=master-simcore",
+                    "io.simcore.runtime.user-id=1",
+                ],
+            }
+        },
+        "networks": {
+            "dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834": {
+                "name": "dy-sidecar_10e1b317-de62-44ca-979e-09bf15663834",
+                "external": True,
+                "driver": "overlay",
+            },
+            "master-simcore_interactive_services_subnet": {
+                "name": "master-simcore_interactive_services_subnet",
+                "external": True,
+                "driver": "overlay",
+            },
+        },
+    }
+
+
+def test_auto_inject_environments_added_to_all_services_in_compose(
+    compose_spec: ComposeSpecLabelDict,
+):
+
+    before = deepcopy(compose_spec)
+
+    after = auto_inject_environments(compose_spec)
+
+    assert before != after
+    assert after == compose_spec
+
+    auto_injected_envs = set(_NEW_ENVIRONMENTS.keys())
+    for name, service in compose_spec.get("services", {}).items():
+
+        # all services have environment specs
+        assert service["environment"], f"expected in {name} service"
+
+        # injected?
+        for env_name in auto_injected_envs:
+            assert env_name in str(service["environment"])
+
+
+def test_auto_inject_environments_are_registered():
+    app = FastAPI()
+    table = OsparcSessionVariablesTable.create(app)
+
+    registered_osparc_variables = set(table.variables_names())
+    auto_injected_osparc_variables = {_.lstrip("$") for _ in _NEW_ENVIRONMENTS.values()}
+
+    assert auto_injected_osparc_variables.issubset(registered_osparc_variables)

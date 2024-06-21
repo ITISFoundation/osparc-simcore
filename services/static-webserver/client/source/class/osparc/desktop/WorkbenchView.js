@@ -985,7 +985,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
       const spacing = 8;
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing*2));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        separator: "separator-vertical",
+        spacing: spacing*2
+      }));
 
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {

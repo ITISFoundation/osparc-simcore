@@ -1,12 +1,13 @@
 from typing import Final
 
-from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from ...services import ServiceMetaDataPublished, ServiceType
+from ...services_constants import LATEST_INTEGRATION_VERSION
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
-def _create_metadata(type_name: str) -> ServiceDockerData:
-    return ServiceDockerData.parse_obj(
+def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.parse_obj(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/{type_name}",
@@ -30,13 +31,14 @@ def _create_metadata(type_name: str) -> ServiceDockerData:
             "outputs": {},
         }
     )
+    return obj
 
 
 META_NUMBER: Final = _create_metadata("number")
 META_BOOL: Final = _create_metadata("boolean")
 META_INT: Final = _create_metadata("integer")
 META_STR: Final = _create_metadata("string")
-META_ARRAY: Final = ServiceDockerData.parse_obj(
+META_ARRAY: Final = ServiceMetaDataPublished.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/array",
@@ -65,7 +67,7 @@ META_ARRAY: Final = ServiceDockerData.parse_obj(
     }
 )
 
-META_FILE: Final = ServiceDockerData.parse_obj(
+META_FILE: Final = ServiceMetaDataPublished.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/file",

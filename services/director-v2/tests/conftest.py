@@ -9,6 +9,7 @@ import logging
 import os
 from collections.abc import AsyncIterable, AsyncIterator
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
@@ -19,7 +20,10 @@ import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_webserver.auth import ApiKeyGet
+from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
@@ -323,3 +327,32 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
     )
     mocker.patch(f"{module_base}.exclusive", side_effect=_mock_exclusive)
+
+
+@pytest.fixture
+def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
+
+    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+
+    async def _create(
+        app: FastAPI,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        name: str,
+        expiration: timedelta,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+        assert expiration is None
+
+        fake_data.display_name = name
+        return fake_data
+
+    # mocks RPC interface
+    mocker.patch(
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
+        side_effect=_create,
+        autospec=True,
+    )
