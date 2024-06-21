@@ -30,7 +30,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
     StorageS3Client,
