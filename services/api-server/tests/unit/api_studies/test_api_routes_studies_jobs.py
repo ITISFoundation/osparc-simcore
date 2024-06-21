@@ -343,16 +343,16 @@ async def test_get_job_logs(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-    _study_id = "2ef9a730-299b-449a-acf4-bf14fc39dae8"
-    _job_id = "6544a671-4460-4791-bc40-90111a01a1c3"
+    _study_id = "7171cbf8-2fc9-11ef-95d3-0242ac140018"
+    _job_id = "1a4145e2-2fca-11ef-a199-0242ac14002a"
 
-    # create_respx_mock_from_capture(
-    #     respx_mocks=[
-    #         mocked_directorv2_service_api_base,
-    #     ],
-    #     capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
-    #     side_effects_callbacks=[],
-    # )
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
+        side_effects_callbacks=[],
+    )
 
     response = await client.get(
         f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
