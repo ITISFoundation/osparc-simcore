@@ -16,7 +16,7 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
-    "pytest_simcore.container_pause",
+    "pytest_simcore.docker",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
