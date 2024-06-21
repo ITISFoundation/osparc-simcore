@@ -40,13 +40,14 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
       flex: 1
     });
 
-    const buttonSize = 24;
+    const buttonSize = 26;
     const billingCenterButton = new qx.ui.form.Button().set({
       appearance: "form-button-outlined",
       width: buttonSize,
       height: buttonSize,
       alignX: "center",
       alignY: "middle",
+      center: true,
       icon: "@FontAwesome5Solid/ellipsis-h/12"
     });
     // make it circular
