@@ -4,6 +4,7 @@ import pydantic
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
 
+from ...services.director_v2 import DownloadLink, NodeName
 from .. import api_resources
 from . import solvers
 
@@ -27,3 +28,7 @@ class StudyPort(solvers.SolverPort):
         "Correponds to the UUID of the parameter/probe node in the study",
         title="Key name",
     )
+
+
+class LogLinkMap(pydantic.BaseModel):
+    map: dict[NodeName, DownloadLink]

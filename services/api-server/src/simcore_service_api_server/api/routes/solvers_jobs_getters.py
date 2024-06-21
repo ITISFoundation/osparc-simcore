@@ -31,7 +31,7 @@ from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.director_v2 import DirectorV2Api
 from ...services.jobs import (
     get_custom_metadata,
     raise_if_job_not_associated_with_solver,
@@ -295,9 +295,10 @@ async def get_job_output_logfile(
 
     project_id = job_id
 
-    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
+    log_link_map = await director2_api.get_computation_logs(
         user_id=user_id, project_id=project_id
     )
+    logs_urls = log_link_map.map
 
     _logger.debug(
         "Found %d logfiles for %s %s: %s",

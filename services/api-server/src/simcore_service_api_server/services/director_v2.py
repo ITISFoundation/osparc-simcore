@@ -13,6 +13,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
     LogFileNotFoundError,
 )
+from simcore_service_api_server.models.schemas.studies import LogLinkMap
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -167,7 +168,7 @@ class DirectorV2Api(BaseServiceClientApi):
     @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
-    ) -> dict[NodeName, DownloadLink]:
+    ) -> LogLinkMap:
         response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
@@ -183,7 +184,7 @@ class DirectorV2Api(BaseServiceClientApi):
             if r.download_link:
                 node_to_links[f"{r.task_id}"] = r.download_link
 
-        return node_to_links
+        return LogLinkMap.parse_obj({"map": node_to_links})
 
 
 # MODULES APP SETUP -------------------------------------------------------------
