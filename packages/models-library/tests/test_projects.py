@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.api_schemas_webserver.projects import DescriptionStr, ProjectPatch
+from models_library.api_schemas_webserver.projects import LongTruncatedStr, ProjectPatch
 from models_library.projects import Project
 
 
@@ -44,8 +44,9 @@ def test_project_with_thumbnail_as_empty_string(minimal_project: dict[str, Any])
 
 
 def test_project_patch_truncates_description():
-    assert DescriptionStr.curtail_length
-    len_truncated = int(DescriptionStr.curtail_length)
+    # NOTE: checks https://github.com/ITISFoundation/osparc-simcore/issues/5988
+    assert LongTruncatedStr.curtail_length
+    len_truncated = int(LongTruncatedStr.curtail_length)
 
     long_description = "X" * (len_truncated + 10)
     assert len(long_description) > len_truncated

@@ -7,10 +7,14 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import ConstrainedStr, Field, validator
+from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import HttpUrlWithCustomMinLength
+from ..basic_types import (
+    HttpUrlWithCustomMinLength,
+    LongTruncatedStr,
+    ShortTruncatedStr,
+)
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
@@ -83,24 +87,10 @@ class ProjectListItem(ProjectGet):
     ...
 
 
-class TitleStr(ConstrainedStr):
-    # Truncate title strings that exceed the specified characters limit (curtail_length).
-    # This ensures the **input** to the API is controlled and prevents exceeding
-    # the database's constraints without causing errors.
-    curtail_length = 200
-    strip_whitespace = True
-
-
-class DescriptionStr(ConstrainedStr):
-    # Truncate description strings that exceed the specified characters limit (curtail_length).
-    curtail_length = 1000
-    strip_whitespace = True
-
-
 class ProjectReplace(InputSchema):
     uuid: ProjectID
-    name: TitleStr
-    description: DescriptionStr
+    name: ShortTruncatedStr
+    description: LongTruncatedStr
     thumbnail: HttpUrlWithCustomMinLength | None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -121,8 +111,8 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectUpdate(InputSchema):
-    name: TitleStr = FieldNotRequired()
-    description: DescriptionStr = FieldNotRequired()
+    name: ShortTruncatedStr = FieldNotRequired()
+    description: LongTruncatedStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     workbench: NodesDict = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
@@ -133,8 +123,8 @@ class ProjectUpdate(InputSchema):
 
 
 class ProjectPatch(InputSchema):
-    name: TitleStr = FieldNotRequired()
-    description: DescriptionStr = FieldNotRequired()
+    name: ShortTruncatedStr = FieldNotRequired()
+    description: LongTruncatedStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
     classifiers: list[ClassifierID] = FieldNotRequired()
