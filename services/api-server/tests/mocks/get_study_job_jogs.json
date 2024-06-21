@@ -1,9 +1,9 @@
 [
  {
   "name": "GET /v2/computations/1a4145e2-2fca-11ef-a199-0242ac14002a/tasks/-/logfile",
-  "description": "<Request('GET', 'http://10.43.103.193:30000/v2/computations/1a4145e2-2fca-11ef-a199-0242ac14002a/tasks/-/logfile?user_id=1')>",
+  "description": "<Request('GET', 'http://director-v2/v2/computations/1a4145e2-2fca-11ef-a199-0242ac14002a/tasks/-/logfile?user_id=1')>",
   "method": "GET",
-  "host": "10.43.103.193",
+  "host": "director-v2",
   "path": {
    "path": "/v2/computations/{project_id}/tasks/-/logfile",
    "path_parameters": [
