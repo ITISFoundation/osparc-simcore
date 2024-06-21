@@ -16,8 +16,8 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.logging_utils import log_context
 from settings_library.docker_registry import RegistrySettings
 
 from .helpers.utils_host import get_localhost_ip

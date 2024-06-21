@@ -22,7 +22,7 @@ from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSock
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest import Item
-from pytest_simcore.logging_utils import log_context
+from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.playwright_utils import (
     MINUTE,
     AutoRegisteredUser,

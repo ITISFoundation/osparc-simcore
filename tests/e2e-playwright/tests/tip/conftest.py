@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page
-from pytest_simcore.logging_utils import log_context
+from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.playwright_utils import RunningState
 
 
