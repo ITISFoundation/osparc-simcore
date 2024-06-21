@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Final, TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
+from aws_library.s3.errors import s3_exception_handler
 from aws_library.s3.models import S3MetaData
 from boto3.s3.transfer import TransferConfig
 from models_library.projects import ProjectID
@@ -57,32 +57,6 @@ async def _list_objects_v2_paginated_gen(
 
 
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
-    @s3_exception_handler(_logger)
-    async def undelete_file(
-        self, bucket: S3BucketName, file_id: SimcoreS3FileID
-    ) -> None:
-        with log_context(_logger, logging.DEBUG, msg=f"undeleting {bucket}/{file_id}"):
-            response = await self.client.list_object_versions(
-                Bucket=bucket, Prefix=file_id, MaxKeys=1
-            )
-            _logger.debug("%s", f"{response=}")
-
-            if all(k not in response for k in ["Versions", "DeleteMarkers"]):
-                # that means there is no such file_id
-                raise S3KeyNotFoundError(key=file_id, bucket=bucket)
-
-            if "DeleteMarkers" in response:
-                latest_version = response["DeleteMarkers"][0]
-                assert "IsLatest" in latest_version  # nosec
-                assert "VersionId" in latest_version  # nosec
-                if latest_version["IsLatest"]:
-                    await self.client.delete_object(
-                        Bucket=bucket,
-                        Key=file_id,
-                        VersionId=latest_version["VersionId"],
-                    )
-                    _logger.debug("restored %s", f"{bucket}/{file_id}")
-
     async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str
     ) -> AsyncGenerator[list[ObjectTypeDef], None]:

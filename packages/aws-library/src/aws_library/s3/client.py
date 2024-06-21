@@ -15,7 +15,7 @@ from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 
-from .errors import s3_exception_handler
+from .errors import S3KeyNotFoundError, s3_exception_handler
 from .models import MultiPartUploadLinks, S3MetaData, S3ObjectKey, UploadID
 from .utils import compute_num_file_chunks
 
@@ -118,6 +118,34 @@ class SimcoreS3API:
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
         await self.client.delete_object(Bucket=bucket, Key=object_key)
+
+    @s3_exception_handler(_logger)
+    async def undelete_file(
+        self, *, bucket: S3BucketName, object_key: S3ObjectKey
+    ) -> None:
+        with log_context(
+            _logger, logging.DEBUG, msg=f"undeleting {bucket}/{object_key}"
+        ):
+            response = await self.client.list_object_versions(
+                Bucket=bucket, Prefix=object_key, MaxKeys=1
+            )
+            _logger.debug("%s", f"{response=}")
+
+            if all(k not in response for k in ["Versions", "DeleteMarkers"]):
+                # that means there is no such file_id
+                raise S3KeyNotFoundError(key=object_key, bucket=bucket)
+
+            if "DeleteMarkers" in response:
+                latest_version = response["DeleteMarkers"][0]
+                assert "IsLatest" in latest_version  # nosec
+                assert "VersionId" in latest_version  # nosec
+                if latest_version["IsLatest"]:
+                    await self.client.delete_object(
+                        Bucket=bucket,
+                        Key=object_key,
+                        VersionId=latest_version["VersionId"],
+                    )
+                    _logger.debug("restored %s", f"{bucket}/{object_key}")
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
