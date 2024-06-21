@@ -122,9 +122,9 @@ ProjectName: TypeAlias = IDStr
 
 
 class DescriptionStr(ConstrainedStr):
-    # Truncates description strings when it goes over a limit
-    # Limits the input of the API and bounds the amount of data injected
-    # in the database without erroring.
+    # Truncate description strings that exceed the specified limit.
+    # This ensures the input to the API is controlled and prevents exceeding
+    # the database's constraints without causing errors.
     curtail_length = 1000
 
 
