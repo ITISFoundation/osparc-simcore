@@ -33,6 +33,17 @@ from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
 from .helpers.utils_host import get_localhost_ip
 
 
+@pytest.fixture(scope="module")
+def temp_folder(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """**Module scoped** temporary folder"""
+    prefix = __name__.replace(".", "_")
+    return tmp_path_factory.mktemp(
+        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
+    )
+
+
 @pytest.fixture(scope="session")
 def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     """
@@ -88,8 +99,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
-    request: pytest.FixtureRequest,
-    tmp_path_factory: pytest.TempPathFactory,
+    temp_folder: Path,
     testing_environ_vars: dict[str, str],
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
@@ -100,11 +110,6 @@ def env_file_for_testing(
     # SEE:
     #   https://docs.docker.com/compose/env-file/
     #   https://docs.docker.com/compose/environment-variables/#the-env-file
-
-    prefix = __name__.replace(".", "_")
-    temp_folder = tmp_path_factory.mktemp(
-        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
-    )
 
     env_test_path = temp_folder / ".env.test"
     with env_test_path.open("wt") as fh:
