@@ -122,21 +122,6 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
         await self.client.head_bucket(Bucket=bucket)
 
     @s3_exception_handler(_logger)
-    async def create_single_presigned_download_link(
-        self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
-    ) -> AnyUrl:
-        # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        await self.get_file_metadata(bucket, file_id)
-        generated_link = await self.client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket, "Key": file_id},
-            ExpiresIn=expiration_secs,
-        )
-        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
-        return url
-
-    @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:

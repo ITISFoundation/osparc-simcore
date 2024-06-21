@@ -1,7 +1,7 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-from typing import cast
+from typing import TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -16,6 +16,8 @@ from .errors import s3_exception_handler
 _logger = logging.getLogger(__name__)
 
 _S3_MAX_CONCURRENCY_DEFAULT = 10
+
+S3ObjectKeyName: TypeAlias = str
 
 
 @dataclass(frozen=True)
@@ -61,11 +63,11 @@ class SimcoreS3API:
     async def create_single_presigned_download_link(
         self,
         bucket_name: S3BucketName,
-        object_key: str,
+        object_key: S3ObjectKeyName,
         expiration_secs: int,
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket_name)
+        await self.client.head_object(Bucket=bucket_name, Key=object_key)
         generated_link = await self.client.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket_name, "Key": object_key},
