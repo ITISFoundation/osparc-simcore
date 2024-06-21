@@ -32,9 +32,9 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
-        const credits = contextWallet.getCreditsAvailable();
-        const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-        button.setTextColor(creditsColor);
+        contextWallet.bind("creditsAvailable", button, "textColor", {
+          converter: c => osparc.desktop.credits.Utils.creditsToColor(c, "strong-main")
+        });
       }
     },
 
