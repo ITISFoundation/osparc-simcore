@@ -302,10 +302,9 @@ async def get_study_job_outputs(
     return job_outputs
 
 
-@router.post(
+@router.get(
     "/{study_id}/jobs/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):

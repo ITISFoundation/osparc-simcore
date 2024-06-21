@@ -333,3 +333,27 @@ async def test_get_study_job_outputs(
 
     assert str(job_outputs.job_id) == job_id
     assert job_outputs.results == {}
+
+
+async def test_get_job_logs(
+    client: httpx.AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    _study_id = ""
+    _job_id = ""
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
+        side_effects_callbacks=[],
+    )
+
+    response = await client.get(
+        f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/logfile"
+    )
