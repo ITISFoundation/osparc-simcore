@@ -73,7 +73,7 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.websocket_client",
+    "pytest_simcore.socketio_client",
 ]
 
 
