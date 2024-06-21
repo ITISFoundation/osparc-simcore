@@ -306,6 +306,7 @@ async def get_study_job_outputs(
     "/{study_id}/jobs/{job_id}/outputs/log-links",
     response_model=LogLinkMap,
     status_code=status.HTTP_200_OK,
+    summary="Get download links for study job log files",
 )
 async def get_study_job_output_logfile(
     study_id: StudyID,
