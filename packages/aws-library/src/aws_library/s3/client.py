@@ -94,25 +94,6 @@ class SimcoreS3API:
         return False
 
     @s3_exception_handler(_logger)
-    async def create_single_presigned_download_link(
-        self,
-        *,
-        bucket: S3BucketName,
-        object_key: S3ObjectKey,
-        expiration_secs: int,
-    ) -> AnyUrl:
-        # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        await self.client.head_object(Bucket=bucket, Key=object_key)
-        generated_link = await self.client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket, "Key": object_key},
-            ExpiresIn=expiration_secs,
-        )
-        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
-        return url
-
-    @s3_exception_handler(_logger)
     async def file_exists(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> bool:
@@ -134,3 +115,36 @@ class SimcoreS3API:
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
         await self.client.delete_object(Bucket=bucket, Key=object_key)
+
+    @s3_exception_handler(_logger)
+    async def create_single_presigned_download_link(
+        self,
+        *,
+        bucket: S3BucketName,
+        object_key: S3ObjectKey,
+        expiration_secs: int,
+    ) -> AnyUrl:
+        # NOTE: ensure the bucket/object exists, this will raise if not
+        await self.client.head_bucket(Bucket=bucket)
+        await self.client.head_object(Bucket=bucket, Key=object_key)
+        generated_link = await self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": object_key},
+            ExpiresIn=expiration_secs,
+        )
+        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
+        return url
+
+    @s3_exception_handler(_logger)
+    async def create_single_presigned_upload_link(
+        self, *, bucket: S3BucketName, object_key: S3ObjectKey, expiration_secs: int
+    ) -> AnyUrl:
+        # NOTE: ensure the bucket/object exists, this will raise if not
+        await self.client.head_bucket(Bucket=bucket)
+        generated_link = await self.client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": bucket, "Key": object_key},
+            ExpiresIn=expiration_secs,
+        )
+        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
+        return url
