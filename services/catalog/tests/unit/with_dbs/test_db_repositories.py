@@ -108,7 +108,9 @@ async def test_create_services(
         ServiceAccessRightsAtDB.parse_obj(a) for a in fake_access_rights
     ]
 
-    new_service = await services_repo.create_service(service, service_access_rights)
+    new_service = await services_repo.create_or_update_service(
+        service, service_access_rights
+    )
 
     assert new_service.dict(include=set(fake_service.keys())) == service.dict()
 

@@ -120,10 +120,9 @@ async def _create_services_in_database(
             service_access_rights
         )
 
-        service_metadata_dict = service_metadata.dict()
         # set the service in the DB
-        await services_repo.create_service(
-            ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
+        await services_repo.create_or_update_service(
+            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
             service_access_rights,
         )
 
