@@ -202,10 +202,6 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
         return response["ETag"]
 
     @s3_exception_handler(_logger)
-    async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
-        await self.client.delete_object(Bucket=bucket, Key=file_id)
-
-    @s3_exception_handler(_logger)
     async def undelete_file(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> None:
@@ -351,13 +347,6 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             for entry in found_items
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
-
-    @s3_exception_handler(_logger)
-    async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
-        """Checks if an S3 object exists"""
-        # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
-        return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
     async def upload_file(

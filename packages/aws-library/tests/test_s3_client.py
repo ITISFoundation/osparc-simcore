@@ -7,12 +7,13 @@
 
 import filecmp
 from collections.abc import AsyncIterator, Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3.client import S3ObjectKey, SimcoreS3API
 from aws_library.s3.errors import S3BucketInvalidError, S3KeyNotFoundError
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
@@ -76,10 +77,10 @@ async def test_create_bucket(
     ensure_bucket_name_deleted: None,
     region: BucketLocationConstraintType,
 ):
-    await simcore_s3_api.create_bucket(bucket_name, region)
-    assert await simcore_s3_api.bucket_exists(bucket_name)
+    await simcore_s3_api.create_bucket(bucket=bucket_name, region=region)
+    assert await simcore_s3_api.bucket_exists(bucket=bucket_name)
     # calling again works and silently does nothing
-    await simcore_s3_api.create_bucket(bucket_name, region)
+    await simcore_s3_api.create_bucket(bucket=bucket_name, region=region)
 
 
 @pytest.fixture
@@ -101,10 +102,12 @@ async def test_bucket_exists(
     with_s3_bucket: S3BucketName,
     non_existing_s3_bucket: S3BucketName,
 ):
-    assert not await simcore_s3_api.bucket_exists(non_existing_s3_bucket)
-    assert await simcore_s3_api.bucket_exists(with_s3_bucket)
-    assert not await simcore_s3_api.http_check_bucket_connected(non_existing_s3_bucket)
-    assert await simcore_s3_api.http_check_bucket_connected(with_s3_bucket)
+    assert not await simcore_s3_api.bucket_exists(bucket=non_existing_s3_bucket)
+    assert await simcore_s3_api.bucket_exists(bucket=with_s3_bucket)
+    assert not await simcore_s3_api.http_check_bucket_connected(
+        bucket=non_existing_s3_bucket
+    )
+    assert await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket)
 
 
 async def test_http_check_bucket_connected(
@@ -125,18 +128,24 @@ async def test_http_check_bucket_connected(
     )
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UploadedFile:
+    local_path: Path
+    s3_key: S3ObjectKey
+
+
 @pytest.fixture
 async def with_uploaded_file_on_s3(
     create_file_of_size: Callable[[ByteSize], Path],
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
-) -> AsyncIterator[Path]:
+) -> AsyncIterator[UploadedFile]:
     test_file = create_file_of_size(parse_obj_as(ByteSize, "10Kib"))
     await s3_client.upload_file(
         Filename=f"{test_file}", Bucket=with_s3_bucket, Key=test_file.name
     )
 
-    yield test_file
+    yield UploadedFile(local_path=test_file, s3_key=test_file.name)
 
     await s3_client.delete_object(Bucket=with_s3_bucket, Key=test_file.name)
 
@@ -144,14 +153,17 @@ async def with_uploaded_file_on_s3(
 async def test_create_single_presigned_download_link(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
-    with_uploaded_file_on_s3: Path,
+    with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
     tmp_path: Path,
     faker: Faker,
 ):
+    assert await simcore_s3_api.file_exists(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
     download_url = await simcore_s3_api.create_single_presigned_download_link(
-        bucket_name=with_s3_bucket,
-        object_key=with_uploaded_file_on_s3.name,
+        bucket=with_s3_bucket,
+        object_key=with_uploaded_file_on_s3.s3_key,
         expiration_secs=50,
     )
     assert isinstance(download_url, AnyUrl)
@@ -164,7 +176,7 @@ async def test_create_single_presigned_download_link(
             fp.write(await response.read())
     assert dest_file.exists()
 
-    assert filecmp.cmp(dest_file, with_uploaded_file_on_s3) is True
+    assert filecmp.cmp(dest_file, with_uploaded_file_on_s3.local_path) is True
 
 
 async def test_create_single_presigned_download_link_of_invalid_object_key_raises(
@@ -175,7 +187,7 @@ async def test_create_single_presigned_download_link_of_invalid_object_key_raise
 ):
     with pytest.raises(S3KeyNotFoundError):
         await simcore_s3_api.create_single_presigned_download_link(
-            bucket_name=with_s3_bucket,
+            bucket=with_s3_bucket,
             object_key=faker.file_name(),
             expiration_secs=50,
         )
@@ -184,12 +196,46 @@ async def test_create_single_presigned_download_link_of_invalid_object_key_raise
 async def test_create_single_presigned_download_link_of_invalid_bucket_raises(
     mocked_s3_server_envs: EnvVarsDict,
     non_existing_s3_bucket: S3BucketName,
-    with_uploaded_file_on_s3: Path,
+    with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
 ):
     with pytest.raises(S3BucketInvalidError):
         await simcore_s3_api.create_single_presigned_download_link(
-            bucket_name=non_existing_s3_bucket,
-            object_key=with_uploaded_file_on_s3.name,
+            bucket=non_existing_s3_bucket,
+            object_key=with_uploaded_file_on_s3.s3_key,
             expiration_secs=50,
+        )
+
+
+async def test_delete_file(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+    with_uploaded_file_on_s3: UploadedFile,
+):
+    # delete the file
+    await simcore_s3_api.delete_file(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+
+    # check it is not available
+    assert not await simcore_s3_api.file_exists(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+
+    # calling again does not raise
+    await simcore_s3_api.delete_file(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+
+
+async def test_delete_file_non_existing_bucket_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    non_existing_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+    faker: Faker,
+):
+    with pytest.raises(S3BucketInvalidError):
+        await simcore_s3_api.delete_file(
+            bucket=non_existing_s3_bucket, object_key=faker.pystr()
         )

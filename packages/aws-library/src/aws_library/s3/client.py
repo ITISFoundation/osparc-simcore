@@ -19,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 _S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
-S3ObjectKeyName: TypeAlias = str
+S3ObjectKey: TypeAlias = str
 
 
 @dataclass(frozen=True)
@@ -53,12 +53,12 @@ class SimcoreS3API:
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
-    async def http_check_bucket_connected(self, bucket: S3BucketName) -> bool:
-        return await self.bucket_exists(bucket)
+    async def http_check_bucket_connected(self, *, bucket: S3BucketName) -> bool:
+        return await self.bucket_exists(bucket=bucket)
 
     @s3_exception_handler(_logger)
     async def create_bucket(
-        self, bucket: S3BucketName, region: BucketLocationConstraintType
+        self, *, bucket: S3BucketName, region: BucketLocationConstraintType
     ) -> None:
         with log_context(
             _logger, logging.INFO, msg=f"Create bucket {bucket} in {region}"
@@ -81,7 +81,7 @@ class SimcoreS3API:
                 )
 
     @s3_exception_handler(_logger)
-    async def bucket_exists(self, bucket: S3BucketName) -> bool:
+    async def bucket_exists(self, *, bucket: S3BucketName) -> bool:
         """
         :raises: S3BucketInvalidError if not existing, not enough rights
         :raises: S3AccessError for any other error
@@ -97,17 +97,31 @@ class SimcoreS3API:
     async def create_single_presigned_download_link(
         self,
         *,
-        bucket_name: S3BucketName,
-        object_key: S3ObjectKeyName,
+        bucket: S3BucketName,
+        object_key: S3ObjectKey,
         expiration_secs: int,
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket_name)
-        await self.client.head_object(Bucket=bucket_name, Key=object_key)
+        await self.client.head_bucket(Bucket=bucket)
+        await self.client.head_object(Bucket=bucket, Key=object_key)
         generated_link = await self.client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": bucket_name, "Key": object_key},
+            Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
         url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
         return url
+
+    @s3_exception_handler(_logger)
+    async def file_exists(
+        self, *, bucket: S3BucketName, object_key: S3ObjectKey
+    ) -> bool:
+        # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=object_key)
+        return len(response.get("Contents", [])) > 0
+
+    @s3_exception_handler(_logger)
+    async def delete_file(
+        self, *, bucket: S3BucketName, object_key: S3ObjectKey
+    ) -> None:
+        await self.client.delete_object(Bucket=bucket, Key=object_key)

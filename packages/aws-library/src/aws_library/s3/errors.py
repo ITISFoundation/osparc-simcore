@@ -60,12 +60,10 @@ def s3_exception_handler(
                 match status_code, operation_name:
                     case 404, "HeadObject":
                         raise S3KeyNotFoundError(
-                            bucket=kwargs["bucket_name"], key=kwargs["object_key"]
+                            bucket=kwargs["bucket"], key=kwargs["object_key"]
                         ) from exc
                     case (404, "HeadBucket") | (403, "HeadBucket"):
-                        raise S3BucketInvalidError(
-                            bucket=kwargs["bucket_name"]
-                        ) from exc
+                        raise S3BucketInvalidError(bucket=kwargs["bucket"]) from exc
                     case _:
                         raise S3AccessError from exc
             except botocore_exc.EndpointConnectionError as exc:
