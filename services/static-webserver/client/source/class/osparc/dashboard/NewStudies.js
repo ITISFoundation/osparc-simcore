@@ -144,14 +144,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       const desc = templateInfo.description;
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       if (templateInfo.billable) {
-        newPlanButton.setIcon(osparc.desktop.credits.Utils.CREDITS_ICON);
-        const store = osparc.store.Store.getInstance();
-        const contextWallet = store.getContextWallet();
-        if (contextWallet) {
-          const credits = contextWallet.getCreditsAvailable();
-          const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-          newPlanButton.setTextColor(creditsColor);
-        }
+        osparc.desktop.credits.Utils.setCreditsIconToButton(newPlanButton);
       }
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
