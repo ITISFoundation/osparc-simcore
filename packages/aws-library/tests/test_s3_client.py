@@ -13,7 +13,7 @@ import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.errors import S3KeyNotFoundError
+from aws_library.s3.errors import S3BucketInvalidError, S3KeyNotFoundError
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
 from moto.server import ThreadedMotoServer
@@ -167,10 +167,9 @@ async def test_create_single_presigned_download_link(
     assert filecmp.cmp(dest_file, with_uploaded_file_on_s3) is True
 
 
-async def test_create_single_presigned_download_link_of_invalid_bucket_raises(
+async def test_create_single_presigned_download_link_of_invalid_object_key_raises(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
-    with_uploaded_file_on_s3: Path,
     simcore_s3_api: SimcoreS3API,
     faker: Faker,
 ):
@@ -182,13 +181,13 @@ async def test_create_single_presigned_download_link_of_invalid_bucket_raises(
         )
 
 
-async def test_create_single_presigned_download_link_of_invalid_key_raises(
+async def test_create_single_presigned_download_link_of_invalid_bucket_raises(
     mocked_s3_server_envs: EnvVarsDict,
     non_existing_s3_bucket: S3BucketName,
     with_uploaded_file_on_s3: Path,
     simcore_s3_api: SimcoreS3API,
 ):
-    with pytest.raises(S3KeyNotFoundError):
+    with pytest.raises(S3BucketInvalidError):
         await simcore_s3_api.create_single_presigned_download_link(
             bucket_name=non_existing_s3_bucket,
             object_key=with_uploaded_file_on_s3.name,

@@ -3,6 +3,7 @@
     - Checks connectivity with other services in the backend
 
 """
+
 import logging
 
 from aiohttp import web
@@ -49,7 +50,7 @@ async def get_status(request: web.Request) -> web.Response:
     s3_state = "disabled"
     if app_settings.STORAGE_S3:
         try:
-            await get_s3_client(request.app).check_bucket_connection(
+            await get_s3_client(request.app).bucket_exists(
                 S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
             )
             s3_state = "connected"

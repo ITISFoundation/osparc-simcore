@@ -7,7 +7,7 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
@@ -16,7 +16,6 @@ from uuid import uuid4
 
 import botocore.exceptions
 import pytest
-from aiohttp import ClientSession
 from aws_library.s3.errors import (
     S3AccessError,
     S3BucketInvalidError,
@@ -68,7 +67,7 @@ async def test_storage_storage_s3_client_creation(
 @pytest.fixture
 async def storage_s3_client(
     app_settings: Settings,
-) -> AsyncIterator[StorageS3Client]:
+) -> StorageS3Client:
     assert app_settings.STORAGE_S3
     storage_s3_client = await StorageS3Client.create(
         app_settings.STORAGE_S3,
@@ -80,7 +79,7 @@ async def storage_s3_client(
     assert not response[
         "Buckets"
     ], f"for testing puproses, there should be no bucket lying around! {response=}"
-    yield storage_s3_client
+    return storage_s3_client
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
@@ -642,58 +641,6 @@ async def test_delete_files_in_project_node_invalid_raises(
     await storage_s3_client.delete_files_in_project_node(
         storage_s3_bucket, uuid4(), uuid4()
     )
-
-
-async def test_create_single_presigned_download_link(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
-    tmp_path: Path,
-    faker: Faker,
-):
-    file_id = await upload_file_single_presigned_link()
-
-    presigned_url = await storage_s3_client.create_single_presigned_download_link(
-        storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
-    )
-
-    assert presigned_url
-
-    dest_file = tmp_path / faker.file_name()
-    # download the file
-    async with ClientSession() as session:
-        response = await session.get(presigned_url)
-        response.raise_for_status()
-        with dest_file.open("wb") as fp:
-            fp.write(await response.read())
-    assert dest_file.exists()
-
-    s3_metadata = await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
-    assert s3_metadata.e_tag
-    assert s3_metadata.last_modified
-    assert dest_file.stat().st_size == s3_metadata.size
-
-
-async def test_create_single_presigned_download_link_invalid_raises(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    file_id = await upload_file_single_presigned_link()
-
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.create_single_presigned_download_link(
-            S3BucketName("invalidpytestbucket"),
-            file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
-        )
-    wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.create_single_presigned_download_link(
-            storage_s3_bucket, wrong_file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
-        )
 
 
 @pytest.fixture

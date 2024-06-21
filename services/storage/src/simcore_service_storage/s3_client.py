@@ -11,7 +11,7 @@ from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
 from boto3.s3.transfer import TransferConfig
 from models_library.api_schemas_storage import UploadedPart
-from models_library.basic_types import IDStr, SHA256Str
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
@@ -88,39 +88,7 @@ async def _list_objects_v2_paginated_gen(
         yield items_in_page
 
 
-_DEFAULT_AWS_REGION: Final[str] = "us-east-1"
-
-
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
-    @s3_exception_handler(_logger)
-    async def create_bucket(self, bucket: S3BucketName, region: IDStr) -> None:
-        _logger.debug("Creating bucket: %s", bucket)
-        try:
-            # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
-            # setting it for the us-east-1 creates issue when creating buckets
-            create_bucket_config = {"Bucket": bucket}
-            if region != _DEFAULT_AWS_REGION:
-                create_bucket_config["CreateBucketConfiguration"] = {
-                    "LocationConstraint": region
-                }
-            await self.client.create_bucket(**create_bucket_config)
-
-            _logger.info("Bucket %s successfully created", bucket)
-        except self.client.exceptions.BucketAlreadyOwnedByYou:
-            _logger.info(
-                "Bucket %s already exists and is owned by us",
-                bucket,
-            )
-
-    @s3_exception_handler(_logger)
-    async def check_bucket_connection(self, bucket: S3BucketName) -> None:
-        """
-        :raises: S3BucketInvalidError if not existing, not enough rights
-        :raises: S3AccessError for any other error
-        """
-        _logger.debug("Head bucket: %s", bucket)
-        await self.client.head_bucket(Bucket=bucket)
-
     @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int

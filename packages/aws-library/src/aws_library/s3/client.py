@@ -102,6 +102,7 @@ class SimcoreS3API:
         expiration_secs: int,
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
+        await self.client.head_bucket(Bucket=bucket_name)
         await self.client.head_object(Bucket=bucket_name, Key=object_key)
         generated_link = await self.client.generate_presigned_url(
             "get_object",
