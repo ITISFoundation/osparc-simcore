@@ -1,6 +1,7 @@
 import functools
 import logging
-from typing import Any, Awaitable, Callable, ParamSpec, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 from botocore import exceptions as botocore_exc
 from pydantic.errors import PydanticErrorMixin
@@ -29,26 +30,25 @@ class S3KeyNotFoundError(S3AccessError):
     msg_template: str = "The file {key}  in {bucket} was not found"
 
 
-P = ParamSpec("P")
 R = TypeVar("R")
 
 
 def s3_exception_handler(
-    log: logging.Logger,
-) -> Callable[..., Callable[P, Awaitable[R]]]:
+    logger: logging.Logger,
+) -> Callable[[Callable[..., Awaitable[R]]], Callable[..., Awaitable[R]]]:
     """converts typical aiobotocore/boto exceptions to storage exceptions
     NOTE: this is a work in progress as more exceptions might arise in different
     use-cases
     """
 
-    def decorator(func: Callable[P, R]) -> Callable[P, Awaitable[R]]:
+    def decorator(func: Callable[..., Awaitable[R]]) -> Callable[..., Awaitable[R]]:
         @functools.wraps(func)
-        def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[Any]:
+        def wrapper(self: "SimcoreS3API", *args, **kwargs) -> Awaitable[R]:  # type: ignore # noqa: F821
             try:
                 return func(self, *args, **kwargs)
             except self.client.exceptions.NoSuchBucket as exc:
                 raise S3BucketInvalidError(
-                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
+                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")  # type: ignore
                 ) from exc
             except botocore_exc.ClientError as exc:
                 status_code = int(exc.response.get("Error", {}).get("Code", -1))
@@ -56,16 +56,16 @@ def s3_exception_handler(
 
                 match status_code, operation_name:
                     case 404, "HeadObject":
-                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
+                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc  # type: ignore
                     case (404, "HeadBucket") | (403, "HeadBucket"):
-                        raise S3BucketInvalidError(bucket=args[0]) from exc
+                        raise S3BucketInvalidError(bucket=args[0]) from exc  # type: ignore
                     case _:
                         raise S3AccessError from exc
             except botocore_exc.EndpointConnectionError as exc:
                 raise S3AccessError from exc
 
             except botocore_exc.BotoCoreError as exc:
-                log.exception("Unexpected error in s3 client: ")
+                logger.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
 
         return wrapper
