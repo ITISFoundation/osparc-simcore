@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import json
@@ -302,6 +304,7 @@ async def test_start_status_stop(
     mock_projects_repository: None,
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
+    mock_osparc_variables_api_auth_rpc: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
