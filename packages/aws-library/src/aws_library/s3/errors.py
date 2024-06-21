@@ -48,7 +48,7 @@ def s3_exception_handler(
                 return func(self, *args, **kwargs)
             except self.client.exceptions.NoSuchBucket as exc:
                 raise S3BucketInvalidError(
-                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")  # type: ignore
+                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
             except botocore_exc.ClientError as exc:
                 status_code = int(exc.response.get("Error", {}).get("Code", -1))
@@ -56,9 +56,9 @@ def s3_exception_handler(
 
                 match status_code, operation_name:
                     case 404, "HeadObject":
-                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc  # type: ignore
+                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
                     case (404, "HeadBucket") | (403, "HeadBucket"):
-                        raise S3BucketInvalidError(bucket=args[0]) from exc  # type: ignore
+                        raise S3BucketInvalidError(bucket=args[0]) from exc
                     case _:
                         raise S3AccessError from exc
             except botocore_exc.EndpointConnectionError as exc:
