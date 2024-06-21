@@ -11,12 +11,14 @@ from typing import Any, Final
 
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
+    DEVServiceGet,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
     ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
+from models_library.rest_pagination import PageQueryParameters
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -25,10 +27,14 @@ from models_library.services_resources import (
 from models_library.utils.json_serialization import json_loads
 from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.application_settings_utils import (
+    requires_dev_feature_enabled,
+)
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -42,6 +48,7 @@ from .exceptions import DefaultPricingUnitForServiceNotFoundError
 _logger = logging.getLogger(__name__)
 
 VTAG: Final[str] = f"/{API_VTAG}"
+VTAG_DEV: Final[str] = f"{VTAG}/dev"
 
 routes = RouteTableDef()
 
@@ -61,6 +68,81 @@ class ServicePathParams(BaseModel):
         if v is not None:
             return urllib.parse.unquote(v)
         return v
+
+
+class ListServiceParams(PageQueryParameters):
+    ...
+
+
+@routes.get(
+    f"{VTAG_DEV}/catalog/services/-/latest",
+    name="dev_list_services_latest",
+)
+@requires_dev_feature_enabled
+@login_required
+@permission_required("services.catalog.*")
+async def dev_list_services_latest(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    query_params = parse_request_query_parameters_as(ListServiceParams, request)
+
+    assert ctx  # nosec
+    assert query_params  # nosec
+
+    _logger.debug("Moking response for %s...", request)
+    got = [
+        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
+    ]
+
+    return envelope_json_response(
+        got[query_params.offset : query_params.offset + query_params.limit]
+    )
+
+
+@routes.get(
+    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
+    name="dev_get_service",
+)
+@requires_dev_feature_enabled
+@login_required
+@permission_required("services.catalog.*")
+async def dev_get_service(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+
+    assert ctx  # nosec
+    assert path_params  # nosec
+
+    _logger.debug("Moking response for %s...", request)
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got.version = path_params.service_version
+    got.key = path_params.service_key
+
+    return envelope_json_response(got)
+
+
+@routes.patch(
+    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
+    name="dev_update_service",
+)
+@requires_dev_feature_enabled
+@login_required
+@permission_required("services.catalog.*")
+async def dev_update_service(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+    update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
+
+    assert ctx  # nosec
+    assert path_params  # nosec
+    assert update  # nosec
+
+    _logger.debug("Moking response for %s...", request)
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got.version = path_params.service_version
+    got.key = path_params.service_key
+    updated = got.copy(update=update.dict(exclude_unset=True))
+
+    return envelope_json_response(updated)
 
 
 @routes.get(f"{VTAG}/catalog/services", name="list_services")
@@ -86,7 +168,8 @@ async def list_services(request: Request):
 
 
 @routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}", name="get_service"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
+    name="get_service",
 )
 @login_required
 @permission_required("services.catalog.*")

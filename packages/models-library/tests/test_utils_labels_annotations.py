@@ -12,7 +12,9 @@ from models_library.utils.labels_annotations import from_labels, to_labels
 
 @pytest.fixture
 def metadata_config(tests_data_dir: Path):
-    config = yaml.safe_load((tests_data_dir / "metadata.yml").read_text())
+    config = yaml.safe_load(
+        (tests_data_dir / "metadata-sleeper-2.0.2.yaml").read_text()
+    )
     # adds some env-vars
     # FIXME: if version is set as '1.0' then pydantic will resolve it as a float!!
     config.update({"schema-version": "1.0.0", "build-date": "${BUILD_DATE}"})

@@ -11,7 +11,7 @@ from pydantic.types import PositiveInt
 
 from .services_access import ServiceGroupAccessRights
 from .services_base import ServiceKeyVersion
-from .services_metadata import ServiceMetaDataEditable
+from .services_metadata_editable import ServiceMetaDataEditable
 
 # -------------------------------------------------------------------
 # Databases models
