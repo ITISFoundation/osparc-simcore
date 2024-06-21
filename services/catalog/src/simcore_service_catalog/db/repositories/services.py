@@ -203,26 +203,28 @@ class ServicesRepository(BaseRepository):
             & (services_meta_data.c.version == version)
         )
         if gids or execute_access or write_access:
-            query = (
-                sa.select(services_meta_data)
-                .select_from(services_meta_data.join(services_access_rights))
-                .where(
-                    and_(
-                        (services_meta_data.c.key == key),
-                        (services_meta_data.c.version == version),
-                        or_(*[services_access_rights.c.gid == gid for gid in gids])
-                        if gids
-                        else True,
-                        services_access_rights.c.execute_access
-                        if execute_access
-                        else True,
-                        services_access_rights.c.write_access if write_access else True,
-                        (services_access_rights.c.product_name == product_name)
-                        if product_name
-                        else True,
-                    )
-                )
+
+            query = sa.select(services_meta_data).select_from(
+                services_meta_data.join(services_access_rights)
             )
+
+            conditions = [
+                services_meta_data.c.key == key,
+                services_meta_data.c.version == version,
+            ]
+            if gids:
+                conditions.append(
+                    or_(*[services_access_rights.c.gid == gid for gid in gids])
+                )
+            if execute_access is not None:
+                conditions.append(services_access_rights.c.execute_access)
+            if write_access is not None:
+                conditions.append(services_access_rights.c.write_access)
+            if product_name:
+                conditions.append(services_access_rights.c.product_name == product_name)
+
+            query = query.where(and_(*conditions))
+
         async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
             row = result.first()
@@ -230,7 +232,15 @@ class ServicesRepository(BaseRepository):
             return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
-    async def create_service(
+    async def get_service_history(self, key: str):
+        query = sa.select(
+            services_meta_data.c.version,
+            services_meta_data.c.created,
+            services_meta_data.c.deprecated,
+        ).where(services_meta_data.c.key == key)
+        # FIXME: and sort by version !?
+
+    async def create_or_update_service(
         self,
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: list[ServiceAccessRightsAtDB],
@@ -242,6 +252,7 @@ class ServicesRepository(BaseRepository):
             ):
                 msg = f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 raise ValueError(msg)
+
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
             result = await conn.execute(
