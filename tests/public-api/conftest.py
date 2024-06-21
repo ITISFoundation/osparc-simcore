@@ -9,8 +9,8 @@ import json
 import logging
 import os
 import time
+from collections.abc import Callable, Iterable, Iterator
 from pprint import pformat
-from typing import Callable, Iterable, Iterator
 
 import httpx
 import osparc
@@ -38,7 +38,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
@@ -196,7 +195,7 @@ def services_registry(
         "description": "A service which awaits for time to pass, two times.",
         "inputs": {
             "input_1": {
-                "description": "Pick a file containing only one " "integer",
+                "description": "Pick a file containing only one integer",
                 "displayOrder": 1,
                 "fileToKeyMap": {"single_number.txt": "input_1"},
                 "label": "File with int number",
@@ -220,7 +219,7 @@ def services_registry(
             },
             "input_4": {
                 "defaultValue": 0,
-                "description": "It will first walk the distance to " "bed",
+                "description": "It will first walk the distance to bed",
                 "displayOrder": 4,
                 "label": "Distance to bed",
                 "type": "integer",
@@ -239,7 +238,7 @@ def services_registry(
                 "type": "data:text/plain",
             },
             "output_2": {
-                "description": "Interval is generated in range " "[1-9]",
+                "description": "Interval is generated in range [1-9]",
                 "displayOrder": 2,
                 "label": "Random sleep interval",
                 "type": "integer",

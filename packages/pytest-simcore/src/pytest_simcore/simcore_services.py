@@ -7,6 +7,7 @@ import json
 import logging
 import warnings
 from dataclasses import dataclass
+from typing import Iterator
 
 import aiohttp
 import pytest
@@ -179,8 +180,27 @@ def simcore_services_ready(
 
 
 @pytest.fixture(scope="module")
+def _monkeypatch_module(request: pytest.FixtureRequest) -> Iterator[pytest.MonkeyPatch]:
+    # WARNING: Temporarily ONLY for simcore_services_ready_module
+    assert request.scope == "module"
+
+    warnings.warn(
+        f"{__name__} is deprecated, we highly recommend to use pytest.monkeypatch at function-scope level."
+        "Large scopes lead to complex problems during tests",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+    # Some extras to overcome https://github.com/pytest-dev/pytest/issues/363
+    # SEE https://github.com/pytest-dev/pytest/issues/363#issuecomment-289830794
+
+    mpatch_module = pytest.MonkeyPatch()
+    yield mpatch_module
+    mpatch_module.undo()
+
+
+@pytest.fixture(scope="module")
 def simcore_services_ready_module(
-    services_endpoint: dict[str, URL], monkeypatch_module: pytest.MonkeyPatch
+    services_endpoint: dict[str, URL], _monkeypatch_module: pytest.MonkeyPatch
 ) -> None:
     warnings.warn(
         "This fixture uses deprecated monkeypatch_module fixture"
@@ -195,5 +215,5 @@ def simcore_services_ready_module(
 
         assert endpoint.host
 
-        monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
-        monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
+        _monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
+        _monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
