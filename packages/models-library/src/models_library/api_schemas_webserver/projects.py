@@ -84,7 +84,7 @@ class ProjectListItem(ProjectGet):
 
 
 # Truncate title and description strings that exceed the specified limit.
-# This ensures the input to the API is controlled and prevents exceeding
+# This ensures the **input** to the API is controlled and prevents exceeding
 # the database's constraints without causing errors.
 class TitleStr(ConstrainedStr):
     curtail_length = 200
