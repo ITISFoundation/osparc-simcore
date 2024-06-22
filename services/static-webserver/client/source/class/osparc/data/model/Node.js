@@ -342,6 +342,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
+    __retriesLeft: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -1245,7 +1246,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
-            this.__retries = 40;
+            this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
           break;
@@ -1331,12 +1332,12 @@ qx.Class.define("osparc.data.model.Node", {
     __waitForServiceReady: function(srvUrl) {
       this.getStatus().setInteractive("connecting");
 
-      if (this.__retries === 0) {
+      if (this.__retriesLeft === 0) {
         return;
       }
 
       const retry = () => {
-        this.__retries--;
+        this.__retriesLeft--;
 
         // Check if node is still there
         if (this.getWorkbench().getNode(this.getNodeId()) === null) {
@@ -1356,9 +1357,7 @@ qx.Class.define("osparc.data.model.Node", {
             if (osparc.utils.Utils.isDevelopmentPlatform()) {
               console.log("Connecting: fetch's response status", response.status);
             }
-            if (response.ok || response.status === 302) {
-              // ok = status in the range 200-299
-              // some services might respond with a 302 which is also fine
+            if (response.status < 400) {
               this.__serviceReadyIn(srvUrl);
             } else {
               console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
