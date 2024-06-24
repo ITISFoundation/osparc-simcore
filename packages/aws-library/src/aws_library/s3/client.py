@@ -411,6 +411,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             async for s3_object in self._list_all_objects(
                 bucket=bucket, prefix=src_prefix
             ):
+                # NOTE: this is currently sequential
                 dst_object_key = s3_object.object_key.replace(src_prefix, dst_prefix)
                 await self.copy_file(
                     bucket=bucket,
