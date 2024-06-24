@@ -2,8 +2,8 @@ import asyncio
 import logging
 import math
 import time
+from collections.abc import Awaitable
 from functools import wraps
-from typing import Awaitable
 
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
 
