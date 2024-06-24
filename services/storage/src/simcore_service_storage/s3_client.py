@@ -1,7 +1,5 @@
 import logging
 import urllib.parse
-from collections.abc import AsyncGenerator
-from dataclasses import dataclass
 from typing import TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
@@ -9,20 +7,15 @@ from aws_library.s3.errors import s3_exception_handler
 from aws_library.s3.models import S3MetaData
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, parse_obj_as
 
-from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from .constants import EXPAND_DIR_MAX_ITEM_COUNT
 from .models import S3BucketName
 
 _logger = logging.getLogger(__name__)
 
 
 NextContinuationToken: TypeAlias = str
-
-
-@dataclass(frozen=True)
-class S3FolderMetaData:
-    size: int
 
 
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
@@ -37,22 +30,6 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             bucket=bucket,
             prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
         )
-
-    async def _list_all_objects(
-        self, bucket: S3BucketName, *, prefix: str
-    ) -> AsyncGenerator[S3MetaData, None]:
-        async for s3_objects in self.list_files_paginated(bucket=bucket, prefix=prefix):
-            for obj in s3_objects:
-                yield obj
-
-    @s3_exception_handler(_logger)
-    async def get_directory_metadata(
-        self, bucket: S3BucketName, *, prefix: str
-    ) -> S3FolderMetaData:
-        size = 0
-        async for s3_object in self._list_all_objects(bucket, prefix=prefix):
-            size += s3_object.size
-        return S3FolderMetaData(size=size)
 
     @s3_exception_handler(_logger)
     async def list_files(
@@ -82,7 +59,3 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}"
         )
         return url
-
-    @staticmethod
-    def is_multipart(file_size: ByteSize) -> bool:
-        return file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE

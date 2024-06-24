@@ -1,7 +1,8 @@
 from typing import Final
 
+from aws_library.s3.constants import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
 from models_library.api_schemas_storage import LinkType
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize
 from servicelib.aiohttp import application_keys
 
 RETRY_WAIT_SECS = 2
@@ -24,13 +25,6 @@ _SAFE_S3_FILE_NAME_RE = r"[\w!\-_\.\*\'\(\)\%]"
 S3_FILE_ID_RE = rf"^({_SAFE_S3_FILE_NAME_RE}+?)\/({_SAFE_S3_FILE_NAME_RE}+?)\/({_SAFE_S3_FILE_NAME_RE}+?)$"
 
 S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID = "UNDEFINED/EXTERNALID"
-
-PRESIGNED_LINK_MAX_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "5GiB")
-S3_MAX_FILE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "5TiB")
-
-# AWS S3 upload limits https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
-MULTIPART_UPLOADS_MIN_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "100MiB")
-MULTIPART_UPLOADS_MIN_PART_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "10MiB")
 
 
 MAX_LINK_CHUNK_BYTE_SIZE: Final[dict[LinkType, ByteSize]] = {
