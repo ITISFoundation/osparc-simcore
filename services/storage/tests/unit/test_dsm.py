@@ -4,7 +4,7 @@
 
 import asyncio
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable
 
 import pytest
 from faker import Faker
@@ -25,7 +25,7 @@ async def dsm_mockup_complete_db(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     upload_file: Callable[
-        [ByteSize, str, Optional[SimcoreS3FileID]],
+        [ByteSize, str, SimcoreS3FileID | None],
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     cleanup_user_projects_file_metadata: None,
@@ -58,7 +58,7 @@ async def test_sync_table_meta_data(
     # now remove the files
     for file_entry in dsm_mockup_complete_db:
         s3_key = f"{file_entry.project_id}/{file_entry.node_id}/{file_entry.file_name}"
-        await storage_s3_client.client.delete_object(
+        await storage_s3_client._client.delete_object(
             Bucket=storage_s3_bucket, Key=s3_key
         )
         expected_removed_files.append(s3_key)

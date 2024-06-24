@@ -49,9 +49,9 @@ async def simcore_s3_api(
 ) -> AsyncIterator[SimcoreS3API]:
     s3 = await SimcoreS3API.create(settings=mocked_s3_server_settings)
     assert s3
-    assert s3.client
-    assert s3.exit_stack
-    assert s3.session
+    assert s3._client
+    assert s3._exit_stack
+    assert s3._session
     yield s3
     await s3.close()
 

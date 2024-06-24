@@ -74,7 +74,6 @@ def create(settings: Settings) -> web.Application:
     app.middlewares.append(dsm_exception_handler)
 
     if settings.STORAGE_PROFILING:
-
         app.middlewares.append(profiling_middleware)
 
     if settings.LOG_LEVEL == "DEBUG":

@@ -64,7 +64,7 @@ async def test_bad_health_status_if_bucket_missing(
     app_status_check = AppStatusCheck.parse_obj(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"
     # now delete the bucket
-    await storage_s3_client.client.delete_bucket(Bucket=storage_s3_bucket)
+    await storage_s3_client._client.delete_bucket(Bucket=storage_s3_bucket)
     # check again the health
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)

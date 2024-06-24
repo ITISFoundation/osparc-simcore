@@ -3,7 +3,7 @@ import contextlib
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -38,13 +38,18 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 
 
+# TODO: copy_folder method
+# Pedro's PR: https://github.com/ITISFoundation/osparc-simcore/pull/5301
 @dataclass(frozen=True)
 class SimcoreS3API:
-    client: S3Client
-    session: aioboto3.Session
-    exit_stack: contextlib.AsyncExitStack
-    transfer_max_concurrency: int
+    _client: S3Client
+    _session: aioboto3.Session
+    _exit_stack: contextlib.AsyncExitStack = field(
+        default_factory=contextlib.AsyncExitStack
+    )
+    transfer_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
 
+    @s3_exception_handler(_logger)
     @classmethod
     async def create(
         cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
@@ -67,7 +72,7 @@ class SimcoreS3API:
         return cls(s3_client, session, exit_stack, s3_max_concurrency)
 
     async def close(self) -> None:
-        await self.exit_stack.aclose()
+        await self._exit_stack.aclose()
 
     async def http_check_bucket_connected(self, *, bucket: S3BucketName) -> bool:
         return await self.bucket_exists(bucket=bucket)
@@ -88,9 +93,9 @@ class SimcoreS3API:
                         "LocationConstraint": region
                     }
 
-                await self.client.create_bucket(**create_bucket_config)
+                await self._client.create_bucket(**create_bucket_config)
 
-            except self.client.exceptions.BucketAlreadyOwnedByYou:
+            except self._client.exceptions.BucketAlreadyOwnedByYou:
                 _logger.info(
                     "Bucket %s already exists and is owned by us",
                     bucket,
@@ -105,7 +110,7 @@ class SimcoreS3API:
         with log_catch(_logger, reraise=False), log_context(
             _logger, logging.DEBUG, msg=f"Head bucket: {bucket}"
         ):
-            await self.client.head_bucket(Bucket=bucket)
+            await self._client.head_bucket(Bucket=bucket)
             return True
         return False
 
@@ -114,14 +119,14 @@ class SimcoreS3API:
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> bool:
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=object_key)
+        response = await self._client.list_objects_v2(Bucket=bucket, Prefix=object_key)
         return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
     async def get_file_metadata(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> S3MetaData:
-        response = await self.client.head_object(
+        response = await self._client.head_object(
             Bucket=bucket, Key=object_key, ChecksumMode="ENABLED"
         )
         return S3MetaData.from_botocore_head_object(object_key, response)
@@ -144,7 +149,7 @@ class SimcoreS3API:
         items_per_page: int = _MAX_ITEMS_PER_PAGE,
     ) -> AsyncGenerator[list[S3MetaData], None]:
 
-        async for page in self.client.get_paginator("list_objects_v2").paginate(
+        async for page in self._client.get_paginator("list_objects_v2").paginate(
             Bucket=bucket,
             Prefix=prefix,
             PaginationConfig={
@@ -179,7 +184,7 @@ class SimcoreS3API:
                 objects_to_delete: list[ObjectIdentifierTypeDef] = [
                     {"Key": _.object_key} for _ in s3_objects
                 ]
-                await self.client.delete_objects(
+                await self._client.delete_objects(
                     Bucket=bucket,
                     Delete={"Objects": objects_to_delete},
                 )
@@ -188,7 +193,7 @@ class SimcoreS3API:
     async def delete_file(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
-        await self.client.delete_object(Bucket=bucket, Key=object_key)
+        await self._client.delete_object(Bucket=bucket, Key=object_key)
 
     @s3_exception_handler(_logger)
     async def undelete_file(
@@ -197,7 +202,7 @@ class SimcoreS3API:
         with log_context(
             _logger, logging.DEBUG, msg=f"undeleting {bucket}/{object_key}"
         ):
-            response = await self.client.list_object_versions(
+            response = await self._client.list_object_versions(
                 Bucket=bucket, Prefix=object_key, MaxKeys=1
             )
             _logger.debug("%s", f"{response=}")
@@ -211,7 +216,7 @@ class SimcoreS3API:
                 assert "IsLatest" in latest_version  # nosec
                 assert "VersionId" in latest_version  # nosec
                 if latest_version["IsLatest"]:
-                    await self.client.delete_object(
+                    await self._client.delete_object(
                         Bucket=bucket,
                         Key=object_key,
                         VersionId=latest_version["VersionId"],
@@ -227,9 +232,9 @@ class SimcoreS3API:
         expiration_secs: int,
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        await self.client.head_object(Bucket=bucket, Key=object_key)
-        generated_link = await self.client.generate_presigned_url(
+        await self._client.head_bucket(Bucket=bucket)
+        await self._client.head_object(Bucket=bucket, Key=object_key)
+        generated_link = await self._client.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
@@ -242,8 +247,8 @@ class SimcoreS3API:
         self, *, bucket: S3BucketName, object_key: S3ObjectKey, expiration_secs: int
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        generated_link = await self.client.generate_presigned_url(
+        await self._client.head_bucket(Bucket=bucket)
+        generated_link = await self._client.generate_presigned_url(
             "put_object",
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
@@ -262,12 +267,12 @@ class SimcoreS3API:
         sha256_checksum: SHA256Str | None,
     ) -> MultiPartUploadLinks:
         # NOTE: ensure the bucket exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
+        await self._client.head_bucket(Bucket=bucket)
         # first initiate the multipart upload
         create_input: dict[str, Any] = {"Bucket": bucket, "Key": object_key}
         if sha256_checksum:
             create_input["Metadata"] = {"sha256_checksum": sha256_checksum}
-        response = await self.client.create_multipart_upload(**create_input)
+        response = await self._client.create_multipart_upload(**create_input)
         upload_id = response["UploadId"]
         # compute the number of links, based on the announced file size
         num_upload_links, chunk_size = compute_num_file_chunks(file_size)
@@ -276,7 +281,7 @@ class SimcoreS3API:
             list[AnyUrl],
             await asyncio.gather(
                 *(
-                    self.client.generate_presigned_url(
+                    self._client.generate_presigned_url(
                         "upload_part",
                         Params={
                             "Bucket": bucket,
@@ -307,7 +312,7 @@ class SimcoreS3API:
 
         :return: list of AWS uploads see [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_multipart_uploads)
         """
-        response = await self.client.list_multipart_uploads(
+        response = await self._client.list_multipart_uploads(
             Bucket=bucket,
         )
 
@@ -323,7 +328,7 @@ class SimcoreS3API:
     async def abort_multipart_upload(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey, upload_id: UploadID
     ) -> None:
-        await self.client.abort_multipart_upload(
+        await self._client.abort_multipart_upload(
             Bucket=bucket, Key=object_key, UploadId=upload_id
         )
 
@@ -347,7 +352,7 @@ class SimcoreS3API:
                 ]
             },
         }
-        response = await self.client.complete_multipart_upload(**inputs)
+        response = await self._client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
     @s3_exception_handler(_logger)
@@ -367,7 +372,7 @@ class SimcoreS3API:
         }
         if bytes_transfered_cb:
             upload_options |= {"Callback": bytes_transfered_cb}
-        await self.client.upload_file(f"{file}", **upload_options)
+        await self._client.upload_file(f"{file}", **upload_options)
 
     @s3_exception_handler(_logger)
     async def copy_file(
@@ -386,7 +391,7 @@ class SimcoreS3API:
         }
         if bytes_transfered_cb:
             copy_options |= {"Callback": bytes_transfered_cb}
-        await self.client.copy(**copy_options)
+        await self._client.copy(**copy_options)
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

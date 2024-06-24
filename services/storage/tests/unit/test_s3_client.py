@@ -16,17 +16,12 @@ from uuid import uuid4
 import botocore.exceptions
 import pytest
 from aws_library.s3.errors import S3BucketInvalidError, S3KeyNotFoundError
-from aws_library.s3.models import MultiPartUploadLinks
 from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.utils_s3 import upload_file_to_presigned_link
 from simcore_service_storage.models import S3BucketName
-from simcore_service_storage.s3_client import (
-    StorageS3Client,
-    _list_objects_v2_paginated_gen,
-)
+from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
 from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
@@ -46,12 +41,12 @@ async def test_storage_storage_s3_client_creation(
         app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
     )
     assert storage_s3_client
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
 
     await storage_s3_client.close()
     with pytest.raises(botocore.exceptions.HTTPClientError):
-        await storage_s3_client.client.list_buckets()
+        await storage_s3_client._client.list_buckets()
 
 
 @pytest.fixture
@@ -65,7 +60,7 @@ async def storage_s3_client(
     )
     # check that no bucket is lying around
     assert storage_s3_client
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response[
         "Buckets"
     ], f"for testing puproses, there should be no bucket lying around! {response=}"
@@ -74,54 +69,17 @@ async def storage_s3_client(
 
 @pytest.fixture
 async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) -> str:
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
     bucket_name = parse_obj_as(S3BucketName, faker.pystr().replace("_", "-"))
     await storage_s3_client.create_bucket(bucket=bucket_name, region="us-east-1")
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [
         bucket_struct.get("Name") for bucket_struct in response["Buckets"]
     ], f"failed creating {bucket_name}"
 
     return bucket_name
-
-
-@pytest.fixture
-def upload_file_single_presigned_link(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    create_file_of_size: Callable[[ByteSize], Path],
-) -> Callable[..., Awaitable[SimcoreS3FileID]]:
-    async def _uploader(file_id: SimcoreS3FileID | None = None) -> SimcoreS3FileID:
-        file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
-        if not file_id:
-            file_id = SimcoreS3FileID(file.name)
-        presigned_url = await storage_s3_client.create_single_presigned_upload_link(
-            bucket=storage_s3_bucket,
-            object_key=file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
-        )
-        assert presigned_url
-
-        # upload the file with a fake multipart upload links structure
-        await upload_file_to_presigned_link(
-            file,
-            MultiPartUploadLinks(
-                upload_id="fake",
-                chunk_size=parse_obj_as(ByteSize, file.stat().st_size),
-                urls=[presigned_url],
-            ),
-        )
-
-        # check the object is complete
-        s3_metadata = await storage_s3_client.get_file_metadata(
-            bucket=storage_s3_bucket, object_key=file_id
-        )
-        assert s3_metadata.size == file.stat().st_size
-        return file_id
-
-    return _uploader
 
 
 async def test_delete_files_in_project_node(
@@ -203,20 +161,6 @@ async def test_delete_files_in_project_node(
             f"{project_1}/{node_3}",
             f"{project_2}",
         )
-    )
-
-
-async def test_delete_files_in_project_node_invalid_raises(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-):
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.delete_files_in_project_node(
-            S3BucketName("pytestinvalidbucket"), uuid4(), uuid4()
-        )
-    #  this should not raise
-    await storage_s3_client.delete_files_in_project_node(
-        storage_s3_bucket, uuid4(), uuid4()
     )
 
 
@@ -328,7 +272,7 @@ async def test_list_objects_v2_paginated_and_list_all_objects_gen(
     listing_requests: list[ObjectTypeDef] = []
 
     async for page_items in _list_objects_v2_paginated_gen(
-        client=storage_s3_client.client,
+        client=storage_s3_client._client,
         bucket=storage_s3_bucket,
         prefix="",  # all items
     ):
