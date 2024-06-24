@@ -42,7 +42,7 @@ def create_folder_of_size_with_multiple_files(
             file_size = ByteSize(
                 faker.pyint(min_value=1, max_value=min(remaining_size, file_max_size))
             )  # max file size 1MB
-            file_path = base_dir / f"{faker.file_path(absolute=False)}"
+            file_path = base_dir / f"{faker.file_path(depth=4, absolute=False)}"
             file_path.parent.mkdir(parents=True, exist_ok=True)
             assert not file_path.exists()
             with file_path.open("wb") as fp:
