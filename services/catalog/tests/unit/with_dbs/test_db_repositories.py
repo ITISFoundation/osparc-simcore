@@ -262,7 +262,13 @@ async def test_get_latest_release(
 
 
 async def test_list_all_services_and_history(
-    services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo
+    services_repo: ServicesRepository,
+    fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
 
-    history = await services_repo.get_service_history()
+    all_services = await services_repo.get_services_histories()
+    assert len(all_services) == 1
+
+    assert all_services[0].key == "simcore/services/dynamic/jupyterlab"
+    history = all_services[0].history
+    assert len(history) == fake_catalog_with_jupyterlab.expected_services_count
