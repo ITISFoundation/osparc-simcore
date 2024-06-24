@@ -21,7 +21,7 @@ from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
     random_pre_registration_details,
 )

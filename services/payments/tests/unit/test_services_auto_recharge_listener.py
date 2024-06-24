@@ -24,7 +24,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.faker_factories import (
     random_payment_autorecharge,
     random_payment_method,
     random_payment_transaction,

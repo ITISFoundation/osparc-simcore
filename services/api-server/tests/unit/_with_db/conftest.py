@@ -24,7 +24,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.faker_factories import (
     random_api_key,
     random_product,
     random_user,

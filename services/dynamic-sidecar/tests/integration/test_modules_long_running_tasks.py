@@ -25,7 +25,7 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_project
+from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
