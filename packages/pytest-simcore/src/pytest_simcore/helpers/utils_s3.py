@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from time import perf_counter
 from typing import Final
@@ -121,20 +122,28 @@ async def delete_all_object_versions(
     response = await s3_client.list_object_versions(
         Bucket=bucket_name, Prefix=object_key
     )
-    # Delete all object versions
-    for version in response.get("Versions", []):
-        assert "Key" in version
-        assert "VersionId" in version
-        await s3_client.delete_object(
-            Bucket=bucket_name, Key=version["Key"], VersionId=version["VersionId"]
+
+    if "Versions" in response:
+        await asyncio.gather(
+            *[
+                s3_client.delete_object(
+                    Bucket=bucket_name,
+                    Key=version["Key"],
+                    VersionId=version["VersionId"],
+                )
+                for version in response.get("Versions", [])
+            ]
         )
 
-    # Delete all delete markers
-    for marker in response.get("DeleteMarkers", []):
-        assert "Key" in marker
-        assert "VersionId" in marker
-        await s3_client.delete_object(
-            Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"]
+    if "DeleteMarkers" in response:
+        # Delete all delete markers
+        await asyncio.gather(
+            *[
+                s3_client.delete_object(
+                    Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"]
+                )
+                for marker in response.get("DeleteMarkers", [])
+            ]
         )
 
     # if there are no version just plain delete
