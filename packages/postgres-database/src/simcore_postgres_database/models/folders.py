@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -28,6 +29,31 @@ folders = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+    ),
+    sa.Column(
+        "created_by",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_folders_to_groups_gid",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    ),
+    sa.Column(
+        "created_at",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "last_modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Timestamp with last update",
     ),
 )
 
@@ -100,4 +126,83 @@ folders_to_projects = sa.Table(
         ),
     ),
     sa.PrimaryKeyConstraint("folder_id", "project_id", name="projects_to_folder_pk"),
+)
+
+# PROCEDURES ------------------------
+
+update_parent_last_modified_ddl = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION update_parent_last_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.parent_folder IS NOT NULL THEN
+        UPDATE folders
+        SET last_modified = NOW()
+        WHERE id = NEW.parent_folder;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+"""
+)
+
+update_folders_last_modified_ddl = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION update_folders_last_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE folders
+    SET last_modified = NOW()
+    WHERE id = NEW.folder_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+"""
+)
+
+
+# TRIGGERS ------------------------
+
+trg_update_parent_last_modified_ddl = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS trg_update_parent_last_modified on folders;
+CREATE TRIGGER trg_update_parent_last_modified
+AFTER INSERT OR UPDATE ON folders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_parent_last_modified();
+"""
+)
+
+trg_update_folders_access_rights_last_modified_ddl = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS trg_update_folders_access_rights_last_modified on folders_access_rights;
+CREATE TRIGGER trg_update_folders_access_rights_last_modified
+AFTER INSERT OR UPDATE OR DELETE ON folders_access_rights
+    FOR EACH ROW
+    EXECUTE FUNCTION update_folders_last_modified();
+"""
+)
+
+trg_update_folders_to_projects_last_modified_ddl = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS trg_update_folders_to_projects_last_modified on folders_to_projects;
+CREATE TRIGGER trg_update_folders_to_projects_last_modified
+AFTER INSERT OR UPDATE OR DELETE ON folders_to_projects
+    FOR EACH ROW
+    EXECUTE FUNCTION update_folders_last_modified();
+"""
+)
+
+sa.event.listen(folders, "after_create", update_parent_last_modified_ddl)
+sa.event.listen(folders, "after_create", update_folders_last_modified_ddl)
+sa.event.listen(folders, "after_create", trg_update_parent_last_modified_ddl)
+sa.event.listen(
+    folders_access_rights,
+    "after_create",
+    trg_update_folders_access_rights_last_modified_ddl,
+)
+sa.event.listen(
+    folders_to_projects,
+    "after_create",
+    trg_update_folders_to_projects_last_modified_ddl,
 )
