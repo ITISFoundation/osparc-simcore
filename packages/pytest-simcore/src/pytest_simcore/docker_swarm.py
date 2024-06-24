@@ -23,9 +23,9 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
 from .helpers.constants import HEADER_STR, MINUTE
+from .helpers.dict_tools import copy_from_dict
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_dict import copy_from_dict
 
 log = logging.getLogger(__name__)
 
