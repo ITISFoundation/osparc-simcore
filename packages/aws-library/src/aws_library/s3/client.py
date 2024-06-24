@@ -377,6 +377,7 @@ class SimcoreS3API:
     @s3_exception_handler(_logger)
     async def copy_file(
         self,
+        *,
         bucket: S3BucketName,
         src_object_key: S3ObjectKey,
         dst_object_key: S3ObjectKey,
@@ -392,6 +393,25 @@ class SimcoreS3API:
         if bytes_transfered_cb:
             copy_options |= {"Callback": bytes_transfered_cb}
         await self._client.copy(**copy_options)
+
+    @s3_exception_handler(_logger)
+    async def copy_files_recursively(
+        self,
+        *,
+        bucket: S3BucketName,
+        src_prefix: str,
+        dst_prefix: str,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> None:
+        """copy from 1 location in S3 to another recreating the same structure"""
+        async for s3_object in self._list_all_objects(bucket=bucket, prefix=src_prefix):
+            dst_object_key = s3_object.object_key.replace(src_prefix, dst_prefix)
+            await self.copy_file(
+                bucket=bucket,
+                src_object_key=s3_object.object_key,
+                dst_object_key=dst_object_key,
+                bytes_transfered_cb=bytes_transfered_cb,
+            )
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
