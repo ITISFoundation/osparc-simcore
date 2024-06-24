@@ -65,7 +65,7 @@ from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.api import delete_user_without_projects
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.users.plugin import setup_users
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

@@ -12,7 +12,7 @@ from typing import Iterator
 import aiohttp
 import pytest
 from aiohttp.client import ClientTimeout
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random

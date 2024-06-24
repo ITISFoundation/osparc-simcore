@@ -63,7 +63,7 @@ from simcore_service_webserver.socketio.messages import (
 from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity import RetryError
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_always, retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

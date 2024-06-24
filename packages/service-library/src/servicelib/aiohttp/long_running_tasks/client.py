@@ -6,7 +6,7 @@ from typing import Any, Final, TypeAlias
 from aiohttp import ClientConnectionError, ClientSession
 from servicelib.aiohttp import status
 from tenacity import TryAgain, retry
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential

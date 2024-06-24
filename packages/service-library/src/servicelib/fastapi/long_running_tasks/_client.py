@@ -8,7 +8,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from tenacity import RetryCallState
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential

@@ -15,7 +15,7 @@ from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
 from servicelib.redis_utils import exclusive, start_exclusive_periodic_task
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

@@ -64,7 +64,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     WalletNotFoundError,
 )
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

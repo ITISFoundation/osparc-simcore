@@ -8,7 +8,7 @@ from models_library.users import UserID
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
