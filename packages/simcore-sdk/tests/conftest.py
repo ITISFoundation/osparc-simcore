@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 import simcore_sdk
-from pytest_simcore.helpers.postgres import PostgresTestConfig
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 

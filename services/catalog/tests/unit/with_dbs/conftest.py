@@ -22,7 +22,7 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.postgres import (
+from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
     insert_and_get_row_lifespan,
 )
