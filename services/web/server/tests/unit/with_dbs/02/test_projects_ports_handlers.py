@@ -16,10 +16,10 @@ from models_library.api_schemas_directorv2.comp_tasks import TasksOutputs
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
-from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from servicelib.aiohttp import status

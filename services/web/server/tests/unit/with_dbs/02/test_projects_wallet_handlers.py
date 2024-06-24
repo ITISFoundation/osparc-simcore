@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import WalletGet
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets

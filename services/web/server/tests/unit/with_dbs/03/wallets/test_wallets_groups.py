@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole

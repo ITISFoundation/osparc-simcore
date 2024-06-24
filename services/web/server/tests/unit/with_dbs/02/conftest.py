@@ -26,8 +26,8 @@ from models_library.services_resources import (
 )
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects

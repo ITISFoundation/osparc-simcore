@@ -18,7 +18,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets

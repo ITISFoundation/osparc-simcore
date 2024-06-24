@@ -20,7 +20,7 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag

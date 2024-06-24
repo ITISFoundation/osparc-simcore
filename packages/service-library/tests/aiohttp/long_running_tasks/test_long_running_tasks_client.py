@@ -7,7 +7,7 @@ from typing import Callable
 import pytest
 from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks import client as lr_client
 from servicelib.aiohttp.long_running_tasks.client import (
