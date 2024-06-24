@@ -96,53 +96,6 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
 
 
 @pytest.mark.parametrize(
-    "file_size",
-    [
-        parametrized_file_size("10Mib"),
-    ],
-    ids=byte_size_ids,
-)
-async def test_create_multipart_presigned_upload_link_invalid_raises(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
-    ],
-    file_size: ByteSize,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    (
-        file_id,
-        upload_links,
-        uploaded_parts,
-    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
-
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.complete_multipart_upload(
-            S3BucketName("pytestinvalidbucket"),
-            file_id,
-            upload_links.upload_id,
-            uploaded_parts,
-        )
-
-    wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
-    # with pytest.raises(S3KeyNotFoundError):
-    # NOTE: this does not raise... and it returns the file_id of the original file...
-    await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
-    )
-    # call it again triggers
-    with pytest.raises(S3AccessError):
-        await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket,
-            wrong_file_id,
-            upload_links.upload_id,
-            uploaded_parts,
-        )
-
-
-@pytest.mark.parametrize(
     "file_size", [parametrized_file_size("100Mib")], ids=byte_size_ids
 )
 async def test_abort_multipart_upload(
