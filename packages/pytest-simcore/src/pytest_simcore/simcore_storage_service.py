@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.docker import get_service_published_port
 from .helpers.utils_host import get_localhost_ip
 
 

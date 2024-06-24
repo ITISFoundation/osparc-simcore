@@ -28,8 +28,8 @@ from .helpers import (
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.constants import HEADER_STR
+from .helpers.docker import run_docker_compose_config, save_docker_infos
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
 from .helpers.utils_host import get_localhost_ip
 
 
