@@ -471,9 +471,9 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         if link_type == LinkType.PRESIGNED:
             link = await get_s3_client(self.app).create_single_presigned_download_link(
-                self.simcore_bucket_name,
-                s3_file_id,
-                self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+                bucket_name=self.simcore_bucket_name,
+                object_key=s3_file_id,
+                expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
             )
 
         return link
