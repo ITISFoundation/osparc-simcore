@@ -25,13 +25,13 @@ from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
     standard_user_role_response,
 )
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import products

@@ -8,11 +8,11 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_login import LoggedUser
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
-from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole

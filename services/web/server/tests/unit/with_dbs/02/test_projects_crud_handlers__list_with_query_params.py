@@ -17,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
