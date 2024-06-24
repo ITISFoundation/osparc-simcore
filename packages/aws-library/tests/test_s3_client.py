@@ -257,12 +257,10 @@ async def upload_file(
     faker: Faker,
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     s3_client: S3Client,
-) -> AsyncIterator[Callable[[ByteSize], Awaitable[UploadedFile]]]:
+) -> AsyncIterator[Callable[[Path], Awaitable[UploadedFile]]]:
     uploaded_object_keys = []
 
-    async def _uploader(file_size: ByteSize) -> UploadedFile:
-        file_name = faker.file_name()
-        file = create_file_of_size(file_size, file_name)
+    async def _uploader(file: Path) -> UploadedFile:
         object_key = file.name
         response = await simcore_s3_api.upload_file(
             bucket=with_s3_bucket,
@@ -272,7 +270,7 @@ async def upload_file(
         )
         # there is no response from aioboto3...
         assert not response
-        # check the object is uploaded
+
         assert (
             await simcore_s3_api.file_exists(
                 bucket=with_s3_bucket, object_key=object_key
@@ -286,6 +284,18 @@ async def upload_file(
 
     for object_key in uploaded_object_keys:
         await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+
+
+@pytest.fixture
+async def with_uploaded_folder(
+    create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize], Path],
+    upload_file: Callable[[Path], Awaitable[UploadedFile]],
+) -> list[UploadedFile]:
+    # create random files of random size and upload to S3
+    folder = create_folder_of_size_with_multiple_files(ByteSize(100), ByteSize(10))
+    return await asyncio.gather(
+        *(upload_file(file) for file in folder.iterdir() if file.is_file())
+    )
 
 
 @pytest.fixture
@@ -848,10 +858,13 @@ async def test_abort_multipart_upload(
     ids=byte_size_ids,
 )
 async def test_upload_file(
+    mocked_s3_server_envs: EnvVarsDict,
+    upload_file: Callable[[Path], Awaitable[UploadedFile]],
     file_size: ByteSize,
-    upload_file: Callable[[ByteSize], Awaitable[UploadedFile]],
+    create_file_of_size: Callable[[ByteSize], Path],
 ):
-    await upload_file(file_size)
+    file = create_file_of_size(file_size)
+    await upload_file(file)
 
 
 async def test_upload_file_invalid_raises(
@@ -881,11 +894,13 @@ async def test_copy_file(
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
     file_size: ByteSize,
-    upload_file: Callable[[ByteSize], Awaitable[UploadedFile]],
+    upload_file: Callable[[Path], Awaitable[UploadedFile]],
     copy_file: Callable[[S3ObjectKey, S3ObjectKey], Awaitable[S3ObjectKey]],
+    create_file_of_size: Callable[[ByteSize], Path],
     faker: Faker,
 ):
-    uploaded_file = await upload_file(file_size)
+    file = create_file_of_size(file_size)
+    uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     await copy_file(uploaded_file.s3_key, dst_object_key)
 
@@ -907,10 +922,12 @@ async def test_copy_file_invalid_raises(
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
     non_existing_s3_bucket: S3BucketName,
-    upload_file: Callable[[ByteSize], Awaitable[UploadedFile]],
+    upload_file: Callable[[Path], Awaitable[UploadedFile]],
+    create_file_of_size: Callable[[ByteSize], Path],
     faker: Faker,
 ):
-    uploaded_file = await upload_file(ByteSize(1024))
+    file = create_file_of_size(ByteSize("1MiB"))
+    uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     with pytest.raises(S3BucketInvalidError, match=f"{non_existing_s3_bucket}"):
         await simcore_s3_api.copy_file(
