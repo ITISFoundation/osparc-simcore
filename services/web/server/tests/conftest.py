@@ -24,7 +24,7 @@ from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus

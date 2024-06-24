@@ -20,8 +20,8 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
-from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole

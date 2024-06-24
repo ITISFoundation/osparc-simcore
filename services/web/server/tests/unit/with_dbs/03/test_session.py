@@ -15,7 +15,7 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography.fernet import Fernet
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.session.api import get_session
 from simcore_service_webserver.session.settings import SessionSettings

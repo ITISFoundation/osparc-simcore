@@ -15,12 +15,12 @@ import aiofiles
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.utils_projects import (
     create_project,
     delete_all_projects,
     empty_project_data,
 )
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings

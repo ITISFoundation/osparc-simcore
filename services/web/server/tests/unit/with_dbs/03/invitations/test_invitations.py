@@ -9,7 +9,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_invitations.invitations import ApiInvitationContent
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.invitations._client import (
     InvitationsServiceApi,

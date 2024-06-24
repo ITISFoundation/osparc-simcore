@@ -43,12 +43,12 @@ from models_library.services_resources import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products

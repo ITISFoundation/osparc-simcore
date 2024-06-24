@@ -21,7 +21,7 @@ from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.aiohttp import status
 from settings_library.redis import RedisSettings

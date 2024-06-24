@@ -22,9 +22,9 @@ from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
