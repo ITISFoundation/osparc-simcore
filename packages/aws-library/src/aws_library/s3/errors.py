@@ -45,21 +45,16 @@ def s3_exception_handler(
     [Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]],
     Callable[Concatenate["SimcoreS3API", P], Awaitable[R]],
 ]:
-    """converts typical aiobotocore/boto exceptions to storage exceptions
-    NOTE: this is a work in progress as more exceptions might arise in different
-    use-cases
+    """
+    Raises:
+        S3BucketInvalidError:
+        S3KeyNotFoundError:
+        S3BucketInvalidError:
+        S3UploadNotFoundError:
+        S3AccessError:
     """
 
     def decorator(func: Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]) -> Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]:  # type: ignore  # noqa: F821
-        """
-        Raises:
-            S3BucketInvalidError:
-            S3KeyNotFoundError:
-            S3BucketInvalidError:
-            S3UploadNotFoundError:
-            S3AccessError:
-        """
-
         @functools.wraps(func)
         async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore # noqa: F821
             try:
@@ -96,6 +91,7 @@ def s3_exception_handler(
                 logger.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
 
+        wrapper.__doc__ = f"{func.__doc__}\n\n{s3_exception_handler.__doc__}"
         return wrapper
 
     return decorator
