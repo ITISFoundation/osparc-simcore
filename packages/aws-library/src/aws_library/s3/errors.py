@@ -35,6 +35,11 @@ class S3UploadNotFoundError(S3AccessError):
     msg_template: str = "The upload for {key}  in {bucket} was not found"
 
 
+class S3DestinationNotEmptyError(S3AccessError):
+    code = "s3_destination.not_empty_error"
+    msg_template: str = "The destination {dst_prefix} is not empty"
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
 

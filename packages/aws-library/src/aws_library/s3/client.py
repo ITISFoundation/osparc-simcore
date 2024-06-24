@@ -21,7 +21,7 @@ from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .errors import S3KeyNotFoundError, s3_exception_handler
+from .errors import S3DestinationNotEmptyError, S3KeyNotFoundError, s3_exception_handler
 from .models import (
     MultiPartUploadLinks,
     S3DirectoryMetaData,
@@ -404,14 +404,31 @@ class SimcoreS3API:
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
         """copy from 1 location in S3 to another recreating the same structure"""
-        async for s3_object in self._list_all_objects(bucket=bucket, prefix=src_prefix):
-            dst_object_key = s3_object.object_key.replace(src_prefix, dst_prefix)
-            await self.copy_file(
-                bucket=bucket,
-                src_object_key=s3_object.object_key,
-                dst_object_key=dst_object_key,
-                bytes_transfered_cb=bytes_transfered_cb,
-            )
+        dst_metadata = await self.get_directory_metadata(
+            bucket=bucket, prefix=dst_prefix
+        )
+        if dst_metadata.size > 0:
+            raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
+        try:
+            async for s3_object in self._list_all_objects(
+                bucket=bucket, prefix=src_prefix
+            ):
+                dst_object_key = s3_object.object_key.replace(src_prefix, dst_prefix)
+                await self.copy_file(
+                    bucket=bucket,
+                    src_object_key=s3_object.object_key,
+                    dst_object_key=dst_object_key,
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
+        except Exception:
+            # rollback changes
+            with log_catch(_logger, reraise=False), log_context(
+                _logger,
+                logging.ERROR,
+                msg="Unexpected error while copying files recursively, deleting partially copied files",
+            ):
+                await self.delete_file_recursively(bucket=bucket, prefix=dst_prefix)
+            raise
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
