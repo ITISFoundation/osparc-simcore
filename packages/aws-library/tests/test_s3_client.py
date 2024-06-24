@@ -7,10 +7,9 @@
 
 import filecmp
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Awaitable
 
 import botocore.exceptions
 import pytest
@@ -23,6 +22,10 @@ from models_library.api_schemas_storage import S3BucketName
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_parametrizations import (
+    byte_size_ids,
+    parametrized_file_size,
+)
 from pytest_simcore.helpers.utils_s3 import upload_file_to_presigned_link
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -373,3 +376,50 @@ async def test_create_single_presigned_upload_link_with_non_existing_bucket_rais
             object_key=s3_object_key,
             expiration_secs=default_expiration_time_seconds,
         )
+
+
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        parametrized_file_size("10Mib"),
+        parametrized_file_size("100Mib"),
+        parametrized_file_size("1000Mib"),
+    ],
+    ids=byte_size_ids,
+)
+async def test_create_multipart_presigned_upload_link(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    upload_file_multipart_presigned_link_without_completion: Callable[
+        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
+    ],
+    file_size: ByteSize,
+):
+    (
+        file_id,
+        upload_links,
+        uploaded_parts,
+    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
+
+    # now complete it
+    received_e_tag = await simcore_s3_api.complete_multipart_upload(
+        bucket=with_s3_bucket,
+        object_key=file_id,
+        upload_id=upload_links.upload_id,
+        uploaded_parts=uploaded_parts,
+    )
+
+    # check that the multipart upload is not listed anymore
+    list_ongoing_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
+        bucket=with_s3_bucket
+    )
+    assert list_ongoing_uploads == []
+
+    # check the object is complete
+    s3_metadata = await simcore_s3_api.get_file_metadata(
+        bucket=with_s3_bucket, object_key=file_id
+    )
+    assert s3_metadata.size == file_size
+    assert s3_metadata.last_modified
+    assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"

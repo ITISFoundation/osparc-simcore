@@ -6,7 +6,6 @@
 
 
 import asyncio
-import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -95,49 +94,6 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
     ], f"failed creating {bucket_name}"
 
     return bucket_name
-
-
-@pytest.mark.parametrize(
-    "file_size",
-    [
-        parametrized_file_size("10Mib"),
-        parametrized_file_size("100Mib"),
-        parametrized_file_size("1000Mib"),
-    ],
-    ids=byte_size_ids,
-)
-async def test_create_multipart_presigned_upload_link(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
-    ],
-    file_size: ByteSize,
-):
-    (
-        file_id,
-        upload_links,
-        uploaded_parts,
-    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
-
-    # now complete it
-    received_e_tag = await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
-    )
-
-    # check that the multipart upload is not listed anymore
-    list_ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        storage_s3_bucket
-    )
-    assert list_ongoing_uploads == []
-
-    # check the object is complete
-    s3_metadata = await storage_s3_client.get_file_metadata(
-        bucket=storage_s3_bucket, object_key=file_id
-    )
-    assert s3_metadata.size == file_size
-    assert s3_metadata.last_modified
-    assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"
 
 
 @pytest.mark.parametrize(
