@@ -292,65 +292,6 @@ async def test_delete_files_in_project_node(
     )
 
 
-async def test_undelete_file_raises_if_file_does_not_exists(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.delete_file(
-            bucket=S3BucketName("pytestinvalidbucket"), object_key=file_id
-        )
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
-
-
-async def test_undelete_file_with_no_versioning_raises(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
-):
-    file_id = await upload_file_single_presigned_link()
-    await storage_s3_client.delete_file(bucket=storage_s3_bucket, object_key=file_id)
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
-
-
-async def test_undelete_file(
-    storage_s3_client: StorageS3Client,
-    with_versioning_enabled: None,
-    storage_s3_bucket: S3BucketName,
-    upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
-):
-    file_id = await upload_file_single_presigned_link()
-
-    # delete the file
-    await storage_s3_client.delete_file(bucket=storage_s3_bucket, object_key=file_id)
-
-    # check it is not available
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.get_file_metadata(
-            bucket=storage_s3_bucket, object_key=file_id
-        )
-
-    # undelete the file
-    await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
-    # check the file is back
-    await storage_s3_client.get_file_metadata(
-        bucket=storage_s3_bucket, object_key=file_id
-    )
-
-    # delete the file again
-    await storage_s3_client.delete_file(bucket=storage_s3_bucket, object_key=file_id)
-    # check it is not available
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.get_file_metadata(
-            bucket=storage_s3_bucket, object_key=file_id
-        )
-
-
 async def test_delete_files_in_project_node_invalid_raises(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,

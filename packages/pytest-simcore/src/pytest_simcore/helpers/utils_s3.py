@@ -5,11 +5,17 @@ from typing import Final
 import aiofiles
 import orjson
 from aiohttp import ClientSession
-from aws_library.s3.models import MultiPartUploadLinks
-from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
+from aws_library.s3.models import MultiPartUploadLinks, S3ObjectKey
+from models_library.api_schemas_storage import (
+    ETag,
+    FileUploadSchema,
+    S3BucketName,
+    UploadedPart,
+)
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.utils import logged_gather
+from types_aiobotocore_s3 import S3Client
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 
@@ -105,3 +111,32 @@ async def upload_file_to_presigned_link(
         f"--> upload of {file=} of {file_size=} completed in {perf_counter() - start}"
     )
     return part_to_etag
+
+
+async def delete_all_object_versions(
+    s3_client: S3Client, bucket_name: S3BucketName, object_key: S3ObjectKey
+) -> None:
+
+    # List object versions
+    response = await s3_client.list_object_versions(
+        Bucket=bucket_name, Prefix=object_key
+    )
+    # Delete all object versions
+    for version in response.get("Versions", []):
+        assert "Key" in version
+        assert "VersionId" in version
+        await s3_client.delete_object(
+            Bucket=bucket_name, Key=version["Key"], VersionId=version["VersionId"]
+        )
+
+    # Delete all delete markers
+    for marker in response.get("DeleteMarkers", []):
+        assert "Key" in marker
+        assert "VersionId" in marker
+        await s3_client.delete_object(
+            Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"]
+        )
+
+    # if there are no version just plain delete
+    if "Versions" not in response:
+        await s3_client.delete_object(Bucket=bucket_name, Key=object_key)
