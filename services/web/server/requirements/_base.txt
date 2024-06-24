@@ -455,7 +455,7 @@ sqlalchemy==1.4.47
     #   alembic
 strict-rfc3339==0.7
     # via openapi-core
-tenacity==8.0.1
+tenacity==8.4.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in

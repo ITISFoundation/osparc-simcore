@@ -397,7 +397,7 @@ sqlalchemy==1.4.52
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-tenacity==8.2.3
+tenacity==8.4.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
