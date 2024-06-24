@@ -10,7 +10,7 @@ import pytest
 from docker import DockerClient
 from docker.models.services import Service
 from pytest_simcore.docker_swarm import assert_service_is_running
-from pytest_simcore.helpers.utils_environs import EnvVarsDict
+from pytest_simcore.helpers.deprecated_environs import EnvVarsDict
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
