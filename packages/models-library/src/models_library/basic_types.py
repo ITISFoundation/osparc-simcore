@@ -80,20 +80,20 @@ class IDStr(ConstrainedStr):
     max_length = 100
 
 
-# Truncated Str:
-#   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-#   - This ensures the **input** to the API is controlled and prevents exceeding the database's constraints
-#   silently, i.e. without raising errors.
 class ShortTruncatedStr(ConstrainedStr):
+    # Truncated Str:
+    #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+    #   - This ensures the **input** to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
     # Use to input e.g. titles or display names
-    curtail_length = 200
     strip_whitespace = True
+    curtail_length = 250
 
 
 class LongTruncatedStr(ConstrainedStr):
+    # Analogous to ShortTruncatedStr
     # Use to input e.g. descriptions or summaries
-    curtail_length = 1000
     strip_whitespace = True
+    curtail_length = 2500
 
 
 # auto-incremented primary-key IDs
