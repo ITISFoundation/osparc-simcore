@@ -9549,13 +9549,9 @@ components:
       properties:
         name:
           title: Name
-          maxLength: 100
-          minLength: 1
           type: string
         description:
           title: Description
-          maxLength: 100
-          minLength: 1
           type: string
         thumbnail:
           title: Thumbnail

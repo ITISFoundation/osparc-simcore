@@ -80,6 +80,23 @@ class IDStr(ConstrainedStr):
     max_length = 100
 
 
+class ShortTruncatedStr(ConstrainedStr):
+    # NOTE: Use to input e.g. titles or display names
+    # A truncated string:
+    #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+    strip_whitespace = True
+    curtail_length = 600
+
+
+class LongTruncatedStr(ConstrainedStr):
+    # NOTE: Use to input e.g. descriptions or summaries
+    # Analogous to ShortTruncatedStr
+    strip_whitespace = True
+    curtail_length = 65536  # same as github descripton
+
+
 # auto-incremented primary-key IDs
 IdInt: TypeAlias = PositiveInt
 PrimaryKeyInt: TypeAlias = PositiveInt
