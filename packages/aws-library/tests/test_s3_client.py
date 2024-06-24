@@ -963,7 +963,7 @@ async def test_copy_file_invalid_raises(
 
 @pytest.mark.parametrize(
     "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "100Mib"), parse_obj_as(ByteSize, "10Mib"))],
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
     ids=byte_size_ids,
 )
 async def test_get_directory_metadata(
@@ -992,7 +992,6 @@ async def test_get_directory_metadata_raises(
     with_s3_bucket: S3BucketName,
     non_existing_s3_bucket: S3BucketName,
     with_uploaded_folder_on_s3: list[UploadedFile],
-    faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
         await simcore_s3_api.get_directory_metadata(
@@ -1006,3 +1005,33 @@ async def test_get_directory_metadata_raises(
         prefix=wrong_prefix,
     )
     assert metadata.size == 0
+
+
+@pytest.mark.parametrize(
+    "directory_size, max_file_size",
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    ids=byte_size_ids,
+)
+async def test_delete_file_recursively(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+):
+    # deleting from the root
+    await simcore_s3_api.delete_file_recursively(
+        bucket=with_s3_bucket,
+        prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
+    )
+    files_exists = set(
+        await asyncio.gather(
+            *[
+                simcore_s3_api.file_exists(
+                    bucket=with_s3_bucket, object_key=file.s3_key
+                )
+                for file in with_uploaded_folder_on_s3
+            ]
+        )
+    )
+    assert len(files_exists) == 1
+    assert next(iter(files_exists)) is False
