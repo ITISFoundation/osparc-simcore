@@ -266,7 +266,7 @@ async def test_list_all_services_and_history(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
 
-    all_services = await services_repo.get_services_histories()
+    all_services = await services_repo.list_services_with_history()
     assert len(all_services) == 1
 
     assert all_services[0].key == "simcore/services/dynamic/jupyterlab"

@@ -22,11 +22,9 @@ from simcore_postgres_database.utils_services import create_select_latest_servic
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.dialects.postgresql import json_build_object
 from sqlalchemy.sql import and_, or_
-from sqlalchemy.sql.expression import tuple_
+from sqlalchemy.sql.expression import func, tuple_
 from sqlalchemy.sql.selectable import Select
-from typing_extensions import deprecated
 
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
@@ -36,6 +34,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
+    *,
     gids: list[int] | None = None,
     execute_access: bool | None = None,
     write_access: bool | None = None,
@@ -102,7 +101,7 @@ def _version(column_or_value):
 @dataclass
 class HistoryItem:
     version: VersionStr
-    deprecated: datetime.datetime
+    deprecated: datetime.datetime | None
     created: datetime.datetime
 
 
@@ -132,11 +131,11 @@ class ServicesRepository(BaseRepository):
                 ServiceMetaDataAtDB.from_orm(row)
                 async for row in await conn.stream(
                     _make_list_services_query(
-                        gids,
-                        execute_access,
-                        write_access,
-                        combine_access_with_and,
-                        product_name,
+                        gids=gids,
+                        execute_access=execute_access,
+                        write_access=write_access,
+                        combine_access_with_and=combine_access_with_and,
+                        product_name=product_name,
                     )
                 )
             ]
@@ -257,40 +256,50 @@ class ServicesRepository(BaseRepository):
         return None  # mypy
 
     def _get_all_services_histories_query(self, limit: int | None, offset: int | None):
-        query = (
+        subquery = (
             sa.select(
                 services_meta_data.c.key,
-                array_agg(
-                    json_build_object(
-                        "version",
-                        services_meta_data.c.version,
-                        "deprecated",
-                        services_meta_data.c.deprecated,
-                        "created",
-                        services_meta_data.c.created,
-                    )
-                    .order_by(_version(services_meta_data.c.version))
-                    .desc()
-                ).label("history"),
+                services_meta_data.c.version,
+                services_meta_data.c.deprecated,
+                services_meta_data.c.created,
             )
-            .group_by(services_meta_data.c.key)
-            .order_by(services_meta_data.c.key)
+            .order_by(services_meta_data.c.key, _version(services_meta_data.c.version))
+            .subquery()
         )
 
+        stmt = sa.select(
+            services_meta_data.c.key,
+            array_agg(
+                func.json_build_object(
+                    "version",
+                    services_meta_data.c.version,
+                    "deprecated",
+                    services_meta_data.c.deprecated,
+                    "created",
+                    services_meta_data.c.created,
+                )
+            ).label("history"),
+        ).group_by(services_meta_data.c.key)
         if limit is not None:
-            query = query.limit(limit)
+            stmt = stmt.limit(limit)
         if offset is not None:
-            query = query.offset(offset)
-        return query
+            stmt = stmt.offset(offset)
+        return stmt
 
-    async def get_services_histories(
+    async def list_services_with_history(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[ServiceHistoryItem]:
         stmt = self._get_all_services_histories_query(limit, offset)
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt)
-            return [ServiceHistoryItem(**s) for s in result]
+            return [
+                ServiceHistoryItem(
+                    key=s.key,
+                    history=[HistoryItem(**h) for h in s.history],
+                )
+                for s in result
+            ]
 
     async def create_or_update_service(
         self,
