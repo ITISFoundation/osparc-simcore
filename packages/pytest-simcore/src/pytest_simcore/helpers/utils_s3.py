@@ -117,7 +117,7 @@ async def upload_file_to_presigned_link(
 async def delete_all_object_versions(
     s3_client: S3Client, bucket_name: S3BucketName, object_key: S3ObjectKey
 ) -> None:
-
+    print(f"--> deleting all versions of {object_key=}")
     # List object versions
     response = await s3_client.list_object_versions(
         Bucket=bucket_name, Prefix=object_key
@@ -149,3 +149,5 @@ async def delete_all_object_versions(
     # if there are no version just plain delete
     if "Versions" not in response:
         await s3_client.delete_object(Bucket=bucket_name, Key=object_key)
+
+    print(f"<-- deleting all versions of {object_key=} completed")

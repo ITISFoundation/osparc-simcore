@@ -979,3 +979,30 @@ async def test_get_directory_metadata(
     )
     assert metadata
     assert metadata.size == directory_size
+
+
+@pytest.mark.parametrize(
+    "directory_size, max_file_size",
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    ids=byte_size_ids,
+)
+async def test_get_directory_metadata_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    non_existing_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    faker: Faker,
+):
+    with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
+        await simcore_s3_api.get_directory_metadata(
+            bucket=non_existing_s3_bucket,
+            prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
+        )
+
+    wrong_prefix = "/"
+    metadata = await simcore_s3_api.get_directory_metadata(
+        bucket=with_s3_bucket,
+        prefix=wrong_prefix,
+    )
+    assert metadata.size == 0
