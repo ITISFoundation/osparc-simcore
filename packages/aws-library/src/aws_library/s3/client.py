@@ -19,6 +19,7 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
+from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .errors import S3KeyNotFoundError, s3_exception_handler
 from .models import (
     MultiPartUploadLinks,

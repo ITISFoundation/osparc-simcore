@@ -197,7 +197,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         assert upload_links
 
         # check there is no file yet
-        with pytest.raises(S3KeyNotFoundError):
+        with pytest.raises(S3KeyNotFoundError, match=f"{object_key}"):
             await simcore_s3_api.get_file_metadata(
                 bucket=with_s3_bucket, object_key=object_key
             )
@@ -912,17 +912,18 @@ async def test_copy_file_invalid_raises(
 ):
     uploaded_file = await upload_file(ByteSize(1024))
     dst_object_key = faker.file_name()
-    with pytest.raises(S3BucketInvalidError):
+    with pytest.raises(S3BucketInvalidError, match=f"{non_existing_s3_bucket}"):
         await simcore_s3_api.copy_file(
             bucket=non_existing_s3_bucket,
             src_object_key=uploaded_file.s3_key,
             dst_object_key=dst_object_key,
             bytes_transfered_cb=None,
         )
-    with pytest.raises(S3KeyNotFoundError):
+    fake_src_key = faker.file_name()
+    with pytest.raises(S3KeyNotFoundError, match=rf"{fake_src_key}"):
         await simcore_s3_api.copy_file(
             bucket=with_s3_bucket,
-            src_object_key=faker.file_name(),
+            src_object_key=fake_src_key,
             dst_object_key=dst_object_key,
             bytes_transfered_cb=None,
         )

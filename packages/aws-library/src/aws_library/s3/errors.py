@@ -64,14 +64,18 @@ def s3_exception_handler(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
             except botocore_exc.ClientError as exc:
+
                 status_code = int(
-                    exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", -1)
+                    exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                    or exc.response.get("Error", {}).get("Code", -1)
                 )
                 operation_name = exc.operation_name
                 match status_code, operation_name:
                     case 404, "HeadObject":
                         raise S3KeyNotFoundError(
-                            bucket=kwargs["bucket"], key=kwargs["object_key"]
+                            bucket=kwargs["bucket"],
+                            key=kwargs.get("object_key")
+                            or kwargs.get("src_object_key"),
                         ) from exc
                     case (404, "HeadBucket") | (403, "HeadBucket"):
                         raise S3BucketInvalidError(bucket=kwargs["bucket"]) from exc
