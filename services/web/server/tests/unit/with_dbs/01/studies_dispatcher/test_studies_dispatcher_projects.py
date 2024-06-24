@@ -14,7 +14,7 @@ from faker import Faker
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_services import list_fake_file_consumers
+from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
 from pytest_simcore.helpers.webserver_login import NewUser
 from pytest_simcore.helpers.webserver_projects import delete_all_projects
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
