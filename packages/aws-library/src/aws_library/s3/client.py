@@ -1,12 +1,14 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Final, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
+from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
@@ -323,3 +325,41 @@ class SimcoreS3API:
         }
         response = await self.client.complete_multipart_upload(**inputs)
         return response["ETag"]
+
+    @s3_exception_handler(_logger)
+    async def upload_file(
+        self,
+        *,
+        bucket: S3BucketName,
+        file: Path,
+        object_key: S3ObjectKey,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> None:
+        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)"""
+        upload_options = {
+            "Bucket": bucket,
+            "Key": object_key,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
+        if bytes_transfered_cb:
+            upload_options |= {"Callback": bytes_transfered_cb}
+        await self.client.upload_file(f"{file}", **upload_options)
+
+    @s3_exception_handler(_logger)
+    async def copy_file(
+        self,
+        bucket: S3BucketName,
+        src_object_key: S3ObjectKey,
+        dst_object_key: S3ObjectKey,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> None:
+        """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
+        copy_options = {
+            "CopySource": {"Bucket": bucket, "Key": src_object_key},
+            "Bucket": bucket,
+            "Key": dst_object_key,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
+        if bytes_transfered_cb:
+            copy_options |= {"Callback": bytes_transfered_cb}
+        await self.client.copy(**copy_options)
