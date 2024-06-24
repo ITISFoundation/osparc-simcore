@@ -9,7 +9,7 @@ from _dask_helpers import DaskGatewayServer
 from aiodocker import Docker
 from dask_gateway import Gateway
 from faker import Faker
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

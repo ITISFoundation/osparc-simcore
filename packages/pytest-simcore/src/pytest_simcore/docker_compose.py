@@ -29,8 +29,8 @@ from .helpers import (
 )
 from .helpers.constants import HEADER_STR
 from .helpers.docker import run_docker_compose_config, save_docker_infos
+from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(scope="module")

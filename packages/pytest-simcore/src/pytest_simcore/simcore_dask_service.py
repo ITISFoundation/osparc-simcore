@@ -13,7 +13,7 @@ from models_library.clusters import InternalClusterAuthentication, TLSAuthentica
 from pydantic import AnyUrl
 
 from .helpers.docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
 
 
 @pytest.fixture

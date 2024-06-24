@@ -17,7 +17,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
 from .helpers.utils_postgres import PostgresTestConfig, migrated_pg_tables_context
 
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"

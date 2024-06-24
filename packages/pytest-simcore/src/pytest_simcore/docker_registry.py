@@ -20,7 +20,7 @@ from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
 
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
