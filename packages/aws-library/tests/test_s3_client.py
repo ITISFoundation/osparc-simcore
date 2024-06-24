@@ -249,6 +249,19 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
 
 
+@dataclass
+class _ProgressCallback:
+    file_size: int
+    action: str
+    _total_bytes_transfered: int = 0
+
+    def __call__(self, bytes_transferred: int) -> None:
+        self._total_bytes_transfered += bytes_transferred
+        print(
+            f"progress cb: {self.action} {self._total_bytes_transfered} / {self.file_size} bytes"
+        )
+
+
 @pytest.fixture
 async def upload_file(
     mocked_s3_server_envs: EnvVarsDict,
@@ -262,11 +275,13 @@ async def upload_file(
         object_key = file.name
         if base_path:
             object_key = f"{file.relative_to(base_path)}"
+
+        progress_cb = _ProgressCallback(file.stat().st_size, "uploaded")
         response = await simcore_s3_api.upload_file(
             bucket=with_s3_bucket,
             file=file,
             object_key=object_key,
-            bytes_transfered_cb=None,
+            bytes_transfered_cb=progress_cb,
         )
         # there is no response from aioboto3...
         assert not response
@@ -320,11 +335,15 @@ async def copy_file(
     copied_object_keys = []
 
     async def _copier(src_key: S3ObjectKey, dst_key: S3ObjectKey) -> S3ObjectKey:
+        file_metadata = await simcore_s3_api.get_file_metadata(
+            bucket=with_s3_bucket, object_key=src_key
+        )
+        progress_cb = _ProgressCallback(file_metadata.size, "copied")
         await simcore_s3_api.copy_file(
             bucket=with_s3_bucket,
             src_object_key=src_key,
             dst_object_key=dst_key,
-            bytes_transfered_cb=None,
+            bytes_transfered_cb=progress_cb,
         )
         copied_object_keys.append(dst_key)
         return dst_key
