@@ -33,7 +33,7 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-def _make_list_services_query(
+def _make_list_services_statement(
     *,
     gids: list[int] | None = None,
     execute_access: bool | None = None,
@@ -41,34 +41,42 @@ def _make_list_services_query(
     combine_access_with_and: bool | None = True,
     product_name: str | None = None,
 ) -> Select:
-    query = sa.select(services_meta_data)
+    stmt = sa.select(services_meta_data)
     if gids or execute_access or write_access:
+        conditions = []
+
+        # access rights
         logic_operator = and_ if combine_access_with_and else or_
         default = bool(combine_access_with_and)
+
         access_query_part = logic_operator(
             services_access_rights.c.execute_access if execute_access else default,
             services_access_rights.c.write_access if write_access else default,
         )
-        query = (
+        conditions.append(access_query_part)
+
+        # on groups
+        if gids:
+            conditions.append(
+                or_(*[services_access_rights.c.gid == gid for gid in gids])
+            )
+
+        # and product name
+        if product_name:
+            conditions.append(services_access_rights.c.product_name == product_name)
+
+        stmt = (
             sa.select(
                 [services_meta_data],
             )
             .distinct(services_meta_data.c.key, services_meta_data.c.version)
             .select_from(services_meta_data.join(services_access_rights))
-            .where(
-                and_(
-                    or_(*[services_access_rights.c.gid == gid for gid in gids])
-                    if gids
-                    else True,
-                    access_query_part,
-                    (services_access_rights.c.product_name == product_name)
-                    if product_name
-                    else True,
-                )
-            )
-            .order_by(services_meta_data.c.key, services_meta_data.c.version)
         )
-    return query
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+        stmt = stmt.order_by(services_meta_data.c.key, services_meta_data.c.version)
+
+    return stmt
 
 
 def _is_newer(
@@ -96,6 +104,53 @@ def _merge_specs(
 def _version(column_or_value):
     # converts version value string to array[integer] that can be compared
     return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
+
+def _make_list_services_with_history_statement(limit: int | None, offset: int | None):
+    #
+    # Common Table Expression (CTE) to select distinct service names with pagination.
+    # This allows limiting the subquery to the required pagination instead of paginating at the last query.
+    # SEE https://learnsql.com/blog/cte-with-examples/
+    #
+    cte = (
+        sa.select(services_meta_data.c.key)
+        .distinct()
+        .order_by(services_meta_data.c.key)  # NOTE: add here the order
+        .limit(limit)
+        .offset(offset)
+        .cte("paginated_services")
+    )
+
+    subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+        )
+        .select_from(
+            services_meta_data.join(cte, services_meta_data.c.key == cte.c.key)
+        )
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+        .subquery()
+    )
+
+    return sa.select(
+        subquery.c.key,
+        array_agg(
+            func.json_build_object(
+                "version",
+                subquery.c.version,
+                "deprecated",
+                subquery.c.deprecated,
+                "created",
+                subquery.c.created,
+            )
+        ).label("history"),
+    ).group_by(subquery.c.key)
 
 
 @dataclass
@@ -130,7 +185,7 @@ class ServicesRepository(BaseRepository):
             return [
                 ServiceMetaDataAtDB.from_orm(row)
                 async for row in await conn.stream(
-                    _make_list_services_query(
+                    _make_list_services_statement(
                         gids=gids,
                         execute_access=execute_access,
                         write_access=write_access,
@@ -255,55 +310,10 @@ class ServicesRepository(BaseRepository):
             return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
-    def _list_services_histories_stmt(self, limit: int | None, offset: int | None):
-
-        # Common Table Expression (CTE) to select distinct service names with pagination.
-        # This allows limiting the subquery to the required pagination instead of paginating at the last query.
-        # SEE https://learnsql.com/blog/cte-with-examples/
-        cte = (
-            sa.select(services_meta_data.c.key)
-            .distinct()
-            .order_by(services_meta_data.c.key)  # NOTE: add here the order
-            .limit(limit)
-            .offset(offset)
-            .cte("paginated_services")
-        )
-
-        subquery = (
-            sa.select(
-                services_meta_data.c.key,
-                services_meta_data.c.version,
-                services_meta_data.c.deprecated,
-                services_meta_data.c.created,
-            )
-            .select_from(
-                services_meta_data.join(cte, services_meta_data.c.key == cte.c.key)
-            )
-            .order_by(
-                services_meta_data.c.key,
-                sa.desc(_version(services_meta_data.c.version)),  # latest version first
-            )
-            .subquery()
-        )
-
-        return sa.select(
-            subquery.c.key,
-            array_agg(
-                func.json_build_object(
-                    "version",
-                    subquery.c.version,
-                    "deprecated",
-                    subquery.c.deprecated,
-                    "created",
-                    subquery.c.created,
-                )
-            ).label("history"),
-        ).group_by(subquery.c.key)
-
     async def list_services_with_history(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[ServiceHistoryItem]:
-        stmt = self._list_services_histories_stmt(limit, offset)
+        stmt = _make_list_services_with_history_statement(limit, offset)
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt)
