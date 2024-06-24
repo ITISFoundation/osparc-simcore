@@ -30,6 +30,11 @@ class S3KeyNotFoundError(S3AccessError):
     msg_template: str = "The file {key}  in {bucket} was not found"
 
 
+class S3UploadNotFoundError(S3AccessError):
+    code = "s3_upload.not_found_error"
+    msg_template: str = "The upload for {key}  in {bucket} was not found"
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -55,7 +60,9 @@ def s3_exception_handler(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
             except botocore_exc.ClientError as exc:
-                status_code = int(exc.response.get("Error", {}).get("Code", -1))
+                status_code = int(
+                    exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", -1)
+                )
                 operation_name = exc.operation_name
                 match status_code, operation_name:
                     case 404, "HeadObject":
@@ -64,6 +71,13 @@ def s3_exception_handler(
                         ) from exc
                     case (404, "HeadBucket") | (403, "HeadBucket"):
                         raise S3BucketInvalidError(bucket=kwargs["bucket"]) from exc
+                    case (404, "AbortMultipartUpload") | (
+                        500,
+                        "CompleteMultipartUpload",
+                    ):
+                        raise S3UploadNotFoundError(
+                            bucket=kwargs["bucket"], key=kwargs["object_key"]
+                        ) from exc
                     case _:
                         raise S3AccessError from exc
             except botocore_exc.EndpointConnectionError as exc:

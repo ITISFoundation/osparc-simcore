@@ -97,7 +97,7 @@ async def upload_file_to_presigned_link(
                     upload_url,
                 )
             )
-        results = await logged_gather(*upload_tasks, max_concurrency=2)
+        results = await logged_gather(*upload_tasks, max_concurrency=0)
     part_to_etag = [
         UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
     ]

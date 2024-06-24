@@ -98,41 +98,6 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
 @pytest.mark.parametrize(
     "file_size", [parametrized_file_size("100Mib")], ids=byte_size_ids
 )
-async def test_abort_multipart_upload(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
-    ],
-    file_size: ByteSize,
-):
-    (
-        file_id,
-        upload_links,
-        _,
-    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
-
-    # now abort it
-    await storage_s3_client.abort_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id
-    )
-
-    # now check that the listing is empty
-    ongoing_multipart_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        storage_s3_bucket
-    )
-    assert ongoing_multipart_uploads == []
-
-    # check it is not available
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.get_file_metadata(
-            bucket=storage_s3_bucket, object_key=file_id
-        )
-
-
-@pytest.mark.parametrize(
-    "file_size", [parametrized_file_size("100Mib")], ids=byte_size_ids
-)
 async def test_multiple_completion_of_multipart_upload(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,

@@ -16,9 +16,9 @@ import pytest
 from aiohttp import ClientSession
 from aws_library.s3.client import S3ObjectKey, SimcoreS3API
 from aws_library.s3.errors import (
-    S3AccessError,
     S3BucketInvalidError,
     S3KeyNotFoundError,
+    S3UploadNotFoundError,
 )
 from aws_library.s3.models import MultiPartUploadLinks
 from faker import Faker
@@ -514,7 +514,7 @@ async def test_create_multipart_presigned_upload_link(
     assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"
 
     # completing again raises
-    with pytest.raises(S3AccessError):
+    with pytest.raises(S3UploadNotFoundError):
         await simcore_s3_api.complete_multipart_upload(
             bucket=with_s3_bucket,
             object_key=file_id,
@@ -576,4 +576,59 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
         object_key=faker.pystr(),
         upload_id=upload_links.upload_id,
         uploaded_parts=uploaded_parts,
+    )
+
+
+@pytest.mark.parametrize(
+    "file_size", [parametrized_file_size("100Mib")], ids=byte_size_ids
+)
+async def test_abort_multipart_upload(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    non_existing_s3_bucket: S3BucketName,
+    upload_file_multipart_presigned_link_without_completing: Callable[
+        ..., Awaitable[tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]]
+    ],
+    file_size: ByteSize,
+    faker: Faker,
+):
+    (
+        object_key,
+        upload_links,
+        _,
+    ) = await upload_file_multipart_presigned_link_without_completing(file_size)
+
+    # first abort with wrong bucket shall raise
+    with pytest.raises(S3BucketInvalidError):
+        await simcore_s3_api.abort_multipart_upload(
+            bucket=non_existing_s3_bucket,
+            object_key=object_key,
+            upload_id=upload_links.upload_id,
+        )
+
+    # now abort it
+    await simcore_s3_api.abort_multipart_upload(
+        bucket=with_s3_bucket,
+        object_key=faker.pystr(),
+        upload_id=upload_links.upload_id,
+    )
+    # doing it again raises
+    with pytest.raises(S3UploadNotFoundError):
+        await simcore_s3_api.abort_multipart_upload(
+            bucket=with_s3_bucket,
+            object_key=object_key,
+            upload_id=upload_links.upload_id,
+        )
+
+    # now check that the listing is empty
+    ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
+        bucket=with_s3_bucket
+    )
+    assert ongoing_multipart_uploads == []
+
+    # check it is not available
+    assert (
+        await simcore_s3_api.file_exists(bucket=with_s3_bucket, object_key=object_key)
+        is False
     )
