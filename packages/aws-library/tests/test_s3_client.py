@@ -18,7 +18,8 @@ from aws_library.s3.client import S3ObjectKey, SimcoreS3API
 from aws_library.s3.errors import S3BucketInvalidError, S3KeyNotFoundError
 from aws_library.s3.models import MultiPartUploadLinks
 from faker import Faker
-from models_library.api_schemas_storage import S3BucketName
+from models_library.api_schemas_storage import S3BucketName, UploadedPart
+from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
@@ -378,6 +379,79 @@ async def test_create_single_presigned_upload_link_with_non_existing_bucket_rais
         )
 
 
+@pytest.fixture
+def upload_file_multipart_presigned_link_without_completion(
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    create_file_of_size: Callable[[ByteSize], Path],
+    faker: Faker,
+) -> Callable[
+    ..., Awaitable[tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]]
+]:
+    async def _uploader(
+        file_size: ByteSize,
+        file_id: S3ObjectKey | None = None,
+    ) -> tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]:
+        file = create_file_of_size(file_size)
+        if not file_id:
+            file_id = S3ObjectKey(file.name)
+        upload_links = await simcore_s3_api.create_multipart_upload_links(
+            bucket=with_s3_bucket,
+            object_key=file_id,
+            file_size=ByteSize(file.stat().st_size),
+            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
+        )
+        assert upload_links
+
+        # check there is no file yet
+        with pytest.raises(S3KeyNotFoundError):
+            await simcore_s3_api.get_file_metadata(
+                bucket=with_s3_bucket, object_key=file_id
+            )
+
+        # check we have the multipart upload initialized and listed
+        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
+            bucket=with_s3_bucket
+        )
+        assert ongoing_multipart_uploads
+        assert len(ongoing_multipart_uploads) == 1
+        ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
+        assert ongoing_upload_id == upload_links.upload_id
+        assert ongoing_file_id == file_id
+
+        # upload the file
+        uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_link(
+            file,
+            upload_links,
+        )
+        assert len(uploaded_parts) == len(upload_links.urls)
+
+        # check there is no file yet
+        with pytest.raises(S3KeyNotFoundError):
+            await simcore_s3_api.get_file_metadata(
+                bucket=with_s3_bucket, object_key=file_id
+            )
+
+        # check we have the multipart upload initialized and listed
+        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
+            bucket=with_s3_bucket
+        )
+        assert ongoing_multipart_uploads
+        assert len(ongoing_multipart_uploads) == 1
+        ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
+        assert ongoing_upload_id == upload_links.upload_id
+        assert ongoing_file_id == file_id
+
+        return (
+            file_id,
+            upload_links,
+            uploaded_parts,
+        )
+
+    return _uploader
+
+
 @pytest.mark.parametrize(
     "file_size",
     [
@@ -392,7 +466,7 @@ async def test_create_multipart_presigned_upload_link(
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
     upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
+        ..., Awaitable[tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]]
     ],
     file_size: ByteSize,
 ):
