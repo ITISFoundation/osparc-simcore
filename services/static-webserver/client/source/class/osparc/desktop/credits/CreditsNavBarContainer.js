@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
       alignX: "center",
       alignY: "middle",
       center: true,
-      icon: "@FontAwesome5Solid/ellipsis-h/12"
+      icon: "@FontAwesome5Solid/ellipsis-v/12"
     });
     // make it circular
     billingCenterButton.getContentElement().setStyles({
