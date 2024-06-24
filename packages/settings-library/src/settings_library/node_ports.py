@@ -21,9 +21,9 @@ class StorageAuthSettings(StorageSettings):
         # for details see https://github.com/ITISFoundation/osparc-issues/issues/1264
         return self.STORAGE_USERNAME is not None and self.STORAGE_PASSWORD is not None
 
-    @classmethod
     @root_validator
-    def validate_auth_fields(cls, values):
+    @classmethod
+    def _validate_auth_fields(cls, values):
         username = values["STORAGE_USERNAME"]
         password = values["STORAGE_PASSWORD"]
         if (username is None) != (password is None):
