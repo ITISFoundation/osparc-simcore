@@ -86,14 +86,14 @@ class ShortTruncatedStr(ConstrainedStr):
     #   - This ensures the **input** to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
     # Use to input e.g. titles or display names
     strip_whitespace = True
-    curtail_length = 250
+    curtail_length = 600
 
 
 class LongTruncatedStr(ConstrainedStr):
     # Analogous to ShortTruncatedStr
     # Use to input e.g. descriptions or summaries
     strip_whitespace = True
-    curtail_length = 2500
+    curtail_length = 65536  # same as github descripton
 
 
 # auto-incremented primary-key IDs
