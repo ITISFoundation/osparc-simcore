@@ -15,20 +15,12 @@ from uuid import uuid4
 
 import botocore.exceptions
 import pytest
-from aws_library.s3.errors import (
-    S3AccessError,
-    S3BucketInvalidError,
-    S3KeyNotFoundError,
-)
+from aws_library.s3.errors import S3BucketInvalidError, S3KeyNotFoundError
 from aws_library.s3.models import MultiPartUploadLinks
 from faker import Faker
-from models_library.api_schemas_storage import UploadedPart
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from pytest_simcore.helpers.utils_s3 import upload_file_to_presigned_link
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import (
@@ -93,84 +85,6 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
     ], f"failed creating {bucket_name}"
 
     return bucket_name
-
-
-@pytest.mark.parametrize(
-    "file_size", [parametrized_file_size("100Mib")], ids=byte_size_ids
-)
-async def test_multiple_completion_of_multipart_upload(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
-    ],
-    file_size: ByteSize,
-):
-    (
-        file_id,
-        upload_links,
-        uploaded_parts,
-    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
-
-    # first completion
-    await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
-    )
-
-    with pytest.raises(S3AccessError):
-        await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
-        )
-
-
-@pytest.mark.parametrize("file_size", [parametrized_file_size("1Gib")])
-async def test_break_completion_of_multipart_upload(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    upload_file_multipart_presigned_link_without_completion: Callable[
-        ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
-    ],
-    file_size: ByteSize,
-):
-    (
-        file_id,
-        upload_links,
-        uploaded_parts,
-    ) = await upload_file_multipart_presigned_link_without_completion(file_size)
-    # let's break the completion very quickly task and see what happens
-    VERY_SHORT_TIMEOUT = 0.2
-    with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(
-            storage_s3_client.complete_multipart_upload(
-                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
-            ),
-            timeout=VERY_SHORT_TIMEOUT,
-        )
-    # check we have the multipart upload initialized and listed
-    ongoing_multipart_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        storage_s3_bucket
-    )
-    assert ongoing_multipart_uploads
-    assert len(ongoing_multipart_uploads) == 1
-    ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
-    assert ongoing_upload_id == upload_links.upload_id
-    assert ongoing_file_id == file_id
-
-    # now wait
-    await asyncio.sleep(10)
-
-    # check that the completion of the update completed...
-    assert (
-        await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket) == []
-    )
-
-    # check the object is complete
-    s3_metadata = await storage_s3_client.get_file_metadata(
-        bucket=storage_s3_bucket, object_key=file_id
-    )
-    assert s3_metadata.size == file_size
-    assert s3_metadata.last_modified
-    assert s3_metadata.e_tag
 
 
 @pytest.fixture
@@ -304,141 +218,6 @@ async def test_delete_files_in_project_node_invalid_raises(
     await storage_s3_client.delete_files_in_project_node(
         storage_s3_bucket, uuid4(), uuid4()
     )
-
-
-@pytest.fixture
-async def upload_file_with_aioboto3_managed_transfer(
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    faker: Faker,
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-) -> Callable[[ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]]:
-    async def _uploader(file_size: ByteSize) -> tuple[Path, SimcoreS3FileID]:
-        file_name = faker.file_name()
-        file = create_file_of_size(file_size, file_name)
-        file_id = create_simcore_file_id(uuid4(), uuid4(), file_name)
-        response = await storage_s3_client.upload_file(
-            storage_s3_bucket, file, file_id, bytes_transfered_cb=None
-        )
-        # there is no response from aioboto3...
-        assert not response
-        # check the object is uploaded
-        response = await storage_s3_client.client.list_objects_v2(
-            Bucket=storage_s3_bucket
-        )
-        assert "Contents" in response
-        list_objects = response["Contents"]
-        assert len(list_objects) >= 1
-        # find our object now
-        for s3_obj in list_objects:
-            if s3_obj.get("Key") == file_id:
-                # found it!
-                assert "ETag" in s3_obj
-                assert "Key" in s3_obj
-                assert s3_obj["Key"] == file_id
-                assert "Size" in s3_obj
-                assert s3_obj["Size"] == file.stat().st_size
-                return file, file_id
-        assert False, "Object was not properly uploaded!"
-
-    return _uploader
-
-
-@pytest.mark.parametrize(
-    "file_size",
-    [parametrized_file_size("500Mib")],
-    ids=byte_size_ids,
-)
-async def test_upload_file(
-    file_size: ByteSize,
-    upload_file_with_aioboto3_managed_transfer: Callable[
-        [ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]
-    ],
-):
-    await upload_file_with_aioboto3_managed_transfer(file_size)
-
-
-async def test_upload_file_invalid_raises(
-    storage_s3_client: StorageS3Client,
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    file = create_file_of_size(ByteSize(10), None)
-    file_id = create_simcore_file_id(uuid4(), uuid4(), file.name)
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.upload_file(
-            S3BucketName("pytestinvalidbucket"), file, file_id, bytes_transfered_cb=None
-        )
-
-
-@pytest.mark.parametrize(
-    "file_size",
-    [parametrized_file_size("500Mib")],
-    ids=byte_size_ids,
-)
-async def test_copy_file(
-    file_size: ByteSize,
-    upload_file_with_aioboto3_managed_transfer: Callable[
-        [ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]
-    ],
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    src_file, src_file_uuid = await upload_file_with_aioboto3_managed_transfer(
-        file_size
-    )
-    dst_file_name = faker.file_name()
-    dst_file_uuid = create_simcore_file_id(uuid4(), uuid4(), dst_file_name)
-    await storage_s3_client.copy_file(
-        storage_s3_bucket, src_file_uuid, dst_file_uuid, bytes_transfered_cb=None
-    )
-
-    # check the object is uploaded
-    response = await storage_s3_client.client.list_objects_v2(Bucket=storage_s3_bucket)
-    assert "Contents" in response
-    list_objects = response["Contents"]
-    assert len(list_objects) == 2
-
-    list_file_uuids = [src_file_uuid, dst_file_uuid]
-    for s3_obj in list_objects:
-        assert "ETag" in s3_obj
-        assert "Key" in s3_obj
-        assert s3_obj["Key"] in list_file_uuids
-        list_file_uuids.pop(list_file_uuids.index(s3_obj["Key"]))
-        assert "Size" in s3_obj
-        assert s3_obj["Size"] == src_file.stat().st_size
-
-
-async def test_copy_file_invalid_raises(
-    upload_file_with_aioboto3_managed_transfer: Callable[
-        [ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]
-    ],
-    storage_s3_client: StorageS3Client,
-    storage_s3_bucket: S3BucketName,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-):
-    _, src_file_uuid = await upload_file_with_aioboto3_managed_transfer(ByteSize(1024))
-    dst_file_name = faker.file_name()
-    dst_file_uuid = create_simcore_file_id(uuid4(), uuid4(), dst_file_name)
-    with pytest.raises(S3BucketInvalidError):
-        await storage_s3_client.copy_file(
-            S3BucketName("pytestinvalidbucket"),
-            src_file_uuid,
-            dst_file_uuid,
-            bytes_transfered_cb=None,
-        )
-    with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.copy_file(
-            storage_s3_bucket,
-            SimcoreS3FileID("missing_file_uuid"),
-            dst_file_uuid,
-            bytes_transfered_cb=None,
-        )
 
 
 async def test_list_files(
