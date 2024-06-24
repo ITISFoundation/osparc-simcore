@@ -254,14 +254,14 @@ async def upload_file(
     mocked_s3_server_envs: EnvVarsDict,
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
-    faker: Faker,
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
     s3_client: S3Client,
 ) -> AsyncIterator[Callable[[Path], Awaitable[UploadedFile]]]:
     uploaded_object_keys = []
 
-    async def _uploader(file: Path) -> UploadedFile:
+    async def _uploader(file: Path, base_path: Path | None = None) -> UploadedFile:
         object_key = file.name
+        if base_path:
+            object_key = f"{file.relative_to(base_path)}"
         response = await simcore_s3_api.upload_file(
             bucket=with_s3_bucket,
             file=file,
@@ -282,20 +282,35 @@ async def upload_file(
 
     yield _uploader
 
-    for object_key in uploaded_object_keys:
-        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+    await asyncio.gather(
+        *[
+            delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+            for object_key in uploaded_object_keys
+        ]
+    )
 
 
 @pytest.fixture
-async def with_uploaded_folder(
+async def with_uploaded_folder_on_s3(
     create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize], Path],
-    upload_file: Callable[[Path], Awaitable[UploadedFile]],
+    upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
+    directory_size: ByteSize,
+    max_file_size: ByteSize,
 ) -> list[UploadedFile]:
     # create random files of random size and upload to S3
-    folder = create_folder_of_size_with_multiple_files(ByteSize(100), ByteSize(10))
-    return await asyncio.gather(
-        *(upload_file(file) for file in folder.iterdir() if file.is_file())
+    folder = create_folder_of_size_with_multiple_files(
+        ByteSize(directory_size), ByteSize(max_file_size)
     )
+    print(f"uploading {folder}...")
+    list_uploaded_files = await asyncio.gather(
+        *[
+            upload_file(file, folder.parent)
+            for file in folder.rglob("*")
+            if file.is_file()
+        ]
+    )
+    print(f"uploaded {len(list_uploaded_files)} files")
+    return list_uploaded_files
 
 
 @pytest.fixture
@@ -926,7 +941,7 @@ async def test_copy_file_invalid_raises(
     create_file_of_size: Callable[[ByteSize], Path],
     faker: Faker,
 ):
-    file = create_file_of_size(ByteSize("1MiB"))
+    file = create_file_of_size(parse_obj_as(ByteSize, "1MiB"))
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     with pytest.raises(S3BucketInvalidError, match=f"{non_existing_s3_bucket}"):
@@ -944,3 +959,23 @@ async def test_copy_file_invalid_raises(
             dst_object_key=dst_object_key,
             bytes_transfered_cb=None,
         )
+
+
+@pytest.mark.parametrize(
+    "directory_size, max_file_size",
+    [(parse_obj_as(ByteSize, "100Mib"), parse_obj_as(ByteSize, "10Mib"))],
+    ids=byte_size_ids,
+)
+async def test_get_directory_metadata(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    directory_size: ByteSize,
+):
+    metadata = await simcore_s3_api.get_directory_metadata(
+        bucket=with_s3_bucket,
+        prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
+    )
+    assert metadata
+    assert metadata.size == directory_size
