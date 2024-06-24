@@ -1,6 +1,8 @@
+import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
+from dataclasses import dataclass
 from itertools import chain
 from typing import Any, cast
 
@@ -9,6 +11,7 @@ import sqlalchemy as sa
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
+from models_library.basic_types import VersionStr
 from models_library.groups import GroupAtDB, GroupTypeInModel
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -17,10 +20,13 @@ from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.postgresql import json_build_object
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
+from typing_extensions import deprecated
 
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
@@ -86,6 +92,24 @@ def _merge_specs(
         if spec is not None:
             merged_spec.update(spec.dict(include={"sidecar", "service"}))
     return merged_spec
+
+
+def _version(column_or_value):
+    # converts version value string to array[integer] that can be compared
+    return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
+
+@dataclass
+class HistoryItem:
+    version: VersionStr
+    deprecated: datetime.datetime
+    created: datetime.datetime
+
+
+@dataclass
+class ServiceHistoryItem:
+    key: ServiceKey
+    history: list[HistoryItem]
 
 
 class ServicesRepository(BaseRepository):
@@ -232,13 +256,41 @@ class ServicesRepository(BaseRepository):
             return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
-    async def get_service_history(self, key: str):
-        query = sa.select(
-            services_meta_data.c.version,
-            services_meta_data.c.created,
-            services_meta_data.c.deprecated,
-        ).where(services_meta_data.c.key == key)
-        # FIXME: and sort by version !?
+    def _get_all_services_histories_query(self, limit: int | None, offset: int | None):
+        query = (
+            sa.select(
+                services_meta_data.c.key,
+                array_agg(
+                    json_build_object(
+                        "version",
+                        services_meta_data.c.version,
+                        "deprecated",
+                        services_meta_data.c.deprecated,
+                        "created",
+                        services_meta_data.c.created,
+                    )
+                    .order_by(_version(services_meta_data.c.version))
+                    .desc()
+                ).label("history"),
+            )
+            .group_by(services_meta_data.c.key)
+            .order_by(services_meta_data.c.key)
+        )
+
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
+        return query
+
+    async def get_services_histories(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[ServiceHistoryItem]:
+        stmt = self._get_all_services_histories_query(limit, offset)
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt)
+            return [ServiceHistoryItem(**s) for s in result]
 
     async def create_or_update_service(
         self,
