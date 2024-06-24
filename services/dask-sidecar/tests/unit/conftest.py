@@ -22,8 +22,8 @@ from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from yarl import URL

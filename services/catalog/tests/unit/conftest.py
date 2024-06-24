@@ -13,8 +13,8 @@ import pytest
 import simcore_service_catalog
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 

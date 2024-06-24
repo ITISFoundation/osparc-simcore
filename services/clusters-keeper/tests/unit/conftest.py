@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings

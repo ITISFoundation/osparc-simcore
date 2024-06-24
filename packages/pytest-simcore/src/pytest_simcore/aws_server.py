@@ -13,7 +13,7 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
 
-from .helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from .helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from .helpers.utils_host import get_localhost_ip
 
 

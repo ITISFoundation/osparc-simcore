@@ -25,7 +25,7 @@ from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
     random_pre_registration_details,
 )
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY

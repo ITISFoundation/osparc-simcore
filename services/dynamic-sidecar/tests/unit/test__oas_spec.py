@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 
 
 @pytest.fixture

@@ -48,8 +48,8 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,

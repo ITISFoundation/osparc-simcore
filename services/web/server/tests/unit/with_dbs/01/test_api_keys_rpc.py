@@ -14,8 +14,8 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings

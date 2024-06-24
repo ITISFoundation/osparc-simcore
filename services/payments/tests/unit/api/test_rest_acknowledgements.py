@@ -16,8 +16,8 @@ from models_library.api_schemas_payments.errors import (
     PaymentNotFoundError,
 )
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,

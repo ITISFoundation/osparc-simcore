@@ -19,8 +19,8 @@ from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
 from settings_library.email import EmailProtocol, SMTPSettings

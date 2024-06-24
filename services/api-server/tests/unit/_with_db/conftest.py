@@ -29,8 +29,8 @@ from pytest_simcore.helpers.faker_factories import (
     random_product,
     random_user,
 )
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.products import products

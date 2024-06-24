@@ -14,7 +14,7 @@ import yaml
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_efs_guardian.core.application import create_app

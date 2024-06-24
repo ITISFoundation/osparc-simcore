@@ -15,8 +15,8 @@ from pprint import pformat
 import httpx
 import osparc
 import pytest
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from pytest_simcore.helpers.typing_docker import UrlStr
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_public_api import (
     RegisteredUserDict,
     ServiceInfoDict,

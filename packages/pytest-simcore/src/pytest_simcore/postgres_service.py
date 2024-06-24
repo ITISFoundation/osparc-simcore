@@ -10,8 +10,8 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

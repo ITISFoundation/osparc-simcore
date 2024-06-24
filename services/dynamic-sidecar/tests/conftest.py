@@ -21,7 +21,7 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     setenvs_from_dict,
     setenvs_from_envfile,

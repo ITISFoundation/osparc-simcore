@@ -41,8 +41,8 @@ import yaml
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 
 from .helpers.httpx_calls_capture_models import (

@@ -4,8 +4,8 @@
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
 
 @pytest.fixture

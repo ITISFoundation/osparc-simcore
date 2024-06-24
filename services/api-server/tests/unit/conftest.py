@@ -38,7 +38,7 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth

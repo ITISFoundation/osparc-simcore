@@ -26,7 +26,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem

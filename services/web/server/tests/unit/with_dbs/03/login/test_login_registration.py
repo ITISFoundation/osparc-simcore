@@ -12,7 +12,7 @@ from faker import Faker
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope

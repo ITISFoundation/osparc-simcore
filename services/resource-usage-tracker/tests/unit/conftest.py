@@ -20,8 +20,8 @@ from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings

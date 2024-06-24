@@ -29,8 +29,8 @@ from pytest_simcore.helpers.faker_factories import (
     random_payment_method,
     random_payment_transaction,
 )
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCRouter
 from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
