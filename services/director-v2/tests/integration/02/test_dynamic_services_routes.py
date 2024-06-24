@@ -38,7 +38,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

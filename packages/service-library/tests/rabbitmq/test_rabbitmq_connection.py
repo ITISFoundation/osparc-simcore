@@ -17,7 +17,7 @@ from pydantic import HttpUrl
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from tenacity import retry, retry_if_exception_type
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

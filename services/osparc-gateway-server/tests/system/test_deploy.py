@@ -4,16 +4,16 @@
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator
 
 import aiohttp
 import dask_gateway
 import pytest
 from faker import Faker
 from pytest_simcore.helpers.host import get_localhost_ip
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

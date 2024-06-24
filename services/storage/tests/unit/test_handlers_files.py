@@ -52,7 +52,7 @@ from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName, UploadID
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
