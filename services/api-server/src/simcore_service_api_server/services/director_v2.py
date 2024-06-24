@@ -9,6 +9,10 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from simcore_service_api_server.exceptions.backend_errors import (
+    JobNotFoundError,
+    LogFileNotFoundError,
+)
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -120,14 +124,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
         return task
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -141,14 +138,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
         return task
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -162,14 +152,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
         return task
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
         response = await self.client.request(
             "DELETE",
@@ -181,14 +164,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"Could not get logfile for solver/study job {kwargs['project_id']}",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:

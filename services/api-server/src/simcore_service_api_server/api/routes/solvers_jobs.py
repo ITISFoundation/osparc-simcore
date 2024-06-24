@@ -5,11 +5,16 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedError,
+)
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -67,7 +72,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "model": ErrorGet,
     },
     status.HTTP_404_NOT_FOUND: {
-        "description": "Job not found",
+        "description": "Job/wallet/pricing details not found",
         "model": ErrorGet,
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -157,8 +162,23 @@ async def delete_job(
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=JobStatus,
-    responses=JOBS_STATUS_CODES,
+    responses=JOBS_STATUS_CODES
+    | {
+        status.HTTP_200_OK: {
+            "description": "Job already started",
+            "model": JobStatus,
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+            "model": ErrorGet,
+        },
+    },
 )
 async def start_job(
     request: Request,
@@ -173,18 +193,31 @@ async def start_job(
     """Starts job job_id created with the solver solver_key:version
 
     New in *version 0.4.3*: cluster_id
+    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
     """
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    await start_project(
-        request=request,
-        job_id=job_id,
-        expected_job_name=job_name,
-        webserver_api=webserver_api,
-        cluster_id=cluster_id,
-    )
+    try:
+        await start_project(
+            request=request,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=webserver_api,
+            cluster_id=cluster_id,
+        )
+    except ProjectAlreadyStartedError:
+        job_status = await inspect_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+            user_id=user_id,
+            director2_api=director2_api,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
+        )
     return await inspect_job(
         solver_key=solver_key,
         version=version,

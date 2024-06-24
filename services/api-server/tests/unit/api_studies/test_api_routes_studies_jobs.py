@@ -177,7 +177,7 @@ async def test_start_stop_delete_study_job(
         f"{API_VTAG}/studies/{fake_study_id}/jobs/{job_id}:start",
         auth=auth,
     )
-    _check_response(response, status.HTTP_200_OK)
+    _check_response(response, status.HTTP_202_ACCEPTED)
 
     # stop study job
     response = await client.post(
