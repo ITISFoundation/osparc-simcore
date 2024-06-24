@@ -249,6 +249,68 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
 
 
+@pytest.fixture
+async def upload_file(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    faker: Faker,
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    s3_client: S3Client,
+) -> AsyncIterator[Callable[[ByteSize], Awaitable[UploadedFile]]]:
+    uploaded_object_keys = []
+
+    async def _uploader(file_size: ByteSize) -> UploadedFile:
+        file_name = faker.file_name()
+        file = create_file_of_size(file_size, file_name)
+        object_key = file.name
+        response = await simcore_s3_api.upload_file(
+            bucket=with_s3_bucket,
+            file=file,
+            object_key=object_key,
+            bytes_transfered_cb=None,
+        )
+        # there is no response from aioboto3...
+        assert not response
+        # check the object is uploaded
+        assert (
+            await simcore_s3_api.file_exists(
+                bucket=with_s3_bucket, object_key=object_key
+            )
+            is True
+        )
+        uploaded_object_keys.append(object_key)
+        return UploadedFile(local_path=file, s3_key=object_key)
+
+    yield _uploader
+
+    for object_key in uploaded_object_keys:
+        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+
+
+@pytest.fixture
+async def copy_file(
+    simcore_s3_api: SimcoreS3API, with_s3_bucket: S3BucketName, s3_client: S3Client
+) -> AsyncIterator[Callable[[S3ObjectKey, S3ObjectKey], Awaitable[S3ObjectKey]]]:
+    copied_object_keys = []
+
+    async def _copier(src_key: S3ObjectKey, dst_key: S3ObjectKey) -> S3ObjectKey:
+        await simcore_s3_api.copy_file(
+            bucket=with_s3_bucket,
+            src_object_key=src_key,
+            dst_object_key=dst_key,
+            bytes_transfered_cb=None,
+        )
+        copied_object_keys.append(dst_key)
+        return dst_key
+
+    yield _copier
+
+    # cleanup
+    for object_key in copied_object_keys:
+        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+
+
 async def test_aiobotocore_s3_client_when_s3_server_goes_up_and_down(
     mocked_aws_server: ThreadedMotoServer,
     mocked_s3_server_envs: EnvVarsDict,
@@ -780,45 +842,6 @@ async def test_abort_multipart_upload(
     )
 
 
-@pytest.fixture
-async def upload_file(
-    mocked_s3_server_envs: EnvVarsDict,
-    simcore_s3_api: SimcoreS3API,
-    with_s3_bucket: S3BucketName,
-    faker: Faker,
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
-    s3_client: S3Client,
-) -> AsyncIterator[Callable[[ByteSize], Awaitable[UploadedFile]]]:
-    uploaded_object_keys = []
-
-    async def _uploader(file_size: ByteSize) -> UploadedFile:
-        file_name = faker.file_name()
-        file = create_file_of_size(file_size, file_name)
-        object_key = file.name
-        response = await simcore_s3_api.upload_file(
-            bucket=with_s3_bucket,
-            file=file,
-            object_key=object_key,
-            bytes_transfered_cb=None,
-        )
-        # there is no response from aioboto3...
-        assert not response
-        # check the object is uploaded
-        assert (
-            await simcore_s3_api.file_exists(
-                bucket=with_s3_bucket, object_key=object_key
-            )
-            is True
-        )
-        uploaded_object_keys.append(object_key)
-        return UploadedFile(local_path=file, s3_key=object_key)
-
-    yield _uploader
-
-    for object_key in uploaded_object_keys:
-        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
-
-
 @pytest.mark.parametrize(
     "file_size",
     [parametrized_file_size("500Mib")],
@@ -846,29 +869,6 @@ async def test_upload_file_invalid_raises(
             object_key=faker.pystr(),
             bytes_transfered_cb=None,
         )
-
-
-@pytest.fixture
-async def copy_file(
-    simcore_s3_api: SimcoreS3API, with_s3_bucket: S3BucketName, s3_client: S3Client
-) -> AsyncIterator[Callable[[S3ObjectKey, S3ObjectKey], Awaitable[S3ObjectKey]]]:
-    copied_object_keys = []
-
-    async def _copier(src_key: S3ObjectKey, dst_key: S3ObjectKey) -> S3ObjectKey:
-        await simcore_s3_api.copy_file(
-            bucket=with_s3_bucket,
-            src_object_key=src_key,
-            dst_object_key=dst_key,
-            bytes_transfered_cb=None,
-        )
-        copied_object_keys.append(dst_key)
-        return dst_key
-
-    yield _copier
-
-    # cleanup
-    for object_key in copied_object_keys:
-        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
 
 
 @pytest.mark.parametrize(
