@@ -1,21 +1,15 @@
 import logging
-import urllib.parse
-from typing import TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import s3_exception_handler
 from aws_library.s3.models import S3MetaData
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, parse_obj_as
+from models_library.projects_nodes_io import NodeID
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT
 from .models import S3BucketName
 
 _logger = logging.getLogger(__name__)
-
-
-NextContinuationToken: TypeAlias = str
 
 
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
@@ -52,10 +46,3 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             break
 
         return found_items
-
-    @staticmethod
-    def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:
-        url: AnyUrl = parse_obj_as(
-            AnyUrl, f"s3://{bucket}/{urllib.parse.quote(file_id)}"
-        )
-        return url

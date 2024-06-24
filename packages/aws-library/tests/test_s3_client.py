@@ -1065,3 +1065,27 @@ async def test_delete_file_recursively(
 )
 def test_is_multipart(file_size: ByteSize, expected_multipart: bool):
     assert SimcoreS3API.is_multipart(file_size) == expected_multipart
+
+
+@pytest.mark.parametrize(
+    "bucket, object_key, expected_s3_url",
+    [
+        (
+            "some-bucket",
+            "an/object/separate/by/slashes",
+            "s3://some-bucket/an/object/separate/by/slashes",
+        ),
+        (
+            "some-bucket",
+            "an/object/separate/by/slashes-?/3#$",
+            r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24",
+        ),
+    ],
+)
+def test_compute_s3_url(
+    bucket: S3BucketName, object_key: S3ObjectKey, expected_s3_url: AnyUrl
+):
+    assert (
+        SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key)
+        == expected_s3_url
+    )

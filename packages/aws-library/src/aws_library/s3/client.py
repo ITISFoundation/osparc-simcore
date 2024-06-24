@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -390,3 +391,10 @@ class SimcoreS3API:
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
         return file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+
+    @staticmethod
+    def compute_s3_url(*, bucket: S3BucketName, object_key: S3ObjectKey) -> AnyUrl:
+        url: AnyUrl = parse_obj_as(
+            AnyUrl, f"s3://{bucket}/{urllib.parse.quote(object_key)}"
+        )
+        return url
