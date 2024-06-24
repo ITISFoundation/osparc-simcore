@@ -255,11 +255,10 @@ class ServicesRepository(BaseRepository):
             return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
-    def _get_all_services_histories_query(self, limit: int | None, offset: int | None):
+    def _list_services_histories_stmt(self, limit: int | None, offset: int | None):
 
-        # Common Table Expression (CTE) to select distinct service names with pagination
-        # This allows limiting the subquery to the required pagination instead of paginating at the
-        # last query.
+        # Common Table Expression (CTE) to select distinct service names with pagination.
+        # This allows limiting the subquery to the required pagination instead of paginating at the last query.
         # SEE https://learnsql.com/blog/cte-with-examples/
         cte = (
             sa.select(services_meta_data.c.key)
@@ -304,7 +303,7 @@ class ServicesRepository(BaseRepository):
     async def list_services_with_history(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[ServiceHistoryItem]:
-        stmt = self._get_all_services_histories_query(limit, offset)
+        stmt = self._list_services_histories_stmt(limit, offset)
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt)
