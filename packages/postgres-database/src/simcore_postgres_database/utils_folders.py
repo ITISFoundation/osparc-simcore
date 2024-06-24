@@ -1,23 +1,19 @@
 import re
 import uuid
-from typing import Final, TypeAlias
+from typing import Any, Final, TypeAlias
 
-import psycopg2
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from psycopg2.errors import ForeignKeyViolation
 from pydantic import NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
 from simcore_postgres_database.models.folders import folders, folders_access_rights
+from sqlalchemy.dialects.postgresql import insert
 
 _ProjectID: TypeAlias = uuid.UUID
 _GroupID: TypeAlias = PositiveInt
 _FolderID: TypeAlias = PositiveInt
-
-
-_DEFAULT_ACCESS_READ: Final[bool] = True
-_DEFAULT_ACCESS_WRITE: Final[bool] = False
-_DEFAULT_ACCESS_DELETE: Final[bool] = False
 
 
 class FoldersError(PydanticErrorMixin, RuntimeError):
@@ -39,7 +35,11 @@ class FolderAlreadyExistsError(FoldersError):
 
 
 class ParentIsNotWritableError(FoldersError):
-    msg_template = "Cannot create any sub-folders inside folder_id={parent_folder_id} since it is not writable."
+    msg_template = "Cannot create any sub-folders inside folder_id={parent_folder_id} since it is not writable for gid={gid}."
+
+
+class SharingMissingPermissionsError(FoldersError):
+    msg_template = "Cannot share folder_id={folder_id} owned by gids={gids} because parent does not have the following permissions: {permissions}"
 
 
 class CouldNotFindFolderError(FoldersError):
@@ -95,9 +95,6 @@ async def folder_create(
     gid: _GroupID,
     *,
     parent: _FolderID | None = None,
-    read: bool = _DEFAULT_ACCESS_READ,
-    write: bool = _DEFAULT_ACCESS_WRITE,
-    delete: bool = _DEFAULT_ACCESS_DELETE,
 ) -> _FolderID:
     _validate_folder_name(name)
 
@@ -123,65 +120,115 @@ async def folder_create(
             has_write_access_in_parent: int | None = await connection.scalar(
                 sa.select([folders_access_rights.c.folder_id])
                 .where(folders_access_rights.c.folder_id == parent)
+                .where(folders_access_rights.c.gid == gid)
                 .where(folders_access_rights.c.write.is_(True))
             )
             if not has_write_access_in_parent:
-                raise ParentIsNotWritableError(parent_folder_id=parent)
+                raise ParentIsNotWritableError(parent_folder_id=parent, gid=gid)
 
         # folder entry can now be inserted
-        folder_id = await connection.scalar(
-            sa.insert(folders)
-            .values(name=name, parent_folder=parent)
-            .returning(folders.c.id)
-        )
-        if not folder_id:
-            raise CouldNotCreateFolderError(folder=name, parent=parent)
-
         try:
+            folder_id = await connection.scalar(
+                sa.insert(folders)
+                .values(name=name, parent_folder=parent, created_by=gid)
+                .returning(folders.c.id)
+            )
+
+            if not folder_id:
+                raise CouldNotCreateFolderError(folder=name, parent=parent)
+
             await connection.execute(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
                     gid=gid,
-                    read=read,
-                    write=write,
-                    delete=delete,
+                    # NOTE the gid that owns the folder always has full permissions
+                    read=True,
+                    write=True,
+                    delete=True,
                 )
             )
-        except psycopg2.errors.ForeignKeyViolation as e:
+        except ForeignKeyViolation as e:
             raise GroupIdDoesNotExistError(gid=gid) from e
 
         return _FolderID(folder_id)
 
 
-async def folder_update_access(
+async def folder_share(
     connection: SAConnection,
     folder_id: _FolderID,
-    gid: _GroupID,
+    shared_group_ids: set[_GroupID],
     *,
-    new_read: bool | None = None,
-    new_write: bool | None = None,
-    new_delete: bool | None = None,
+    recipient_group_id: _GroupID,
+    recipient_read: bool = False,
+    recipient_write: bool = False,
+    recipient_delete: bool = False,
 ) -> None:
-    values: dict[str, bool] = {}
+    """
+    if any of the gids own the directory, folder can be shared
+    # the permission must be given via the same permission level
 
-    if new_read is not None:
-        values["read"] = new_read
-    if new_write is not None:
-        values["write"] = new_write
-    if new_delete is not None:
-        values["delete"] = new_delete
+    Arguments:
+        connection -- _description_
+        folder_id -- _description_
+        shared_group_ids -- _description_
+        recipient_group_id -- _description_
 
-    if not values:
-        return
+    Keyword Arguments:
+        recipient_read -- _description_ (default: {_DEFAULT_ACCESS_READ})
+        recipient_write -- _description_ (default: {_DEFAULT_ACCESS_WRITE})
+        recipient_delete -- _description_ (default: {_DEFAULT_ACCESS_DELETE})
+    """
 
-    await connection.execute(
-        sa.update(folders_access_rights)
-        .where(
-            folders_access_rights.c.folder_id == folder_id,
-            folders_access_rights.c.gid == gid,
+    async with connection.begin():
+        requested_permissions: dict["str", bool] = {}
+
+        has_permissions_query = (
+            sa.select([folders_access_rights.c.folder_id])
+            .where(folders_access_rights.c.folder_id == folder_id)
+            .where(folders_access_rights.c.gid.in_(shared_group_ids))
         )
-        .values(**values)
-    )
+        if recipient_read:
+            has_permissions_query.where(
+                folders_access_rights.c.read.is_(recipient_read)
+            )
+            requested_permissions["read"] = True
+        if recipient_write:
+            has_permissions_query.where(
+                folders_access_rights.c.write.is_(recipient_write)
+            )
+            requested_permissions["write"] = True
+        if recipient_delete:
+            has_permissions_query.where(
+                folders_access_rights.c.delete.is_(recipient_delete)
+            )
+            requested_permissions["delete"] = True
+
+        has_permission: int | None = await connection.scalar(has_permissions_query)
+
+        if not has_permission:
+            raise SharingMissingPermissionsError(
+                folder_id=folder_id,
+                gids=shared_group_ids,
+                permissions=requested_permissions,
+            )
+
+        # update or create permissions
+        data: dict[str, Any] = {
+            "folder_id": folder_id,
+            "gid": recipient_group_id,
+            "read": recipient_read,
+            "write": recipient_write,
+            "delete": recipient_delete,
+        }
+        insert_stmt = insert(folders_access_rights).values(**data)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                folders_access_rights.c.folder_id,
+                folders_access_rights.c.gid,
+            ],
+            set_=data,
+        )
+        await connection.execute(upsert_stmt)
 
 
 async def folder_delete(
@@ -226,16 +273,6 @@ async def folder_move(
     new_parent_id: _FolderID,
 ) -> None:
     # TODO: make sure parent is not self
-    pass
-
-
-async def folder_share(
-    connection: SAConnection,
-    folder_id: _FolderID,
-    shared_group_ids: set[_GroupID],
-    *,
-    recipient_group_id: _GroupID,
-) -> None:
     pass
 
 
