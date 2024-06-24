@@ -1,5 +1,7 @@
 # pylint:disable=redefined-outer-name
 
+import itertools
+import secrets
 from collections.abc import Awaitable, Callable
 from unittest.mock import Mock
 
@@ -17,34 +19,51 @@ from simcore_postgres_database.utils_folders import (
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
     InvalidFolderNameError,
+    ParentIsNotWritableError,
+    _FolderID,
+    _GroupID,
     folder_create,
     folder_delete,
-    folder_update_access,
+    folder_share,
 )
 
 
-@pytest.fixture
-async def create_user(
-    connection: SAConnection,
-    create_fake_user: Callable[..., Awaitable[RowProxy]],
-) -> Callable[[], Awaitable[RowProxy]]:
-    async def _() -> RowProxy:
-        return await create_fake_user(connection)
-
-    return _
-
-
 async def _assert_folder_entires(
-    connection: SAConnection, *, count: NonNegativeInt
+    connection: SAConnection,
+    *,
+    folder_count: NonNegativeInt,
+    access_rights_count: NonNegativeInt | None = None,
 ) -> None:
-    async def _query_table(table_name: sa.Table) -> None:
+    async def _query_table(table_name: sa.Table, count: NonNegativeInt) -> None:
         async with connection.execute(table_name.select()) as result:
             rows = await result.fetchall()
             assert rows is not None
             assert len(rows) == count
 
-    await _query_table(folders)
-    await _query_table(folders_access_rights)
+    await _query_table(folders, folder_count)
+    await _query_table(folders_access_rights, access_rights_count or folder_count)
+
+
+async def _assert_access_rights(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    read: bool,
+    write: bool,
+    delete: bool,
+) -> None:
+    async with connection.execute(
+        folders_access_rights.select()
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == gid)
+        .where(folders_access_rights.c.read == read)
+        .where(folders_access_rights.c.write == write)
+        .where(folders_access_rights.c.delete == delete)
+    ) as result:
+        rows = await result.fetchall()
+        assert rows is not None
+        assert len(rows) == 1
 
 
 async def _create_folder_structure(
@@ -54,7 +73,7 @@ async def _create_folder_structure(
     tree_depth: NonNegativeInt,
     subfolder_count: NonNegativeInt,
 ) -> tuple[NonNegativeInt, NonNegativeInt]:
-    root_folder_id = await folder_create(connection, "root", gid, write=True)
+    root_folder_id = await folder_create(connection, "root", gid)
 
     async def _create_sub_folders(
         parent_folder_id: NonNegativeInt,
@@ -72,7 +91,6 @@ async def _create_folder_structure(
                 f"{current_level}_{i}",
                 gid,
                 parent=parent_folder_id,
-                write=True,
             )
             creation_count += 1
             creation_count += await _create_sub_folders(
@@ -87,10 +105,26 @@ async def _create_folder_structure(
     return root_folder_id, subfolder_count + 1
 
 
-# TODO: fixture that creates 10 users and each of them has
-# own_group and all other group to which they do not have access to initially
-# use all these to run tests against whatever endpoint we write
-# we can create a various mix of things
+@pytest.fixture
+async def setup_users_and_groups(
+    connection: SAConnection,
+    create_fake_user: Callable[..., Awaitable[RowProxy]],
+) -> set[NonNegativeInt]:
+    gids = set()
+    for _ in range(10):
+        user: RowProxy = await create_fake_user(connection)
+        user_gid = user.primary_gid
+        gids.add(user_gid)
+    return gids
+
+
+def get_random_gid(
+    all_gids: set[NonNegativeInt], already_picked: set[NonNegativeInt] | None = None
+) -> NonNegativeInt:
+    if already_picked is None:
+        already_picked = set()
+    to_random_pick = all_gids - already_picked
+    return secrets.choice(list(to_random_pick))
 
 
 @pytest.mark.parametrize(
@@ -121,52 +155,179 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
 
 
 async def test_folder_create_base_usage(
-    connection: SAConnection,
-    create_user: Callable[[], Awaitable[RowProxy]],
+    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-
-    user: RowProxy = await create_user()
-    user_gid = user.primary_gid
+    user_gid = get_random_gid(setup_users_and_groups)
 
     # when GID is missing no entries should be present
     missing_gid = 10202023302
-    await _assert_folder_entires(connection, count=0)
+    await _assert_folder_entires(connection, folder_count=0)
     with pytest.raises(GroupIdDoesNotExistError):
         await folder_create(connection, "f1", missing_gid)
-    await _assert_folder_entires(connection, count=0)
+    await _assert_folder_entires(connection, folder_count=0)
 
     # create a folder ana subfolder of the same name
-    f1_folder_id = await folder_create(connection, "f1", user_gid, write=True)
-    await _assert_folder_entires(connection, count=1)
+    f1_folder_id = await folder_create(connection, "f1", user_gid)
+    await _assert_folder_entires(connection, folder_count=1)
     await folder_create(connection, "f1", user_gid, parent=f1_folder_id)
-    await _assert_folder_entires(connection, count=2)
+    await _assert_folder_entires(connection, folder_count=2)
 
     # inserting already existing folder fails
     with pytest.raises(FolderAlreadyExistsError):
         await folder_create(connection, "f1", user_gid)
-    await _assert_folder_entires(connection, count=2)
+    await _assert_folder_entires(connection, folder_count=2)
+
+
+async def test_folder_share_basic(
+    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
+):
+    user_gid = get_random_gid(setup_users_and_groups)
+    another_user_gid = get_random_gid(setup_users_and_groups, {user_gid})
+
+    # create parent folder
+    await _assert_folder_entires(connection, folder_count=0)
+    folder_id = await folder_create(connection, "f1", user_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+
+    async def _assert_shared_permissions(
+        *, read: bool, write: bool, delete: bool
+    ) -> None:
+        await folder_share(
+            connection,
+            folder_id,
+            {user_gid},
+            recipient_group_id=another_user_gid,
+            recipient_read=read,
+            recipient_write=write,
+            recipient_delete=delete,
+        )
+        await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            another_user_gid,
+            read=read,
+            write=write,
+            delete=delete,
+        )
+
+    for read, write, delete in itertools.combinations_with_replacement(
+        (True, False), 3
+    ):
+        await _assert_shared_permissions(read=read, write=write, delete=delete)
+
+
+async def test_folder_share(
+    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
+):
+    user_gid = get_random_gid(setup_users_and_groups)
+    another_user_gid = get_random_gid(setup_users_and_groups, {user_gid})
+
+    # create parent folder
+    await _assert_folder_entires(connection, folder_count=0)
+    parent_folder_id = await folder_create(connection, "f1", user_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+
+    # cannot create subfolder in parent if user differs
+    with pytest.raises(ParentIsNotWritableError):
+        await folder_create(connection, "f1", another_user_gid, parent=parent_folder_id)
+    await _assert_folder_entires(connection, folder_count=1)
+
+    # give permissions to parent (write)
+    await folder_share(
+        connection,
+        parent_folder_id,
+        {user_gid},
+        recipient_group_id=another_user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=False,
+    )
+    await _assert_access_rights(
+        connection,
+        parent_folder_id,
+        another_user_gid,
+        read=True,
+        write=True,
+        delete=False,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+    # add subfolder
+    subfolder_id = await folder_create(
+        connection, "f1", user_gid, parent=parent_folder_id
+    )
+    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
+    # delete subfolder (fails)
+    with pytest.raises(CouldNotFindFolderError):
+        await folder_delete(connection, subfolder_id, {another_user_gid})
+    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
+
+    # give permissions to parent (delete)
+    await folder_share(
+        connection,
+        parent_folder_id,
+        {user_gid},
+        recipient_group_id=another_user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=True,
+    )
+    await _assert_access_rights(
+        connection,
+        parent_folder_id,
+        another_user_gid,
+        read=True,
+        write=True,
+        delete=True,
+    )
+    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
+    # delete subfolder
+    await folder_delete(connection, subfolder_id, {another_user_gid})
+    await _assert_folder_entires(connection, folder_count=1)
+
+    # add subfolder again
+    subfolder_id = await folder_create(
+        connection, "f1", another_user_gid, parent=parent_folder_id
+    )
+    await _assert_folder_entires(connection, folder_count=2)
+    # remove permissions
+    await folder_share(
+        connection,
+        subfolder_id,
+        {user_gid},
+        recipient_group_id=another_user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=False,
+    )
+    await _assert_folder_entires(connection, folder_count=2)
+    # delete subfolder (raises error)
+    await folder_delete(connection, subfolder_id, {user_gid})
+    await _assert_folder_entires(connection, folder_count=2)
+
+    # TODO: also add the listing of folder contents
+    # this also must withstand the same rules
 
 
 async def test_folder_delete_base_usage(
-    connection: SAConnection, create_user: Callable[[], Awaitable[RowProxy]]
+    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-    user: RowProxy = await create_user()
-    user_gid = user.primary_gid
+    user_gid = get_random_gid(setup_users_and_groups)
 
     missing_folder_id = 12313213
     with pytest.raises(CouldNotFindFolderError):
         await folder_delete(connection, missing_folder_id, {user_gid})
 
-    await _assert_folder_entires(connection, count=0)
+    await _assert_folder_entires(connection, folder_count=0)
     f1_folder_id = await folder_create(connection, "f1", user_gid)
-    await _assert_folder_entires(connection, count=1)
+    await _assert_folder_entires(connection, folder_count=1)
 
     with pytest.raises(CouldNotDeleteMissingAccessError):
         await folder_delete(connection, f1_folder_id, {user_gid})
 
     await folder_update_access(connection, f1_folder_id, user_gid, new_delete=True)
     await folder_delete(connection, f1_folder_id, {user_gid})
-    await _assert_folder_entires(connection, count=0)
+    await _assert_folder_entires(connection, folder_count=0)
 
     # delete root of a subfolder removes all elements inside
     root_folder_id, total_created_items = await _create_folder_structure(
@@ -174,6 +335,8 @@ async def test_folder_delete_base_usage(
     )
     # NOTE: only the root node is give delete access
     await folder_update_access(connection, root_folder_id, user_gid, new_delete=True)
-    await _assert_folder_entires(connection, count=total_created_items)
+    await _assert_folder_entires(connection, folder_count=total_created_items)
     await folder_delete(connection, root_folder_id, {user_gid})
-    await _assert_folder_entires(connection, count=0)
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # TODO: try removal with existing gid but no access
