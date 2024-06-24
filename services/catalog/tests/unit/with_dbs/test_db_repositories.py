@@ -9,6 +9,7 @@ import pytest
 from models_library.products import ProductName
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging import version
+from packaging.version import Version
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -272,3 +273,45 @@ async def test_list_all_services_and_history(
     assert all_services[0].key == "simcore/services/dynamic/jupyterlab"
     history = all_services[0].history
     assert len(history) == fake_catalog_with_jupyterlab.expected_services_count
+
+    # latest, ..., first version
+    assert history[0].version == fake_catalog_with_jupyterlab.expected_latest
+
+    # check sorted
+    got_versions = [Version(h.version) for h in history]
+    assert got_versions == sorted(got_versions, reverse=True)
+
+
+async def test_list_all_services_and_history_with_pagination(
+    target_product: ProductName,
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+):
+    num_services = 5
+    num_versions_per_service = 20
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                f"simcore/services/dynamic/some-service-{n}",
+                f"{v}.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for n in range(num_services)
+            for v in range(num_versions_per_service)
+        ]
+    )
+
+    all_services = await services_repo.list_services_with_history()
+    assert len(all_services) == num_services
+
+    for service in all_services:
+        assert len(service.history) == num_versions_per_service
+
+    all_services = await services_repo.list_services_with_history(limit=2)
+    assert len(all_services) == 2
+
+    for service in all_services:
+        assert len(service.history) == num_versions_per_service

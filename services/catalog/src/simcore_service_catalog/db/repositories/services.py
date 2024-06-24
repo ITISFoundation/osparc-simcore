@@ -256,6 +256,20 @@ class ServicesRepository(BaseRepository):
         return None  # mypy
 
     def _get_all_services_histories_query(self, limit: int | None, offset: int | None):
+
+        # Common Table Expression (CTE) to select distinct service names with pagination
+        # This allows limiting the subquery to the required pagination instead of paginating at the
+        # last query.
+        # SEE https://learnsql.com/blog/cte-with-examples/
+        cte = (
+            sa.select(services_meta_data.c.key)
+            .distinct()
+            .order_by(services_meta_data.c.key)  # NOTE: add here the order
+            .limit(limit)
+            .offset(offset)
+            .cte("paginated_services")
+        )
+
         subquery = (
             sa.select(
                 services_meta_data.c.key,
@@ -263,28 +277,29 @@ class ServicesRepository(BaseRepository):
                 services_meta_data.c.deprecated,
                 services_meta_data.c.created,
             )
-            .order_by(services_meta_data.c.key, _version(services_meta_data.c.version))
+            .select_from(
+                services_meta_data.join(cte, services_meta_data.c.key == cte.c.key)
+            )
+            .order_by(
+                services_meta_data.c.key,
+                sa.desc(_version(services_meta_data.c.version)),  # latest version first
+            )
             .subquery()
         )
 
-        stmt = sa.select(
-            services_meta_data.c.key,
+        return sa.select(
+            subquery.c.key,
             array_agg(
                 func.json_build_object(
                     "version",
-                    services_meta_data.c.version,
+                    subquery.c.version,
                     "deprecated",
-                    services_meta_data.c.deprecated,
+                    subquery.c.deprecated,
                     "created",
-                    services_meta_data.c.created,
+                    subquery.c.created,
                 )
             ).label("history"),
-        ).group_by(services_meta_data.c.key)
-        if limit is not None:
-            stmt = stmt.limit(limit)
-        if offset is not None:
-            stmt = stmt.offset(offset)
-        return stmt
+        ).group_by(subquery.c.key)
 
     async def list_services_with_history(
         self, limit: int | None = None, offset: int | None = None
