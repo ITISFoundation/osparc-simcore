@@ -703,7 +703,7 @@ async def test_create_multipart_presigned_upload_link(
 @pytest.mark.parametrize(
     "file_size",
     [
-        parametrized_file_size(f"{MULTIPART_UPLOADS_MIN_TOTAL_SIZE}"),
+        parametrized_file_size(MULTIPART_UPLOADS_MIN_TOTAL_SIZE.human_readable()),
     ],
     ids=byte_size_ids,
 )
@@ -1035,3 +1035,14 @@ async def test_delete_file_recursively(
     )
     assert len(files_exists) == 1
     assert next(iter(files_exists)) is False
+
+
+@pytest.mark.parametrize(
+    "file_size, expected_multipart",
+    [
+        (MULTIPART_UPLOADS_MIN_TOTAL_SIZE - 1, False),
+        (MULTIPART_UPLOADS_MIN_TOTAL_SIZE, True),
+    ],
+)
+def test_is_multipart(file_size: ByteSize, expected_multipart: bool):
+    assert SimcoreS3API.is_multipart(file_size) == expected_multipart
