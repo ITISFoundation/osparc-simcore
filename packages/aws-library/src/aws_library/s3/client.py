@@ -38,10 +38,8 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 
 
-# TODO: copy_folder method
-# Pedro's PR: https://github.com/ITISFoundation/osparc-simcore/pull/5301
 @dataclass(frozen=True)
-class SimcoreS3API:
+class SimcoreS3API:  # pylint: disable=too-many-public-methods
     _client: S3Client
     _session: aioboto3.Session
     _exit_stack: contextlib.AsyncExitStack = field(
