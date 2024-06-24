@@ -24,10 +24,9 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
     this._setLayout(new qx.ui.layout.Grow());
 
     this.set({
-      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-      maxWidth: this.self().WIDTH,
-      backgroundColor: "background-main-2",
-      padding: 10
+      appearance: "floating-menu",
+      padding: 8,
+      maxWidth: this.self().WIDTH
     });
     osparc.utils.Utils.setIdToWidget(this, "creditsNavBarContainer");
 
