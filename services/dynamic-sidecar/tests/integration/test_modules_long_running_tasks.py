@@ -27,7 +27,7 @@ from pydantic import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
+from pytest_simcore.helpers.postgres import PostgresTestConfig
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings

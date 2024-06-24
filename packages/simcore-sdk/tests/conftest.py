@@ -10,8 +10,8 @@ from typing import Any
 
 import pytest
 import simcore_sdk
+from pytest_simcore.helpers.postgres import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

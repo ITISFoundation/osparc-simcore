@@ -22,11 +22,11 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_postgres import (
+from pytest_simcore.helpers.postgres import (
     PostgresTestConfig,
     insert_and_get_row_lifespan,
 )
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_catalog.core.settings import ApplicationSettings

@@ -12,8 +12,8 @@ import pytest
 from fastapi import FastAPI
 from models_library.users import GroupID, UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_postgres import insert_and_get_row_lifespan
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users

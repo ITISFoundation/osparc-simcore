@@ -21,7 +21,7 @@ from models_library.projects_state import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
+from pytest_simcore.helpers.postgres_tags import create_tag, delete_tag
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
