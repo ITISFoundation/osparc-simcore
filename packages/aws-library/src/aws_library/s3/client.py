@@ -20,7 +20,13 @@ from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .errors import S3KeyNotFoundError, s3_exception_handler
-from .models import MultiPartUploadLinks, S3MetaData, S3ObjectKey, UploadID
+from .models import (
+    MultiPartUploadLinks,
+    S3DirectoryMetaData,
+    S3MetaData,
+    S3ObjectKey,
+    UploadID,
+)
 from .utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
@@ -118,6 +124,15 @@ class SimcoreS3API:
         )
         return S3MetaData.from_botocore_head_object(object_key, response)
 
+    @s3_exception_handler(_logger)
+    async def get_directory_metadata(
+        self, *, bucket: S3BucketName, prefix: str
+    ) -> S3DirectoryMetaData:
+        size = 0
+        async for s3_object in self._list_all_objects(bucket=bucket, prefix=prefix):
+            size += s3_object.size
+        return S3DirectoryMetaData(size=size)
+
     # @s3_exception_handler(_logger)
     async def list_files_paginated(
         self,
@@ -138,6 +153,13 @@ class SimcoreS3API:
                 S3MetaData.from_botocore_list_objects(obj)
                 for obj in page.get("Contents", [])
             ]
+
+    async def _list_all_objects(
+        self, *, bucket: S3BucketName, prefix: str
+    ) -> AsyncGenerator[S3MetaData, None]:
+        async for s3_objects in self.list_files_paginated(bucket=bucket, prefix=prefix):
+            for obj in s3_objects:
+                yield obj
 
     @s3_exception_handler(_logger)
     async def delete_file_recursively(
@@ -363,3 +385,7 @@ class SimcoreS3API:
         if bytes_transfered_cb:
             copy_options |= {"Callback": bytes_transfered_cb}
         await self.client.copy(**copy_options)
+
+    @staticmethod
+    def is_multipart(file_size: ByteSize) -> bool:
+        return file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE

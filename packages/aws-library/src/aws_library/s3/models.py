@@ -8,6 +8,7 @@ from pydantic import AnyUrl, BaseModel, ByteSize
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
 S3ObjectKey: TypeAlias = str
+UploadID: TypeAlias = str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -55,7 +56,9 @@ class S3MetaData:
         )
 
 
-UploadID: TypeAlias = str
+@dataclass(frozen=True)
+class S3DirectoryMetaData:
+    size: int
 
 
 class MultiPartUploadLinks(BaseModel):
