@@ -42,7 +42,8 @@ async def user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[User
         row = await result.fetchone()
     assert row
     assert isinstance(row.id, int)
-    yield row.id
+
+    yield UserID(row.id)
 
     async with aiopg_engine.acquire() as conn:
         await conn.execute(users.delete().where(users.c.id == row.id))
@@ -93,7 +94,7 @@ async def project_id(
 @pytest.fixture
 async def collaborator_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
     async with user_context(aiopg_engine, name="collaborator") as new_user_id:
-        yield new_user_id
+        yield UserID(new_user_id)
 
 
 @pytest.fixture
