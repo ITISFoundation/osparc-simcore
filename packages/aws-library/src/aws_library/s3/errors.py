@@ -51,6 +51,15 @@ def s3_exception_handler(
     """
 
     def decorator(func: Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]) -> Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]:  # type: ignore  # noqa: F821
+        """
+        Raises:
+            S3BucketInvalidError:
+            S3KeyNotFoundError:
+            S3BucketInvalidError:
+            S3UploadNotFoundError:
+            S3AccessError:
+        """
+
         @functools.wraps(func)
         async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore # noqa: F821
             try:
