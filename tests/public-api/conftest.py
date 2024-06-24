@@ -16,13 +16,13 @@ import httpx
 import osparc
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from pytest_simcore.helpers.public_api import (
+from pytest_simcore.helpers.typing_docker import UrlStr
+from pytest_simcore.helpers.typing_public_api import (
     RegisteredUserDict,
     ServiceInfoDict,
     ServiceNameStr,
     StacksDeployedDict,
 )
-from pytest_simcore.helpers.typing_docker import UrlStr
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
