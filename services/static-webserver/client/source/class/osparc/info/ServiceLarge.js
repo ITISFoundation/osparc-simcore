@@ -430,7 +430,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }
