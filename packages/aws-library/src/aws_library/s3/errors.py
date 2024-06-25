@@ -1,6 +1,7 @@
 import functools
+import inspect
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
@@ -67,16 +68,20 @@ def _map_botocore_client_exception(
             return S3AccessError()
 
 
+def _map_s3_exception() -> S3AccessError:
+    return S3AccessError()
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
+T = TypeVar("T")
+WrappedFunc = Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]  # type: ignore[name-defined]  # noqa: F821
+WrappedAsyncGenFunc = Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]  # type: ignore[name-defined]  # noqa: F821
 
 
 def s3_exception_handler(
     logger: logging.Logger,
-) -> Callable[  # type: ignore[name-defined]
-    [Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]],
-    Callable[Concatenate["SimcoreS3API", P], Awaitable[R]],
-]:
+) -> Callable[[WrappedFunc | WrappedAsyncGenFunc], WrappedFunc | WrappedAsyncGenFunc]:
     """
     Raises:
         S3BucketInvalidError:
@@ -86,12 +91,18 @@ def s3_exception_handler(
         S3AccessError:
     """
 
-    def decorator(func: Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]) -> Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]:  # type: ignore  # noqa: F821
+    def decorator(  # noqa: C901
+        func: WrappedFunc | WrappedAsyncGenFunc,
+    ) -> WrappedFunc | WrappedAsyncGenFunc:
         @functools.wraps(func)
-        async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore # noqa: F821
+        async def awaitable_wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore # noqa: F821
             try:
-                return await func(self, *args, **kwargs)
-            except self.client.exceptions.NoSuchBucket as exc:
+                result = func(self, *args, **kwargs)
+                assert inspect.isawaitable(result)  # nosec
+                return await result
+            except (
+                self._client.exceptions.NoSuchBucket  # pylint: disable=protected-access
+            ) as exc:
                 raise S3BucketInvalidError(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
@@ -99,12 +110,36 @@ def s3_exception_handler(
                 raise _map_botocore_client_exception(exc, **kwargs) from exc
             except botocore_exc.EndpointConnectionError as exc:
                 raise S3AccessError from exc
-
             except botocore_exc.BotoCoreError as exc:
                 logger.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
 
-        wrapper.__doc__ = f"{func.__doc__}\n\n{s3_exception_handler.__doc__}"
-        return wrapper
+        @functools.wraps(func)
+        async def async_generator_wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[T, None]:  # type: ignore # noqa: F821
+            try:
+                assert inspect.isasyncgenfunction(func)  # nosec
+                async for item in func(self, *args, **kwargs):
+                    yield item
+            except (
+                self._client.exceptions.NoSuchBucket  # pylint: disable=protected-access
+            ) as exc:
+                raise S3BucketInvalidError(
+                    bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
+                ) from exc
+            except botocore_exc.ClientError as exc:
+                raise _map_botocore_client_exception(exc, **kwargs) from exc
+            except botocore_exc.EndpointConnectionError as exc:
+                raise S3AccessError from exc
+            except botocore_exc.BotoCoreError as exc:
+                logger.exception("Unexpected error in s3 client: ")
+                raise S3AccessError from exc
+
+        wrapped_func = (
+            async_generator_wrapper
+            if inspect.isasyncgenfunction(func)
+            else awaitable_wrapper
+        )
+        wrapped_func.__doc__ = f"{func.__doc__}\n\n{s3_exception_handler.__doc__}"
+        return wrapped_func
 
     return decorator
