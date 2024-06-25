@@ -89,7 +89,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
             filter = "invert(55%) sepia(73%) saturate(6976%) hue-rotate(177deg) brightness(100%) contrast(102%)";
           } else if (qx.theme.manager.Meta.getInstance().getTheme().name.includes(".tis.")) {
             // "rgba(105, 105, 255, 1)"
-            filter = "invert(51%) sepia(98%) saturate(4017%) hue-rotate(223deg) brightness(99%) contrast(105%)";
+            filter = "invert(36%) sepia(74%) saturate(2007%) hue-rotate(225deg) brightness(102%) contrast(104%)";
           } else {
             // "rgba(131, 0, 191, 1)" osparc
             filter = "invert(13%) sepia(95%) saturate(6107%) hue-rotate(282deg) brightness(77%) contrast(115%)";
