@@ -20,7 +20,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.settings import AppSettings

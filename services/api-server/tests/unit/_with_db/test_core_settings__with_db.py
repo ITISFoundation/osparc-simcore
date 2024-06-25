@@ -5,7 +5,7 @@
 
 import logging
 
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
 from yarl import URL
 

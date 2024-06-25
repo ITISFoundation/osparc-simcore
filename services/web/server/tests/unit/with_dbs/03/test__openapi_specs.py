@@ -9,8 +9,8 @@ import pytest
 from aiohttp import web
 from faker import Faker
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
 

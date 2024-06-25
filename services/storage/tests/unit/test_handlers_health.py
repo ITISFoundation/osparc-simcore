@@ -8,7 +8,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_storage import S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_storage.handlers_health import HealthCheck
 from simcore_service_storage.s3_client import StorageS3Client

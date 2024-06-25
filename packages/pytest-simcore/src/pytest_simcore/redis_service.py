@@ -15,8 +15,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 

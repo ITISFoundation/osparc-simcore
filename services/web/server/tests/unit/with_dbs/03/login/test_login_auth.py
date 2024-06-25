@@ -10,8 +10,8 @@ import pytest
 from aiohttp.test_utils import TestClient
 from cryptography import fernet
 from faker import Faker
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver._constants import APP_SETTINGS_KEY

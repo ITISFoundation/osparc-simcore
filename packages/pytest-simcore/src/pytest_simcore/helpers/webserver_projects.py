@@ -20,7 +20,7 @@ from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAP
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import now_str
 
-from .utils_assert import assert_status
+from .assert_checks import assert_status
 
 
 def empty_project_data():

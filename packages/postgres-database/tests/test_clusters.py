@@ -8,7 +8,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.errors import ForeignKeyViolation, NotNullViolation
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters

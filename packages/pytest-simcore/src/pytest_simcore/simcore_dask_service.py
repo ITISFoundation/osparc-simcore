@@ -12,8 +12,8 @@ from distributed import Client
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
-from .helpers.utils_docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
 
 
 @pytest.fixture

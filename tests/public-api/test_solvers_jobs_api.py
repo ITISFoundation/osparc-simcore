@@ -19,7 +19,7 @@ from zipfile import ZipFile
 
 import osparc
 import pytest
-from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
+from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
 
 osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert osparc_VERSION >= (0, 4, 3)

@@ -17,14 +17,14 @@ class ComputationalServices(BaseCustomSettings):
 
     @validator("DEFAULT_MAX_NANO_CPUS", pre=True)
     @classmethod
-    def set_default_cpus_if_negative(cls, v):
+    def _set_default_cpus_if_negative(cls, v):
         if v is None or v == "" or int(v) <= 0:
             v = _DEFAULT_MAX_NANO_CPUS_VALUE
         return v
 
     @validator("DEFAULT_MAX_MEMORY", pre=True)
     @classmethod
-    def set_default_memory_if_negative(cls, v):
+    def _set_default_memory_if_negative(cls, v):
         if v is None or v == "" or int(v) <= 0:
             v = _DEFAULT_MAX_MEMORY_VALUE
         return v
