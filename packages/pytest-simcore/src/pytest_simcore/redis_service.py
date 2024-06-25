@@ -69,7 +69,7 @@ async def redis_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture()
@@ -86,7 +86,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @tenacity.retry(
@@ -103,4 +103,4 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
             msg = f"{redis_url=} not available"
             raise ConnectionError(msg)
     finally:
-        await client.close(close_connection_pool=True)
+        await client.aclose(close_connection_pool=True)
