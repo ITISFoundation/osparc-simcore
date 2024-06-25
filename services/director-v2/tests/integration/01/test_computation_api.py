@@ -835,7 +835,7 @@ async def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_403_FORBIDDEN}"):
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
         await create_pipeline(
             async_client,
             project=sleepers_project,
