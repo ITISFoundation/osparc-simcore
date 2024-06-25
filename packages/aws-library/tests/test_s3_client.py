@@ -35,11 +35,11 @@ from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,
 )
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_s3 import (
+from pytest_simcore.helpers.s3 import (
     delete_all_object_versions,
     upload_file_to_presigned_link,
 )
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
