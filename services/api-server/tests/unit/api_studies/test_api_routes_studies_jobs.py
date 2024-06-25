@@ -350,7 +350,7 @@ async def test_get_job_logs(
         respx_mocks=[
             mocked_directorv2_service_api_base,
         ],
-        capture_path=project_tests_dir / "mocks" / "get_study_job_jogs.json",
+        capture_path=project_tests_dir / "mocks" / "get_study_job_logs.json",
         side_effects_callbacks=[],
     )
 

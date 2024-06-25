@@ -24,7 +24,7 @@
   "response_body": [
    {
     "task_id": "2da40b78-d529-5657-95c5-ab663cbd890d",
-    "download_link": "http://172.17.0.1:9001/simcore/1a4145e2-2fca-11ef-a199-0242ac14002a/2da40b78-d529-5657-95c5-ab663cbd890d/logs.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=12345678/20240621/us-east-1/s3/aws4_request&X-Amz-Date=20240621T131211Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c8d80f980a7f4e06a5464b42b58d0ab6c9ab3fcb63354beee1a5db1954e0c314"
+    "download_link": "http://www.jensen-boyle.com/"
    }
   ]
  }
