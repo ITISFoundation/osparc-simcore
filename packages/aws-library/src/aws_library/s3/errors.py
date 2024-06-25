@@ -40,6 +40,33 @@ class S3DestinationNotEmptyError(S3AccessError):
     msg_template: str = "The destination {dst_prefix} is not empty"
 
 
+def _map_botocore_client_exception(
+    botocore_error: botocore_exc.ClientError, **kwargs
+) -> S3AccessError:
+    status_code = int(
+        botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        or botocore_error.response.get("Error", {}).get("Code", -1)
+    )
+    operation_name = botocore_error.operation_name
+    match status_code, operation_name:
+        case 404, "HeadObject":
+            return S3KeyNotFoundError(
+                bucket=kwargs["bucket"],
+                key=kwargs.get("object_key") or kwargs.get("src_object_key"),
+            )
+        case (404, "HeadBucket") | (403, "HeadBucket"):
+            return S3BucketInvalidError(bucket=kwargs["bucket"])
+        case (404, "AbortMultipartUpload") | (
+            500,
+            "CompleteMultipartUpload",
+        ):
+            return S3UploadNotFoundError(
+                bucket=kwargs["bucket"], key=kwargs["object_key"]
+            )
+        case _:
+            return S3AccessError()
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -69,30 +96,7 @@ def s3_exception_handler(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
             except botocore_exc.ClientError as exc:
-
-                status_code = int(
-                    exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-                    or exc.response.get("Error", {}).get("Code", -1)
-                )
-                operation_name = exc.operation_name
-                match status_code, operation_name:
-                    case 404, "HeadObject":
-                        raise S3KeyNotFoundError(
-                            bucket=kwargs["bucket"],
-                            key=kwargs.get("object_key")
-                            or kwargs.get("src_object_key"),
-                        ) from exc
-                    case (404, "HeadBucket") | (403, "HeadBucket"):
-                        raise S3BucketInvalidError(bucket=kwargs["bucket"]) from exc
-                    case (404, "AbortMultipartUpload") | (
-                        500,
-                        "CompleteMultipartUpload",
-                    ):
-                        raise S3UploadNotFoundError(
-                            bucket=kwargs["bucket"], key=kwargs["object_key"]
-                        ) from exc
-                    case _:
-                        raise S3AccessError from exc
+                raise _map_botocore_client_exception(exc, **kwargs) from exc
             except botocore_exc.EndpointConnectionError as exc:
                 raise S3AccessError from exc
 
