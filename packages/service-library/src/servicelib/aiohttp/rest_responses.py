@@ -106,9 +106,9 @@ def create_error_response(
         )
 
     assert not http_error_cls.empty_body  # nosec
-
     payload = wrap_as_envelope(error=asdict(error))
-    # Returning web.HTTPException is deprecated
+
+    # Returning web.HTTPException is deprecated, returning instead a response object
     # SEE https://github.com/aio-libs/aiohttp/issues/2415
     return web.json_response(
         payload,
