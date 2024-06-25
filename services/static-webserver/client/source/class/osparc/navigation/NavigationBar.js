@@ -139,6 +139,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("help");
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         this.getChildControl("credits-menu-button");
+        this.getChildControl("credits-image-button");
       }
       this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
@@ -236,6 +237,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             maxHeight: this.self().HEIGHT
           });
           osparc.utils.Utils.setIdToWidget(control, "creditsNavigationBtn");
+          this.getChildControl("right-items").add(control);
+          break;
+        }
+        case "credits-image-button": {
+          control = new osparc.ui.basic.SVGImage("osparc/coins-solid.svg").set({
+            maxHeight: 24
+          })
+          control.setSize({
+            height: 24,
+            width: 32
+          });
+          control.setTextColor();
           this.getChildControl("right-items").add(control);
           break;
         }
