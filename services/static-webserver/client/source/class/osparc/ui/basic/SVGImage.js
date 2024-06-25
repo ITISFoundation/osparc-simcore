@@ -83,6 +83,17 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
             filter = "invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%)";
           }
           break;
+        case "strong-main": // it depends on the product
+          if (qx.theme.manager.Meta.getInstance().getTheme().name.includes(".s4l.")) {
+            // "rgba(0, 144, 208, 1)"
+            filter = "invert(55%) sepia(73%) saturate(6976%) hue-rotate(177deg) brightness(100%) contrast(102%)";
+          } else if (qx.theme.manager.Meta.getInstance().getTheme().name.includes(".tis.")) {
+            // "rgba(105, 105, 255, 1)"
+            filter = "invert(51%) sepia(98%) saturate(4017%) hue-rotate(223deg) brightness(99%) contrast(105%)";
+          } else {
+            // "rgba(131, 0, 191, 1)" osparc
+            filter = "invert(13%) sepia(95%) saturate(6107%) hue-rotate(282deg) brightness(77%) contrast(115%)";
+          }
       }
       return filter;
     },
@@ -154,13 +165,11 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param keywordOrRgb predefined keywords string ["danger-red", "danger-red", "ready-green", "text"]
+      * @param keywordOrRgb predefined keyword or rgb "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
-      let filterValue = "";
-      if (["danger-red", "warning-yellow", "ready-green", "text"].includes(keywordOrRgb)) {
-        filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
-      } else {
+      let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
+      if (filterValue === null) {
         const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
         const rgbColor = qx.util.ColorUtil.hexStringToRgb(hexColor);
         filterValue = this.self().rgbToCSSFilter(rgbColor);
