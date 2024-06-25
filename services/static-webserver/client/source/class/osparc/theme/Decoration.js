@@ -236,6 +236,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "border-simple": {
+      include: "border",
+      style: {
+        radius: 4
+      }
+    },
+
     "no-border": {
       style: {
         radius: 4,
