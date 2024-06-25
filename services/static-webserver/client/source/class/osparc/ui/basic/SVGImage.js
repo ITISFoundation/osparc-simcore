@@ -66,16 +66,22 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       let filter = null;
       switch (keyword) {
         case "danger-red": // "#FF2D2D"
-          filter = "filter: invert(13%) sepia(89%) saturate(5752%) hue-rotate(346deg) brightness(85%) contrast(109%);";
+          filter = "invert(13%) sepia(89%) saturate(5752%) hue-rotate(346deg) brightness(85%) contrast(109%)";
           break;
         case "warning-yellow": // #F8DB1F
-          filter = "filter: invert(90%) sepia(99%) saturate(7500%) hue-rotate(331deg) brightness(95%) contrast(108%);";
+          filter = "invert(90%) sepia(99%) saturate(7500%) hue-rotate(331deg) brightness(95%) contrast(108%)";
           break;
         case "ready-green": // #58A6FF
-          filter = "filter: invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%);";
+          filter = "invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%)";
           break;
-        case "text": // #58A6FF
-          filter = "filter: invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%);";
+        case "text": // light or dark
+          if (qx.theme.manager.Meta.getInstance().getTheme().basename === "ThemeLight") {
+            // ThemeLight #282828
+            filter = "invert(10%) sepia(4%) saturate(19%) hue-rotate(354deg) brightness(102%) contrast(86%)";
+          } else {
+            // ThemeDark #D8D8D8
+            filter = "invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%)";
+          }
           break;
       }
       return filter;
@@ -151,19 +157,18 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       * @param keywordOrRgb predefined keywords string ["danger-red", "danger-red", "ready-green", "text"]
       */
     __applyImageColor: function(keywordOrRgb) {
+      let filterValue = "";
       if (["danger-red", "warning-yellow", "ready-green", "text"].includes(keywordOrRgb)) {
-        const filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
-        const myStyle = {
-          "filter": filterValue
-        };
-        this.getChildControl("image").getContentElement().setStyles(myStyle);
+        filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
       } else {
-        const filterValue = this.self().rgbToCSSFilter(keywordOrRgb);
-        const myStyle = {
-          "filter": filterValue
-        };
-        this.getChildControl("image").getContentElement().setStyles(myStyle);
+        const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
+        const rgbColor = qx.util.ColorUtil.hexStringToRgb(hexColor);
+        filterValue = this.self().rgbToCSSFilter(rgbColor);
       }
+      const myStyle = {
+        "filter": filterValue
+      };
+      this.getChildControl("image").getContentElement().setStyles(myStyle);
     },
 
     setSize: function(size) {

@@ -41,10 +41,8 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
         const credits = contextWallet.getCreditsAvailable();
-        const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-        const hexColor = qx.theme.manager.Color.getInstance().resolve(creditsColor);
-        const rgbColor = qx.util.ColorUtil.hexStringToRgb(hexColor);
-        this.setImageColor(`${rgbColor[0]},${rgbColor[1]},${rgbColor[2]}`);
+        const creditsColorKeyword = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+        this.setImageColor(creditsColorKeyword);
       }
     }
   }
