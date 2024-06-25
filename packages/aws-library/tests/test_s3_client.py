@@ -13,6 +13,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable
 
 import botocore.exceptions
 import pytest
@@ -284,7 +285,7 @@ async def upload_file(
             bucket=with_s3_bucket,
             file=file,
             object_key=object_key,
-            bytes_transfered_cb=progress_cb,
+            bytes_transfered_cb=None,
         )
         # there is no response from aioboto3...
         assert not response
@@ -324,14 +325,43 @@ async def with_uploaded_folder_on_s3(
     folder = create_folder_of_size_with_multiple_files(
         ByteSize(directory_size), ByteSize(max_file_size)
     )
+    list_uploaded_files = []
+
+    async def limit_concurrency(aws: Iterable[Awaitable], *, limit):
+        aws = iter(aws)
+        aws_ended = False
+        pending = set()
+
+        while pending or not aws_ended:
+            while len(pending) < limit and not aws_ended:
+                try:
+                    aw = next(aws)
+                except StopIteration:
+                    aws_ended = True
+                else:
+                    pending.add(aw)
+
+            if not pending:
+                return
+
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
+            )
+            while done:
+                yield done.pop()
+
     with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
-        list_uploaded_files = await asyncio.gather(
-            *[
-                upload_file(file, folder.parent)
-                for file in folder.rglob("*")
-                if file.is_file()
-            ]
-        )
+        list_uploaded_files = [
+            await uploaded_file
+            async for uploaded_file in limit_concurrency(
+                (
+                    upload_file(file, folder.parent)
+                    for file in folder.rglob("*")
+                    if file.is_file()
+                ),
+                limit=20,
+            )
+        ]
         ctx.logger.info("uploaded %s files", len(list_uploaded_files))
     return list_uploaded_files
 
@@ -990,7 +1020,7 @@ async def test_copy_file_invalid_raises(
 
 @pytest.mark.parametrize(
     "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    [(parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "10Kib"))],
     ids=byte_size_ids,
 )
 async def test_get_directory_metadata(
