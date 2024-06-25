@@ -1,11 +1,14 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import logging
 from pathlib import Path
 
 import pytest
 from faker import Faker
-from servicelib.file_utils import remove_directory
+from servicelib.file_utils import log_directory_changes, remove_directory
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -80,3 +83,35 @@ async def test_remove_not_existing_directory_rasing_error(
         await remove_directory(
             path=missing_path, only_children=only_children, ignore_errors=False
         )
+
+
+async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir: Path):
+    # files were added
+    caplog.clear()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        (some_dir / "hoho").mkdir(parents=True, exist_ok=True)
+    assert "Files changes in path" in caplog.text
+    assert "Files added:" in caplog.text
+
+    # files were removed
+    caplog.clear()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        await remove_directory(path=some_dir)
+    assert "Files changes in path" in caplog.text
+    assert "Files removed:" in caplog.text
+
+    # nothing changed
+    caplog.clear()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        pass
+    assert caplog.text == ""
+
+    # files added and removed
+    some_dir.mkdir(parents=True, exist_ok=True)
+    (some_dir / "som_other_file").touch()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        (some_dir / "som_other_file").unlink()
+        (some_dir / "som_other_file_2").touch()
+    assert "Files changes in path" in caplog.text
+    assert "Files added:" in caplog.text
+    assert "Files removed:" in caplog.text

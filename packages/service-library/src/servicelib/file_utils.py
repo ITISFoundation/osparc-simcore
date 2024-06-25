@@ -1,8 +1,10 @@
 import asyncio
 import hashlib
 import shutil
+from contextlib import contextmanager
+from logging import Logger
 from pathlib import Path
-from typing import Final, Protocol
+from typing import Final, Iterator, Protocol
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
@@ -67,3 +69,28 @@ async def _eval_hash_async(
         hasher.update(chunk)
     digest = hasher.hexdigest()
     return f"{digest}"
+
+
+@contextmanager
+def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterator[None]:
+    before: set[str] = {f"{x.relative_to(path)}" for x in path.rglob("*")}
+    yield
+    after: set[str] = {f"{x.relative_to(path)}" for x in path.rglob("*")}
+
+    added_elements = after - before
+    removed_elements = before - after
+
+    if added_elements or removed_elements:
+        logger.log(log_level, "Files changes in path: '%s'", f"{path}")
+    if added_elements:
+        logger.log(
+            log_level,
+            "Files added:\n%s",
+            "\n".join([f"+ {x}" for x in sorted(added_elements)]),
+        )
+    if removed_elements:
+        logger.log(
+            log_level,
+            "Files removed:\n%s",
+            "\n".join([f"- {x}" for x in sorted(removed_elements)]),
+        )
