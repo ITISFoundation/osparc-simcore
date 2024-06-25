@@ -20,12 +20,12 @@
    "type": "computational",
    "authors": [
     {
-     "name": "William Long",
-     "email": "brownkaren@example.net",
-     "affiliation": "Harris-Wright"
+     "name": "Julia Lewis",
+     "email": "ecantrell@example.org",
+     "affiliation": "Eaton LLC"
     }
    ],
-   "contact": "grayrachel@example.com",
+   "contact": "moorezachary@example.com",
    "inputs": {
     "input_1": {
      "displayOrder": 1.0,
@@ -129,7 +129,7 @@
        }
       }
      },
-     "prjOwner": "mark71@example.org",
+     "prjOwner": "madison17@example.org",
      "accessRights": {
       "3": {
        "read": true,
@@ -199,7 +199,7 @@
        }
       }
      },
-     "prjOwner": "heather83@example.org",
+     "prjOwner": "jacksonnicole@example.net",
      "accessRights": {
       "3": {
        "read": true,

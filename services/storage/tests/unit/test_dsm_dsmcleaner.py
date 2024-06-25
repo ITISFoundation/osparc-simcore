@@ -22,7 +22,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.exceptions import (

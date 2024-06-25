@@ -19,8 +19,8 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (

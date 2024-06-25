@@ -17,8 +17,8 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData

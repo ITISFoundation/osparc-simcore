@@ -10,8 +10,8 @@ from datetime import timedelta
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import ValidationError
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.studies_dispatcher.settings import (
     StudiesDispatcherSettings,
 )

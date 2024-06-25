@@ -25,7 +25,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
+from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient

@@ -10,9 +10,9 @@ from pathlib import Path
 import pytest
 import sqlalchemy as sa
 from aioresponses import aioresponses
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.application_settings import ApplicationSettings
 
