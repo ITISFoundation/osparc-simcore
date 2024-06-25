@@ -11,7 +11,7 @@ from aws_library.s3.utils import (
     compute_num_file_chunks,
 )
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 
 
 @pytest.mark.parametrize(
