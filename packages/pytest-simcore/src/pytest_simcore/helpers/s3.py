@@ -14,10 +14,11 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
 from servicelib.utils import logged_gather
 from types_aiobotocore_s3 import S3Client
+
+from .logging import log_context
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 
