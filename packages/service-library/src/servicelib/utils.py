@@ -4,13 +4,14 @@ IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
    DO NOT IMPORT ANYTHING from .
 """
+
 import asyncio
 import logging
 import os
 import socket
 from collections.abc import Awaitable, Coroutine, Generator, Iterable
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, AsyncGenerator, AsyncIterable, Final, TypeVar, cast
 
 import toolz
 from pydantic import NonNegativeInt
@@ -175,3 +176,115 @@ def unused_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return cast(int, s.getsockname()[1])
+
+
+T = TypeVar("T")
+
+
+async def limited_as_completed(
+    awaitables: Iterable[Awaitable[T]] | AsyncIterable[Awaitable[T]], *, limit: int = 1
+) -> AsyncGenerator[asyncio.Future[T], None]:
+    """Runs awaitables using limited concurrent tasks and returns
+    result futures unordered.
+
+    Arguments:
+        awaitables -- The awaitables to limit the concurrency of.
+
+    Keyword Arguments:
+        limit -- The maximum number of awaitables to run concurrently.
+                0 or negative values disables the limit. (default: {1})
+
+    Returns:
+        nothing
+
+    Yields:
+        Future[T]: the future of the awaitables as they appear.
+
+
+    """
+    if isinstance(awaitables, AsyncIterable):
+        awaitable_iterator = aiter(awaitables)
+        is_async = True
+    else:
+        awaitable_iterator = iter(awaitables)
+        is_async = False
+
+    completed_all_awaitables = False
+    pending_futures: set[asyncio.Future] = set()
+
+    while pending_futures or not completed_all_awaitables:
+        while (
+            limit < 1 or len(pending_futures) < limit
+        ) and not completed_all_awaitables:
+            try:
+                aw = (
+                    await anext(awaitable_iterator)
+                    if is_async
+                    else next(awaitable_iterator)
+                )
+                pending_futures.add(asyncio.ensure_future(aw))
+            except (StopIteration, StopAsyncIteration):  # noqa: PERF203
+                completed_all_awaitables = True
+        if not pending_futures:
+            return
+        done, pending_futures = await asyncio.wait(
+            pending_futures, return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for future in done:
+            yield future
+
+
+async def _wrapped(
+    awaitable: Awaitable[T], *, index: int, reraise: bool, logger: logging.Logger
+) -> tuple[int, T | BaseException]:
+    try:
+        return index, await awaitable
+    except BaseException as exc:  # pylint: disable=broad-exception-caught
+        logger.warning(
+            "Error in %i-th concurrent task %s: %s",
+            index + 1,
+            f"{awaitable=}",
+            f"{exc=}",
+        )
+        if reraise:
+            raise
+        return index, exc
+
+
+async def limited_gather(
+    *awaitables: Awaitable[T],
+    reraise: bool = True,
+    log: logging.Logger = _logger,
+    limit: int = 1,
+) -> list[T | BaseException]:
+    """runs all the awaitables using the limited concurrency and returns them in the same order
+
+    Arguments:
+        awaitables -- The awaitables to limit the concurrency of.
+
+    Keyword Arguments:
+        limit -- The maximum number of awaitables to run concurrently.
+                setting 0 or negative values disable (default: {1})
+        reraise -- if True will raise at the first exception
+                The remaining tasks will continue as in standard asyncio gather.
+                If False, then the exceptions will be returned (default: {True})
+
+    Returns:
+       the results of the awaitables keeping the order
+
+       special thanks to: https://death.andgravity.com/limit-concurrency
+    """
+
+    indexed_awaitables = [
+        _wrapped(awaitable, reraise=reraise, index=index, logger=log)
+        for index, awaitable in enumerate(awaitables)
+    ]
+
+    results: list[T | BaseException | None] = [None] * len(indexed_awaitables)
+    async for future in limited_as_completed(indexed_awaitables, limit=limit):
+        index, result = await future
+        results[index] = result
+    assert all(_ is not None for _ in results)  # nosec
+
+    return results

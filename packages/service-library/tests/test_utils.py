@@ -3,29 +3,38 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from collections.abc import Awaitable, Coroutine
-from copy import copy
+from collections.abc import AsyncIterator, Awaitable, Coroutine, Iterator
+from copy import copy, deepcopy
 from pathlib import Path
 from random import randint
+from typing import NoReturn
+from unittest import mock
 
 import pytest
 from faker import Faker
-from servicelib.utils import ensure_ends_with, fire_and_forget_task, logged_gather
+from pytest_mock import MockerFixture
+from servicelib.utils import (
+    ensure_ends_with,
+    fire_and_forget_task,
+    limited_as_completed,
+    limited_gather,
+    logged_gather,
+)
 
 
-async def _value_error(uid, *, delay=1):
-    await _succeed(delay)
+async def _value_error(uid: int, *, delay: int = 1) -> NoReturn:
+    await _succeed(uid, delay=delay)
     msg = f"task#{uid}"
     raise ValueError(msg)
 
 
-async def _runtime_error(uid, *, delay=1):
-    await _succeed(delay)
+async def _runtime_error(uid: int, *, delay: int = 1) -> NoReturn:
+    await _succeed(uid, delay=delay)
     msg = f"task#{uid}"
     raise RuntimeError(msg)
 
 
-async def _succeed(uid, *, delay=1):
+async def _succeed(uid: int, *, delay: int = 1) -> int:
     print(f"task#{uid} begin")
     await asyncio.sleep(delay)
     print(f"task#{uid} end")
@@ -33,19 +42,19 @@ async def _succeed(uid, *, delay=1):
 
 
 @pytest.fixture
-def coros():
+def coros() -> list[Coroutine]:
     return [
         _succeed(0),
-        _value_error(1, delay=2),
+        _value_error(1, delay=4),
         _succeed(2),
-        _runtime_error(3),
-        _value_error(4, delay=0),
+        _runtime_error(3, delay=0),
+        _value_error(4, delay=2),
         _succeed(5),
     ]
 
 
 @pytest.fixture
-def mock_logger(mocker):
+def mock_logger(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mock_logger = mocker.Mock()
 
     yield mock_logger
@@ -175,3 +184,95 @@ def test_ensure_ends_with(original: str, termination: str, expected: str):
     assert original_copy == original
     assert terminated_string.endswith(termination)
     assert terminated_string == expected
+
+
+@pytest.fixture
+def uids(faker: Faker) -> list[int]:
+    return [faker.pyint() for _ in range(10)]
+
+
+@pytest.fixture
+def successful_coros_list(uids: list[int]) -> list[Coroutine]:
+    return [_succeed(uid) for uid in uids]
+
+
+@pytest.fixture
+async def successful_coros_gen(uids: list[int]) -> AsyncIterator[Coroutine]:
+    async def as_async_iter(it):
+        for x in it:
+            yield x
+
+    return as_async_iter(_succeed(uid) for uid in uids)
+
+
+@pytest.fixture(params=["list", "generator"])
+async def successful_coros(
+    successful_coros_list: list[Coroutine],
+    successful_coros_gen: AsyncIterator[Coroutine],
+    request: pytest.FixtureRequest,
+) -> list[Coroutine] | AsyncIterator[Coroutine]:
+    return successful_coros_list if request.param == "list" else successful_coros_gen
+
+
+@pytest.mark.parametrize("limit", [0, 2, 5, 10])
+async def test_limited_as_completed(
+    uids: list[int],
+    successful_coros: list[Coroutine] | AsyncIterator[Coroutine],
+    limit: int,
+):
+    expected_uids = deepcopy(uids)
+    async for future in limited_as_completed(successful_coros, limit=limit):
+        result = await future
+        assert result is not None
+        assert result in expected_uids
+        expected_uids.remove(result)
+    assert len(expected_uids) == 0
+
+
+async def test_limited_as_completed_empty_coros():
+    results = [await result async for result in limited_as_completed([])]
+    assert results == []
+
+
+@pytest.mark.parametrize("limit", [0, 2, 5, 10])
+async def test_limited_gather_limits(
+    uids: list[int],
+    successful_coros_list: list[Coroutine],
+    limit: int,
+):
+    results = await limited_gather(*successful_coros_list, limit=limit)
+    assert results == uids
+
+
+async def test_limited_gather(
+    event_loop: asyncio.AbstractEventLoop, coros, mock_logger
+):
+    with pytest.raises(RuntimeError) as excinfo:
+        await limited_gather(*coros, reraise=True, log=mock_logger, limit=0)
+
+    # NOTE: #3 fails first
+    assert "task#3" in str(excinfo.value)
+
+    # NOTE: only first error in the list is raised, since it is not RuntimeError, that task
+    assert isinstance(excinfo.value, RuntimeError)
+
+    unfinished_tasks = [
+        task
+        for task in asyncio.all_tasks(event_loop)
+        if task is not asyncio.current_task()
+    ]
+    final_results = await asyncio.gather(*unfinished_tasks, return_exceptions=True)
+    for result in final_results:
+        if isinstance(result, Exception):
+            assert isinstance(result, ValueError | RuntimeError)
+
+
+async def test_limited_gather_wo_raising(coros, mock_logger):
+    results = await limited_gather(*coros, reraise=False, log=mock_logger, limit=0)
+
+    assert results[0] == 0
+    assert isinstance(results[1], ValueError)
+    assert results[2] == 2
+    assert isinstance(results[3], RuntimeError)
+    assert isinstance(results[4], ValueError)
+    assert results[5] == 5
