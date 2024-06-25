@@ -47,7 +47,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     )
     transfer_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
 
-    @s3_exception_handler(_logger)
     @classmethod
     async def create(
         cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
@@ -138,7 +137,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             size += s3_object.size
         return S3DirectoryMetaData(size=size)
 
-    # @s3_exception_handler(_logger)
+    @s3_exception_handler(_logger)
     async def list_files_paginated(
         self,
         bucket: S3BucketName,
