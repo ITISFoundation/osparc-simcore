@@ -248,7 +248,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             height: 24,
             width: 32
           });
-          control.setTextColor();
+          control.setImageColor("blue");
           this.getChildControl("right-items").add(control);
           break;
         }

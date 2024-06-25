@@ -50,12 +50,12 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       apply: "__applySource"
     },
 
-    textColor: {
+    imageColor: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeTextColor",
-      apply: "__applyTextColor"
+      event: "changeImageColor",
+      apply: "__applyImageColor"
     },
   },
 
@@ -63,7 +63,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon":
+        case "image":
           control = new qx.ui.basic.Image().set({
             scale: true,
             alignX: "center",
@@ -86,7 +86,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       }
     },
 
-    __applyTextColor: function() {
+    __applyImageColor: function() {
       const myStyle = {
         "filter": "invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)"
       };
