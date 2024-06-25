@@ -1,8 +1,8 @@
-"""added folders tables
+"""added folder models
 
-Revision ID: efbf0676d4a5
+Revision ID: 560b8f8eca12
 Revises: 481d5b472721
-Create Date: 2024-06-24 12:09:49.569184+00:00
+Create Date: 2024-06-25 09:09:09.185231+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "efbf0676d4a5"
+revision = "560b8f8eca12"
 down_revision = "481d5b472721"
 branch_labels = None
 depends_on = None
@@ -23,7 +23,7 @@ def upgrade():
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("parent_folder", sa.BigInteger(), nullable=True),
-        sa.Column("created_by", sa.BigInteger(), nullable=True),
+        sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
@@ -34,10 +34,11 @@ def upgrade():
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["created_by"],
+            ["owner"],
             ["groups.gid"],
             name="fk_folders_to_groups_gid",
-            ondelete="SET NULL",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["parent_folder"],
@@ -55,6 +56,7 @@ def upgrade():
         sa.Column("read", sa.Boolean(), nullable=False),
         sa.Column("write", sa.Boolean(), nullable=False),
         sa.Column("delete", sa.Boolean(), nullable=False),
+        sa.Column("admin", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(
             ["folder_id"],
             ["folders.id"],
@@ -75,6 +77,22 @@ def upgrade():
         "folders_to_projects",
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.Column("project_id", sa.BigInteger(), nullable=False),
+        sa.Column("created_by", sa.BigInteger(), nullable=True),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "last_modified",
+            sa.DateTime(),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["created_by"],
+            ["groups.gid"],
+            name="fk_folders_to_groups_gid",
+            ondelete="SET NULL",
+        ),
         sa.ForeignKeyConstraint(
             ["folder_id"],
             ["folders.id"],
