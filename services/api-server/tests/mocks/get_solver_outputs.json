@@ -72,7 +72,7 @@
       }
      }
     },
-    "prjOwner": "ypatton@example.com",
+    "prjOwner": "greenrichard@example.org",
     "accessRights": {
      "3": {
       "read": true,
@@ -162,7 +162,7 @@
   "response_body": {
    "data": {
     "walletId": 1,
-    "name": "Hannah Johnson",
+    "name": "Derek Nguyen",
     "description": "Credits purchased by Bisgaard end up in here",
     "owner": 3,
     "thumbnail": null,
@@ -205,7 +205,7 @@
   "response_body": {
    "data": {
     "walletId": 1,
-    "name": "Kimberly Hoffman",
+    "name": "Eric Hunter",
     "description": "Credits purchased by Bisgaard end up in here",
     "owner": 3,
     "thumbnail": null,
