@@ -209,17 +209,15 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 # that means there is no such file_id
                 raise S3KeyNotFoundError(key=object_key, bucket=bucket)
 
-            if "DeleteMarkers" in response:
-                latest_version = response["DeleteMarkers"][0]
-                assert "IsLatest" in latest_version  # nosec
-                assert "VersionId" in latest_version  # nosec
-                if latest_version["IsLatest"]:
-                    await self._client.delete_object(
-                        Bucket=bucket,
-                        Key=object_key,
-                        VersionId=latest_version["VersionId"],
-                    )
-                    _logger.debug("restored %s", f"{bucket}/{object_key}")
+            latest_version = response["DeleteMarkers"][0]
+            assert "IsLatest" in latest_version  # nosec
+            assert "VersionId" in latest_version  # nosec
+            await self._client.delete_object(
+                Bucket=bucket,
+                Key=object_key,
+                VersionId=latest_version["VersionId"],
+            )
+            _logger.debug("restored %s", f"{bucket}/{object_key}")
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
