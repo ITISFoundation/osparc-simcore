@@ -9,6 +9,7 @@
 import asyncio
 import filecmp
 import json
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,6 +39,7 @@ from pytest_simcore.helpers.utils_s3 import (
     delete_all_object_versions,
     upload_file_to_presigned_link,
 )
+from pytest_simcore.logging_utils import log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -298,12 +300,17 @@ async def upload_file(
 
     yield _uploader
 
-    await asyncio.gather(
-        *[
-            delete_all_object_versions(s3_client, with_s3_bucket, object_key)
-            for object_key in uploaded_object_keys
-        ]
-    )
+    with log_context(logging.INFO, msg=f"delete {len(uploaded_object_keys)}"):
+        await s3_client.delete_objects(
+            Bucket=with_s3_bucket,
+            Delete={"Objects": [{"Key": k} for k in uploaded_object_keys]},
+        )
+
+
+@pytest.fixture(autouse=True)
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
 @pytest.fixture
@@ -317,15 +324,15 @@ async def with_uploaded_folder_on_s3(
     folder = create_folder_of_size_with_multiple_files(
         ByteSize(directory_size), ByteSize(max_file_size)
     )
-    print(f"uploading {folder}...")
-    list_uploaded_files = await asyncio.gather(
-        *[
-            upload_file(file, folder.parent)
-            for file in folder.rglob("*")
-            if file.is_file()
-        ]
-    )
-    print(f"uploaded {len(list_uploaded_files)} files")
+    with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
+        list_uploaded_files = await asyncio.gather(
+            *[
+                upload_file(file, folder.parent)
+                for file in folder.rglob("*")
+                if file.is_file()
+            ]
+        )
+        ctx.logger.info("uploaded %s files", len(list_uploaded_files))
     return list_uploaded_files
 
 

@@ -1,4 +1,4 @@
-import asyncio
+import logging
 from pathlib import Path
 from time import perf_counter
 from typing import Final
@@ -14,6 +14,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_simcore.logging_utils import log_context
 from servicelib.aiohttp import status
 from servicelib.utils import logged_gather
 from types_aiobotocore_s3 import S3Client
@@ -117,37 +118,30 @@ async def upload_file_to_presigned_link(
 async def delete_all_object_versions(
     s3_client: S3Client, bucket_name: S3BucketName, object_key: S3ObjectKey
 ) -> None:
-    print(f"--> deleting all versions of {object_key=}")
-    # List object versions
-    response = await s3_client.list_object_versions(
-        Bucket=bucket_name, Prefix=object_key
-    )
-
-    if "Versions" in response:
-        await asyncio.gather(
-            *[
-                s3_client.delete_object(
-                    Bucket=bucket_name,
-                    Key=version["Key"],
-                    VersionId=version["VersionId"],
-                )
-                for version in response.get("Versions", [])
-            ]
+    with log_context(logging.INFO, msg=f"Deleting all versions of {object_key=}"):
+        # List object versions
+        response = await s3_client.list_object_versions(
+            Bucket=bucket_name, Prefix=object_key
         )
 
-    if "DeleteMarkers" in response:
-        # Delete all delete markers
-        await asyncio.gather(
-            *[
-                s3_client.delete_object(
-                    Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"]
-                )
-                for marker in response.get("DeleteMarkers", [])
-            ]
-        )
+        for version in response.get("Versions", []):
+            assert "Key" in version
+            assert "VersionId" in version
+            await s3_client.delete_object(
+                Bucket=bucket_name,
+                Key=version["Key"],
+                VersionId=version["VersionId"],
+            )
 
-    # if there are no version just plain delete
-    if "Versions" not in response:
-        await s3_client.delete_object(Bucket=bucket_name, Key=object_key)
+        for marker in response.get("DeleteMarkers", []):
+            assert "Key" in marker
+            assert "VersionId" in marker
+            await s3_client.delete_object(
+                Bucket=bucket_name,
+                Key=marker["Key"],
+                VersionId=marker["VersionId"],
+            )
 
-    print(f"<-- deleting all versions of {object_key=} completed")
+        # if there are no version just plain delete
+        if "Versions" not in response:
+            await s3_client.delete_object(Bucket=bucket_name, Key=object_key)

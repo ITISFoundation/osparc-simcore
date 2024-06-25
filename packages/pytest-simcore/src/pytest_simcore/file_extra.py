@@ -1,9 +1,11 @@
+import logging
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 from faker import Faker
 from pydantic import ByteSize
+from pytest_simcore.logging_utils import log_context
 
 
 @pytest.fixture
@@ -54,15 +56,16 @@ def create_folder_of_size_with_multiple_files(
 
         # Recursively create content in the temporary directory
         remaining_size = directory_size
-        print(
-            f"--> about to create a directory of {directory_size.human_readable()} random files writen in {tmp_path}"
-        )
-        while remaining_size > 0:
-            remaining_size = create_random_content(tmp_path, remaining_size)
-            print(f"<-- still {remaining_size.human_readable()} to write...")
-        print(
-            f"<-- directory of {directory_size.human_readable()} random files writen in {tmp_path}"
-        )
+        with log_context(
+            logging.INFO,
+            msg=f"creating {directory_size.human_readable()} of random files "
+            f"(up to {file_max_size.human_readable()}) in {tmp_path}",
+        ) as ctx:
+            num_files_created = 0
+            while remaining_size > 0:
+                remaining_size = create_random_content(tmp_path, remaining_size)
+                num_files_created += 1
+            ctx.logger.info("created %s files", num_files_created)
         return tmp_path
 
     return _create_folder_of_size_with_multiple_files
