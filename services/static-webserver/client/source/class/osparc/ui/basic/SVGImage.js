@@ -95,7 +95,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param rgb string in the following format: "(255,0,0)"
+      * @param rgb string in the following format: "255,0,0"
       */
     __applyImageColor: function(rgb) {
       const filterValue = this.self().rgbToCSSFilter(rgb);
