@@ -111,7 +111,7 @@ async def _check_pipeline_not_running_or_raise_409(
         )
 
 
-async def _check_pipeline_startable_or_raise(
+async def _check_pipeline_startable(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
     catalog_client: CatalogClient,
@@ -338,7 +338,7 @@ async def create_computation(  # noqa: PLR0913
         )
 
         if computation.start_pipeline:
-            await _check_pipeline_startable_or_raise(
+            await _check_pipeline_startable(
                 minimal_computational_dag, computation, catalog_client, clusters_repo
             )
 

@@ -33,7 +33,7 @@ async def get_computation(project_id: ProjectID):
             "description": "Project/wallet/pricing details not found"
         },
         status.HTTP_402_PAYMENT_REQUIRED: {
-            "description": "Insufficient osparc credits."
+            "description": "Insufficient credits to run computation"
         },
         status.HTTP_406_NOT_ACCEPTABLE: {
             "description": "Cluster not found",
