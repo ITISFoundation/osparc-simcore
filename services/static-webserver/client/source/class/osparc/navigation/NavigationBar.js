@@ -241,14 +241,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "credits-image-button": {
-          control = new osparc.ui.basic.SVGImage("osparc/coins-solid.svg").set({
+          control = new osparc.desktop.credits.CreditsImage().set({
             maxHeight: 24
           })
           control.setSize({
             height: 24,
             width: 32
           });
-          control.setImageColor("blue");
           this.getChildControl("right-items").add(control);
           break;
         }
