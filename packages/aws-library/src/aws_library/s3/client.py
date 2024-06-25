@@ -21,7 +21,8 @@ from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .errors import S3DestinationNotEmptyError, S3KeyNotFoundError, s3_exception_handler
+from .error_handler import s3_exception_handler, s3_exception_handler_async_gen
+from .errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from .models import (
     MultiPartUploadLinks,
     S3DirectoryMetaData,
@@ -137,7 +138,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             size += s3_object.size
         return S3DirectoryMetaData(size=size)
 
-    @s3_exception_handler(_logger)
+    @s3_exception_handler_async_gen(_logger)
     async def list_files_paginated(
         self,
         bucket: S3BucketName,
