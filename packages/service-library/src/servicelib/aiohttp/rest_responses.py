@@ -12,7 +12,6 @@ from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
-from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
@@ -82,7 +81,7 @@ def create_error_response(
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
     *,
     skip_internal_error_details: bool = False,
-) -> HTTPError:
+) -> web.Response:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
@@ -106,12 +105,16 @@ def create_error_response(
             status=http_error_cls.status_code,
         )
 
-    payload = wrap_as_envelope(error=asdict(error))
+    assert not http_error_cls.empty_body  # nosec
 
-    return http_error_cls(
+    payload = wrap_as_envelope(error=asdict(error))
+    # Returning web.HTTPException is deprecated
+    # SEE https://github.com/aio-libs/aiohttp/issues/2415
+    return web.json_response(
+        payload,
         reason=reason,
-        text=json_dumps(payload),
-        content_type=MIMETYPE_APPLICATION_JSON,
+        status=http_error_cls.status_code,
+        dumps=json_dumps,
     )
 
 
