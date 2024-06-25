@@ -60,6 +60,28 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
   },
 
   statics: {
+    keywordToCSSFilter: function(keyword) {
+      // use the following link to extended supported colors
+      // https://isotropic.co/tool/hex-color-to-css-filter/
+      let filter = null;
+      switch (keyword) {
+        case "danger-red": // "#FF2D2D"
+          filter = "filter: invert(13%) sepia(89%) saturate(5752%) hue-rotate(346deg) brightness(85%) contrast(109%);";
+          break;
+        case "warning-yellow": // #F8DB1F
+          filter = "filter: invert(90%) sepia(99%) saturate(7500%) hue-rotate(331deg) brightness(95%) contrast(108%);";
+          break;
+        case "ready-green": // #58A6FF
+          filter = "filter: invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%);";
+          break;
+        case "text": // #58A6FF
+          filter = "filter: invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%);";
+          break;
+      }
+      return filter;
+    },
+
+    // not very accurate
     rgbToCSSFilter: function(rgb) {
       const [r, g, b] = rgb.split(",").map(Number);
 
@@ -126,14 +148,22 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param rgb string in the following format: "255,0,0"
+      * @param keywordOrRgb predefined keywords string ["danger-red", "danger-red", "ready-green", "text"]
       */
-    __applyImageColor: function(rgb) {
-      const filterValue = this.self().rgbToCSSFilter(rgb);
-      const myStyle = {
-        "filter": filterValue
-      };
-      this.getChildControl("image").getContentElement().setStyles(myStyle);
+    __applyImageColor: function(keywordOrRgb) {
+      if (["danger-red", "warning-yellow", "ready-green", "text"].includes(keywordOrRgb)) {
+        const filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
+        const myStyle = {
+          "filter": filterValue
+        };
+        this.getChildControl("image").getContentElement().setStyles(myStyle);
+      } else {
+        const filterValue = this.self().rgbToCSSFilter(keywordOrRgb);
+        const myStyle = {
+          "filter": filterValue
+        };
+        this.getChildControl("image").getContentElement().setStyles(myStyle);
+      }
     },
 
     setSize: function(size) {
