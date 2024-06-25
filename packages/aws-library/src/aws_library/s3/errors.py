@@ -79,7 +79,7 @@ WrappedFunc = Callable[Concatenate["SimcoreS3API", P], Awaitable[R]]  # type: ig
 WrappedAsyncGenFunc = Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]  # type: ignore[name-defined]  # noqa: F821
 
 
-def s3_exception_handler(
+def s3_exception_handler(  # noqa: C901
     logger: logging.Logger,
 ) -> Callable[[WrappedFunc | WrappedAsyncGenFunc], WrappedFunc | WrappedAsyncGenFunc]:
     """
