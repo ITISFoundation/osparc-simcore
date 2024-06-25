@@ -1,20 +1,18 @@
-import typing
+from typing import Mapping, TypeAlias
 
-import pydantic
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
+from pydantic import AnyUrl, BaseModel, Field
 
 from .. import api_resources
 from . import solvers
 
-StudyID: typing.TypeAlias = projects.ProjectID
+StudyID: TypeAlias = projects.ProjectID
+NodeName: TypeAlias = str
+DownloadLink: TypeAlias = AnyUrl
 
 
-NodeName = str
-DownloadLink = pydantic.AnyUrl
-
-
-class Study(pydantic.BaseModel):
+class Study(BaseModel):
     uid: StudyID
     title: str = pydantic_tools_extension.FieldNotRequired()
     description: str = pydantic_tools_extension.FieldNotRequired()
@@ -25,7 +23,7 @@ class Study(pydantic.BaseModel):
 
 
 class StudyPort(solvers.SolverPort):
-    key: projects_nodes_io.NodeID = pydantic.Field(
+    key: projects_nodes_io.NodeID = Field(
         ...,
         description="port identifier name."
         "Correponds to the UUID of the parameter/probe node in the study",
@@ -33,7 +31,7 @@ class StudyPort(solvers.SolverPort):
     )
 
 
-class LogLinkMap(pydantic.BaseModel):
-    map: typing.Mapping[NodeName, DownloadLink] = pydantic.Field(
+class LogLinkMap(BaseModel):
+    map: Mapping[NodeName, DownloadLink] = Field(
         ..., description="Mapping of node name to download link"
     )
