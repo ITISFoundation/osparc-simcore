@@ -22,14 +22,16 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     this.base(arguments);
 
     this.set({
-      // maxHeight: 30,
       cursor: "pointer",
       padding: [3, 8]
     });
 
-    this.setSize({
+    this.getChildControl("image").set({
+      marginTop: 10,
+      width: 30,
+      maxWidth: 30,
       height: 24,
-      width: 30
+      maxHeight: 24
     });
 
     this.__creditsContainer = new osparc.desktop.credits.CreditsNavBarContainer();

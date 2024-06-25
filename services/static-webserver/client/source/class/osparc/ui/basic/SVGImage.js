@@ -179,13 +179,6 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
         "filter": filterValue
       };
       this.getChildControl("image").getContentElement().setStyles(myStyle);
-    },
-
-    setSize: function(size) {
-      this.getChildControl("image").set({
-        height: size.height,
-        width: size.width
-      });
     }
   }
 });
