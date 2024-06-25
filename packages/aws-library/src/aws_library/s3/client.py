@@ -18,7 +18,6 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
-from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .error_handler import s3_exception_handler, s3_exception_handler_async_gen
@@ -179,13 +178,13 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 bucket=bucket, prefix=prefix
             ):
 
-                objects_to_delete: list[ObjectIdentifierTypeDef] = [
-                    {"Key": _.object_key} for _ in s3_objects
-                ]
-                await self._client.delete_objects(
-                    Bucket=bucket,
-                    Delete={"Objects": objects_to_delete},
-                )
+                if objects_to_delete := [
+                    {"Key": f"{_.object_key}"} for _ in s3_objects
+                ]:
+                    await self._client.delete_objects(
+                        Bucket=bucket,
+                        Delete={"Objects": objects_to_delete},
+                    )
 
     @s3_exception_handler(_logger)
     async def delete_file(

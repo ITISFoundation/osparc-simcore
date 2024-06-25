@@ -1098,6 +1098,36 @@ async def test_delete_file_recursively(
 
 
 @pytest.mark.parametrize(
+    "directory_size, max_file_size",
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    ids=byte_size_ids,
+)
+async def test_delete_file_recursively_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    non_existing_s3_bucket: S3BucketName,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    faker: Faker,
+):
+    with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
+        await simcore_s3_api.delete_file_recursively(
+            bucket=non_existing_s3_bucket,
+            prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
+        )
+    # this will do nothing
+    await simcore_s3_api.delete_file_recursively(
+        bucket=with_s3_bucket,
+        prefix=f"{faker.pystr()}",
+    )
+    # and this files still exist
+    some_file = next(
+        iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3))
+    )
+    await simcore_s3_api.file_exists(bucket=with_s3_bucket, object_key=some_file.s3_key)
+
+
+@pytest.mark.parametrize(
     "file_size, expected_multipart",
     [
         (MULTIPART_UPLOADS_MIN_TOTAL_SIZE - 1, False),
