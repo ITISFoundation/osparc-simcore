@@ -12,6 +12,7 @@ from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
@@ -64,24 +65,26 @@ def create_data_response(
 
         response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
-        response = create_error_response(
-            [
-                err,
-            ],
-            str(err),
-            web.HTTPInternalServerError,
-            skip_internal_error_details=skip_internal_error_details,
+        response = exception_to_response(
+            create_http_error(
+                [
+                    err,
+                ],
+                str(err),
+                web.HTTPInternalServerError,
+                skip_internal_error_details=skip_internal_error_details,
+            )
         )
     return response
 
 
-def create_error_response(
+def create_http_error(
     errors: list[Exception] | Exception,
     reason: str | None = None,
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
     *,
     skip_internal_error_details: bool = False,
-) -> web.Response:
+) -> HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
@@ -108,13 +111,24 @@ def create_error_response(
     assert not http_error_cls.empty_body  # nosec
     payload = wrap_as_envelope(error=asdict(error))
 
-    # Returning web.HTTPException is deprecated, returning instead a response object
-    # SEE https://github.com/aio-libs/aiohttp/issues/2415
-    return web.json_response(
-        payload,
+    return http_error_cls(
         reason=reason,
-        status=http_error_cls.status_code,
-        dumps=json_dumps,
+        text=json_dumps(payload),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+def exception_to_response(exc: HTTPError) -> web.Response:
+    # Returning web.HTTPException is deprecated so here we have a converter to a response
+    # so it can be used as
+    # SEE https://github.com/aio-libs/aiohttp/issues/2415
+    return web.Response(
+        status=exc.status,
+        headers=exc.headers,
+        reason=exc.reason,
+        body=exc.body,
+        text=exc.text,
+        content_type=exc.content_type,
     )
 
 
