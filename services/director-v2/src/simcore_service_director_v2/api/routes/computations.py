@@ -98,7 +98,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-async def _check_pipeline_not_running_or_raise_403(
+async def _check_pipeline_not_running_or_raise_409(
     comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
 ) -> None:
     pipeline_state = utils.get_pipeline_state_from_task_states(
@@ -106,12 +106,12 @@ async def _check_pipeline_not_running_or_raise_403(
     )
     if utils.is_pipeline_running(pipeline_state):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
         )
 
 
-async def _check_pipeline_startable(
+async def _check_pipeline_startable_or_raise(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
     catalog_client: CatalogClient,
@@ -281,7 +281,7 @@ async def _try_start_pipeline(
             "description": "Configuration error",
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
-        status.HTTP_403_FORBIDDEN: {"description": "Project already started"},
+        status.HTTP_409_CONFLICT: {"description": "Project already started"},
     },
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
@@ -324,7 +324,7 @@ async def create_computation(  # noqa: PLR0913
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
         # check if current state allow to modify the computation
-        await _check_pipeline_not_running_or_raise_403(comp_tasks_repo, computation)
+        await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
@@ -338,7 +338,7 @@ async def create_computation(  # noqa: PLR0913
         )
 
         if computation.start_pipeline:
-            await _check_pipeline_startable(
+            await _check_pipeline_startable_or_raise(
                 minimal_computational_dag, computation, catalog_client, clusters_repo
             )
 

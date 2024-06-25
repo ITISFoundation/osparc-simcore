@@ -103,7 +103,7 @@
           "402": {
             "description": "Payment required"
           },
-          "403": {
+          "409": {
             "description": "Project already started"
           }
         }
