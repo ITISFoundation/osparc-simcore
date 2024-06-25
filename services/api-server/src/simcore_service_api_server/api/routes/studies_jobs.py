@@ -314,12 +314,15 @@ async def get_study_job_output_logfile(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}."
-    _logger.debug(msg)
-    log_link_map = await director2_api.get_computation_logs(
-        user_id=user_id, project_id=job_id
-    )
-    return log_link_map
+    with log_context(
+        logger=_logger,
+        level=logging.DEBUG,
+        msg=f"get study job output logfile study_id={study_id!r} job_id={job_id!r}.",
+    ):
+        log_link_map = await director2_api.get_computation_logs(
+            user_id=user_id, project_id=job_id
+        )
+        return log_link_map
 
 
 @router.get(
