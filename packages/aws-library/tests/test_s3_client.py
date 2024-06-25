@@ -22,6 +22,7 @@ from aws_library.s3.client import S3ObjectKey, SimcoreS3API
 from aws_library.s3.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from aws_library.s3.errors import (
     S3BucketInvalidError,
+    S3DestinationNotEmptyError,
     S3KeyNotFoundError,
     S3UploadNotFoundError,
 )
@@ -366,6 +367,45 @@ async def copy_file(
 
     # cleanup
     await delete_all_object_versions(s3_client, with_s3_bucket, copied_object_keys)
+
+
+@pytest.fixture
+async def copy_files_recursively(
+    simcore_s3_api: SimcoreS3API, with_s3_bucket: S3BucketName, s3_client: S3Client
+) -> AsyncIterator[Callable[[str, str], Awaitable[str]]]:
+    copied_dst_prefixes = []
+
+    async def _copier(src_prefix: str, dst_prefix: str) -> str:
+        src_directory_metadata = await simcore_s3_api.get_directory_metadata(
+            bucket=with_s3_bucket, prefix=src_prefix
+        )
+        progress_cb = _ProgressCallback(src_directory_metadata.size, "copied")
+        with log_context(
+            logging.INFO,
+            msg=f"copying {src_prefix} [{ByteSize(src_directory_metadata.size).human_readable()}] to {dst_prefix}",
+        ):
+            await simcore_s3_api.copy_files_recursively(
+                bucket=with_s3_bucket,
+                src_prefix=src_prefix,
+                dst_prefix=dst_prefix,
+                bytes_transfered_cb=progress_cb,
+            )
+
+        dst_directory_metadata = await simcore_s3_api.get_directory_metadata(
+            bucket=with_s3_bucket, prefix=dst_prefix
+        )
+        assert dst_directory_metadata.size == src_directory_metadata.size
+
+        copied_dst_prefixes.append(dst_prefix)
+        return dst_prefix
+
+    yield _copier
+
+    # cleanup
+    for dst_prefix in copied_dst_prefixes:
+        await simcore_s3_api.delete_file_recursively(
+            bucket=with_s3_bucket, prefix=dst_prefix
+        )
 
 
 async def test_aiobotocore_s3_client_when_s3_server_goes_up_and_down(
@@ -1125,6 +1165,39 @@ async def test_delete_file_recursively_raises(
         iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3))
     )
     await simcore_s3_api.file_exists(bucket=with_s3_bucket, object_key=some_file.s3_key)
+
+
+@pytest.mark.parametrize(
+    "directory_size, max_file_size",
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    ids=byte_size_ids,
+)
+async def test_copy_files_recursively(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    copy_files_recursively: Callable[[str, str], Awaitable[str]],
+):
+    src_folder = Path(with_uploaded_folder_on_s3[0].s3_key).parts[0]
+    dst_folder = f"{src_folder}-copy"
+    await copy_files_recursively(src_folder, dst_folder)
+
+    # doing it again shall raise
+    with pytest.raises(S3DestinationNotEmptyError, match=rf"{dst_folder}"):
+        await copy_files_recursively(src_folder, dst_folder)
+
+
+async def test_copy_files_recursively_raises(
+    mocked_s3_server_envs: EnvVarsDict,
+    simcore_s3_api: SimcoreS3API,
+    non_existing_s3_bucket: S3BucketName,
+):
+    with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
+        await simcore_s3_api.copy_files_recursively(
+            bucket=non_existing_s3_bucket,
+            src_prefix="",
+            dst_prefix="",
+            bytes_transfered_cb=None,
+        )
 
 
 @pytest.mark.parametrize(
