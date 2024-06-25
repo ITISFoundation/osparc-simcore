@@ -48,6 +48,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     SPACING: 15,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
     TITLE_MAX_HEIGHT: 40, // two lines in Manrope
+    ICON_SIZE: 50,
     POS: {
       TITLE: {
         row: 0,
@@ -287,7 +288,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     // overridden
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
-        value += "50";
+        value += this.self().ICON_SIZE;
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
           source: value
