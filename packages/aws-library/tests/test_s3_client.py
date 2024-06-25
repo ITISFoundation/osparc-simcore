@@ -10,7 +10,8 @@ import asyncio
 import filecmp
 import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+from collections import defaultdict
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -40,6 +41,7 @@ from pytest_simcore.helpers.s3 import (
     upload_file_to_presigned_link,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.utils import limit_concurrency
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -93,7 +95,7 @@ async def upload_to_presigned_link(
 ) -> AsyncIterator[
     Callable[[Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]]
 ]:
-    uploaded_object_keys: list[tuple[S3BucketName, S3ObjectKey]] = []
+    uploaded_object_keys: dict[S3BucketName, list[S3ObjectKey]] = defaultdict(list)
 
     async def _(
         file: Path, presigned_url: AnyUrl, bucket: S3BucketName, s3_object: S3ObjectKey
@@ -106,12 +108,12 @@ async def upload_to_presigned_link(
                 urls=[presigned_url],
             ),
         )
-        uploaded_object_keys.append((bucket, s3_object))
+        uploaded_object_keys[bucket].append(s3_object)
 
     yield _
 
-    for bucket, object_key in uploaded_object_keys:
-        await delete_all_object_versions(s3_client, bucket, object_key)
+    for bucket, object_keys in uploaded_object_keys.items():
+        await delete_all_object_versions(s3_client, bucket, object_keys)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -135,7 +137,7 @@ async def with_uploaded_file_on_s3(
 
     yield UploadedFile(local_path=test_file, s3_key=test_file.name)
 
-    await delete_all_object_versions(s3_client, with_s3_bucket, test_file.name)
+    await delete_all_object_versions(s3_client, with_s3_bucket, [test_file.name])
 
 
 @pytest.fixture
@@ -248,8 +250,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
     yield _uploader
 
-    for object_key in possibly_updated_files:
-        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+    await delete_all_object_versions(s3_client, with_s3_bucket, possibly_updated_files)
 
 
 @dataclass
@@ -301,9 +302,8 @@ async def upload_file(
     yield _uploader
 
     with log_context(logging.INFO, msg=f"delete {len(uploaded_object_keys)}"):
-        await s3_client.delete_objects(
-            Bucket=with_s3_bucket,
-            Delete={"Objects": [{"Key": k} for k in uploaded_object_keys]},
+        await delete_all_object_versions(
+            s3_client, with_s3_bucket, uploaded_object_keys
         )
 
 
@@ -326,32 +326,9 @@ async def with_uploaded_folder_on_s3(
     )
     list_uploaded_files = []
 
-    async def limit_concurrency(aws: Iterable[Awaitable], *, limit):
-        aws = iter(aws)
-        aws_ended = False
-        pending = set()
-
-        while pending or not aws_ended:
-            while len(pending) < limit and not aws_ended:
-                try:
-                    aw = next(aws)
-                except StopIteration:
-                    aws_ended = True
-                else:
-                    pending.add(aw)
-
-            if not pending:
-                return
-
-            done, pending = await asyncio.wait(
-                pending, return_when=asyncio.FIRST_COMPLETED
-            )
-            while done:
-                yield done.pop()
-
     with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
         list_uploaded_files = [
-            await uploaded_file
+            uploaded_file
             async for uploaded_file in limit_concurrency(
                 (
                     upload_file(file, folder.parent)
@@ -388,8 +365,7 @@ async def copy_file(
     yield _copier
 
     # cleanup
-    for object_key in copied_object_keys:
-        await delete_all_object_versions(s3_client, with_s3_bucket, object_key)
+    await delete_all_object_versions(s3_client, with_s3_bucket, copied_object_keys)
 
 
 async def test_aiobotocore_s3_client_when_s3_server_goes_up_and_down(
@@ -524,26 +500,54 @@ async def test_undelete_file(
     with_versioning_enabled: None,
     simcore_s3_api: SimcoreS3API,
     with_uploaded_file_on_s3: UploadedFile,
+    upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
+    create_file_of_size: Callable[[ByteSize], Path],
+    s3_client: S3Client,
 ):
-    # delete the file
+    # we have a file uploaded
+    file_metadata = await simcore_s3_api.get_file_metadata(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+    assert file_metadata.size == with_uploaded_file_on_s3.local_path.stat().st_size
+
+    # upload another file on top of the existing one
+    new_file = create_file_of_size(parse_obj_as(ByteSize, "5Kib"))
+    await s3_client.upload_file(
+        Filename=f"{new_file}",
+        Bucket=with_s3_bucket,
+        Key=file_metadata.object_key,
+    )
+
+    # check that the metadata changed
+    new_file_metadata = await simcore_s3_api.get_file_metadata(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+    assert new_file_metadata.size == new_file.stat().st_size
+    assert file_metadata.e_tag != new_file_metadata.e_tag
+
+    # this deletes the new_file, so it's gone
     await simcore_s3_api.delete_file(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
-
-    # check it is not available
-    assert (
-        await simcore_s3_api.file_exists(
-            bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-        )
-        is False
+    assert not await simcore_s3_api.file_exists(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
-    # undelete the file
+    # undelete the file, the new file is back
     await simcore_s3_api.undelete_file(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
-    # check the file is back
     await simcore_s3_api.file_exists(
+        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+    )
+    assert (
+        await simcore_s3_api.get_file_metadata(
+            bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
+        )
+        == new_file_metadata
+    )
+    # does nothing
+    await simcore_s3_api.undelete_file(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
@@ -1019,7 +1023,7 @@ async def test_copy_file_invalid_raises(
 
 @pytest.mark.parametrize(
     "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
     ids=byte_size_ids,
 )
 async def test_get_directory_metadata(
