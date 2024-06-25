@@ -305,7 +305,7 @@ async def get_job_output_logfile(
         len(logs_urls),
         f"{project_id=}",
         f"{user_id=}",
-        list(logs_urls.keys()),
+        list(elm.download_link for elm in logs_urls),
     )
 
     # if more than one node? should rezip all of them??
@@ -313,7 +313,8 @@ async def get_job_output_logfile(
         len(logs_urls) <= 1
     ), "Current version only supports one node per solver"
 
-    for presigned_download_link in logs_urls.values():
+    for log_link in logs_urls:
+        presigned_download_link = log_link.download_link
         _logger.info(
             "Redirecting '%s' to %s ...",
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
