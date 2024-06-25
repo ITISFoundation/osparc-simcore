@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options

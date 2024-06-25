@@ -10,7 +10,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from pytest_simcore.helpers.faker_factories import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 

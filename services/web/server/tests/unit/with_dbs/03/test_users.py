@@ -20,13 +20,13 @@ from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
     random_pre_registration_details,
 )
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus

@@ -10,8 +10,8 @@ import simcore_service_storage.application
 from aiohttp import web
 from faker import Faker
 from openapi_core import Spec as OpenApiSpecs
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_storage.settings import Settings
 
 

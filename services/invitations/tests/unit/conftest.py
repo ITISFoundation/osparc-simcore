@@ -10,8 +10,8 @@ import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
 from models_library.products import ProductName
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_invitations.services.invitations import InvitationInputs
 
 pytest_plugins = [

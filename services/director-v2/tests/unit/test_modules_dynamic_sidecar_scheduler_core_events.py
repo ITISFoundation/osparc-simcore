@@ -11,8 +11,8 @@ from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from simcore_service_director_v2.models.dynamic_services_scheduler import (

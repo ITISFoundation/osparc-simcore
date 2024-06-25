@@ -3,7 +3,7 @@ from collections.abc import Iterable
 import pytest
 import sqlalchemy as sa
 from models_library.users import UserID
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import users
 
 pytest_plugins = [

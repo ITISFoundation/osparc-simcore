@@ -14,7 +14,7 @@ from aiopg.sa import create_engine
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.products import ProductName
-from pytest_simcore.helpers.rawdata_fakers import random_product
+from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.models.user_preferences import user_preferences_frontend
