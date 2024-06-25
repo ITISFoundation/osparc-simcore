@@ -30,9 +30,11 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
   construct: function(source) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.Canvas());
+    this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
+      allowGrowX: true,
+      allowGrowY: true,
       alignX: "center",
       alignY: "middle"
     });
@@ -144,14 +146,13 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
         case "image":
           control = new qx.ui.basic.Image().set({
             scale: true,
+            allowGrowX: true,
+            allowGrowY: true,
             alignX: "center",
             alignY: "middle"
           });
           this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
+            flex: 1
           });
           break;
       }

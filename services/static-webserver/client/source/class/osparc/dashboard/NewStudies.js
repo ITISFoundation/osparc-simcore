@@ -148,7 +148,18 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
       if (templateInfo.billable) {
-        osparc.desktop.credits.Utils.setCreditsIconToButton(newPlanButton);
+        // replace the plus button with the creditsImage
+        const plusIcon = newPlanButton.getChildControl("icon");
+        plusIcon.exclude();
+        const creditsImage = new osparc.desktop.credits.CreditsImage();
+        creditsImage.getChildControl("image").set({
+          marginTop: 20,
+          maxWidth: 60,
+          maxHeight: 60
+        })
+        const bodyLayout = newPlanButton.getChildControl("body");
+        bodyLayout.add(creditsImage, {flex: 1});
+
         newPlanButton.addListener("execute", () => {
           const store = osparc.store.Store.getInstance();
           const credits = store.getContextWallet().getCreditsAvailable()

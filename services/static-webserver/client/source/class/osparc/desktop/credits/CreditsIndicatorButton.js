@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     this.base(arguments);
 
     this.set({
-      maxHeight: 30,
+      // maxHeight: 30,
       cursor: "pointer",
       padding: [3, 8]
     });
