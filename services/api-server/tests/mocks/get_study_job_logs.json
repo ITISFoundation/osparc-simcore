@@ -1,0 +1,31 @@
+[
+ {
+  "name": "GET /v2/computations/1a4145e2-2fca-11ef-a199-0242ac14002a/tasks/-/logfile",
+  "description": "<Request('GET', 'http://director-v2/v2/computations/1a4145e2-2fca-11ef-a199-0242ac14002a/tasks/-/logfile?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}/tasks/-/logfile",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": [
+   {
+    "task_id": "2da40b78-d529-5657-95c5-ab663cbd890d",
+    "download_link": "http://www.jensen-boyle.com/"
+   }
+  ]
+ }
+]

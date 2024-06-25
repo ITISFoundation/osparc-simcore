@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.5.1"
+    "version": "0.6.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2175,7 +2175,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nNew in *version 0.4.3*: cluster_id",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nNew in *version 0.4.3*: cluster_id\nNew in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation",
         "operationId": "start_job",
         "parameters": [
           {
@@ -3571,6 +3571,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
+        "description": "New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
         "parameters": [
           {
@@ -3896,6 +3897,90 @@
           }
         ]
       }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}/outputs/log-links": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Get download links for study job log files",
+        "operationId": "get_study_job_output_logfile",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobLogsMap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/credits/price": {
+      "get": {
+        "tags": [
+          "credits"
+        ],
+        "summary": "Get Credits Price",
+        "operationId": "get_credits_price",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCreditPrice"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -4097,6 +4182,33 @@
         ],
         "title": "FileUploadData"
       },
+      "GetCreditPrice": {
+        "properties": {
+          "productName": {
+            "type": "string",
+            "title": "Productname"
+          },
+          "usdPerCredit": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Usdpercredit",
+            "description": "Price of a credit in USD. If None, then this product's price is UNDEFINED"
+          },
+          "minPaymentAmountUsd": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Minpaymentamountusd",
+            "description": "Minimum amount (included) in USD that can be paid for this productCan be None if this product's price is UNDEFINED"
+          }
+        },
+        "type": "object",
+        "required": [
+          "productName",
+          "usdPerCredit",
+          "minPaymentAmountUsd"
+        ],
+        "title": "GetCreditPrice"
+      },
       "Groups": {
         "properties": {
           "me": {
@@ -4259,6 +4371,23 @@
           }
         }
       },
+      "JobLogsMap": {
+        "properties": {
+          "log_links": {
+            "items": {
+              "$ref": "#/components/schemas/LogLink"
+            },
+            "type": "array",
+            "title": "Log Links",
+            "description": "Array of download links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_links"
+        ],
+        "title": "JobLogsMap"
+      },
       "JobOutputs": {
         "properties": {
           "job_id": {
@@ -4396,6 +4525,27 @@
         },
         "type": "object",
         "title": "Links"
+      },
+      "LogLink": {
+        "properties": {
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "download_link": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Download Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_name",
+          "download_link"
+        ],
+        "title": "LogLink"
       },
       "Meta": {
         "properties": {
