@@ -42,7 +42,7 @@ from pytest_simcore.helpers.s3 import (
     upload_file_to_presigned_link,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.utils import limit_concurrency
+from servicelib.utils import limit_concurrency_unordered
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -330,7 +330,7 @@ async def with_uploaded_folder_on_s3(
     with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
         list_uploaded_files = [
             uploaded_file
-            async for uploaded_file in limit_concurrency(
+            async for uploaded_file in limit_concurrency_unordered(
                 (
                     upload_file(file, folder.parent)
                     for file in folder.rglob("*")

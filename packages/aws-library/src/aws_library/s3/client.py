@@ -15,7 +15,7 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.utils import limit_concurrency
+from servicelib.utils import limit_concurrency_unordered
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -411,7 +411,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
         try:
 
-            async for _ in limit_concurrency(
+            async for _ in limit_concurrency_unordered(
                 [
                     self.copy_file(
                         bucket=bucket,

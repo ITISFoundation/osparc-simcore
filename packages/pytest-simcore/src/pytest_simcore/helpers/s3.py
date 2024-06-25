@@ -9,7 +9,7 @@ from aws_library.s3.models import MultiPartUploadLinks
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
-from servicelib.utils import limit_concurrency, logged_gather
+from servicelib.utils import limit_concurrency_unordered, logged_gather
 from types_aiobotocore_s3 import S3Client
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
@@ -118,7 +118,7 @@ async def delete_all_object_versions(
         # NOTE: using gather here kills the moto server
         all_versions = [
             v
-            async for v in limit_concurrency(
+            async for v in limit_concurrency_unordered(
                 (
                     s3_client.list_object_versions(Bucket=bucket, Prefix=key)
                     for key in keys
