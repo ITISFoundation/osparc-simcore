@@ -15,6 +15,7 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils import limit_concurrency
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -36,6 +37,7 @@ _logger = logging.getLogger(__name__)
 _S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
+_MAX_CONCURRENT_COPY: Final[int] = 4
 
 
 @dataclass(frozen=True)
@@ -408,17 +410,25 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         if dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
         try:
-            async for s3_object in self._list_all_objects(
-                bucket=bucket, prefix=src_prefix
+
+            async for _ in limit_concurrency(
+                [
+                    self.copy_file(
+                        bucket=bucket,
+                        src_object_key=s3_object.object_key,
+                        dst_object_key=s3_object.object_key.replace(
+                            src_prefix, dst_prefix
+                        ),
+                        bytes_transfered_cb=bytes_transfered_cb,
+                    )
+                    async for s3_object in self._list_all_objects(
+                        bucket=bucket, prefix=src_prefix
+                    )
+                ],
+                limit=_MAX_CONCURRENT_COPY,
             ):
-                # NOTE: this is currently sequential
-                dst_object_key = s3_object.object_key.replace(src_prefix, dst_prefix)
-                await self.copy_file(
-                    bucket=bucket,
-                    src_object_key=s3_object.object_key,
-                    dst_object_key=dst_object_key,
-                    bytes_transfered_cb=bytes_transfered_cb,
-                )
+                ...
+
         except Exception:
             # rollback changes
             with log_catch(_logger, reraise=False), log_context(
