@@ -10,10 +10,9 @@ import asyncio
 import filecmp
 import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import botocore.exceptions
 import pytest
@@ -31,16 +30,16 @@ from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from pytest_simcore.helpers.utils_parametrizations import (
+from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,
 )
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_s3 import (
     delete_all_object_versions,
     upload_file_to_presigned_link,
 )
-from pytest_simcore.logging_utils import log_context
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType

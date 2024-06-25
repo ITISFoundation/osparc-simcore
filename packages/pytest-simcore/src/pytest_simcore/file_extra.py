@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from faker import Faker
 from pydantic import ByteSize
-from pytest_simcore.logging_utils import log_context
+from pytest_simcore.helpers.logging import log_context
 
 
 @pytest.fixture
