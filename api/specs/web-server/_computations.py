@@ -29,22 +29,16 @@ async def get_computation(project_id: ProjectID):
     "/computations/{project_id}:start",
     response_model=Envelope[_ComputationStarted],
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Project/wallet/pricing details not found"
-        },
         status.HTTP_402_PAYMENT_REQUIRED: {
             "description": "Insufficient credits to run computation"
         },
-        status.HTTP_406_NOT_ACCEPTABLE: {
-            "description": "Cluster not found",
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Project/wallet/pricing details were not found"
         },
-        status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": "Service not available",
-        },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Configuration error",
-        },
+        status.HTTP_406_NOT_ACCEPTABLE: {"description": "Cluster not found"},
         status.HTTP_409_CONFLICT: {"description": "Project already started"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Configuration error"},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service not available"},
     },
 )
 async def start_computation(project_id: ProjectID, _start: ComputationStart):
