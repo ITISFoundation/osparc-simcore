@@ -25,8 +25,11 @@ from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -44,7 +47,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -52,7 +55,6 @@ pytest_plugins = [
     "pytest_simcore.simcore_dask_service",
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 logger = logging.getLogger(__name__)

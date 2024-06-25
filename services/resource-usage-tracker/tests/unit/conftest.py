@@ -20,8 +20,8 @@ from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
@@ -37,7 +37,6 @@ pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
 ]

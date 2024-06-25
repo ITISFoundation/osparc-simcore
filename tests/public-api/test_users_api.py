@@ -8,7 +8,7 @@ from typing import TypedDict
 
 import osparc
 import pytest
-from pytest_simcore.helpers.utils_public_api import RegisteredUserDict
+from pytest_simcore.helpers.typing_public_api import RegisteredUserDict
 
 
 @pytest.fixture(scope="module")

@@ -15,8 +15,8 @@ from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.modules.user_services_preferences import (
     load_user_services_preferences,

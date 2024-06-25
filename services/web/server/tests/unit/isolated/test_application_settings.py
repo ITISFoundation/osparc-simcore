@@ -9,8 +9,11 @@ import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,

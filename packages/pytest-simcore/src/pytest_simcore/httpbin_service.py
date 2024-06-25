@@ -21,7 +21,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
 
 
 @pytest.fixture(scope="session")

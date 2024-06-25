@@ -12,7 +12,7 @@ from uuid import uuid4
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import web
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings

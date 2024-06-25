@@ -14,7 +14,7 @@ from http import HTTPStatus
 import pytest
 from playwright.sync_api import APIRequestContext
 from pydantic import AnyUrl
-from pytest_simcore.logging_utils import test_logger
+from pytest_simcore.helpers.logging import test_logger
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

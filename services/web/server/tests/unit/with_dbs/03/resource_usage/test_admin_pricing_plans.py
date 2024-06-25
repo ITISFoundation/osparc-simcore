@@ -19,8 +19,8 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.resource_tracker import PricingPlanClassification
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 

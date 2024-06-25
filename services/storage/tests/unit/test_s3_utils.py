@@ -6,7 +6,7 @@
 
 import pytest
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_service_storage.s3_utils import (
     _MULTIPART_MAX_NUMBER_OF_PARTS,
     _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
