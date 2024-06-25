@@ -197,6 +197,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     async def undelete_file(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
+        """this allows to restore a file that was deleted.
+        **NOT to restore previous versions!"""
         with log_context(
             _logger, logging.DEBUG, msg=f"undeleting {bucket}/{object_key}"
         ):
@@ -204,20 +206,21 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 Bucket=bucket, Prefix=object_key, MaxKeys=1
             )
             _logger.debug("%s", f"{response=}")
-
-            if all(k not in response for k in ["Versions", "DeleteMarkers"]):
-                # that means there is no such file_id
+            if not response["IsTruncated"] and all(
+                _ not in response for _ in ("Versions", "DeleteMarkers")
+            ):
                 raise S3KeyNotFoundError(key=object_key, bucket=bucket)
-
-            latest_version = response["DeleteMarkers"][0]
-            assert "IsLatest" in latest_version  # nosec
-            assert "VersionId" in latest_version  # nosec
-            await self._client.delete_object(
-                Bucket=bucket,
-                Key=object_key,
-                VersionId=latest_version["VersionId"],
-            )
-            _logger.debug("restored %s", f"{bucket}/{object_key}")
+            if "DeleteMarkers" in response:
+                # we have something to undelete
+                latest_version = response["DeleteMarkers"][0]
+                assert "IsLatest" in latest_version  # nosec
+                assert "VersionId" in latest_version  # nosec
+                await self._client.delete_object(
+                    Bucket=bucket,
+                    Key=object_key,
+                    VersionId=latest_version["VersionId"],
+                )
+                _logger.debug("restored %s", f"{bucket}/{object_key}")
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
