@@ -62,7 +62,7 @@ async def create_sha256_checksum(
 
 async def _eval_hash_async(
     async_stream: AsyncStream,
-    hasher: "hashlib._Hash",  # noqa: SLF001
+    hasher: "hashlib._Hash",
     chunk_size: ByteSize,
 ) -> str:
     while chunk := await async_stream.read(chunk_size):
@@ -71,16 +71,30 @@ async def _eval_hash_async(
     return f"{digest}"
 
 
+def _get_file_properties(path: Path) -> tuple[float, int]:
+    stats = path.stat()
+    return stats.st_mtime, stats.st_size
+
+
+def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
+    return {f"{x.relative_to(path)}": _get_file_properties(x) for x in path.rglob("*")}
+
+
 @contextmanager
 def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterator[None]:
-    before: set[str] = {f"{x.relative_to(path)}" for x in path.rglob("*")}
+    before: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
     yield
-    after: set[str] = {f"{x.relative_to(path)}" for x in path.rglob("*")}
+    after: dict[str, tuple[float, int]] = _get_directory_snapshot(path)
 
-    added_elements = after - before
-    removed_elements = before - after
+    after_keys: set[str] = set(after.keys())
+    before_keys: set[str] = set(before.keys())
+    common_keys = before_keys & after_keys
 
-    if added_elements or removed_elements:
+    added_elements = after_keys - before_keys
+    removed_elements = before_keys - after_keys
+    content_changed_elements = {x for x in common_keys if before[x] != after[x]}
+
+    if added_elements or removed_elements or content_changed_elements:
         logger.log(log_level, "Files changes in path: '%s'", f"{path}")
     if added_elements:
         logger.log(
@@ -93,4 +107,10 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
             log_level,
             "Files removed:\n%s",
             "\n".join([f"- {x}" for x in sorted(removed_elements)]),
+        )
+    if content_changed_elements:
+        logger.log(
+            log_level,
+            "Files content changed:\n%s",
+            "\n".join([f"* {x}" for x in sorted(content_changed_elements)]),
         )

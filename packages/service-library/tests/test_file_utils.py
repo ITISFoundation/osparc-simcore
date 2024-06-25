@@ -92,6 +92,8 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
         (some_dir / "hoho").mkdir(parents=True, exist_ok=True)
     assert "Files changes in path" in caplog.text
     assert "Files added:" in caplog.text
+    assert "Files removed:" not in caplog.text
+    assert "Files content changed" not in caplog.text
 
     # files were removed
     caplog.clear()
@@ -99,6 +101,8 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
         await remove_directory(path=some_dir)
     assert "Files changes in path" in caplog.text
     assert "Files removed:" in caplog.text
+    assert "Files added:" not in caplog.text
+    assert "Files content changed" not in caplog.text
 
     # nothing changed
     caplog.clear()
@@ -107,6 +111,7 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     assert caplog.text == ""
 
     # files added and removed
+    caplog.clear()
     some_dir.mkdir(parents=True, exist_ok=True)
     (some_dir / "som_other_file").touch()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
@@ -115,3 +120,14 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     assert "Files changes in path" in caplog.text
     assert "Files added:" in caplog.text
     assert "Files removed:" in caplog.text
+    assert "Files content changed" not in caplog.text
+
+    # file content changed
+    caplog.clear()
+    (some_dir / "file_to_change").touch()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        (some_dir / "file_to_change").write_text("ab")
+    assert "Files changes in path" in caplog.text
+    assert "Files added:" not in caplog.text
+    assert "Files removed:" not in caplog.text
+    assert "Files content changed" in caplog.text
