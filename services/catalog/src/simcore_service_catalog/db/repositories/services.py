@@ -13,11 +13,13 @@ from models_library.api_schemas_catalog.services_specifications import (
 )
 from models_library.basic_types import VersionStr
 from models_library.groups import GroupAtDB, GroupTypeInModel
+from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from models_library.users import GroupID
+from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
+from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
@@ -103,10 +105,52 @@ def _merge_specs(
 
 def _version(column_or_value):
     # converts version value string to array[integer] that can be compared
+    # i.e. '1.2.3' -> [1, 2, 3]
     return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
 
 
-def _make_list_services_with_history_statement(limit: int | None, offset: int | None):
+class AccessRightsClauses:
+    can_execute = services_access_rights.c.execute_access
+    can_read = (
+        services_access_rights.c.execute_access | services_access_rights.c.write_access
+    )
+    is_owner = (
+        services_access_rights.c.execute_access & services_access_rights.c.write_access
+    )
+    can_edit = services_access_rights.c.write_access
+
+
+def _make_list_accessible_services(
+    product_name: ProductName, user_id: UserID, access_clause=None
+):
+    conditions = [
+        services_access_rights.c.product_name == product_name,
+        user_to_groups.c.uid == user_id,
+    ]
+    if access_clause is not None:
+        conditions.append(access_clause)
+
+    return (
+        sa.select(services_meta_data.c.key, services_meta_data.c.version)
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(user_to_groups, services_access_rights.c.gid == user_to_groups.c.gid)
+        )
+        .where(and_(*conditions))
+        .distinct()  # Multiple gid of the same uid can have access to the same (key, version). Therefore they apper repeated
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+    )
+
+
+def _make_list_services_with_history_statement(
+    *, limit: int | None, offset: int | None
+):
     #
     # Common Table Expression (CTE) to select distinct service names with pagination.
     # This allows limiting the subquery to the required pagination instead of paginating at the last query.
@@ -313,7 +357,7 @@ class ServicesRepository(BaseRepository):
     async def list_services_with_history(
         self, limit: int | None = None, offset: int | None = None
     ) -> list[ServiceHistoryItem]:
-        stmt = _make_list_services_with_history_statement(limit, offset)
+        stmt = _make_list_services_with_history_statement(limit=limit, offset=offset)
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt)

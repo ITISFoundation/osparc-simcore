@@ -315,3 +315,22 @@ async def test_list_all_services_and_history_with_pagination(
 
     for service in all_services:
         assert len(service.history) == num_versions_per_service
+
+
+if __name__ == "__main__":
+    from simcore_service_catalog.db.repositories.services import (
+        AccessRightsClauses,
+        _make_list_accessible_services,
+    )
+    from sqlalchemy.dialects import postgresql
+
+    # stmt = _make_list_services_with_history_statement(limit=10, offset=None)
+    stmt = _make_list_accessible_services(
+        user_id=4,
+        product_name="osparc",
+        access_clause=AccessRightsClauses.can_read,
+    )
+    compiled = stmt.compile(
+        compile_kwargs={"literal_binds": True}, dialect=postgresql.dialect()
+    )
+    print(compiled)
