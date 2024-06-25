@@ -113,4 +113,4 @@ def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
     # lowered to allow CI to properly shutdown RedisClientSDK instances
     from servicelib import redis
 
-    mocker.patch.object(redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=2))
+    mocker.patch.object(redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=1))
