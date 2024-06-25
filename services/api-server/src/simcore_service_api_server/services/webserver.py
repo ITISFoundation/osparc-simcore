@@ -36,7 +36,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -548,7 +547,7 @@ class AuthSession:
     # PRODUCTS -------------------------------------------------
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
-    async def get_product_price(self) -> NonNegativeDecimal | None:
+    async def get_product_price(self) -> GetCreditPrice:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
@@ -556,7 +555,7 @@ class AuthSession:
         response.raise_for_status()
         data = Envelope[GetCreditPrice].parse_raw(response.text).data
         assert data is not None  # nosec
-        return data.usd_per_credit
+        return data
 
     # SERVICES -------------------------------------------------
 

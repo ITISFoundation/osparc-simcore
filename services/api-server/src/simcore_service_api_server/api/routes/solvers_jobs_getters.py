@@ -31,7 +31,7 @@ from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.director_v2 import DirectorV2Api
 from ...services.jobs import (
     get_custom_metadata,
     raise_if_job_not_associated_with_solver,
@@ -231,7 +231,7 @@ async def get_job_outputs(
     assert len(node_ids) == 1  # nosec
 
     product_price = await webserver_api.get_product_price()
-    if product_price is not None:
+    if product_price.usd_per_credit is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
             raise MissingWalletError(job_id=project.uuid)
@@ -295,16 +295,17 @@ async def get_job_output_logfile(
 
     project_id = job_id
 
-    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
+    log_link_map = await director2_api.get_computation_logs(
         user_id=user_id, project_id=project_id
     )
+    logs_urls = log_link_map.log_links
 
     _logger.debug(
         "Found %d logfiles for %s %s: %s",
         len(logs_urls),
         f"{project_id=}",
         f"{user_id=}",
-        list(logs_urls.keys()),
+        list(elm.download_link for elm in logs_urls),
     )
 
     # if more than one node? should rezip all of them??
@@ -312,7 +313,8 @@ async def get_job_output_logfile(
         len(logs_urls) <= 1
     ), "Current version only supports one node per solver"
 
-    for presigned_download_link in logs_urls.values():
+    for log_link in logs_urls:
+        presigned_download_link = log_link.download_link
         _logger.info(
             "Redirecting '%s' to %s ...",
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
