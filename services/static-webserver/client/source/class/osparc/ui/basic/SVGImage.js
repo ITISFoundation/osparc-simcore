@@ -59,6 +59,14 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
   },
 
+  statics: {
+    rgbToCSSFilter: function(rgb) {
+      const [r, g, b] = rgb.split(",").map(Number);
+      // Values below are based on approximations and may not be perfect
+      return `invert(${100 - r/2.55}%) sepia(${g/2.55}%) saturate(${b/2.55}%) hue-rotate(${r - g}deg)`;
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -86,9 +94,13 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       }
     },
 
-    __applyImageColor: function() {
+    /**
+      * @param rgb string in the following format: "(255,0,0)"
+      */
+    __applyImageColor: function(rgb) {
+      const filterValue = this.self().rgbToCSSFilter(rgb);
       const myStyle = {
-        "filter": "invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)"
+        "filter": filterValue
       };
       this.getChildControl("image").getContentElement().setStyles(myStyle);
     },
