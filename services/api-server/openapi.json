@@ -3933,7 +3933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LogLinkMap"
+                  "$ref": "#/components/schemas/JobLogsMap"
                 }
               }
             }
@@ -4371,6 +4371,23 @@
           }
         }
       },
+      "JobLogsMap": {
+        "properties": {
+          "log_links": {
+            "items": {
+              "$ref": "#/components/schemas/LogLink"
+            },
+            "type": "array",
+            "title": "Log Links",
+            "description": "Array of download links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_links"
+        ],
+        "title": "JobLogsMap"
+      },
       "JobOutputs": {
         "properties": {
           "job_id": {
@@ -4509,25 +4526,26 @@
         "type": "object",
         "title": "Links"
       },
-      "LogLinkMap": {
+      "LogLink": {
         "properties": {
-          "map": {
-            "additionalProperties": {
-              "type": "string",
-              "maxLength": 65536,
-              "minLength": 1,
-              "format": "uri"
-            },
-            "type": "object",
-            "title": "Map",
-            "description": "Mapping of node name to download link"
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "download_link": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Download Link"
           }
         },
         "type": "object",
         "required": [
-          "map"
+          "node_name",
+          "download_link"
         ],
-        "title": "LogLinkMap"
+        "title": "LogLink"
       },
       "Meta": {
         "properties": {

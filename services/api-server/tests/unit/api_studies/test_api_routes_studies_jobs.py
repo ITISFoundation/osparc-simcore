@@ -26,7 +26,7 @@ from servicelib.common_headers import (
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
-from simcore_service_api_server.models.schemas.studies import LogLinkMap, Study, StudyID
+from simcore_service_api_server.models.schemas.studies import JobLogsMap, Study, StudyID
 
 _faker = Faker()
 
@@ -358,4 +358,4 @@ async def test_get_job_logs(
         f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
-    _ = LogLinkMap.parse_obj(response.json())
+    _ = JobLogsMap.parse_obj(response.json())

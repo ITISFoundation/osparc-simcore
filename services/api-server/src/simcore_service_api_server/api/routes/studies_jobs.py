@@ -33,7 +33,7 @@ from ...models.schemas.jobs import (
     JobOutputs,
     JobStatus,
 )
-from ...models.schemas.studies import LogLinkMap, Study, StudyID
+from ...models.schemas.studies import JobLogsMap, Study, StudyID
 from ...services.director_v2 import DirectorV2Api
 from ...services.jobs import (
     get_custom_metadata,
@@ -304,7 +304,7 @@ async def get_study_job_outputs(
 
 @router.get(
     "/{study_id}/jobs/{job_id}/outputs/log-links",
-    response_model=LogLinkMap,
+    response_model=JobLogsMap,
     status_code=status.HTTP_200_OK,
     summary="Get download links for study job log files",
 )

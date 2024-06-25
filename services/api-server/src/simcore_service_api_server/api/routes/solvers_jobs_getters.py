@@ -298,7 +298,7 @@ async def get_job_output_logfile(
     log_link_map = await director2_api.get_computation_logs(
         user_id=user_id, project_id=project_id
     )
-    logs_urls = log_link_map.map
+    logs_urls = log_link_map.log_links
 
     _logger.debug(
         "Found %d logfiles for %s %s: %s",

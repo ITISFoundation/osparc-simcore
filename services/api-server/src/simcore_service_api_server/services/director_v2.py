@@ -19,7 +19,7 @@ from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
-from ..models.schemas.studies import DownloadLink, LogLinkMap, NodeName
+from ..models.schemas.studies import JobLogsMap, LogLink
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,7 @@ class DirectorV2Api(BaseServiceClientApi):
     @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
-    ) -> LogLinkMap:
+    ) -> JobLogsMap:
         response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
@@ -176,12 +176,14 @@ class DirectorV2Api(BaseServiceClientApi):
         # probably not found
         response.raise_for_status()
 
-        node_to_links: dict[NodeName, DownloadLink] = {}
+        log_links: list[LogLink] = []
         for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
             if r.download_link:
-                node_to_links[f"{r.task_id}"] = r.download_link
+                log_links.append(
+                    LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
+                )
 
-        return LogLinkMap(map=node_to_links)
+        return JobLogsMap(log_links=log_links)
 
 
 # MODULES APP SETUP -------------------------------------------------------------

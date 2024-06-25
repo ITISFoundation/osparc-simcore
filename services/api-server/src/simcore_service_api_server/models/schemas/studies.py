@@ -1,4 +1,4 @@
-from typing import Mapping, TypeAlias
+from typing import TypeAlias
 
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
@@ -31,7 +31,10 @@ class StudyPort(solvers.SolverPort):
     )
 
 
-class LogLinkMap(BaseModel):
-    map: Mapping[NodeName, DownloadLink] = Field(
-        ..., description="Mapping of node name to download link"
-    )
+class LogLink(BaseModel):
+    node_name: NodeName
+    download_link: DownloadLink
+
+
+class JobLogsMap(BaseModel):
+    log_links: list[LogLink] = Field(..., description="Array of download links")
