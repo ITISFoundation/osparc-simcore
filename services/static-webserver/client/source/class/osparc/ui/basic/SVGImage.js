@@ -16,28 +16,19 @@
 ************************************************************************ */
 
 /**
- * Widget that displays an svg image and support changing its color.
- * It is meant to be used for those images that are not available in the catalog of font icons we include.
+ * Widget that displays a SVG image and supports changing its color.
+ * It is meant to be used for those images that are not available in the catalogs of font icons we include.
  */
 
 
 qx.Class.define("osparc.ui.basic.SVGImage", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.ui.layout.CenteredGrid,
 
   /**
    * @param source
    */
   construct: function(source) {
     this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.set({
-      allowGrowX: true,
-      allowGrowY: true,
-      alignX: "center",
-      alignY: "middle"
-    });
 
     if (source) {
       this.setSource(source);
@@ -151,9 +142,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
             alignX: "center",
             alignY: "middle"
           });
-          this._add(control, {
-            flex: 1
-          });
+          this.addCenteredWidget(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -166,7 +155,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param keywordOrRgb predefined keyword or rgb "0,255,0"
+      * @param keywordOrRgb {string} predefined keyword or rgb in the folloing format "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
       let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);

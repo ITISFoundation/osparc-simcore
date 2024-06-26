@@ -5,6 +5,7 @@
 import itertools
 
 import pytest
+from aiohttp import web
 from aiohttp.web_exceptions import (
     HTTPBadRequest,
     HTTPError,
@@ -14,10 +15,14 @@ from aiohttp.web_exceptions import (
     HTTPNotModified,
     HTTPOk,
 )
+from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import (
     _STATUS_CODE_TO_HTTP_ERRORS,
+    create_http_error,
+    exception_to_response,
     get_http_error,
 )
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 #
 
@@ -53,3 +58,29 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 
     assert http_error_cls != HTTPError
     assert issubclass(http_error_cls, HTTPError)
+
+
+@pytest.mark.parametrize("skip_details", [True, False])
+def tests_exception_to_response(skip_details: bool):
+    exception = create_http_error(
+        errors=[RuntimeError("foo")],
+        reason="Something whent wrong",
+        http_error_cls=web.HTTPInternalServerError,
+        skip_internal_error_details=skip_details,
+    )
+
+    # For now until deprecated SEE https://github.com/aio-libs/aiohttp/issues/2415
+    assert isinstance(exception, Exception)
+    assert isinstance(exception, web.Response)
+    assert hasattr(exception, "__http_exception__")
+
+    # until they have exception.make_response(), we user
+    response = exception_to_response(exception)
+    assert isinstance(response, web.Response)
+    assert not isinstance(response, Exception)
+    assert not hasattr(response, "__http_exception__")
+
+    assert response.content_type == MIMETYPE_APPLICATION_JSON
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.text
+    assert response.body

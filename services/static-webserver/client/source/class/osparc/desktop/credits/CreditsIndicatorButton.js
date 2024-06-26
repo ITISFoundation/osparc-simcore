@@ -27,11 +27,8 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     });
 
     this.getChildControl("image").set({
-      marginTop: 10,
       width: 24,
-      maxWidth: 24,
-      height: 24,
-      maxHeight: 24
+      height: 24
     });
 
     this.__creditsContainer = new osparc.desktop.credits.CreditsNavBarContainer();
