@@ -7,6 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import cast
 
 from aiohttp import web
+from aws_library.s3.client import SimcoreS3API
 from models_library.utils.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying
@@ -14,7 +15,6 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_fixed
 
 from .constants import APP_CONFIG_KEY, APP_S3_KEY, RETRY_WAIT_SECS
-from .s3_client import StorageS3Client
 from .settings import Settings
 
 log = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ async def setup_s3_client(app) -> AsyncGenerator[None, None]:
             reraise=True,
         ):
             with attempt:
-                client = await StorageS3Client.create(
+                client = await SimcoreS3API.create(
                     storage_s3_settings,
                     storage_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
                 )
@@ -66,7 +66,7 @@ def setup_s3(app: web.Application):
         app.cleanup_ctx.append(setup_s3_bucket)
 
 
-def get_s3_client(app: web.Application) -> StorageS3Client:
+def get_s3_client(app: web.Application) -> SimcoreS3API:
     assert app[APP_S3_KEY]  # nosec
-    assert isinstance(app[APP_S3_KEY], StorageS3Client)  # nosec
-    return cast(StorageS3Client, app[APP_S3_KEY])
+    assert isinstance(app[APP_S3_KEY], SimcoreS3API)  # nosec
+    return cast(SimcoreS3API, app[APP_S3_KEY])
