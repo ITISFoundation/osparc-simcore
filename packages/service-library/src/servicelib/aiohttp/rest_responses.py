@@ -126,7 +126,6 @@ def exception_to_response(exc: HTTPError) -> web.Response:
         status=exc.status,
         headers=exc.headers,
         reason=exc.reason,
-        body=exc.body,
         text=exc.text,
         content_type=exc.content_type,
     )
