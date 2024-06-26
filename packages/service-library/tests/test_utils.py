@@ -5,7 +5,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Coroutine, Iterator
 from copy import copy, deepcopy
-from pathlib import Path
 from random import randint
 from typing import NoReturn
 from unittest import mock
@@ -66,7 +65,11 @@ def mock_logger(mocker: MockerFixture) -> Iterator[mock.Mock]:
     ), "Expected all 3 errors ALWAYS logged as warnings"
 
 
-async def test_logged_gather(event_loop, coros, mock_logger):
+async def test_logged_gather(
+    event_loop: asyncio.AbstractEventLoop,
+    coros: list[Coroutine],
+    mock_logger: mock.Mock,
+):
     with pytest.raises(ValueError) as excinfo:  # noqa: PT011
         await logged_gather(*coros, reraise=True, log=mock_logger)
 
@@ -88,7 +91,7 @@ async def test_logged_gather(event_loop, coros, mock_logger):
             assert not task.cancelled()
 
 
-async def test_logged_gather_wo_raising(coros, mock_logger):
+async def test_logged_gather_wo_raising(coros: list[Coroutine], mock_logger: mock.Mock):
     results = await logged_gather(*coros, reraise=False, log=mock_logger)
 
     assert results[0] == 0
@@ -97,13 +100,6 @@ async def test_logged_gather_wo_raising(coros, mock_logger):
     assert isinstance(results[3], RuntimeError)
     assert isinstance(results[4], ValueError)
     assert results[5] == 5
-
-
-def print_tree(path: Path, level=0):
-    tab = " " * level
-    print(f"{tab}{'+' if path.is_dir() else '-'} {path if level==0 else path.name}")
-    for p in path.glob("*"):
-        print_tree(p, level + 1)
 
 
 @pytest.fixture()
@@ -151,7 +147,7 @@ async def test_fire_and_forget_cancellation_no_errors_raised(
 async def test_fire_and_forget_1000s_tasks(faker: Faker):
     tasks_collection = set()
 
-    async def _some_task(n: int):
+    async def _some_task(n: int) -> str:
         await asyncio.sleep(randint(1, 3))
         return f"I'm great since I slept a bit, and by the way I'm task {n}"
 
@@ -189,6 +185,16 @@ def test_ensure_ends_with(original: str, termination: str, expected: str):
 @pytest.fixture
 def uids(faker: Faker) -> list[int]:
     return [faker.pyint() for _ in range(10)]
+
+
+@pytest.fixture
+def long_delay() -> int:
+    return 10
+
+
+@pytest.fixture
+def slow_successful_coros_list(uids: list[int], long_delay: int) -> list[Coroutine]:
+    return [_succeed(uid, delay=long_delay) for uid in uids]
 
 
 @pytest.fixture
@@ -245,7 +251,9 @@ async def test_limited_gather_limits(
 
 
 async def test_limited_gather(
-    event_loop: asyncio.AbstractEventLoop, coros, mock_logger
+    event_loop: asyncio.AbstractEventLoop,
+    coros: list[Coroutine],
+    mock_logger: mock.Mock,
 ):
     with pytest.raises(RuntimeError) as excinfo:
         await limited_gather(*coros, reraise=True, log=mock_logger, limit=0)
@@ -267,7 +275,9 @@ async def test_limited_gather(
             assert isinstance(result, ValueError | RuntimeError)
 
 
-async def test_limited_gather_wo_raising(coros, mock_logger):
+async def test_limited_gather_wo_raising(
+    coros: list[Coroutine], mock_logger: mock.Mock
+):
     results = await limited_gather(*coros, reraise=False, log=mock_logger, limit=0)
 
     assert results[0] == 0
@@ -276,3 +286,21 @@ async def test_limited_gather_wo_raising(coros, mock_logger):
     assert isinstance(results[3], RuntimeError)
     assert isinstance(results[4], ValueError)
     assert results[5] == 5
+
+
+async def test_limited_gather_cancellation(
+    event_loop: asyncio.AbstractEventLoop, slow_successful_coros_list: list[Coroutine]
+):
+    task = asyncio.create_task(limited_gather(*slow_successful_coros_list, limit=0))
+    await asyncio.sleep(3)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    # check all coros are cancelled
+    unfinished_tasks = [
+        task
+        for task in asyncio.all_tasks(event_loop)
+        if task is not asyncio.current_task()
+    ]
+    assert not unfinished_tasks
