@@ -214,7 +214,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
                 directory_expands.append(
                     expand_directory(
-                        self.app,
+                        get_s3_client(self.app),
                         self.simcore_bucket_name,
                         metadata,
                         max_items_to_include,
