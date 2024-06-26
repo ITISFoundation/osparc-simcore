@@ -31,14 +31,16 @@ folders = sa.Table(
         ),
     ),
     sa.Column(
-        "created_by",
+        "owner",
         sa.BigInteger,
         sa.ForeignKey(
             "groups.gid",
             name="fk_folders_to_groups_gid",
-            ondelete="SET NULL",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         nullable=True,
+        doc="Traces back the creator of the folder",
     ),
     sa.Column(
         "created_at",
@@ -98,6 +100,12 @@ folders_access_rights = sa.Table(
         nullable=False,
         doc="can remove the the entry pointed by folder_id",
     ),
+    sa.Column(
+        "admin",
+        sa.Boolean(),
+        nullable=False,
+        doc="can alter folder_access_rights entries except the owner's one",
+    ),
     sa.PrimaryKeyConstraint("folder_id", "gid", name="folders_access_rights_pk"),
 )
 
@@ -126,6 +134,32 @@ folders_to_projects = sa.Table(
         ),
     ),
     sa.PrimaryKeyConstraint("folder_id", "project_id", name="projects_to_folder_pk"),
+    sa.Column(
+        "created_by",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_folders_to_groups_gid",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        doc="Traces back the person who added the project to the folder",
+    ),
+    sa.Column(
+        "created_at",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "last_modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Timestamp with last update",
+    ),
 )
 
 # PROCEDURES ------------------------

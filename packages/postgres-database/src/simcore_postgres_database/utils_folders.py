@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Final, TypeAlias
+from typing import Any, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -89,6 +89,24 @@ def _validate_folder_name(value: str) -> None:
         )
 
 
+class _PermissionsType(TypedDict):
+    read: bool
+    write: bool
+    delete: bool
+    admin: bool
+
+
+def _parse_permissions(
+    *, read: bool, write: bool, delete: bool, admin: bool = False
+) -> _PermissionsType:
+    # ensure admin always has all the permissions
+    return (
+        {"read": True, "write": True, "delete": True, "admin": True}
+        if admin
+        else {"read": read, "write": write, "delete": delete, "admin": False}
+    )
+
+
 async def folder_create(
     connection: SAConnection,
     name: str,
@@ -142,9 +160,9 @@ async def folder_create(
                     folder_id=folder_id,
                     gid=gid,
                     # NOTE the gid that owns the folder always has full permissions
-                    read=True,
-                    write=True,
-                    delete=True,
+                    **_parse_permissions(
+                        read=True, write=True, delete=True, admin=True
+                    ),
                 )
             )
         except ForeignKeyViolation as e:
@@ -163,21 +181,9 @@ async def folder_share(
     recipient_write: bool = False,
     recipient_delete: bool = False,
 ) -> None:
-    """
-    if any of the gids own the directory, folder can be shared
-    # the permission must be given via the same permission level
-
-    Arguments:
-        connection -- _description_
-        folder_id -- _description_
-        shared_group_ids -- _description_
-        recipient_group_id -- _description_
-
-    Keyword Arguments:
-        recipient_read -- _description_ (default: {_DEFAULT_ACCESS_READ})
-        recipient_write -- _description_ (default: {_DEFAULT_ACCESS_WRITE})
-        recipient_delete -- _description_ (default: {_DEFAULT_ACCESS_DELETE})
-    """
+    # Permission change rules:
+    # - `owner`` can never loose any permission, always haas all of them
+    # - `admin` can edit and remove permissions of every other user, including other `admins`
 
     async with connection.begin():
         requested_permissions: dict["str", bool] = {}
@@ -188,24 +194,24 @@ async def folder_share(
             .where(folders_access_rights.c.gid.in_(shared_group_ids))
         )
         if recipient_read:
-            has_permissions_query.where(
+            has_permissions_query = has_permissions_query.where(
                 folders_access_rights.c.read.is_(recipient_read)
             )
             requested_permissions["read"] = True
         if recipient_write:
-            has_permissions_query.where(
+            has_permissions_query = has_permissions_query.where(
                 folders_access_rights.c.write.is_(recipient_write)
             )
             requested_permissions["write"] = True
         if recipient_delete:
-            has_permissions_query.where(
+            has_permissions_query = has_permissions_query.where(
                 folders_access_rights.c.delete.is_(recipient_delete)
             )
             requested_permissions["delete"] = True
 
         has_permission: int | None = await connection.scalar(has_permissions_query)
 
-        if not has_permission:
+        if not has_permission or not requested_permissions:
             raise SharingMissingPermissionsError(
                 folder_id=folder_id,
                 gids=shared_group_ids,
@@ -216,9 +222,9 @@ async def folder_share(
         data: dict[str, Any] = {
             "folder_id": folder_id,
             "gid": recipient_group_id,
-            "read": recipient_read,
-            "write": recipient_write,
-            "delete": recipient_delete,
+            **_parse_permissions(
+                read=recipient_read, write=recipient_write, delete=recipient_delete
+            ),
         }
         insert_stmt = insert(folders_access_rights).values(**data)
         upsert_stmt = insert_stmt.on_conflict_do_update(
