@@ -3,7 +3,8 @@
 """
 
 import logging
-from typing import AsyncGenerator, cast
+from collections.abc import AsyncGenerator
+from typing import cast
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
