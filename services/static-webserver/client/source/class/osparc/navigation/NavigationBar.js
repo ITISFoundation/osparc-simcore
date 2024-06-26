@@ -239,13 +239,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "credits-button":
-          control = new osparc.desktop.credits.CreditsIndicatorButton().set({
-            maxHeight: 32
-          });
-          control.getChildControl("icon").set({
-            maxHeight: 24,
-            scale: true
-          });
+          control = new osparc.desktop.credits.CreditsIndicatorButton();
           osparc.utils.Utils.setIdToWidget(control, "creditsNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;

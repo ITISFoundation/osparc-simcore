@@ -27,17 +27,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
-    setCreditsIconToButton: function(button) {
-      button.setIcon(osparc.desktop.credits.Utils.CREDITS_ICON);
-      const store = osparc.store.Store.getInstance();
-      const contextWallet = store.getContextWallet();
-      if (contextWallet) {
-        contextWallet.bind("creditsAvailable", button, "textColor", {
-          converter: c => osparc.desktop.credits.Utils.creditsToColor(c, "strong-main")
-        });
-      }
-    },
-
     getNoWriteAccessInformationLabel: function() {
       return new qx.ui.basic.Label().set({
         value: qx.locale.Manager.tr("You can't access this information"),

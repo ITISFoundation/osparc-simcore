@@ -16,17 +16,20 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
-  extend: qx.ui.form.Button,
+  extend: osparc.desktop.credits.CreditsImage,
 
   construct: function() {
     this.base(arguments);
 
     this.set({
-      backgroundColor: "transparent"
+      cursor: "pointer",
+      padding: [3, 8]
     });
 
-    const store = osparc.store.Store.getInstance();
-    store.bind("contextWallet", this, "wallet");
+    this.getChildControl("image").set({
+      width: 24,
+      height: 24
+    });
 
     this.__creditsContainer = new osparc.desktop.credits.CreditsNavBarContainer();
     this.__creditsContainer.exclude();
@@ -34,23 +37,10 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     this.addListener("tap", this.__buttonTapped, this);
   },
 
-  properties: {
-    wallet: {
-      check: "osparc.data.model.Wallet",
-      init: null,
-      nullable: true,
-      event: "changeWallet",
-      apply: "__applyWallet"
-    }
-  },
 
   members: {
     __creditsContainer: null,
     __tappedOut: null,
-
-    __applyWallet: function() {
-      osparc.desktop.credits.Utils.setCreditsIconToButton(this);
-    },
 
     __buttonTapped: function() {
       if (this.__tappedOut) {
