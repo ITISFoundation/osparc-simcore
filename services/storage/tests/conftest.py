@@ -123,6 +123,7 @@ async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
 
 @pytest.fixture
 def simcore_s3_dsm(client: TestClient) -> SimcoreS3DataManager:
+    assert client.app
     return cast(
         SimcoreS3DataManager,
         get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),
