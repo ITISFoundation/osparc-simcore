@@ -35,6 +35,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 
@@ -210,3 +211,14 @@ async def create_directory_with_files(
         await delete_directory(directory_file_upload=directory_file_upload)
 
     return _create_context
+
+
+@pytest.fixture
+async def with_versioning_enabled(
+    s3_client: S3Client,
+    storage_s3_bucket: S3BucketName,
+) -> None:
+    await s3_client.put_bucket_versioning(
+        Bucket=storage_s3_bucket,
+        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
+    )
