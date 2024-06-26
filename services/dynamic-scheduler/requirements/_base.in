@@ -14,9 +14,10 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-
+arrow
 fastapi
 httpx
 packaging
+python-socketio
 typer[all]
 uvicorn[standard]

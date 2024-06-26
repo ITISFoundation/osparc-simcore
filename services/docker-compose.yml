@@ -1120,7 +1120,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "8",
+        "9",
         "--appendonly",
         "yes"
       ]

@@ -13,6 +13,10 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
+from servicelib.utils import logged_gather
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
 
 pytest_plugins = [
@@ -86,6 +90,18 @@ def disable_redis_setup(mocker: MockerFixture) -> None:
     mocker.patch(f"{base_path}.setup_redis")
 
 
+@pytest.fixture
+def disable_service_tracker_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_service_tracker")
+
+
+@pytest.fixture
+def disable_deferred_manager_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_deferred_manager")
+
+
 MAX_TIME_FOR_APP_TO_STARTUP = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
@@ -101,3 +117,13 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield test_app
+
+
+@pytest.fixture
+async def remove_redis_data(redis_service: RedisSettings) -> None:
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(x) for x in RedisDatabase}, redis_service
+    ) as manager:
+        await logged_gather(
+            *[manager.client(d).redis.flushall() for d in RedisDatabase]
+        )

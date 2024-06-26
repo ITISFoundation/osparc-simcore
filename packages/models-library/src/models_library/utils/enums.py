@@ -1,6 +1,11 @@
+import enum
 import inspect
 from enum import Enum, unique
 from typing import Any
+
+
+class auto_str(enum.auto):  # noqa: N801
+    value: str = enum._auto_null  # pylint:disable=protected-access # noqa: SLF001
 
 
 @unique

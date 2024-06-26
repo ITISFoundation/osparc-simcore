@@ -39,11 +39,15 @@ def mock_rabbitmq_clients(
 
 @pytest.fixture
 def mock_redis_client(
-    disable_redis_setup: None, mocker: MockerFixture, redis_client_ok: bool
+    disable_redis_setup: None,
+    disable_service_tracker_setup: None,
+    mocker: MockerFixture,
+    redis_client_ok: bool,
 ) -> None:
     base_path = "simcore_service_dynamic_scheduler.api.rest._dependencies"
     mocker.patch(
-        f"{base_path}.get_redis_client", return_value=MockHealth(redis_client_ok)
+        f"{base_path}.get_all_redis_clients",
+        return_value={0: MockHealth(redis_client_ok)},
     )
 
 
@@ -51,6 +55,7 @@ def mock_redis_client(
 def app_environment(
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
+    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment

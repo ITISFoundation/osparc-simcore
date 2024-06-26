@@ -215,6 +215,13 @@ class RedisManagerDBConfig:
     health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
 
 
+@dataclass(frozen=True)
+class RedisManagerDBConfig:
+    database: RedisDatabase
+    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
+    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
+
+
 @dataclass
 class RedisClientsManager:
     """
@@ -245,3 +252,10 @@ class RedisClientsManager:
 
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
+
+    async def __aenter__(self):
+        await self.setup()
+        return self
+
+    async def __aexit__(self, *args):
+        await self.shutdown()
