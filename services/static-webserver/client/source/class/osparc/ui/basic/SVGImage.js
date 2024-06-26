@@ -30,14 +30,37 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
   construct: function(source) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    const layout = new qx.ui.layout.Grid();
+    layout.setRowFlex(0, 1);
+    layout.setRowFlex(2, 1);
+    layout.setColumnFlex(0, 1);
+    layout.setColumnFlex(2, 1);
+    this._setLayout(layout);
 
+    [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 2],
+      [2, 0],
+      [2, 1],
+      [2, 2]
+    ].forEach(quad => {
+      const empty = new qx.ui.core.Spacer();
+      this._add(empty, {
+        row: quad[0],
+        column: quad[1]
+      });
+    });
+    /*
     this.set({
       allowGrowX: true,
       allowGrowY: true,
       alignX: "center",
       alignY: "middle"
     });
+    */
 
     if (source) {
       this.setSource(source);
@@ -146,13 +169,16 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
         case "image":
           control = new qx.ui.basic.Image().set({
             scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
             allowGrowX: true,
             allowGrowY: true,
             alignX: "center",
             alignY: "middle"
           });
           this._add(control, {
-            flex: 1
+            row: 1,
+            column: 1
           });
           break;
       }
