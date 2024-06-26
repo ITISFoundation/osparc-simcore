@@ -86,7 +86,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
-      this.__updateFavicon();
+      // this.__updateFavicon();
 
       this.__initRouting();
       this.__startupChecks();
@@ -207,15 +207,35 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateFavicon: function() {
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        document.getElementsByTagName("head")[0].appendChild(link);
-      }
-      link.href = "";
       osparc.product.Utils.getFaviconUrl()
-        .then(url => link.href = url);
+        .then(url => {
+          const faviconURLs = [{
+            rel: "icon",
+            type: "image/png",
+            href: url + "?" + new Date().getTime()
+          }, {
+            rel: "shortcut icon",
+            type: "image/png",
+            href: url + "?" + new Date().getTime()
+          }, {
+            rel: "apple-touch-icon",
+            type: "image/png",
+            href: url + "?" + new Date().getTime()
+          }];
+
+          // Remove existing favicons
+          const existingIcons = document.querySelectorAll("link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']");
+          existingIcons.forEach(icon => icon.parentNode.removeChild(icon));
+
+          // Add new favicon links
+          faviconURLs.forEach(favicon => {
+            const link = document.createElement("link");
+            link.rel = favicon.rel;
+            link.type = favicon.type;
+            link.href = favicon.href;
+            document.getElementsByTagName("head")[0].appendChild(link);
+          });
+        });
     },
 
     __startupChecks: function() {
