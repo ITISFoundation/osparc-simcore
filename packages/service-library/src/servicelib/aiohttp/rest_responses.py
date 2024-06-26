@@ -13,6 +13,7 @@ from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..status_utils import get_code_description
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
@@ -96,16 +97,20 @@ def create_http_error(
     # TODO: guarantee no throw!
 
     is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
+    default_message = reason or get_code_description(http_error_cls.status_code)
 
     if is_internal_error and skip_internal_error_details:
         error = ErrorType(
             errors=[],
             status=http_error_cls.status_code,
+            message=default_message,
         )
     else:
+        items = [ErrorItemType.from_error(err) for err in errors]
         error = ErrorType(
-            errors=[ErrorItemType.from_error(err) for err in errors],
+            errors=items,
             status=http_error_cls.status_code,
+            message=items[0].message if items else default_message,
         )
 
     assert not http_error_cls.empty_body  # nosec
