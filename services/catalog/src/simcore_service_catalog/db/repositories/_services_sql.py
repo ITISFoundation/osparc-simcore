@@ -72,7 +72,7 @@ class AccessRightsClauses:
     )
 
 
-def compose_access_rights_clause(
+def create_access_rights_clause(
     product_name: ProductName,
     user_id: UserID,
     access_clause: sa.sql.ClauseElement | None = None,

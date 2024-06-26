@@ -11,6 +11,14 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
+from simcore_postgres_database.utils import as_postgres_sql_statement
+from simcore_service_catalog.db.repositories._services_sql import (
+    AccessRightsClauses,
+    _list_services_key_version_stmt,
+    create_access_rights_clause,
+    list_services_with_history_stmt,
+    total_count_stmt,
+)
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -329,23 +337,20 @@ async def test_list_all_services_and_history_with_pagination(
         assert len(service.history) == num_versions_per_service
 
 
-if __name__ == "__main__":
-    from simcore_service_catalog.db.repositories.services import (
-        AccessRightsClauses,
-        _list_services_key_version_stmt,
-        compose_access_rights_clause,
+def test_services_sql_queries():
+    access_rights = create_access_rights_clause(
+        product_name="osparc",
+        user_id=4,
+        access_clause=AccessRightsClauses.can_read,
     )
-    from sqlalchemy.dialects import postgresql
 
-    # stmt = _make_list_services_with_history_statement(limit=10, offset=None)
-    stmt = _list_services_key_version_stmt(
-        compose_access_rights_clause(
-            product_name="osparc",
-            user_id=4,
-            access_clause=AccessRightsClauses.can_read,
-        )
+    stmt = _list_services_key_version_stmt(access_rights=access_rights)
+    print(as_postgres_sql_statement(stmt))
+
+    stmt = total_count_stmt(access_rights=access_rights)
+    print(as_postgres_sql_statement(stmt))
+
+    stmt = list_services_with_history_stmt(
+        access_rights=access_rights, limit=10, offset=None
     )
-    compiled = stmt.compile(
-        compile_kwargs={"literal_binds": True}, dialect=postgresql.dialect()
-    )
-    print(compiled)
+    print(as_postgres_sql_statement(stmt))
