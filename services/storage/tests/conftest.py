@@ -15,6 +15,7 @@ from time import perf_counter
 from typing import cast
 
 import aioresponses
+import dotenv
 import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
@@ -106,6 +107,21 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     assert service_folder.exists()
     assert any(service_folder.glob("src/simcore_service_storage"))
     return service_folder
+
+
+@pytest.fixture(scope="session")
+def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str | None]:
+    env_devel_file = project_slug_dir / ".env-devel"
+    assert env_devel_file.exists()
+    return dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
+
+
+@pytest.fixture
+def project_env_devel_environment(
+    project_env_devel_dict: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for key, value in project_env_devel_dict.items():
+        monkeypatch.setenv(key, value)
 
 
 ## FAKE DATA FIXTURES ----------------------------------------------

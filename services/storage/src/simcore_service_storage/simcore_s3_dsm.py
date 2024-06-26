@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aws_library.s3.errors import S3KeyNotFoundError
+from aws_library.s3.models import S3MetaData
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -68,7 +69,6 @@ from .models import (
     UserOrProjectFilter,
 )
 from .s3 import get_s3_client
-from .s3_client import S3MetaData
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
 from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
