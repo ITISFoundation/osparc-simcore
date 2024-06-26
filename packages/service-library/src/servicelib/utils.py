@@ -202,11 +202,12 @@ async def limited_as_completed(
 
 
     """
-    if isinstance(awaitables, AsyncIterable):
-        awaitable_iterator = aiter(awaitables)
+    try:
+        awaitable_iterator = aiter(awaitables)  # type: ignore[arg-type]
         is_async = True
-    else:
-        awaitable_iterator = iter(awaitables)
+    except TypeError:
+        assert isinstance(awaitables, Iterable)  # nosec
+        awaitable_iterator = iter(awaitables)  # type: ignore[assignment]
         is_async = False
 
     completed_all_awaitables = False
@@ -220,7 +221,7 @@ async def limited_as_completed(
                 aw = (
                     await anext(awaitable_iterator)
                     if is_async
-                    else next(awaitable_iterator)
+                    else next(awaitable_iterator)  # type: ignore[call-overload]
                 )
                 pending_futures.add(asyncio.ensure_future(aw))
             except (StopIteration, StopAsyncIteration):  # noqa: PERF203
