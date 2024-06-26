@@ -258,7 +258,7 @@ async def limited_gather(
     reraise: bool = True,
     log: logging.Logger = _logger,
     limit: int = 1,
-) -> list[T | BaseException]:
+) -> list[T | BaseException | None]:
     """runs all the awaitables using the limited concurrency and returns them in the same order
 
     Arguments:
@@ -286,6 +286,5 @@ async def limited_gather(
     async for future in limited_as_completed(indexed_awaitables, limit=limit):
         index, result = await future
         results[index] = result
-    assert all(_ is not None for _ in results)  # nosec
 
     return results
