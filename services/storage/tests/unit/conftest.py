@@ -130,7 +130,10 @@ async def populate_directory(
             file_name = f"{dir_name}/sub-dir-{s}/file-{f}"
             clean_path = Path(f"{project_id}/{node_id}/{file_name}")
             await storage_s3_client.upload_file(
-                storage_s3_bucket, file, SimcoreS3FileID(f"{clean_path}"), None
+                bucket=storage_s3_bucket,
+                file=file,
+                object_key=SimcoreS3FileID(f"{clean_path}"),
+                bytes_transfered_cb=None,
             )
 
         tasks: deque = deque()
@@ -170,10 +173,13 @@ async def delete_directory(
 
         # NOTE: ensures no more files are left in the directory,
         # even if one file is left this will detect it
-        files = await storage_s3_client.list_files(
-            bucket=storage_s3_bucket, prefix=directory_file_id
-        )
-        assert len(files) == 0
+        all_files = [
+            objects
+            async for objects in storage_s3_client.list_files_paginated(
+                bucket=storage_s3_bucket, prefix=directory_file_id
+            )
+        ]
+        assert len(all_files) == 0
 
     return _dir_remover
 
