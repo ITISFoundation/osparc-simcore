@@ -332,14 +332,14 @@ async def test_list_all_services_and_history_with_pagination(
 if __name__ == "__main__":
     from simcore_service_catalog.db.repositories.services import (
         AccessRightsClauses,
-        _compose_access_rights_clause,
         _list_services_key_version_stmt,
+        compose_access_rights_clause,
     )
     from sqlalchemy.dialects import postgresql
 
     # stmt = _make_list_services_with_history_statement(limit=10, offset=None)
     stmt = _list_services_key_version_stmt(
-        _compose_access_rights_clause(
+        compose_access_rights_clause(
             product_name="osparc",
             user_id=4,
             access_clause=AccessRightsClauses.can_read,
