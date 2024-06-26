@@ -51,7 +51,7 @@ async def get_status(request: web.Request) -> web.Response:
     if app_settings.STORAGE_S3:
         try:
             await get_s3_client(request.app).bucket_exists(
-                S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+                bucket=S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
             )
             s3_state = "connected"
         except S3BucketInvalidError:
