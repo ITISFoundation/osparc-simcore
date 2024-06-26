@@ -22,45 +22,13 @@
 
 
 qx.Class.define("osparc.ui.basic.SVGImage", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.ui.layout.CenteredGrid,
 
   /**
    * @param source
    */
   construct: function(source) {
     this.base(arguments);
-
-    const layout = new qx.ui.layout.Grid();
-    layout.setRowFlex(0, 1);
-    layout.setRowFlex(2, 1);
-    layout.setColumnFlex(0, 1);
-    layout.setColumnFlex(2, 1);
-    this._setLayout(layout);
-
-    [
-      [0, 0],
-      [0, 1],
-      [0, 2],
-      [1, 0],
-      [1, 2],
-      [2, 0],
-      [2, 1],
-      [2, 2]
-    ].forEach(quad => {
-      const empty = new qx.ui.core.Spacer();
-      this._add(empty, {
-        row: quad[0],
-        column: quad[1]
-      });
-    });
-    /*
-    this.set({
-      allowGrowX: true,
-      allowGrowY: true,
-      alignX: "center",
-      alignY: "middle"
-    });
-    */
 
     if (source) {
       this.setSource(source);
@@ -176,10 +144,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
             alignX: "center",
             alignY: "middle"
           });
-          this._add(control, {
-            row: 1,
-            column: 1
-          });
+          this.addCenteredWidget(control);
           break;
       }
       return control || this.base(arguments, id);
