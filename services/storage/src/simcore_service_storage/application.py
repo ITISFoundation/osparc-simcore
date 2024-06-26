@@ -64,11 +64,9 @@ def create(settings: Settings) -> web.Application:
     setup_long_running_tasks(app)
     setup_rest(app)
 
-    if settings.STORAGE_REDIS:
-        setup_redis(app)
-
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S:
+        setup_redis(app)
         setup_dsm_cleaner(app)
 
     app.middlewares.append(dsm_exception_handler)
