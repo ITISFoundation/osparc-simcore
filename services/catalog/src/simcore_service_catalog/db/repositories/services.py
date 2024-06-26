@@ -18,7 +18,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import ValidationError
+from pydantic import PositiveInt, ValidationError
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
@@ -114,32 +114,41 @@ class AccessRightsClauses:
     can_read = (
         services_access_rights.c.execute_access | services_access_rights.c.write_access
     )
+    can_edit = services_access_rights.c.write_access
     is_owner = (
         services_access_rights.c.execute_access & services_access_rights.c.write_access
     )
-    can_edit = services_access_rights.c.write_access
 
 
-def _make_list_accessible_services(
-    product_name: ProductName, user_id: UserID, access_clause=None
-):
-    conditions = [
+def _compose_access_rights_clause(
+    product_name: ProductName,
+    user_id: UserID,
+    access_clause: sa.sql.ClauseElement | None = None,
+) -> sa.sql.ClauseElement:
+    conditions: list[sa.sql.ClauseElement] = [
         services_access_rights.c.product_name == product_name,
         user_to_groups.c.uid == user_id,
     ]
     if access_clause is not None:
         conditions.append(access_clause)
+    return and_(*conditions)
 
+
+_join_service_metadata_and_access_rights = services_meta_data.join(
+    services_access_rights,
+    (services_meta_data.c.key == services_access_rights.c.key)
+    & (services_meta_data.c.version == services_access_rights.c.version),
+).join(
+    user_to_groups,
+    services_access_rights.c.gid == user_to_groups.c.gid,
+)
+
+
+def _list_services_key_version_stmt(access_rights: sa.sql.ClauseElement):
     return (
         sa.select(services_meta_data.c.key, services_meta_data.c.version)
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(user_to_groups, services_access_rights.c.gid == user_to_groups.c.gid)
-        )
-        .where(and_(*conditions))
+        .select_from(_join_service_metadata_and_access_rights)
+        .where(access_rights)
         .distinct()  # Multiple gid of the same uid can have access to the same (key, version). Therefore they apper repeated
         .order_by(
             services_meta_data.c.key,
@@ -148,8 +157,16 @@ def _make_list_accessible_services(
     )
 
 
-def _make_list_services_with_history_statement(
-    *, limit: int | None, offset: int | None
+def _total_count_stmt(access_rights: sa.sql.ClauseElement):
+    return (
+        sa.select(func.count(sa.distinct(services_meta_data.c.keys)))
+        .select_from(_join_service_metadata_and_access_rights)
+        .where(access_rights)
+    )
+
+
+def _list_services_with_history_stmt(
+    *, access_rights: sa.sql.ClauseElement, limit: int | None, offset: int | None
 ):
     #
     # Common Table Expression (CTE) to select distinct service names with pagination.
@@ -159,6 +176,17 @@ def _make_list_services_with_history_statement(
     cte = (
         sa.select(services_meta_data.c.key)
         .distinct()
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                services_access_rights.c.gid == user_to_groups.c.gid,
+            )
+        )
+        .where(access_rights)
         .order_by(services_meta_data.c.key)  # NOTE: add here the order
         .limit(limit)
         .offset(offset)
@@ -173,8 +201,21 @@ def _make_list_services_with_history_statement(
             services_meta_data.c.created,
         )
         .select_from(
-            services_meta_data.join(cte, services_meta_data.c.key == cte.c.key)
+            services_meta_data.join(
+                cte,
+                services_meta_data.c.key == cte.c.key,
+            )
+            # joins because access-rights might change per version
+            .join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                services_access_rights.c.gid == user_to_groups.c.gid,
+            )
         )
+        .where(access_rights)
         .order_by(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
@@ -355,19 +396,40 @@ class ServicesRepository(BaseRepository):
         return None  # mypy
 
     async def list_services_with_history(
-        self, limit: int | None = None, offset: int | None = None
-    ) -> list[ServiceHistoryItem]:
-        stmt = _make_list_services_with_history_statement(limit=limit, offset=offset)
+        self,
+        product_name: ProductName,
+        user_id: UserID,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[PositiveInt, list[ServiceHistoryItem]]:
+
+        access_rights = _compose_access_rights_clause(
+            product_name=product_name,
+            user_id=user_id,
+            access_clause=AccessRightsClauses.can_read,
+        )
+
+        stmt_total = _total_count_stmt(access_rights=access_rights)
+        stmt_page = _list_services_with_history_stmt(
+            access_rights=access_rights,
+            limit=limit,
+            offset=offset,
+        )
 
         async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt)
-            return [
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
+            result = await conn.execute(stmt_page)
+            items = [
                 ServiceHistoryItem(
                     key=s.key,
                     history=[HistoryItem(**h) for h in s.history],
                 )
                 for s in result
             ]
+            assert len(items) <= total_count  # nosec
+            return (total_count, items)
 
     async def create_or_update_service(
         self,
