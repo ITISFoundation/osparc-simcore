@@ -30,7 +30,7 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
-    compose_access_rights_clause,
+    create_access_rights_clause,
     list_services_stmt,
     list_services_with_history_stmt,
     total_count_stmt,
@@ -226,7 +226,7 @@ class ServicesRepository(BaseRepository):
         offset: int | None = None,
     ) -> tuple[PositiveInt, list[ServiceHistoryItem]]:
 
-        access_rights = compose_access_rights_clause(
+        access_rights = create_access_rights_clause(
             product_name=product_name,
             user_id=user_id,
             access_clause=AccessRightsClauses.can_read,
