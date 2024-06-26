@@ -12,6 +12,7 @@ from pathlib import Path
 import openapi_core
 import pytest
 from aiohttp.test_utils import TestClient
+from aws_library.s3.client import SimcoreS3API
 from models_library.api_schemas_storage import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,

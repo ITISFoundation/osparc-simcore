@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import datetime
 import json
 import sys
 import time
@@ -12,7 +11,10 @@ from pathlib import Path
 from typing import Any, TypeAlias, TypedDict
 from uuid import uuid4
 
+import arrow
 import pytest
+from aws_library.s3 import client as s3_client
+from aws_library.s3.client import SimcoreS3API
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -20,9 +22,7 @@ from pydantic import BaseModel, ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_service_storage import s3_client
 from simcore_service_storage.models import S3BucketName
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -50,20 +50,20 @@ def settings() -> Settings:
 @pytest.fixture
 async def benchmark_s3_client(
     benchmark_s3_settings: S3Settings, settings: Settings
-) -> AsyncIterator[StorageS3Client]:
-    client = await StorageS3Client.create(
+) -> AsyncIterator[SimcoreS3API]:
+    client = await SimcoreS3API.create(
         benchmark_s3_settings,
         settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
     )
     bucket = S3BucketName(benchmark_s3_settings.S3_BUCKET_NAME)
 
     # make sure bucket is empty
-    await client.delete_files_in_path(bucket, prefix="")
+    await client.delete_file_recursively(bucket=bucket, prefix="")
 
     yield client
 
     # empty bucket once more when done testing
-    await client.delete_files_in_path(bucket, prefix="")
+    await client.delete_file_recursively(bucket=bucket, prefix="")
     await client.close()
 
 
@@ -80,14 +80,14 @@ async def temp_file(size: ByteSize) -> AsyncIterator[Path]:
 
 
 async def _create_file(
-    s3_client: StorageS3Client,
+    s3_client: SimcoreS3API,
     bucket: S3BucketName,
     file_id: SimcoreS3FileID,
     size: ByteSize = parse_obj_as(ByteSize, "1"),
 ) -> None:
     async with temp_file(size) as file:
         await s3_client.upload_file(
-            bucket=bucket, file=file, file_id=file_id, bytes_transfered_cb=None
+            bucket=bucket, file=file, object_key=file_id, bytes_transfered_cb=None
         )
 
 
@@ -112,7 +112,7 @@ def _create_node_structure(
 
 
 async def _create_files(
-    s3_client: StorageS3Client,
+    s3_client: SimcoreS3API,
     bucket: S3BucketName,
     project_id: ProjectID,
     node_id: NodeID,
@@ -142,7 +142,7 @@ async def _create_files(
 
 @pytest.fixture(scope="session")
 def tests_session_id() -> str:
-    return datetime.datetime.utcnow().isoformat()
+    return arrow.utcnow.datetime.isoformat()
 
 
 class MetricsResult(BaseModel):
@@ -179,9 +179,7 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
 @pytest.fixture
 def mock_max_items(mocker: MockerFixture) -> None:
     # pylint: disable=protected-access
-    mocker.patch.object(
-        s3_client._list_objects_v2_paginated_gen, "__defaults__", (None,)
-    )
+    mocker.patch.object(s3_client.list_files_paginated, "__defaults__", (None,))
 
 
 @pytest.mark.parametrize("total_queries", [3])
@@ -198,7 +196,7 @@ def mock_max_items(mocker: MockerFixture) -> None:
 async def test_benchmark_s3_listing(
     # pylint: disable=too-many-arguments
     mock_max_items: None,
-    benchmark_s3_client: StorageS3Client,
+    benchmark_s3_client: SimcoreS3API,
     benchmark_s3_settings: S3Settings,
     faker: Faker,
     tests_session_id: str,
@@ -240,7 +238,9 @@ async def test_benchmark_s3_listing(
                 "generated_file_count": f"{len(created_fils)}",
             },
         ):
-            files = await benchmark_s3_client.list_files(bucket, prefix="")
+            files = await benchmark_s3_client._list_all_objects(
+                bucket=bucket, prefix=""
+            )
         assert len(files) == len(created_fils)
 
 

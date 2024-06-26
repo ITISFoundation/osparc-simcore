@@ -16,6 +16,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
+from aws_library.s3.client import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.basic_types import SHA256Str

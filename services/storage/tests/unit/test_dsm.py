@@ -1,12 +1,14 @@
 # pylint: disable=unused-variable
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 import pytest
+from aws_library.s3.client import SimcoreS3API
 from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID

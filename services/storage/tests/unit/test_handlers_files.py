@@ -1408,7 +1408,7 @@ async def test_listing_with_project_id_filter(
         .with_query(**{k: v for k, v in query.items() if v is not None})
     )
     response = await client.get(f"{url}")
-    data, _ = await assert_status(response, status.HTTP_200_OK)
+    data, _ = await assert_status(response, HTTPStatus.OK)
 
     list_of_files = parse_obj_as(list[FileMetaDataGet], data)
 

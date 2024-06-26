@@ -1,10 +1,12 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 
 import simcore_service_storage._meta
 from aiohttp.test_utils import TestClient
+from aws_library.s3.client import SimcoreS3API
 from models_library.api_schemas_storage import S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
