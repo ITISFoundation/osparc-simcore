@@ -33,6 +33,7 @@ from simcore_service_storage.exceptions import (
 )
 from simcore_service_storage.models import FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from types_aiobotocore_s3 import S3Client
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -202,6 +203,17 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     # since there is no entry in the db, this upload shall be cleaned up
     assert not await storage_s3_client.list_ongoing_multipart_uploads(
         bucket=storage_s3_bucket
+    )
+
+
+@pytest.fixture
+async def with_versioning_enabled(
+    s3_client: S3Client,
+    storage_s3_bucket: S3BucketName,
+) -> None:
+    await s3_client.put_bucket_versioning(
+        Bucket=storage_s3_bucket,
+        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
     )
 
 

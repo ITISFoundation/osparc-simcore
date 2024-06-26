@@ -61,6 +61,7 @@ from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
+    "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
