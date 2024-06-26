@@ -6,7 +6,7 @@
 import pytest
 from aiohttp import ClientSession
 from aiohttp.client import ClientTimeout
-from pytest_simcore.helpers.utils_scrunch_citations import (
+from pytest_simcore.helpers.scrunch_citations import (
     ANTIBODY_CITATIONS,
     ORGANISM_CITATIONS,
     PLAMID_CITATIONS,

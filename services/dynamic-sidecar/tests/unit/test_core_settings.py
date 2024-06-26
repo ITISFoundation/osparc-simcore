@@ -2,7 +2,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 

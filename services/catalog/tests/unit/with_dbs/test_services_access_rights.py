@@ -7,7 +7,7 @@ from collections.abc import Callable
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB
 from models_library.products import ProductName
-from models_library.services import ServiceDockerData, ServiceVersion
+from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB
 from pydantic import parse_obj_as
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -111,8 +111,8 @@ async def test_auto_upgrade_policy(
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
-    new_service_metadata = ServiceDockerData.parse_obj(
-        ServiceDockerData.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
+    new_service_metadata = ServiceMetaDataPublished.parse_obj(
+        ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = parse_obj_as(ServiceVersion, "1.0.11")
 

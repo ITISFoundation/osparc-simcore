@@ -2,10 +2,12 @@
 
 """
 
+from typing import TypeAlias
+
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
 
-GroupId = PositiveInt
+GroupId: TypeAlias = PositiveInt
 
 
 class ServiceGroupAccessRights(BaseModel):

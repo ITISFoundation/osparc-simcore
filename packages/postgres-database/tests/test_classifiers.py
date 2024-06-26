@@ -10,7 +10,7 @@ import psycopg2.errors
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from pytest_simcore.helpers.rawdata_fakers import random_group
+from pytest_simcore.helpers.faker_factories import random_group
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
 from sqlalchemy import func, literal_column

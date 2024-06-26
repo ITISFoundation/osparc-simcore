@@ -9,7 +9,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_invitations.invitations import ApiInvitationContent
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.invitations._client import (
     InvitationsServiceApi,
@@ -95,7 +95,7 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
 
     # user exists, and we skip product registration to do this test
     mocker.patch(
-        "pytest_simcore.helpers.utils_login.auto_add_user_to_product_group",
+        "pytest_simcore.helpers.webserver_login.auto_add_user_to_product_group",
         return_value=f"Mocked in {__file__}. SKIPPED auto_add_user_to_product_group",
         autospec=True,
     )

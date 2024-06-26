@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.projects import ProjectID
-from pytest_simcore.helpers.utils_projects import NewProject
+from pytest_simcore.helpers.webserver_projects import NewProject
 
 
 @pytest.fixture(scope="session")

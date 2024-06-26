@@ -12,7 +12,7 @@
     "first_name": "crespo",
     "last_name": "",
     "id": 1,
-    "login": "williamsmartin@example.net",
+    "login": "rturner@example.net",
     "role": "User",
     "groups": {
      "me": {
@@ -80,22 +80,22 @@
    "type": "computational",
    "authors": [
     {
-     "name": "Erin Lee",
-     "email": "sandraramirez@example.org",
-     "affiliation": "Harris PLC"
+     "name": "Joshua Boone",
+     "email": "sharon60@example.net",
+     "affiliation": "Johnson Inc"
     },
     {
-     "name": "Lynn Lopez",
-     "email": "nreid@example.com",
-     "affiliation": "Gonzalez, Whitney and Lynch"
+     "name": "Kenneth Alvarez",
+     "email": "ncollins@example.com",
+     "affiliation": "Singh LLC"
     },
     {
-     "name": "Riley Ray",
-     "email": "christina74@example.com",
-     "affiliation": "Davenport Inc"
+     "name": "Jennifer Howard",
+     "email": "amyhood@example.org",
+     "affiliation": "Campos-Weaver"
     }
    ],
-   "contact": "jared54@example.com",
+   "contact": "sharon91@example.com",
    "inputs": {
     "input_1": {
      "displayOrder": 1.0,
@@ -312,7 +312,7 @@
       }
      }
     },
-    "prjOwner": "hguerrero@example.com",
+    "prjOwner": "brownlisa@example.com",
     "accessRights": {
      "3": {
       "read": true,

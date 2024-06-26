@@ -25,12 +25,13 @@ qx.Class.define("osparc.tours.Manager", {
       layout: new qx.ui.layout.VBox(20),
       contentPadding: 15,
       modal: true,
-      width: 300,
+      width: 400,
       height: 300,
       showMaximize: false,
       showMinimize: false
     });
 
+    this.__blankets = [];
     this.__buildLayout();
   },
 
@@ -58,6 +59,7 @@ qx.Class.define("osparc.tours.Manager", {
   members: {
     __currentBubble: null,
     __currentIdx: null,
+    __blankets: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -95,6 +97,7 @@ qx.Class.define("osparc.tours.Manager", {
     stop: function() {
       this.setTour(null);
       this.__removeCurrentBubble();
+      this.__removeBlankets();
     },
 
     __removeCurrentBubble: function() {
@@ -102,6 +105,49 @@ qx.Class.define("osparc.tours.Manager", {
         qx.core.Init.getApplication().getRoot().remove(this.__currentBubble);
         this.__currentBubble.exclude();
         this.__currentBubble = null;
+      }
+    },
+
+    __addBlankets: function(targetWidget) {
+      // the plan is to surround the targetWidget with dark blankets so it gets highlighted
+      const element = targetWidget.getContentElement().getDomElement();
+      const {
+        top,
+        left
+      } = qx.bom.element.Location.get(element);
+      const {
+        width,
+        height
+      } = qx.bom.element.Dimension.getSize(element);
+      const windowW = window.innerWidth;
+      const windowH = window.innerHeight;
+
+      const addBlanket = (w, h, l, t) => {
+        const blanket = new qx.ui.core.Widget().set({
+          width: w,
+          height: h,
+          backgroundColor: "black",
+          opacity: 0.4,
+          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX-1
+        });
+        qx.core.Init.getApplication().getRoot().add(blanket, {
+          left: l,
+          top: t
+        });
+        return blanket;
+      };
+      this.__blankets.push(addBlanket(left, windowH, 0, 0)); // left
+      this.__blankets.push(addBlanket(width, top, left, 0)); // top
+      this.__blankets.push(addBlanket(windowW-left-width, windowH, left+width, 0)); // right
+      this.__blankets.push(addBlanket(width, windowH-top-height, left, top+height)); // bottom
+    },
+
+    __removeBlankets: function() {
+      const nBlankets = this.__blankets.length;
+      for (let i=nBlankets-1; i>=0; i--) {
+        const blanket = this.__blankets[i];
+        qx.core.Init.getApplication().getRoot().remove(blanket);
+        this.__blankets.splice(i, 1);
       }
     },
 
@@ -121,6 +167,7 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       this.__removeCurrentBubble();
+      this.__removeBlankets();
       this.__currentIdx = idx;
       const step = steps[idx];
       if (step.beforeClick && step.beforeClick.selector) {
@@ -128,6 +175,8 @@ qx.Class.define("osparc.tours.Manager", {
         const widget = qx.ui.core.Widget.getWidgetByElement(element);
         if (step.beforeClick.action) {
           widget[step.beforeClick.action]();
+        } else if (step.beforeClick.event) {
+          widget.fireEvent(step.beforeClick.event);
         } else {
           widget.execute();
         }
@@ -165,13 +214,15 @@ qx.Class.define("osparc.tours.Manager", {
           if (step.placement) {
             stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
           }
+          this.__addBlankets(targetWidget);
         } else {
           // target not found, move to the next step
           this.__toStepCheck(this.__currentIdx+1);
+          return;
         }
       } else {
+        // intro text, it will be centered
         stepWidget.getChildControl("caret").exclude();
-        stepWidget.moveToTheCenter();
       }
       if (step.title) {
         stepWidget.setTitle(step.title);
@@ -187,8 +238,13 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       stepWidget.show();
-      // eslint-disable-next-line no-underscore-dangle
-      setTimeout(() => stepWidget.__updatePosition(), 10); // Hacky: Execute async and give some time for the relevant properties to be set
+      setTimeout(() => {
+        if (stepWidget.getElement()) {
+          stepWidget.updatePosition();
+        } else {
+          stepWidget.moveToTheCenter();
+        }
+      }, 10);
     }
   }
 });

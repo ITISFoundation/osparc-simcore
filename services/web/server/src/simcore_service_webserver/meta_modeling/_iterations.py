@@ -14,7 +14,7 @@ from models_library.basic_types import MD5Str, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
@@ -49,7 +49,9 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
     """
 
     # select iterable nodes
-    iterable_nodes_defs: list[ServiceDockerData] = []  # schemas of iterable nodes
+    iterable_nodes_defs: list[
+        ServiceMetaDataPublished
+    ] = []  # schemas of iterable nodes
     iterable_nodes: list[Node] = []  # iterable nodes
     iterable_nodes_ids: list[NodeID] = []
 

@@ -18,10 +18,11 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudies) {
+  construct: function(newStudies, groups) {
     this.base(arguments);
 
     this.__newStudies = newStudies;
+    this.__groups = groups || [];
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -38,18 +39,11 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   properties: {
-    mode: {
-      check: ["grid", "list"],
-      init: "grid",
-      nullable: false,
-      event: "changeMode",
-      apply: "reloadCards"
-    },
-
     groupBy: {
       check: [null, "category"],
       init: null,
-      nullable: true
+      nullable: true,
+      apply: "reloadCards"
     }
   },
 
@@ -59,6 +53,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
   members: {
     __newStudies: null,
+    __groups: null,
     __flatList: null,
     __groupedContainers: null,
 
@@ -69,10 +64,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
 
-        const categories = new Set([]);
-        this.__newStudies.forEach(newStudy => newStudy.category && categories.add(newStudy.category));
-        Array.from(categories).forEach(category => {
-          const groupContainer = this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent");
+        Array.from(this.__groups).forEach(group => {
+          const groupContainer = this.__createGroupContainer(group.id, group.label, "transparent");
           this._add(groupContainer);
         });
       } else {
@@ -84,7 +77,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         ].forEach(signalName => {
           flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
         });
-        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+        const spacing = osparc.dashboard.GridButtonBase.SPACING;
         this.__flatList.getLayout().set({
           spacingX: spacing,
           spacingY: spacing
@@ -131,6 +124,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         headerColor,
         visibility: "excluded"
       });
+      osparc.utils.Utils.setIdToWidget(groupContainer, groupId.toString() + "Group");
       const atom = groupContainer.getChildControl("header");
       atom.setFont("text-16");
       this.__groupedContainers.push(groupContainer);
@@ -146,17 +140,48 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
+      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+
       const title = templateInfo.title;
       const desc = templateInfo.description;
-      const mode = this.getMode();
-      const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+      const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        newPlanButton.setWidth(width);
+      if (templateInfo.billable) {
+        // replace the plus button with the creditsImage
+        const creditsImage = new osparc.desktop.credits.CreditsImage();
+        creditsImage.getChildControl("image").set({
+          width: 60,
+          height: 60
+        })
+        newPlanButton.replaceIcon(creditsImage);
+
+        newPlanButton.addListener("execute", () => {
+          const store = osparc.store.Store.getInstance();
+          const credits = store.getContextWallet().getCreditsAvailable()
+          const preferencesSettings = osparc.Preferences.getInstance();
+          const warningThreshold = preferencesSettings.getCreditsWarningThreshold();
+          if (credits <= warningThreshold) {
+            const msg = this.tr("This Plan requires Credits to run Sim4Life powered simulations. You can top up in the Billing Center.");
+            const win = new osparc.ui.window.Confirmation(msg).set({
+              caption: this.tr("Credits required"),
+              confirmText: this.tr("Start, I'll get them later"),
+              confirmAction: "create"
+            });
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                this.fireDataEvent("newStudyClicked", templateInfo);
+              }
+            });
+          } else {
+            newStudyClicked();
+          }
+        });
+      } else {
+        newPlanButton.addListener("execute", () => newStudyClicked());
       }
-      newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
       return newPlanButton;
     },
 

@@ -16,7 +16,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB, ProjectID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks

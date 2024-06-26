@@ -22,7 +22,7 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations.settings import (

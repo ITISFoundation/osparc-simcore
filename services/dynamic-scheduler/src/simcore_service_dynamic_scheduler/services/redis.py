@@ -1,11 +1,7 @@
 from typing import Final
 
 from fastapi import FastAPI
-from servicelib.redis import (
-    RedisClientSDKHealthChecked,
-    RedisClientsManager,
-    RedisManagerDBConfig,
-)
+from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 _DECODE_DBS: Final[set[RedisDatabase]] = {
@@ -39,14 +35,12 @@ def setup_redis(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_redis_client(
-    app: FastAPI, database: RedisDatabase
-) -> RedisClientSDKHealthChecked:
+def get_redis_client(app: FastAPI, database: RedisDatabase) -> RedisClientSDK:
     manager: RedisClientsManager = app.state.redis_clients_manager
     return manager.client(database)
 
 
 def get_all_redis_clients(
     app: FastAPI,
-) -> dict[RedisDatabase, RedisClientSDKHealthChecked]:
+) -> dict[RedisDatabase, RedisClientSDK]:
     return {d: get_redis_client(app, d) for d in _ALL_REDIS_DATABASES}

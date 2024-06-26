@@ -6,7 +6,7 @@
 # Based on https://github.com/Stranger6667/pytest-click
 
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from typer.testing import CliRunner

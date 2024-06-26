@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import ValidationError
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 from simcore_service_webserver.login.settings import (

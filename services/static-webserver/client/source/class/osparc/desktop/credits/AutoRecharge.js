@@ -50,16 +50,19 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     __paymentMethodField: null,
 
     __buildLayout: function() {
-      this.removeAll()
+      this.removeAll();
+
+      const titleText = this.tr("Auto-recharge");
+      const introText = this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.");
 
       this.__mainContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center"
       }))
-      const title = new qx.ui.basic.Label("Auto-recharge").set({
+      const title = new qx.ui.basic.Label(titleText).set({
         marginTop: 25,
         font: "title-18"
       });
-      const subtitle = new qx.ui.basic.Label(this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.")).set({
+      const subtitle = new qx.ui.basic.Label(introText).set({
         rich: true,
         font: "text-14",
         textAlign: "center"
@@ -73,11 +76,11 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       this.__noPaymentMethodsContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
         alignX: "center"
       }))
-      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label("Auto-recharge").set({
+      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label(titleText).set({
         marginTop: 25,
         font: "title-18"
       }))
-      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label(this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.")).set({
+      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label(introText).set({
         rich: true,
         font: "text-14",
         textAlign: "center"

@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from pytest_simcore.helpers.faker_factories import random_project, random_user
 from simcore_postgres_database.webserver_models import projects, users
 from sqlalchemy import func
 

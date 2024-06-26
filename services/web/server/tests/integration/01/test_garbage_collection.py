@@ -22,8 +22,8 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
-from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -87,7 +87,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
         decode_responses=True,
     )
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture(scope="session")

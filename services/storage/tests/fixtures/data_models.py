@@ -19,7 +19,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import logged_gather
 from simcore_postgres_database.storage_models import projects, users
 
@@ -188,7 +188,7 @@ async def random_project_with_files(
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
 ) -> Callable[
-    [int, tuple[ByteSize, ...]],
+    [int, tuple[ByteSize, ...], tuple[SHA256Str, ...]],
     Awaitable[
         tuple[
             dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]

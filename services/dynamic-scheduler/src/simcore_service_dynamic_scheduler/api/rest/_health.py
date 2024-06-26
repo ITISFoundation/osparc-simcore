@@ -8,7 +8,7 @@ from models_library.errors import (
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
 from ._dependencies import (
@@ -31,7 +31,7 @@ async def healthcheck(
         RabbitMQRPCClient, Depends(get_rabbitmq_rpc_server_from_request)
     ],
     redis_client_sdks: Annotated[
-        dict[RedisDatabase, RedisClientSDKHealthChecked],
+        dict[RedisDatabase, RedisClientSDK],
         Depends(get_redis_clients_from_request),
     ],
 ):

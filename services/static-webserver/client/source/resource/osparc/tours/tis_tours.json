@@ -1,0 +1,143 @@
+{
+  "navbar": {
+    "id": "navbar",
+    "name": "Navigation Bar",
+    "description": "Introduction to the Navigation Bar",
+    "context": "osparc-test-id=navigationBar",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=notificationsButton",
+        "event": "tap"
+      },
+      "anchorEl": "osparc-test-id=notificationsContainer",
+      "text": "By clicking on the Bell, you will you see notifications about what Studies, Credits and Organizations.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=helpNavigationBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=helpNavigationMenu",
+      "text": "Under the question mark, you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "placement": "left"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuMenu",
+      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
+      "placement": "left"
+    }]
+  },
+  "plans": {
+    "id": "plans",
+    "name": "Plans",
+    "description": "All you need to know about Plan handling",
+    "context": "osparc-test-id=studiesTabBtn",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=newStudyBtn",
+      "title": "Start A new Plan",
+      "text": "Clicking on this (+) button a window with all the Plans available will pop up.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=newStudyBtn"
+      },
+      "anchorEl": "osparc-test-id=precomputedGroup",
+      "title": "Precomputed Plans",
+      "text": "These plans have been available in prior versions and continue to be free of charge. They utilize pre-installed models and do not support personalization. Please select these for basic stimulation optimization.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=personalizedGroup",
+      "title": "Personalized Plans",
+      "text": "These plans support personalization and allow for customized models. Running the simulations required for personalized optimization will incur charges. Choose these plans for advanced stimulation optimization. If you want to learn how to purchase credits, follow the 'Buy Credits' Guided Tour.",
+      "placement": "top"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=newStudiesWindow",
+        "action": "close"
+      },
+      "anchorEl": "osparc-test-id=studiesList",
+      "title": "Plans",
+      "text": "The Plans you create and the ones shared with you will be listed here.",
+      "placement": "top"
+    }, {
+      "anchorEl": "osparc-test-id=resourceFilter",
+      "title": "Filters",
+      "text": "These filters allows you to display a better organized Dashboard.<br>You can filter by with with whom the resources is Shared with and also Tags if you assign them.",
+      "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Filters and Search",
+      "text": "This tool allows you to search and filter Plans, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
+      "text": "On the Plan card, you can use the three dots button to access more information and operation on the Plan.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
+      "text": "On the Plan card, you can use the Update button to update the corresponding service to its latest version.",
+      "placement": "bottom"
+    }]
+  },
+  "credits": {
+    "id": "credits",
+    "name": "Buy Credits",
+    "description": "Buy Credits for Personalization",
+    "context": "osparc-test-id=userMenuBtn",
+    "steps": [{
+      "title": "Credits",
+      "text": "In order to run Personalized TI Plans, credits are required.<br>In the next Guided Tour you will learn how to purchase them."
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuBillingCenterBtn",
+      "text": "From the User Menu you can access the Billing Center.",
+      "placement": "left"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBillingCenterBtn",
+        "action": "execute"
+      },
+      "anchorEl": "osparc-test-id=walletsList",
+      "title": "Credits Accounts",
+      "text": "This is the list of Credits Accounts you have access to. You have your own Account, but you could also use Credit Accounts that were shared with you.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=personalWalletsList",
+      "title": "Top-up Credits",
+      "text": "There are two ways to charge credits into your Credit Account: you can set up an Auto-recharge process or go for a One time payment.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=buyCreditsBtn",
+      "title": "One time payment",
+      "text": "For a one-off, non recurring payment. After the payment is made, the available credits will be added to the Credit Account. <br>Also, the Payment Method can be saved for future payments.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=autorechargeBtn",
+      "title": "Auto-recharge",
+      "text": "Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.<br>Before the auto-recharge function can be activated you need to add your first payment method.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=billingCenterWindow",
+        "action": "close"
+      },
+      "title": "Credits Indicator",
+      "text": "Once the payment is validated, the Credits will be added to the Credit Account. In the User Menu -> Preferences, you will be able to tune the visibility options of the Credits Indicator."
+    }]
+  }
+}

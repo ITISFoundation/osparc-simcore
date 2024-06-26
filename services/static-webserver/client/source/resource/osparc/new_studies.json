@@ -28,21 +28,31 @@
       "description": "Start new Personalized Classic TI planning",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewTIPlanButton"
+      "idToWidget": "personalizationNewTIPlanButton",
+      "billable": true
     }, {
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
       "title": "Personalized MC TI",
       "description": "Start new Personalized Multichannel TI planning",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewMTIPlanButton"
+      "idToWidget": "personalizationNewMTIPlanButton",
+      "billable": true
     }, {
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
       "title": "Personalized PM TI",
       "description": "Start new Personalized Phase-Modulation TI planning",
       "newStudyLabel": "Personalized Phase-Modulation TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewPMTIPlanButton"
+      "idToWidget": "personalizationNewPMTIPlanButton",
+      "billable": true
+    }],
+    "categories": [{
+      "id": "precomputed",
+      "label": "Precomputed"
+    }, {
+      "id": "personalized",
+      "label": "Personalized: Credits are required to run simulations."
     }]
   },
   "s4l": {

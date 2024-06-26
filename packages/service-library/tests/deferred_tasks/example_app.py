@@ -15,7 +15,7 @@ from servicelib.deferred_tasks import (
     StartContext,
     TaskUID,
 )
-from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -80,7 +80,7 @@ class ExampleApp:
         in_memory_lists: InMemoryLists,
         max_workers: NonNegativeInt,
     ) -> None:
-        self._redis_client = RedisClientSDKHealthChecked(
+        self._redis_client = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=False,
         )

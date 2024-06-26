@@ -1,6 +1,6 @@
 from importlib.metadata import distribution, version
 
-from models_library.services import LATEST_INTEGRATION_VERSION
+from models_library.services_constants import LATEST_INTEGRATION_VERSION
 
 current_distribution = distribution("simcore-service-integration")
 project_name: str = current_distribution.metadata["Name"]

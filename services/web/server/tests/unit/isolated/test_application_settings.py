@@ -9,8 +9,11 @@ import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -78,7 +81,7 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         PYTHON_GET_PIP_SHA256=6123659241292b2147b58922b9ffe11dda66b39d52d8a6f3aa310bc1d60ea6f7
         PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/a1675ab6c2bd898ed82b1f58c486097f763c74a9/public/get-pip.py
         PYTHON_PIP_VERSION=21.1.3
-        PYTHON_VERSION=3.10.10
+        PYTHON_VERSION=3.10.14
         PYTHONDONTWRITEBYTECODE=1
         PYTHONOPTIMIZE=TRUE
         SC_BOOT_MODE=production

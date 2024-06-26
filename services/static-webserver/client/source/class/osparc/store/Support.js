@@ -25,7 +25,7 @@ qx.Class.define("osparc.store.Support", {
     addQuickStartToMenu: function(menu) {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {
-        const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
+        const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"), "@FontAwesome5Solid/graduation-cap/14");
         qsButton.getChildControl("label").set({
           rich: true
         });
@@ -39,10 +39,10 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addGuidedToursToMenu: function(menu) {
-      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"));
+      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"), "@FontAwesome5Solid/graduation-cap/14");
       guidedToursButton.exclude();
       menu.add(guidedToursButton);
-      const fetchTours = osparc.product.tours.Utils.getTours();
+      const fetchTours = osparc.product.tours.Tours.getTours();
       if (fetchTours) {
         fetchTours
           .then(tours => {
@@ -64,7 +64,7 @@ qx.Class.define("osparc.store.Support", {
         menuButton.setVisibility(manuals && manuals.length ? "visible" : "excluded");
       }
       manuals.forEach(manual => {
-        const manualBtn = new qx.ui.menu.Button(manual.label);
+        const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
         manualBtn.getChildControl("label").set({
           rich: true
         });
@@ -81,7 +81,7 @@ qx.Class.define("osparc.store.Support", {
       }
       issues.forEach(issueInfo => {
         const label = issueInfo["label"];
-        const issueButton = new qx.ui.menu.Button(label);
+        const issueButton = new qx.ui.menu.Button(label, "@FontAwesome5Solid/comments/14");
         issueButton.getChildControl("label").set({
           rich: true
         });
@@ -89,12 +89,12 @@ qx.Class.define("osparc.store.Support", {
           const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
             qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
           );
-          const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+          const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/14");
           contBtn.addListener("execute", () => {
             window.open(issueInfo["new_url"]);
             issueConfirmationWindow.close();
           }, this);
-          const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/12");
+          const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/14");
           loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
           issueConfirmationWindow.addButton(contBtn);
           issueConfirmationWindow.addButton(loginBtn);
@@ -117,15 +117,15 @@ qx.Class.define("osparc.store.Support", {
         let cb = null;
         switch (supportInfo["kind"]) {
           case "web":
-            icon = "@FontAwesome5Solid/link/12";
+            icon = "@FontAwesome5Solid/link/14";
             cb = () => window.open(supportInfo["url"]);
             break;
           case "forum":
-            icon = "@FontAwesome5Solid/comments/12";
+            icon = "@FontAwesome5Solid/comments/14";
             cb = () => window.open(supportInfo["url"]);
             break;
           case "email":
-            icon = "@FontAwesome5Solid/envelope/12";
+            icon = "@FontAwesome5Solid/envelope/14";
             cb = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
             break;
         }

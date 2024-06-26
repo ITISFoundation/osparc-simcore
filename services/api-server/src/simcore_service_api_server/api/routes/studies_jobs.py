@@ -3,8 +3,9 @@ from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
-from fastapi.responses import RedirectResponse
-from models_library.api_schemas_webserver.projects import ProjectName, ProjectPatch
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
@@ -13,6 +14,10 @@ from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.routes.solvers_jobs import JOBS_STATUS_CODES
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedError,
+)
 
 from ...api.dependencies.authentication import get_current_user_id
 from ...api.dependencies.services import get_api_client
@@ -28,7 +33,7 @@ from ...models.schemas.jobs import (
     JobOutputs,
     JobStatus,
 )
-from ...models.schemas.studies import Study, StudyID
+from ...models.schemas.studies import JobLogsMap, Study, StudyID
 from ...services.director_v2 import DirectorV2Api
 from ...services.jobs import (
     get_custom_metadata,
@@ -111,7 +116,7 @@ async def create_study_job(
     )
 
     await webserver_api.patch_project(
-        project_id=job.id, patch_params=ProjectPatch(name=ProjectName(job.name))
+        project_id=job.id, patch_params=ProjectPatch(name=job.name)
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
@@ -181,7 +186,23 @@ async def delete_study_job(
 
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=JobStatus,
+    responses=JOBS_STATUS_CODES
+    | {
+        status.HTTP_200_OK: {
+            "description": "Job already started",
+            "model": JobStatus,
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+            "model": ErrorGet,
+        },
+    },
 )
 async def start_study_job(
     request: Request,
@@ -191,17 +212,31 @@ async def start_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
-) -> JobStatus:
+):
+    """
+    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
+    """
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
-        await start_project(
-            request=request,
-            job_id=job_id,
-            expected_job_name=job_name,
-            webserver_api=webserver_api,
-            cluster_id=cluster_id,
-        )
-        job_status: JobStatus = await inspect_study_job(
+        try:
+            await start_project(
+                request=request,
+                job_id=job_id,
+                expected_job_name=job_name,
+                webserver_api=webserver_api,
+                cluster_id=cluster_id,
+            )
+        except ProjectAlreadyStartedError:
+            job_status: JobStatus = await inspect_study_job(
+                study_id=study_id,
+                job_id=job_id,
+                user_id=user_id,
+                director2_api=director2_api,
+            )
+            return JSONResponse(
+                content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
+            )
+        job_status = await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
@@ -267,15 +302,27 @@ async def get_study_job_outputs(
     return job_outputs
 
 
-@router.post(
-    "/{study_id}/jobs/{job_id}/outputs/logfile",
-    response_class=RedirectResponse,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+@router.get(
+    "/{study_id}/jobs/{job_id}/outputs/log-links",
+    response_model=JobLogsMap,
+    status_code=status.HTTP_200_OK,
+    summary="Get download links for study job log files",
 )
-async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
-    msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+async def get_study_job_output_logfile(
+    study_id: StudyID,
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+):
+    with log_context(
+        logger=_logger,
+        level=logging.DEBUG,
+        msg=f"get study job output logfile study_id={study_id!r} job_id={job_id!r}.",
+    ):
+        log_link_map = await director2_api.get_computation_logs(
+            user_id=user_id, project_id=job_id
+        )
+        return log_link_map
 
 
 @router.get(

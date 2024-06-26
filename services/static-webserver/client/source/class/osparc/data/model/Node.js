@@ -342,6 +342,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
+    __retriesLeft: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -1245,6 +1246,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
+            this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
           break;
@@ -1328,49 +1330,48 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __waitForServiceReady: function(srvUrl) {
-      // ping for some time until it is really ready
-      fetch(srvUrl)
-        .then(request => {
-          if (request.status >= 200 || request.status < 300) {
-            this.__waitForServiceWebsite(srvUrl)
-          }
-        })
-        .catch(err => {
-          this.getStatus().setInteractive("connecting");
-          console.log("service not ready yet, waiting... " + err);
-          // Check if node is still there
-          if (this.getWorkbench().getNode(this.getNodeId()) === null) {
-            return;
-          }
-          const interval = 1000;
-          qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
-        })
-    },
+      this.getStatus().setInteractive("connecting");
 
-    __waitForServiceWebsite: function(srvUrl) {
-      // request the frontend to make sure it is ready
-      let retries = 5
-      const openAndSend = () => {
-        if (retries === 0) {
-          return
+      if (this.__retriesLeft === 0) {
+        return;
+      }
+
+      const retry = () => {
+        this.__retriesLeft--;
+
+        // Check if node is still there
+        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
+          return;
         }
-        retries--
+        const interval = 5000;
+        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
+      };
+
+      // ping for some time until it is really reachable
+      try {
+        if (osparc.utils.Utils.isDevelopmentPlatform()) {
+          console.log("Connecting: about to fetch", srvUrl);
+        }
         fetch(srvUrl)
-          .then(request => {
-            if (request.status >= 200 || request.status < 300) {
-              this.__serviceReadyIn(srvUrl)
+          .then(response => {
+            if (osparc.utils.Utils.isDevelopmentPlatform()) {
+              console.log("Connecting: fetch's response status", response.status);
+            }
+            if (response.status < 400) {
+              this.__serviceReadyIn(srvUrl);
             } else {
-              retry() // eslint-disable-line no-use-before-define
+              console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
+              retry();
             }
           })
-          .catch(() => {
-            retry() // eslint-disable-line no-use-before-define
-          })
+          .catch(err => {
+            console.error("Connecting: Error", err);
+            retry();
+          });
+      } catch (error) {
+        console.error(`Connecting: Error while checking ${srvUrl}:`, error);
+        retry();
       }
-      const retry = () => {
-        setTimeout(() => openAndSend(), 2000)
-      };
-      openAndSend()
     },
 
     __serviceReadyIn: function(srvUrl) {
