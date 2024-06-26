@@ -259,6 +259,13 @@ async def _wrapped(
 ) -> tuple[int, T | BaseException]:
     try:
         return index, await awaitable
+    except asyncio.CancelledError:
+        logger.debug(
+            "Cancelled %i-th concurrent task %s",
+            index + 1,
+            f"{awaitable=}",
+        )
+        raise
     except BaseException as exc:  # pylint: disable=broad-exception-caught
         logger.warning(
             "Error in %i-th concurrent task %s: %s",
