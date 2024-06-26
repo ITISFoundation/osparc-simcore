@@ -32,7 +32,6 @@ from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
@@ -154,7 +153,7 @@ async def test_copy_folders_from_empty_project(
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
 ):
     # we will copy from src to dst
     src_project = await create_project()

@@ -11,7 +11,6 @@ from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_storage.handlers_health import HealthCheck
-from simcore_service_storage.s3_client import StorageS3Client
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -52,7 +51,7 @@ async def test_health_status(client: TestClient):
 
 async def test_bad_health_status_if_bucket_missing(
     client: TestClient,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
 ):
     assert client.app

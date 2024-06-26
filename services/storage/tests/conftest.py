@@ -9,18 +9,17 @@
 import asyncio
 import sys
 import urllib.parse
-import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from time import perf_counter
 from typing import cast
 
 import aioresponses
-import dotenv
 import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
+from aws_library.s3.client import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from models_library.api_schemas_storage import (
@@ -42,20 +41,20 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.file_utils import upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from yarl import URL
 
@@ -86,14 +85,14 @@ def here() -> Path:
 
 
 @pytest.fixture(scope="session")
-def package_dir(here) -> Path:
+def package_dir(here: Path) -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
+def osparc_simcore_root_dir(here: Path) -> Path:
     root_dir = here.parent.parent.parent
     assert root_dir.exists()
     assert any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
@@ -101,14 +100,7 @@ def osparc_simcore_root_dir(here) -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
-    dirpath = osparc_simcore_root_dir / "api" / "specs"
-    assert dirpath.exists()
-    return dirpath
-
-
-@pytest.fixture(scope="session")
-def project_slug_dir(osparc_simcore_root_dir) -> Path:
+def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = osparc_simcore_root_dir / "services" / "storage"
     assert service_folder.exists()
@@ -116,37 +108,7 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
     return service_folder
 
 
-@pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str]:
-    env_devel_file = project_slug_dir / ".env-devel"
-    assert env_devel_file.exists()
-    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    return environ
-
-
-@pytest.fixture
-def project_env_devel_environment(
-    project_env_devel_dict: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> None:
-    for key, value in project_env_devel_dict.items():
-        monkeypatch.setenv(key, value)
-
-
 ## FAKE DATA FIXTURES ----------------------------------------------
-
-
-@pytest.fixture
-def mock_files_factory(tmpdir_factory) -> Callable[[int], list[Path]]:
-    def _create_files(count: int) -> list[Path]:
-        filepaths = []
-        for _i in range(count):
-            filepath = Path(tmpdir_factory.mktemp("data")) / f"{uuid.uuid4()}.txt"
-            filepath.write_text("Hello world\n")
-            filepaths.append(filepath)
-
-        return filepaths
-
-    return _create_files
 
 
 @pytest.fixture
@@ -170,7 +132,7 @@ def simcore_s3_dsm(client) -> SimcoreS3DataManager:
 @pytest.fixture
 async def storage_s3_client(
     client: TestClient,
-) -> StorageS3Client:
+) -> SimcoreS3API:
     assert client.app
     return get_s3_client(client.app)
 
@@ -185,7 +147,7 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 def mock_config(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
-    mocked_s3_server_envs,
+    mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
 ) -> None:
     # NOTE: this can be overriden in tests that do not need all dependencies up
@@ -380,7 +342,7 @@ async def create_upload_file_link_v2(
 @pytest.fixture
 def upload_file(
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     project_id: ProjectID,
@@ -395,7 +357,6 @@ def upload_file(
         file_size: ByteSize,
         file_name: str,
         file_id: SimcoreS3FileID | None = None,
-        wait_for_completion: bool = True,
         sha256_checksum: SHA256Str | None = None,
         project_id: ProjectID = project_id,
     ) -> tuple[Path, SimcoreS3FileID]:
@@ -430,10 +391,6 @@ def upload_file(
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
         state_url = URL(file_upload_complete_response.links.state).relative()
-
-        if not wait_for_completion:
-            # we do not want to wait for completion to finish
-            return file, file_id, state_url
 
         completion_etag = None
         async for attempt in AsyncRetrying(
@@ -476,7 +433,7 @@ def upload_file(
         )
         # check the file is in S3 for real
         s3_metadata = await storage_s3_client.get_file_metadata(
-            storage_s3_bucket, file_id
+            bucket=storage_s3_bucket, object_key=file_id
         )
         assert s3_metadata.size == file_size
         assert s3_metadata.last_modified

@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 # pylint:disable=no-name-in-module
+# pylint:disable=protected-access
 
 
 import asyncio
@@ -23,7 +24,10 @@ import pytest
 from aiohttp import ClientSession
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
+from aws_library.s3.client import SimcoreS3API
+from aws_library.s3.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from aws_library.s3.errors import S3KeyNotFoundError
+from aws_library.s3.models import S3ObjectKey
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
@@ -46,19 +50,14 @@ from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.parametrizations import byte_size_ids
-from servicelib.aiohttp import status
-from simcore_service_storage.constants import (
-    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
-    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
-)
+from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
+from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName, UploadID
-from simcore_service_storage.s3_client import StorageS3Client
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.file_utils import upload_file_part, upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from yarl import URL
 
@@ -77,15 +76,14 @@ _HTTP_PRESIGNED_LINK_QUERY_KEYS = [
 
 
 async def assert_multipart_uploads_in_progress(
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    file_id: SimcoreS3FileID,
     *,
     expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
     list_uploads: list[
-        tuple[UploadID, SimcoreS3FileID]
+        tuple[UploadID, S3ObjectKey]
     ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     if expected_upload_ids is None:
         assert (
@@ -136,7 +134,7 @@ class SingleLinkParam:
     ],
 )
 async def test_create_upload_file_with_file_size_0_returns_single_link(
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
@@ -182,7 +180,6 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=None,
     )
 
@@ -217,7 +214,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
     ],
 )
 async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
@@ -252,7 +249,6 @@ async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=None,
     )
 
@@ -273,7 +269,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "10MiB"),
-                expected_response=status.HTTP_200_OK,
+                expected_response=HTTPStatus.OK,
                 expected_num_links=1,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -283,7 +279,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "100MiB"),
-                expected_response=status.HTTP_200_OK,
+                expected_response=HTTPStatus.OK,
                 expected_num_links=10,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -293,7 +289,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "5TiB"),
-                expected_response=status.HTTP_200_OK,
+                expected_response=HTTPStatus.OK,
                 expected_num_links=8739,
                 expected_chunk_size=parse_obj_as(ByteSize, "600MiB"),
             ),
@@ -303,7 +299,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "9431773844"),
-                expected_response=status.HTTP_200_OK,
+                expected_response=HTTPStatus.OK,
                 expected_num_links=900,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -313,7 +309,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.S3,
                 file_size=parse_obj_as(ByteSize, "255GiB"),
-                expected_response=status.HTTP_200_OK,
+                expected_response=HTTPStatus.OK,
                 expected_num_links=1,
                 expected_chunk_size=parse_obj_as(ByteSize, "255GiB"),
             ),
@@ -322,7 +318,7 @@ class MultiPartParam:
     ],
 )
 async def test_create_upload_file_presigned_with_file_size_returns_multipart_links_if_bigger_than_99MiB(  # noqa: N802
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     test_param: MultiPartParam,
@@ -360,7 +356,6 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=([upload_id] if upload_id else None),
     )
 
@@ -376,7 +371,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     aiopg_engine: Engine,
     client: TestClient,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     with_versioning_enabled: None,
     simcore_file_id: SimcoreS3FileID,
@@ -405,13 +400,12 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=([upload_id] if upload_id else None),
     )
     # delete/abort file upload
     abort_url = URL(upload_link.links.abort_upload).relative()
     response = await client.post(f"{abort_url}")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
+    await assert_status(response, HTTPStatus.NO_CONTENT)
 
     # the DB shall be cleaned up
     await assert_file_meta_data_in_db(
@@ -427,7 +421,6 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=None,
     )
 
@@ -445,7 +438,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
 async def test_upload_same_file_uuid_aborts_previous_upload(
     aiopg_engine: Engine,
     client: TestClient,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
@@ -475,7 +468,6 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=([upload_id] if upload_id else None),
     )
 
@@ -511,7 +503,6 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     await assert_multipart_uploads_in_progress(
         storage_s3_client,
         storage_s3_bucket,
-        simcore_file_id,
         expected_upload_ids=([new_upload_id] if new_upload_id else None),
     )
 
@@ -558,7 +549,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
 ):
     """what does that mean?
@@ -583,7 +574,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
     )
     response.raise_for_status()
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+    data, error = await assert_status(response, HTTPStatus.ACCEPTED)
     assert not error
     assert data
     file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -604,7 +595,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
                 f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
             )
             response = await client.post(f"{state_url}")
-            data, error = await assert_status(response, status.HTTP_200_OK)
+            data, error = await assert_status(response, HTTPStatus.OK)
             assert not error
             assert data
             future = FileUploadCompleteFutureResponse.parse_obj(data)
@@ -625,7 +616,9 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
-    s3_metadata = await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
+    s3_metadata = await storage_s3_client.get_file_metadata(
+        bucket=storage_s3_bucket, object_key=file_id
+    )
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == completion_etag
@@ -633,7 +626,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
 
 async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
@@ -664,7 +657,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
         upload_e_tag = json.loads(response["ETag"])
     # check the file is now on S3
     s3_metadata = await storage_s3_client.get_file_metadata(
-        storage_s3_bucket, simcore_file_id
+        bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
@@ -676,7 +669,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
 
 async def test_upload_real_file_with_s3_client(
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
@@ -706,7 +699,7 @@ async def test_upload_real_file_with_s3_client(
         upload_e_tag = json.loads(response["ETag"])
     # check the file is now on S3
     s3_metadata = await storage_s3_client.get_file_metadata(
-        storage_s3_bucket, simcore_file_id
+        bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
@@ -718,7 +711,7 @@ async def test_upload_real_file_with_s3_client(
     print(f"--> completing upload of {file=}")
     response = await client.post(f"{complete_url}", json={"parts": []})
     response.raise_for_status()
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+    data, error = await assert_status(response, HTTPStatus.ACCEPTED)
     assert not error
     assert data
     file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -736,7 +729,7 @@ async def test_upload_real_file_with_s3_client(
             )
             response = await client.post(f"{state_url}")
             response.raise_for_status()
-            data, error = await assert_status(response, status.HTTP_200_OK)
+            data, error = await assert_status(response, HTTPStatus.OK)
             assert not error
             assert data
             future = FileUploadCompleteFutureResponse.parse_obj(data)
@@ -764,7 +757,7 @@ async def test_upload_real_file_with_s3_client(
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(
-        storage_s3_bucket, simcore_file_id
+        bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
@@ -779,7 +772,7 @@ async def test_upload_real_file_with_s3_client(
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     aiopg_engine: Engine,
     client: TestClient,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     with_versioning_enabled: None,
     file_size: ByteSize,
@@ -828,7 +821,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     # 4. abort file upload
     abort_url = URL(upload_link.links.abort_upload).relative()
     response = await client.post(f"{abort_url}")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
+    await assert_status(response, HTTPStatus.NO_CONTENT)
 
     # we should have the original file still in now...
     await assert_file_meta_data_in_db(
@@ -842,7 +835,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(
-        storage_s3_bucket, uploaded_file_id
+        bucket=storage_s3_bucket, object_key=uploaded_file_id
     )
     assert s3_metadata.size == file_size
 
@@ -872,14 +865,16 @@ async def test_download_file_no_file_was_uploaded(
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
 ):
     assert client.app
 
     missing_file = parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/missing.file")
     assert (
-        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
+        await storage_s3_client.file_exists(
+            bucket=storage_s3_bucket, object_key=missing_file
+        )
         is False
     )
 
@@ -892,7 +887,7 @@ async def test_download_file_no_file_was_uploaded(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
+    data, error = await assert_status(response, HTTPStatus.NOT_FOUND)
     assert data is None
     assert missing_file in error["message"]
 
@@ -903,7 +898,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: int,
     user_id: UserID,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     tmp_path: Path,
     faker: Faker,
@@ -916,7 +911,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
     )
     assert (
         await storage_s3_client.file_exists(
-            storage_s3_bucket, s3_object=uploaded_file_uuid
+            bucket=storage_s3_bucket, object_key=uploaded_file_uuid
         )
         is True
     )
@@ -930,7 +925,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    data, error = await assert_status(response, HTTPStatus.OK)
     assert not error
     assert data
     assert "link" in data
@@ -947,7 +942,7 @@ async def test_download_file_from_inside_a_directory(
     user_id: UserID,
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     tmp_path: Path,
     faker: Faker,
@@ -967,10 +962,15 @@ async def test_download_file_from_inside_a_directory(
 
     s3_file_id = parse_obj_as(SimcoreS3FileID, f"{dir_path_in_s3}/{file_name}")
     await storage_s3_client.upload_file(
-        storage_s3_bucket, file_to_upload_in_dir, s3_file_id, None
+        bucket=storage_s3_bucket,
+        file=file_to_upload_in_dir,
+        object_key=s3_file_id,
+        bytes_transfered_cb=None,
     )
     assert (
-        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=s3_file_id)
+        await storage_s3_client.file_exists(
+            bucket=storage_s3_bucket, object_key=s3_file_id
+        )
         is True
     )
 
@@ -984,7 +984,7 @@ async def test_download_file_from_inside_a_directory(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    data, error = await assert_status(response, HTTPStatus.OK)
     assert not error
     assert data
     assert "link" in data
@@ -1021,7 +1021,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
+    data, error = await assert_status(response, HTTPStatus.NOT_FOUND)
     assert data is None
     assert missing_s3_file_id in error["message"]
 
@@ -1030,7 +1030,7 @@ async def test_download_file_access_rights(
     client: TestClient,
     location_id: int,
     user_id: UserID,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     faker: Faker,
 ):
@@ -1041,7 +1041,9 @@ async def test_download_file_access_rights(
         SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/project_id_is_missing"
     )
     assert (
-        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
+        await storage_s3_client.file_exists(
+            bucket=storage_s3_bucket, object_key=missing_file
+        )
         is False
     )
 
@@ -1054,7 +1056,7 @@ async def test_download_file_access_rights(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
+    data, error = await assert_status(response, HTTPStatus.FORBIDDEN)
     assert data is None
     assert "Insufficient access rights" in error["message"]
 
@@ -1068,7 +1070,7 @@ async def test_download_file_access_rights(
 )
 async def test_delete_file(
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     file_size: ByteSize,
@@ -1089,7 +1091,7 @@ async def test_delete_file(
         .with_query(user_id=user_id)
     )
     response = await client.delete(f"{delete_url}")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
+    await assert_status(response, HTTPStatus.NO_CONTENT)
 
     # check the entry in db is removed
     await assert_file_meta_data_in_db(
@@ -1103,7 +1105,9 @@ async def test_delete_file(
     )
     # check the file is gone from S3
     with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.get_file_metadata(storage_s3_bucket, uploaded_file_uuid)
+        await storage_s3_client.get_file_metadata(
+            bucket=storage_s3_bucket, object_key=uploaded_file_uuid
+        )
 
 
 async def test_copy_as_soft_link(
@@ -1130,7 +1134,7 @@ async def test_copy_as_soft_link(
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=invalid_link_id))
     )
-    await assert_status(response, status.HTTP_404_NOT_FOUND)
+    await assert_status(response, HTTPStatus.NOT_FOUND)
 
     # now let's try with whatever link id
     file, original_file_uuid = await upload_file(
@@ -1147,7 +1151,7 @@ async def test_copy_as_soft_link(
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=link_id))
     )
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    data, error = await assert_status(response, HTTPStatus.OK)
     assert not error
     fmd = parse_obj_as(FileMetaDataGet, data)
     assert fmd.file_id == link_id
@@ -1171,7 +1175,7 @@ async def __list_files(
         .with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     )
     response = await client.get(f"{get_url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    data, error = await assert_status(response, HTTPStatus.OK)
     assert not error
     return parse_obj_as(list[FileMetaDataGet], data)
 

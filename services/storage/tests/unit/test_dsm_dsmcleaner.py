@@ -35,7 +35,6 @@ from simcore_service_storage.models import (
     S3BucketName,
     UploadID,
 )
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -81,7 +80,7 @@ async def test_regression_collaborator_creates_file_upload_links(
     link_type: LinkType,
     file_size: ByteSize,
     is_directory: bool,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     checksum: SHA256Str | None,
     collaborator_id: UserID,
@@ -147,7 +146,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     link_type: LinkType,
     file_size: ByteSize,
     is_directory: bool,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     checksum: SHA256Str | None,
 ):
@@ -225,7 +224,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     user_id: UserID,
     link_type: LinkType,
     file_size: ByteSize,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     with_versioning_enabled: None,
     checksum: SHA256Str | None,
@@ -315,7 +314,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     user_id: UserID,
     file_size: ByteSize,
     is_directory: bool,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     checksum: SHA256Str | None,
 ):

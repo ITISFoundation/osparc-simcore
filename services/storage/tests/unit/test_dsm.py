@@ -13,7 +13,6 @@ from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from servicelib.utils import logged_gather
 from simcore_service_storage.models import FileMetaData, S3BucketName
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -47,7 +46,7 @@ async def dsm_mockup_complete_db(
 async def test_sync_table_meta_data(
     simcore_s3_dsm: SimcoreS3DataManager,
     dsm_mockup_complete_db: tuple[FileMetaData, FileMetaData],
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
 ):
     expected_removed_files = []
