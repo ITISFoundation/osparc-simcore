@@ -98,7 +98,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-async def _check_pipeline_not_running(
+async def _check_pipeline_not_running_or_raise_409(
     comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
 ) -> None:
     pipeline_state = utils.get_pipeline_state_from_task_states(
@@ -106,7 +106,7 @@ async def _check_pipeline_not_running(
     )
     if utils.is_pipeline_running(pipeline_state):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
         )
 
@@ -324,7 +324,7 @@ async def create_computation(  # noqa: PLR0913
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
         # check if current state allow to modify the computation
-        await _check_pipeline_not_running(comp_tasks_repo, computation)
+        await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)

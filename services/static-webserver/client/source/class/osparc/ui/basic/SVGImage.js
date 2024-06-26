@@ -16,8 +16,8 @@
 ************************************************************************ */
 
 /**
- * Widget that displays an svg image and support changing its color.
- * It is meant to be used for those images that are not available in the catalog of font icons we include.
+ * Widget that displays a SVG image and supports changing its color.
+ * It is meant to be used for those images that are not available in the catalogs of font icons we include.
  */
 
 
@@ -157,7 +157,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param keywordOrRgb predefined keyword or rgb "0,255,0"
+      * @param keywordOrRgb {string} predefined keyword or rgb in the folloing format "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
       let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
