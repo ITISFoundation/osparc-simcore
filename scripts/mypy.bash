@@ -29,12 +29,10 @@ echo_requirements() {
     --interactive \
     --rm \
     --user="$(id --user "$USER")":"$(id --group "$USER")" \
-    --entrypoint="pip" \
+    --entrypoint="uv" \
     "$IMAGE_NAME" \
-     --no-cache-dir freeze
+    --no-cache-dir pip freeze
 }
-
-
 
 run() {
   echo Using "$(docker run --rm "$IMAGE_NAME" --version)"

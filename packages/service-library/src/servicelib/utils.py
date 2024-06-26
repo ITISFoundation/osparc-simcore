@@ -4,18 +4,23 @@ IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
    DO NOT IMPORT ANYTHING from .
 """
+
 import asyncio
 import logging
 import os
 import socket
 from collections.abc import Awaitable, Coroutine, Generator, Iterable
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, AsyncGenerator, AsyncIterable, Final, TypeVar, cast
 
 import toolz
 from pydantic import NonNegativeInt
 
 _logger = logging.getLogger(__name__)
+
+_DEFAULT_GATHER_TASKS_GROUP_PREFIX: Final[str] = "gathered"
+_DEFAULT_LOGGER: Final[logging.Logger] = _logger
+_DEFAULT_LIMITED_CONCURRENCY: Final[int] = 1
 
 
 def is_production_environ() -> bool:
@@ -175,3 +180,144 @@ def unused_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return cast(int, s.getsockname()[1])
+
+
+T = TypeVar("T")
+
+
+async def limited_as_completed(
+    awaitables: Iterable[Awaitable[T]] | AsyncIterable[Awaitable[T]],
+    *,
+    limit: int = _DEFAULT_LIMITED_CONCURRENCY,
+    tasks_group_prefix: str | None = None,
+) -> AsyncGenerator[asyncio.Future[T], None]:
+    """Runs awaitables using limited concurrent tasks and returns
+    result futures unordered.
+
+    Arguments:
+        awaitables -- The awaitables to limit the concurrency of.
+
+    Keyword Arguments:
+        limit -- The maximum number of awaitables to run concurrently.
+                0 or negative values disables the limit. (default: {1})
+        tasks_group_prefix -- The prefix to use for the name of the asyncio tasks group.
+                             If None, no name is used. (default: {None})
+
+    Returns:
+        nothing
+
+    Yields:
+        Future[T]: the future of the awaitables as they appear.
+
+
+    """
+    try:
+        awaitable_iterator = aiter(awaitables)  # type: ignore[arg-type]
+        is_async = True
+    except TypeError:
+        assert isinstance(awaitables, Iterable)  # nosec
+        awaitable_iterator = iter(awaitables)  # type: ignore[assignment]
+        is_async = False
+
+    completed_all_awaitables = False
+    pending_futures: set[asyncio.Future] = set()
+
+    try:
+        while pending_futures or not completed_all_awaitables:
+            while (
+                limit < 1 or len(pending_futures) < limit
+            ) and not completed_all_awaitables:
+                try:
+                    aw = (
+                        await anext(awaitable_iterator)
+                        if is_async
+                        else next(awaitable_iterator)  # type: ignore[call-overload]
+                    )
+                    future = asyncio.ensure_future(aw)
+                    if tasks_group_prefix:
+                        future.set_name(f"{tasks_group_prefix}-{future.get_name()}")
+                    pending_futures.add(future)
+                except (StopIteration, StopAsyncIteration):  # noqa: PERF203
+                    completed_all_awaitables = True
+            if not pending_futures:
+                return
+            done, pending_futures = await asyncio.wait(
+                pending_futures, return_when=asyncio.FIRST_COMPLETED
+            )
+
+            for future in done:
+                yield future
+    except asyncio.CancelledError:
+        for future in pending_futures:
+            future.cancel()
+        await asyncio.gather(*pending_futures, return_exceptions=True)
+        raise
+
+
+async def _wrapped(
+    awaitable: Awaitable[T], *, index: int, reraise: bool, logger: logging.Logger
+) -> tuple[int, T | BaseException]:
+    try:
+        return index, await awaitable
+    except asyncio.CancelledError:
+        logger.debug(
+            "Cancelled %i-th concurrent task %s",
+            index + 1,
+            f"{awaitable=}",
+        )
+        raise
+    except BaseException as exc:  # pylint: disable=broad-exception-caught
+        logger.warning(
+            "Error in %i-th concurrent task %s: %s",
+            index + 1,
+            f"{awaitable=}",
+            f"{exc=}",
+        )
+        if reraise:
+            raise
+        return index, exc
+
+
+async def limited_gather(
+    *awaitables: Awaitable[T],
+    reraise: bool = True,
+    log: logging.Logger = _DEFAULT_LOGGER,
+    limit: int = _DEFAULT_LIMITED_CONCURRENCY,
+    tasks_group_prefix: str | None = None,
+) -> list[T | BaseException | None]:
+    """runs all the awaitables using the limited concurrency and returns them in the same order
+
+    Arguments:
+        awaitables -- The awaitables to limit the concurrency of.
+
+    Keyword Arguments:
+        limit -- The maximum number of awaitables to run concurrently.
+                setting 0 or negative values disable (default: {1})
+        reraise -- if True will raise at the first exception
+                The remaining tasks will continue as in standard asyncio gather.
+                If False, then the exceptions will be returned (default: {True})
+        log -- the logger to use for logging the exceptions (default: {_logger})
+        tasks_group_prefix -- The prefix to use for the name of the asyncio tasks group.
+                             If None, 'gathered' prefix is used. (default: {None})
+
+    Returns:
+       the results of the awaitables keeping the order
+
+       special thanks to: https://death.andgravity.com/limit-concurrency
+    """
+
+    indexed_awaitables = [
+        _wrapped(awaitable, reraise=reraise, index=index, logger=log)
+        for index, awaitable in enumerate(awaitables)
+    ]
+
+    results: list[T | BaseException | None] = [None] * len(indexed_awaitables)
+    async for future in limited_as_completed(
+        indexed_awaitables,
+        limit=limit,
+        tasks_group_prefix=tasks_group_prefix or _DEFAULT_GATHER_TASKS_GROUP_PREFIX,
+    ):
+        index, result = await future
+        results[index] = result
+
+    return results
