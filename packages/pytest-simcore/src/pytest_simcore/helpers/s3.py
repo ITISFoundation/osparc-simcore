@@ -117,7 +117,7 @@ async def delete_all_object_versions(
     if "Status" in bucket_versioning and bucket_versioning["Status"] == "Enabled":
         # NOTE: using gather here kills the moto server
         all_versions = [
-            v
+            await v
             async for v in limited_as_completed(
                 (
                     s3_client.list_object_versions(Bucket=bucket, Prefix=key)
