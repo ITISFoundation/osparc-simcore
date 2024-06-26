@@ -89,7 +89,7 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     # files were added
     caplog.clear()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
-        (some_dir / "hoho").mkdir(parents=True, exist_ok=True)
+        (some_dir / "hoho").touch()
     assert "File changes in path" in caplog.text
     assert "Files added:" in caplog.text
     assert "Files removed:" not in caplog.text
