@@ -137,6 +137,8 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
         case "image":
           control = new qx.ui.basic.Image().set({
             scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
             allowGrowX: true,
             allowGrowY: true,
             alignX: "center",
