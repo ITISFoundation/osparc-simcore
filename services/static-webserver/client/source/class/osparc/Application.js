@@ -86,7 +86,6 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
-      // this.__updateFavicon();
 
       this.__initRouting();
       this.__startupChecks();
