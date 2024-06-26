@@ -579,7 +579,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 # SOCKETS FIXTURES  --------------------------------------------------------

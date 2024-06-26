@@ -87,7 +87,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
         decode_responses=True,
     )
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture(scope="session")
