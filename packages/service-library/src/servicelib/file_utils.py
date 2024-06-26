@@ -77,7 +77,11 @@ def _get_file_properties(path: Path) -> tuple[float, int]:
 
 
 def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
-    return {f"{x.relative_to(path)}": _get_file_properties(x) for x in path.rglob("*")}
+    return {
+        f"{x.relative_to(path)}": _get_file_properties(x)
+        for x in path.rglob("*")
+        if x.is_file()
+    }
 
 
 @contextmanager
@@ -95,7 +99,7 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
     content_changed_elements = {x for x in common_keys if before[x] != after[x]}
 
     if added_elements or removed_elements or content_changed_elements:
-        logger.log(log_level, "Files changes in path: '%s'", f"{path}")
+        logger.log(log_level, "File changes in path: '%s'", f"{path}")
     if added_elements:
         logger.log(
             log_level,
@@ -111,6 +115,6 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
     if content_changed_elements:
         logger.log(
             log_level,
-            "Files content changed:\n%s",
+            "File content changed:\n%s",
             "\n".join([f"* {x}" for x in sorted(content_changed_elements)]),
         )

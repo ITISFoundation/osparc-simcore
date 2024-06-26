@@ -90,19 +90,19 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     caplog.clear()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
         (some_dir / "hoho").mkdir(parents=True, exist_ok=True)
-    assert "Files changes in path" in caplog.text
+    assert "File changes in path" in caplog.text
     assert "Files added:" in caplog.text
     assert "Files removed:" not in caplog.text
-    assert "Files content changed" not in caplog.text
+    assert "File content changed" not in caplog.text
 
     # files were removed
     caplog.clear()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
         await remove_directory(path=some_dir)
-    assert "Files changes in path" in caplog.text
+    assert "File changes in path" in caplog.text
     assert "Files removed:" in caplog.text
     assert "Files added:" not in caplog.text
-    assert "Files content changed" not in caplog.text
+    assert "File content changed" not in caplog.text
 
     # nothing changed
     caplog.clear()
@@ -117,17 +117,17 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     with log_directory_changes(some_dir, _logger, logging.ERROR):
         (some_dir / "som_other_file").unlink()
         (some_dir / "som_other_file_2").touch()
-    assert "Files changes in path" in caplog.text
+    assert "File changes in path" in caplog.text
     assert "Files added:" in caplog.text
     assert "Files removed:" in caplog.text
-    assert "Files content changed" not in caplog.text
+    assert "File content changed" not in caplog.text
 
     # file content changed
     caplog.clear()
     (some_dir / "file_to_change").touch()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
         (some_dir / "file_to_change").write_text("ab")
-    assert "Files changes in path" in caplog.text
+    assert "File changes in path" in caplog.text
     assert "Files added:" not in caplog.text
     assert "Files removed:" not in caplog.text
-    assert "Files content changed" in caplog.text
+    assert "File content changed" in caplog.text
