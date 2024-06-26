@@ -86,6 +86,15 @@ async def test_remove_not_existing_directory_rasing_error(
 
 
 async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir: Path):
+    # directory cretion triggers no changes
+    caplog.clear()
+    with log_directory_changes(some_dir, _logger, logging.ERROR):
+        (some_dir / "a-dir").mkdir(parents=True, exist_ok=True)
+    assert "File changes in path" not in caplog.text
+    assert "Files added:" not in caplog.text
+    assert "Files removed:" not in caplog.text
+    assert "File content changed" not in caplog.text
+
     # files were added
     caplog.clear()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
