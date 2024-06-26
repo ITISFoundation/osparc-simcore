@@ -9,7 +9,7 @@ from collections.abc import Callable
 import pytest
 from aiopg.sa.exc import ResourceClosedError
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_product
+from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.webserver_models import products
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 

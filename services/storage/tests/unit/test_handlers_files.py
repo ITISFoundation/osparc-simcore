@@ -44,8 +44,8 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import (
     MULTIPART_UPLOADS_MIN_TOTAL_SIZE,

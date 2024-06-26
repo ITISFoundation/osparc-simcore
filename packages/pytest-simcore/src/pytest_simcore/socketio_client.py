@@ -9,7 +9,7 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from yarl import URL
 

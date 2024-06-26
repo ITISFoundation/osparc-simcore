@@ -1,7 +1,7 @@
 from typing import Callable
 
 import pytest
-from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.dict_tools import ConfigDict
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.application_settings_utils import (
     convert_to_app_config,

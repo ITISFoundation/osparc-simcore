@@ -19,9 +19,9 @@ import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.redis import get_redis_user_notifications_client
@@ -92,14 +92,11 @@ async def _create_notifications(
     redis_client: aioredis.Redis,
     logged_user: UserInfoDict,
     product_name: ProductName,
-    count: int
+    count: int,
 ) -> AsyncIterator[list[UserNotification]]:
 
     user_notifications: list[UserNotification] = [
-        _create_notification(
-            logged_user=logged_user,
-            product_name=product_name
-        )
+        _create_notification(logged_user=logged_user, product_name=product_name)
         for _ in range(count)
     ]
 
@@ -312,7 +309,7 @@ async def test_create_user_notification_per_product(
             logged_user=logged_user,
             product_name="s4l",
             count=n_notifications_per_product,
-        ) as _
+        ) as _,
     ):
         user_id = logged_user["id"]
 

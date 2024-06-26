@@ -342,6 +342,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posY: null,
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
+    __retriesLeft: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -1245,6 +1246,7 @@ qx.Class.define("osparc.data.model.Node", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           this.setDynamicV2(isDynamicV2);
           if (srvUrl) {
+            this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
           break;
@@ -1327,68 +1329,49 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __waitForServiceReady: async function(srvUrl) {
+    __waitForServiceReady: function(srvUrl) {
       this.getStatus().setInteractive("connecting");
+
+      if (this.__retriesLeft === 0) {
+        return;
+      }
+
       const retry = () => {
+        this.__retriesLeft--;
+
         // Check if node is still there
         if (this.getWorkbench().getNode(this.getNodeId()) === null) {
           return;
         }
-        const interval = 3000;
+        const interval = 5000;
         qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
       };
 
       // ping for some time until it is really reachable
       try {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("Connecting: about to fetch ", srvUrl);
+          console.log("Connecting: about to fetch", srvUrl);
         }
-        const response = await fetch(srvUrl);
-        if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("Connecting: fetch's response ", JSON.stringify(response));
-        }
-        if (response.ok || response.status === 302) {
-          // ok = status in the range 200-299
-          // some services might respond with a 302 which is also fine
-          // instead of
-          // - requesting its frontend to make sure it is ready and ...
-          // - waiting for the "load" event triggered by the content of the iframe
-          // we will skip those steps and directly switch its iframe
-          this.__serviceReadyIn(srvUrl);
-        } else {
-          console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
-          retry();
-        }
+        fetch(srvUrl)
+          .then(response => {
+            if (osparc.utils.Utils.isDevelopmentPlatform()) {
+              console.log("Connecting: fetch's response status", response.status);
+            }
+            if (response.status < 400) {
+              this.__serviceReadyIn(srvUrl);
+            } else {
+              console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
+              retry();
+            }
+          })
+          .catch(err => {
+            console.error("Connecting: Error", err);
+            retry();
+          });
       } catch (error) {
         console.error(`Connecting: Error while checking ${srvUrl}:`, error);
         retry();
       }
-    },
-
-    __waitForServiceWebsite: function(srvUrl) {
-      // request the frontend to make sure it is ready
-      let retries = 5
-      const openAndSend = () => {
-        if (retries === 0) {
-          return
-        }
-        retries--
-        fetch(srvUrl)
-          .then(request => {
-            if (request.status >= 200 || request.status < 300) {
-              this.__serviceReadyIn(srvUrl)
-            } else {
-              retry() // eslint-disable-line no-use-before-define
-            }
-          })
-          .catch(() => {
-            retry() // eslint-disable-line no-use-before-define
-          })
-      }
-      const retry = () => {
-        setTimeout(() => openAndSend(), 2000)
-      };
-      openAndSend()
     },
 
     __serviceReadyIn: function(srvUrl) {

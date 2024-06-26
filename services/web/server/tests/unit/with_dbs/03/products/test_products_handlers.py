@@ -12,8 +12,8 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.product import GetProduct
 from models_library.products import ProductName
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG

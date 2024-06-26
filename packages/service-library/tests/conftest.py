@@ -17,10 +17,10 @@ from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDB
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
-    "pytest_simcore.container_pause",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.pytest_global_environs",
@@ -29,7 +29,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_service_library_fixtures",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

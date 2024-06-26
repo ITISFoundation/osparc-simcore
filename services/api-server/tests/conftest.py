@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import simcore_service_api_server
 from dotenv import dotenv_values
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -27,7 +27,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

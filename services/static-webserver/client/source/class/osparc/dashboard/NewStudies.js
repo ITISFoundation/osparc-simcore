@@ -140,12 +140,48 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
+      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+
       const title = templateInfo.title;
       const desc = templateInfo.description;
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
+      if (templateInfo.billable) {
+        // replace the plus button with the creditsImage
+        const creditsImage = new osparc.desktop.credits.CreditsImage();
+        creditsImage.getChildControl("image").set({
+          width: 60,
+          height: 60
+        })
+        newPlanButton.replaceIcon(creditsImage);
+
+        newPlanButton.addListener("execute", () => {
+          const store = osparc.store.Store.getInstance();
+          const credits = store.getContextWallet().getCreditsAvailable()
+          const preferencesSettings = osparc.Preferences.getInstance();
+          const warningThreshold = preferencesSettings.getCreditsWarningThreshold();
+          if (credits <= warningThreshold) {
+            const msg = this.tr("This Plan requires Credits to run Sim4Life powered simulations. You can top up in the Billing Center.");
+            const win = new osparc.ui.window.Confirmation(msg).set({
+              caption: this.tr("Credits required"),
+              confirmText: this.tr("Start, I'll get them later"),
+              confirmAction: "create"
+            });
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                this.fireDataEvent("newStudyClicked", templateInfo);
+              }
+            });
+          } else {
+            newStudyClicked();
+          }
+        });
+      } else {
+        newPlanButton.addListener("execute", () => newStudyClicked());
+      }
       return newPlanButton;
     },
 
