@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import pytest
 from models_library.products import ProductName
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -263,12 +264,17 @@ async def test_get_latest_release(
 
 
 async def test_list_all_services_and_history(
+    target_product: ProductName,
+    user_id: UserID,
     services_repo: ServicesRepository,
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
 
-    all_services = await services_repo.list_services_with_history()
+    total_count, all_services = await services_repo.list_services_with_history(
+        product_name=target_product, user_id=user_id
+    )
     assert len(all_services) == 1
+    assert total_count == 1
 
     assert all_services[0].key == "simcore/services/dynamic/jupyterlab"
     history = all_services[0].history
@@ -287,6 +293,7 @@ async def test_list_all_services_and_history_with_pagination(
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
+    user_id: UserID,
 ):
     num_services = 5
     num_versions_per_service = 20
@@ -304,13 +311,18 @@ async def test_list_all_services_and_history_with_pagination(
         ]
     )
 
-    all_services = await services_repo.list_services_with_history()
+    total_count, all_services = await services_repo.list_services_with_history(
+        product_name=target_product, user_id=user_id
+    )
     assert len(all_services) == num_services
+    assert total_count == num_services
 
     for service in all_services:
         assert len(service.history) == num_versions_per_service
 
-    all_services = await services_repo.list_services_with_history(limit=2)
+    _, all_services = await services_repo.list_services_with_history(
+        product_name=target_product, user_id=user_id, limit=2
+    )
     assert len(all_services) == 2
 
     for service in all_services:
@@ -320,15 +332,18 @@ async def test_list_all_services_and_history_with_pagination(
 if __name__ == "__main__":
     from simcore_service_catalog.db.repositories.services import (
         AccessRightsClauses,
-        _make_list_accessible_services,
+        _compose_access_rights_clause,
+        _list_services_key_version_stmt,
     )
     from sqlalchemy.dialects import postgresql
 
     # stmt = _make_list_services_with_history_statement(limit=10, offset=None)
-    stmt = _make_list_accessible_services(
-        user_id=4,
-        product_name="osparc",
-        access_clause=AccessRightsClauses.can_read,
+    stmt = _list_services_key_version_stmt(
+        _compose_access_rights_clause(
+            product_name="osparc",
+            user_id=4,
+            access_clause=AccessRightsClauses.can_read,
+        )
     )
     compiled = stmt.compile(
         compile_kwargs={"literal_binds": True}, dialect=postgresql.dialect()
