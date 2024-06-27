@@ -168,11 +168,11 @@ update_parent_last_modified_ddl = sa.DDL(
 CREATE OR REPLACE FUNCTION update_parent_last_modified()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.parent_folder IS NOT NULL THEN
-        UPDATE folders
-        SET last_modified = NOW()
-        WHERE id = NEW.parent_folder;
-    END IF;
+    UPDATE folders f
+    SET last_modified = NOW()
+    FROM folders_access_rights far
+    WHERE far.folder_id = NEW.folder_id
+      AND f.id = far.parent_folder;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -198,9 +198,9 @@ $$ LANGUAGE plpgsql;
 
 trg_update_parent_last_modified_ddl = sa.DDL(
     """
-DROP TRIGGER IF EXISTS trg_update_parent_last_modified on folders;
+DROP TRIGGER IF EXISTS trg_update_parent_last_modified on folders_access_rights;
 CREATE TRIGGER trg_update_parent_last_modified
-AFTER INSERT OR UPDATE ON folders
+AFTER INSERT OR UPDATE ON folders_access_rights
     FOR EACH ROW
     EXECUTE FUNCTION update_parent_last_modified();
 """
@@ -228,7 +228,9 @@ AFTER INSERT OR UPDATE OR DELETE ON folders_to_projects
 
 sa.event.listen(folders, "after_create", update_parent_last_modified_ddl)
 sa.event.listen(folders, "after_create", update_folders_last_modified_ddl)
-sa.event.listen(folders, "after_create", trg_update_parent_last_modified_ddl)
+sa.event.listen(
+    folders_access_rights, "after_create", trg_update_parent_last_modified_ddl
+)
 sa.event.listen(
     folders_access_rights,
     "after_create",
