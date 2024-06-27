@@ -67,7 +67,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
-    CATALOG_SERVER_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+    CATALOG_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     CATALOG_CLIENT_REQUEST: ClientRequestSettings | None = Field(
         auto_default_from_env=True

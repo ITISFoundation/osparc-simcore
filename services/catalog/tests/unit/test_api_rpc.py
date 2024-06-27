@@ -32,7 +32,7 @@ def app_environment(
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
 ) -> EnvVarsDict:
     # set environs
-    monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
+    monkeypatch.delenv("CATALOG_RABBITMQ", raising=False)
 
     return setenvs_from_dict(
         monkeypatch,

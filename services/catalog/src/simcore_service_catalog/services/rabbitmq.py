@@ -2,12 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi.requests import Request
-from servicelib.rabbitmq import (
-    RabbitMQClient,
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
-)
+from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
 from .._meta import PROJECT_NAME
@@ -16,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
-    settings: RabbitSettings = app.state.settings.PAYMENTS_RABBITMQ
+    settings: RabbitSettings = app.state.settings.CATALOG_RABBITMQ
     return settings
 
 
@@ -38,15 +33,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
-
-
-def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    assert app.state.rabbitmq_client  # nosec
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
-
-
-def get_rabbitmq_client_from_request(request: Request):
-    return get_rabbitmq_client(request.app)
 
 
 def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
