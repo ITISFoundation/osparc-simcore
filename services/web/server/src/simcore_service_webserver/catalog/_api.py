@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputGet,
     ServiceOutputKey,
 )
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageQueryParameters
 from models_library.services import (
     ServiceInput,
@@ -58,7 +59,9 @@ class CatalogRequestContext(BaseModel):
             )
 
 
-async def _replace_service_ios(service: dict[str, Any], unit_registry: UnitRegistry):
+async def _safe_replace_service_input_outputs(
+    service: dict[str, Any], unit_registry: UnitRegistry
+):
     try:
         await asyncio.to_thread(
             replace_service_input_outputs,
@@ -87,7 +90,7 @@ async def dev_list_latest_services(
     app: web.Application,
     *,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     unit_registry: UnitRegistry,
     page_params: PageQueryParameters,
 ) -> tuple[list, PageMetaInfoLimitOffset]:
@@ -102,9 +105,36 @@ async def dev_list_latest_services(
 
     services = jsonable_encoder(page.data, exclude_unset=True)
     for service in services:
-        await _replace_service_ios(service, unit_registry)
+        await _safe_replace_service_input_outputs(service, unit_registry)
 
     return services, page.meta
+
+
+async def dev_get_service(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    unit_registry: UnitRegistry,
+):
+    service = await _rpc.get_service(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    data = jsonable_encoder(service, exclude_unset=True)
+    await asyncio.to_thread(
+        replace_service_input_outputs,
+        data,
+        unit_registry=unit_registry,
+        **RESPONSE_MODEL_POLICY,
+    )
+    return data
 
 
 async def list_services(
@@ -118,7 +148,7 @@ async def list_services(
         app, user_id, product_name, only_key_versions=False
     )
     for service in services:
-        await _replace_service_ios(service, unit_registry)
+        await _safe_replace_service_input_outputs(service, unit_registry)
 
     return services
 
