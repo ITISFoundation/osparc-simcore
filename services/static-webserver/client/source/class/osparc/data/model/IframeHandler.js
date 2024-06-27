@@ -66,6 +66,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     startPolling: function() {
       this.getNode().getStatus().getProgressSequence()
         .resetSequence();
+
       this.__unresponsiveRetries = 5;
       this.__nodeState();
     },

@@ -27,8 +27,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.self().openStudy(studyId)
       .then(studyData => {
+        // create study
         const study = new osparc.data.model.Study(studyData);
-        this.setStudy(study);
 
         // create node
         if (studyData["workbench"] && nodeId in studyData["workbench"]) {
@@ -36,29 +36,16 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           const key = nodeData["key"];
           const version = nodeData["version"];
           const node = new osparc.data.model.Node(study, key, version, nodeId);
-          this.setNode(node);
 
-          this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this.getNode());
+          this.__iframeHandler = new osparc.data.model.IframeHandler(study, node);
           this.__iframeHandler.startPolling();
 
+          this.__iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
+          this.__iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
           this.__buildLayout();
         }
       })
       .catch(err => console.error(err));
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      init: null,
-      nullable: false
-    },
-
-    node: {
-      check: "osparc.data.model.Node",
-      init: null,
-      nullable: false
-    }
   },
 
   statics: {
@@ -82,15 +69,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       const loadingPage = this.__iframeHandler.getLoadingPage();
       const iFrame = this.__iframeHandler.getIFrame();
       const src = iFrame.getSource();
-      let iFrameView;
-      if (src === null || src === "about:blank") {
-        iFrameView = loadingPage;
-      } else {
-        this.getLayoutParent().set({
-          zIndex: iFrame.getZIndex()-1
-        });
-        iFrameView = iFrame;
-      }
+      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+      /*
+      this.getLayoutParent().set({
+        zIndex: iFrame.getZIndex()-1
+      });
+      */
       this._add(iFrameView, {
         flex: 1
       });
