@@ -21,6 +21,10 @@
 
 qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
 
+  events: {
+    "iframeChanged": "qx.event.typeEvent"
+  },
+
   members: {
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
@@ -278,6 +282,10 @@ qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
       if (status === "ready") {
         this.getIFrame().resetSource();
         this.getIFrame().setSource(this.getServiceUrl());
+
+        // fire event to switch to iframe's content:
+        // it is required in those cases where the native 'load' event isn't triggered (voila)
+        this.getIFrame().fireEvent("iframeChanged");
       }
     }
   }
