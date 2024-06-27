@@ -56,7 +56,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks:
       - default
 
