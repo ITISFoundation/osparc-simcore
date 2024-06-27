@@ -2,6 +2,7 @@ import re
 from copy import deepcopy
 
 import sqlalchemy as sa
+import sqlalchemy.dialects.postgresql
 from sqlalchemy.engine import Engine
 from yarl import URL
 
@@ -72,3 +73,11 @@ def hide_dict_pass(data: dict) -> dict:
         elif key == "url":
             data_clone[key] = hide_url_pass(data[key])
     return data_clone
+
+
+def as_postgres_sql_query_str(statement) -> str:
+    compiled = statement.compile(
+        compile_kwargs={"literal_binds": True},
+        dialect=sqlalchemy.dialects.postgresql.dialect(),
+    )
+    return f"{compiled}"
