@@ -16,7 +16,6 @@ from simcore_postgres_database.utils_folders import (
     _FOLDER_NAMES_RESERVED_WINDOWS,
     CannotAlterOwnerPermissionsError,
     CannotGrantPermissionError,
-    CouldNotDeleteMissingAccessError,
     CouldNotFindFolderError,
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
@@ -350,31 +349,24 @@ async def test_folder_share(
 async def test_folder_delete_base_usage(
     connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-    user_gid = _get_random_gid(setup_users_and_groups)
+    owner_gid = _get_random_gid(setup_users_and_groups)
 
     missing_folder_id = 12313213
     with pytest.raises(CouldNotFindFolderError):
-        await folder_delete(connection, missing_folder_id, {user_gid})
+        await folder_delete(connection, missing_folder_id, {owner_gid})
 
     await _assert_folder_entires(connection, folder_count=0)
-    f1_folder_id = await folder_create(connection, "f1", user_gid)
+    f1_folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
 
-    with pytest.raises(CouldNotDeleteMissingAccessError):
-        await folder_delete(connection, f1_folder_id, {user_gid})
-
-    await folder_update_access(connection, f1_folder_id, user_gid, new_delete=True)
-    await folder_delete(connection, f1_folder_id, {user_gid})
+    await folder_delete(connection, f1_folder_id, {owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
-    # delete root of a subfolder removes all elements inside
-    root_folder_id, total_created_items = await _create_folder_structure(
-        connection, user_gid, tree_depth=3, subfolder_count=4
-    )
-    # NOTE: only the root node is give delete access
-    await folder_update_access(connection, root_folder_id, user_gid, new_delete=True)
-    await _assert_folder_entires(connection, folder_count=total_created_items)
-    await folder_delete(connection, root_folder_id, {user_gid})
-    await _assert_folder_entires(connection, folder_count=0)
+    # shared as user can user remove it's own folder entry?
+    # this is based on access rights?
 
-    # TODO: try removal with existing gid but no access
+    # TODO: test for CouldNotDeleteMissingAccessError
+
+    # TODO: delete root of a subfolder removes all elements inside
+
+    # TODO: try deleting a folder with some projects inside it

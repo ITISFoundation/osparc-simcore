@@ -4,7 +4,7 @@ from typing import Any, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import BaseModel, NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
@@ -332,27 +332,32 @@ async def folder_share(
         await connection.execute(upsert_stmt)
 
 
+async def folder_rename(
+    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+) -> None:
+    # admin users only can rename the folder, all other users are not allowed
+    pass
+
+
 async def folder_delete(
     connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
 ) -> None:
     # NOTE on emulating linux
     # the owner of a folder can delete files and directories from another user
     async with connection.begin():
-        query_result: ResultProxy = await connection.execute(
-            sa.select([folders, folders_access_rights])
-            .select_from(
-                folders.join(
-                    folders_access_rights,
-                    folders.c.id == folders_access_rights.c.folder_id,
+        found_entry: RowProxy | None = await (
+            await connection.execute(
+                sa.select([folders, folders_access_rights])
+                .select_from(
+                    folders.join(
+                        folders_access_rights,
+                        folders.c.id == folders_access_rights.c.folder_id,
+                    )
                 )
+                .where(folders.c.id == folder_id)
+                .where(folders_access_rights.c.gid.in_(gids))
             )
-            .where(folders.c.id == folder_id)
-            .where(folders_access_rights.c.gid.in_(gids))
-        )
-        found_entry: RowProxy | None = None
-        async for entry in query_result:
-            if entry is not None:
-                found_entry = entry
+        ).fetchone()
 
         if found_entry is None:
             raise CouldNotFindFolderError(folder_id=folder_id, gids=gids)
@@ -393,35 +398,42 @@ async def folder_list(
 # TODO: figure out which of these is required
 
 
-async def project_in_folder_add(
-    connection: SAConnection, project_id: _ProjectID, folder_id: _FolderID
-) -> None:
-    pass
-
-
-async def project_in_folder_remove(
+async def folder_add_project(
     connection: SAConnection,
-    project_id: _ProjectID,
     folder_id: _FolderID,
     gids: set[_GroupID],
+    *,
+    project_id: _ProjectID,
 ) -> None:
+    # TODO: check that you have gids for write permission to add folder
     pass
 
 
-async def project_in_folder_move(
+async def folder_remove_project(
     connection: SAConnection,
-    project_id: _ProjectID,
-    current_folder_id: _FolderID,
-    new_folder_id: _FolderID,
-    gids: set[_GroupID],
-) -> None:
-    pass
-
-
-async def project_in_folder_list(
-    connection: SAConnection,
-    project_id: _ProjectID,
     folder_id: _FolderID,
     gids: set[_GroupID],
+    *,
+    project_id: _ProjectID,
+) -> None:
+    # TODO: check that you have gids for write permission to add folder? I guess delete refers to the folder not the project?
+    pass
+
+
+async def folder_move_project(
+    connection: SAConnection,
+    project_id: _ProjectID,
+    gids: set[_GroupID],
+    *,
+    from_folder_id: _FolderID,
+    to_folder_id: _FolderID,
+) -> None:
+    # TODO: check taht entry for project_id with it's gid have access to
+    pass
+
+
+async def folder_list_projects(
+    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
 ) -> list[_ProjectID]:
+    # when listing show all the projects which have access via gids, also need to check the project's owne access rights in order to figure out if it can be shown
     pass
