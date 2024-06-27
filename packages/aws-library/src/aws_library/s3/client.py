@@ -2,14 +2,15 @@ import asyncio
 import contextlib
 import logging
 import urllib.parse
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Sequence, cast
+from typing import Any, Final, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
+from botocore import exceptions as botocore_exc
 from botocore.client import Config
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
@@ -23,7 +24,7 @@ from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .error_handler import s3_exception_handler, s3_exception_handler_async_gen
-from .errors import S3BucketInvalidError, S3DestinationNotEmptyError, S3KeyNotFoundError
+from .errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from .models import (
     MultiPartUploadLinks,
     S3DirectoryMetaData,
@@ -109,8 +110,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         try:
             await self._client.head_bucket(Bucket=bucket)
             return True
-        except S3BucketInvalidError:
-            return False
+        except botocore_exc.ClientError as exc:
+            status_code = exc.response.get("Error", {}).get("Code", -1)
+            if status_code == "404":
+                return False
+            raise
 
     @s3_exception_handler(_logger)
     async def object_exists(
