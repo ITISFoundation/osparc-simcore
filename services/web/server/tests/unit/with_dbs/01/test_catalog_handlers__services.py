@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceUpdate,
 )
 from models_library.products import ProductName
+from models_library.rest_pagination import Page
 from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -196,3 +197,14 @@ async def test_dev_get_and_patch_service(
     assert model.version == service_version
     assert model.name == "foo"
     assert model.description == "bar"
+
+    # LIST
+    url = client.app.router["dev_list_services_latest"].url_for()
+    response = await client.get("{url}")
+
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert data
+    assert error is None
+
+    model = parse_obj_as(Page[CatalogServiceGet], data)
+    assert model.data
