@@ -1,6 +1,7 @@
 from typing import Any, ClassVar
 
-from pydantic import Extra
+from models_library.services_history import ServiceRelease
+from pydantic import Extra, Field
 
 from ..emails import LowerCaseEmailStr
 from ..services import ServiceMetaDataPublished
@@ -107,6 +108,16 @@ class ServiceGet(
                 "owner": "redpandas@wonderland.com",
             },
         }
+
+
+class DEVServiceGet(ServiceGet):
+    # pylint: disable=too-many-ancestors
+
+    history: list[ServiceRelease] = Field(
+        default=[],
+        description="history of releases for this service at this point in time, starting from the newest to the oldest."
+        " It includes current release.",
+    )
 
 
 ServiceResourcesGet = ServiceResourcesDict

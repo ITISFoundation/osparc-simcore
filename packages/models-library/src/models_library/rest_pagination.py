@@ -3,6 +3,7 @@ from typing import Any, ClassVar, Final, Generic, TypeVar
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConstrainedInt,
     Extra,
     Field,
     NonNegativeInt,
@@ -10,6 +11,8 @@ from pydantic import (
     validator,
 )
 from pydantic.generics import GenericModel
+
+from .utils.common_validators import none_to_empty_list_pre_validator
 
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
@@ -20,14 +23,17 @@ MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
 
 
+class PageLimitInt(ConstrainedInt):
+    ge = 1
+    lt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+
+
 class PageQueryParameters(BaseModel):
     """Use as pagination options in query parameters"""
 
-    limit: int = Field(
+    limit: PageLimitInt = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
@@ -97,12 +103,9 @@ class Page(GenericModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    @validator("data", pre=True)
-    @classmethod
-    def convert_none_to_empty_list(cls, v):
-        if v is None:
-            v = []
-        return v
+    _none_is_empty = validator("data", allow_reuse=True, pre=True)(
+        none_to_empty_list_pre_validator
+    )
 
     @validator("data")
     @classmethod

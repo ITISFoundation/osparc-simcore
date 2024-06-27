@@ -19,7 +19,10 @@ class ServiceRelease(BaseModel):
     # from ServiceMetaDataPublished
     version: ServiceVersion
     version_display: str | None = Field(default=None)
-    release_date: datetime | None = Field(default=None)
+    released_at: datetime | None = Field(default=None)
+    deprecated_at: datetime | None = Field(
+        default=None, description="If deprecated, it sets the deprecation date"
+    )
 
     # computed compatibility
     compatibility: Compatibility | None = Field(default=None)
@@ -35,7 +38,8 @@ class ServiceRelease(BaseModel):
                 {
                     "version": "0.9.1",
                     "version_display": "Matterhorn",
-                    "release_date": "2024-06-20T18:49:17",
+                    "released_at": "2024-06-20T18:49:17",
+                    "deprecated_at": "2034-06-20",
                     "compatibility": {"can_update_to": "0.9.10"},
                 },
             ]
