@@ -1,12 +1,13 @@
 import sqlalchemy as sa
 from models_library.products import ProductName
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data, user_to_groups
+from ..tables import services_access_rights, services_meta_data, user_to_groups, users
 
 
 def list_services_stmt(
@@ -104,6 +105,36 @@ def _list_services_key_version_stmt(access_rights: sa.sql.ClauseElement):
         .order_by(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+    )
+
+
+def batch_get_services(
+    product_name: ProductName, selection: list[tuple[ServiceKey, ServiceVersion]]
+):
+    return (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            users.c.email.label("owner_email"),
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
+        )
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
+            ).join(users, services_meta_data.c.owner == users.c.id)
+        )
+        .where(
+            or_(
+                (services_meta_data.c.key == key)
+                & (services_meta_data.c.version == version)
+                for key, version in selection
+            )
         )
     )
 

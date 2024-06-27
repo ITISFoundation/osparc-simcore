@@ -15,10 +15,24 @@ async def list_services_paginated(
     offset: NonNegativeInt = 0,
 ) -> tuple[NonNegativeInt, list[DEVServiceGet]]:
 
-    # TODO: add access-rights needed
-
-    # user_id
-    items = await repo.list_services_with_history(
+    total_count, services = await repo.list_services_with_history(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
-    # TODO: add more info on latest version!
+
+    # TODO: get_batch latest and fill
+
+    items = [
+        DEVServiceGet(
+            name=None,
+            thumbnail=None,
+            description=None,
+            access_rights=None,
+            key=s.key,
+            version=s.version,
+            version_display=None,
+            release_version=None,
+            history=s.history,
+        )
+        for s in services
+    ]
+    return total_count, items
