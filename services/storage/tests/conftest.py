@@ -450,7 +450,7 @@ def upload_file(
             expected_sha256_checksum=sha256_checksum,
         )
         # check the file is in S3 for real
-        s3_metadata = await storage_s3_client.get_file_metadata(
+        s3_metadata = await storage_s3_client.get_object_metadata(
             bucket=storage_s3_bucket, object_key=file_id
         )
         assert s3_metadata.size == file_size

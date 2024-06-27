@@ -27,7 +27,7 @@ async def _list_all_files_in_folder(
     prefix: str,
     max_files_to_list: int,
 ) -> list[S3MetaData]:
-    async for s3_objects in s3_client.list_files_paginated(
+    async for s3_objects in s3_client.list_objects_paginated(
         bucket, prefix, items_per_page=max_files_to_list
     ):
         # NOTE: stop immediately after listing after `max_files_to_list`

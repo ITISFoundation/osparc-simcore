@@ -617,7 +617,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
-    s3_metadata = await storage_s3_client.get_file_metadata(
+    s3_metadata = await storage_s3_client.get_object_metadata(
         bucket=storage_s3_bucket, object_key=file_id
     )
     assert s3_metadata.size == file_size
@@ -658,7 +658,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
         assert "ETag" in response
         upload_e_tag = json.loads(response["ETag"])
     # check the file is now on S3
-    s3_metadata = await storage_s3_client.get_file_metadata(
+    s3_metadata = await storage_s3_client.get_object_metadata(
         bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
@@ -700,7 +700,7 @@ async def test_upload_real_file_with_s3_client(
         assert "ETag" in response
         upload_e_tag = json.loads(response["ETag"])
     # check the file is now on S3
-    s3_metadata = await storage_s3_client.get_file_metadata(
+    s3_metadata = await storage_s3_client.get_object_metadata(
         bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
@@ -758,7 +758,7 @@ async def test_upload_real_file_with_s3_client(
         expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
-    s3_metadata = await storage_s3_client.get_file_metadata(
+    s3_metadata = await storage_s3_client.get_object_metadata(
         bucket=storage_s3_bucket, object_key=simcore_file_id
     )
     assert s3_metadata.size == file_size
@@ -836,7 +836,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
         expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
-    s3_metadata = await storage_s3_client.get_file_metadata(
+    s3_metadata = await storage_s3_client.get_object_metadata(
         bucket=storage_s3_bucket, object_key=uploaded_file_id
     )
     assert s3_metadata.size == file_size
@@ -874,7 +874,7 @@ async def test_download_file_no_file_was_uploaded(
 
     missing_file = parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/missing.file")
     assert (
-        await storage_s3_client.file_exists(
+        await storage_s3_client.object_exists(
             bucket=storage_s3_bucket, object_key=missing_file
         )
         is False
@@ -912,7 +912,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
         file_size, "meta_data_entry_is_file.file"
     )
     assert (
-        await storage_s3_client.file_exists(
+        await storage_s3_client.object_exists(
             bucket=storage_s3_bucket, object_key=uploaded_file_uuid
         )
         is True
@@ -970,7 +970,7 @@ async def test_download_file_from_inside_a_directory(
         bytes_transfered_cb=None,
     )
     assert (
-        await storage_s3_client.file_exists(
+        await storage_s3_client.object_exists(
             bucket=storage_s3_bucket, object_key=s3_file_id
         )
         is True
@@ -1043,7 +1043,7 @@ async def test_download_file_access_rights(
         SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/project_id_is_missing"
     )
     assert (
-        await storage_s3_client.file_exists(
+        await storage_s3_client.object_exists(
             bucket=storage_s3_bucket, object_key=missing_file
         )
         is False
@@ -1107,7 +1107,7 @@ async def test_delete_file(
     )
     # check the file is gone from S3
     with pytest.raises(S3KeyNotFoundError):
-        await storage_s3_client.get_file_metadata(
+        await storage_s3_client.get_object_metadata(
             bucket=storage_s3_bucket, object_key=uploaded_file_uuid
         )
 

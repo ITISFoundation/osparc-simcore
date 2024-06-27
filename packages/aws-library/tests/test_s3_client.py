@@ -204,7 +204,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
         # check there is no file yet
         with pytest.raises(S3KeyNotFoundError, match=f"{object_key}"):
-            await simcore_s3_api.get_file_metadata(
+            await simcore_s3_api.get_object_metadata(
                 bucket=with_s3_bucket, object_key=object_key
             )
 
@@ -227,7 +227,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
         # check there is no file yet
         with pytest.raises(S3KeyNotFoundError):
-            await simcore_s3_api.get_file_metadata(
+            await simcore_s3_api.get_object_metadata(
                 bucket=with_s3_bucket, object_key=object_key
             )
 
@@ -298,7 +298,7 @@ async def upload_file(
         assert not response
 
         assert (
-            await simcore_s3_api.file_exists(
+            await simcore_s3_api.object_exists(
                 bucket=with_s3_bucket, object_key=object_key
             )
             is True
@@ -356,14 +356,14 @@ async def copy_file(
     copied_object_keys = []
 
     async def _copier(src_key: S3ObjectKey, dst_key: S3ObjectKey) -> S3ObjectKey:
-        file_metadata = await simcore_s3_api.get_file_metadata(
+        file_metadata = await simcore_s3_api.get_object_metadata(
             bucket=with_s3_bucket, object_key=src_key
         )
         with log_context(logging.INFO, msg=f"copying {src_key} to {dst_key}") as ctx:
             progress_cb = _ProgressCallback(
                 file_size=file_metadata.size, action="copied", logger=ctx.logger
             )
-            await simcore_s3_api.copy_file(
+            await simcore_s3_api.copy_object(
                 bucket=with_s3_bucket,
                 src_object_key=src_key,
                 dst_object_key=dst_key,
@@ -397,7 +397,7 @@ async def copy_files_recursively(
                 action="copied",
                 logger=ctx.logger,
             )
-            await simcore_s3_api.copy_files_recursively(
+            await simcore_s3_api.copy_objects_recursively(
                 bucket=with_s3_bucket,
                 src_prefix=src_prefix,
                 dst_prefix=dst_prefix,
@@ -416,7 +416,7 @@ async def copy_files_recursively(
 
     # cleanup
     for dst_prefix in copied_dst_prefixes:
-        await simcore_s3_api.delete_file_recursively(
+        await simcore_s3_api.delete_objects_recursively(
             bucket=with_s3_bucket, prefix=dst_prefix
         )
 
@@ -476,7 +476,7 @@ async def test_get_file_metadata(
     simcore_s3_api: SimcoreS3API,
     s3_client: S3Client,
 ):
-    s3_metadata = await simcore_s3_api.get_file_metadata(
+    s3_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     aioboto_s3_object_response = await s3_client.get_object(
@@ -496,7 +496,7 @@ async def test_get_file_metadata_with_non_existing_bucket_raises(
     simcore_s3_api: SimcoreS3API,
 ):
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.get_file_metadata(
+        await simcore_s3_api.get_object_metadata(
             bucket=non_existing_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
         )
 
@@ -508,7 +508,7 @@ async def test_get_file_metadata_with_non_existing_key_raises(
     faker: Faker,
 ):
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.get_file_metadata(
+        await simcore_s3_api.get_object_metadata(
             bucket=with_s3_bucket, object_key=faker.pystr()
         )
 
@@ -520,17 +520,17 @@ async def test_delete_file(
     with_uploaded_file_on_s3: UploadedFile,
 ):
     # delete the file
-    await simcore_s3_api.delete_file(
+    await simcore_s3_api.delete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
     # check it is not available
-    assert not await simcore_s3_api.file_exists(
+    assert not await simcore_s3_api.object_exists(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
     # calling again does not raise
-    await simcore_s3_api.delete_file(
+    await simcore_s3_api.delete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
@@ -542,7 +542,7 @@ async def test_delete_file_non_existing_bucket_raises(
     faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError):
-        await simcore_s3_api.delete_file(
+        await simcore_s3_api.delete_object(
             bucket=non_existing_s3_bucket, object_key=faker.pystr()
         )
 
@@ -558,7 +558,7 @@ async def test_undelete_file(
     s3_client: S3Client,
 ):
     # we have a file uploaded
-    file_metadata = await simcore_s3_api.get_file_metadata(
+    file_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     assert file_metadata.size == with_uploaded_file_on_s3.local_path.stat().st_size
@@ -572,45 +572,45 @@ async def test_undelete_file(
     )
 
     # check that the metadata changed
-    new_file_metadata = await simcore_s3_api.get_file_metadata(
+    new_file_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     assert new_file_metadata.size == new_file.stat().st_size
     assert file_metadata.e_tag != new_file_metadata.e_tag
 
     # this deletes the new_file, so it's gone
-    await simcore_s3_api.delete_file(
+    await simcore_s3_api.delete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
-    assert not await simcore_s3_api.file_exists(
+    assert not await simcore_s3_api.object_exists(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
     # undelete the file, the new file is back
-    await simcore_s3_api.undelete_file(
+    await simcore_s3_api.undelete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
-    await simcore_s3_api.file_exists(
+    await simcore_s3_api.object_exists(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     assert (
-        await simcore_s3_api.get_file_metadata(
+        await simcore_s3_api.get_object_metadata(
             bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
         )
         == new_file_metadata
     )
     # does nothing
-    await simcore_s3_api.undelete_file(
+    await simcore_s3_api.undelete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
 
     # delete the file again
-    await simcore_s3_api.delete_file(
+    await simcore_s3_api.delete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     # check it is not available
     assert (
-        await simcore_s3_api.file_exists(
+        await simcore_s3_api.object_exists(
             bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
         )
         is False
@@ -625,11 +625,11 @@ async def test_undelete_file_raises_if_file_does_not_exists(
     faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError):
-        await simcore_s3_api.undelete_file(
+        await simcore_s3_api.undelete_object(
             bucket=non_existing_s3_bucket, object_key=faker.pystr()
         )
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.undelete_file(
+        await simcore_s3_api.undelete_object(
             bucket=with_s3_bucket, object_key=faker.pystr()
         )
 
@@ -640,11 +640,11 @@ async def test_undelete_file_with_no_versioning_raises(
     simcore_s3_api: SimcoreS3API,
     with_uploaded_file_on_s3: UploadedFile,
 ):
-    await simcore_s3_api.delete_file(
+    await simcore_s3_api.delete_object(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.undelete_file(
+        await simcore_s3_api.undelete_object(
             bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
         )
 
@@ -658,7 +658,7 @@ async def test_create_single_presigned_download_link(
     tmp_path: Path,
     faker: Faker,
 ):
-    assert await simcore_s3_api.file_exists(
+    assert await simcore_s3_api.object_exists(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
     download_url = await simcore_s3_api.create_single_presigned_download_link(
@@ -732,7 +732,7 @@ async def test_create_single_presigned_upload_link(
     await upload_to_presigned_link(file, presigned_url, with_s3_bucket, s3_object_key)
 
     # check it is there
-    s3_metadata = await simcore_s3_api.get_file_metadata(
+    s3_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=s3_object_key
     )
     assert s3_metadata.size == file.stat().st_size
@@ -796,7 +796,7 @@ async def test_create_multipart_presigned_upload_link(
     assert list_ongoing_uploads == []
 
     # check the object is complete
-    s3_metadata = await simcore_s3_api.get_file_metadata(
+    s3_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=file_id
     )
     assert s3_metadata.size == file_size
@@ -915,7 +915,7 @@ async def test_break_completion_of_multipart_upload(
     )
 
     # check the object is complete
-    s3_metadata = await simcore_s3_api.get_file_metadata(
+    s3_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=object_key
     )
     assert s3_metadata.size == file_size
@@ -975,7 +975,7 @@ async def test_abort_multipart_upload(
 
     # check it is not available
     assert (
-        await simcore_s3_api.file_exists(bucket=with_s3_bucket, object_key=object_key)
+        await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=object_key)
         is False
     )
 
@@ -1034,12 +1034,12 @@ async def test_copy_file(
 
     # check the object is uploaded
     assert (
-        await simcore_s3_api.file_exists(
+        await simcore_s3_api.object_exists(
             bucket=with_s3_bucket, object_key=dst_object_key
         )
         is True
     )
-    dst_file_metadata = await simcore_s3_api.get_file_metadata(
+    dst_file_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=dst_object_key
     )
     assert uploaded_file.local_path.stat().st_size == dst_file_metadata.size
@@ -1058,7 +1058,7 @@ async def test_copy_file_invalid_raises(
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     with pytest.raises(S3BucketInvalidError, match=f"{non_existing_s3_bucket}"):
-        await simcore_s3_api.copy_file(
+        await simcore_s3_api.copy_object(
             bucket=non_existing_s3_bucket,
             src_object_key=uploaded_file.s3_key,
             dst_object_key=dst_object_key,
@@ -1066,7 +1066,7 @@ async def test_copy_file_invalid_raises(
         )
     fake_src_key = faker.file_name()
     with pytest.raises(S3KeyNotFoundError, match=rf"{fake_src_key}"):
-        await simcore_s3_api.copy_file(
+        await simcore_s3_api.copy_object(
             bucket=with_s3_bucket,
             src_object_key=fake_src_key,
             dst_object_key=dst_object_key,
@@ -1132,14 +1132,14 @@ async def test_delete_file_recursively(
     with_uploaded_folder_on_s3: list[UploadedFile],
 ):
     # deleting from the root
-    await simcore_s3_api.delete_file_recursively(
+    await simcore_s3_api.delete_objects_recursively(
         bucket=with_s3_bucket,
         prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
     )
     files_exists = set(
         await asyncio.gather(
             *[
-                simcore_s3_api.file_exists(
+                simcore_s3_api.object_exists(
                     bucket=with_s3_bucket, object_key=file.s3_key
                 )
                 for file in with_uploaded_folder_on_s3
@@ -1164,12 +1164,12 @@ async def test_delete_file_recursively_raises(
     faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
-        await simcore_s3_api.delete_file_recursively(
+        await simcore_s3_api.delete_objects_recursively(
             bucket=non_existing_s3_bucket,
             prefix=Path(with_uploaded_folder_on_s3[0].s3_key).parts[0],
         )
     # this will do nothing
-    await simcore_s3_api.delete_file_recursively(
+    await simcore_s3_api.delete_objects_recursively(
         bucket=with_s3_bucket,
         prefix=f"{faker.pystr()}",
     )
@@ -1177,7 +1177,9 @@ async def test_delete_file_recursively_raises(
     some_file = next(
         iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3))
     )
-    await simcore_s3_api.file_exists(bucket=with_s3_bucket, object_key=some_file.s3_key)
+    await simcore_s3_api.object_exists(
+        bucket=with_s3_bucket, object_key=some_file.s3_key
+    )
 
 
 @pytest.mark.parametrize(
@@ -1205,7 +1207,7 @@ async def test_copy_files_recursively_raises(
     non_existing_s3_bucket: S3BucketName,
 ):
     with pytest.raises(S3BucketInvalidError, match=rf"{non_existing_s3_bucket}"):
-        await simcore_s3_api.copy_files_recursively(
+        await simcore_s3_api.copy_objects_recursively(
             bucket=non_existing_s3_bucket,
             src_prefix="",
             dst_prefix="",

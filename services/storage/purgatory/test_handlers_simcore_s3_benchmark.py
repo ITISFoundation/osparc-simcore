@@ -58,12 +58,12 @@ async def benchmark_s3_client(
     bucket = S3BucketName(benchmark_s3_settings.S3_BUCKET_NAME)
 
     # make sure bucket is empty
-    await client.delete_file_recursively(bucket=bucket, prefix="")
+    await client.delete_objects_recursively(bucket=bucket, prefix="")
 
     yield client
 
     # empty bucket once more when done testing
-    await client.delete_file_recursively(bucket=bucket, prefix="")
+    await client.delete_objects_recursively(bucket=bucket, prefix="")
     await client.close()
 
 

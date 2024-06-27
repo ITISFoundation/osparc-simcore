@@ -112,7 +112,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             return False
 
     @s3_exception_handler(_logger)
-    async def file_exists(
+    async def object_exists(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> bool:
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
@@ -120,7 +120,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
-    async def get_file_metadata(
+    async def get_object_metadata(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> S3MetaData:
         response = await self._client.head_object(
@@ -138,7 +138,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         return S3DirectoryMetaData(size=size)
 
     @s3_exception_handler_async_gen(_logger)
-    async def list_files_paginated(
+    async def list_objects_paginated(
         self,
         bucket: S3BucketName,
         prefix: str,
@@ -161,12 +161,14 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     async def _list_all_objects(
         self, *, bucket: S3BucketName, prefix: str
     ) -> AsyncGenerator[S3MetaData, None]:
-        async for s3_objects in self.list_files_paginated(bucket=bucket, prefix=prefix):
+        async for s3_objects in self.list_objects_paginated(
+            bucket=bucket, prefix=prefix
+        ):
             for obj in s3_objects:
                 yield obj
 
     @s3_exception_handler(_logger)
-    async def delete_file_recursively(
+    async def delete_objects_recursively(
         self, *, bucket: S3BucketName, prefix: str
     ) -> None:
         # NOTE: deletion of objects is done in batches of max 1000 elements,
@@ -174,7 +176,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         with log_context(
             _logger, logging.DEBUG, f"deleting objects in {prefix=}", log_duration=True
         ):
-            async for s3_objects in self.list_files_paginated(
+            async for s3_objects in self.list_objects_paginated(
                 bucket=bucket, prefix=prefix
             ):
 
@@ -187,13 +189,13 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                     )
 
     @s3_exception_handler(_logger)
-    async def delete_file(
+    async def delete_object(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
         await self._client.delete_object(Bucket=bucket, Key=object_key)
 
     @s3_exception_handler(_logger)
-    async def undelete_file(
+    async def undelete_object(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
     ) -> None:
         """this allows to restore a file that was deleted.
@@ -373,7 +375,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         await self._client.upload_file(f"{file}", **upload_options)
 
     @s3_exception_handler(_logger)
-    async def copy_file(
+    async def copy_object(
         self,
         *,
         bucket: S3BucketName,
@@ -393,7 +395,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         await self._client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
-    async def copy_files_recursively(
+    async def copy_objects_recursively(
         self,
         *,
         bucket: S3BucketName,
@@ -411,7 +413,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
             await limited_gather(
                 *[
-                    self.copy_file(
+                    self.copy_object(
                         bucket=bucket,
                         src_object_key=s3_object.object_key,
                         dst_object_key=s3_object.object_key.replace(
@@ -433,7 +435,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 logging.ERROR,
                 msg="Unexpected error while copying files recursively, deleting partially copied files",
             ):
-                await self.delete_file_recursively(bucket=bucket, prefix=dst_prefix)
+                await self.delete_objects_recursively(bucket=bucket, prefix=dst_prefix)
             raise
 
     @staticmethod
