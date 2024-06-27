@@ -21,11 +21,11 @@ from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.basic_types import SHA256Str
-from models_library.projects import Project, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_file_as, parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
@@ -314,14 +314,6 @@ async def test_copy_folders_from_valid_project(
             )
 
 
-def _get_project_with_data() -> list[Project]:
-    projects = parse_file_as(
-        list[Project], CURRENT_DIR / "../data/projects_with_data.json"
-    )
-    assert projects
-    return projects
-
-
 async def _create_and_delete_folders_from_project(
     user_id: UserID,
     project: dict[str, Any],
@@ -396,35 +388,36 @@ async def test_create_and_delete_folders_from_project(
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
 ):
-    project_in_db, node_to_file_dict = await random_project_with_files()
+    project_in_db, _ = await random_project_with_files()
     await _create_and_delete_folders_from_project(
         user_id, project_in_db, client, create_project, check_list_files=True
     )
 
 
-@pytest.mark.parametrize(
-    "project",
-    [pytest.param(prj, id=prj.name) for prj in _get_project_with_data()],
-)
 async def test_create_and_delete_folders_from_project_burst(
     client: TestClient,
     user_id: UserID,
-    project: Project,
+    random_project_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
+    ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
 ):
-    project_as_dict = jsonable_encoder(
-        project, exclude={"tags", "state", "prj_owner"}, by_alias=False
-    )
-    await create_project(**project_as_dict)
+    project_in_db, _ = await random_project_with_files()
     await limited_gather(
         *[
             _create_and_delete_folders_from_project(
-                user_id, project_as_dict, client, create_project, check_list_files=False
+                user_id, project_in_db, client, create_project, check_list_files=False
             )
             for _ in range(100)
         ],
-        limit=2,
+        limit=0,
     )
 
 
