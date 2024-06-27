@@ -131,16 +131,6 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
         ...
 
 
-_CATALOG_SERVICE_EXAMPLE: dict[str, Any] = {
-    **api_schemas_catalog_services.DEVServiceGet.Config.schema_extra["examples"][0],
-    "inputs": {
-        f"input{i}": example
-        for i, example in enumerate(ServiceInputGet.Config.schema_extra["examples"])
-    },
-    "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
-}
-
-
 class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
     # NOTE: will replace ServiceGet!
 
@@ -153,4 +143,17 @@ class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
     )
 
     class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _CATALOG_SERVICE_EXAMPLE}
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                **api_schemas_catalog_services.DEVServiceGet.Config.schema_extra[
+                    "examples"
+                ][0],
+                "inputs": {
+                    f"input{i}": example
+                    for i, example in enumerate(
+                        ServiceInputGet.Config.schema_extra["examples"]
+                    )
+                },
+                "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
+            }
+        }
