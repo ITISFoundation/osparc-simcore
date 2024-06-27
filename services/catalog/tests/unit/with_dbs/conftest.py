@@ -87,10 +87,11 @@ def client(app: FastAPI) -> Iterator[TestClient]:
         yield cli
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_director_service_api(
     app_settings: ApplicationSettings,
 ) -> Iterator[respx.MockRouter]:
+    assert app_settings.CATALOG_DIRECTOR
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
@@ -98,8 +99,9 @@ def mocked_director_service_api(
     ) as respx_mock:
         respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
         respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": []}
+            200, json={"data": ["one", "two"]}
         )
+
         yield respx_mock
 
 
