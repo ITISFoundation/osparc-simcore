@@ -41,30 +41,6 @@ def app_environment(
     )
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
-async def test_dev_list_latest_services(
-    client: TestClient,
-    logged_user: UserInfoDict,
-):
-    assert client.app
-    assert client.app.router
-
-    # LIST latest
-    url = client.app.router["dev_list_services_latest"].url_for()
-    assert url.path.endswith("/catalog/services/-/latest")
-
-    response = await client.get(f"{url}", params={"offset": "0", "limit": "1"})
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert data
-    assert error is None
-    model = parse_obj_as(list[CatalogServiceGet], data)
-    assert model
-    assert len(model) == 1
-
-
 @pytest.fixture
 def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     async def _list(
@@ -129,21 +105,49 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 
     return {
         "list_services_paginated": mocker.patch(
-            "simcore_service_webserver.catalog._api._rpc.list_services_paginated",
+            "simcore_service_webserver.catalog._api.catalog_rpc.list_services_paginated",
             autospec=True,
             side_effect=_list,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.catalog._api._rpc.get_service",
+            "simcore_service_webserver.catalog._api.catalog_rpc.get_service",
             autospec=True,
             side_effect=_get,
         ),
         "update_service": mocker.patch(
-            "simcore_service_webserver.catalog._api._rpc.update_service",
+            "simcore_service_webserver.catalog._api.catalog_rpc.update_service",
             autospec=True,
             side_effect=_update,
         ),
     }
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_dev_list_latest_services(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+):
+    assert client.app
+    assert client.app.router
+
+    # LIST latest
+    url = client.app.router["dev_list_services_latest"].url_for()
+    assert url.path.endswith("/catalog/services/-/latest")
+
+    response = await client.get(f"{url}", params={"offset": "0", "limit": "1"})
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert data
+    assert error is None
+    model = parse_obj_as(Page[CatalogServiceGet], data)
+    assert model
+    assert model.data
+    assert len(model.data) == model.meta.count
+
+    assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
 
 
 @pytest.mark.parametrize(
@@ -176,7 +180,8 @@ async def test_dev_get_and_patch_service(
     assert model.key == service_key
     assert model.version == service_version
 
-    assert mocked_rpc_catalog_service_api["get_service"].called
+    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
+    assert not mocked_rpc_catalog_service_api["update_service"].called
 
     # PATCH
     update = ServiceUpdate(
@@ -198,13 +203,5 @@ async def test_dev_get_and_patch_service(
     assert model.name == "foo"
     assert model.description == "bar"
 
-    # LIST
-    url = client.app.router["dev_list_services_latest"].url_for()
-    response = await client.get(f"{url}")
-
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert data
-    assert error is None
-
-    model = parse_obj_as(Page[CatalogServiceGet], data)
-    assert model.data
+    assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
+    assert mocked_rpc_catalog_service_api["update_service"].call_count == 1

@@ -4,7 +4,6 @@
 
 import logging
 
-from aiohttp import web
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import DEVServiceGet, ServiceUpdate
 from models_library.products import ProductName
@@ -12,25 +11,25 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
 
-from ..rabbitmq import get_rabbitmq_rpc_client
+from ..._client_rpc import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
+_config = {"arbitrary_types_allowed": True}
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+@validate_arguments(config=_config)
 async def list_services_paginated(  # pylint: disable=too-many-arguments
-    app: web.Application,
+    rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt,
     offset: NonNegativeInt,
 ) -> PageRpc[DEVServiceGet]:
-    rpc_client = get_rabbitmq_rpc_client(app)
-
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "list_services_paginated"),
@@ -44,15 +43,15 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+@validate_arguments(config=_config)
 async def get_service(
-    app: web.Application,
+    rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> DEVServiceGet:
-    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -67,8 +66,9 @@ async def get_service(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+@validate_arguments(config=_config)
 async def update_service(
-    app: web.Application,
+    rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -77,8 +77,6 @@ async def update_service(
     update: ServiceUpdate,
 ) -> DEVServiceGet:
     """Updates editable fields of a service"""
-    rpc_client = get_rabbitmq_rpc_client(app)
-
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "update_service"),

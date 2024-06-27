@@ -25,10 +25,12 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
-from . import _rpc, client
+from ..rabbitmq import get_rabbitmq_rpc_client
+from . import client
 from ._api_units import can_connect, replace_service_input_outputs
 from ._models import ServiceInputGetFactory, ServiceOutputGetFactory
 
@@ -95,20 +97,21 @@ async def dev_list_latest_services(
     unit_registry: UnitRegistry,
     page_params: PageQueryParameters,
 ) -> tuple[list, PageMetaInfoLimitOffset]:
+    # NOTE: will replace list_services
 
-    page = await _rpc.list_services_paginated(
-        app,
+    page = await catalog_rpc.list_services_paginated(
+        get_rabbitmq_rpc_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=page_params.limit,
         offset=page_params.offset,
     )
 
-    services = jsonable_encoder(page.data, exclude_unset=True)
-    for service in services:
-        await _safe_replace_service_input_outputs(service, unit_registry)
+    page_data = jsonable_encoder(page.data, exclude_unset=True)
+    for data in page_data:
+        await _safe_replace_service_input_outputs(data, unit_registry)
 
-    return services, page.meta
+    return page_data, page.meta
 
 
 async def dev_get_service(
@@ -120,8 +123,9 @@ async def dev_get_service(
     service_version: ServiceVersion,
     unit_registry: UnitRegistry,
 ):
-    service = await _rpc.get_service(
-        app,
+    # NOTE: will replace get_service
+    service = await catalog_rpc.get_service(
+        get_rabbitmq_rpc_client(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -148,8 +152,9 @@ async def dev_update_service(
     update_data: dict[str, Any],
     unit_registry: UnitRegistry,
 ):
-    service = await _rpc.update_service(
-        app,
+    # NOTE: will replace update_service
+    service = await catalog_rpc.update_service(
+        get_rabbitmq_rpc_client(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
