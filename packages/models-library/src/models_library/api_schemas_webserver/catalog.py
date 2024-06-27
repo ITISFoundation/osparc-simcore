@@ -131,7 +131,7 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
         ...
 
 
-_DEVEXAMPLE: dict[str, Any] = {
+_CATALOG_SERVICE_EXAMPLE: dict[str, Any] = {
     **api_schemas_catalog_services.DEVServiceGet.Config.schema_extra["examples"][0],
     "inputs": {
         f"input{i}": example
@@ -153,4 +153,4 @@ class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
     )
 
     class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _DEVEXAMPLE}
+        schema_extra: ClassVar[dict[str, Any]] = {"example": _CATALOG_SERVICE_EXAMPLE}

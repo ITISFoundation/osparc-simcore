@@ -8,8 +8,10 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_catalog.services import CatalogServiceUpdate
-from models_library.api_schemas_webserver.catalog import CatalogServiceGet
+from models_library.api_schemas_webserver.catalog import (
+    CatalogServiceGet,
+    ServiceUpdate,
+)
 from models_library.products import ProductName
 from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.users import UserID
@@ -128,7 +130,12 @@ async def test_dev_get_and_patch_service(
     assert model.version == service_version
 
     # PATCH
-    update = CatalogServiceUpdate(name="foo", thumbnail=None, description="bar")
+    update = ServiceUpdate(
+        name="foo",
+        thumbnail=None,
+        description="bar",
+        classifiers=None,
+    )
     response = await client.patch(
         f"{url}", json=jsonable_encoder(update, exclude_unset=True)
     )
