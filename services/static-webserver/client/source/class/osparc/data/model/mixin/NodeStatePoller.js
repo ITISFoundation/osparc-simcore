@@ -61,6 +61,55 @@ qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
       this.setIFrame(iframe);
     },
 
+    __initLoadingPage: function() {
+      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
+      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
+      loadingPage.set({
+        header: this.__getLoadingPageHeader()
+      });
+
+      const thumbnail = this.getMetaData()["thumbnail"];
+      if (thumbnail) {
+        loadingPage.setLogo(thumbnail);
+      }
+      this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+
+      const nodeStatus = this.getStatus();
+      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
+      nodeStatus.bind("interactive", sequenceWidget, "visibility", {
+        converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
+      });
+      loadingPage.addExtraWidget(sequenceWidget);
+
+      this.getStatus().addListener("changeInteractive", () => {
+        loadingPage.setHeader(this.__getLoadingPageHeader());
+        const status = this.getStatus().getInteractive();
+        if (["idle", "failed"].includes(status)) {
+          const startButton = new qx.ui.form.Button().set({
+            label: this.tr("Start"),
+            icon: "@FontAwesome5Solid/play/18",
+            font: "text-18",
+            allowGrowX: false,
+            height: 32
+          });
+          startButton.addListener("execute", () => this.requestStartNode());
+          loadingPage.addWidgetToMessages(startButton);
+        } else {
+          loadingPage.setMessages([]);
+        }
+      }, this);
+      this.setLoadingPage(loadingPage);
+    },
+
+    __getLoadingPageHeader: function() {
+      let statusText = this.tr("Starting");
+      const status = this.getStatus().getInteractive();
+      if (status) {
+        statusText = status.charAt(0).toUpperCase() + status.slice(1);
+      }
+      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
+    },
+
     __nodeState: function(starting=true) {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
