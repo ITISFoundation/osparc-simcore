@@ -1285,7 +1285,6 @@ def test_compute_s3_url(
     )
 
 
-@pytest.mark.heavy_load()
 @pytest.mark.parametrize(
     "file_size",
     [
@@ -1312,7 +1311,6 @@ def test_upload_file_performance(
     benchmark(run_async_test)
 
 
-@pytest.mark.heavy_load()
 @pytest.mark.parametrize(
     "directory_size, min_file_size, max_file_size",
     [
