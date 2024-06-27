@@ -22,7 +22,7 @@
 qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
 
   events: {
-    "iframeChanged": "qx.event.typeEvent"
+    "iframeChanged": "qx.event.type.Event"
   },
 
   members: {
