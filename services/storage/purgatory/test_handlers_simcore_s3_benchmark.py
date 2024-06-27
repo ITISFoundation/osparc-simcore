@@ -142,7 +142,7 @@ async def _create_files(
 
 @pytest.fixture(scope="session")
 def tests_session_id() -> str:
-    return arrow.utcnow.datetime.isoformat()
+    return arrow.utcnow().datetime.isoformat()
 
 
 class MetricsResult(BaseModel):
