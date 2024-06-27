@@ -114,6 +114,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       HALO: 2,
     },
 
+    DISCLAIMER_TIME: 50000,
+
     createTaskLayout: function(label) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
@@ -212,6 +214,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __pullingStateLayout: null,
     __pullingImagesLayout: null,
     __pullingInputsLayout: null,
+    __disclaimerTimer: null,
     __disclaimerText: null,
 
     getDefaultStartValues: function() {
@@ -233,6 +236,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     resetSequence: function() {
+      if (this.__disclaimerTimer) {
+        this.__disclaimerTimer.clearTimeout();
+      }
       const defaultVals = this.getDefaultStartValues();
       this.setOverallProgress(0);
       this.setClusterUpScaling(defaultVals);
@@ -355,9 +361,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyOverallProgress: function(value) {
       if (value > 0 && value < 6) {
-        setTimeout(() => {
-          this.__disclaimerText.show();
-        }, 50000);
+        this.__disclaimerTimer = setTimeout(() => this.__disclaimerText.show(), this.self().DISCLAIMER_TIME);
       } else {
         this.__disclaimerText.exclude();
       }
