@@ -13,8 +13,8 @@ from uuid import uuid4
 
 import arrow
 import pytest
-from aws_library.s3 import client as s3_client
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
+from aws_library.s3 import _client as s3_client
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID

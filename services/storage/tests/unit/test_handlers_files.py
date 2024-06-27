@@ -22,10 +22,8 @@ import pytest
 from aiohttp import ClientSession
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
-from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from aws_library.s3.errors import S3KeyNotFoundError
-from aws_library.s3.models import S3ObjectKey
+from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
+from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,

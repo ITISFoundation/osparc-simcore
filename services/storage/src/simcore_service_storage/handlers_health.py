@@ -7,7 +7,7 @@
 import logging
 
 from aiohttp import web
-from aws_library.s3.errors import S3AccessError
+from aws_library.s3 import S3AccessError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.utils.json_serialization import json_dumps

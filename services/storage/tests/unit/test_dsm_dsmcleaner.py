@@ -16,8 +16,7 @@ from typing import Final
 import arrow
 import pytest
 from aiopg.sa.engine import Engine
-from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.models import MultiPartUploadLinks
+from aws_library.s3 import MultiPartUploadLinks, SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import SHA256Str

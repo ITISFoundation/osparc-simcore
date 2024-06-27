@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Final, Literal, NamedTuple
 from uuid import UUID
 
-from aws_library.s3.models import UploadID
+from aws_library.s3 import UploadID
 from models_library.api_schemas_storage import (
     DatasetMetaDataGet,
     ETag,

@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import cast
 
 from aiohttp import web
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
 from models_library.utils.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying

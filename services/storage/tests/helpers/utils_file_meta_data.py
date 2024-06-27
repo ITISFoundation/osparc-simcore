@@ -1,5 +1,5 @@
 from aiopg.sa.engine import Engine
-from aws_library.s3.models import UploadID
+from aws_library.s3 import UploadID
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from simcore_postgres_database.storage_models import file_meta_data

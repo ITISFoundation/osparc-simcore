@@ -20,7 +20,7 @@ import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from models_library.api_schemas_storage import (

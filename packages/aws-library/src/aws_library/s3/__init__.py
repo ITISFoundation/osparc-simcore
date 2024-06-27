@@ -1,6 +1,6 @@
-from .client import SimcoreS3API
-from .constants import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
-from .errors import (
+from ._client import SimcoreS3API
+from ._constants import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
+from ._errors import (
     S3AccessError,
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
@@ -9,7 +9,7 @@ from .errors import (
     S3RuntimeError,
     S3UploadNotFoundError,
 )
-from .models import (
+from ._models import (
     MultiPartUploadLinks,
     S3DirectoryMetaData,
     S3MetaData,

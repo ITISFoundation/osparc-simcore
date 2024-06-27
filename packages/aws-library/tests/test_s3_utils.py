@@ -5,7 +5,7 @@
 
 
 import pytest
-from aws_library.s3.utils import (
+from aws_library.s3._utils import (
     _MULTIPART_MAX_NUMBER_OF_PARTS,
     _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
     compute_num_file_chunks,

@@ -14,8 +14,7 @@ import arrow
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aws_library.s3.errors import S3KeyNotFoundError
-from aws_library.s3.models import S3MetaData
+from aws_library.s3 import S3KeyNotFoundError, S3MetaData
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID

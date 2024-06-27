@@ -22,17 +22,17 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
-from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from .error_handler import s3_exception_handler, s3_exception_handler_async_gen
-from .errors import S3DestinationNotEmptyError, S3KeyNotFoundError
-from .models import (
+from ._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
+from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
+from ._models import (
     MultiPartUploadLinks,
     S3DirectoryMetaData,
     S3MetaData,
     S3ObjectKey,
     UploadID,
 )
-from .utils import compute_num_file_chunks
+from ._utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
 

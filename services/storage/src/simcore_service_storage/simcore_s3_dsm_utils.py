@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import cast
 
 from aiopg.sa.connection import SAConnection
-from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.models import S3MetaData
+from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,

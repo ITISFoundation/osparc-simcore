@@ -18,15 +18,15 @@ from pathlib import Path
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
-from aws_library.s3.client import S3ObjectKey, SimcoreS3API
-from aws_library.s3.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
-from aws_library.s3.errors import (
+from aws_library.s3._client import S3ObjectKey, SimcoreS3API
+from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from aws_library.s3._errors import (
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
     S3KeyNotFoundError,
     S3UploadNotFoundError,
 )
-from aws_library.s3.models import MultiPartUploadLinks
+from aws_library.s3._models import MultiPartUploadLinks
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str

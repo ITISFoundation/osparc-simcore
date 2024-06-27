@@ -6,7 +6,7 @@ from typing import Any, Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 
-from .errors import (
+from ._errors import (
     S3AccessError,
     S3BucketInvalidError,
     S3KeyNotFoundError,
