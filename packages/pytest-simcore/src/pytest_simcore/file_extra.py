@@ -29,11 +29,15 @@ def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Pa
 @pytest.fixture
 def create_folder_of_size_with_multiple_files(
     tmp_path: Path, faker: Faker
-) -> Callable[[ByteSize, ByteSize], Path]:
+) -> Callable[[ByteSize, ByteSize, ByteSize], Path]:
     def _create_folder_of_size_with_multiple_files(
-        directory_size: ByteSize, file_max_size: ByteSize
+        directory_size: ByteSize,
+        file_min_size: ByteSize,
+        file_max_size: ByteSize,
     ) -> Path:
         # Helper function to create random files and directories
+        assert file_min_size > 0
+        assert file_min_size <= file_max_size
 
         def create_random_content(base_dir: Path, remaining_size: ByteSize) -> ByteSize:
             if remaining_size <= 0:
@@ -42,7 +46,10 @@ def create_folder_of_size_with_multiple_files(
             # Decide to create a file or a subdirectory
             # Create a file
             file_size = ByteSize(
-                faker.pyint(min_value=1, max_value=min(remaining_size, file_max_size))
+                faker.pyint(
+                    min_value=min(file_min_size, remaining_size),
+                    max_value=min(remaining_size, file_max_size),
+                )
             )  # max file size 1MB
             file_path = base_dir / f"{faker.file_path(depth=4, absolute=False)}"
             file_path.parent.mkdir(parents=True, exist_ok=True)

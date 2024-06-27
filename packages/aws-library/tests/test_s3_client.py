@@ -14,6 +14,7 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import botocore.exceptions
 import pytest
@@ -32,6 +33,7 @@ from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
@@ -322,14 +324,17 @@ def set_log_levels_for_noisy_libraries() -> None:
 
 @pytest.fixture
 async def with_uploaded_folder_on_s3(
-    create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize], Path],
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize], Path
+    ],
     upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
     directory_size: ByteSize,
+    min_file_size: ByteSize,
     max_file_size: ByteSize,
 ) -> list[UploadedFile]:
     # create random files of random size and upload to S3
     folder = create_folder_of_size_with_multiple_files(
-        ByteSize(directory_size), ByteSize(max_file_size)
+        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
     )
     list_uploaded_files = []
 
@@ -1075,8 +1080,14 @@ async def test_copy_file_invalid_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        )
+    ],
     ids=byte_size_ids,
 )
 async def test_get_directory_metadata(
@@ -1095,8 +1106,14 @@ async def test_get_directory_metadata(
 
 
 @pytest.mark.parametrize(
-    "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        )
+    ],
     ids=byte_size_ids,
 )
 async def test_get_directory_metadata_raises(
@@ -1121,8 +1138,14 @@ async def test_get_directory_metadata_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        )
+    ],
     ids=byte_size_ids,
 )
 async def test_delete_file_recursively(
@@ -1151,8 +1174,14 @@ async def test_delete_file_recursively(
 
 
 @pytest.mark.parametrize(
-    "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        )
+    ],
     ids=byte_size_ids,
 )
 async def test_delete_file_recursively_raises(
@@ -1183,8 +1212,14 @@ async def test_delete_file_recursively_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, max_file_size",
-    [(parse_obj_as(ByteSize, "1Mib"), parse_obj_as(ByteSize, "10Kib"))],
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        )
+    ],
     ids=byte_size_ids,
 )
 async def test_copy_files_recursively(
@@ -1248,3 +1283,71 @@ def test_compute_s3_url(
         SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key)
         == expected_s3_url
     )
+
+
+@pytest.mark.heavy_load()
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        parametrized_file_size("10Mib"),
+        parametrized_file_size("100Mib"),
+        parametrized_file_size("1000Mib"),
+    ],
+    ids=byte_size_ids,
+)
+def test_upload_file_performance(
+    mocked_s3_server_envs: EnvVarsDict,
+    create_file_of_size: Callable[[ByteSize], Path],
+    file_size: ByteSize,
+    upload_file: Callable[[Path, Path | None], Awaitable[UploadedFile]],
+    benchmark: BenchmarkFixture,
+):
+
+    # create random files of random size and upload to S3
+    file = create_file_of_size(file_size)
+
+    def run_async_test(*args, **kwargs) -> None:
+        asyncio.get_event_loop().run_until_complete(upload_file(file, None))
+
+    benchmark(run_async_test)
+
+
+@pytest.mark.heavy_load()
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            parse_obj_as(ByteSize, "1Mib"),
+            parse_obj_as(ByteSize, "1B"),
+            parse_obj_as(ByteSize, "10Kib"),
+        ),
+        (
+            parse_obj_as(ByteSize, "500Mib"),
+            parse_obj_as(ByteSize, "10Mib"),
+            parse_obj_as(ByteSize, "50Mib"),
+        ),
+    ],
+    ids=byte_size_ids,
+)
+def test_copy_recurively_performance(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    copy_files_recursively: Callable[[str, str], Awaitable[str]],
+    benchmark: BenchmarkFixture,
+):
+    src_folder = Path(with_uploaded_folder_on_s3[0].s3_key).parts[0]
+
+    folder_index = 0
+
+    def dst_folder_setup() -> tuple[tuple[str], dict[str, Any]]:
+        nonlocal folder_index
+        dst_folder = f"{src_folder}-copy-{folder_index}"
+        folder_index += 1
+        return (dst_folder,), {}
+
+    def run_async_test(dst_folder: str) -> None:
+        asyncio.get_event_loop().run_until_complete(
+            copy_files_recursively(src_folder, dst_folder)
+        )
+
+    benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=2)
