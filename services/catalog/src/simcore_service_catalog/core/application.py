@@ -13,7 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..api import rest
-from ..api.routes.health import router as health_router
+from ..api.rest.health import router as health_router
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
 from .events import create_on_shutdown, create_on_startup

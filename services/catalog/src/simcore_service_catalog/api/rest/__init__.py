@@ -2,7 +2,7 @@ from enum import Enum
 
 from fastapi import APIRouter
 
-from .routes import (
+from . import (
     health,
     meta,
     services,
