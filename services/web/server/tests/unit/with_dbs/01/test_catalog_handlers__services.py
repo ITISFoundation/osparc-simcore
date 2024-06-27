@@ -169,24 +169,68 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         items = [
-            parse_obj_as(
-                CatalogServiceGet, CatalogServiceGet.Config.schema_extra["example"]
-            ),
+            parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
         ]
         total_count = 1
 
-        return PageRpc[CatalogServiceGet].create(
+        return PageRpc[DEVServiceGet].create(
             items,
             total=total_count,
             limit=limit,
             offset=offset,
         )
 
+    async def _get(
+        app: web.Application,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+
+        got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+        got.version = service_version
+        got.key = service_key
+
+        return got
+
+    async def _update(
+        app: web.Application,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+        update: ServiceUpdate,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+
+        got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+        got.version = service_version
+        got.key = service_key
+        return got.copy(update=update.dict(exclude_unset=True))
+
     return {
         "list_services_paginated": mocker.patch(
             "simcore_service_webserver.catalog._api._rpc.list_services_paginated",
             autospec=True,
             side_effect=_list,
+        ),
+        "get_service": mocker.patch(
+            "simcore_service_webserver.catalog._api._rpc.get_service",
+            autospec=True,
+            side_effect=_get,
+        ),
+        "update_service": mocker.patch(
+            "simcore_service_webserver.catalog._api._rpc.update_service",
+            autospec=True,
+            side_effect=_update,
         ),
     }
 
