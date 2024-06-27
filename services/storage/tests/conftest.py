@@ -165,18 +165,12 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 
 
 @pytest.fixture
-def mock_config(
+def app_settings(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
-) -> None:
-    # NOTE: this can be overriden in tests that do not need all dependencies up
-    ...
-
-
-@pytest.fixture
-def app_settings(mock_config: None) -> Settings:
+) -> Settings:
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
@@ -223,7 +217,6 @@ def simcore_file_id(
     )
 
 
-# NOTE: this will be enabled at a later timepoint
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
