@@ -218,6 +218,20 @@ async def test_folder_share(
 
     folder_id = await folder_create(connection, "f1", owner_gid)
 
+    # 0. share not existing folder
+    missing_folder_id = 2137912783
+    with pytest.raises(CannotGrantPermissionError):
+        await folder_share(
+            connection,
+            missing_folder_id,
+            {owner_gid},
+            recipient_gid=admin_gid,
+            recipient_read=False,
+            recipient_write=False,
+            recipient_delete=False,
+            recipient_admin=False,
+        )
+
     # 1. make admin with all permissions
     await folder_share(
         connection,

@@ -1,3 +1,4 @@
+import datetime
 import re
 import uuid
 from typing import Any, Final, TypeAlias, TypedDict
@@ -23,16 +24,20 @@ class ORMModeBaseModel(BaseModel):
         allow_population_by_field_name = True
 
 
-class FolderWithAccessRights(ORMModeBaseModel):
+class FolderEntry(ORMModeBaseModel):
     id: NonNegativeInt
     name: str
-    parent_folder: NonNegativeInt | None
     owner: NonNegativeInt
     gid: NonNegativeInt
+    parent_folder: NonNegativeInt | None
+
     read: bool
     write: bool
     delete: bool
     admin: bool
+
+    created_at: datetime.datetime
+    last_modified: datetime.datetime
 
 
 class FoldersError(PydanticErrorMixin, RuntimeError):
@@ -68,7 +73,10 @@ class CannotAlterOwnerPermissionsError(BasePermissionError):
 
 
 class CannotGrantPermissionError(BasePermissionError):
-    msg_template = "folder_id={folder_id} has no group in gids={gids} with 'admin' and '{permission}' permissions."
+    msg_template = (
+        "folder_id={folder_id} might not exit or it was not shared with any of "
+        "your groups groups ({gids}) with the following permissions: {permissions}"
+    )
 
 
 class RequiresOwnerToMakeAdminError(BasePermissionError):
@@ -233,7 +241,7 @@ async def folder_share(
             )
         ).fetchone()
         if query_possible_owner_entry:
-            owner_entry = FolderWithAccessRights.from_orm(query_possible_owner_entry)
+            owner_entry = FolderEntry.from_orm(query_possible_owner_entry)
             if owner_entry.owner == owner_entry.gid:
                 raise CannotAlterOwnerPermissionsError(
                     gid=recipient_gid, folder_id=folder_id
@@ -277,7 +285,9 @@ async def folder_share(
             )
             if not has_read_permision:
                 raise CannotGrantPermissionError(
-                    folder_id=folder_id, gids=sharing_gids, permission="read"
+                    folder_id=folder_id,
+                    gids=sharing_gids,
+                    permissions={"read", "admin"},
                 )
         if recipient_write:
             has_write_permision = await connection.scalar(
@@ -285,7 +295,9 @@ async def folder_share(
             )
             if not has_write_permision:
                 raise CannotGrantPermissionError(
-                    folder_id=folder_id, gids=sharing_gids, permission="write"
+                    folder_id=folder_id,
+                    gids=sharing_gids,
+                    permissions={"write", "admin"},
                 )
         if recipient_delete:
             has_delete_permision = await connection.scalar(
@@ -293,19 +305,21 @@ async def folder_share(
             )
             if not has_delete_permision:
                 raise CannotGrantPermissionError(
-                    folder_id=folder_id, gids=sharing_gids, permission="delete"
+                    folder_id=folder_id,
+                    gids=sharing_gids,
+                    permissions={"delete", "admin"},
                 )
 
         # when setting all permissions to False admin rights are still required
-        has_admin_permission = await connection.scalar(
+        has_admin_permission_or_exists = await connection.scalar(
             sa.select([folders_access_rights.c.folder_id])
             .where(folders_access_rights.c.folder_id == folder_id)
             .where(folders_access_rights.c.gid.in_(sharing_gids))
             .where(folders_access_rights.c.admin.is_(True))
         )
-        if not has_admin_permission:
+        if not has_admin_permission_or_exists:
             raise CannotGrantPermissionError(
-                folder_id=folder_id, gids=sharing_gids, permission="admin"
+                folder_id=folder_id, gids=sharing_gids, permissions={"admin"}
             )
 
         # update or create permissions
@@ -360,9 +374,9 @@ async def folder_delete(
 
         if found_entry is None:
             raise CouldNotFindFolderError(folder_id=folder_id, gid=gid)
-        folder_rights = FolderWithAccessRights.from_orm(found_entry)
+        folder_entry = FolderEntry.from_orm(found_entry)
 
-        if not folder_rights.delete:
+        if not folder_entry.delete:
             raise CouldNotDeleteMissingAccessError(folder_id=folder_id, gid=gid)
 
         # NOTE: first access rights are removed
@@ -372,7 +386,7 @@ async def folder_delete(
             .where(folders_access_rights.c.folder_id == folder_id)
             .where(folders_access_rights.c.gid == gid)
         )
-        if folder_rights.owner == folder_rights.gid:
+        if folder_entry.owner == folder_entry.gid:
             await connection.execute(folders.delete().where(folders.c.id == folder_id))
 
 
