@@ -15,13 +15,14 @@ from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 
 _logger = logging.getLogger(__name__)
+_config = {"arbitrary_types_allowed": True}
 
 router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments
+@validate_arguments(config=_config)
 async def list_services_paginated(
     app: FastAPI,
     *,
@@ -52,7 +53,7 @@ async def list_services_paginated(
 
 @router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments
+@validate_arguments(config=_config)
 async def get_service(
     app: FastAPI,
     *,
@@ -77,7 +78,7 @@ async def get_service(
 
 @router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments
+@validate_arguments(config=_config)
 async def update_service(
     app: FastAPI,
     *,
