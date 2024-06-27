@@ -16,6 +16,7 @@ from ..api import rest
 from ..api.rest.health import router as health_router
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
+from ..services.rabbitmq import setup_rabbitmq
 from .events import create_on_shutdown, create_on_startup
 from .settings import ApplicationSettings
 
@@ -49,6 +50,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # PLUGIN SETUP
     setup_function_services(app)
+    setup_rabbitmq(app)
 
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
