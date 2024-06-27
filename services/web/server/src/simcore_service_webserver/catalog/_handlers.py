@@ -146,23 +146,25 @@ async def dev_get_service(request: Request):
 @login_required
 @permission_required("services.catalog.*")
 async def dev_update_service(request: Request):
-    ctx = CatalogRequestContext.create(request)
+    request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
 
-    assert ctx  # nosec
+    assert request_ctx  # nosec
     assert path_params  # nosec
     assert update  # nosec
 
-    _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(
-        CatalogServiceGet, CatalogServiceGet.Config.schema_extra["examples"][0]
+    updated = await _api.dev_update_service(
+        request.app,
+        user_id=request_ctx.user_id,
+        product_name=request_ctx.product_name,
+        service_key=path_params.service_key,
+        service_version=path_params.service_version,
+        update_data=update.dict(exclude_unset=True),
+        unit_registry=request_ctx.unit_registry,
     )
-    got.version = path_params.service_version
-    got.key = path_params.service_key
-    updated = got.copy(update=update.dict(exclude_unset=True))
 
-    return envelope_json_response(updated)
+    return envelope_json_response(CatalogServiceGet.parse_obj(updated))
 
 
 @routes.get(f"{VTAG}/catalog/services", name="list_services")
