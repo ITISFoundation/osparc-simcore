@@ -9,11 +9,7 @@ from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import DEVServiceGet, ServiceUpdate
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rpc_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    PageLimitInt,
-    PageRpc,
-)
+from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
@@ -30,8 +26,8 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     *,
     product_name: ProductName,
     user_id: UserID,
-    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
+    limit: PageLimitInt,
+    offset: NonNegativeInt,
 ) -> PageRpc[DEVServiceGet]:
     rpc_client = get_rabbitmq_rpc_client(app)
 
@@ -66,7 +62,7 @@ async def get_service(
         service_key=service_key,
         service_version=service_version,
     )
-    assert parse_obj_as(Page[DEVServiceGet], result) is not None  # nosec
+    assert parse_obj_as(DEVServiceGet, result) is not None  # nosec
     return result
 
 
@@ -92,5 +88,5 @@ async def update_service(
         service_version=service_version,
         update=update,
     )
-    assert parse_obj_as(Page[DEVServiceGet], result) is not None  # nosec
+    assert parse_obj_as(DEVServiceGet, result) is not None  # nosec
     return result
