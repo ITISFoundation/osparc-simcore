@@ -48,7 +48,7 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     @validator("offset")
     @classmethod
-    def check_offset(cls, v, values):
+    def _check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
             msg = f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
             raise ValueError(msg)
@@ -56,7 +56,7 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     @validator("count")
     @classmethod
-    def check_count(cls, v, values):
+    def _check_count(cls, v, values):
         if v > values["limit"]:
             msg = f"count {v} bigger than limit {values['limit']}, please check"
             raise ValueError(msg)
@@ -109,7 +109,7 @@ class Page(GenericModel, Generic[ItemT]):
 
     @validator("data")
     @classmethod
-    def check_data_compatible_with_meta(cls, v, values):
+    def _check_data_compatible_with_meta(cls, v, values):
         if "meta" not in values:
             # if the validation failed in meta this happens
             msg = "meta not in values"
