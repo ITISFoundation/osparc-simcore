@@ -200,7 +200,7 @@ async def test_dev_get_and_patch_service(
 
     # LIST
     url = client.app.router["dev_list_services_latest"].url_for()
-    response = await client.get("{url}")
+    response = await client.get(f"{url}")
 
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data

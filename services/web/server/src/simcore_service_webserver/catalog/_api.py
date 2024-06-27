@@ -154,7 +154,7 @@ async def dev_update_service(
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update=ServiceUpdate.parse_obj(**update_data),
+        update=ServiceUpdate.parse_obj(update_data),
     )
 
     data = jsonable_encoder(service, exclude_unset=True)

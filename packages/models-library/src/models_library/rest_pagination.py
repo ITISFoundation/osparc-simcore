@@ -94,7 +94,8 @@ class PageRefs(BaseModel, Generic[RefT]):
         extra = Extra.forbid
 
 
-PageLinks = PageRefs[AnyHttpUrl]
+class PageLinks(PageRefs[AnyHttpUrl]):
+    ...
 
 
 ItemT = TypeVar("ItemT")
