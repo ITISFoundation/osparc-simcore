@@ -31,7 +31,6 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteState,
     FileUploadCompletionBody,
     FileUploadSchema,
-    PresignedLink,
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
@@ -262,52 +261,6 @@ async def get_file_meta_data(
         return received_fmd
 
     return _getter
-
-
-@pytest.fixture
-async def create_upload_file_link_v1(
-    client: TestClient, user_id: UserID, location_id: LocationID
-) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
-    file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
-
-    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> PresignedLink:
-        assert client.app
-        url = (
-            client.app.router["upload_file"]
-            .url_for(
-                location_id=f"{location_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(**query_kwargs, user_id=user_id)
-        )
-        assert (
-            "file_size" not in url.query
-        ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
-        response = await client.put(f"{url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
-        assert not error
-        assert data
-        received_file_upload_link = parse_obj_as(PresignedLink, data)
-        assert received_file_upload_link
-        file_params.append((user_id, location_id, file_id))
-        return received_file_upload_link
-
-    yield _link_creator
-
-    # cleanup
-    assert client.app
-    clean_tasks = []
-    for u_id, loc_id, file_id in file_params:
-        url = (
-            client.app.router["delete_file"]
-            .url_for(
-                location_id=f"{loc_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(user_id=u_id)
-        )
-        clean_tasks.append(client.delete(f"{url}"))
-    await asyncio.gather(*clean_tasks)
 
 
 @pytest.fixture
