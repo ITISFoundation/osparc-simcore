@@ -374,7 +374,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         object_key: S3ObjectKey,
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
-        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)"""
+        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         upload_options = {
             "Bucket": bucket,
             "Key": object_key,
