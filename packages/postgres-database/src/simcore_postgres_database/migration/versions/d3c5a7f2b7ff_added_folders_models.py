@@ -1,8 +1,8 @@
-"""added folder models
+"""added folders models
 
-Revision ID: 560b8f8eca12
+Revision ID: d3c5a7f2b7ff
 Revises: 481d5b472721
-Create Date: 2024-06-25 09:09:09.185231+00:00
+Create Date: 2024-06-27 11:27:32.841317+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "560b8f8eca12"
+revision = "d3c5a7f2b7ff"
 down_revision = "481d5b472721"
 branch_labels = None
 depends_on = None
@@ -22,7 +22,6 @@ def upgrade():
         "folders",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("parent_folder", sa.BigInteger(), nullable=True),
         sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
@@ -40,19 +39,13 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["parent_folder"],
-            ["folders.id"],
-            name="fk_folders_to_folders_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
         "folders_access_rights",
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.Column("gid", sa.BigInteger(), nullable=False),
+        sa.Column("parent_folder", sa.BigInteger(), nullable=True),
         sa.Column("read", sa.Boolean(), nullable=False),
         sa.Column("write", sa.Boolean(), nullable=False),
         sa.Column("delete", sa.Boolean(), nullable=False),
@@ -70,6 +63,12 @@ def upgrade():
             name="fk_folders_access_rights_to_groups_gid",
             onupdate="CASCADE",
             ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["parent_folder"],
+            ["folders.id"],
+            name="fk_folders_to_folders_id",
+            ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("folder_id", "gid", name="folders_access_rights_pk"),
     )

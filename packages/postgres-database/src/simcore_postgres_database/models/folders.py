@@ -21,16 +21,6 @@ folders = sa.Table(
         doc="name of the folder",
     ),
     sa.Column(
-        "parent_folder",
-        sa.BigInteger,
-        sa.ForeignKey(
-            "folders.id",
-            name="fk_folders_to_folders_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-    ),
-    sa.Column(
         "owner",
         sa.BigInteger,
         sa.ForeignKey(
@@ -80,6 +70,15 @@ folders_access_rights = sa.Table(
             name="fk_folders_access_rights_to_groups_gid",
             onupdate="CASCADE",
             ondelete="CASCADE",
+        ),
+    ),
+    sa.Column(
+        "parent_folder",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "folders.id",
+            name="fk_folders_to_folders_id",
+            ondelete="SET NULL",
         ),
     ),
     sa.Column(
