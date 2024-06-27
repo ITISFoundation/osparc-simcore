@@ -78,9 +78,9 @@ def _get_file_properties(path: Path) -> tuple[float, int]:
 
 def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
     return {
-        f"{x.relative_to(path)}": _get_file_properties(x)
-        for x in path.rglob("*")
-        if x.is_file()
+        f"{p.relative_to(path)}": _get_file_properties(p)
+        for p in path.rglob("*")
+        if p.is_file()
     }
 
 
