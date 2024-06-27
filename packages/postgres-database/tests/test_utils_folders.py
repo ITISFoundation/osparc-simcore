@@ -14,12 +14,14 @@ from simcore_postgres_database.models.folders import folders, folders_access_rig
 from simcore_postgres_database.utils_folders import (
     _FOLDER_NAME_MAX_LENGTH,
     _FOLDER_NAMES_RESERVED_WINDOWS,
+    CannotAlterOwnerPermissionsError,
+    CannotGrantPermissionError,
     CouldNotDeleteMissingAccessError,
     CouldNotFindFolderError,
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
     InvalidFolderNameError,
-    ParentIsNotWritableError,
+    RequiresOwnerToMakeAdminError,
     _FolderID,
     _GroupID,
     folder_create,
@@ -52,6 +54,7 @@ async def _assert_access_rights(
     read: bool,
     write: bool,
     delete: bool,
+    admin: bool,
 ) -> None:
     async with connection.execute(
         folders_access_rights.select()
@@ -60,6 +63,7 @@ async def _assert_access_rights(
         .where(folders_access_rights.c.read == read)
         .where(folders_access_rights.c.write == write)
         .where(folders_access_rights.c.delete == delete)
+        .where(folders_access_rights.c.admin == admin)
     ) as result:
         rows = await result.fetchall()
         assert rows is not None
@@ -105,6 +109,15 @@ async def _create_folder_structure(
     return root_folder_id, subfolder_count + 1
 
 
+def _get_random_gid(
+    all_gids: set[NonNegativeInt], already_picked: set[NonNegativeInt] | None = None
+) -> NonNegativeInt:
+    if already_picked is None:
+        already_picked = set()
+    to_random_pick = all_gids - already_picked
+    return secrets.choice(list(to_random_pick))
+
+
 @pytest.fixture
 async def setup_users_and_groups(
     connection: SAConnection,
@@ -116,15 +129,6 @@ async def setup_users_and_groups(
         user_gid = user.primary_gid
         gids.add(user_gid)
     return gids
-
-
-def get_random_gid(
-    all_gids: set[NonNegativeInt], already_picked: set[NonNegativeInt] | None = None
-) -> NonNegativeInt:
-    if already_picked is None:
-        already_picked = set()
-    to_random_pick = all_gids - already_picked
-    return secrets.choice(list(to_random_pick))
 
 
 @pytest.mark.parametrize(
@@ -157,7 +161,7 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
 async def test_folder_create_base_usage(
     connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-    user_gid = get_random_gid(setup_users_and_groups)
+    user_gid = _get_random_gid(setup_users_and_groups)
 
     # when GID is missing no entries should be present
     missing_gid = 10202023302
@@ -178,141 +182,175 @@ async def test_folder_create_base_usage(
     await _assert_folder_entires(connection, folder_count=2)
 
 
-async def test_folder_share_basic(
-    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
-):
-    user_gid = get_random_gid(setup_users_and_groups)
-    another_user_gid = get_random_gid(setup_users_and_groups, {user_gid})
-
-    # create parent folder
-    await _assert_folder_entires(connection, folder_count=0)
-    folder_id = await folder_create(connection, "f1", user_gid)
-    await _assert_folder_entires(connection, folder_count=1)
-
-    async def _assert_shared_permissions(
-        *, read: bool, write: bool, delete: bool
-    ) -> None:
-        await folder_share(
-            connection,
-            folder_id,
-            {user_gid},
-            recipient_group_id=another_user_gid,
-            recipient_read=read,
-            recipient_write=write,
-            recipient_delete=delete,
-        )
-        await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
-        await _assert_access_rights(
-            connection,
-            folder_id,
-            another_user_gid,
-            read=read,
-            write=write,
-            delete=delete,
-        )
-
-    for read, write, delete in itertools.combinations_with_replacement(
-        (True, False), 3
-    ):
-        await _assert_shared_permissions(read=read, write=write, delete=delete)
-
-
 async def test_folder_share(
     connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-    user_gid = get_random_gid(setup_users_and_groups)
-    another_user_gid = get_random_gid(setup_users_and_groups, {user_gid})
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    admin_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
+    user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, admin_gid})
+    not_shared_with = _get_random_gid(
+        setup_users_and_groups, {owner_gid, admin_gid, user_gid}
+    )
+    reciving_permissions_gid = _get_random_gid(
+        setup_users_and_groups, {owner_gid, admin_gid, user_gid, not_shared_with}
+    )
 
-    # create parent folder
-    await _assert_folder_entires(connection, folder_count=0)
-    parent_folder_id = await folder_create(connection, "f1", user_gid)
-    await _assert_folder_entires(connection, folder_count=1)
+    async def _clear_gid_permissions(gid: _GroupID) -> None:
+        await folder_share(
+            connection,
+            folder_id,
+            {owner_gid},
+            recipient_gid=gid,
+            recipient_read=False,
+            recipient_write=False,
+            recipient_delete=False,
+            recipient_admin=False,
+        )
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            gid,
+            read=False,
+            write=False,
+            delete=False,
+            admin=False,
+        )
 
-    # cannot create subfolder in parent if user differs
-    with pytest.raises(ParentIsNotWritableError):
-        await folder_create(connection, "f1", another_user_gid, parent=parent_folder_id)
-    await _assert_folder_entires(connection, folder_count=1)
+    folder_id = await folder_create(connection, "f1", owner_gid)
 
-    # give permissions to parent (write)
+    # 1. make admin with all permissions
     await folder_share(
         connection,
-        parent_folder_id,
-        {user_gid},
-        recipient_group_id=another_user_gid,
-        recipient_read=True,
-        recipient_write=True,
+        folder_id,
+        {owner_gid},
+        recipient_gid=admin_gid,
+        # NOTE regardless of permissions granted, admin will always get all of them
+        recipient_read=False,
+        recipient_write=False,
         recipient_delete=False,
+        recipient_admin=True,
     )
     await _assert_access_rights(
-        connection,
-        parent_folder_id,
-        another_user_gid,
-        read=True,
-        write=True,
-        delete=False,
+        connection, folder_id, admin_gid, read=True, write=True, delete=True, admin=True
     )
-    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
-    # add subfolder
-    subfolder_id = await folder_create(
-        connection, "f1", user_gid, parent=parent_folder_id
-    )
-    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
-    # delete subfolder (fails)
-    with pytest.raises(CouldNotFindFolderError):
-        await folder_delete(connection, subfolder_id, {another_user_gid})
-    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
 
-    # give permissions to parent (delete)
+    # 2. make user with all permissions
     await folder_share(
         connection,
-        parent_folder_id,
-        {user_gid},
-        recipient_group_id=another_user_gid,
+        folder_id,
+        {owner_gid},
+        recipient_gid=user_gid,
         recipient_read=True,
         recipient_write=True,
         recipient_delete=True,
+        recipient_admin=False,
     )
     await _assert_access_rights(
-        connection,
-        parent_folder_id,
-        another_user_gid,
-        read=True,
-        write=True,
-        delete=True,
+        connection, folder_id, user_gid, read=True, write=True, delete=True, admin=False
     )
-    await _assert_folder_entires(connection, folder_count=2, access_rights_count=3)
-    # delete subfolder
-    await folder_delete(connection, subfolder_id, {another_user_gid})
-    await _assert_folder_entires(connection, folder_count=1)
 
-    # add subfolder again
-    subfolder_id = await folder_create(
-        connection, "f1", another_user_gid, parent=parent_folder_id
-    )
-    await _assert_folder_entires(connection, folder_count=2)
-    # remove permissions
-    await folder_share(
-        connection,
-        subfolder_id,
-        {user_gid},
-        recipient_group_id=another_user_gid,
-        recipient_read=True,
-        recipient_write=True,
-        recipient_delete=False,
-    )
-    await _assert_folder_entires(connection, folder_count=2)
-    # delete subfolder (raises error)
-    await folder_delete(connection, subfolder_id, {user_gid})
-    await _assert_folder_entires(connection, folder_count=2)
+    # 3. no one is allowed to alter admin access rights
+    for gid in (owner_gid, admin_gid, user_gid, not_shared_with):
+        with pytest.raises(CannotAlterOwnerPermissionsError):
+            await folder_share(
+                connection,
+                folder_id,
+                {gid},
+                recipient_gid=owner_gid,
+                recipient_read=True,
+                recipient_write=True,
+                recipient_delete=True,
+                recipient_admin=True,
+            )
 
-    # TODO: also add the listing of folder contents
-    # this also must withstand the same rules
+    # 4. only the owner can make an admin
+    await _clear_gid_permissions(reciving_permissions_gid)
+    for gid in (admin_gid, user_gid, not_shared_with):
+        with pytest.raises(RequiresOwnerToMakeAdminError):
+            await folder_share(
+                connection,
+                folder_id,
+                {gid},
+                recipient_gid=reciving_permissions_gid,
+                recipient_read=True,
+                recipient_write=True,
+                recipient_delete=True,
+                recipient_admin=True,
+            )
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            reciving_permissions_gid,
+            read=False,
+            write=False,
+            delete=False,
+            admin=False,
+        )
+
+    # 5. owner & admin can grant and remove: read, write and delete
+    for gid in (owner_gid, admin_gid):
+        # grant read, write and delete
+        await folder_share(
+            connection,
+            folder_id,
+            {gid},
+            recipient_gid=reciving_permissions_gid,
+            recipient_read=True,
+            recipient_write=True,
+            recipient_delete=True,
+            recipient_admin=False,
+        )
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            reciving_permissions_gid,
+            read=True,
+            write=True,
+            delete=True,
+            admin=False,
+        )
+        # remove read, write and delete
+        await folder_share(
+            connection,
+            folder_id,
+            {gid},
+            recipient_gid=reciving_permissions_gid,
+            recipient_read=False,
+            recipient_write=False,
+            recipient_delete=False,
+            recipient_admin=False,
+        )
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            reciving_permissions_gid,
+            read=False,
+            write=False,
+            delete=False,
+            admin=False,
+        )
+
+    # 6. other users cannot alter any permission combination
+    for gid in (user_gid, not_shared_with):
+        # grant read, write and delete
+        for read, write, delete in itertools.product([True, False], repeat=3):
+            with pytest.raises(CannotGrantPermissionError):
+                await folder_share(
+                    connection,
+                    folder_id,
+                    {gid},
+                    recipient_gid=reciving_permissions_gid,
+                    recipient_read=read,
+                    recipient_write=write,
+                    recipient_delete=delete,
+                    recipient_admin=False,
+                )
 
 
 async def test_folder_delete_base_usage(
     connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
-    user_gid = get_random_gid(setup_users_and_groups)
+    user_gid = _get_random_gid(setup_users_and_groups)
 
     missing_folder_id = 12313213
     with pytest.raises(CouldNotFindFolderError):
