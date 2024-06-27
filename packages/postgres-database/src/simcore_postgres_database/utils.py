@@ -2,7 +2,7 @@ import re
 from copy import deepcopy
 
 import sqlalchemy as sa
-import sqlalchemy.dialects.postgresql
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Engine
 from yarl import URL
 
@@ -78,6 +78,6 @@ def hide_dict_pass(data: dict) -> dict:
 def as_postgres_sql_query_str(statement) -> str:
     compiled = statement.compile(
         compile_kwargs={"literal_binds": True},
-        dialect=sqlalchemy.dialects.postgresql.dialect(),
+        dialect=postgresql.dialect(),  # type: ignore[misc]
     )
     return f"{compiled}"

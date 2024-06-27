@@ -8,6 +8,7 @@ from pydantic import (
     Field,
     NonNegativeInt,
     PositiveInt,
+    parse_obj_as,
     validator,
 )
 from pydantic.generics import GenericModel
@@ -32,7 +33,7 @@ class PageQueryParameters(BaseModel):
     """Use as pagination options in query parameters"""
 
     limit: PageLimitInt = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        default=parse_obj_as(PageLimitInt, DEFAULT_NUMBER_OF_ITEMS_PER_PAGE),
         description="maximum number of items to return (pagination)",
     )
     offset: NonNegativeInt = Field(
