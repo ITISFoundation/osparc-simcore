@@ -59,6 +59,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
+from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -636,6 +637,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     node_id: NodeID,
     faker: Faker,
     get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
+    s3_client: S3Client,
 ):
     assert client.app
     file_size = parse_obj_as(ByteSize, "500Mib")
@@ -650,7 +652,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     assert file_upload_link
     # let's use the storage s3 internal client to upload
     with file.open("rb") as fp:
-        response = await storage_s3_client._client.put_object(
+        response = await s3_client.put_object(
             Bucket=storage_s3_bucket, Key=simcore_file_id, Body=fp
         )
         assert "ETag" in response
@@ -678,7 +680,7 @@ async def test_upload_real_file_with_s3_client(
     project_id: ProjectID,
     node_id: NodeID,
     faker: Faker,
-    get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
+    s3_client: S3Client,
 ):
     assert client.app
     file_size = parse_obj_as(ByteSize, "500Mib")
@@ -692,7 +694,7 @@ async def test_upload_real_file_with_s3_client(
     )
     # let's use the storage s3 internal client to upload
     with file.open("rb") as fp:
-        response = await storage_s3_client._client.put_object(
+        response = await s3_client.put_object(
             Bucket=storage_s3_bucket, Key=simcore_file_id, Body=fp
         )
         assert "ETag" in response
