@@ -70,8 +70,8 @@ async def app_settings(  # starts postgres service before app starts
     # Ensures both postgres service and app environs are the same!
     assert app_settings
     assert app_settings.CATALOG_POSTGRES
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_USER == postgres_host_config["user"]
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_DB == postgres_host_config["database"]
+    assert postgres_host_config["user"] == app_settings.CATALOG_POSTGRES.POSTGRES_USER
+    assert postgres_host_config["database"] == app_settings.CATALOG_POSTGRES.POSTGRES_DB
     assert (
         app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
         == postgres_host_config["password"]
