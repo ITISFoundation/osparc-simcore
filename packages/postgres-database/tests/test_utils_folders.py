@@ -16,6 +16,7 @@ from simcore_postgres_database.utils_folders import (
     _FOLDER_NAMES_RESERVED_WINDOWS,
     CannotAlterOwnerPermissionsError,
     CannotGrantPermissionError,
+    CouldNotDeleteMissingAccessError,
     CouldNotFindFolderError,
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
@@ -350,22 +351,146 @@ async def test_folder_delete_base_usage(
     connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
 ):
     owner_gid = _get_random_gid(setup_users_and_groups)
+    user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, owner_gid})
 
+    # 1 raise error if folder is not found
     missing_folder_id = 12313213
     with pytest.raises(CouldNotFindFolderError):
-        await folder_delete(connection, missing_folder_id, {owner_gid})
+        await folder_delete(connection, missing_folder_id, owner_gid)
 
+    # 2 removes owner's folder
     await _assert_folder_entires(connection, folder_count=0)
     f1_folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
-
-    await folder_delete(connection, f1_folder_id, {owner_gid})
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        owner_gid,
+        read=True,
+        write=True,
+        delete=True,
+        admin=True,
+    )
+    await folder_delete(connection, f1_folder_id, owner_gid)
     await _assert_folder_entires(connection, folder_count=0)
 
-    # shared as user can user remove it's own folder entry?
-    # this is based on access rights?
+    # 3 create folder and share it with a user -> remove via user -> only the user's fodler entry is removed
+    f1_folder_id = await folder_create(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+    # 3.1 share with no delete permissions -> does not delete
+    await folder_share(
+        connection,
+        f1_folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=False,
+        recipient_write=False,
+        recipient_delete=False,
+        recipient_admin=False,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        owner_gid,
+        read=True,
+        write=True,
+        delete=True,
+        admin=True,
+    )
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        user_gid,
+        read=False,
+        write=False,
+        delete=False,
+        admin=False,
+    )
 
-    # TODO: test for CouldNotDeleteMissingAccessError
+    with pytest.raises(CouldNotDeleteMissingAccessError):
+        await folder_delete(connection, f1_folder_id, user_gid)
+
+    # 3.2 share with delete permissions -> will delete
+    # -> removes folder shared with user and original remains
+    await folder_share(
+        connection,
+        f1_folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=False,
+        recipient_write=False,
+        recipient_delete=True,
+        recipient_admin=False,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        owner_gid,
+        read=True,
+        write=True,
+        delete=True,
+        admin=True,
+    )
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        user_gid,
+        read=False,
+        write=False,
+        delete=True,
+        admin=False,
+    )
+
+    # only removes the access_rights entry and not the owner's one
+    await folder_delete(connection, f1_folder_id, user_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        owner_gid,
+        read=True,
+        write=True,
+        delete=True,
+        admin=True,
+    )
+
+    # 4 share folder it with a user -> remove via owner -> both entries are removed
+    await _assert_folder_entires(connection, folder_count=1)
+    # share with minimum permissions
+    await folder_share(
+        connection,
+        f1_folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=False,
+        recipient_write=False,
+        recipient_delete=True,
+        recipient_admin=False,
+    )
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        owner_gid,
+        read=True,
+        write=True,
+        delete=True,
+        admin=True,
+    )
+    await _assert_access_rights(
+        connection,
+        f1_folder_id,
+        user_gid,
+        read=False,
+        write=False,
+        delete=True,
+        admin=False,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+
+    await folder_delete(connection, f1_folder_id, owner_gid)
+    await _assert_folder_entires(connection, folder_count=0)
 
     # TODO: delete root of a subfolder removes all elements inside
 

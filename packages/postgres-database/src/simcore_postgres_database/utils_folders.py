@@ -366,7 +366,7 @@ async def folder_delete(
             raise CouldNotDeleteMissingAccessError(folder_id=folder_id, gid=gid)
 
         # NOTE: first access rights are removed
-        # and lastly if it's the owner we are talking about we remove everything
+        # and lastly if it's the owner the folder entry is also removed
         await connection.execute(
             folders_access_rights.delete()
             .where(folders_access_rights.c.folder_id == folder_id)
