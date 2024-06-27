@@ -204,18 +204,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeOutputConnected"
     },
 
-    loadingPage: {
-      check: "osparc.ui.message.Loading",
-      init: null,
-      nullable: true
-    },
-
-    iFrame: {
-      check: "osparc.widget.PersistentIframe",
-      init: null,
-      nullable: true
-    },
-
     logger: {
       check: "osparc.widget.logger.LoggerView",
       init: null,

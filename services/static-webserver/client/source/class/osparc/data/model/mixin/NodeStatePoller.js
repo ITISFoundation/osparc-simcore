@@ -21,6 +21,20 @@
 
 qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
 
+  properties: {
+    loadingPage: {
+      check: "osparc.ui.message.Loading",
+      init: null,
+      nullable: true
+    },
+
+    iFrame: {
+      check: "osparc.widget.PersistentIframe",
+      init: null,
+      nullable: true
+    }
+  },
+
   events: {
     "iframeChanged": "qx.event.type.Event"
   },
