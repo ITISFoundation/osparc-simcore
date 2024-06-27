@@ -27,15 +27,12 @@ async def _list_all_files_in_folder(
     prefix: str,
     max_files_to_list: int,
 ) -> list[S3MetaData]:
-    found_items = []
     async for s3_objects in s3_client.list_files_paginated(
         bucket, prefix, items_per_page=max_files_to_list
     ):
-        found_items.extend(s3_objects)
         # NOTE: stop immediately after listing after `max_files_to_list`
-        break
-
-    return [S3MetaData.from_botocore_list_objects(entry) for entry in found_items]
+        return s3_objects
+    return []
 
 
 async def expand_directory(
