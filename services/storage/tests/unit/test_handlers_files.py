@@ -8,13 +8,13 @@
 import asyncio
 import filecmp
 import json
+import logging
 import urllib.parse
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from time import perf_counter
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -47,6 +47,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.logging import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from servicelib.aiohttp import status
@@ -590,10 +591,10 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         stop=stop_after_delay(60),
         retry=retry_if_exception_type(AssertionError),
     ):
-        with attempt:
-            print(
-                f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-            )
+        with attempt, log_context(
+            logging.INFO,
+            f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+        ) as ctx:
             response = await client.post(f"{state_url}")
             data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
@@ -602,8 +603,9 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
             assert future.state == FileUploadCompleteState.OK
             assert future.e_tag is not None
             completion_etag = future.e_tag
-            print(
-                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
+            ctx.logger.info(
+                "%s",
+                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
             )
     # check the entry in db now has the correct file size, and the upload id is gone
     await assert_file_meta_data_in_db(
@@ -708,43 +710,41 @@ async def test_upload_real_file_with_s3_client(
 
     # complete the upload
     complete_url = URL(file_upload_link.links.complete_upload).relative()
-    start = perf_counter()
-    print(f"--> completing upload of {file=}")
-    response = await client.post(f"{complete_url}", json={"parts": []})
-    response.raise_for_status()
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-    assert not error
-    assert data
-    file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-    state_url = URL(file_upload_complete_response.links.state).relative()
-    completion_etag = None
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(ValueError),
-    ):
-        with attempt:
-            print(
-                f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-            )
-            response = await client.post(f"{state_url}")
-            response.raise_for_status()
-            data, error = await assert_status(response, status.HTTP_200_OK)
-            assert not error
-            assert data
-            future = FileUploadCompleteFutureResponse.parse_obj(data)
-            if future.state != FileUploadCompleteState.OK:
-                msg = f"{data=}"
-                raise ValueError(msg)
-            assert future.state == FileUploadCompleteState.OK
-            assert future.e_tag is not None
-            completion_etag = future.e_tag
-            print(
-                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
-            )
-
-    print(f"--> completed upload in {perf_counter() - start}")
+    with log_context(logging.INFO, f"completing upload of {file=}"):
+        response = await client.post(f"{complete_url}", json={"parts": []})
+        response.raise_for_status()
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert not error
+        assert data
+        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+        state_url = URL(file_upload_complete_response.links.state).relative()
+        completion_etag = None
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            wait=wait_fixed(1),
+            stop=stop_after_delay(60),
+            retry=retry_if_exception_type(ValueError),
+        ):
+            with attempt, log_context(
+                logging.INFO,
+                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+            ) as ctx:
+                response = await client.post(f"{state_url}")
+                response.raise_for_status()
+                data, error = await assert_status(response, status.HTTP_200_OK)
+                assert not error
+                assert data
+                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                if future.state != FileUploadCompleteState.OK:
+                    msg = f"{data=}"
+                    raise ValueError(msg)
+                assert future.state == FileUploadCompleteState.OK
+                assert future.e_tag is not None
+                completion_etag = future.e_tag
+                ctx.logger.info(
+                    "%s",
+                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
+                )
 
     # check the entry in db now has the correct file size, and the upload id is gone
     await assert_file_meta_data_in_db(

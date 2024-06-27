@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import logging
 import urllib.parse
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -25,6 +26,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
@@ -82,10 +84,10 @@ async def create_empty_directory(
             stop=stop_after_delay(60),
             retry=retry_if_exception_type(AssertionError),
         ):
-            with attempt:
-                print(
-                    f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-                )
+            with attempt, log_context(
+                logging.INFO,
+                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+            ) as ctx:
                 response = await client.post(f"{state_url}")
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
@@ -93,8 +95,9 @@ async def create_empty_directory(
                 future = FileUploadCompleteFutureResponse.parse_obj(data)
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is None
-                print(
-                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
+                ctx.logger.info(
+                    "%s",
+                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
                 )
 
         return directory_file_upload

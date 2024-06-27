@@ -47,7 +47,6 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
     settings = Settings.create_from_envs()
-    print(settings.json(indent=1))
     return simcore_service_storage.application.create(settings)
 
 
