@@ -27,14 +27,15 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.self().openStudy(studyId)
       .then(studyData => {
-        // create study
-        const study = new osparc.data.model.Study(studyData);
-
-        // create node
         if (studyData["workbench"] && nodeId in studyData["workbench"]) {
           const nodeData = studyData["workbench"][nodeId];
           const key = nodeData["key"];
           const version = nodeData["version"];
+
+          // create study
+          const study = new osparc.data.model.Study(studyData);
+
+          // create node
           const node = new osparc.data.model.Node(study, key, version, nodeId);
 
           this.__iframeHandler = new osparc.data.model.IframeHandler(study, node);
