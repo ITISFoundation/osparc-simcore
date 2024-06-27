@@ -355,8 +355,12 @@ async def folder_rename(
 async def folder_delete(
     connection: SAConnection, folder_id: _FolderID, gid: _GroupID
 ) -> None:
-    # NOTE on emulating linux
-    # the owner of a folder can delete files and directories from another user
+    # NOTE when deleting a folder it only removes children that are owned by
+    # `gid`. If they are owned by a different user they will be skipped.
+    # This is the more conservative route and will not upset users
+
+    own_children: list[_FolderID] = []
+
     async with connection.begin():
         found_entry: RowProxy | None = await (
             await connection.execute(
@@ -379,6 +383,17 @@ async def folder_delete(
         if not folder_entry.delete:
             raise CouldNotDeleteMissingAccessError(folder_id=folder_id, gid=gid)
 
+        # list all children then delete
+        results = await connection.execute(
+            folders_access_rights.select()
+            .where(folders_access_rights.c.parent_folder == folder_id)
+            .where(folders_access_rights.c.gid == gid)
+        )
+        rows = await results.fetchall()
+        if rows:
+            for entry in rows:
+                own_children.append(entry.folder_id)  # noqa: PERF401
+
         # NOTE: first access rights are removed
         # and lastly if it's the owner the folder entry is also removed
         await connection.execute(
@@ -388,6 +403,10 @@ async def folder_delete(
         )
         if folder_entry.owner == folder_entry.gid:
             await connection.execute(folders.delete().where(folders.c.id == folder_id))
+
+    # finally remove all the children from the folder
+    for child_folder_id in own_children:
+        await folder_delete(connection, child_folder_id, gid)
 
 
 async def folder_permissions() -> None:

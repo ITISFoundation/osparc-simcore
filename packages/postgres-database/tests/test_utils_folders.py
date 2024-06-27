@@ -506,6 +506,44 @@ async def test_folder_delete_base_usage(
     await folder_delete(connection, f1_folder_id, owner_gid)
     await _assert_folder_entires(connection, folder_count=0)
 
-    # TODO: delete root of a subfolder removes all elements inside
+    # 5 create a folder with subfolders x levels deep -> delete it removes all elements
+    f1_folder_id = await folder_create(connection, "f1", owner_gid)
+    f2_folder_id = await folder_create(connection, "f2", owner_gid, parent=f1_folder_id)
+    f3_folder_id = await folder_create(connection, "f3", owner_gid, parent=f2_folder_id)
+    await folder_create(connection, "f4", owner_gid, parent=f3_folder_id)
+    await _assert_folder_entires(connection, folder_count=4)
+    await folder_delete(connection, f1_folder_id, owner_gid)
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # 6 create a folder-> share it-> user creates subfolders x levels deep -> removes only owner directories
+    f1_folder_id = await folder_create(connection, "f1", owner_gid)
+    await folder_create(connection, "f2_owner", owner_gid, parent=f1_folder_id)
+    await folder_share(
+        connection,
+        f1_folder_id,
+        {owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=True,
+        recipient_admin=False,
+    )
+
+    f2_folder_id = await folder_create(connection, "f2", user_gid, parent=f1_folder_id)
+    f3_folder_id = await folder_create(connection, "f3", user_gid, parent=f2_folder_id)
+    f4_folder_id = await folder_create(connection, "f4", user_gid, parent=f3_folder_id)
+    await _assert_folder_entires(connection, folder_count=5, access_rights_count=6)
+    await folder_delete(connection, f1_folder_id, owner_gid)
+    await _assert_folder_entires(connection, folder_count=3)
+    for folder_id in (f2_folder_id, f3_folder_id, f4_folder_id):
+        await _assert_access_rights(
+            connection,
+            folder_id,
+            user_gid,
+            read=True,
+            write=True,
+            delete=True,
+            admin=True,
+        )
 
     # TODO: try deleting a folder with some projects inside it
