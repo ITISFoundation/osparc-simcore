@@ -76,13 +76,11 @@ class RequiresOwnerToMakeAdminError(BasePermissionError):
 
 
 class CouldNotFindFolderError(FoldersError):
-    msg_template = "Could not find an entry for folder_id={folder_id} and gids={gids}"
+    msg_template = "Could not find an entry for folder_id={folder_id}, gid={gid}"
 
 
 class CouldNotDeleteMissingAccessError(FoldersError):
-    msg_template = (
-        "No delete permission found for folder_id={folder_id} using gids={gids}"
-    )
+    msg_template = "No delete permission found for folder_id={folder_id}, gid={gid}"
 
 
 class InvalidFolderNameError(FoldersError):
@@ -341,7 +339,7 @@ async def folder_rename(
 
 
 async def folder_delete(
-    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+    connection: SAConnection, folder_id: _FolderID, gid: _GroupID
 ) -> None:
     # NOTE on emulating linux
     # the owner of a folder can delete files and directories from another user
@@ -356,18 +354,26 @@ async def folder_delete(
                     )
                 )
                 .where(folders.c.id == folder_id)
-                .where(folders_access_rights.c.gid.in_(gids))
+                .where(folders_access_rights.c.gid == gid)
             )
         ).fetchone()
 
         if found_entry is None:
-            raise CouldNotFindFolderError(folder_id=folder_id, gids=gids)
+            raise CouldNotFindFolderError(folder_id=folder_id, gid=gid)
+        folder_rights = FolderWithAccessRights.from_orm(found_entry)
 
-        if not found_entry.delete:
-            raise CouldNotDeleteMissingAccessError(folder_id=folder_id, gids=gids)
+        if not folder_rights.delete:
+            raise CouldNotDeleteMissingAccessError(folder_id=folder_id, gid=gid)
 
-        # this removes entry from folder_access_rights as well
-        await connection.execute(folders.delete().where(folders.c.id == folder_id))
+        # NOTE: first access rights are removed
+        # and lastly if it's the owner we are talking about we remove everything
+        await connection.execute(
+            folders_access_rights.delete()
+            .where(folders_access_rights.c.folder_id == folder_id)
+            .where(folders_access_rights.c.gid == gid)
+        )
+        if folder_rights.owner == folder_rights.gid:
+            await connection.execute(folders.delete().where(folders.c.id == folder_id))
 
 
 async def folder_permissions() -> None:
