@@ -154,6 +154,43 @@ async def test_dev_list_latest_services(
     assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
 
 
+@pytest.fixture
+def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock]:
+    async def _list(
+        app: web.Application,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        limit: PageLimitInt,
+        offset: NonNegativeInt,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+
+        items = [
+            parse_obj_as(
+                CatalogServiceGet, CatalogServiceGet.Config.schema_extra["example"]
+            ),
+        ]
+        total_count = 1
+
+        return PageRpc[CatalogServiceGet].create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        )
+
+    return {
+        "list_services_paginated": mocker.patch(
+            "simcore_service_webserver.catalog._api._rpc.list_services_paginated",
+            autospec=True,
+            side_effect=_list,
+        ),
+    }
+
+
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
