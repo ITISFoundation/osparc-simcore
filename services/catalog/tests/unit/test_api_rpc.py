@@ -3,10 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import Awaitable, Callable
 
 import pytest
-from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -42,13 +40,6 @@ def app_environment(
             "POSTGRES_CLIENT_NAME": "catalog-service-pg-client",
         },
     )
-
-
-@pytest.fixture
-async def rpc_client(
-    faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client(f"catalog-client-{faker.word()}")
 
 
 async def test_rcp_catalog_client(

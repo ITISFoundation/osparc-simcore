@@ -6,15 +6,18 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 
 import pytest
 import simcore_service_catalog
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
@@ -105,3 +108,22 @@ async def app(
 @pytest.fixture
 def disable_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+#
+# rabbit-MQ
+#
+
+
+@pytest.fixture
+def with_disabled_rabbitmq_and_rpc(mocker: MockerFixture):
+    # The following services are affected if rabbitmq is not in place
+    mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
+    mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
+
+
+@pytest.fixture
+async def rpc_client(
+    faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client(f"catalog-client-{faker.word()}")
