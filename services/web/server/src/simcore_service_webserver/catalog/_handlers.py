@@ -9,16 +9,18 @@ import logging
 import urllib.parse
 from typing import Any, Final
 
+from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
-    DEVServiceGet,
+    CatalogServiceGet,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
     ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.rest_pagination import PageQueryParameters
+from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination_utils import paginate_data
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -82,20 +84,32 @@ class ListServiceParams(PageQueryParameters):
 @login_required
 @permission_required("services.catalog.*")
 async def dev_list_services_latest(request: Request):
-    ctx = CatalogRequestContext.create(request)
+    request_ctx = CatalogRequestContext.create(request)
     query_params = parse_request_query_parameters_as(ListServiceParams, request)
 
-    assert ctx  # nosec
-    assert query_params  # nosec
-
-    _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(
-        list[DEVServiceGet], DEVServiceGet.Config.schema_extra["examples"]
+    page_items, page_meta = await _api.dev_list_latest_services(
+        request.app,
+        user_id=request_ctx.user_id,
+        product_name=request_ctx.product_name,
+        unit_registry=request_ctx.unit_registry,
+        page_params=PageQueryParameters.construct(
+            offset=query_params.offset, limit=query_params.limit
+        ),
     )
 
-    return envelope_json_response(
-        got[query_params.offset : query_params.offset + query_params.limit]
+    assert page_meta.limit == query_params.limit  # nosec
+    assert page_meta.offset == query_params.offset  # nosec
+
+    page = Page[CatalogServiceGet].parse_obj(
+        paginate_data(
+            chunk=page_items,
+            request_url=request.url,
+            total=page_meta.total,
+            limit=page_meta.limit,
+            offset=page_meta.offset,
+        )
     )
+    return envelope_json_response(page, web.HTTPOk)
 
 
 @routes.get(
@@ -113,7 +127,9 @@ async def dev_get_service(request: Request):
     assert path_params  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
+    got = parse_obj_as(
+        CatalogServiceGet, CatalogServiceGet.Config.schema_extra["examples"][0]
+    )
     got.version = path_params.service_version
     got.key = path_params.service_key
 
@@ -137,7 +153,9 @@ async def dev_update_service(request: Request):
     assert update  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
+    got = parse_obj_as(
+        CatalogServiceGet, CatalogServiceGet.Config.schema_extra["examples"][0]
+    )
     got.version = path_params.service_version
     got.key = path_params.service_key
     updated = got.copy(update=update.dict(exclude_unset=True))

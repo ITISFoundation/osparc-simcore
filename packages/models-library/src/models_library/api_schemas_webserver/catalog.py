@@ -141,7 +141,9 @@ _DEVEXAMPLE: dict[str, Any] = {
 }
 
 
-class DEVServiceGet(api_schemas_catalog_services.DEVServiceGet):
+class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
+    # NOTE: will replace ServiceGet!
+
     # pylint: disable=too-many-ancestors
     inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
         ..., description="inputs with extended information"
