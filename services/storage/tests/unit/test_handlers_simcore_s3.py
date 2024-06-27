@@ -24,7 +24,6 @@ from models_library.basic_types import SHA256Str
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -329,7 +328,7 @@ async def _create_and_delete_folders_from_project(
     client: TestClient,
     project_db_creator: Callable,
     check_list_files: bool,
-):
+) -> None:
     destination_project, nodes_map = clone_project_data(project)
     await project_db_creator(**destination_project)
 
@@ -343,15 +342,9 @@ async def _create_and_delete_folders_from_project(
     )
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
-    for key in data:
-        if key != "workbench":
-            assert data[key] == destination_project[key]
-        else:
-            for _node_id, node in data[key].items():
-                if "outputs" in node:
-                    for _o_id, o in node["outputs"].items():
-                        if "store" in o:
-                            assert o["store"] == SimcoreS3DataManager.get_location_id()
+    # NOTE: data is jsonized where destination project is not!
+    assert jsonable_encoder(destination_project) == data
+
     project_id = data["uuid"]
 
     # list data to check all is here
@@ -388,26 +381,24 @@ async def _create_and_delete_folders_from_project(
         assert not data
 
 
-@pytest.mark.parametrize(
-    "project",
-    [pytest.param(prj, id=prj.name) for prj in _get_project_with_data()],
-)
 async def test_create_and_delete_folders_from_project(
     client: TestClient,
     user_id: UserID,
-    project: Project,
+    random_project_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
+    ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
 ):
-    project_as_dict = jsonable_encoder(project, exclude={"tags", "state", "prj_owner"})
-    # HACK: some key names must be changed but not all
-    KEYS = {"creationDate", "lastChangeDate", "accessRights"}
-    for k in KEYS:
-        project_as_dict[camel_to_snake(k)] = project_as_dict.pop(k, None)
-
-    await create_project(**project_as_dict)
+    project_in_db, node_to_file_dict = await random_project_with_files()
     await _create_and_delete_folders_from_project(
-        user_id, project_as_dict, client, create_project, check_list_files=True
+        user_id, project_in_db, client, create_project, check_list_files=True
     )
 
 
