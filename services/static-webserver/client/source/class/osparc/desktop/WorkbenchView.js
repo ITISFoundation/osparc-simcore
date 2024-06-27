@@ -727,7 +727,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
         this.__iFrameChanged(node);
 
-        node.addListener("iframeChanged", () => this.__iFrameChanged(node), this);
+        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(node), this);
         iFrame.addListener("load", () => this.__iFrameChanged(node), this);
       } else {
         // This will keep what comes after at the bottom

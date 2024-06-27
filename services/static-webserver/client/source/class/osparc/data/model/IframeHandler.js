@@ -148,7 +148,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         return;
       }
       // Check if node is still there
-      if (this.getStudy().getWorkbench().getNode(this.getNodeId()) === null) {
+      if (this.getStudy().getWorkbench().getNode(this.getNode().getNodeId()) === null) {
         return;
       }
 
@@ -362,11 +362,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     __loadIframe: function() {
-      const status = this.getNode().getStatus().getInteractive();
+      const node = this.getNode();
+      const status = node.getStatus().getInteractive();
       // it might have been stopped
       if (status === "ready") {
         this.getIFrame().resetSource();
-        this.getIFrame().setSource(this.getServiceUrl());
+        this.getIFrame().setSource(node.getServiceUrl());
 
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)

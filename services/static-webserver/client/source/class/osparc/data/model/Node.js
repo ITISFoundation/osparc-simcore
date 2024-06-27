@@ -524,12 +524,20 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    getIframeHandler: function() {
+      return this.__iframeHandler;
+    },
+
     getIFrame: function() {
       return this.__iframeHandler.getIFrame();
     },
 
     setIFrame: function(iframe) {
       return this.__iframeHandler.setIFrame(iframe);
+    },
+
+    getLoadingPage: function() {
+      return this.__iframeHandler.getLoadingPage();
     },
 
     __applyPropsForm: function() {
@@ -1062,7 +1070,7 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__iframeHandler.startPoling();
+        this.__iframeHandler.startPolling();
       }
     },
 
