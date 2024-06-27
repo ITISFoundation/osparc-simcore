@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 
-import openapi_core
 import pytest
 from aiohttp.test_utils import TestClient
 from aws_library.s3.client import SimcoreS3API
@@ -27,22 +26,14 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
-from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
-from simcore_service_storage.resources import storage_resources
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
-
-
-@pytest.fixture(scope="module")
-def openapi_specs() -> openapi_core.Spec:
-    spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
-    return openapi_core.Spec.from_path(spec_path)
 
 
 @pytest.fixture
@@ -174,13 +165,15 @@ async def delete_directory(
 
         # NOTE: ensures no more files are left in the directory,
         # even if one file is left this will detect it
-        all_files = [
-            objects
-            async for objects in storage_s3_client.list_files_paginated(
-                bucket=storage_s3_bucket, prefix=directory_file_id
-            )
-        ]
-        assert len(all_files) == 0
+        list_files_metadata_url = (
+            client.app.router["get_files_metadata"]
+            .url_for(location_id=f"{location_id}")
+            .with_query(user_id=user_id, uuid_filter=directory_file_id)
+        )
+        response = await client.get(f"{list_files_metadata_url}")
+        data, error = await assert_status(response, status.HTTP_200_OK)
+        assert error is None
+        assert data == []
 
     return _dir_remover
 
