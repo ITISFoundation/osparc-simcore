@@ -118,9 +118,7 @@ async def test_dev_get_and_patch_service(
     )
 
     # GET
-    response = await client.get(
-        f"{url}",
-    )
+    response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
 
     assert data
