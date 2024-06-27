@@ -79,7 +79,7 @@ from simcore_service_director_v2.modules.dask_client import (
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from starlette.testclient import TestClient
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

@@ -24,7 +24,7 @@ from simcore_service_autoscaling.modules.rabbitmq import (
     post_message,
 )
 from tenacity import retry
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

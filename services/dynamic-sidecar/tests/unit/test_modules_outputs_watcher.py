@@ -38,7 +38,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

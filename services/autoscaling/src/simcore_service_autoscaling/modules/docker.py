@@ -3,7 +3,7 @@ from typing import cast
 
 import aiodocker
 from fastapi import FastAPI
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential

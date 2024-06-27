@@ -22,7 +22,7 @@ from pydantic import parse_obj_as
 from servicelib.fastapi import long_running_tasks
 from servicelib.long_running_tasks._models import TaskGet, TaskId
 from servicelib.long_running_tasks._task import TaskContext
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

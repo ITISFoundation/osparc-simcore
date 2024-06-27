@@ -13,7 +13,7 @@ from pydantic import PositiveInt
 from pydantic.networks import AnyHttpUrl
 from pytest_simcore.helpers.constants import MINUTE
 from starlette import status
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

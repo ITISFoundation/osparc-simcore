@@ -53,7 +53,7 @@ from simcore_service_payments.services.auto_recharge_process_message import (
     _exceeds_monthly_limit,
     _recently_topped_up,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

@@ -37,7 +37,7 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_credit_trans
 from simcore_service_resource_usage_tracker.models.resource_tracker_service_runs import (
     ServiceRunDB,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

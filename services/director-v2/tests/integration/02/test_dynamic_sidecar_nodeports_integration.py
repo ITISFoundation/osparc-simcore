@@ -79,7 +79,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed

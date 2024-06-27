@@ -69,20 +69,20 @@ async def set_project_ancestors_from_custom_metadata(
         # NOTE: backward compatibility with S4l old client
         parent_node_id = parse_obj_as(NodeID, parent_node_idstr)
 
-    if parent_node_id == _NIL_NODE_UUID:
-        return
+        if parent_node_id == _NIL_NODE_UUID:
+            return
 
-    # let's try to get the parent project UUID
-    parent_project_uuid = await _metadata_db.get_project_id_from_node_id(
-        get_database_engine(app), node_id=parent_node_id
-    )
+        # let's try to get the parent project UUID
+        parent_project_uuid = await _metadata_db.get_project_id_from_node_id(
+            get_database_engine(app), node_id=parent_node_id
+        )
 
-    await _metadata_db.set_project_ancestors(
-        get_database_engine(app),
-        project_uuid=project_uuid,
-        parent_project_uuid=parent_project_uuid,
-        parent_node_id=parent_node_id,
-    )
+        await _metadata_db.set_project_ancestors(
+            get_database_engine(app),
+            project_uuid=project_uuid,
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
+        )
 
 
 async def set_project_ancestors(

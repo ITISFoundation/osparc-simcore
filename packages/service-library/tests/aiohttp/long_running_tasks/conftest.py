@@ -15,7 +15,7 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.long_running_tasks._task import TaskContext
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

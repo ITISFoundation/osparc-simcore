@@ -38,7 +38,7 @@ from simcore_service_resource_usage_tracker.resource_tracker_process_messages im
     _process_start_event,
     _process_stop_event,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

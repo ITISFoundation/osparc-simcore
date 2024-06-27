@@ -24,7 +24,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.projects.models import ProjectDict
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
