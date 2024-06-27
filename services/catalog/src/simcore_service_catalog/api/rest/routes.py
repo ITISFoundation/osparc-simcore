@@ -1,6 +1,6 @@
 from enum import Enum
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 
 from . import (
     _health,
@@ -60,3 +60,10 @@ v0_router.include_router(
     tags=_SERVICE_TAGS,
     prefix=_SERVICE_PREFIX,
 )
+
+
+def setup_rest_api_routes(app: FastAPI, vtag: str):
+    # healthcheck at / and at /v0/
+    app.include_router(health_router)
+    # api under /v*
+    app.include_router(v0_router, prefix=f"/{vtag}")

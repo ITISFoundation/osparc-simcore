@@ -12,7 +12,8 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
-from ..api.rest.routes import health_router, v0_router
+from ..api.rest.routes import setup_rest_api_routes
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
 from ..services.function_services import setup_function_services
 from ..services.rabbitmq import setup_rabbitmq
@@ -67,10 +68,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_middleware(GZipMiddleware)
 
     # ROUTES
-    # healthcheck at / and at /v0/
-    app.include_router(health_router)
-    # api under /v*
-    app.include_router(v0_router, prefix=f"/{API_VTAG}")
+    setup_rest_api_routes(app, vtag=API_VTAG)
+    setup_rpc_api_routes(app)
 
     # SHUTDOWN-EVENT
     app.add_event_handler("shutdown", create_on_shutdown(app))
