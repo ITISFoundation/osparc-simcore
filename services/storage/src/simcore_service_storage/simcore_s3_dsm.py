@@ -29,8 +29,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
-from servicelib.sequences_utils import partition_gen
-from servicelib.utils import ensure_ends_with, logged_gather
+from servicelib.utils import ensure_ends_with, limited_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
@@ -219,8 +218,8 @@ class SimcoreS3DataManager(BaseDataManager):
                         max_items_to_include,
                     )
                 )
-        for files_in_directory in await logged_gather(
-            *directory_expands, max_concurrency=_MAX_PARALLEL_S3_CALLS
+        for files_in_directory in await limited_gather(
+            *directory_expands, limit=_MAX_PARALLEL_S3_CALLS
         ):
             data.extend(files_in_directory)
 
@@ -634,18 +633,10 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             log_duration=True,
         ):
-            sizes_and_num_files: list[tuple[ByteSize, int]] = []
-            for src_project_files_slice in partition_gen(
-                src_project_files, slice_size=_MAX_PARALLEL_S3_CALLS
-            ):
-                sizes_and_num_files.extend(
-                    await logged_gather(
-                        *[
-                            self._get_size_and_num_files(fmd)
-                            for fmd in src_project_files_slice
-                        ]
-                    )
-                )
+            sizes_and_num_files: list[tuple[ByteSize, int]] = await limited_gather(
+                *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
+                limit=_MAX_PARALLEL_S3_CALLS,
+            )
 
             total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
@@ -703,10 +694,8 @@ class SimcoreS3DataManager(BaseDataManager):
                     and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
-        for copy_tasks_slice in partition_gen(
-            copy_tasks, slice_size=MAX_CONCURRENT_S3_TASKS
-        ):
-            await logged_gather(*copy_tasks_slice)
+        await limited_gather(*copy_tasks, limit=MAX_CONCURRENT_S3_TASKS)
+
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
         _logger.info(
@@ -851,14 +840,14 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
-        updated_fmds = await logged_gather(
+        updated_fmds = await limited_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
             log=_logger,
-            max_concurrency=_NO_CONCURRENCY,
+            limit=_NO_CONCURRENCY,
         )
         list_of_fmds_to_delete = [
             expired_fmd
@@ -887,11 +876,11 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_client = get_s3_client(self.app)
         async with self.engine.acquire() as conn:
             # NOTE: no concurrency here as we want to run low resources
-            reverted_fmds = await logged_gather(
+            reverted_fmds = await limited_gather(
                 *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
                 reraise=False,
                 log=_logger,
-                max_concurrency=_NO_CONCURRENCY,
+                limit=_NO_CONCURRENCY,
             )
         list_of_fmds_to_delete = [
             fmd

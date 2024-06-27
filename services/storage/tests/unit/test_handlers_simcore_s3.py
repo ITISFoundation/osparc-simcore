@@ -31,7 +31,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
@@ -426,14 +426,14 @@ async def test_create_and_delete_folders_from_project_burst(
         project, exclude={"tags", "state", "prj_owner"}, by_alias=False
     )
     await create_project(**project_as_dict)
-    await logged_gather(
+    await limited_gather(
         *[
             _create_and_delete_folders_from_project(
                 user_id, project_as_dict, client, create_project, check_list_files=False
             )
             for _ in range(100)
         ],
-        max_concurrency=2,
+        limit=2,
     )
 
 
