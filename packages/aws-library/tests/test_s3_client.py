@@ -1350,4 +1350,4 @@ def test_copy_recurively_performance(
             copy_files_recursively(src_folder, dst_folder)
         )
 
-    benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=2)
+    benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=4)
