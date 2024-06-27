@@ -38,18 +38,15 @@
 
 qx.Class.define("osparc.data.model.Node", {
   extend: qx.core.Object,
-  include: [
-    osparc.data.model.mixin.NodeStatePoller,
-    qx.locale.MTranslation,
-  ],
+  include: qx.locale.MTranslation,
 
   /**
     * @param study {osparc.data.model.Study} Study or Serialized Study Object
     * @param key {String} key of the service represented by the node
     * @param version {String} version of the service represented by the node
-    * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
+    * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(study, key, version, uuid) {
+  construct: function(study, key, version, nodeId) {
     this.base(arguments);
 
     this.__metaData = osparc.service.Utils.getMetaData(key, version);
@@ -61,7 +58,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setStudy(study);
     }
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidV4(),
+      nodeId: nodeId || osparc.utils.Utils.uuidV4(),
       key,
       version,
       status: new osparc.data.model.NodeStatus(this)
@@ -331,6 +328,7 @@ qx.Class.define("osparc.data.model.Node", {
     __settingsForm: null,
     __posX: null,
     __posY: null,
+    __iframeHandler: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -480,7 +478,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       this.__initLogger();
       if (this.isDynamic()) {
-        this.__initIFrame();
+        this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this);
       }
 
       if (this.isParameter()) {
@@ -524,6 +522,14 @@ qx.Class.define("osparc.data.model.Node", {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
       }
+    },
+
+    getIFrame: function() {
+      return this.__iframeHandler.getIFrame();
+    },
+
+    setIFrame: function(iframe) {
+      return this.__iframeHandler.setIFrame(iframe);
     },
 
     __applyPropsForm: function() {
@@ -1047,8 +1053,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     startDynamicService: function() {
       if (this.isDynamic()) {
-        this.getStatus().getProgressSequence().resetSequence();
-
         const metaData = this.getMetaData();
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
@@ -1058,28 +1062,22 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__unresponsiveRetries = 5;
-        this.__nodeState();
+        this.__iframeHandler.startPoling();
       }
     },
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        this.getStatus().getProgressSequence().resetSequence();
-
         const metaData = this.getMetaData();
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg,
+          msg,
           level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__unresponsiveRetries = 5;
-        this.__nodeState(false);
-
-        this.getIFrame().resetSource();
+        this.__iframeHandler.stopIframe();
       }
     },
 
