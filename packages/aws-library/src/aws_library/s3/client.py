@@ -5,7 +5,7 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final, Sequence, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -19,6 +19,7 @@ from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
+from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 from .constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .error_handler import s3_exception_handler, s3_exception_handler_async_gen
@@ -179,10 +180,10 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             async for s3_objects in self.list_objects_paginated(
                 bucket=bucket, prefix=prefix
             ):
-
-                if objects_to_delete := [
+                objects_to_delete: Sequence[ObjectIdentifierTypeDef] = [
                     {"Key": f"{_.object_key}"} for _ in s3_objects
-                ]:
+                ]
+                if objects_to_delete:
                     await self._client.delete_objects(
                         Bucket=bucket,
                         Delete={"Objects": objects_to_delete},
