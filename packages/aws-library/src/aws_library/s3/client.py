@@ -40,6 +40,7 @@ _S3_MAX_CONCURRENCY_DEFAULT: Final[int] = 10
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
+_AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
 
 
 @dataclass(frozen=True)
@@ -152,7 +153,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         *,
         items_per_page: int = _MAX_ITEMS_PER_PAGE,
     ) -> AsyncGenerator[list[S3MetaData], None]:
-
+        if items_per_page > _AWS_MAX_ITEMS_PER_PAGE:
+            msg = f"items_per_page must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
+            raise ValueError(msg)
         async for page in self._client.get_paginator("list_objects_v2").paginate(
             Bucket=bucket,
             Prefix=prefix,
