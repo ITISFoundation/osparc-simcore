@@ -237,7 +237,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     resetSequence: function() {
       if (this.__disclaimerTimer) {
-        this.__disclaimerTimer.clearTimeout();
+        clearTimeout(this.__disclaimerTimer);
       }
       const defaultVals = this.getDefaultStartValues();
       this.setOverallProgress(0);
