@@ -394,7 +394,14 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
+@pytest.fixture
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+
 async def test_create_and_delete_folders_from_project_burst(
+    set_log_levels_for_noisy_libraries: None,
     client: TestClient,
     user_id: UserID,
     random_project_with_files: Callable[
