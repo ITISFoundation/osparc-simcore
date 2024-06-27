@@ -12,8 +12,8 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole

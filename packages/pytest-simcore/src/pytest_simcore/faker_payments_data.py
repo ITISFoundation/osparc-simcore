@@ -29,7 +29,7 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-from .helpers.rawdata_fakers import random_payment_transaction
+from .helpers.faker_factories import random_payment_transaction
 
 
 @pytest.fixture

@@ -10,7 +10,7 @@ from types import ModuleType
 from typing import Any
 
 import pytest
-from pytest_simcore.helpers.utils_environs import eval_service_environ
+from pytest_simcore.helpers.deprecated_environs import eval_service_environ
 from servicelib.aiohttp.application_setup import is_setup_function
 
 

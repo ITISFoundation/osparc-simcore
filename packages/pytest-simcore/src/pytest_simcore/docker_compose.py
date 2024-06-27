@@ -28,9 +28,20 @@ from .helpers import (
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.constants import HEADER_STR
+from .helpers.docker import run_docker_compose_config, save_docker_infos
+from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
-from .helpers.utils_host import get_localhost_ip
+
+
+@pytest.fixture(scope="module")
+def temp_folder(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """**Module scoped** temporary folder"""
+    prefix = __name__.replace(".", "_")
+    return tmp_path_factory.mktemp(
+        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
+    )
 
 
 @pytest.fixture(scope="session")
@@ -88,8 +99,8 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
-    testing_environ_vars: dict[str, str],
     temp_folder: Path,
+    testing_environ_vars: dict[str, str],
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file

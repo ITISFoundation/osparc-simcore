@@ -14,7 +14,7 @@ import settings_library.base
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.fields import Field
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from settings_library.base import (
     _DEFAULTS_TO_NONE_MSG,
     BaseCustomSettings,

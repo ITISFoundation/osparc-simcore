@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from models_library.services import RunID
 from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings

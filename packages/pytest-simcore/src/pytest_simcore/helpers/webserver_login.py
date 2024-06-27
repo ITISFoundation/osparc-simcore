@@ -15,8 +15,8 @@ from simcore_service_webserver.products.api import list_products
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
-from .rawdata_fakers import DEFAULT_FAKER, DEFAULT_TEST_PASSWORD, random_user
-from .utils_assert import assert_status
+from .assert_checks import assert_status
+from .faker_factories import DEFAULT_FAKER, DEFAULT_TEST_PASSWORD, random_user
 
 
 # WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):

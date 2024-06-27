@@ -17,7 +17,7 @@ from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 

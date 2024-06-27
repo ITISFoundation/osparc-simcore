@@ -7,7 +7,7 @@ from urllib.parse import quote
 import pytest
 from aiohttp import web
 from faker import Faker
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole

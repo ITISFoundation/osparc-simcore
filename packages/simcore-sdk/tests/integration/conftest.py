@@ -18,7 +18,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from pytest_simcore.helpers.faker_factories import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline

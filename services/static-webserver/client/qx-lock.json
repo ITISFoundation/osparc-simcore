@@ -2,11 +2,11 @@
   "libraries": [
     {
       "library_name": "qx-iconfont-fontawesome5",
-      "library_version": "0.2.0",
-      "path": "qx_packages/ITISFoundation_qx-iconfont-fontawesome5_v0_2_0",
+      "library_version": "1.0.0",
+      "path": "qx_packages/ITISFoundation_qx-iconfont-fontawesome5_v1_0_0",
       "uri": "ITISFoundation/qx-iconfont-fontawesome5",
       "repo_name": "ITISFoundation/qx-iconfont-fontawesome5",
-      "repo_tag": "v0.2.0"
+      "repo_tag": "v1.0.0"
     },
     {
       "library_name": "qx-osparc-theme",

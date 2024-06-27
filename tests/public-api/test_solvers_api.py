@@ -11,7 +11,7 @@ from typing import NamedTuple
 import osparc
 import pytest
 from packaging.version import parse as parse_version
-from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
+from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
 
 
 class NameTagTuple(NamedTuple):

@@ -3,8 +3,8 @@
 import os
 
 import pytest
+from pytest_simcore.helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_dynamic_scheduler._meta import API_VERSION
 from simcore_service_dynamic_scheduler.cli import main as cli_main
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings

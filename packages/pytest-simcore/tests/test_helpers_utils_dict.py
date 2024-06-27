@@ -7,8 +7,8 @@ import json
 import sys
 
 import pytest
+from pytest_simcore.helpers.dict_tools import copy_from_dict, get_from_dict
 from pytest_simcore.helpers.typing_docker import TaskDict
-from pytest_simcore.helpers.utils_dict import copy_from_dict, get_from_dict
 
 
 @pytest.fixture

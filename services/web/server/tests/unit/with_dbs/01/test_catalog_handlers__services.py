@@ -10,10 +10,10 @@ from models_library.api_schemas_catalog.services import ServiceUpdate
 from models_library.api_schemas_webserver.catalog import DEVServiceGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 

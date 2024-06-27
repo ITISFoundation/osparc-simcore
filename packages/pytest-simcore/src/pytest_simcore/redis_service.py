@@ -15,8 +15,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ async def redis_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture()
@@ -86,7 +86,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @tenacity.retry(
@@ -103,4 +103,4 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
             msg = f"{redis_url=} not available"
             raise ConnectionError(msg)
     finally:
-        await client.close(close_connection_pool=True)
+        await client.aclose(close_connection_pool=True)

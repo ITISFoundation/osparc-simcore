@@ -24,7 +24,7 @@ class HttpApiCallCaptureModel(BaseModel):
     path: PathDescription | str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
-    response_body: dict[str, Any] | list | None = None
+    response_body: list[Any] | dict[str, Any] | None = None
     status_code: HTTPStatus = Field(default=status.HTTP_200_OK)
 
     @classmethod

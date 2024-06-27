@@ -24,7 +24,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY

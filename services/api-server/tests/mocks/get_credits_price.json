@@ -1,0 +1,19 @@
+[
+ {
+  "name": "GET /credits-price",
+  "description": "<Request('GET', 'http://webserver/v0/credits-price')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/credits-price",
+   "path_parameters": []
+  },
+  "response_body": {
+   "data": {
+    "productName": "osparc",
+    "usdPerCredit": null,
+    "minPaymentAmountUsd": null
+   }
+  }
+ }
+]

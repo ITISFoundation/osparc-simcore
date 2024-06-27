@@ -14,7 +14,7 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator
 
 import pytest
 from faker import Faker
@@ -23,7 +23,12 @@ from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
-from .test_utils import print_tree
+
+def _print_tree(path: Path, level=0):
+    tab = " " * level
+    print(f"{tab}{'+' if path.is_dir() else '-'} {path if level==0 else path.name}")
+    for p in path.glob("*"):
+        _print_tree(p, level + 1)
 
 
 @pytest.fixture
@@ -96,7 +101,7 @@ def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
     (base_dir / "d1" / "sd1" / "f2.txt").write_text(faker.text())
 
     print("exclude_patterns_validation_dir ---")
-    print_tree(base_dir)
+    _print_tree(base_dir)
     return base_dir
 
 
@@ -174,7 +179,7 @@ def _escape_undecodable_path(path: Path) -> Path:
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
-    inject_relative_path: Optional[Path] = None,
+    inject_relative_path: Path | None = None,
     unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:

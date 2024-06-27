@@ -17,8 +17,8 @@ from typing import Any, Final
 from packaging.version import Version
 from packaging.version import parse as parse_version
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.logging_utils import ContextMessages, log_context, test_logger
-from pytest_simcore.playwright_utils import (
+from pytest_simcore.helpers.logging import ContextMessages, log_context, test_logger
+from pytest_simcore.helpers.playwright import (
     MINUTE,
     RunningState,
     ServiceType,
