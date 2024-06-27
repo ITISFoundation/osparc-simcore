@@ -161,7 +161,7 @@ async def folder_create(
             .where(folders.c.name == name)
             .where(folders_access_rights.c.gid == gid)
             .where(folders_access_rights.c.read.is_(True))
-            .where(folders.c.parent_folder == parent)
+            .where(folders_access_rights.c.parent_folder == parent)
         )
         if entry_exists:
             raise FolderAlreadyExistsError(folder=name, parent=parent, gid=gid)
@@ -180,9 +180,7 @@ async def folder_create(
         # folder entry can now be inserted
         try:
             folder_id = await connection.scalar(
-                sa.insert(folders)
-                .values(name=name, parent_folder=parent, owner=gid)
-                .returning(folders.c.id)
+                sa.insert(folders).values(name=name, owner=gid).returning(folders.c.id)
             )
 
             if not folder_id:
@@ -192,6 +190,7 @@ async def folder_create(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
                     gid=gid,
+                    parent_folder=parent,
                     # NOTE the gid that owns the folder always has full permissions
                     **_parse_permissions(
                         read=True, write=True, delete=True, admin=True
@@ -210,6 +209,7 @@ async def folder_share(
     sharing_gids: set[_GroupID],
     *,
     recipient_gid: _GroupID,
+    parent_folder: _FolderID | None = None,
     recipient_read: bool = False,
     recipient_write: bool = False,
     recipient_delete: bool = False,
@@ -314,6 +314,7 @@ async def folder_share(
         data: dict[str, Any] = {
             "folder_id": folder_id,
             "gid": recipient_gid,
+            "parent_folder": parent_folder,
             **_parse_permissions(
                 read=recipient_read,
                 write=recipient_write,
