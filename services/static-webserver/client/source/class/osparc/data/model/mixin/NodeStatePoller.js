@@ -285,7 +285,7 @@ qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
 
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)
-        this.getIFrame().fireEvent("iframeChanged");
+        this.fireEvent("iframeChanged");
       }
     }
   }
