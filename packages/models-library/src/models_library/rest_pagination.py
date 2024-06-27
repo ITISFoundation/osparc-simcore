@@ -80,15 +80,21 @@ class PageMetaInfoLimitOffset(BaseModel):
         }
 
 
-class PageLinks(BaseModel):
-    self: AnyHttpUrl
-    first: AnyHttpUrl
-    prev: AnyHttpUrl | None
-    next: AnyHttpUrl | None
-    last: AnyHttpUrl
+RefT = TypeVar("RefT")
+
+
+class PageRefs(BaseModel, Generic[RefT]):
+    self: RefT
+    first: RefT
+    prev: RefT | None
+    next: RefT | None
+    last: RefT
 
     class Config:
         extra = Extra.forbid
+
+
+PageLinks = PageRefs[AnyHttpUrl]
 
 
 ItemT = TypeVar("ItemT")
