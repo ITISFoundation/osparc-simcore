@@ -76,7 +76,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         await self._exit_stack.aclose()
 
     async def http_check_bucket_connected(self, *, bucket: S3BucketName) -> bool:
-        return await self.bucket_exists(bucket=bucket)
+        with log_catch(_logger, reraise=False):
+            return await self.bucket_exists(bucket=bucket)
+        return False
 
     @s3_exception_handler(_logger)
     async def create_bucket(
