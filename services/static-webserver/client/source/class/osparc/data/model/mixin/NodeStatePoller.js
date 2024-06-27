@@ -30,24 +30,6 @@ qx.Mixin.define("osparc.data.model.mixin.NodeStatePoller", {
     __stopRequestingStatus: null,
     __retriesLeft: null,
 
-    startDynamicService: function() {
-      if (this.isDynamic()) {
-        this.getStatus().getProgressSequence().resetSequence();
-
-        const metaData = this.getMetaData();
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
-        const msgData = {
-          nodeId: this.getNodeId(),
-          msg,
-          level: "INFO"
-        };
-        this.fireDataEvent("showInLogger", msgData);
-
-        this.__unresponsiveRetries = 5;
-        this.__nodeState();
-      }
-    },
-
     __initIFrame: function() {
       this.__initLoadingPage();
 

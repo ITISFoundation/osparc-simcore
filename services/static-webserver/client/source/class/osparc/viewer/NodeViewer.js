@@ -34,7 +34,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     });
 
     this.self().openStudy(studyId)
-      .then(() => this.__nodeState())
+      .then(() => {
+        this.getStatus().getProgressSequence().resetSequence();
+        this.__unresponsiveRetries = 5;
+        this.__nodeState();
+      })
       .catch(err => console.error(err));
   },
 

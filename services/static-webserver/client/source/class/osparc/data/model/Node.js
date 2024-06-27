@@ -1057,6 +1057,24 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    startDynamicService: function() {
+      if (this.isDynamic()) {
+        this.getStatus().getProgressSequence().resetSequence();
+
+        const metaData = this.getMetaData();
+        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeId: this.getNodeId(),
+          msg,
+          level: "INFO"
+        };
+        this.fireDataEvent("showInLogger", msgData);
+
+        this.__unresponsiveRetries = 5;
+        this.__nodeState();
+      }
+    },
+
     stopDynamicService: function() {
       if (this.isDynamic()) {
         this.getStatus().getProgressSequence().resetSequence();
