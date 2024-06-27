@@ -31,13 +31,16 @@ def app_environment(
 ) -> EnvVarsDict:
     # set environs
     monkeypatch.delenv("CATALOG_RABBITMQ", raising=False)
+    monkeypatch.delenv("CATALOG_DIRECTOR", raising=False)
+    monkeypatch.delenv("CATALOG_POSTGRES", raising=False)
 
     return setenvs_from_dict(
         monkeypatch,
         {
             **app_environment,
             **rabbit_env_vars_dict,
-            "POSTGRES_CLIENT_NAME": "catalog-service-pg-client",
+            "CATALOG_DIRECTOR": "null",  # disabled
+            "CATALOG_POSTGRES": "null",  # disabled
         },
     )
 
