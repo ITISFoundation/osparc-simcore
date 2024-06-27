@@ -39,7 +39,7 @@ class ServiceRelease(BaseModel):
                     "version": "0.9.1",
                     "version_display": "Matterhorn",
                     "released_at": "2024-06-20T18:49:17",
-                    "deprecated_at": "2034-06-20",
+                    "deprecated_at": "2034-06-20T00:00:00",
                     "compatibility": {"can_update_to": "0.9.10"},
                 },
             ]
