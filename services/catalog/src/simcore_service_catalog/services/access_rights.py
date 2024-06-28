@@ -11,7 +11,6 @@ from urllib.parse import quote_plus
 import arrow
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_db import ServiceAccessRightsAtDB
 from packaging.version import Version
 from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -19,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.services_db import ServiceAccessRightsAtDB
 from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)

@@ -1,17 +1,12 @@
-"""
-
-NOTE: to dump json-schema from CLI use
-    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
-"""
-
+import datetime
 from typing import Any, ClassVar
 
-from pydantic import Field
+from models_library.services_access import ServiceGroupAccessRights
+from models_library.services_base import ServiceKeyVersion
+from models_library.services_metadata_editable import ServiceMetaDataEditable
+from models_library.services_types import ServiceVersion
+from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
-
-from .services_access import ServiceGroupAccessRights
-from .services_base import ServiceKeyVersion
-from .services_metadata_editable import ServiceMetaDataEditable
 
 # -------------------------------------------------------------------
 # Databases models
@@ -56,6 +51,16 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                 },
             }
         }
+
+
+class HistoryItem(BaseModel):
+    version: ServiceVersion
+    deprecated: datetime.datetime | None
+    created: datetime.datetime
+
+
+class ServiceHistoryDB(ServiceMetaDataAtDB):
+    history: list[HistoryItem]
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):

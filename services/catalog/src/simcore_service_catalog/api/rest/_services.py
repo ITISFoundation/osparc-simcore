@@ -9,7 +9,6 @@ from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -17,6 +16,7 @@ from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
+from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository

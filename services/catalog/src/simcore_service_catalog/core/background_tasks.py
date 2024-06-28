@@ -18,7 +18,6 @@ from typing import Any, Final, NewType, TypeAlias, cast
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -27,6 +26,7 @@ from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..services import access_rights
 
 _logger = logging.getLogger(__name__)
