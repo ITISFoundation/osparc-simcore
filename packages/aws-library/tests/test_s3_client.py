@@ -1062,7 +1062,8 @@ async def test_copy_file_invalid_raises(
     file = create_file_of_size(parse_obj_as(ByteSize, "1MiB"))
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
-    with pytest.raises(S3BucketInvalidError, match=f"{non_existing_s3_bucket}"):
+    # NOTE: since aioboto3 13.1.0 this raises S3KeyNotFoundError instead of S3BucketInvalidError
+    with pytest.raises(S3KeyNotFoundError, match=f"{non_existing_s3_bucket}"):
         await simcore_s3_api.copy_object(
             bucket=non_existing_s3_bucket,
             src_object_key=uploaded_file.s3_key,
