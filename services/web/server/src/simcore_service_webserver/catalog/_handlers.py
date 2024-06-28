@@ -89,9 +89,9 @@ async def dev_list_services_latest(request: Request):
     assert query_params  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = [
-        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"]),
-    ]
+    got = parse_obj_as(
+        list[DEVServiceGet], DEVServiceGet.Config.schema_extra["examples"]
+    )
 
     return envelope_json_response(
         got[query_params.offset : query_params.offset + query_params.limit]
