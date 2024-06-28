@@ -14,7 +14,7 @@ from packaging.version import Version
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
-    _list_services_key_version_stmt,
+    batch_get_services,
     list_services_with_history_stmt,
     total_count_stmt,
 )
@@ -341,13 +341,15 @@ def test_services_sql_statements():
     product_name = "osparc"
     user_id = 4
 
+    print(f"{total_count_stmt.__name__:*^100}")
     stmt = total_count_stmt(
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
     )
-    print("\n", as_postgres_sql_query_str(stmt))
+    print(as_postgres_sql_query_str(stmt))
 
+    print(f"{list_services_with_history_stmt.__name__:*^100}")
     stmt = list_services_with_history_stmt(
         product_name=product_name,
         user_id=user_id,
@@ -357,7 +359,13 @@ def test_services_sql_statements():
     )
     print(as_postgres_sql_query_str(stmt))
 
-    stmt = _list_services_key_version_stmt(
-        access_rights=AccessRightsClauses.can_read,
+    print(f"{batch_get_services.__name__:*^100}")
+    stmt = batch_get_services(
+        product_name=product_name,
+        selection=[
+            ("simcore/services/comp/kember-cardiac-model", "1.0.0"),
+            ("simcore/services/comp/human-gb-0d-cardiac-model", "1.0.0"),
+            ("simcore/services/dynamic/invalid", "2.0.0"),
+        ],
     )
     print(as_postgres_sql_query_str(stmt))
