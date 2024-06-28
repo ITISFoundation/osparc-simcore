@@ -7,7 +7,9 @@
 import pytest
 from fastapi import FastAPI
 from models_library.products import ProductName
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
+from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -29,22 +31,16 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
 ) -> EnvVarsDict:
-    for name in ("CATALOG_RABBITMQ", "CATALOG_DIRECTOR", "CATALOG_POSTGRES"):
-        monkeypatch.delenv(name, raising=False)
-        app_environment.pop(name, None)
-
+    monkeypatch.delenv("CATALOG_RABBITMQ", raising=False)
     return setenvs_from_dict(
         monkeypatch,
-        {
-            **app_environment,
-            **rabbit_env_vars_dict,
-            "CATALOG_DIRECTOR": "null",  # disabled
-            "CATALOG_POSTGRES": "null",  # disabled
-        },
+        {**app_environment, **rabbit_env_vars_dict},
     )
 
 
 async def test_rcp_catalog_client(
+    postgres_setup_disabled: None,
+    director_setup_disabled: None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
@@ -53,16 +49,20 @@ async def test_rcp_catalog_client(
     assert app
 
     page = await list_services_paginated(
-        rpc_client,
-        product_name=product_name,
-        user_id=user_id,
-        limit=10,
-        offset=0,
+        rpc_client, product_name=product_name, user_id=user_id
     )
 
     assert page.data
     service_key = page.data[0].key
     service_version = page.data[0].version
+
+    with pytest.raises(ValidationError):
+        await list_services_paginated(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 1,
+        )
 
     got = await get_service(
         rpc_client,

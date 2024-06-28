@@ -183,7 +183,7 @@ class _ServiceResourceParams:
 )
 async def test_get_service_resources(
     mocked_catalog_background_task,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
@@ -288,7 +288,7 @@ def create_mock_director_service_labels(
 )
 async def test_get_service_resources_sim4life_case(
     mocked_catalog_background_task,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
@@ -309,7 +309,7 @@ async def test_get_service_resources_sim4life_case(
 
 async def test_get_service_resources_raises_errors(
     mocked_catalog_background_task,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
 ) -> None:

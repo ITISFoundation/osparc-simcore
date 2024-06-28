@@ -125,7 +125,7 @@ def create_service_specifications(
 async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     mocked_catalog_background_task,
     mocked_director_service_api: respx.MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     client: TestClient,
     user_id: UserID,
 ):
@@ -141,7 +141,7 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
 async def test_get_service_specifications_of_unknown_service_returns_default_specs(
     mocked_catalog_background_task,
     mocked_director_service_api: respx.MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
@@ -166,7 +166,7 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
 async def test_get_service_specifications(
     mocked_catalog_background_task,
     mocked_director_service_api: respx.MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,
@@ -259,7 +259,7 @@ async def test_get_service_specifications(
 async def test_get_service_specifications_are_passed_to_newer_versions_of_service(
     mocked_catalog_background_task,
     mocked_director_service_api: respx.MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     app: FastAPI,
     client: TestClient,
     user_id: UserID,

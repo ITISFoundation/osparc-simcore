@@ -29,7 +29,7 @@ pytest_simcore_ops_services_selection = [
 
 async def test_list_services_with_details(
     mocked_catalog_background_task: None,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_api: MockRouter,
     user_id: UserID,
     target_product: ProductName,
@@ -86,7 +86,7 @@ async def test_list_services_with_details(
 async def test_list_services_without_details(
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
     service_catalog_faker: Callable,
@@ -127,10 +127,10 @@ async def test_list_services_without_details(
 
 
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
-    disabled_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
     service_catalog_faker: Callable,
@@ -159,10 +159,10 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 
 
 async def test_list_services_without_details_with_another_product_returns_other_services(
-    disabled_service_caching: None,
+    service_caching_disabled: None,
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
     other_product: ProductName,
@@ -192,10 +192,10 @@ async def test_list_services_without_details_with_another_product_returns_other_
 
 
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
-    disabled_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task,
     mocked_director_service_api: MockRouter,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
     service_catalog_faker: Callable,
@@ -228,9 +228,9 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
 
 
 async def test_list_services_that_are_deprecated(
-    disabled_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_api: MockRouter,
     user_id: int,
     target_product: ProductName,

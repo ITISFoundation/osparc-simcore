@@ -108,8 +108,13 @@ async def app(
 
 
 @pytest.fixture
-def disabled_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+@pytest.fixture
+def postgres_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CATALOG_POSTGRES", "null")
 
 
 #
@@ -118,7 +123,7 @@ def disabled_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def disabled_rabbitmq_and_rpc(mocker: MockerFixture):
+def setup_rabbitmq_and_rpc_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
     mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
     mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
@@ -134,6 +139,11 @@ async def rpc_client(
 #
 # director
 #
+
+
+@pytest.fixture
+def director_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CATALOG_DIRECTOR", "null")
 
 
 @pytest.fixture

@@ -79,11 +79,11 @@ async def mocked_director_service_api(
 
 
 async def test_list_service_ports(
-    disabled_service_caching: None,
+    service_caching_disabled: None,
     mocked_catalog_background_task: None,
     mocked_check_service_read_access: None,
     mocked_director_service_api: None,
-    disabled_rabbitmq_and_rpc: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     client: TestClient,
     product_name: str,
     user_id: int,

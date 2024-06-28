@@ -18,15 +18,15 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
 #    interconnecting paginated calls
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
-
-assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
 
 
 class PageLimitInt(ConstrainedInt):
     ge = 1
     lt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+
+
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = parse_obj_as(PageLimitInt, 20)
 
 
 class PageQueryParameters(BaseModel):
