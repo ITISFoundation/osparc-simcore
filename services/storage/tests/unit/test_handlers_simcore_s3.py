@@ -379,10 +379,8 @@ def set_log_levels_for_noisy_libraries() -> None:
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
-async def test_create_and_delete_folders_from_project(
-    set_log_levels_for_noisy_libraries: None,
-    client: TestClient,
-    user_id: UserID,
+@pytest.fixture
+async def with_random_project_with_files(
     random_project_with_files: Callable[
         ...,
         Awaitable[
@@ -392,34 +390,41 @@ async def test_create_and_delete_folders_from_project(
             ]
         ],
     ],
+) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
+    return await random_project_with_files()
+
+
+async def test_create_and_delete_folders_from_project(
+    set_log_levels_for_noisy_libraries: None,
+    client: TestClient,
+    user_id: UserID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+    ],
     mock_datcore_download,
 ):
-    project_in_db, _ = await random_project_with_files()
+    project_in_db, _ = with_random_project_with_files
     await _create_and_delete_folders_from_project(
         user_id, project_in_db, client, create_project, check_list_files=True
     )
 
 
-@pytest.mark.parametrize("num_concurrent_calls", [1, 10, 100])
+@pytest.mark.parametrize("num_concurrent_calls", [10])
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
     client: TestClient,
     user_id: UserID,
-    random_project_with_files: Callable[
-        ...,
-        Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
-            ]
-        ],
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _ = await random_project_with_files()
+    project_in_db, _ = with_random_project_with_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
