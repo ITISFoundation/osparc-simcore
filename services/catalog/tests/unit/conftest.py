@@ -6,15 +6,17 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 
 import pytest
+import respx
 import simcore_service_catalog
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -127,3 +129,26 @@ async def rpc_client(
     faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client(f"catalog-client-{faker.word()}")
+
+
+#
+# director
+#
+
+
+@pytest.fixture
+def mocked_director_service_api(
+    app_settings: ApplicationSettings,
+) -> Iterator[respx.MockRouter]:
+    assert app_settings.CATALOG_DIRECTOR
+    with respx.mock(
+        base_url=app_settings.CATALOG_DIRECTOR.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
+        respx_mock.get("/services", name="list_services").respond(
+            200, json={"data": ["one", "two"]}
+        )
+
+        yield respx_mock

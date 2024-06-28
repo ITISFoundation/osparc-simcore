@@ -11,7 +11,6 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-import respx
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
@@ -85,24 +84,6 @@ def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
-
-
-@pytest.fixture
-def mocked_director_service_api(
-    app_settings: ApplicationSettings,
-) -> Iterator[respx.MockRouter]:
-    assert app_settings.CATALOG_DIRECTOR
-    with respx.mock(
-        base_url=app_settings.CATALOG_DIRECTOR.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": ["one", "two"]}
-        )
-
-        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------
