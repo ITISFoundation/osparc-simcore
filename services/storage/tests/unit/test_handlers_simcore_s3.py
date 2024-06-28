@@ -29,6 +29,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from settings_library.s3 import S3Settings
@@ -42,7 +43,7 @@ from yarl import URL
 from ..helpers.utils import get_updated_project
 
 pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_ops_services_selection = ["adminer", "minio"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -428,9 +429,10 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
-@pytest.mark.parametrize("num_concurrent_calls", [10])
+@pytest.mark.parametrize("num_concurrent_calls", [50])
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
+    minio_s3_settings_envs: EnvVarsDict,
     client: TestClient,
     user_id: UserID,
     with_random_project_with_files: tuple[

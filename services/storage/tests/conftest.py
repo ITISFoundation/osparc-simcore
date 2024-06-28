@@ -163,7 +163,6 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 def app_settings(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
-    # minio_s3_settings_envs: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
     monkeypatch: pytest.MonkeyPatch,
