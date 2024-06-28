@@ -37,8 +37,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
           // create node
           const node = new osparc.data.model.Node(study, key, version, nodeId);
-
-          this.__iframeHandler = new osparc.data.model.IframeHandler(study, node);
+          node.initIframeHandler();
+          this.__iframeHandler = node.getIframeHandler();
           this.__iframeHandler.startPolling();
 
           this.__iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
