@@ -16,7 +16,6 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
