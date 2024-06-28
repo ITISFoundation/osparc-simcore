@@ -373,7 +373,14 @@ async def _create_and_delete_folders_from_project(
         assert not data
 
 
+@pytest.fixture
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+
 async def test_create_and_delete_folders_from_project(
+    set_log_levels_for_noisy_libraries: None,
     client: TestClient,
     user_id: UserID,
     random_project_with_files: Callable[
@@ -392,12 +399,6 @@ async def test_create_and_delete_folders_from_project(
     await _create_and_delete_folders_from_project(
         user_id, project_in_db, client, create_project, check_list_files=True
     )
-
-
-@pytest.fixture
-def set_log_levels_for_noisy_libraries() -> None:
-    # Reduce the log level for 'werkzeug'
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
 @pytest.mark.parametrize("num_concurrent_calls", [1, 10, 100])
