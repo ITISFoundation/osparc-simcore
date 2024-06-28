@@ -43,9 +43,11 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
@@ -161,8 +163,24 @@ def app_settings(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Settings:
+    # TODO: fix the externals
+    if external_envfile_dict:
+        s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
+        if s3_settings.S3_ENDPOINT is None:
+            monkeypatch.delenv("S3_ENDPOINT")
+            setenvs_from_dict(
+                monkeypatch,
+                s3_settings.dict(exclude={"S3_ENDPOINT"}),
+            )
+        else:
+            setenvs_from_dict(
+                monkeypatch,
+                s3_settings.dict(),
+            )
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings

@@ -394,6 +394,23 @@ async def with_random_project_with_files(
     return await random_project_with_files()
 
 
+async def test_connect_to_external(
+    set_log_levels_for_noisy_libraries: None,
+    client: TestClient,
+    user_id: UserID,
+    project_id: ProjectID,
+):
+    assert client.app
+    url = (
+        client.app.router["get_files_metadata"]
+        .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
+        .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+    )
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, status.HTTP_200_OK)
+    print(data)
+
+
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
     client: TestClient,
