@@ -1,19 +1,21 @@
 from locust import HttpUser, task
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
 from urllib3 import PoolManager, Retry
 
 
 class UserSettings(BaseSettings):
-    username: str = Field(default=...)
-    password: str = Field(default=...)
+    key: str = Field(default=...)
+    secret: str = Field(default=...)
+
+    model_config = SettingsConfigDict(env_prefix="osparc_api_")
 
 
 class MetaModelingUser(HttpUser):
     def __init__(self, *args, **kwargs):
         config = UserSettings()
-        self._auth = HTTPBasicAuth(username=config.username, password=config.password)
+        self._auth = HTTPBasicAuth(username=config.key, password=config.secret)
         retry_strategy = Retry(
             total=4,
             backoff_factor=4.0,
