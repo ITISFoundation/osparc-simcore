@@ -53,6 +53,7 @@ qx.Class.define("osparc.data.model.Node", {
     this.setOutputs({});
 
     this.__inputNodes = [];
+    this.__inputsRequired = [];
 
     if (study) {
       this.setStudy(study);
@@ -133,11 +134,6 @@ qx.Class.define("osparc.data.model.Node", {
       check: "Object",
       // nullable: false,
       event: "changeInputs"
-    },
-
-    inputsRequired: {
-      check: "Array",
-      init: []
     },
 
     outputs: {
@@ -336,6 +332,7 @@ qx.Class.define("osparc.data.model.Node", {
   members: {
     __metaData: null,
     __inputNodes: null,
+    __inputsRequired: null,
     __settingsForm: null,
     __posX: null,
     __posY: null,
@@ -885,6 +882,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
     // !---- Input Nodes -----
 
+    // ----- Inputs Required -----
+    getInputsRequired: function() {
+      return this.__inputsRequired;
+    },
+
+    setInputsRequired: function(inputsRequired) {
+      this.__inputsRequired = inputsRequired;
+    },
+
     toggleInputRequired: function(portId) {
       const inputsRequired = this.getInputsRequired();
       const index = inputsRequired.indexOf(portId);
@@ -896,6 +902,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setInputsRequired(inputsRequired);
       this.fireEvent("changeInputsRequired");
     },
+    // !---- Inputs Required -----
 
     canNodeStart: function() {
       return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());
