@@ -361,7 +361,7 @@ async def service_metadata_faker(faker: Faker) -> Callable:
 
 
 @pytest.fixture()
-async def service_catalog_faker(
+async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
