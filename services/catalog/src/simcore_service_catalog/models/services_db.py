@@ -60,6 +60,7 @@ class HistoryItem(BaseModel):
 
 
 class ServiceHistoryDB(ServiceMetaDataAtDB):
+    owner_email: str | None
     history: list[HistoryItem]
 
 

@@ -235,20 +235,20 @@ class ServicesRepository(BaseRepository):
             total_count = result.scalar() or 0
 
             result = await conn.execute(stmt_page)
-            rows = result.fetchall()
+            rows = result.mappings().fetchall()
             assert len(rows) <= total_count  # nosec
 
         # batch-get latest
-        latest = [(s.key, s.history[0].version) for s in rows if s.history]
+        latest = [(s["key"], s["history"][0]["version"]) for s in rows]
         stmt = batch_get_services_stmt(product_name=product_name, selection=latest)
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt)
-            latest_services = {s.key: dict(s) for s in result.fetchall()}
+            latest_services = {s["key"]: s for s in result.mappings().fetchall()}
 
         # compose history with latest
         items_page = [
-            ServiceHistoryDB.parse_obj({**dict(r), **latest_services.get(r.key, {})})
+            ServiceHistoryDB.parse_obj({**r, **latest_services.get(r["key"], {})})
             for r in rows
         ]
 

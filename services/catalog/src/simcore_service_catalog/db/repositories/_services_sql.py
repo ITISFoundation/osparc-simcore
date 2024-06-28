@@ -89,7 +89,13 @@ def batch_get_services_stmt(
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version)
                 & (services_access_rights.c.product_name == product_name),
-            ).join(users, services_meta_data.c.owner == users.c.id)
+            )
+            # NOTE: owner can be NULL
+            .join(
+                user_to_groups,
+                services_meta_data.c.owner == user_to_groups.c.gid,
+                isouter=True,
+            ).join(users, user_to_groups.c.uid == users.c.id, isouter=True)
         )
         .where(
             or_(
