@@ -61,10 +61,14 @@ async def test__copy_path_s3_s3(
         )
 
     async def _count_files(s3_file_id: SimcoreS3FileID, expected_count: int) -> None:
-        files = await get_s3_client(simcore_s3_dsm.app).list_files(
-            simcore_s3_dsm.simcore_bucket_name, prefix=s3_file_id
-        )
-        assert len(files) == expected_count
+        s3_client = get_s3_client(simcore_s3_dsm.app)
+        counted_files = 0
+        async for s3_objects in s3_client.list_objects_paginated(
+            bucket=simcore_s3_dsm.simcore_bucket_name, prefix=s3_file_id
+        ):
+            counted_files += len(s3_objects)
+
+        assert counted_files == expected_count
 
     # using directory
 
