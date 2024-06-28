@@ -5,6 +5,7 @@
 # pylint:disable=no-name-in-module
 # pylint:disable=too-many-nested-blocks
 
+import asyncio
 import logging
 import sys
 from collections.abc import Awaitable, Callable
@@ -30,7 +31,6 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
-from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
@@ -400,6 +400,7 @@ def set_log_levels_for_noisy_libraries() -> None:
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
+@pytest.mark.parametrize("num_concurrent_calls", [1, 10, 100])
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
     client: TestClient,
@@ -415,16 +416,17 @@ async def test_create_and_delete_folders_from_project_burst(
     ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
+    num_concurrent_calls: int,
 ):
     project_in_db, _ = await random_project_with_files()
-    await limited_gather(
+    # NOTE: here the point is to NOT have a limit on the number of calls!!
+    await asyncio.gather(
         *[
             _create_and_delete_folders_from_project(
                 user_id, project_in_db, client, create_project, check_list_files=False
             )
-            for _ in range(100)
-        ],
-        limit=0,
+            for _ in range(num_concurrent_calls)
+        ]
     )
 
 
