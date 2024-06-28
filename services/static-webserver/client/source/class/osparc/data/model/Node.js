@@ -889,6 +889,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     setInputsRequired: function(inputsRequired) {
       this.__inputsRequired = inputsRequired;
+      this.fireEvent("changeInputsRequired");
     },
 
     toggleInputRequired: function(portId) {
@@ -900,7 +901,6 @@ qx.Class.define("osparc.data.model.Node", {
         inputsRequired.push(portId);
       }
       this.setInputsRequired(inputsRequired);
-      this.fireEvent("changeInputsRequired");
     },
     // !---- Inputs Required -----
 
