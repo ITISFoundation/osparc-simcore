@@ -71,14 +71,6 @@ def _build_cache_key(fct, *_, **kwargs):
 router = APIRouter()
 
 
-# TODO:
-# - move `access layer` away from the handler implementation using dependency injection
-# - pagination, filters, search?
-# - Test speed against new
-# - reduce dependency with directorv0 -> access to registry
-#
-
-
 # NOTE: this call is pretty expensive and can be called several times
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
