@@ -1,9 +1,11 @@
-aioboto3==9.6.0
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/_test.in
-aiobotocore==2.3.0
+aioboto3==13.1.0
+    # via -r requirements/_test.in
+aiobotocore==2.13.1
     # via aioboto3
+aiofiles==23.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   aioboto3
 aiohttp==3.9.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -42,13 +44,12 @@ aws-xray-sdk==2.13.0
     # via moto
 blinker==1.8.1
     # via flask
-boto3==1.21.21
+boto3==1.34.131
     # via
-    #   -c requirements/./constraints.txt
     #   aiobotocore
     #   aws-sam-translator
     #   moto
-botocore==1.24.21
+botocore==1.34.131
     # via
     #   aiobotocore
     #   aws-xray-sdk
@@ -286,7 +287,7 @@ rpds-py==0.18.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.5.2
+s3transfer==0.10.2
     # via boto3
 sarif-om==1.0.4
     # via cfn-lint
