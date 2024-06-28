@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, cast
 from urllib.parse import quote_plus
 
+import arrow
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_db import ServiceAccessRightsAtDB
@@ -45,9 +46,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
 
     _logger.debug("retrieved service extras are %s", data)
 
-    service_build_data = datetime.strptime(
-        data["build_date"], "%Y-%m-%dT%H:%M:%SZ"
-    ).replace(tzinfo=timezone.utc)
+    service_build_data = arrow.get(data["build_date"]).datetime
     return service_build_data < _LEGACY_SERVICES_DATE
 
 
