@@ -97,14 +97,6 @@ def package_dir(here: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here: Path) -> Path:
-    root_dir = here.parent.parent.parent
-    assert root_dir.exists()
-    assert any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
-    return root_dir
-
-
-@pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = osparc_simcore_root_dir / "services" / "storage"
