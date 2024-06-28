@@ -8407,6 +8407,21 @@ components:
           type: string
           description: Owner's last name
       additionalProperties: false
+    PageLinks:
+      title: PageLinks
+      type: object
+      properties:
+        self:
+          title: Self
+        first:
+          title: First
+        prev:
+          title: Prev
+        next:
+          title: Next
+        last:
+          title: Last
+      additionalProperties: false
     PageMetaInfoLimitOffset:
       title: PageMetaInfoLimitOffset
       required:
@@ -8434,21 +8449,6 @@ components:
           minimum: 0
           type: integer
       additionalProperties: false
-    PageRefs:
-      title: PageRefs
-      type: object
-      properties:
-        self:
-          title: Self
-        first:
-          title: First
-        prev:
-          title: Prev
-        next:
-          title: Next
-        last:
-          title: Last
-      additionalProperties: false
     Page_CatalogServiceGet_:
       title: Page[CatalogServiceGet]
       required:
@@ -8460,7 +8460,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8479,7 +8479,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8498,7 +8498,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8517,7 +8517,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8536,7 +8536,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8555,7 +8555,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -8574,7 +8574,7 @@ components:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
         _links:
-          $ref: '#/components/schemas/PageRefs'
+          $ref: '#/components/schemas/PageLinks'
         data:
           title: Data
           type: array
@@ -10349,14 +10349,17 @@ components:
         version_display:
           title: Version Display
           type: string
-        released_at:
-          title: Released At
+        released:
+          title: Released
           type: string
+          description: When provided, it indicates the release timestamp
           format: date-time
-        deprecated_at:
-          title: Deprecated At
+        retired:
+          title: Retired
           type: string
-          description: If deprecated, it sets the deprecation date
+          description: 'whether this service is planned to be retired. If None, the
+            service is still active. If now<retired then the service is deprecated.
+            If retired<now then the service is retired and should not be used. '
           format: date-time
         compatibility:
           $ref: '#/components/schemas/Compatibility'
