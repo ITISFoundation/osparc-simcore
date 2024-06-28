@@ -3,7 +3,6 @@ import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import Any, cast
 
 import packaging.version
@@ -18,7 +17,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import PositiveInt, ValidationError
+from pydantic import BaseModel, PositiveInt, ValidationError, parse_obj_as
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -61,15 +60,13 @@ def merge_specs(
     return merged_spec
 
 
-@dataclass
-class HistoryItem:
+class HistoryItem(BaseModel):
     version: VersionStr
     deprecated: datetime.datetime | None
     created: datetime.datetime
 
 
-@dataclass
-class ServiceHistoryItem:
+class ServiceHistory(BaseModel):
     key: ServiceKey
     history: list[HistoryItem]
 
@@ -220,11 +217,13 @@ class ServicesRepository(BaseRepository):
 
     async def list_services_with_history(
         self,
+        # access-rights
         product_name: ProductName,
         user_id: UserID,
+        # pagination
         limit: int | None = None,
         offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceHistoryItem]]:
+    ) -> tuple[PositiveInt, list[ServiceHistory]]:
 
         access_rights = create_access_rights_clause(
             product_name=product_name,
@@ -244,13 +243,7 @@ class ServicesRepository(BaseRepository):
             total_count = result.scalar() or 0
 
             result = await conn.execute(stmt_page)
-            items = [
-                ServiceHistoryItem(
-                    key=s.key,
-                    history=[HistoryItem(**h) for h in s.history],
-                )
-                for s in result
-            ]
+            items = parse_obj_as(list[ServiceHistory], result)
             assert len(items) <= total_count  # nosec
             return (total_count, items)
 
