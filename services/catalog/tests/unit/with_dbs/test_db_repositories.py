@@ -15,6 +15,7 @@ from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     batch_get_services_stmt,
+    list_services_stmt2,
     list_services_with_history_stmt,
     total_count_stmt,
 )
@@ -382,4 +383,8 @@ def test_services_sql_statements():
             ("simcore/services/dynamic/invalid", "2.0.0"),
         ],
     )
+    print(as_postgres_sql_query_str(stmt))
+
+    print(f"{list_services_stmt2.__name__:*^100}")
+    stmt = list_services_stmt2()
     print(as_postgres_sql_query_str(stmt))
