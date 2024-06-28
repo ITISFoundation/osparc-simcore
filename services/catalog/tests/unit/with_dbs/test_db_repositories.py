@@ -10,6 +10,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
+from pydantic import EmailStr, parse_obj_as
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
@@ -337,6 +338,16 @@ async def test_list_all_services_and_history_with_pagination(
 
     for service in services_items:
         assert len(service.history) == num_versions_per_service
+
+    assert parse_obj_as(
+        EmailStr, services_items[0].owner_email
+    ), "resolved own'es email"
+    assert (
+        services_items[0].version == services_items[0].history[-1].version
+    ), "resolved latest"
+
+    # TODO:
+    #  - test with NULL owner
 
 
 def test_services_sql_statements():
