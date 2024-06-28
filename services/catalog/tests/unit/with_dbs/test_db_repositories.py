@@ -11,7 +11,7 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
-from simcore_postgres_database.utils import as_postgres_sql_statement
+from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     _list_services_key_version_stmt,
@@ -45,45 +45,45 @@ class FakeCatalogInfo:
     expected_0_x_x: list[str] = field(default_factory=list)
 
 
-@pytest.fixture()
+@pytest.fixture
 async def fake_catalog_with_jupyterlab(
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
 ) -> FakeCatalogInfo:
 
     # injects fake data in db
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.7",
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.10.0",
                 team_access="x",
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "1.1.0",
                 team_access="xw",
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "1.1.3",
                 team_access=None,
@@ -102,10 +102,10 @@ async def fake_catalog_with_jupyterlab(
 
 
 async def test_create_services(
-    services_repo: ServicesRepository, service_catalog_faker: Callable
+    services_repo: ServicesRepository, create_fake_service_data: Callable
 ):
     # creates fake data
-    fake_service, *fake_access_rights = service_catalog_faker(
+    fake_service, *fake_access_rights = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.0",
         team_access=None,
@@ -129,21 +129,21 @@ async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: list[int],
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
 ):
 
     # injects fake data in db
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "1.0.0",
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "1.0.2",
                 team_access="x",
@@ -298,7 +298,7 @@ async def test_list_all_services_and_history(
 
 async def test_list_all_services_and_history_with_pagination(
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
@@ -307,7 +307,7 @@ async def test_list_all_services_and_history_with_pagination(
     num_versions_per_service = 20
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 f"simcore/services/dynamic/some-service-{n}",
                 f"{v}.0.0",
                 team_access=None,
@@ -345,12 +345,12 @@ def test_services_sql_queries():
     )
 
     stmt = _list_services_key_version_stmt(access_rights=access_rights)
-    print(as_postgres_sql_statement(stmt))
+    print(as_postgres_sql_query_str(stmt))
 
     stmt = total_count_stmt(access_rights=access_rights)
-    print(as_postgres_sql_statement(stmt))
+    print(as_postgres_sql_query_str(stmt))
 
     stmt = list_services_with_history_stmt(
         access_rights=access_rights, limit=10, offset=None
     )
-    print(as_postgres_sql_statement(stmt))
+    print(as_postgres_sql_query_str(stmt))
