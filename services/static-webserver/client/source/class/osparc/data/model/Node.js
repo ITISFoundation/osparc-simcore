@@ -340,10 +340,6 @@ qx.Class.define("osparc.data.model.Node", {
     __stopRequestingStatus: null,
     __retriesLeft: null,
 
-    __applyInputsRequired: function(n, o) {
-      console.log("hello", n, o);
-    },
-
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
     },
@@ -1547,8 +1543,6 @@ qx.Class.define("osparc.data.model.Node", {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }
-
-      console.log("serialize", filteredNodeEntry.label, filteredNodeEntry.inputsRequired);
 
       return filteredNodeEntry;
     }
