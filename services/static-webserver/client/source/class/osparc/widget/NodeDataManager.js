@@ -173,6 +173,7 @@ qx.Class.define("osparc.widget.NodeDataManager", {
 
     __reloadTree: function() {
       if (this.__filesTree) {
+        this.__filesTree.resetCache();
         if (this.getStudyId()) {
           this.__filesTree.populateStudyTree(this.getStudyId());
         }
