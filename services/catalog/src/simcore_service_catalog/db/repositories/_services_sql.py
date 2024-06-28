@@ -211,3 +211,34 @@ def list_services_with_history_stmt(
             )
         ).label("history"),
     ).group_by(subquery.c.key)
+
+
+def list_services_stmt2():
+    # Subquery to get the latest version for each key
+    subquery = sa.select(
+        services_meta_data.c.key,
+        services_meta_data.c.version,
+        services_meta_data.c.description,
+        func.row_number()
+        .over(
+            partition_by=services_meta_data.c.key,
+            order_by=sa.desc(_version(services_meta_data.c.version)),
+        )
+        .label("row_num"),
+    ).alias("s")
+
+    return (
+        sa.select(
+            subquery.c.key,
+            subquery.c.description,
+            func.array_agg(services_meta_data.c.version).label("history"),
+        )
+        .select_from(
+            subquery.join(
+                services_meta_data, subquery.c.key == services_meta_data.c.key
+            )
+        )
+        .where(subquery.c.row_num == 1)
+        .group_by(subquery.c.key, subquery.c.description)
+        .order_by(subquery.c.key)
+    )
