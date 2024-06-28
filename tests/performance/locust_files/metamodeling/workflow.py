@@ -22,5 +22,6 @@ class MetaModelingUser(HttpUser):
             respect_retry_after_header=True,
             raise_on_status=True,
         )
-        pool_manager = PoolManager(key_retries=retry_strategy)
-        super().__init__(*args, **kwargs, pool_manager=pool_manager)
+        super().__init__(
+            *args, **kwargs, pool_manager=PoolManager(key_retries=retry_strategy)
+        )
