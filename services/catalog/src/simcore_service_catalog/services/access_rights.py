@@ -31,7 +31,7 @@ def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
     return "/frontend/" in service.key
 
 
-async def _is_legacy_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
+async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
     # get service build date
     client = get_director_api(app)
     data = cast(
@@ -68,7 +68,7 @@ async def evaluate_default_policy(
     owner_gid = None
     group_ids: list[PositiveInt] = []
 
-    if _is_frontend_service(service) or await _is_legacy_service(app, service):
+    if _is_frontend_service(service) or await _is_old_service(app, service):
         everyone_gid = (await groups_repo.get_everyone_group()).gid
         _logger.debug("service %s:%s is old or frontend", service.key, service.version)
         # let's make that one available to everyone

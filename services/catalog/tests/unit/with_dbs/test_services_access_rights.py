@@ -94,7 +94,7 @@ async def test_auto_upgrade_policy(
 
     # Avoids calls to director API
     mocker.patch(
-        "simcore_service_catalog.services.access_rights._is_legacy_service",
+        "simcore_service_catalog.services.access_rights._is_old_service",
         return_value=False,
     )
     # Avoids creating a users + user_to_group table
