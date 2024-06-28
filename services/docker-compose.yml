@@ -1187,7 +1187,7 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
         # middleware for limiting total inflight requests the api-server is handling
         - traefik.http.middlewares.ensure-group-header-${SWARM_STACK_NAME}_api-server.headers.customrequestheaders.X-Inflight-Limit-Group=all
-        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${API_SERVER_INFLIGHTREQ_AMOUNT}
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT}
         - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.sourcecriterion.requestheadername=X-Inflight-Limit-Group
         - traefik.http.middlewares.inflightreq-${SWARM_STACK_NAME}_api-server.chain.middlewares=ensure-group-header-${SWARM_STACK_NAME}_api-server,limit-reqs-${SWARM_STACK_NAME}_api-server
     networks:
