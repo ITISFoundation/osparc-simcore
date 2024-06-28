@@ -29,7 +29,6 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
-    create_access_rights_clause,
     list_services_stmt,
     list_services_with_history_stmt,
     total_count_stmt,
@@ -66,7 +65,7 @@ class HistoryItem(BaseModel):
     created: datetime.datetime
 
 
-class ServiceHistory(BaseModel):
+class ServiceHistoryDB(BaseModel):
     key: ServiceKey
     history: list[HistoryItem]
 
@@ -223,17 +222,17 @@ class ServicesRepository(BaseRepository):
         # pagination
         limit: int | None = None,
         offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceHistory]]:
+    ) -> tuple[PositiveInt, list[ServiceHistoryDB]]:
 
-        access_rights = create_access_rights_clause(
+        stmt_total = total_count_stmt(
             product_name=product_name,
             user_id=user_id,
-            access_clause=AccessRightsClauses.can_read,
+            access_rights=AccessRightsClauses.can_read,
         )
-
-        stmt_total = total_count_stmt(access_rights=access_rights)
         stmt_page = list_services_with_history_stmt(
-            access_rights=access_rights,
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
             limit=limit,
             offset=offset,
         )
@@ -243,7 +242,7 @@ class ServicesRepository(BaseRepository):
             total_count = result.scalar() or 0
 
             result = await conn.execute(stmt_page)
-            items = parse_obj_as(list[ServiceHistory], result)
+            items = parse_obj_as(list[ServiceHistoryDB], result)
             assert len(items) <= total_count  # nosec
             return (total_count, items)
 
