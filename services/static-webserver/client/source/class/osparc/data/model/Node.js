@@ -32,7 +32,6 @@
  * <pre class='javascript'>
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
- *   node.startDynamicService();
  * </pre>
  */
 
@@ -477,9 +476,8 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       this.__initLogger();
-      if (this.isDynamic()) {
-        this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this);
-      }
+
+      this.initIframeHandler();
 
       if (this.isParameter()) {
         this.__initParameter();
@@ -521,6 +519,12 @@ qx.Class.define("osparc.data.model.Node", {
       }
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
+      }
+    },
+
+    initIframeHandler: function() {
+      if (this.isDynamic()) {
+        this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this);
       }
     },
 
@@ -911,7 +915,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "startNode", params)
-        .then(() => this.startDynamicService())
+        .then(() => this.startPollingState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
             osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
@@ -1059,7 +1063,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startDynamicService: function() {
+    startPollingState: function() {
       if (this.isDynamic()) {
         const metaData = this.getMetaData();
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
