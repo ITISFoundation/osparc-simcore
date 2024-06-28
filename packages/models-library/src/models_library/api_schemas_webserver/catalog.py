@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import Extra, Field
@@ -100,18 +99,137 @@ ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
 ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
-_EXAMPLE: dict[str, Any] = deepcopy(
-    api_schemas_catalog_services.ServiceGet.Config.schema_extra["example"]
-)
-_EXAMPLE.update(
-    {
+_EXAMPLE_FILEPICKER: dict[str, Any] = {
+    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["example"],
+    **{
         "inputs": {
             f"input{i}": example
             for i, example in enumerate(ServiceInputGet.Config.schema_extra["examples"])
         },
         "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
-    }
-)
+    },
+}
+
+
+_EXAMPLE_SLEEPER: dict[str, Any] = {
+    "name": "sleeper",
+    "thumbnail": None,
+    "description": "A service which awaits for time to pass, two times.",
+    "classifiers": [],
+    "quality": {},
+    "accessRights": {"1": {"execute_access": True, "write_access": False}},
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "2.2.1",
+    "version_display": "2 Xtreme",
+    "integration-version": "1.0.0",
+    "type": "computational",
+    "authors": [
+        {
+            "name": "Author Bar",
+            "email": "author@acme.com",
+            "affiliation": "ACME",
+        },
+    ],
+    "contact": "contact@acme.com",
+    "inputs": {
+        "input_1": {
+            "displayOrder": 1,
+            "label": "File with int number",
+            "description": "Pick a file containing only one integer",
+            "type": "data:text/plain",
+            "fileToKeyMap": {"single_number.txt": "input_1"},
+            "keyId": "input_1",
+        },
+        "input_2": {
+            "unitLong": "second",
+            "unitShort": "s",
+            "label": "Sleep interval",
+            "description": "Choose an amount of time to sleep in range [0:]",
+            "keyId": "input_2",
+            "displayOrder": 2,
+            "type": "ref_contentSchema",
+            "contentSchema": {
+                "title": "Sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+                "minimum": 0,
+            },
+            "defaultValue": 2,
+        },
+        "input_3": {
+            "displayOrder": 3,
+            "label": "Fail after sleep",
+            "description": "If set to true will cause service to fail after it sleeps",
+            "type": "boolean",
+            "defaultValue": False,
+            "keyId": "input_3",
+        },
+        "input_4": {
+            "unitLong": "meter",
+            "unitShort": "m",
+            "label": "Distance to bed",
+            "description": "It will first walk the distance to bed",
+            "keyId": "input_4",
+            "displayOrder": 4,
+            "type": "ref_contentSchema",
+            "contentSchema": {
+                "title": "Distance to bed",
+                "type": "integer",
+                "x_unit": "meter",
+            },
+            "defaultValue": 0,
+        },
+        "input_5": {
+            "unitLong": "byte",
+            "unitShort": "B",
+            "label": "Dream (or nightmare) of the night",
+            "description": "Defines the size of the dream that will be generated [0:]",
+            "keyId": "input_5",
+            "displayOrder": 5,
+            "type": "ref_contentSchema",
+            "contentSchema": {
+                "title": "Dream of the night",
+                "type": "integer",
+                "x_unit": "byte",
+                "minimum": 0,
+            },
+            "defaultValue": 0,
+        },
+    },
+    "outputs": {
+        "output_1": {
+            "displayOrder": 1,
+            "label": "File containing one random integer",
+            "description": "Integer is generated in range [1-9]",
+            "type": "data:text/plain",
+            "fileToKeyMap": {"single_number.txt": "output_1"},
+            "keyId": "output_1",
+        },
+        "output_2": {
+            "unitLong": "second",
+            "unitShort": "s",
+            "label": "Random sleep interval",
+            "description": "Interval is generated in range [1-9]",
+            "keyId": "output_2",
+            "displayOrder": 2,
+            "type": "ref_contentSchema",
+            "contentSchema": {
+                "title": "Random sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+            },
+        },
+        "output_3": {
+            "displayOrder": 3,
+            "label": "Dream output",
+            "description": "Contains some random data representing a dream",
+            "type": "data:text/plain",
+            "fileToKeyMap": {"dream.txt": "output_3"},
+            "keyId": "output_3",
+        },
+    },
+    "owner": "owner@acme.com",
+}
 
 
 class ServiceGet(api_schemas_catalog_services.ServiceGet):
@@ -124,7 +242,7 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
     )
 
     class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _EXAMPLE}
+        schema_extra: ClassVar[dict[str, Any]] = {"example": _EXAMPLE_FILEPICKER}
 
 
 class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
@@ -148,39 +266,51 @@ class DEVServiceGet(ServiceGet):
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                **_EXAMPLE,  # 1.0.0
-                "history": [
-                    {
-                        "version": "1.0.5",
-                        "version_display": "Summer Release",
-                        "release_date": "2024-07-20T15:00:00",
-                    },
-                    {
-                        "version": _EXAMPLE["version"],
-                        "compatibility": {
-                            "can_update_to": "1.0.5",
+            "examples": [
+                {
+                    **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
+                    "history": [
+                        {
+                            "version": _EXAMPLE_SLEEPER["version"],
+                            "version_display": "Summer Release",
+                            "release_date": "2024-07-20T15:00:00",
                         },
-                    },
-                    {"version": "0.9.11"},
-                    {"version": "0.9.10"},
-                    {
-                        "version": "0.9.8",
-                        "compatibility": {
-                            "can_update_to": "0.9.10",
+                        {
+                            "version": "2.0.0",
+                            "compatibility": {
+                                "can_update_to": _EXAMPLE_SLEEPER["version"],
+                            },
                         },
-                    },
-                    {
-                        "version": "0.9.1",
-                        "version_display": "Matterhorn",
-                        "release_date": "2024-01-20T18:49:17",
-                        "compatibility": {
-                            "can_update_to": "0.9.10",
+                        {"version": "0.9.11"},
+                        {"version": "0.9.10"},
+                        {
+                            "version": "0.9.8",
+                            "compatibility": {
+                                "can_update_to": "0.9.11",
+                            },
                         },
-                    },
-                    {"version": "0.9.0"},
-                    {"version": "0.8.0"},
-                    {"version": "0.1.0"},
-                ],
-            }
+                        {
+                            "version": "0.9.1",
+                            "version_display": "Matterhorn",
+                            "release_date": "2024-01-20T18:49:17",
+                            "compatibility": {
+                                "can_update_to": "0.9.11",
+                            },
+                        },
+                        {"version": "0.9.0"},
+                        {"version": "0.8.0"},
+                        {"version": "0.1.0"},
+                    ],
+                },
+                {
+                    **_EXAMPLE_FILEPICKER,
+                    "history": [
+                        {
+                            "version": _EXAMPLE_FILEPICKER["version"],
+                            "version_display": "Odei Release",
+                            "release_date": "2025-03-25T00:00:00",
+                        }
+                    ],
+                },
+            ]
         }

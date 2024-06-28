@@ -90,7 +90,7 @@ async def dev_list_services_latest(request: Request):
 
     _logger.debug("Moking response for %s...", request)
     got = [
-        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
+        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"]),
     ]
 
     return envelope_json_response(
@@ -113,7 +113,7 @@ async def dev_get_service(request: Request):
     assert path_params  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
     got.version = path_params.service_version
     got.key = path_params.service_key
 
@@ -137,7 +137,7 @@ async def dev_update_service(request: Request):
     assert update  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"][0])
     got.version = path_params.service_version
     got.key = path_params.service_key
     updated = got.copy(update=update.dict(exclude_unset=True))
