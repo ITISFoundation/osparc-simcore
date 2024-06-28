@@ -280,14 +280,14 @@ async def test_list_all_services_and_history(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
 
-    total_count, all_services = await services_repo.list_services_with_history(
+    total_count, services_items = await services_repo.list_services_with_history(
         product_name=target_product, user_id=user_id
     )
-    assert len(all_services) == 1
+    assert len(services_items) == 1
     assert total_count == 1
 
-    assert all_services[0].key == "simcore/services/dynamic/jupyterlab"
-    history = all_services[0].history
+    assert services_items[0].key == "simcore/services/dynamic/jupyterlab"
+    history = services_items[0].history
     assert len(history) == fake_catalog_with_jupyterlab.expected_services_count
 
     # latest, ..., first version
@@ -321,21 +321,21 @@ async def test_list_all_services_and_history_with_pagination(
         ]
     )
 
-    total_count, all_services = await services_repo.list_services_with_history(
+    total_count, services_items = await services_repo.list_services_with_history(
         product_name=target_product, user_id=user_id
     )
-    assert len(all_services) == num_services
+    assert len(services_items) == num_services
     assert total_count == num_services
 
-    for service in all_services:
+    for service in services_items:
         assert len(service.history) == num_versions_per_service
 
-    _, all_services = await services_repo.list_services_with_history(
+    _, services_items = await services_repo.list_services_with_history(
         product_name=target_product, user_id=user_id, limit=2
     )
-    assert len(all_services) == 2
+    assert len(services_items) == 2
 
-    for service in all_services:
+    for service in services_items:
         assert len(service.history) == num_versions_per_service
 
 
