@@ -7,12 +7,12 @@
 
 
 import asyncio
+import logging
 import sys
 import urllib.parse
-import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from time import perf_counter
 from typing import cast
 
 import aioresponses
@@ -21,6 +21,7 @@ import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
+from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from models_library.api_schemas_storage import (
@@ -30,7 +31,6 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteState,
     FileUploadCompletionBody,
     FileUploadSchema,
-    PresignedLink,
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
@@ -42,25 +42,29 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
+from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.file_utils import upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
+from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
+    "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
@@ -86,14 +90,14 @@ def here() -> Path:
 
 
 @pytest.fixture(scope="session")
-def package_dir(here) -> Path:
+def package_dir(here: Path) -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
+def osparc_simcore_root_dir(here: Path) -> Path:
     root_dir = here.parent.parent.parent
     assert root_dir.exists()
     assert any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
@@ -101,14 +105,7 @@ def osparc_simcore_root_dir(here) -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
-    dirpath = osparc_simcore_root_dir / "api" / "specs"
-    assert dirpath.exists()
-    return dirpath
-
-
-@pytest.fixture(scope="session")
-def project_slug_dir(osparc_simcore_root_dir) -> Path:
+def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = osparc_simcore_root_dir / "services" / "storage"
     assert service_folder.exists()
@@ -117,11 +114,10 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str]:
+def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str | None]:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    return environ
+    return dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
 
 
 @pytest.fixture
@@ -136,20 +132,6 @@ def project_env_devel_environment(
 
 
 @pytest.fixture
-def mock_files_factory(tmpdir_factory) -> Callable[[int], list[Path]]:
-    def _create_files(count: int) -> list[Path]:
-        filepaths = []
-        for _i in range(count):
-            filepath = Path(tmpdir_factory.mktemp("data")) / f"{uuid.uuid4()}.txt"
-            filepath.write_text("Hello world\n")
-            filepaths.append(filepath)
-
-        return filepaths
-
-    return _create_files
-
-
-@pytest.fixture
 async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
     yield
     # cleanup
@@ -160,7 +142,8 @@ async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
 
 
 @pytest.fixture
-def simcore_s3_dsm(client) -> SimcoreS3DataManager:
+def simcore_s3_dsm(client: TestClient) -> SimcoreS3DataManager:
+    assert client.app
     return cast(
         SimcoreS3DataManager,
         get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),
@@ -170,7 +153,7 @@ def simcore_s3_dsm(client) -> SimcoreS3DataManager:
 @pytest.fixture
 async def storage_s3_client(
     client: TestClient,
-) -> StorageS3Client:
+) -> SimcoreS3API:
     assert client.app
     return get_s3_client(client.app)
 
@@ -182,18 +165,12 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 
 
 @pytest.fixture
-def mock_config(
+def app_settings(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
-    mocked_s3_server_envs,
+    mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
-) -> None:
-    # NOTE: this can be overriden in tests that do not need all dependencies up
-    ...
-
-
-@pytest.fixture
-def app_settings(mock_config: None) -> Settings:
+) -> Settings:
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
@@ -240,7 +217,6 @@ def simcore_file_id(
     )
 
 
-# NOTE: this will be enabled at a later timepoint
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
@@ -275,57 +251,9 @@ async def get_file_meta_data(
         assert data
         received_fmd = parse_obj_as(FileMetaDataGet, data)
         assert received_fmd
-        print(f"<-- {received_fmd.json(indent=2)=}")
         return received_fmd
 
     return _getter
-
-
-@pytest.fixture
-async def create_upload_file_link_v1(
-    client: TestClient, user_id: UserID, location_id: LocationID
-) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
-    file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
-
-    async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> PresignedLink:
-        assert client.app
-        url = (
-            client.app.router["upload_file"]
-            .url_for(
-                location_id=f"{location_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(**query_kwargs, user_id=user_id)
-        )
-        assert (
-            "file_size" not in url.query
-        ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
-        response = await client.put(f"{url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
-        assert not error
-        assert data
-        received_file_upload_link = parse_obj_as(PresignedLink, data)
-        assert received_file_upload_link
-        print(f"--> created link for {file_id=}")
-        file_params.append((user_id, location_id, file_id))
-        return received_file_upload_link
-
-    yield _link_creator
-
-    # cleanup
-    assert client.app
-    clean_tasks = []
-    for u_id, loc_id, file_id in file_params:
-        url = (
-            client.app.router["delete_file"]
-            .url_for(
-                location_id=f"{loc_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(user_id=u_id)
-        )
-        clean_tasks.append(client.delete(f"{url}"))
-    await asyncio.gather(*clean_tasks)
 
 
 @pytest.fixture
@@ -355,7 +283,6 @@ async def create_upload_file_link_v2(
         assert data
         received_file_upload = parse_obj_as(FileUploadSchema, data)
         assert received_file_upload
-        print(f"--> created link for {file_id=}")
         file_params.append((user_id, location_id, file_id))
         return received_file_upload
 
@@ -380,7 +307,7 @@ async def create_upload_file_link_v2(
 @pytest.fixture
 def upload_file(
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
     project_id: ProjectID,
@@ -395,7 +322,6 @@ def upload_file(
         file_size: ByteSize,
         file_name: str,
         file_id: SimcoreS3FileID | None = None,
-        wait_for_completion: bool = True,
         sha256_checksum: SHA256Str | None = None,
         project_id: ProjectID = project_id,
     ) -> tuple[Path, SimcoreS3FileID]:
@@ -418,51 +344,45 @@ def upload_file(
         )
         # complete the upload
         complete_url = URL(file_upload_link.links.complete_upload).relative()
-        start = perf_counter()
-        print(f"--> completing upload of {file=}")
-        response = await client.post(
-            f"{complete_url}",
-            json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
-        )
-        response.raise_for_status()
-        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-        assert not error
-        assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        with log_context(logging.INFO, f"completing upload of {file=}"):
+            response = await client.post(
+                f"{complete_url}",
+                json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
+            )
+            response.raise_for_status()
+            data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+            assert not error
+            assert data
+            file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+            state_url = URL(file_upload_complete_response.links.state).relative()
 
-        if not wait_for_completion:
-            # we do not want to wait for completion to finish
-            return file, file_id, state_url
-
-        completion_etag = None
-        async for attempt in AsyncRetrying(
-            reraise=True,
-            wait=wait_fixed(1),
-            stop=stop_after_delay(60),
-            retry=retry_if_exception_type(ValueError),
-        ):
-            with attempt:
-                print(
-                    f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
-                )
-                response = await client.post(f"{state_url}")
-                response.raise_for_status()
-                data, error = await assert_status(response, status.HTTP_200_OK)
-                assert not error
-                assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
-                if future.state == FileUploadCompleteState.NOK:
-                    msg = f"{data=}"
-                    raise ValueError(msg)
-                assert future.state == FileUploadCompleteState.OK
-                assert future.e_tag is not None
-                completion_etag = future.e_tag
-                print(
-                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]"
-                )
-
-        print(f"--> completed upload in {perf_counter() - start}")
+            completion_etag = None
+            async for attempt in AsyncRetrying(
+                reraise=True,
+                wait=wait_fixed(1),
+                stop=stop_after_delay(60),
+                retry=retry_if_exception_type(ValueError),
+            ):
+                with attempt, log_context(
+                    logging.INFO,
+                    f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+                ) as ctx:
+                    response = await client.post(f"{state_url}")
+                    response.raise_for_status()
+                    data, error = await assert_status(response, status.HTTP_200_OK)
+                    assert not error
+                    assert data
+                    future = FileUploadCompleteFutureResponse.parse_obj(data)
+                    if future.state == FileUploadCompleteState.NOK:
+                        msg = f"{data=}"
+                        raise ValueError(msg)
+                    assert future.state == FileUploadCompleteState.OK
+                    assert future.e_tag is not None
+                    completion_etag = future.e_tag
+                    ctx.logger.info(
+                        "%s",
+                        f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
+                    )
 
         # check the entry in db now has the correct file size, and the upload id is gone
         await assert_file_meta_data_in_db(
@@ -475,8 +395,8 @@ def upload_file(
             expected_sha256_checksum=sha256_checksum,
         )
         # check the file is in S3 for real
-        s3_metadata = await storage_s3_client.get_file_metadata(
-            storage_s3_bucket, file_id
+        s3_metadata = await storage_s3_client.get_object_metadata(
+            bucket=storage_s3_bucket, object_key=file_id
         )
         assert s3_metadata.size == file_size
         assert s3_metadata.last_modified
@@ -503,3 +423,184 @@ def create_simcore_file_id(
         return SimcoreS3FileID(f"{clean_path}")
 
     return _creator
+
+
+@pytest.fixture
+async def with_versioning_enabled(
+    s3_client: S3Client,
+    storage_s3_bucket: S3BucketName,
+) -> None:
+    await s3_client.put_bucket_versioning(
+        Bucket=storage_s3_bucket,
+        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
+    )
+
+
+@pytest.fixture
+async def create_empty_directory(
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    client: TestClient,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> Callable[..., Awaitable[FileUploadSchema]]:
+    async def _directory_creator(dir_name: str):
+        # creating an empty directory goes through the same procedure as uploading a multipart file
+        # done by using 3 calls:
+        # 1. create the link as a directory
+        # 2. call complete_upload link
+        # 3. call file_upload_complete_response until it replies OK
+
+        directory_file_id = create_simcore_file_id(project_id, node_id, dir_name)
+        directory_file_upload: FileUploadSchema = await create_upload_file_link_v2(
+            directory_file_id, link_type="s3", is_directory="true", file_size=-1
+        )
+        # always returns a v2 link when dealing with directories
+        assert isinstance(directory_file_upload, FileUploadSchema)
+        assert len(directory_file_upload.urls) == 1
+
+        # complete the upload
+        complete_url = URL(directory_file_upload.links.complete_upload).relative()
+        response = await client.post(
+            f"{complete_url}",
+            json=jsonable_encoder(FileUploadCompletionBody(parts=[])),
+        )
+        response.raise_for_status()
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert not error
+        assert data
+        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+        state_url = URL(file_upload_complete_response.links.state).relative()
+
+        # check that it finished updating
+        assert client.app
+        client.app[UPLOAD_TASKS_KEY].clear()
+        # now check for the completion
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            wait=wait_fixed(1),
+            stop=stop_after_delay(60),
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt, log_context(
+                logging.INFO,
+                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+            ) as ctx:
+                response = await client.post(f"{state_url}")
+                data, error = await assert_status(response, status.HTTP_200_OK)
+                assert not error
+                assert data
+                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                assert future.state == FileUploadCompleteState.OK
+                assert future.e_tag is None
+                ctx.logger.info(
+                    "%s",
+                    f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
+                )
+
+        return directory_file_upload
+
+    return _directory_creator
+
+
+@pytest.fixture
+async def populate_directory(
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> Callable[..., Awaitable[None]]:
+    async def _create_content(
+        file_size_in_dir: ByteSize,
+        dir_name: str,
+        subdir_count: int = 4,
+        file_count: int = 5,
+    ) -> None:
+        file = create_file_of_size(file_size_in_dir, "some_file")
+
+        async def _create_file(s: int, f: int):
+            file_name = f"{dir_name}/sub-dir-{s}/file-{f}"
+            clean_path = Path(f"{project_id}/{node_id}/{file_name}")
+            await storage_s3_client.upload_file(
+                bucket=storage_s3_bucket,
+                file=file,
+                object_key=SimcoreS3FileID(f"{clean_path}"),
+                bytes_transfered_cb=None,
+            )
+
+        tasks = [
+            _create_file(s, f) for f in range(file_count) for s in range(subdir_count)
+        ]
+
+        await asyncio.gather(*tasks)
+
+        file.unlink()
+
+    return _create_content
+
+
+@pytest.fixture
+async def delete_directory(
+    client: TestClient,
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+    user_id: UserID,
+    location_id: LocationID,
+) -> Callable[..., Awaitable[None]]:
+    async def _dir_remover(directory_file_upload: FileUploadSchema) -> None:
+        assert directory_file_upload.urls[0].path
+        directory_file_id = directory_file_upload.urls[0].path.strip("/")
+        assert client.app
+        delete_url = (
+            client.app.router["delete_file"]
+            .url_for(
+                location_id=f"{location_id}",
+                file_id=urllib.parse.quote(directory_file_id, safe=""),
+            )
+            .with_query(user_id=user_id)
+        )
+        response = await client.delete(f"{delete_url}")
+        await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+        # NOTE: ensures no more files are left in the directory,
+        # even if one file is left this will detect it
+        list_files_metadata_url = (
+            client.app.router["get_files_metadata"]
+            .url_for(location_id=f"{location_id}")
+            .with_query(user_id=user_id, uuid_filter=directory_file_id)
+        )
+        response = await client.get(f"{list_files_metadata_url}")
+        data, error = await assert_status(response, status.HTTP_200_OK)
+        assert error is None
+        assert data == []
+
+    return _dir_remover
+
+
+@pytest.fixture
+async def create_directory_with_files(
+    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+    populate_directory: Callable[..., Awaitable[None]],
+    delete_directory: Callable[..., Awaitable[None]],
+) -> Callable[..., AbstractAsyncContextManager[FileUploadSchema]]:
+    @asynccontextmanager
+    async def _create_context(
+        dir_name: str, file_size_in_dir: ByteSize, subdir_count: int, file_count: int
+    ) -> AsyncIterator[FileUploadSchema]:
+        directory_file_upload: FileUploadSchema = await create_empty_directory(
+            dir_name=dir_name
+        )
+
+        await populate_directory(
+            file_size_in_dir=file_size_in_dir,
+            dir_name=dir_name,
+            subdir_count=subdir_count,
+            file_count=file_count,
+        )
+
+        yield directory_file_upload
+
+        await delete_directory(directory_file_upload=directory_file_upload)
+
+    return _create_context
