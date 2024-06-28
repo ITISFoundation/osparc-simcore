@@ -7,18 +7,21 @@ from dataclasses import dataclass, field
 
 import pytest
 from models_library.products import ProductName
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
-    batch_get_services,
+    batch_get_services_stmt,
     list_services_with_history_stmt,
     total_count_stmt,
 )
 from simcore_service_catalog.db.repositories.services import ServicesRepository
+from simcore_service_catalog.models.services_db import (
+    ServiceAccessRightsAtDB,
+    ServiceMetaDataAtDB,
+)
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -359,8 +362,8 @@ def test_services_sql_statements():
     )
     print(as_postgres_sql_query_str(stmt))
 
-    print(f"{batch_get_services.__name__:*^100}")
-    stmt = batch_get_services(
+    print(f"{batch_get_services_stmt.__name__:*^100}")
+    stmt = batch_get_services_stmt(
         product_name=product_name,
         selection=[
             ("simcore/services/comp/kember-cardiac-model", "1.0.0"),
