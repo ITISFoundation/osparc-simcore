@@ -73,18 +73,14 @@ class AccessRightsClauses:
     )
 
 
-def batch_get_services(
+def batch_get_services_stmt(
     product_name: ProductName, selection: list[tuple[ServiceKey, ServiceVersion]]
 ):
     # WARNING: access-rights to the selection is not considered!
     return (
         sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version,
+            services_meta_data,
             users.c.email.label("owner_email"),
-            services_meta_data.c.name,
-            services_meta_data.c.description,
-            services_meta_data.c.thumbnail,
         )
         .distinct(services_meta_data.c.key, services_meta_data.c.version)
         .select_from(
