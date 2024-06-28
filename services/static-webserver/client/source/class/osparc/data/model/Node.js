@@ -137,8 +137,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     inputsRequired: {
       check: "Array",
-      init: [],
-      event: "changeInputsRequired"
+      init: []
     },
 
     outputs: {
@@ -343,6 +342,10 @@ qx.Class.define("osparc.data.model.Node", {
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
     __retriesLeft: null,
+
+    __applyInputsRequired: function(n, o) {
+      console.log("hello", n, o);
+    },
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -1537,6 +1540,8 @@ qx.Class.define("osparc.data.model.Node", {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }
+
+      console.log("serialize", filteredNodeEntry.label, filteredNodeEntry.inputsRequired);
 
       return filteredNodeEntry;
     }
