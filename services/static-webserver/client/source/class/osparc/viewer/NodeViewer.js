@@ -34,6 +34,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
           // create study
           const study = new osparc.data.model.Study(studyData);
+          this.setStudy(study);
 
           // create node
           const node = new osparc.data.model.Node(study, key, version, nodeId);
@@ -44,9 +45,19 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           this.__iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
           this.__iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
           this.__buildLayout();
+
+          this.__attachSocketEventHandlers();
         }
       })
       .catch(err => console.error(err));
+  },
+
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    }
   },
 
   statics: {
@@ -71,14 +82,34 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       const iFrame = this.__iframeHandler.getIFrame();
       const src = iFrame.getSource();
       const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      /*
-      this.getLayoutParent().set({
-        zIndex: iFrame.getZIndex()-1
-      });
-      */
       this._add(iFrameView, {
         flex: 1
       });
+    },
+
+    __attachSocketEventHandlers: function() {
+      this.__listenToNodeUpdated();
+      this.__listenToNodeProgress();
+    },
+
+    __listenToNodeUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeUpdated")) {
+        socket.on("nodeUpdated", data => {
+          this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    __listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeProgress")) {
+        socket.on("nodeProgress", data => {
+          this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
     }
   }
 });
