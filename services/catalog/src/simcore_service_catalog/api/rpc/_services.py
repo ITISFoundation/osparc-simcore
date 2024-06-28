@@ -33,9 +33,6 @@ async def list_services_paginated(
 ) -> PageRpc[DEVServiceGet]:
     assert app  # nosec
     assert product_name  # nosec
-    assert user_id  # nosec
-    assert limit  # nosec
-    assert offset  # nosec
 
     _logger.debug("Moking list_services_paginated for %s...", f"{user_id=}")
     items = [
@@ -65,13 +62,11 @@ async def get_service(
     assert app  # nosec
     assert product_name  # nosec
     assert user_id  # nosec
-    assert service_key  # nosec
-    assert service_version  # nosec
 
     _logger.debug("Moking get_service for %s...", f"{user_id=}")
     got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
-    got.version = service_version
     got.key = service_key
+    got.version = service_version
 
     return got
 
@@ -93,12 +88,9 @@ async def update_service(
     assert app  # nosec
     assert product_name  # nosec
     assert user_id  # nosec
-    assert service_key  # nosec
-    assert service_version  # nosec
-    assert update  # nosec
 
     _logger.debug("Moking update_service for %s...", f"{user_id=}")
     got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
-    got.version = service_version
     got.key = service_key
+    got.version = service_version
     return got.copy(update=update.dict(exclude_unset=True))

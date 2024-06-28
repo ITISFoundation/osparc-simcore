@@ -11,13 +11,13 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
+from pydantic import Extra, NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
 
 from ..._client_rpc import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
-_config = {"arbitrary_types_allowed": True}
+_config = {"arbitrary_types_allowed": True, "extra": Extra.ignore}
 
 
 @log_decorator(_logger, level=logging.DEBUG)

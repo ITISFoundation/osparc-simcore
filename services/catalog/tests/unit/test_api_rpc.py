@@ -29,10 +29,9 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
 ) -> EnvVarsDict:
-    # set environs
-    monkeypatch.delenv("CATALOG_RABBITMQ", raising=False)
-    monkeypatch.delenv("CATALOG_DIRECTOR", raising=False)
-    monkeypatch.delenv("CATALOG_POSTGRES", raising=False)
+    for name in ("CATALOG_RABBITMQ", "CATALOG_DIRECTOR", "CATALOG_POSTGRES"):
+        monkeypatch.delenv(name, raising=False)
+        app_environment.pop(name, None)
 
     return setenvs_from_dict(
         monkeypatch,
@@ -57,7 +56,7 @@ async def test_rcp_catalog_client(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
-        limit=100,
+        limit=10,
         offset=0,
     )
 
