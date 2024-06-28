@@ -1,16 +1,17 @@
-import json
+from collections.abc import Iterable
 from pathlib import Path
 from time import perf_counter
 from typing import Final
 
 import aiofiles
-import pytest
+import orjson
 from aiohttp import ClientSession
-from models_library.api_schemas_storage import FileUploadSchema
+from aws_library.s3 import MultiPartUploadLinks
+from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
-from servicelib.utils import logged_gather
-from simcore_service_storage.s3_client import ETag, MultiPartUploadLinks, UploadedPart
+from servicelib.utils import limited_as_completed, logged_gather
+from types_aiobotocore_s3 import S3Client
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 
@@ -29,7 +30,8 @@ async def _file_sender(
             num_read_bytes += len(chunk)
             yield chunk
             if raise_while_uploading:
-                raise RuntimeError("we were asked to raise here!")
+                msg = "we were asked to raise here!"
+                raise RuntimeError(msg)
 
 
 async def upload_file_part(
@@ -40,6 +42,7 @@ async def upload_file_part(
     this_file_chunk_size: int,
     num_parts: int,
     upload_url: AnyUrl,
+    *,
     raise_while_uploading: bool = False,
 ) -> tuple[int, ETag]:
     print(
@@ -62,7 +65,7 @@ async def upload_file_part(
     assert response.status == status.HTTP_200_OK
     assert response.headers
     assert "Etag" in response.headers
-    received_e_tag = json.loads(response.headers["Etag"])
+    received_e_tag = orjson.loads(response.headers["Etag"])
     print(
         f"--> completed upload {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}], {received_e_tag=}"
     )
@@ -96,7 +99,7 @@ async def upload_file_to_presigned_link(
                     upload_url,
                 )
             )
-        results = await logged_gather(*upload_tasks, max_concurrency=2)
+        results = await logged_gather(*upload_tasks, max_concurrency=0)
     part_to_etag = [
         UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
     ]
@@ -106,5 +109,41 @@ async def upload_file_to_presigned_link(
     return part_to_etag
 
 
-def parametrized_file_size(size_str: str):
-    return pytest.param(parse_obj_as(ByteSize, size_str), id=size_str)
+async def delete_all_object_versions(
+    s3_client: S3Client, bucket: str, keys: Iterable[str]
+) -> None:
+    objects_to_delete = []
+
+    bucket_versioning = await s3_client.get_bucket_versioning(Bucket=bucket)
+    if "Status" in bucket_versioning and bucket_versioning["Status"] == "Enabled":
+        # NOTE: using gather here kills the moto server
+        all_versions = [
+            await v
+            async for v in limited_as_completed(
+                (
+                    s3_client.list_object_versions(Bucket=bucket, Prefix=key)
+                    for key in keys
+                ),
+                limit=10,
+            )
+        ]
+
+        for versions in all_versions:
+            # Collect all version IDs and delete markers
+            objects_to_delete.extend(
+                {"Key": version["Key"], "VersionId": version["VersionId"]}
+                for version in versions.get("Versions", [])
+            )
+
+            objects_to_delete.extend(
+                {"Key": marker["Key"], "VersionId": marker["VersionId"]}
+                for marker in versions.get("DeleteMarkers", [])
+            )
+    else:
+        # NOTE: this is way faster
+        objects_to_delete = [{"Key": key} for key in keys]
+    # Delete all versions and delete markers
+    if objects_to_delete:
+        await s3_client.delete_objects(
+            Bucket=bucket, Delete={"Objects": objects_to_delete}
+        )

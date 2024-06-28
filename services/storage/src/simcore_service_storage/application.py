@@ -17,7 +17,7 @@ from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
-from .long_running_tasks import setup_long_running_tasks
+from .long_running_tasks import setup_rest_api_long_running_tasks
 from .redis import setup_redis
 from .rest import setup_rest
 from .s3 import setup_s3
@@ -61,20 +61,17 @@ def create(settings: Settings) -> web.Application:
     setup_db(app)
     setup_s3(app)
 
-    setup_long_running_tasks(app)
+    setup_rest_api_long_running_tasks(app)
     setup_rest(app)
-
-    if settings.STORAGE_REDIS:
-        setup_redis(app)
 
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S:
+        setup_redis(app)
         setup_dsm_cleaner(app)
 
     app.middlewares.append(dsm_exception_handler)
 
     if settings.STORAGE_PROFILING:
-
         app.middlewares.append(profiling_middleware)
 
     if settings.LOG_LEVEL == "DEBUG":

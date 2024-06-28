@@ -1,8 +1,7 @@
 import logging
 from typing import cast
 
-from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.errors import S3NotConnectedError
+from aws_library.s3 import S3NotConnectedError, SimcoreS3API
 from fastapi import FastAPI
 from models_library.api_schemas_storage import S3BucketName
 from settings_library.s3 import S3Settings
