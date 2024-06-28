@@ -1,4 +1,3 @@
-import datetime
 import itertools
 import logging
 from collections import defaultdict
@@ -10,25 +9,29 @@ import sqlalchemy as sa
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.basic_types import VersionStr
 from models_library.groups import GroupAtDB, GroupTypeInModel
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import BaseModel, PositiveInt, ValidationError, parse_obj_as
+from pydantic import PositiveInt, ValidationError
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 
+from ...models.services_db import (
+    ServiceAccessRightsAtDB,
+    ServiceHistoryDB,
+    ServiceMetaDataAtDB,
+)
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    batch_get_services_stmt,
     list_services_stmt,
     list_services_with_history_stmt,
     total_count_stmt,
@@ -57,17 +60,6 @@ def merge_specs(
         if spec is not None:
             merged_spec.update(spec.dict(include={"sidecar", "service"}))
     return merged_spec
-
-
-class HistoryItem(BaseModel):
-    version: VersionStr
-    deprecated: datetime.datetime | None
-    created: datetime.datetime
-
-
-class ServiceHistoryDB(BaseModel):
-    key: ServiceKey
-    history: list[HistoryItem]
 
 
 class ServicesRepository(BaseRepository):
@@ -224,6 +216,7 @@ class ServicesRepository(BaseRepository):
         offset: int | None = None,
     ) -> tuple[PositiveInt, list[ServiceHistoryDB]]:
 
+        # get page
         stmt_total = total_count_stmt(
             product_name=product_name,
             user_id=user_id,
@@ -242,9 +235,24 @@ class ServicesRepository(BaseRepository):
             total_count = result.scalar() or 0
 
             result = await conn.execute(stmt_page)
-            items = parse_obj_as(list[ServiceHistoryDB], result)
-            assert len(items) <= total_count  # nosec
-            return (total_count, items)
+            rows = result.fetchall()
+            assert len(rows) <= total_count  # nosec
+
+        # batch-get latest
+        latest = [(s.key, s.history[0].version) for s in rows if s.history]
+        stmt = batch_get_services_stmt(product_name=product_name, selection=latest)
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt)
+            latest_services = {s.key: dict(s) for s in result.fetchall()}
+
+        # compose history with latest
+        items_page = [
+            ServiceHistoryDB.parse_obj({**dict(r), **latest_services.get(r.key, {})})
+            for r in rows
+        ]
+
+        return (total_count, items_page)
 
     async def create_or_update_service(
         self,
