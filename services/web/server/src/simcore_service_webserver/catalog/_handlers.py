@@ -137,7 +137,7 @@ async def dev_update_service(request: Request):
     assert update  # nosec
 
     _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"][0])
+    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
     got.version = path_params.service_version
     got.key = path_params.service_key
     updated = got.copy(update=update.dict(exclude_unset=True))
