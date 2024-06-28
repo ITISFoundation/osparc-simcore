@@ -48,7 +48,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     _logger.debug("retrieved service extras are %s", data)
 
     service_build_data = arrow.get(data["build_date"]).datetime
-    return service_build_data < _LEGACY_SERVICES_DATE
+    return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
 async def evaluate_default_policy(
