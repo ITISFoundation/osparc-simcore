@@ -74,6 +74,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
+    "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -162,7 +163,7 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 def app_settings(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
-    mocked_s3_server_envs: EnvVarsDict,
+    # minio_s3_settings_envs: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
     monkeypatch: pytest.MonkeyPatch,
