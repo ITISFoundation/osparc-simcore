@@ -30,7 +30,7 @@ def app_environment(
 
 
 async def test_director_client_setup(
-    with_disabled_rabbitmq_and_rpc: None,
+    disabled_rabbitmq_and_rpc: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,
 ):

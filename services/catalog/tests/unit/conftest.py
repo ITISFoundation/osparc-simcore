@@ -108,7 +108,7 @@ async def app(
 
 
 @pytest.fixture
-def disable_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+def disabled_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
 
 
@@ -118,7 +118,7 @@ def disable_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def with_disabled_rabbitmq_and_rpc(mocker: MockerFixture):
+def disabled_rabbitmq_and_rpc(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
     mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
     mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
