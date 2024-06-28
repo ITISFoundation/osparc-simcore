@@ -24,7 +24,7 @@ RUN apt-get update \
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"

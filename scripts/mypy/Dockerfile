@@ -16,7 +16,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 RUN \
   --mount=type=cache,mode=0755,target=/root/.cache/uv \
