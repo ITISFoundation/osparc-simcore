@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
@@ -298,9 +298,9 @@ class ServiceGetV2(BaseModel):
         }
 
 
-PageRpcServicesGetV2 = PageRpc[
+PageRpcServicesGetV2: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
     ServiceGetV2
 ]
 
-ServiceResourcesGet = ServiceResourcesDict
+ServiceResourcesGet: TypeAlias = ServiceResourcesDict
