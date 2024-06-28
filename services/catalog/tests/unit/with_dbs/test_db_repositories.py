@@ -15,7 +15,6 @@ from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     _list_services_key_version_stmt,
-    create_access_rights_clause,
     list_services_with_history_stmt,
     total_count_stmt,
 )
@@ -337,20 +336,28 @@ async def test_list_all_services_and_history_with_pagination(
         assert len(service.history) == num_versions_per_service
 
 
-def test_services_sql_queries():
-    access_rights = create_access_rights_clause(
-        product_name="osparc",
-        user_id=4,
-        access_clause=AccessRightsClauses.can_read,
+def test_services_sql_statements():
+
+    product_name = "osparc"
+    user_id = 4
+
+    stmt = total_count_stmt(
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
     )
-
-    stmt = _list_services_key_version_stmt(access_rights=access_rights)
-    print(as_postgres_sql_query_str(stmt))
-
-    stmt = total_count_stmt(access_rights=access_rights)
-    print(as_postgres_sql_query_str(stmt))
+    print("\n", as_postgres_sql_query_str(stmt))
 
     stmt = list_services_with_history_stmt(
-        access_rights=access_rights, limit=10, offset=None
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+        limit=10,
+        offset=None,
+    )
+    print(as_postgres_sql_query_str(stmt))
+
+    stmt = _list_services_key_version_stmt(
+        access_rights=AccessRightsClauses.can_read,
     )
     print(as_postgres_sql_query_str(stmt))

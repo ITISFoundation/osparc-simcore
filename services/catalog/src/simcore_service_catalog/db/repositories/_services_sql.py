@@ -73,42 +73,6 @@ class AccessRightsClauses:
     )
 
 
-def create_access_rights_clause(
-    product_name: ProductName,
-    user_id: UserID,
-    access_clause: sa.sql.ClauseElement | None = None,
-) -> sa.sql.ClauseElement:
-    conditions: list[sa.sql.ClauseElement] = [
-        services_access_rights.c.product_name == product_name,
-        user_to_groups.c.uid == user_id,
-    ]
-    if access_clause is not None:
-        conditions.append(access_clause)
-    return and_(*conditions)
-
-
-def _list_services_key_version_stmt(access_rights: sa.sql.ClauseElement):
-    return (
-        sa.select(services_meta_data.c.key, services_meta_data.c.version)
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
-                user_to_groups,
-                services_access_rights.c.gid == user_to_groups.c.gid,
-            )
-        )
-        .where(access_rights)
-        .distinct()  # Multiple gid of the same uid can have access to the same (key, version). Therefore they apper repeated
-        .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
-        )
-    )
-
-
 def batch_get_services(
     product_name: ProductName, selection: list[tuple[ServiceKey, ServiceVersion]]
 ):
@@ -139,17 +103,24 @@ def batch_get_services(
     )
 
 
-def total_count_stmt(access_rights: sa.sql.ClauseElement):
+def total_count_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+):
     return (
-        sa.select(func.count(sa.distinct(services_meta_data.c.keys)))
+        sa.select(func.count(sa.distinct(services_meta_data.c.key)))
         .select_from(
             services_meta_data.join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
             ).join(
                 user_to_groups,
-                services_access_rights.c.gid == user_to_groups.c.gid,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
             )
         )
         .where(access_rights)
@@ -157,7 +128,12 @@ def total_count_stmt(access_rights: sa.sql.ClauseElement):
 
 
 def list_services_with_history_stmt(
-    *, access_rights: sa.sql.ClauseElement, limit: int | None, offset: int | None
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    limit: int | None,
+    offset: int | None,
 ):
     #
     # Common Table Expression (CTE) to select distinct service names with pagination.
@@ -171,10 +147,12 @@ def list_services_with_history_stmt(
             services_meta_data.join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
             ).join(
                 user_to_groups,
-                services_access_rights.c.gid == user_to_groups.c.gid,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
             )
         )
         .where(access_rights)
@@ -200,10 +178,12 @@ def list_services_with_history_stmt(
             .join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
             ).join(
                 user_to_groups,
-                services_access_rights.c.gid == user_to_groups.c.gid,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
             )
         )
         .where(access_rights)
