@@ -34,13 +34,11 @@ class MetaModelingUser(HttpUser):
             respect_retry_after_header=True,
             raise_on_status=True,
         )
-        super().__init__(
-            *args, **kwargs, pool_manager=PoolManager(key_retries=retry_strategy)
-        )
+        self.pool_manager = PoolManager(retries=retry_strategy)
+        super().__init__(*args, **kwargs)
 
     def on_start(self) -> None:
         response = self.client.get("/v0/me", auth=self._auth)
-        response.raise_for_status()
 
     @task
     def create_and_run_job(self):
