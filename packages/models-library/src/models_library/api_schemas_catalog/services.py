@@ -105,7 +105,7 @@ class ServiceGet(
                     }
                 },
                 "owner": "redpandas@wonderland.com",
-            }
+            },
         }
 
 
