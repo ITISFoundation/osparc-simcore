@@ -10,7 +10,7 @@ from pydantic import (
     PositiveInt,
 )
 
-from .basic_regex import UUID_RE, VERSION_RE
+from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS, UUID_RE, VERSION_RE
 
 
 class NonNegativeDecimal(ConstrainedDecimal):
@@ -44,6 +44,10 @@ class VersionTag(ConstrainedStr):
 # e.g. '1.23.11' or '2.1.0-rc2'
 class VersionStr(ConstrainedStr):
     regex = re.compile(VERSION_RE)
+
+
+class SemanticVersionStr(ConstrainedStr):
+    regex = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 
 
 # checksums
