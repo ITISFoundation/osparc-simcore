@@ -1,8 +1,9 @@
 import base64
+from typing import Sequence
 
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import InstanceTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef
 
 
 async def assert_autoscaled_computational_ec2_instances(
@@ -21,6 +22,9 @@ async def assert_autoscaled_computational_ec2_instances(
         expected_instance_state=expected_instance_state,
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.dask-scheduler_url",
+            "user_id",
+            "wallet_id",
+            "osparc-tag",
         ],
         expected_user_data=["docker swarm join"],
     )
@@ -43,6 +47,9 @@ async def assert_autoscaled_dynamic_ec2_instances(
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
+            "user_id",
+            "wallet_id",
+            "osparc-tag",
         ],
         expected_user_data=["docker swarm join"],
     )
@@ -56,6 +63,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
+    instance_filters: Sequence[FilterTypeDef] | None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -70,6 +78,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
             *expected_additional_tag_keys,
         ],
         expected_user_data=[],
+        instance_filters=instance_filters,
     )
 
 
@@ -82,9 +91,10 @@ async def assert_ec2_instances(
     expected_instance_state: InstanceStateNameType,
     expected_instance_tag_keys: list[str],
     expected_user_data: list[str],
+    instance_filters: Sequence[FilterTypeDef] | None = None,
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
-    all_instances = await ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances(Filters=instance_filters or [])
     assert len(all_instances["Reservations"]) == expected_num_reservations
     for reservation in all_instances["Reservations"]:
         assert "Instances" in reservation
@@ -100,9 +110,6 @@ async def assert_ec2_instances(
                 *expected_instance_tag_keys,
                 "io.simcore.autoscaling.version",
                 "Name",
-                "user_id",
-                "wallet_id",
-                "osparc-tag",
             ]
             for tag_dict in instance["Tags"]:
                 assert "Key" in tag_dict
