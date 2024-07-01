@@ -7,6 +7,8 @@
 from typing import Any
 
 import pytest
+from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
+from models_library.api_schemas_webserver.catalog import ServiceGet, ServiceUpdate
 from models_library.utils.change_case import snake_to_camel
 from models_library.utils.pydantic_factory import create_model_with_recursive_config
 from pydantic import BaseModel, Field, ValidationError
@@ -98,3 +100,24 @@ def test_config_recursive(user_data_with_camelcase: dict[str, Any]):
         UserApi.__fields__["address"].field_info.description
         == User.__fields__["address"].field_info.description
     )
+
+
+def test_create_models_for_web_api():
+    def _to_dict(config_cls):
+        return {k: v for k, v in config_cls.__dict__.items() if not k.startswith("_")}
+
+    ServiceGetApi = create_model_with_recursive_config(
+        ServiceGet,
+        _to_dict(OutputSchema.Config),
+        new_cls_name_suffix="Api",
+    )
+
+    print(ServiceGetApi.schema_json(indent=1))
+
+    ServiceUpdateApi = create_model_with_recursive_config(
+        ServiceUpdate,
+        _to_dict(InputSchema.Config),
+        new_cls_name_suffix="Api",
+    )
+
+    print(ServiceUpdateApi.schema_json(indent=1))
