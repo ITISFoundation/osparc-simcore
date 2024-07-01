@@ -3,7 +3,7 @@
 #
 include ../../scripts/common.Makefile
 
-LOCUST_VERSION=2.5.1
+LOCUST_VERSION=2.29.1
 export LOCUST_VERSION
 
 # UTILS
