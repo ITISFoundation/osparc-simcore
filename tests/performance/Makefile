@@ -42,7 +42,7 @@ down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
 .PHONY: test
-test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
+test: ## runs osparc locust. locust and test confiuration are specified in .env file next to target file
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
 	export ENV_FILE=$$(dirname $$(realpath locust_files/$${LOCUST_FILE}))/.env; \
