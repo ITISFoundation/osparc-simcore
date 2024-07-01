@@ -19,25 +19,29 @@ def create_model_with_recursive_config(
     for key, value in config_overrides.items():
         setattr(NewConfig, key, value)
 
-    new_fields = {}
-    for field_name, model_field in reference_cls.__fields__.items():
-        if isinstance(model_field.type_, type) and issubclass(
-            model_field.type_, BaseModel
-        ):
-            new_field_type = create_model_with_recursive_config(
-                model_field.type_,
+    def _resolve_type(outer_type):
+        if hasattr(outer_type, "__origin__"):
+            # e.g. dict[str, SomeModel] | None -> dict[str, SomeModelNew] | None
+            origin = outer_type.__origin__
+            args = outer_type.__args__
+            wrapped_args = tuple(_resolve_type(arg) for arg in args)
+            return origin[wrapped_args]
+
+        if isinstance(outer_type, type) and issubclass(outer_type, BaseModel):
+            return create_model_with_recursive_config(
+                outer_type,
                 config_overrides,
                 new_cls_name_suffix=new_cls_name_suffix,
             )
-            new_fields[field_name] = (
-                new_field_type,
-                deepcopy(model_field.field_info),
-            )
-        else:
-            new_fields[field_name] = (
-                model_field.type_,
-                deepcopy(model_field.field_info),
-            )
+        return outer_type
+
+    new_fields = {}
+    for field_name, model_field in reference_cls.__fields__.items():
+        field_type = _resolve_type(model_field.outer_type_)
+        new_fields[field_name] = (
+            field_type,
+            deepcopy(model_field.field_info),
+        )
 
     # Create a new model dynamically
     return create_model(

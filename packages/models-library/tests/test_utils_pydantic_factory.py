@@ -106,14 +106,6 @@ def test_create_models_for_web_api():
     def _to_dict(config_cls):
         return {k: v for k, v in config_cls.__dict__.items() if not k.startswith("_")}
 
-    ServiceGetApi = create_model_with_recursive_config(
-        ServiceGet,
-        _to_dict(OutputSchema.Config),
-        new_cls_name_suffix="Api",
-    )
-
-    print(ServiceGetApi.schema_json(indent=1))
-
     ServiceUpdateApi = create_model_with_recursive_config(
         ServiceUpdate,
         _to_dict(InputSchema.Config),
@@ -121,3 +113,11 @@ def test_create_models_for_web_api():
     )
 
     print(ServiceUpdateApi.schema_json(indent=1))
+
+    ServiceGetApi = create_model_with_recursive_config(
+        ServiceGet,
+        _to_dict(OutputSchema.Config),
+        new_cls_name_suffix="Api",
+    )
+
+    print(ServiceGetApi.schema_json(indent=1))
