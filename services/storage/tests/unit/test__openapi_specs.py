@@ -3,8 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from pathlib import Path
 from typing import NamedTuple
 
+import openapi_core
 import pytest
 import simcore_service_storage.application
 from aiohttp import web
@@ -12,6 +14,8 @@ from faker import Faker
 from openapi_core import Spec as OpenApiSpecs
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_storage._meta import API_VTAG
+from simcore_service_storage.resources import storage_resources
 from simcore_service_storage.settings import Settings
 
 
@@ -43,8 +47,13 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
     settings = Settings.create_from_envs()
-    print(settings.json(indent=1))
     return simcore_service_storage.application.create(settings)
+
+
+@pytest.fixture(scope="module")
+def openapi_specs() -> openapi_core.Spec:
+    spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
+    return openapi_core.Spec.from_path(spec_path)
 
 
 @pytest.fixture

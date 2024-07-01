@@ -112,6 +112,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
           }
           return false;
         }
+        // if we get here, it means that it was shared-with-me via an organization
+        if (sharedWith === "shared-with-me") {
+          return false;
+        }
         return true;
       }
       return false;

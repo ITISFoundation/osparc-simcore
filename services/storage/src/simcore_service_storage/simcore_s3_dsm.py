@@ -14,7 +14,7 @@ import arrow
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aws_library.s3.errors import S3KeyNotFoundError
+from aws_library.s3 import S3KeyNotFoundError, S3MetaData
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -29,8 +29,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
-from servicelib.sequences_utils import partition_gen
-from servicelib.utils import ensure_ends_with, logged_gather
+from servicelib.utils import ensure_ends_with, limited_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
@@ -68,7 +67,6 @@ from .models import (
     UserOrProjectFilter,
 )
 from .s3 import get_s3_client
-from .s3_client import S3MetaData, StorageS3Client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
 from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
@@ -214,14 +212,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
                 directory_expands.append(
                     expand_directory(
-                        self.app,
+                        get_s3_client(self.app),
                         self.simcore_bucket_name,
                         metadata,
                         max_items_to_include,
                     )
                 )
-        for files_in_directory in await logged_gather(
-            *directory_expands, max_concurrency=_MAX_PARALLEL_S3_CALLS
+        for files_in_directory in await limited_gather(
+            *directory_expands, limit=_MAX_PARALLEL_S3_CALLS
         ):
             data.extend(files_in_directory)
 
@@ -317,9 +315,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 multipart_presigned_links = await get_s3_client(
                     self.app
                 ).create_multipart_upload_links(
-                    fmd.bucket_name,
-                    fmd.file_id,
-                    file_size_bytes,
+                    bucket=fmd.bucket_name,
+                    object_key=fmd.file_id,
+                    file_size=file_size_bytes,
                     expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
                     sha256_checksum=fmd.sha256_checksum,
                 )
@@ -335,8 +333,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 single_presigned_link = await get_s3_client(
                     self.app
                 ).create_single_presigned_upload_link(
-                    self.simcore_bucket_name,
-                    fmd.file_id,
+                    bucket=self.simcore_bucket_name,
+                    object_key=fmd.file_id,
                     expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
                 )
                 return UploadLinks(
@@ -346,7 +344,8 @@ class SimcoreS3DataManager(BaseDataManager):
 
         # user wants just the s3 link
         s3_link = get_s3_client(self.app).compute_s3_url(
-            self.simcore_bucket_name, parse_obj_as(SimcoreS3FileID, file_id)
+            bucket=self.simcore_bucket_name,
+            object_key=parse_obj_as(SimcoreS3FileID, file_id),
         )
         return UploadLinks(
             [s3_link], file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type]
@@ -371,13 +370,13 @@ class SimcoreS3DataManager(BaseDataManager):
                 assert fmd.upload_id  # nosec
                 await get_s3_client(self.app).abort_multipart_upload(
                     bucket=fmd.bucket_name,
-                    file_id=fmd.file_id,
+                    object_key=fmd.file_id,
                     upload_id=fmd.upload_id,
                 )
             # try to recover a file if it existed
             with contextlib.suppress(S3KeyNotFoundError):
-                await get_s3_client(self.app).undelete_file(
-                    bucket=fmd.bucket_name, file_id=fmd.file_id
+                await get_s3_client(self.app).undelete_object(
+                    bucket=fmd.bucket_name, object_key=fmd.file_id
                 )
 
             try:
@@ -416,7 +415,7 @@ class SimcoreS3DataManager(BaseDataManager):
             assert fmd.upload_id  # nosec
             await get_s3_client(self.app).complete_multipart_upload(
                 bucket=self.simcore_bucket_name,
-                file_id=fmd.file_id,
+                object_key=fmd.file_id,
                 upload_id=fmd.upload_id,
                 uploaded_parts=uploaded_parts,
             )
@@ -471,9 +470,9 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         if link_type == LinkType.PRESIGNED:
             link = await get_s3_client(self.app).create_single_presigned_download_link(
-                self.simcore_bucket_name,
-                s3_file_id,
-                self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+                bucket=self.simcore_bucket_name,
+                object_key=s3_file_id,
+                expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
             )
 
         return link
@@ -505,8 +504,8 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> AnyUrl:
         # 2. the file_id represents a file inside a directory
         await self.__ensure_read_access_rights(conn, user_id, directory_file_id)
-        if not await get_s3_client(self.app).file_exists(
-            self.simcore_bucket_name, s3_object=f"{file_id}"
+        if not await get_s3_client(self.app).object_exists(
+            bucket=self.simcore_bucket_name, object_key=f"{file_id}"
         ):
             raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
         return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
@@ -542,8 +541,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 # NOTE: since this lists the files before deleting them
                 # it can be used to filter for just a single file and also
                 # to delete it
-                await get_s3_client(self.app).delete_files_in_path(
-                    file.bucket_name,
+                await get_s3_client(self.app).delete_objects_recursively(
+                    bucket=file.bucket_name,
                     prefix=(
                         ensure_ends_with(file.file_id, "/")
                         if file.is_directory
@@ -570,8 +569,11 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 await db_file_meta_data.delete_all_from_node(conn, node_id)
 
-            await get_s3_client(self.app).delete_files_in_project_node(
-                self.simcore_bucket_name, project_id, node_id
+            await get_s3_client(self.app).delete_objects_recursively(
+                bucket=self.simcore_bucket_name,
+                prefix=ensure_ends_with(
+                    f"{project_id}/{node_id}" if node_id else f"{project_id}", "/"
+                ),
             )
 
     async def deep_copy_project_simcore_s3(  # noqa: C901
@@ -631,18 +633,10 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             log_duration=True,
         ):
-            sizes_and_num_files: list[tuple[ByteSize, int]] = []
-            for src_project_files_slice in partition_gen(
-                src_project_files, slice_size=_MAX_PARALLEL_S3_CALLS
-            ):
-                sizes_and_num_files.extend(
-                    await logged_gather(
-                        *[
-                            self._get_size_and_num_files(fmd)
-                            for fmd in src_project_files_slice
-                        ]
-                    )
-                )
+            sizes_and_num_files: list[tuple[ByteSize, int]] = await limited_gather(
+                *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
+                limit=_MAX_PARALLEL_S3_CALLS,
+            )
 
             total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
@@ -700,10 +694,8 @@ class SimcoreS3DataManager(BaseDataManager):
                     and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
-        for copy_tasks_slice in partition_gen(
-            copy_tasks, slice_size=MAX_CONCURRENT_S3_TASKS
-        ):
-            await logged_gather(*copy_tasks_slice)
+        await limited_gather(*copy_tasks, limit=MAX_CONCURRENT_S3_TASKS)
+
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
         _logger.info(
@@ -721,11 +713,15 @@ class SimcoreS3DataManager(BaseDataManager):
         # in case of directory list files and return size
         total_size: int = 0
         total_num_s3_objects = 0
-        async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
-            self.simcore_bucket_name,
-            prefix=f"{fmd.object_name}",
+        async for s3_objects in get_s3_client(self.app).list_objects_paginated(
+            bucket=self.simcore_bucket_name,
+            prefix=(
+                ensure_ends_with(f"{fmd.object_name}", "/")
+                if fmd.is_directory
+                else fmd.object_name
+            ),
         ):
-            total_size += sum(x.get("Size", 0) for x in s3_objects)
+            total_size += sum(x.size for x in s3_objects)
             total_num_s3_objects += len(s3_objects)
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
@@ -795,8 +791,8 @@ class SimcoreS3DataManager(BaseDataManager):
             file_ids_to_remove = [
                 fmd.file_id
                 async for fmd in db_file_meta_data.list_valid_uploads(conn)
-                if not await get_s3_client(self.app).file_exists(
-                    self.simcore_bucket_name, s3_object=fmd.object_name
+                if not await get_s3_client(self.app).object_exists(
+                    bucket=self.simcore_bucket_name, object_key=fmd.object_name
                 )
             ]
 
@@ -820,7 +816,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 assert fmd.upload_id  # nosec
                 await get_s3_client(self.app).abort_multipart_upload(
                     bucket=self.simcore_bucket_name,
-                    file_id=file_id,
+                    object_key=file_id,
                     upload_id=fmd.upload_id,
                 )
 
@@ -844,14 +840,14 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
-        updated_fmds = await logged_gather(
+        updated_fmds = await limited_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
             log=_logger,
-            max_concurrency=_NO_CONCURRENCY,
+            limit=_NO_CONCURRENCY,
         )
         list_of_fmds_to_delete = [
             expired_fmd
@@ -869,20 +865,22 @@ class SimcoreS3DataManager(BaseDataManager):
                 assert fmd.upload_id  # nosec
                 await s3_client.abort_multipart_upload(
                     bucket=fmd.bucket_name,
-                    file_id=fmd.file_id,
+                    object_key=fmd.file_id,
                     upload_id=fmd.upload_id,
                 )
-            await s3_client.undelete_file(fmd.bucket_name, fmd.file_id)
+            await s3_client.undelete_object(
+                bucket=fmd.bucket_name, object_key=fmd.file_id
+            )
             return await self._update_database_from_storage(conn, fmd)
 
         s3_client = get_s3_client(self.app)
         async with self.engine.acquire() as conn:
             # NOTE: no concurrency here as we want to run low resources
-            reverted_fmds = await logged_gather(
+            reverted_fmds = await limited_gather(
                 *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
                 reraise=False,
                 log=_logger,
-                max_concurrency=_NO_CONCURRENCY,
+                limit=_NO_CONCURRENCY,
             )
         list_of_fmds_to_delete = [
             fmd
@@ -915,8 +913,8 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaDataAtDB:
         s3_metadata: S3MetaData | None = None
         if not fmd.is_directory:
-            s3_metadata = await get_s3_client(self.app).get_file_metadata(
-                fmd.bucket_name, fmd.object_name
+            s3_metadata = await get_s3_client(self.app).get_object_metadata(
+                bucket=fmd.bucket_name, object_key=fmd.object_name
             )
 
         fmd = await db_file_meta_data.get(conn, fmd.file_id)
@@ -926,7 +924,7 @@ class SimcoreS3DataManager(BaseDataManager):
             fmd.entity_tag = s3_metadata.e_tag
         elif fmd.is_directory:
             s3_folder_metadata = await get_s3_client(self.app).get_directory_metadata(
-                fmd.bucket_name, prefix=fmd.object_name
+                bucket=fmd.bucket_name, prefix=fmd.object_name
             )
             fmd.file_size = parse_obj_as(ByteSize, s3_folder_metadata.size)
         fmd.upload_expires_at = None
@@ -986,10 +984,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 await transaction.commit()
                 # Uploads local -> S3
                 await get_s3_client(self.app).upload_file(
-                    self.simcore_bucket_name,
-                    local_file_path,
-                    dst_file_id,
-                    bytes_transfered_cb,
+                    bucket=self.simcore_bucket_name,
+                    file=local_file_path,
+                    object_key=dst_file_id,
+                    bytes_transfered_cb=bytes_transfered_cb,
                 )
                 updated_fmd = await self._update_database_from_storage(conn, new_fmd)
             file_storage_link["store"] = self.location_id
@@ -1026,34 +1024,20 @@ class SimcoreS3DataManager(BaseDataManager):
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
 
-            s3_client: StorageS3Client = get_s3_client(self.app)
+            s3_client = get_s3_client(self.app)
 
             if src_fmd.is_directory:
-                async for s3_objects in s3_client.list_all_objects_gen(
-                    self.simcore_bucket_name,
-                    prefix=src_fmd.object_name,
-                ):
-                    s3_objects_src_to_new: dict[str, str] = {
-                        x["Key"]: x["Key"].replace(
-                            f"{src_fmd.object_name}", f"{new_fmd.object_name}"
-                        )
-                        for x in s3_objects
-                    }
-
-                    for src, new in s3_objects_src_to_new.items():
-                        # NOTE: copy_file cannot be called concurrently or it will hang.
-                        # test this with copying multiple 1GB files if you do not believe me
-                        await s3_client.copy_file(
-                            self.simcore_bucket_name,
-                            cast(SimcoreS3FileID, src),
-                            cast(SimcoreS3FileID, new),
-                            bytes_transfered_cb=bytes_transfered_cb,
-                        )
+                await s3_client.copy_objects_recursively(
+                    bucket=self.simcore_bucket_name,
+                    src_prefix=src_fmd.object_name,
+                    dst_prefix=new_fmd.object_name,
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
             else:
-                await s3_client.copy_file(
-                    self.simcore_bucket_name,
-                    src_fmd.object_name,
-                    new_fmd.object_name,
+                await s3_client.copy_object(
+                    bucket=self.simcore_bucket_name,
+                    src_object_key=src_fmd.object_name,
+                    dst_object_key=new_fmd.object_name,
                     bytes_transfered_cb=bytes_transfered_cb,
                 )
 

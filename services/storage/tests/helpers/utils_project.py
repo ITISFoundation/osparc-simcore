@@ -21,7 +21,7 @@ def clone_project_data(
         return NodeIDStr(uuidlib.uuid5(project_copy_uuid, old_uuid))
 
     nodes_map = {}
-    for node_uuid in project.get("workbench", {}).keys():
+    for node_uuid in project.get("workbench", {}):
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
     def _replace_uuids(node):

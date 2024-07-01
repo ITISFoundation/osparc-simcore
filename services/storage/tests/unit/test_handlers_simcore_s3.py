@@ -5,6 +5,7 @@
 # pylint:disable=no-name-in-module
 # pylint:disable=too-many-nested-blocks
 
+import logging
 import sys
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
@@ -16,6 +17,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
+from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.basic_types import SHA256Str
@@ -26,13 +28,13 @@ from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.logging import log_context
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
-from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
@@ -51,8 +53,10 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 def mock_datcore_download(mocker, client):
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
-        print(f"Faking download:  {url} -> {dest_path}")
-        Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
+        with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
+            Path(dest_path).write_text(
+                "FAKE: test_create_and_delete_folders_from_project"
+            )
 
     mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
@@ -93,18 +97,22 @@ async def _request_copy_folders(
     url = client.make_url(
         f"{(client.app.router['copy_folders_from_project'].url_for().with_query(user_id=user_id))}"
     )
-    async for lr_task in long_running_task_request(
-        client.session,
-        url,
-        json=jsonable_encoder(
-            FoldersBody(
-                source=source_project, destination=dst_project, nodes_map=nodes_map
-            )
-        ),
-    ):
-        print(f"<-- current state is {lr_task.progress=}")
-        if lr_task.done():
-            return await lr_task.result()
+    with log_context(
+        logging.INFO,
+        f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
+    ) as ctx:
+        async for lr_task in long_running_task_request(
+            client.session,
+            url,
+            json=jsonable_encoder(
+                FoldersBody(
+                    source=source_project, destination=dst_project, nodes_map=nodes_map
+                )
+            ),
+        ):
+            ctx.logger.info("%s", f"<-- current state is {lr_task.progress=}")
+            if lr_task.done():
+                return await lr_task.result()
 
     pytest.fail(reason="Copy folders failed!")
 
@@ -154,7 +162,7 @@ async def test_copy_folders_from_empty_project(
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     aiopg_engine: Engine,
-    storage_s3_client: StorageS3Client,
+    storage_s3_client: SimcoreS3API,
 ):
     # we will copy from src to dst
     src_project = await create_project()
@@ -189,7 +197,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     client: TestClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     aiopg_engine: Engine,
     random_project_with_files: Callable[
         [int, tuple[ByteSize], tuple[SHA256Str]],
@@ -419,14 +426,14 @@ async def test_create_and_delete_folders_from_project_burst(
         project, exclude={"tags", "state", "prj_owner"}, by_alias=False
     )
     await create_project(**project_as_dict)
-    await logged_gather(
+    await limited_gather(
         *[
             _create_and_delete_folders_from_project(
                 user_id, project_as_dict, client, create_project, check_list_files=False
             )
             for _ in range(100)
         ],
-        max_concurrency=2,
+        limit=2,
     )
 
 

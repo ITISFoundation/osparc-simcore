@@ -15,6 +15,7 @@ moto[server]
 pint
 pytest
 pytest-asyncio
+pytest-benchmark
 pytest-cov
 pytest-icdiff
 pytest-instafail
