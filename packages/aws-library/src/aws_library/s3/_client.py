@@ -22,7 +22,7 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
-from ._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from ._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE, PRESIGNED_LINK_MAX_SIZE
 from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
 from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from ._models import (
@@ -398,7 +398,10 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             "CopySource": {"Bucket": bucket, "Key": src_object_key},
             "Bucket": bucket,
             "Key": dst_object_key,
-            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+            "Config": TransferConfig(
+                max_concurrency=self.transfer_max_concurrency,
+                multipart_threshold=PRESIGNED_LINK_MAX_SIZE,
+            ),
         }
         if bytes_transfered_cb:
             copy_options |= {"Callback": bytes_transfered_cb}
@@ -419,34 +422,20 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         if dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
-        try:
-
-            await limited_gather(
-                *[
-                    self.copy_object(
-                        bucket=bucket,
-                        src_object_key=s3_object.object_key,
-                        dst_object_key=s3_object.object_key.replace(
-                            src_prefix, dst_prefix
-                        ),
-                        bytes_transfered_cb=bytes_transfered_cb,
-                    )
-                    async for s3_object in self._list_all_objects(
-                        bucket=bucket, prefix=src_prefix
-                    )
-                ],
-                limit=_MAX_CONCURRENT_COPY,
-            )
-
-        except Exception:
-            # rollback changes
-            with log_catch(_logger, reraise=False), log_context(
-                _logger,
-                logging.ERROR,
-                msg="Unexpected error while copying files recursively, deleting partially copied files",
-            ):
-                await self.delete_objects_recursively(bucket=bucket, prefix=dst_prefix)
-            raise
+        await limited_gather(
+            *[
+                self.copy_object(
+                    bucket=bucket,
+                    src_object_key=s3_object.object_key,
+                    dst_object_key=s3_object.object_key.replace(src_prefix, dst_prefix),
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
+                async for s3_object in self._list_all_objects(
+                    bucket=bucket, prefix=src_prefix
+                )
+            ],
+            limit=_MAX_CONCURRENT_COPY,
+        )
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
