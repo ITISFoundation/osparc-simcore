@@ -533,15 +533,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getIFrame: function() {
-      return this.__iframeHandler.getIFrame();
+      return this.getIframeHandler() ? this.getIframeHandler().getIFrame() : null;
     },
 
     setIFrame: function(iframe) {
-      return this.__iframeHandler.setIFrame(iframe);
+      return this.getIframeHandler() ? this.getIframeHandler().setIFrame(iframe) : null;
     },
 
     getLoadingPage: function() {
-      return this.__iframeHandler.getLoadingPage();
+      return this.getIframeHandler() ? this.getIframeHandler().getLoadingPage() : null;
     },
 
     __applyPropsForm: function() {
@@ -1074,7 +1074,7 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__iframeHandler.startPolling();
+        this.getIframeHandler().startPolling();
       }
     },
 
@@ -1089,7 +1089,7 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__iframeHandler.stopIframe();
+        this.getIframeHandler().stopIframe();
       }
     },
 

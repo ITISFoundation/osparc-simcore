@@ -38,15 +38,18 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
           // create node
           const node = new osparc.data.model.Node(study, key, version, nodeId);
+          this.setNode(node);
           node.initIframeHandler();
-          this.__iframeHandler = node.getIframeHandler();
-          this.__iframeHandler.startPolling();
 
-          this.__iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
-          this.__iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
-          this.__buildLayout();
+          const iframeHandler = node.getIframeHandler();
+          if (iframeHandler) {
+            iframeHandler.startPolling();
+            iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
+            iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
+            this.__buildLayout();
 
-          this.__attachSocketEventHandlers();
+            this.__attachSocketEventHandlers();
+          }
         }
       })
       .catch(err => console.error(err));
@@ -55,6 +58,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    },
+
+    node: {
+      check: "osparc.data.model.Node",
       init: null,
       nullable: false
     }
@@ -73,13 +82,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   },
 
   members: {
-    __iframeHandler: null,
-
     __buildLayout: function() {
       this._removeAll();
 
-      const loadingPage = this.__iframeHandler.getLoadingPage();
-      const iFrame = this.__iframeHandler.getIFrame();
+      const iframeHandler = this.getNode().getIframeHandler();
+      const loadingPage = iframeHandler.getLoadingPage();
+      const iFrame = iframeHandler.getIFrame();
       const src = iFrame.getSource();
       const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
       this._add(iFrameView, {
