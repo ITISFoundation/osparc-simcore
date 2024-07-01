@@ -444,6 +444,24 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
+       * SERVICES DEV
+       */
+      "servicesDev": {
+        useCache: false, // handled in store
+        idField: ["key", "version"],
+        endpoints: {
+          getDev: {
+            method: "GET",
+            url: statics.API + "/dev/catalog/services"
+          },
+          getOneDev: {
+            method: "GET",
+            url: statics.API + "/dev/catalog/services/{key}/{version}"
+          }
+        }
+      },
+
+      /*
        * PORTS COMPATIBILITY
        */
       "portsCompatibility": {
