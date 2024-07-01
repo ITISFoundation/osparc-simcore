@@ -147,6 +147,12 @@ class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
     msg_tempalte = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
 
 
+class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = (
+        "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
+    )
+
+
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
     ...
 
