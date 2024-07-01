@@ -144,9 +144,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       const versions = osparc.service.Utils.getVersions(null, serviceKey);
       const latest = new qx.ui.form.ListItem(this.self().LATEST);
       selectBox.add(latest);
-      for (let i = versions.length; i--;) {
-        selectBox.add(new qx.ui.form.ListItem(versions[i]));
-      }
+      versions.forEach(version => selectBox.add(new qx.ui.form.ListItem(version)));
       selectBox.setSelection([latest]);
     },
 

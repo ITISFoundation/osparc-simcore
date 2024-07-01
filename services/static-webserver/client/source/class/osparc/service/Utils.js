@@ -167,7 +167,7 @@ qx.Class.define("osparc.service.Utils", {
 
     getVersions: function(services, key, filterDeprecates = true) {
       if (services === null) {
-        services = osparc.service.Utils.servicesCached;
+        services = osparc.service.Store.servicesCached;
       }
       let versions = [];
       if (key in services) {
@@ -184,7 +184,7 @@ qx.Class.define("osparc.service.Utils", {
         }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
-      return versions;
+      return versions.reverse();
     },
 
     getLatest: function(services, key) {
@@ -193,7 +193,7 @@ qx.Class.define("osparc.service.Utils", {
       }
       if (key in services) {
         const versions = this.getVersions(services, key, false);
-        return services[key][versions[versions.length - 1]];
+        return services[key][versions[0]];
       }
       return null;
     },
@@ -251,7 +251,6 @@ qx.Class.define("osparc.service.Utils", {
         const v2 = srcVersion.split(".");
         return (v1[0] === v2[0] && v1[1] === v2[1]);
       });
-      versions.reverse();
 
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
       const idx = versions.indexOf(srcVersion);
