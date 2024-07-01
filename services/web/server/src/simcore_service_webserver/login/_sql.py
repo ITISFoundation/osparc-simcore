@@ -1,12 +1,5 @@
-from logging import getLogger
-
-log = getLogger(__name__)
-LOG_TPL = "%s <--%s"
-
-
 def find_one(conn, table, filter_, fields=None):
     sql, values = find_one_sql(table, filter_, fields)
-    log.debug(LOG_TPL, sql, values)
     return conn.fetchrow(sql, *values)
 
 
@@ -26,7 +19,6 @@ def find_one_sql(table, filter_, fields=None):
 
 def insert(conn, table, data, returning="id"):
     sql, values = insert_sql(table, data, returning)
-    log.debug(LOG_TPL, sql, values)
     return conn.fetchval(sql, *values)
 
 
@@ -53,7 +45,6 @@ def insert_sql(table, data, returning="id"):
 
 def update(conn, table, filter_, updates):
     sql, values = update_sql(table, filter_, updates)
-    log.debug(LOG_TPL, sql, values)
     return conn.execute(sql, *values)
 
 
@@ -72,7 +63,6 @@ def update_sql(table, filter_, updates):
 
 def delete(conn, table, filter_):
     sql, values = delete_sql(table, filter_)
-    log.debug(LOG_TPL, sql, values)
     return conn.execute(sql, *values)
 
 
