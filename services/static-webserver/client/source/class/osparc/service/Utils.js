@@ -174,7 +174,13 @@ qx.Class.define("osparc.service.Utils", {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
         if (filterDeprecates) {
-          versions = versions.filter(version => (services[key][version]["deprecated"] === null));
+          versions = versions.filter(version => {
+            // TODO OM. they will always have the retired field
+            if (["retired"] in services[key][version]) {
+              return false;
+            }
+            return true;
+          });
         }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }

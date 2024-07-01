@@ -241,36 +241,32 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const versionsBox = new osparc.ui.toolbar.SelectBox();
       hBox.add(versionsBox);
 
-      // populate it with owned versions
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
-          let selectedItem = null;
 
-          // first setSelection
-          versions.reverse().forEach(version => {
-            selectedItem = new qx.ui.form.ListItem(version);
-            versionsBox.add(selectedItem);
-            if (this.__resourceData["version"] === version) {
-              versionsBox.setSelection([selectedItem]);
-            }
-          });
+      const versions = osparc.service.Utils.getVersions(osparc.service.Store.servicesCached, this.__resourceData["key"]);
+      let selectedItem = null;
 
-          // then listen to changes
-          versionsBox.addListener("changeSelection", e => {
-            const selection = e.getData();
-            if (selection.length) {
-              const serviceVersion = selection[0].getLabel();
-              if (serviceVersion !== this.__resourceData["version"]) {
-                const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
-                serviceData["resourceType"] = "service";
-                this.__resourceData = serviceData;
-                this.__addPages();
-              }
-            }
-          }, this);
-        });
+      // first setSelection
+      versions.reverse().forEach(version => {
+        selectedItem = new qx.ui.form.ListItem(version);
+        versionsBox.add(selectedItem);
+        if (this.__resourceData["version"] === version) {
+          versionsBox.setSelection([selectedItem]);
+        }
+      });
+
+      // then listen to changes
+      versionsBox.addListener("changeSelection", e => {
+        const selection = e.getData();
+        if (selection.length) {
+          const serviceVersion = selection[0].getLabel();
+          if (serviceVersion !== this.__resourceData["version"]) {
+            const serviceData = osparc.service.Utils.getFromObject(osparc.service.Store.servicesCached, this.__resourceData["key"], serviceVersion);
+            serviceData["resourceType"] = "service";
+            this.__resourceData = serviceData;
+            this.__addPages();
+          }
+        }
+      }, this);
 
       return hBox;
     },
