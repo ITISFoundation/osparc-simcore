@@ -13,7 +13,7 @@ import arrow
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aws_library.s3 import S3KeyNotFoundError, S3MetaData
+from aws_library.s3 import S3DirectoryMetaData, S3KeyNotFoundError, S3MetaData
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -147,7 +147,7 @@ class SimcoreS3DataManager(BaseDataManager):
         data: list[FileMetaData] = []
         accessible_projects_ids = []
         uid = UserID | None
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             if project_id is not None:
                 project_access_rights = await get_project_access_rights(
                     conn=conn, user_id=user_id, project_id=project_id
@@ -174,23 +174,22 @@ class SimcoreS3DataManager(BaseDataManager):
                 sha256_checksum=None,
             )
 
-            # add all the entries from file_meta_data without
-            for metadata in file_and_directory_meta_data:
-                # below checks ensures that directoris either appear as
-                if metadata.is_directory and expand_dirs:
-                    # avoids directory files and does not add any directory entry to the result
-                    continue
+        # add all the entries from file_meta_data without
+        for metadata in file_and_directory_meta_data:
+            # below checks ensures that directoris either appear as
+            if metadata.is_directory and expand_dirs:
+                # avoids directory files and does not add any directory entry to the result
+                continue
 
-                if is_file_entry_valid(metadata):
-                    data.append(convert_db_to_model(metadata))
-                    continue
-                with suppress(S3KeyNotFoundError):
-                    updated_fmd = await self._update_database_from_storage(
-                        conn, metadata
-                    )
-                    data.append(convert_db_to_model(updated_fmd))
+            if is_file_entry_valid(metadata):
+                data.append(convert_db_to_model(metadata))
+                continue
+            with suppress(S3KeyNotFoundError):
+                updated_fmd = await self._update_database_from_storage(metadata)
+                data.append(convert_db_to_model(updated_fmd))
 
-            # now parse the project to search for node/project names
+        # now parse the project to search for node/project names
+        async with self.engine.acquire() as conn:
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
             async for proj_data in db_projects.list_valid_projects_in(
                 conn, accessible_projects_ids
@@ -239,21 +238,21 @@ class SimcoreS3DataManager(BaseDataManager):
         return data
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
-            if can.read:
-                fmd: FileMetaDataAtDB = await db_file_meta_data.get(
-                    conn, parse_obj_as(SimcoreS3FileID, file_id)
-                )
-                if is_file_entry_valid(fmd):
-                    return convert_db_to_model(fmd)
-                fmd = await self._update_database_from_storage(conn, fmd)
-                return convert_db_to_model(fmd)
+            if not can.read:
+                raise FileAccessRightError(access_right="read", file_id=file_id)
 
-            _logger.debug("User %s cannot read file %s", user_id, file_id)
-            raise FileAccessRightError(access_right="read", file_id=file_id)
+            fmd = await db_file_meta_data.get(
+                conn, parse_obj_as(SimcoreS3FileID, file_id)
+            )
+        if is_file_entry_valid(fmd):
+            return convert_db_to_model(fmd)
+        # get file from storage if available
+        fmd = await self._update_database_from_storage(fmd)
+        return convert_db_to_model(fmd)
 
     async def create_file_upload_links(
         self,
@@ -355,7 +354,7 @@ class SimcoreS3DataManager(BaseDataManager):
         user_id: UserID,
         file_id: StorageFileID,
     ) -> None:
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
@@ -365,24 +364,25 @@ class SimcoreS3DataManager(BaseDataManager):
             fmd: FileMetaDataAtDB = await db_file_meta_data.get(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
-            if is_valid_managed_multipart_upload(fmd.upload_id):
-                assert fmd.upload_id  # nosec
-                await get_s3_client(self.app).abort_multipart_upload(
-                    bucket=fmd.bucket_name,
-                    object_key=fmd.file_id,
-                    upload_id=fmd.upload_id,
-                )
-            # try to recover a file if it existed
-            with contextlib.suppress(S3KeyNotFoundError):
-                await get_s3_client(self.app).undelete_object(
-                    bucket=fmd.bucket_name, object_key=fmd.file_id
-                )
+        if is_valid_managed_multipart_upload(fmd.upload_id):
+            assert fmd.upload_id  # nosec
+            await get_s3_client(self.app).abort_multipart_upload(
+                bucket=fmd.bucket_name,
+                object_key=fmd.file_id,
+                upload_id=fmd.upload_id,
+            )
+        # try to recover a file if it existed
+        with contextlib.suppress(S3KeyNotFoundError):
+            await get_s3_client(self.app).undelete_object(
+                bucket=fmd.bucket_name, object_key=fmd.file_id
+            )
 
-            try:
-                # try to revert to what we had in storage if any
-                await self._update_database_from_storage(conn, fmd)
-            except S3KeyNotFoundError:
-                # the file does not exist, so we delete the entry in the db
+        try:
+            # try to revert to what we had in storage if any
+            await self._update_database_from_storage(fmd)
+        except S3KeyNotFoundError:
+            # the file does not exist, so we delete the entry in the db
+            async with self.engine.acquire() as conn:
                 await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
@@ -418,10 +418,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 upload_id=fmd.upload_id,
                 uploaded_parts=uploaded_parts,
             )
-        async with self.engine.acquire() as conn:
-            fmd = await self._update_database_from_storage(conn, fmd)
-            assert fmd  # nosec
-            return convert_db_to_model(fmd)
+        fmd = await self._update_database_from_storage(fmd)
+        assert fmd  # nosec
+        return convert_db_to_model(fmd)
 
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
@@ -438,15 +437,26 @@ class SimcoreS3DataManager(BaseDataManager):
             directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
                 conn, cast(SimcoreS3FileID, file_id)
             )
-            return (
-                await self._get_link_for_directory_fmd(
-                    conn, user_id, directory_file_id, file_id, link_type
-                )
-                if directory_file_id
-                else await self._get_link_for_file_fmd(
-                    conn, user_id, file_id, link_type
-                )
+            await self.__ensure_read_access_rights(
+                conn, user_id, directory_file_id if directory_file_id else file_id
             )
+        if directory_file_id:
+            if not await get_s3_client(self.app).object_exists(
+                bucket=self.simcore_bucket_name, object_key=f"{file_id}"
+            ):
+                raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
+            return await self.__get_link(
+                parse_obj_as(SimcoreS3FileID, file_id), link_type
+            )
+        # standard file link
+        async with self.engine.acquire() as conn:
+            fmd = await db_file_meta_data.get(
+                conn, parse_obj_as(SimcoreS3FileID, file_id)
+            )
+        if not is_file_entry_valid(fmd):
+            # try lazy update
+            fmd = await self._update_database_from_storage(fmd)
+        return await self.__get_link(fmd.object_name, link_type)
 
     @staticmethod
     async def __ensure_read_access_rights(
@@ -475,39 +485,6 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
         return link
-
-    async def _get_link_for_file_fmd(
-        self,
-        conn: SAConnection,
-        user_id: UserID,
-        file_id: StorageFileID,
-        link_type: LinkType,
-    ) -> AnyUrl:
-        # 1. the file_id maps 1:1 to `file_meta_data`
-        await self.__ensure_read_access_rights(conn, user_id, file_id)
-
-        fmd = await db_file_meta_data.get(conn, parse_obj_as(SimcoreS3FileID, file_id))
-        if not is_file_entry_valid(fmd):
-            # try lazy update
-            fmd = await self._update_database_from_storage(conn, fmd)
-
-        return await self.__get_link(fmd.object_name, link_type)
-
-    async def _get_link_for_directory_fmd(
-        self,
-        conn: SAConnection,
-        user_id: UserID,
-        directory_file_id: SimcoreS3FileID,
-        file_id: StorageFileID,
-        link_type: LinkType,
-    ) -> AnyUrl:
-        # 2. the file_id represents a file inside a directory
-        await self.__ensure_read_access_rights(conn, user_id, directory_file_id)
-        if not await get_s3_client(self.app).object_exists(
-            bucket=self.simcore_bucket_name, object_key=f"{file_id}"
-        ):
-            raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
-        return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
 
     async def delete_file(
         self,
@@ -751,15 +728,15 @@ class SimcoreS3DataManager(BaseDataManager):
                 limit=limit,
                 offset=offset,
             )
-            resolved_fmds = []
-            for fmd in file_metadatas:
-                if is_file_entry_valid(fmd):
-                    resolved_fmds.append(convert_db_to_model(fmd))
-                    continue
-                with suppress(S3KeyNotFoundError):
-                    updated_fmd = await self._update_database_from_storage(conn, fmd)
-                    resolved_fmds.append(convert_db_to_model(updated_fmd))
-            return resolved_fmds
+        resolved_fmds = []
+        for fmd in file_metadatas:
+            if is_file_entry_valid(fmd):
+                resolved_fmds.append(convert_db_to_model(fmd))
+                continue
+            with suppress(S3KeyNotFoundError):
+                updated_fmd = await self._update_database_from_storage(fmd)
+                resolved_fmds.append(convert_db_to_model(updated_fmd))
+        return resolved_fmds
 
     async def create_soft_link(
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
@@ -806,7 +783,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 len(file_ids_to_remove),
             )
 
-        return file_ids_to_remove
+        return cast(list[StorageFileID], file_ids_to_remove)
 
     async def _clean_pending_upload(
         self, conn: SAConnection, file_id: SimcoreS3FileID
@@ -841,15 +818,17 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
+        # NOTE: no concurrency here as we want to run low resources
         updated_fmds = await limited_gather(
             *(
-                self._update_database_from_storage_no_connection(fmd)
+                self._update_database_from_storage(fmd)
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
             log=_logger,
             limit=_NO_CONCURRENCY,
         )
+
         list_of_fmds_to_delete = [
             expired_fmd
             for expired_fmd, updated_fmd in zip(
@@ -859,9 +838,7 @@ class SimcoreS3DataManager(BaseDataManager):
         ]
 
         # try to revert the files if they exist
-        async def _revert_file(
-            conn: SAConnection, fmd: FileMetaDataAtDB
-        ) -> FileMetaDataAtDB:
+        async def _revert_file(fmd: FileMetaDataAtDB) -> FileMetaDataAtDB:
             if is_valid_managed_multipart_upload(fmd.upload_id):
                 assert fmd.upload_id  # nosec
                 await s3_client.abort_multipart_upload(
@@ -872,17 +849,16 @@ class SimcoreS3DataManager(BaseDataManager):
             await s3_client.undelete_object(
                 bucket=fmd.bucket_name, object_key=fmd.file_id
             )
-            return await self._update_database_from_storage(conn, fmd)
+            return await self._update_database_from_storage(fmd)
 
         s3_client = get_s3_client(self.app)
-        async with self.engine.acquire() as conn:
-            # NOTE: no concurrency here as we want to run low resources
-            reverted_fmds = await limited_gather(
-                *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
-                reraise=False,
-                log=_logger,
-                limit=_NO_CONCURRENCY,
-            )
+        # NOTE: no concurrency here as we want to run low resources
+        reverted_fmds = await limited_gather(
+            *(_revert_file(fmd) for fmd in list_of_fmds_to_delete),
+            reraise=False,
+            log=_logger,
+            limit=_NO_CONCURRENCY,
+        )
         list_of_fmds_to_delete = [
             fmd
             for fmd, reverted_fmd in zip(
@@ -909,25 +885,20 @@ class SimcoreS3DataManager(BaseDataManager):
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()
 
-    async def _update_database_from_storage(
-        self, conn: SAConnection, fmd: FileMetaDataAtDB
+    async def _update_fmd_from_other(
+        self, conn: SAConnection, *, fmd: FileMetaDataAtDB, copy_from: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
-        s3_metadata: S3MetaData | None = None
         if not fmd.is_directory:
             s3_metadata = await get_s3_client(self.app).get_object_metadata(
                 bucket=fmd.bucket_name, object_key=fmd.object_name
             )
-
-        fmd = await db_file_meta_data.get(conn, fmd.file_id)
-        if not fmd.is_directory and s3_metadata:
             fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
-        elif fmd.is_directory:
-            s3_folder_metadata = await get_s3_client(self.app).get_directory_metadata(
-                bucket=fmd.bucket_name, prefix=fmd.object_name
-            )
-            fmd.file_size = parse_obj_as(ByteSize, s3_folder_metadata.size)
+        else:
+            # we spare calling get_directory_metadata as it is not needed now and is costly
+            fmd.file_size = copy_from.file_size
+
         fmd.upload_expires_at = None
         fmd.upload_id = None
         updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
@@ -935,12 +906,40 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         return updated_fmd
 
-    async def _update_database_from_storage_no_connection(
+    async def _get_s3_metadata(
+        self, fmd: FileMetaDataAtDB
+    ) -> S3MetaData | S3DirectoryMetaData:
+        return (
+            await get_s3_client(self.app).get_object_metadata(
+                bucket=fmd.bucket_name, object_key=fmd.object_name
+            )
+            if not fmd.is_directory
+            else await get_s3_client(self.app).get_directory_metadata(
+                bucket=fmd.bucket_name, prefix=fmd.object_name
+            )
+        )
+
+    async def _update_database_from_storage(
         self, fmd: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
+        """
+        Raises:
+            S3KeyNotFoundError -- if the object key is not found in S3
+        """
+        s3_metadata = await self._get_s3_metadata(fmd)
+        if not fmd.is_directory:
+            assert isinstance(s3_metadata, S3MetaData)  # nosec
+            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+            fmd.last_modified = s3_metadata.last_modified
+            fmd.entity_tag = s3_metadata.e_tag
+        elif fmd.is_directory:
+            assert isinstance(s3_metadata, S3DirectoryMetaData)  # nosec
+            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+        fmd.upload_expires_at = None
+        fmd.upload_id = None
         async with self.engine.acquire() as conn:
-            updated_fmd: FileMetaDataAtDB = await self._update_database_from_storage(
-                conn, fmd
+            updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
+                conn, convert_db_to_model(fmd)
             )
         return updated_fmd
 
@@ -972,7 +971,7 @@ class SimcoreS3DataManager(BaseDataManager):
             await download_to_file_or_raise(session, dc_link, local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
-            async with self.engine.acquire() as conn, conn.begin() as transaction:
+            async with self.engine.acquire() as conn:
                 new_fmd = await self._create_fmd_for_upload(
                     conn,
                     user_id,
@@ -981,16 +980,14 @@ class SimcoreS3DataManager(BaseDataManager):
                     is_directory=False,
                     sha256_checksum=None,
                 )
-                # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
-                await transaction.commit()
-                # Uploads local -> S3
-                await get_s3_client(self.app).upload_file(
-                    bucket=self.simcore_bucket_name,
-                    file=local_file_path,
-                    object_key=dst_file_id,
-                    bytes_transfered_cb=bytes_transfered_cb,
-                )
-                updated_fmd = await self._update_database_from_storage(conn, new_fmd)
+            # Uploads local -> S3
+            await get_s3_client(self.app).upload_file(
+                bucket=self.simcore_bucket_name,
+                file=local_file_path,
+                object_key=dst_file_id,
+                bytes_transfered_cb=bytes_transfered_cb,
+            )
+            updated_fmd = await self._update_database_from_storage(fmd=new_fmd)
             file_storage_link["store"] = self.location_id
             file_storage_link["path"] = new_fmd.file_id
 
@@ -1039,9 +1036,11 @@ class SimcoreS3DataManager(BaseDataManager):
                     dst_object_key=new_fmd.object_name,
                     bytes_transfered_cb=bytes_transfered_cb,
                 )
+            # we are done, let's update the copy with the src
             async with self.engine.acquire() as conn:
-                updated_fmd = await self._update_database_from_storage(conn, new_fmd)
-            _logger.info("copied %s to %s", f"{src_fmd=}", f"{updated_fmd=}")
+                updated_fmd = await self._update_fmd_from_other(
+                    conn, fmd=new_fmd, copy_from=src_fmd
+                )
             return convert_db_to_model(updated_fmd)
 
     async def _create_fmd_for_upload(
