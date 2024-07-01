@@ -53,6 +53,23 @@ qx.Class.define("osparc.service.Store", {
         this.servicesCached[key] = {};
       }
       this.servicesCached[key][version] = service;
+      this.servicesCached[key][version]["cached"] = true;
+
+      if ("history" in service) {
+        service["history"].forEach(historyEntry => {
+          const hVersion = historyEntry.version;
+          if (!(hVersion in this.servicesCached[key])) {
+            this.servicesCached[key][hVersion] = {};
+            this.servicesCached[key][hVersion]["cached"] = false;
+          }
+          // merge history data into current metadata
+          this.servicesCached[key][hVersion] = {
+            ...this.servicesCached[key][hVersion],
+            ...historyEntry
+          };
+        });
+      }
+      console.log("servicesCached", this.servicesCached);
     },
 
     getService: function(key, version, useCache = true) {
