@@ -341,40 +341,53 @@ qx.Class.define("osparc.service.Utils", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
-    addTSRInfo: function(services) {
+    addTSRInfo: function(service) {
+      if (osparc.data.model.Node.isComputational(service)) {
+        osparc.metadata.Quality.attachQualityToObject(service);
+      }
+    },
+
+    addTSRInfos: function(services) {
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          if (osparc.data.model.Node.isComputational(service)) {
-            osparc.metadata.Quality.attachQualityToObject(service);
-          }
+          this.self().addTSRInfo(service);
         });
       });
     },
 
-    addExtraTypeInfo: function(services) {
+    addExtraTypeInfo: function(service) {
+      service["xType"] = service["type"];
+      if (["backend", "frontend"].includes(service["xType"])) {
+        if (osparc.data.model.Node.isFilePicker(service)) {
+          service["xType"] = "file";
+        } else if (osparc.data.model.Node.isParameter(service)) {
+          service["xType"] = "parameter";
+        } else if (osparc.data.model.Node.isIterator(service)) {
+          service["xType"] = "iterator";
+        } else if (osparc.data.model.Node.isProbe(service)) {
+          service["xType"] = "probe";
+        }
+      }
+    },
+
+    addExtraTypeInfos: function(services) {
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          service["xType"] = service["type"];
-          if (["backend", "frontend"].includes(service["xType"])) {
-            if (osparc.data.model.Node.isFilePicker(service)) {
-              service["xType"] = "file";
-            } else if (osparc.data.model.Node.isParameter(service)) {
-              service["xType"] = "parameter";
-            } else if (osparc.data.model.Node.isIterator(service)) {
-              service["xType"] = "iterator";
-            } else if (osparc.data.model.Node.isProbe(service)) {
-              service["xType"] = "probe";
-            }
-          }
+          this.self().addExtraTypeInfo(service);
         });
       });
+    },
+
+    addHit: function(service, favServices) {
+      const cachedHit = favServices ? favServices : osparc.utils.Utils.localCache.getFavServices();
+      const found = Object.keys(cachedHit).find(favSrv => favSrv === service["key"]);
+      service.hits = found ? cachedHit[found]["hits"] : 0;
     },
 
     addHits: function(servicesArray) {
       const favServices = osparc.utils.Utils.localCache.getFavServices();
       servicesArray.forEach(service => {
-        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
-        service.hits = found ? favServices[found]["hits"] : 0;
+        this.self().addHit(service, favServices);
       });
     },
 

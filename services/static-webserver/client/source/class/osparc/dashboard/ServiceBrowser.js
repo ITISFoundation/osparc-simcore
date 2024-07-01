@@ -43,27 +43,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   },
 
   members: {
-    __servicesAll: null,
     __sortBy: null,
 
     // overridden
     initResources: function() {
-      this.__servicesAll = {};
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-
-      Promise.all(preResourcePromises)
-        .then(() => {
-          this.getChildControl("resources-layout");
-          this.reloadResources();
-          this._hideLoadingPage();
-        })
-        .catch(err => console.error(err));
+      this.getChildControl("resources-layout");
+      this.reloadResources();
+      this._hideLoadingPage();
     },
 
     reloadResources: function() {
@@ -71,19 +58,17 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __reloadServices: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices(false, false)
-        .then(services => {
-          this.__servicesAll = services;
+      osparc.service.Store.getServicesLatest(true, false)
+        .then(servicesLatest => {
           const favServices = osparc.utils.Utils.localCache.getFavServices();
           const servicesList = [];
-          for (const key in services) {
-            const latestService = osparc.service.Utils.getLatest(services, key);
+          for (const key in servicesLatest) {
+            const serviceLatest = servicesLatest[key];
             const found = Object.keys(favServices).find(favSrv => favSrv === key);
-            latestService.hits = found ? favServices[found]["hits"] : 0;
+            serviceLatest.hits = found ? favServices[found]["hits"] : 0;
             // do not list frontend services
-            if (!latestService["key"].includes("simcore/services/frontend/")) {
-              servicesList.push(latestService);
+            if (!serviceLatest["key"].includes("simcore/services/frontend/")) {
+              servicesList.push(serviceLatest);
             }
           }
           this.__setResourcesToList(servicesList);
