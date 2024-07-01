@@ -9,12 +9,10 @@ services:
     command: >
       -f /mnt/locust/${LOCUST_FILE} --html /reporting/locust_html.html --master
     env_file:
-      - ${ENV_FILE}
+      - ./locust_files/${ENV_FILE}
 
   worker:
     image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
       - ./locust_files:/mnt/locust
     command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master
-    env_file:
-      - ${ENV_FILE}
