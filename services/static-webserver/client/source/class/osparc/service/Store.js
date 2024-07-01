@@ -50,12 +50,7 @@ qx.Class.define("osparc.service.Store", {
 
     getService: function(key, version, useCache = true) {
       return new Promise(resolve => {
-        if (
-          useCache &&
-          key in this.servicesCached &&
-          version in this.servicesCached[key] &&
-          this.servicesCached[key][version]["cached"]
-        ) {
+        if (useCache && this.__isInCache()) {
           resolve(this.servicesCached[key][version]);
           return;
         }
@@ -97,6 +92,14 @@ qx.Class.define("osparc.service.Store", {
           };
         });
       }
+    },
+
+    __isInCache: function(key, version) {
+      return (
+        key in this.servicesCached &&
+        version in this.servicesCached[key] &&
+        this.servicesCached[key][version]["cached"]
+      );
     },
 
     __getLatestCached: function() {
