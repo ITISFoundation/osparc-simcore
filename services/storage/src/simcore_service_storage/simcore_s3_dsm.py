@@ -783,7 +783,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 len(file_ids_to_remove),
             )
 
-        return cast(list[StorageFileID], file_ids_to_remove)
+        return file_ids_to_remove
 
     async def _clean_pending_upload(
         self, conn: SAConnection, file_id: SimcoreS3FileID
