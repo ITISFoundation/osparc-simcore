@@ -54,21 +54,21 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     reloadResources: function() {
-      this.__reloadServices();
+      this.__loadServices();
     },
 
-    __reloadServices: function() {
-      osparc.service.Store.getServicesLatest(true, false)
+    __loadServices: function() {
+      osparc.service.Store.getServicesLatest()
         .then(servicesLatest => {
-          const favServices = osparc.utils.Utils.localCache.getFavServices();
           const servicesList = [];
           for (const key in servicesLatest) {
-            const serviceLatest = servicesLatest[key];
-            const found = Object.keys(favServices).find(favSrv => favSrv === key);
-            serviceLatest.hits = found ? favServices[found]["hits"] : 0;
-            // do not list frontend services
-            if (!serviceLatest["key"].includes("simcore/services/frontend/")) {
-              servicesList.push(serviceLatest);
+            // filter out frontend services
+            if (!key.includes("simcore/services/frontend/")) {
+              for (const version in servicesLatest[key]) {
+                const serviceLatest = servicesLatest[key][version];
+                servicesList.push(serviceLatest);
+                // TODO OM: filter out retired services
+              }
             }
           }
           this.__setResourcesToList(servicesList);

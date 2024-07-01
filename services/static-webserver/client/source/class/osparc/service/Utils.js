@@ -406,6 +406,8 @@ qx.Class.define("osparc.service.Utils", {
       });
     },
 
+    // TODO OM: function that filters out retired services
+
     getUniqueServicesFromWorkbench: function(workbench) {
       const services = [];
       Object.values(workbench).forEach(node => {

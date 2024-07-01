@@ -39,21 +39,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-
-      Promise.all(preResourcePromises)
-        .then(() => {
-          this.getChildControl("resources-layout");
-          this.reloadResources();
-          this.__attachEventHandlers();
-          this._hideLoadingPage();
-        })
-        .catch(err => console.error(err));
+      this.getChildControl("resources-layout");
+      this.reloadResources();
+      this.__attachEventHandlers();
+      this._hideLoadingPage();
     },
 
     reloadResources: function() {

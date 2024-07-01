@@ -21,7 +21,7 @@ qx.Class.define("osparc.service.Store", {
   statics: {
     servicesCached: {},
 
-    getServicesLatest: function(useCache = true, includeRetired = true) {
+    getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
         if (useCache && Object.keys(this.servicesCached)) {
           resolve(this.servicesCached);
@@ -39,8 +39,6 @@ qx.Class.define("osparc.service.Store", {
             Object.values(servicesObj).forEach(serviceKey => {
               Object.values(serviceKey).forEach(srv => this.__addToCache(srv));
             });
-
-            // TODO OM: filter out retired in resolve
 
             resolve(servicesObj);
           })
