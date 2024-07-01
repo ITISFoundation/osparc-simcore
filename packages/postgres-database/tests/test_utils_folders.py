@@ -10,7 +10,11 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.folders import folders, folders_access_rights
+from simcore_postgres_database.models.folders import (
+    folders,
+    folders_access_rights,
+    folders_to_projects,
+)
 from simcore_postgres_database.utils_folders import (
     _FOLDER_NAME_MAX_LENGTH,
     _FOLDER_NAMES_RESERVED_WINDOWS,
@@ -21,9 +25,13 @@ from simcore_postgres_database.utils_folders import (
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
     InvalidFolderNameError,
+    NoAccessToFolderFoundrError,
+    ProjectAlreadyExistsInFolderError,
     RequiresOwnerToMakeAdminError,
     _FolderID,
     _GroupID,
+    _ProjectID,
+    folder_add_project,
     folder_create,
     folder_delete,
     folder_share,
@@ -70,9 +78,27 @@ async def _assert_access_rights(
         assert len(rows) == 1
 
 
+async def _assert_project_in_folder(
+    connection: SAConnection,
+    *,
+    folder_id: _FolderID,
+    project_id: _ProjectID,
+    owner: _GroupID,
+):
+    async with connection.execute(
+        folders_to_projects.select()
+        .where(folders_to_projects.c.folder_id == folder_id)
+        .where(folders_to_projects.c.project_id == project_id)
+        .where(folders_to_projects.c.owner == owner)
+    ) as result:
+        rows = await result.fetchall()
+        assert rows is not None
+        assert len(rows) == 1
+
+
 async def _create_folder_structure(
     connection: SAConnection,
-    gid: NonNegativeInt,
+    gid: _GroupID,
     *,
     tree_depth: NonNegativeInt,
     subfolder_count: NonNegativeInt,
@@ -110,8 +136,17 @@ async def _create_folder_structure(
 
 
 def _get_random_gid(
-    all_gids: set[NonNegativeInt], already_picked: set[NonNegativeInt] | None = None
-) -> NonNegativeInt:
+    all_gids: set[_GroupID], already_picked: set[_GroupID] | None = None
+) -> _GroupID:
+    if already_picked is None:
+        already_picked = set()
+    to_random_pick = all_gids - already_picked
+    return secrets.choice(list(to_random_pick))
+
+
+def _get_random_project_id(
+    all_gids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
+) -> _ProjectID:
     if already_picked is None:
         already_picked = set()
     to_random_pick = all_gids - already_picked
@@ -119,16 +154,31 @@ def _get_random_gid(
 
 
 @pytest.fixture
-async def setup_users_and_groups(
-    connection: SAConnection,
-    create_fake_user: Callable[..., Awaitable[RowProxy]],
-) -> set[NonNegativeInt]:
-    gids = set()
+async def setup_users(
+    connection: SAConnection, create_fake_user: Callable[..., Awaitable[RowProxy]]
+) -> list[RowProxy]:
+    users: list[RowProxy] = []
     for _ in range(10):
-        user: RowProxy = await create_fake_user(connection)
-        user_gid = user.primary_gid
-        gids.add(user_gid)
-    return gids
+        users.append(await create_fake_user(connection))
+    return users
+
+
+@pytest.fixture
+async def setup_users_and_groups(setup_users: list[RowProxy]) -> set[_GroupID]:
+    return {u.primary_gid for u in setup_users}
+
+
+@pytest.fixture
+async def setup_projects_for_users(
+    connection: SAConnection,
+    setup_users: list[RowProxy],
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+) -> set[_ProjectID]:
+    projects: set[_ProjectID] = set()
+    for user in setup_users:
+        project = await create_fake_project(connection, user)
+        projects.add(project.id)
+    return projects
 
 
 @pytest.mark.parametrize(
@@ -159,7 +209,7 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
 
 
 async def test_folder_create_base_usage(
-    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     user_gid = _get_random_gid(setup_users_and_groups)
 
@@ -183,7 +233,7 @@ async def test_folder_create_base_usage(
 
 
 async def test_folder_share(
-    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     owner_gid = _get_random_gid(setup_users_and_groups)
     admin_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
@@ -362,7 +412,7 @@ async def test_folder_share(
 
 
 async def test_folder_delete_base_usage(
-    connection: SAConnection, setup_users_and_groups: set[NonNegativeInt]
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     owner_gid = _get_random_gid(setup_users_and_groups)
     user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, owner_gid})
@@ -547,3 +597,52 @@ async def test_folder_delete_base_usage(
         )
 
     # TODO: try deleting a folder with some projects inside it
+
+
+async def test_folder_add_project(
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    setup_projects_for_users: set[_ProjectID],
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    another_user_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
+    user_with_access_gid = _get_random_gid(
+        setup_users_and_groups, {owner_gid, another_user_gid}
+    )
+
+    folder_id = await folder_create(connection, "f1", owner_gid)
+
+    await folder_share(
+        connection,
+        folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_with_access_gid,
+        recipient_write=True,
+    )
+
+    project_id = _get_random_project_id(setup_projects_for_users)
+
+    await folder_add_project(connection, folder_id, owner_gid, project_id=project_id)
+    await _assert_project_in_folder(
+        connection, folder_id=folder_id, project_id=project_id, owner=owner_gid
+    )
+
+    with pytest.raises(NoAccessToFolderFoundrError):
+        await folder_add_project(
+            connection, folder_id, another_user_gid, project_id=project_id
+        )
+
+    with pytest.raises(ProjectAlreadyExistsInFolderError) as exc:
+        await folder_add_project(
+            connection, folder_id, owner_gid, project_id=project_id
+        )
+    assert f"gid={owner_gid}" in f"{exc.value}"
+    assert f"owner={owner_gid}" in f"{exc.value}"
+
+    with pytest.raises(ProjectAlreadyExistsInFolderError) as exc:
+        await folder_add_project(
+            connection, folder_id, user_with_access_gid, project_id=project_id
+        )
+
+    assert f"gid={user_with_access_gid}" in f"{exc.value}"
+    assert f"owner={owner_gid}" in f"{exc.value}"

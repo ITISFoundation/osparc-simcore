@@ -9,7 +9,11 @@ from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import BaseModel, NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
-from simcore_postgres_database.models.folders import folders, folders_access_rights
+from simcore_postgres_database.models.folders import (
+    folders,
+    folders_access_rights,
+    folders_to_projects,
+)
 from sqlalchemy.dialects.postgresql import insert
 
 _ProjectID: TypeAlias = uuid.UUID
@@ -25,16 +29,25 @@ class ORMModeBaseModel(BaseModel):
 
 
 class FolderEntry(ORMModeBaseModel):
-    id: NonNegativeInt
+    folder_id: _FolderID
     name: str
-    owner: NonNegativeInt
-    gid: NonNegativeInt
-    parent_folder: NonNegativeInt | None
+    owner: _GroupID
+    gid: _GroupID
+    parent_folder: _FolderID | None
 
     read: bool
     write: bool
     delete: bool
     admin: bool
+
+    created_at: datetime.datetime
+    last_modified: datetime.datetime
+
+
+class ProjectInFolderEntry(ORMModeBaseModel):
+    folder_id: _FolderID
+    project_id: _ProjectID
+    owner: _GroupID
 
     created_at: datetime.datetime
     last_modified: datetime.datetime
@@ -83,8 +96,20 @@ class RequiresOwnerToMakeAdminError(BasePermissionError):
     msg_template = "Only owner can share folder with 'admin' rights. No owner found in gids={gids} for folder_id={folder_id}"
 
 
+class NoAccessToFolderFoundrError(BasePermissionError):
+    msg_template = "could not find an entry for folder_id={folder_id} and gid={gid}"
+
+
+class NoWriteAccessToFolderError(BasePermissionError):
+    msg_template = "folder folder_id={folder_id} owned by gid={gid} has no write access"
+
+
 class CouldNotFindFolderError(FoldersError):
     msg_template = "Could not find an entry for folder_id={folder_id}, gid={gid}"
+
+
+class ProjectAlreadyExistsInFolderError(FoldersError):
+    msg_template = "could not add project for gid={gid}. Project project_id={project_id} in folder folder_id={folder_id} is already owned by owner={owner}"
 
 
 class CouldNotDeleteMissingAccessError(FoldersError):
@@ -348,6 +373,7 @@ async def folder_share(
 async def folder_rename(
     connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
 ) -> None:
+    # TODO:
     # admin users only can rename the folder, all other users are not allowed
     pass
 
@@ -409,11 +435,6 @@ async def folder_delete(
         await folder_delete(connection, child_folder_id, gid)
 
 
-async def folder_permissions() -> None:
-    # TODO: a way to figure out whom owns the folder and who has access to it and in which way
-    pass
-
-
 async def folder_move(
     connection: SAConnection,
     folder_id: _FolderID,
@@ -422,58 +443,85 @@ async def folder_move(
     new_parent_id: _FolderID,
 ) -> None:
     # TODO: make sure parent is not self
+    # TODO: enforce access rights
     pass
 
 
 async def folder_list(
+    # maybe this one should be private and we need a more generic listing
     # TODO: think about how this will be used and add it based on that!
     connection: SAConnection,
     gids: set[_GroupID],
     *,
     parent_folder: _FolderID | None = None,
 ) -> list[_FolderID]:
-    pass
-
-
-# TODO: figure out which of these is required
+    # TODO: with pagination
+    return []
 
 
 async def folder_add_project(
     connection: SAConnection,
     folder_id: _FolderID,
-    gids: set[_GroupID],
+    gid: _GroupID,
     *,
     project_id: _ProjectID,
 ) -> None:
-    # TODO: check that you have gids for write permission to add folder
-    pass
+    async with connection.begin():
+        # check access rights from folder
+        access_rights = await (
+            await connection.execute(
+                folders_access_rights.select()
+                .where(folders_access_rights.c.folder_id == folder_id)
+                .where(folders_access_rights.c.gid == gid)
+            )
+        ).fetchone()
+        if not access_rights:
+            raise NoAccessToFolderFoundrError(gid=gid, folder_id=folder_id)
+
+        if not access_rights.write:
+            raise NoWriteAccessToFolderError(gid=gid, folder_id=folder_id)
+
+        # check if already added in folder
+        project_in_folder_entry = await (
+            await connection.execute(
+                folders_to_projects.select()
+                .where(folders_to_projects.c.folder_id == folder_id)
+                .where(folders_to_projects.c.project_id == project_id)
+            )
+        ).fetchone()
+        if project_in_folder_entry:
+            raise ProjectAlreadyExistsInFolderError(
+                project_id=project_id,
+                owner=project_in_folder_entry.owner,
+                gid=gid,
+                folder_id=folder_id,
+            )
+
+        # finally add project to folder
+        await connection.execute(
+            folders_to_projects.insert().values(
+                folder_id=folder_id, project_id=project_id, owner=gid
+            )
+        )
 
 
 async def folder_remove_project(
     connection: SAConnection,
     folder_id: _FolderID,
-    gids: set[_GroupID],
+    gid: _GroupID,
     *,
     project_id: _ProjectID,
 ) -> None:
-    # TODO: check that you have gids for write permission to add folder? I guess delete refers to the folder not the project?
-    pass
-
-
-async def folder_move_project(
-    connection: SAConnection,
-    project_id: _ProjectID,
-    gids: set[_GroupID],
-    *,
-    from_folder_id: _FolderID,
-    to_folder_id: _FolderID,
-) -> None:
-    # TODO: check taht entry for project_id with it's gid have access to
+    # TODO: check that you have gids for delete permissions to remove project
     pass
 
 
 async def folder_list_projects(
-    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+    # TODO: -> maybe this one should be merged with the Other function that simply lists the root element?
+    # or maybe this one could be private
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gids: set[_GroupID],
 ) -> list[_ProjectID]:
-    # when listing show all the projects which have access via gids, also need to check the project's owne access rights in order to figure out if it can be shown
-    pass
+    # TODO: with pagination
+    return []

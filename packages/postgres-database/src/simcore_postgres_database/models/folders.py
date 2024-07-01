@@ -132,14 +132,14 @@ folders_to_projects = sa.Table(
             ondelete="CASCADE",
         ),
     ),
-    sa.PrimaryKeyConstraint("folder_id", "project_id", name="projects_to_folder_pk"),
     sa.Column(
-        "created_by",
+        "owner",
         sa.BigInteger,
         sa.ForeignKey(
             "groups.gid",
             name="fk_folders_to_groups_gid",
-            ondelete="SET NULL",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         nullable=True,
         doc="Traces back the person who added the project to the folder",
@@ -159,6 +159,7 @@ folders_to_projects = sa.Table(
         onupdate=func.now(),
         doc="Timestamp with last update",
     ),
+    sa.PrimaryKeyConstraint("folder_id", "project_id", name="projects_to_folder_pk"),
 )
 
 # PROCEDURES ------------------------
