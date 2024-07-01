@@ -9,5 +9,6 @@ RUN pip3 --version && \
   pydantic \
   pydantic-settings \
   python-dotenv \
+  tenacity \
   locust-plugins==2.1.1 &&\
   pip3 freeze --verbose
