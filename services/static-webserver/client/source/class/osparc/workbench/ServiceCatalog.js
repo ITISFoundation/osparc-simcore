@@ -112,12 +112,6 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         flex: 1
       });
 
-      if (osparc.data.Permissions.getInstance().canDo("services.all.reupdate")) {
-        const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
-        reloadBtn.addListener("execute", () => this.__populateList(true), this);
-        layout.add(reloadBtn);
-      }
-
       const containerSortBtns = new osparc.service.SortServicesButtons();
       containerSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
@@ -203,12 +197,14 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__updateList();
     },
 
-    __populateList: function(reload = false) {
+    __populateList: function() {
       this.__allServicesList = [];
-      let store = osparc.store.Store.getInstance();
-      store.getAllServices(reload, false)
-        .then(services => {
-          this.__allServicesList = osparc.service.Utils.convertObjectToArray(services);
+      osparc.service.Store.getServicesLatest()
+        .then(servicesLatest => {
+          Object.keys(servicesLatest).forEach(key => {
+            const serviceLatest = servicesLatest[key];
+            this.__allServicesList.push(serviceLatest);
+          });
           this.__updateList();
         });
     },
@@ -231,14 +227,12 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         }
       });
 
-      osparc.service.Utils.addHits(filteredServices);
       osparc.service.Utils.sortObjectsBasedOn(filteredServices, this.__sortBy);
       const filteredServicesObj = this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
         let service = osparc.service.Utils.getLatest(filteredServicesObj, key);
-        osparc.service.Utils.addHits([service]);
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.service.Utils.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
@@ -252,9 +246,9 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
-          let versions = osparc.service.Utils.getVersions(this.__filteredServicesObj, key);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
+          let versions = osparc.service.Utils.getVersions(null, key);
           versions.forEach(version => selectBox.add(new qx.ui.form.ListItem(version)));
           selectBox.setSelection([latest]);
         }
