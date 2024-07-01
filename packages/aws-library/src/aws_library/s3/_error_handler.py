@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from collections.abc import AsyncGenerator, Callable, Coroutine
-from typing import Any, Concatenate, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 
@@ -12,6 +12,11 @@ from ._errors import (
     S3KeyNotFoundError,
     S3UploadNotFoundError,
 )
+
+if TYPE_CHECKING:
+    # NOTE: TYPE_CHECKING is True when static type checkers are running,
+    # allowing for circular imports only for them (mypy, pylance, ruff)
+    from ._client import SimcoreS3API
 
 
 def _map_botocore_client_exception(
@@ -48,7 +53,7 @@ T = TypeVar("T")
 
 def s3_exception_handler(
     logger: logging.Logger,
-) -> Callable[  # type: ignore[name-defined]
+) -> Callable[
     [Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]]],
     Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]],
 ]:
@@ -62,10 +67,10 @@ def s3_exception_handler(
     """
 
     def decorator(
-        func: Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]]  # type: ignore[name-defined]  # noqa: F821
-    ) -> Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]]:  # type: ignore[name-defined]  # noqa: F821
+        func: Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]]
+    ) -> Callable[Concatenate["SimcoreS3API", P], Coroutine[Any, Any, R]]:
         @functools.wraps(func)
-        async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:  # type: ignore[name-defined]  # noqa: F821
+        async def wrapper(self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return await func(self, *args, **kwargs)
             except (
@@ -91,9 +96,9 @@ def s3_exception_handler(
 
 def s3_exception_handler_async_gen(
     logger: logging.Logger,
-) -> Callable[  # type: ignore[name-defined]
-    [Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]],  # noqa: F821
-    Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]],  # noqa: F821
+) -> Callable[
+    [Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]],
+    Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]],
 ]:
     """
     Raises:
@@ -105,11 +110,11 @@ def s3_exception_handler_async_gen(
     """
 
     def decorator(
-        func: Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]  # type: ignore[name-defined]  # noqa: F821
-    ) -> Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]:  # type: ignore[name-defined]  # noqa: F821
+        func: Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]
+    ) -> Callable[Concatenate["SimcoreS3API", P], AsyncGenerator[T, None]]:
         @functools.wraps(func)
         async def async_generator_wrapper(
-            self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs  # type: ignore[name-defined]  # noqa: F821
+            self: "SimcoreS3API", *args: P.args, **kwargs: P.kwargs
         ) -> AsyncGenerator[T, None]:
             try:
                 assert inspect.isasyncgenfunction(func)  # nosec
@@ -130,7 +135,7 @@ def s3_exception_handler_async_gen(
                 raise S3AccessError from exc
 
         async_generator_wrapper.__doc__ = (
-            f"{func.__doc__}\n\n{s3_exception_handler.__doc__}"
+            f"{func.__doc__}\n\n{s3_exception_handler_async_gen.__doc__}"
         )
         return async_generator_wrapper
 
