@@ -55,10 +55,12 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        items = [
-            parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
-        ]
-        total_count = 1
+        items = (
+            parse_obj_as(
+                list[DEVServiceGet], DEVServiceGet.Config.schema_extra["examples"]
+            ),
+        )
+        total_count = len(items)
 
         return PageRpc[DEVServiceGet].create(
             items,
@@ -79,7 +81,9 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+        got = parse_obj_as(
+            DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0]
+        )
         got.version = service_version
         got.key = service_key
 
@@ -98,7 +102,9 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
+        got = parse_obj_as(
+            DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0]
+        )
         got.version = service_version
         got.key = service_key
         return got.copy(update=update.dict(exclude_unset=True))
