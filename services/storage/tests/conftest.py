@@ -168,7 +168,6 @@ def app_settings(
     datcore_adapter_service_mock: aioresponses.aioresponses,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Settings:
-    # TODO: fix the externals
     if external_envfile_dict:
         s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
         if s3_settings.S3_ENDPOINT is None:
