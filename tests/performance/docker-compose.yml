@@ -9,7 +9,7 @@ services:
     command: >
       -f /mnt/locust/${LOCUST_FILE} --html /reporting/locust_html.html --master
     env_file:
-      - ./locust_files/${ENV_FILE}
+      - ${ENV_FILE}
 
   worker:
     image: itisfoundation/locust:${LOCUST_VERSION}
