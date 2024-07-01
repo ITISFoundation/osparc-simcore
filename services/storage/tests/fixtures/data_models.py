@@ -4,10 +4,11 @@
 
 
 from collections import deque
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from random import choice, randint
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -179,7 +180,7 @@ async def create_project_node(
 @pytest.fixture
 async def random_project_with_files(
     aiopg_engine: Engine,
-    create_project: Callable[[], Awaitable[dict[str, Any]]],
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
     create_project_node: Callable[..., Awaitable[NodeID]],
     create_simcore_file_id: Callable[
         [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
@@ -219,7 +220,7 @@ async def random_project_with_files(
         dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
     ]:
         assert len(file_sizes) == len(file_checksums)
-        project = await create_project()
+        project = await create_project(name="random-project")
         src_projects_list: dict[
             NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]
         ] = {}
