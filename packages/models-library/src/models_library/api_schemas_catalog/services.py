@@ -127,22 +127,12 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "description": "Pick a file containing only one integer",
             "type": "data:text/plain",
             "fileToKeyMap": {"single_number.txt": "input_1"},
-            "keyId": "input_1",
         },
         "input_2": {
-            "unitLong": "second",
-            "unitShort": "s",
             "label": "Sleep interval",
             "description": "Choose an amount of time to sleep in range [0:]",
-            "keyId": "input_2",
             "displayOrder": 2,
             "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-                "minimum": 0,
-            },
             "defaultValue": 2,
         },
         "input_3": {
@@ -151,37 +141,19 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "description": "If set to true will cause service to fail after it sleeps",
             "type": "boolean",
             "defaultValue": False,
-            "keyId": "input_3",
         },
         "input_4": {
-            "unitLong": "meter",
-            "unitShort": "m",
             "label": "Distance to bed",
             "description": "It will first walk the distance to bed",
-            "keyId": "input_4",
             "displayOrder": 4,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Distance to bed",
-                "type": "integer",
-                "x_unit": "meter",
-            },
+            "type": "integer",
             "defaultValue": 0,
         },
         "input_5": {
-            "unitLong": "byte",
-            "unitShort": "B",
             "label": "Dream (or nightmare) of the night",
             "description": "Defines the size of the dream that will be generated [0:]",
-            "keyId": "input_5",
             "displayOrder": 5,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Dream of the night",
-                "type": "integer",
-                "x_unit": "byte",
-                "minimum": 0,
-            },
+            "type": "integer",
             "defaultValue": 0,
         },
     },
@@ -192,21 +164,12 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "description": "Integer is generated in range [1-9]",
             "type": "data:text/plain",
             "fileToKeyMap": {"single_number.txt": "output_1"},
-            "keyId": "output_1",
         },
         "output_2": {
-            "unitLong": "second",
-            "unitShort": "s",
             "label": "Random sleep interval",
             "description": "Interval is generated in range [1-9]",
-            "keyId": "output_2",
             "displayOrder": 2,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Random sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-            },
+            "type": "integer",
         },
         "output_3": {
             "displayOrder": 3,
@@ -214,7 +177,6 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "description": "Contains some random data representing a dream",
             "type": "data:text/plain",
             "fileToKeyMap": {"dream.txt": "output_3"},
-            "keyId": "output_3",
         },
     },
     "owner": "owner@acme.com",
@@ -229,7 +191,9 @@ class ServiceGet(
     class Config:
         allow_population_by_field_name = True
         extra = Extra.ignore
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _EXAMPLE_FILEPICKER}
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
+        }
 
 
 class DEVServiceGet(ServiceGet):
