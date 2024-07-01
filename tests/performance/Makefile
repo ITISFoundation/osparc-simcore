@@ -45,6 +45,6 @@ down: ## stops and removes osparc locust containers
 test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
-	echo "LOCUST_FILE=$${LOCUST_FILE}";\
 	export ENV_FILE=$(dirname $(realpath locust_files/$${LOCUST_FILE}))/.env; \
+	if [ ! -f $${ENV_FILE} ]; then cp $(dirname $${ENV_FILE}/.env-devel $${ENV_FILE}); fi \;
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
