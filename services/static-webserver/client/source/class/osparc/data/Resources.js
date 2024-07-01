@@ -321,15 +321,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "serviceResources": {
-        idField: ["key", "version"],
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/resources"
-          }
-        }
-      },
+
       /*
        * SNAPSHOTS
        */
@@ -423,6 +415,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+
       /*
        * SERVICES
        */
@@ -446,6 +439,39 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+          }
+        }
+      },
+
+      /*
+       * PORTS COMPATIBILITY
+       */
+      "portsCompatibility": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
+          },
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
+          }
+        }
+      },
+
+      /*
+       * SERVICE RESOURCES
+       */
+      "serviceResources": {
+        idField: ["key", "version"],
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/resources"
           }
         }
       },
@@ -513,25 +539,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
 
-      /*
-       * PORT COMPATIBILITY
-       */
-      "portsCompatibility": {
-        useCache: false, // It has its own cache handler
-        endpoints: {
-          matchInputs: {
-            // get_compatible_inputs_given_source_output_handler
-            method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
-          },
-          matchOutputs: {
-            useCache: false,
-            // get_compatible_outputs_given_target_input_handler
-            method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
-          }
-        }
-      },
       /*
        * GROUPS/DAGS
        */
