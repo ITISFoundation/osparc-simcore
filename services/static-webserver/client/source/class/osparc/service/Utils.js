@@ -347,8 +347,8 @@ qx.Class.define("osparc.service.Utils", {
       }
     },
 
-    addTSRInfos: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
+    addTSRInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
           this.self().addTSRInfo(service);
         });
@@ -370,8 +370,8 @@ qx.Class.define("osparc.service.Utils", {
       }
     },
 
-    addExtraTypeInfos: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
+    addExtraTypeInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
           this.self().addExtraTypeInfo(service);
         });

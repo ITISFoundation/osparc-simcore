@@ -28,29 +28,33 @@ qx.Class.define("osparc.service.Store", {
           return;
         }
 
-        let allServices = [];
         osparc.data.Resources.get("servicesDev")
-          .then(services => {
-            allServices = services;
-          })
-          .catch(err => console.error("getServices failed", err))
-          .finally(() => {
-            let servicesObj = {};
-            if (includeRetired) {
-              servicesObj = osparc.service.Utils.convertArrayToObject(allServices);
-            } else {
-              const nonDepServices = allServices.filter(service => !(osparc.service.Utils.isRetired(service) || osparc.service.Utils.isDeprecated(service)));
-              servicesObj = osparc.service.Utils.convertArrayToObject(nonDepServices);
-            }
-            osparc.service.Utils.addTSRInfo(servicesObj);
-            osparc.service.Utils.addExtraTypeInfo(servicesObj);
-            // osparc.service.Utils.addHits(service);
-            if (includeRetired) {
-              osparc.service.Utils.servicesCached = servicesObj;
-            }
+          .then(servicesArray => {
+            osparc.service.Utils.addHits(servicesArray);
+            const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
+            osparc.service.Utils.addTSRInfos(servicesObj);
+            osparc.service.Utils.addExtraTypeInfos(servicesObj);
+
+            // use response to populate servicesCached
+            Object.values(servicesObj).forEach(serviceKey => {
+              Object.values(serviceKey).forEach(srv => this.__addToCache(srv));
+            });
+
+            // TODO OM: filter out retired in resolve
+
             resolve(servicesObj);
-          });
+          })
+          .catch(err => console.error("getServices failed", err));
       });
+    },
+
+    __addToCache: function(service) {
+      const key = service.key;
+      const version = service.version;
+      if (!(key in this.servicesCached)) {
+        this.servicesCached[key] = {};
+      }
+      this.servicesCached[key][version] = service;
     },
 
     getService: function(key, version, useCache = true) {
@@ -64,8 +68,12 @@ qx.Class.define("osparc.service.Store", {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
         osparc.data.Resources.getOne("servicesDev", params)
-          .then(serviceData => {
-            resolve(serviceData);
+          .then(service => {
+            osparc.service.Utils.addHit(service);
+            osparc.service.Utils.addTSRInfo(service);
+            osparc.service.Utils.addExtraTypeInfo(service);
+            this.__addToCache(service)
+            resolve(service);
           });
       });
     }
