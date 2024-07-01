@@ -262,41 +262,41 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       }
     },
 
-    __onAddService: function(model) {
-      if (model == null && this.__serviceList.isSelectionEmpty()) {
+    __onAddService: async function(selectedServiceModel) {
+      if (selectedServiceModel == null && this.__serviceList.isSelectionEmpty()) {
         return;
       }
 
-      let serviceModel = model;
+      let serviceModel = selectedServiceModel;
       if (!serviceModel) {
-        let service = this.__getSelectedService();
-        service = osparc.utils.Utils.deepCloneObject(service);
-        osparc.service.Utils.removeFileToKeyMap(service);
-        serviceModel = qx.data.marshal.Json.createModel(service);
+        let serviceMetadata = await this.__getSelectedService();
+        serviceMetadata = osparc.utils.Utils.deepCloneObject(serviceMetadata);
+        osparc.service.Utils.removeFileToKeyMap(serviceMetadata);
+        serviceModel = qx.data.marshal.Json.createModel(serviceMetadata);
       }
-      if (serviceModel) {
-        const eData = {
-          service: serviceModel,
-          nodeLeftId: this.__contextLeftNodeId,
-          nodeRightId: this.__contextRightNodeId
-        };
-        this.fireDataEvent("addService", eData);
-      }
+      const eData = {
+        service: serviceModel,
+        nodeLeftId: this.__contextLeftNodeId,
+        nodeRightId: this.__contextRightNodeId
+      };
+      this.fireDataEvent("addService", eData);
       this.close();
     },
 
-    __getSelectedService: function() {
+    __getSelectedService: async function() {
       const selected = this.__serviceList.getSelected();
       const key = selected.getKey();
       let version = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (version == this.self(arguments).LATEST.toString()) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.service.Utils.getFromArray(this.__allServicesList, key, version);
+      const serviceMetadata = await osparc.service.Store.getService(key, version);
+      return serviceMetadata;
     },
 
-    __showServiceDetails: function() {
-      const serviceDetails = new osparc.info.ServiceLarge(this.__getSelectedService());
+    __showServiceDetails: async function() {
+      const serviceMetadata = await this.__getSelectedService();
+      const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
       const title = this.tr("Service information");
       const width = osparc.info.CardLarge.WIDTH;
       const height = osparc.info.CardLarge.HEIGHT;
