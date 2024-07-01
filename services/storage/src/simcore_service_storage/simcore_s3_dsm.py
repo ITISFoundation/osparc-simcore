@@ -264,7 +264,7 @@ class SimcoreS3DataManager(BaseDataManager):
         sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
-        async with self.engine.acquire() as conn, conn.begin() as transaction:
+        async with self.engine.acquire() as conn:
             can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
@@ -276,16 +276,16 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
 
-            # ensure file is deleted first in case it already exists
-            await self.delete_file(
-                user_id=user_id,
-                file_id=file_id,
-                # NOTE: bypassing check since the project access rights don't play well
-                # with collaborators
-                # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
-                enforce_access_rights=False,
-            )
-
+        # ensure file is deleted first in case it already exists
+        await self.delete_file(
+            user_id=user_id,
+            file_id=file_id,
+            # NOTE: bypassing check since the project access rights don't play well
+            # with collaborators
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+            enforce_access_rights=False,
+        )
+        async with self.engine.acquire() as conn:
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
                 conn,
@@ -302,43 +302,42 @@ class SimcoreS3DataManager(BaseDataManager):
                 is_directory=is_directory,
                 sha256_checksum=sha256_checksum,
             )
-            # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
-            await transaction.commit()
 
-            if link_type == LinkType.PRESIGNED and get_s3_client(self.app).is_multipart(
-                file_size_bytes
-            ):
-                # create multipart links
-                assert file_size_bytes  # nosec
-                multipart_presigned_links = await get_s3_client(
-                    self.app
-                ).create_multipart_upload_links(
-                    bucket=fmd.bucket_name,
-                    object_key=fmd.file_id,
-                    file_size=file_size_bytes,
-                    expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
-                    sha256_checksum=fmd.sha256_checksum,
-                )
-                # update the database so we keep the upload id
-                fmd.upload_id = multipart_presigned_links.upload_id
+        if link_type == LinkType.PRESIGNED and get_s3_client(self.app).is_multipart(
+            file_size_bytes
+        ):
+            # create multipart links
+            assert file_size_bytes  # nosec
+            multipart_presigned_links = await get_s3_client(
+                self.app
+            ).create_multipart_upload_links(
+                bucket=fmd.bucket_name,
+                object_key=fmd.file_id,
+                file_size=file_size_bytes,
+                expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+                sha256_checksum=fmd.sha256_checksum,
+            )
+            # update the database so we keep the upload id
+            fmd.upload_id = multipart_presigned_links.upload_id
+            async with self.engine.acquire() as conn:
                 await db_file_meta_data.upsert(conn, fmd)
-                return UploadLinks(
-                    multipart_presigned_links.urls,
-                    multipart_presigned_links.chunk_size,
-                )
-            if link_type == LinkType.PRESIGNED:
-                # create single presigned link
-                single_presigned_link = await get_s3_client(
-                    self.app
-                ).create_single_presigned_upload_link(
-                    bucket=self.simcore_bucket_name,
-                    object_key=fmd.file_id,
-                    expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
-                )
-                return UploadLinks(
-                    [single_presigned_link],
-                    file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type],
-                )
+            return UploadLinks(
+                multipart_presigned_links.urls,
+                multipart_presigned_links.chunk_size,
+            )
+        if link_type == LinkType.PRESIGNED:
+            # create single presigned link
+            single_presigned_link = await get_s3_client(
+                self.app
+            ).create_single_presigned_upload_link(
+                bucket=self.simcore_bucket_name,
+                object_key=fmd.file_id,
+                expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+            )
+            return UploadLinks(
+                [single_presigned_link],
+                file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type],
+            )
 
         # user wants just the s3 link
         s3_link = get_s3_client(self.app).compute_s3_url(
@@ -504,33 +503,33 @@ class SimcoreS3DataManager(BaseDataManager):
         # Only use this in those circumstances where a collaborator requires to delete a file (the current
         # permissions model will not allow him to do so, even though this is a legitimate action)
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             if enforce_access_rights:
                 can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-            with suppress(FileMetaDataNotFoundError):
+        with suppress(FileMetaDataNotFoundError):
+            # NOTE: deleting might be slow, so better ensure we release the connection
+            async with self.engine.acquire() as conn:
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
                 )
-                # NOTE: since this lists the files before deleting them
-                # it can be used to filter for just a single file and also
-                # to delete it
-                await get_s3_client(self.app).delete_objects_recursively(
-                    bucket=file.bucket_name,
-                    prefix=(
-                        ensure_ends_with(file.file_id, "/")
-                        if file.is_directory
-                        else file.file_id
-                    ),
-                )
+            await get_s3_client(self.app).delete_objects_recursively(
+                bucket=file.bucket_name,
+                prefix=(
+                    ensure_ends_with(file.file_id, "/")
+                    if file.is_directory
+                    else file.file_id
+                ),
+            )
+            async with self.engine.acquire() as conn:
                 await db_file_meta_data.delete(conn, [file.file_id])
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             can: AccessRights | None = await get_project_access_rights(
                 conn, user_id, project_id
             )
@@ -545,12 +544,12 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 await db_file_meta_data.delete_all_from_node(conn, node_id)
 
-            await get_s3_client(self.app).delete_objects_recursively(
-                bucket=self.simcore_bucket_name,
-                prefix=ensure_ends_with(
-                    f"{project_id}/{node_id}" if node_id else f"{project_id}", "/"
-                ),
-            )
+        await get_s3_client(self.app).delete_objects_recursively(
+            bucket=self.simcore_bucket_name,
+            prefix=ensure_ends_with(
+                f"{project_id}/{node_id}" if node_id else f"{project_id}", "/"
+            ),
+        )
 
     async def deep_copy_project_simcore_s3(
         self,
