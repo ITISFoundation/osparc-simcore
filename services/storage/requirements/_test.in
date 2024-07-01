@@ -16,7 +16,6 @@ pandas
 pytest
 pytest-aiohttp
 pytest-asyncio
-pytest-benchmark
 pytest-cov
 pytest-icdiff
 pytest-instafail
