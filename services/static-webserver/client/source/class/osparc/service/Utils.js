@@ -117,14 +117,6 @@ qx.Class.define("osparc.service.Utils", {
       });
     },
 
-    addHits: function(servicesArray) {
-      const favServices = osparc.utils.Utils.localCache.getFavServices();
-      servicesArray.forEach(service => {
-        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
-        service.hits = found ? favServices[found]["hits"] : 0;
-      });
-    },
-
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {
@@ -375,6 +367,14 @@ qx.Class.define("osparc.service.Utils", {
             }
           }
         });
+      });
+    },
+
+    addHits: function(servicesArray) {
+      const favServices = osparc.utils.Utils.localCache.getFavServices();
+      servicesArray.forEach(service => {
+        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
+        service.hits = found ? favServices[found]["hits"] : 0;
       });
     },
 

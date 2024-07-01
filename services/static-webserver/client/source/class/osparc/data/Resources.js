@@ -447,14 +447,14 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES DEV
        */
       "servicesDev": {
-        useCache: false, // handled in store
+        useCache: false, // handled in its store
         idField: ["key", "version"],
         endpoints: {
-          getDev: {
+          get: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services"
+            url: statics.API + "/dev/catalog/services/-/latest"
           },
-          getOneDev: {
+          getOne: {
             method: "GET",
             url: statics.API + "/dev/catalog/services/{key}/{version}"
           }

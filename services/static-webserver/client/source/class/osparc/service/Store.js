@@ -23,7 +23,7 @@ qx.Class.define("osparc.service.Store", {
 
     getServicesLatest: function(useCache = true, includeRetired = true) {
       return new Promise(resolve => {
-        if (useCache) {
+        if (useCache && Object.keys(this.servicesCached)) {
           resolve(this.servicesCached);
           return;
         }
@@ -44,6 +44,7 @@ qx.Class.define("osparc.service.Store", {
             }
             osparc.service.Utils.addTSRInfo(servicesObj);
             osparc.service.Utils.addExtraTypeInfo(servicesObj);
+            // osparc.service.Utils.addHits(service);
             if (includeRetired) {
               osparc.service.Utils.servicesCached = servicesObj;
             }
