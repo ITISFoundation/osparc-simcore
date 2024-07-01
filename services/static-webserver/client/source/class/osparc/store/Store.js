@@ -454,6 +454,8 @@ qx.Class.define("osparc.store.Store", {
         };
         osparc.data.Resources.getOne("services", params, null, !reload)
           .then(serviceData => {
+            osparc.service.Utils.addTSRInfo(serviceData);
+            osparc.service.Utils.addExtraTypeInfo(serviceData);
             resolve(serviceData);
           });
       });
