@@ -422,34 +422,20 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         if dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
-        try:
-
-            await limited_gather(
-                *[
-                    self.copy_object(
-                        bucket=bucket,
-                        src_object_key=s3_object.object_key,
-                        dst_object_key=s3_object.object_key.replace(
-                            src_prefix, dst_prefix
-                        ),
-                        bytes_transfered_cb=bytes_transfered_cb,
-                    )
-                    async for s3_object in self._list_all_objects(
-                        bucket=bucket, prefix=src_prefix
-                    )
-                ],
-                limit=_MAX_CONCURRENT_COPY,
-            )
-
-        except Exception:
-            # rollback changes
-            with log_catch(_logger, reraise=False), log_context(
-                _logger,
-                logging.ERROR,
-                msg="Unexpected error while copying files recursively, deleting partially copied files",
-            ):
-                await self.delete_objects_recursively(bucket=bucket, prefix=dst_prefix)
-            raise
+        await limited_gather(
+            *[
+                self.copy_object(
+                    bucket=bucket,
+                    src_object_key=s3_object.object_key,
+                    dst_object_key=s3_object.object_key.replace(src_prefix, dst_prefix),
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
+                async for s3_object in self._list_all_objects(
+                    bucket=bucket, prefix=src_prefix
+                )
+            ],
+            limit=_MAX_CONCURRENT_COPY,
+        )
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
