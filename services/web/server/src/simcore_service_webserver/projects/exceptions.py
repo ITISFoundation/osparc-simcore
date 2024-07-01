@@ -144,7 +144,7 @@ class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
 
 
 class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_tempalte = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
+    msg_template = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
 
 
 class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
