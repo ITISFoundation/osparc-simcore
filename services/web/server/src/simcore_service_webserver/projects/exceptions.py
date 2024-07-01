@@ -130,7 +130,21 @@ class PermalinkFactoryError(BaseProjectError):
 
 
 class ProjectNodeResourcesInvalidError(BaseProjectError):
-    ...
+    msg_template = "Invalid resource associated to node"
+
+
+class InvalidContainerInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = (
+        "Incompatible '{container_name}' cannot be applied on any of {resource_keys}"
+    )
+
+
+class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = "Incompatible '{image_name}' cannot be applied on {container_name}:{expected_image}"
+
+
+class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_tempalte = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
 
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
