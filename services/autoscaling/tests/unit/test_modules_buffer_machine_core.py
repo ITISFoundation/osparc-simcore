@@ -13,11 +13,11 @@ from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_aws_ec2 import (
+from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
 )
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_moto import patched_aiobotocore_make_api_call
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.moto import patched_aiobotocore_make_api_call
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
