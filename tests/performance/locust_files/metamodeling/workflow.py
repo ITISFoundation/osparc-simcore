@@ -129,6 +129,19 @@ class MetaModelingUser(HttpUser):
 
         assert state == "SUCCESS"
 
+        response = self.client.post(
+            f"/v0/studies/{self._user_settings.template_uuid}/jobs/{self._job_uuid}/outputs",
+            auth=self._auth,
+            name="/v0/studies/[study_id]/jobs/[job_id]/outputs",
+        )
+        response.raise_for_status()
+        results = response.json()
+        assert results is not None
+        output_file = results.get("OutputFile1")
+        assert output_file is not None
+        output_file_uuid = output_file.get("id")
+        assert output_file_uuid is not None
+
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
         files = {"file": open(f"{file.resolve()}", "rb")}
