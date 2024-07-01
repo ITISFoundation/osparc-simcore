@@ -392,7 +392,7 @@ async def with_random_project_with_files(
         ],
     ],
 ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
-    return await random_project_with_files()
+    return await random_project_with_files(num_nodes=7)
 
 
 async def test_connect_to_external(
