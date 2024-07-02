@@ -55,10 +55,8 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        items = (
-            parse_obj_as(
-                list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
-            ),
+        items = parse_obj_as(
+            list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
         )
         total_count = len(items)
 

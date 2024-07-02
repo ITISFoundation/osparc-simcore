@@ -137,7 +137,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "label": "Sleep interval",
             "description": "Choose an amount of time to sleep in range [0:]",
             "displayOrder": 2,
-            "type": "ref_contentSchema",
+            "type": "integer",
             "defaultValue": 2,
         },
         "input_3": {
