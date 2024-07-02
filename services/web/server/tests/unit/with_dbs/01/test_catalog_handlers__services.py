@@ -61,7 +61,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         total_count = len(items)
 
         return PageRpc[ServiceGetV2].create(
-            items,
+            items[offset : offset + limit],
             total=total_count,
             limit=limit,
             offset=offset,

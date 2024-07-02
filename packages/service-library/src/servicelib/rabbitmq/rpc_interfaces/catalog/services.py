@@ -15,17 +15,15 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import Extra, NonNegativeInt, parse_obj_as, validate_arguments
+from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..._client_rpc import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
-_config = {"arbitrary_types_allowed": True, "extra": Extra.ignore}
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments(config=_config)
 async def list_services_paginated(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
@@ -47,7 +45,6 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments(config=_config)
 async def get_service(
     rpc_client: RabbitMQRPCClient,
     *,
@@ -70,7 +67,6 @@ async def get_service(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments(config=_config)
 async def update_service(
     rpc_client: RabbitMQRPCClient,
     *,
