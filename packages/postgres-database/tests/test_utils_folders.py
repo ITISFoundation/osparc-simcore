@@ -26,8 +26,11 @@ from simcore_postgres_database.utils_folders import (
     FolderAlreadyExistsError,
     GroupIdDoesNotExistError,
     InvalidFolderNameError,
+    MissingProjectFolderError,
     NoAccessToFolderFoundrError,
     ProjectAlreadyExistsInFolderError,
+    ProjectRemovalAccessRightsEntryNotFoundError,
+    ProjectRemovalRequiresDeleteAccessError,
     RequiresOwnerToMakeAdminError,
     _FolderID,
     _GroupID,
@@ -35,6 +38,7 @@ from simcore_postgres_database.utils_folders import (
     folder_add_project,
     folder_create,
     folder_delete,
+    folder_remove_project,
     folder_rename,
     folder_share,
 )
@@ -99,6 +103,7 @@ async def _assert_project_in_folder(
     folder_id: _FolderID,
     project_id: _ProjectID,
     owner: _GroupID,
+    expected_entries: NonNegativeInt = 1,
 ):
     async with connection.execute(
         folders_to_projects.select()
@@ -108,7 +113,7 @@ async def _assert_project_in_folder(
     ) as result:
         rows = await result.fetchall()
         assert rows is not None
-        assert len(rows) == 1
+        assert len(rows) == expected_entries
 
 
 def _get_random_gid(
@@ -184,7 +189,7 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
         await folder_create(Mock(), invalid_name, Mock())
 
 
-async def test_folder_create_base_usage(
+async def test_folder_create(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     user_gid = _get_random_gid(setup_users_and_groups)
@@ -447,7 +452,7 @@ async def test_folder_share(
                 )
 
 
-async def test_folder_delete_base_usage(
+async def test_folder_delete(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     owner_gid = _get_random_gid(setup_users_and_groups)
@@ -682,3 +687,77 @@ async def test_folder_add_project(
 
     assert f"gid={user_with_access_gid}" in f"{exc.value}"
     assert f"owner={owner_gid}" in f"{exc.value}"
+
+
+async def test_folder_remove_project(
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    setup_projects_for_users: set[_ProjectID],
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    another_user_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
+    user_with_access_gid = _get_random_gid(
+        setup_users_and_groups, {owner_gid, another_user_gid}
+    )
+
+    folder_id = await folder_create(connection, "f1", owner_gid)
+
+    await folder_share(
+        connection,
+        folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_with_access_gid,
+        recipient_write=True,
+    )
+    project_id = _get_random_project_id(setup_projects_for_users)
+
+    await folder_add_project(connection, folder_id, owner_gid, project_id=project_id)
+    await _assert_project_in_folder(
+        connection, folder_id=folder_id, project_id=project_id, owner=owner_gid
+    )
+
+    # 1. folder is not present
+    fake_folder_id = 123123132
+    with pytest.raises(MissingProjectFolderError):
+        await folder_remove_project(
+            connection, fake_folder_id, another_user_gid, project_id=project_id
+        )
+    await _assert_project_in_folder(
+        connection, folder_id=folder_id, project_id=project_id, owner=owner_gid
+    )
+
+    # 2. removing project which has no access rights to the fodler
+    with pytest.raises(ProjectRemovalAccessRightsEntryNotFoundError):
+        await folder_remove_project(
+            connection, folder_id, another_user_gid, project_id=project_id
+        )
+    await _assert_project_in_folder(
+        connection, folder_id=folder_id, project_id=project_id, owner=owner_gid
+    )
+
+    # 3. try to remove project as user who has access to the fodler, but not delete
+    await folder_share(
+        connection,
+        folder_id,
+        sharing_gids={owner_gid},
+        recipient_gid=user_with_access_gid,
+        recipient_read=True,
+        recipient_write=True,
+    )
+    with pytest.raises(ProjectRemovalRequiresDeleteAccessError):
+        await folder_remove_project(
+            connection, folder_id, user_with_access_gid, project_id=project_id
+        )
+    await _assert_project_in_folder(
+        connection, folder_id=folder_id, project_id=project_id, owner=owner_gid
+    )
+
+    # 4. removal by user with delete rights
+    await folder_remove_project(connection, folder_id, owner_gid, project_id=project_id)
+    await _assert_project_in_folder(
+        connection,
+        folder_id=folder_id,
+        project_id=project_id,
+        owner=owner_gid,
+        expected_entries=0,
+    )

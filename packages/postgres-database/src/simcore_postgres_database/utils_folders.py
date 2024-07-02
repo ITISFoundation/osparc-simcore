@@ -108,6 +108,20 @@ class CannotRenameFolderError(BasePermissionError):
     msg_template = "no folder folder_id={folder_id} owned by any of gids={gids} has 'admin' permission"
 
 
+class ProjectRemovalAccessRightsEntryNotFoundError(BasePermissionError):
+    msg_template = "no folder_id={folder_id} found for gid={gid}"
+
+
+class ProjectRemovalRequiresDeleteAccessError(BasePermissionError):
+    msg_template = "could not remove project_id={project_id}, missing 'delete' permission for folder_id={folder_id} and gid={gid}"
+
+
+class MissingProjectFolderError(FoldersError):
+    msg_template = (
+        "Could not find an folder for folder_id={folder_id} and project_id={project_id}"
+    )
+
+
 class CouldNotFindFolderError(FoldersError):
     msg_template = "Could not find an entry for folder_id={folder_id}, gid={gid}"
 
@@ -534,8 +548,41 @@ async def folder_remove_project(
     *,
     project_id: _ProjectID,
 ) -> None:
-    # TODO: check that you have gids for delete permissions to remove project
-    pass
+    # project is removed from folder only if the gid has permisisons on said folder
+    async with connection.begin():
+        entry_exists = await (
+            await connection.execute(
+                folders_to_projects.select()
+                .where(folders_to_projects.c.folder_id == folder_id)
+                .where(folders_to_projects.c.project_id == project_id)
+            )
+        ).fetchone()
+        if not entry_exists:
+            raise MissingProjectFolderError(project_id=project_id, folder_id=folder_id)
+
+        # ensure has permissions to remove the folder
+        folder_access_entry = await (
+            await connection.execute(
+                folders_access_rights.select()
+                .where(folders_access_rights.c.folder_id == folder_id)
+                .where(folders_access_rights.c.gid == gid)
+            )
+        ).fetchone()
+        if not folder_access_entry:
+            raise ProjectRemovalAccessRightsEntryNotFoundError(
+                folder_id=folder_id, gid=gid
+            )
+
+        if not folder_access_entry.delete:
+            raise ProjectRemovalRequiresDeleteAccessError(
+                project_id=project_id, folder_id=folder_id, gid=gid
+            )
+
+        await connection.execute(
+            folders_to_projects.delete()
+            .where(folders_to_projects.c.folder_id == folder_id)
+            .where(folders_to_projects.c.project_id == project_id)
+        )
 
 
 async def folder_list_projects(
