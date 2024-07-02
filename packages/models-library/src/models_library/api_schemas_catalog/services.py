@@ -1,6 +1,5 @@
 from typing import Any, ClassVar
 
-from models_library.services_history import ServiceRelease
 from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
@@ -9,6 +8,7 @@ from ..services import ServiceMetaDataPublished
 from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsApi
 from ..services_authoring import Author, Badge
 from ..services_enums import ServiceType
+from ..services_history import ServiceRelease
 from ..services_metadata_editable import ServiceMetaDataEditable
 from ..services_metadata_published import ServiceInputsDict, ServiceOutputsDict
 from ..services_resources import ServiceResourcesDict
