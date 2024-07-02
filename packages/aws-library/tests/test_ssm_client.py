@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 
 import botocore.exceptions
 import pytest
-from aws_library.ssm.client import SimcoreSSMAPI
+from aws_library.ssm._client import SimcoreSSMAPI
 from moto.server import ThreadedMotoServer
 from settings_library.ssm import SSMSettings
 from types_aiobotocore_ssm import SSMClient

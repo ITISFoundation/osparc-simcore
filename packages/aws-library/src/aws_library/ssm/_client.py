@@ -1,13 +1,16 @@
 import contextlib
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence, cast
+from typing import cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from settings_library.ssm import SSMSettings
 from types_aiobotocore_ssm import SSMClient
 from types_aiobotocore_ssm.literals import CommandStatusType
+
+from ._error_handler import ssm_exception_handler
 
 _logger = logging.getLogger(__name__)
 
@@ -55,6 +58,7 @@ class SimcoreSSMAPI:
             return False
 
     # a function to send a command via ssm
+    @ssm_exception_handler(_logger)
     async def send_command(
         self, instance_ids: Sequence[str], *, command: str, command_name: str
     ) -> SSMCommand:
@@ -78,6 +82,7 @@ class SimcoreSSMAPI:
             instance_ids=instance_ids,
         )
 
+    @ssm_exception_handler(_logger)
     async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
 
         response = await self.client.get_command_invocation(
