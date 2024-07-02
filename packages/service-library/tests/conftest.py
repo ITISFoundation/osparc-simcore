@@ -3,7 +3,7 @@
 # pylint: disable=unused-import
 
 import sys
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
@@ -12,7 +12,8 @@ from typing import Any
 import pytest
 import servicelib
 from faker import Faker
-from servicelib.redis import RedisClientSDK
+from pytest_mock import MockerFixture
+from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
@@ -68,8 +69,12 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 async def get_redis_client_sdk(
+    mock_redis_socket_timeout: None,
+    mocker: MockerFixture,
     redis_service: RedisSettings,
-) -> Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]:
+) -> AsyncIterable[
+    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
+]:
     @asynccontextmanager
     async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
@@ -78,12 +83,17 @@ async def get_redis_client_sdk(
         assert client.redis_dsn == redis_resources_dns
         await client.setup()
 
-        await client.redis.flushall()
-
         yield client
 
-        # cleanup, properly close the clients
-        await client.redis.flushall()
         await client.shutdown()
 
-    return _
+    async def _cleanup_redis_data(clients_manager: RedisClientsManager) -> None:
+        for db in RedisDatabase:
+            await clients_manager.client(db).redis.flushall()
+
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(db) for db in RedisDatabase}, redis_service
+    ) as clients_manager:
+        await _cleanup_redis_data(clients_manager)
+        yield _
+        await _cleanup_redis_data(clients_manager)

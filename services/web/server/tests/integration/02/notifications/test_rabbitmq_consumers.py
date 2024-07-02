@@ -131,6 +131,7 @@ async def _assert_handler_called_with_json(
 
 @pytest.fixture
 def client(
+    mock_redis_socket_timeout: None,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict[str, Any],

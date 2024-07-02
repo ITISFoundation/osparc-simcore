@@ -1,3 +1,5 @@
+# pylint:disable=unused-argument
+
 import docker
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -14,7 +16,9 @@ pytest_simcore_core_services_selection = [
 # It breaks the service `redis` from `pytest_simcore_core_services_selection`
 # since the service is being removed.
 async def test_redis_client_sdk_lost_connection(
-    redis_service: RedisSettings, docker_client: docker.client.DockerClient
+    mock_redis_socket_timeout: None,
+    redis_service: RedisSettings,
+    docker_client: docker.client.DockerClient,
 ):
     redis_client_sdk = RedisClientSDK(
         redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
