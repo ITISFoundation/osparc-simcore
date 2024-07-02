@@ -41,7 +41,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   /**
     * @param study {osparc.data.model.Study} Study or Serialized Study Object
-    * @param metadata {Object} service's metadata'
+    * @param metadata {Object} service's metadata
     * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
   */
   construct: function(study, metadata, nodeId) {
@@ -386,8 +386,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
     },
 
-    __applyNewMetaData: function() {
-      this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
+    __applyNewMetaData: function(newV, oldV) {
+      if (oldV !== null) {
+        this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
+      }
     },
 
     getMetaData: function() {
