@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(null, null));
+    this._setLayout(new qx.ui.layout.VBox());
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 

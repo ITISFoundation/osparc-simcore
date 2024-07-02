@@ -9,7 +9,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.payments import UserInvoiceAddress
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (

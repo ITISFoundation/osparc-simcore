@@ -18,6 +18,7 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from starlette import status
 
@@ -69,7 +70,7 @@ async def test_delete_non_existing_solver_job(
 ):
     # Cannot delete if it does not exists
     resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
@@ -129,7 +130,7 @@ async def test_create_and_delete_solver_job(
 ):
     # create Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         json=JobInputs(
             values={
@@ -143,7 +144,7 @@ async def test_create_and_delete_solver_job(
 
     # Delete Job after creation
     resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
@@ -214,7 +215,7 @@ async def test_create_job(
     if parent_node_id is not None:
         header_dict[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         params={"hidden": f"{hidden}"},
         headers=header_dict,

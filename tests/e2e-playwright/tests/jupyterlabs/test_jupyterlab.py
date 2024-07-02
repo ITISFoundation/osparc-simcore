@@ -10,12 +10,12 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
 from pydantic import ByteSize
-from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import MINUTE, SECOND, ServiceType
+from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.playwright import MINUTE, SECOND, ServiceType
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = (
     10 * MINUTE
@@ -65,7 +65,7 @@ class _JLabWaitForTerminalWebSocket:
 def test_jupyterlab(
     page: Page,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], str
+        [ServiceType, str, str | None], dict[str, Any]
     ],
     service_key: str,
     large_file_size: ByteSize,

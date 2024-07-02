@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from aiopg.sa.connection import SAConnection
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_users import UserNotFoundInRepoError, UsersRepo
 

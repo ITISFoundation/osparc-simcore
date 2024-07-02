@@ -25,7 +25,7 @@ class RegistrySettings(BaseCustomSettings):
 
     @validator("REGISTRY_PATH", pre=True)
     @classmethod
-    def escape_none_string(cls, v) -> Any | None:
+    def _escape_none_string(cls, v) -> Any | None:
         return None if v == "None" else v
 
     @cached_property

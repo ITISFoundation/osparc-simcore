@@ -177,6 +177,16 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "none": {},
 
+    "floating-menu": {
+      style: function() {
+        return {
+          backgroundColor: "background-main",
+          padding: 4,
+          decorator: "border-simple"
+        }
+      }
+    },
+
     /*
     ---------------------------------------------------------------------------
       WINDOW-SMALL-CAP CHOOSER

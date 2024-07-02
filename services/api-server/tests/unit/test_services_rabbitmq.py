@@ -28,7 +28,7 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageB
 from models_library.users import UserID
 from pydantic import ValidationError
 from pytest_mock import MockerFixture, MockFixture
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     delenvs_from_dict,
     setenvs_from_dict,

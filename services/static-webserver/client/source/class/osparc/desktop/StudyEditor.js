@@ -472,7 +472,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getStudy().setPipelineRunning(false);
       }, this);
       req.addListener("fail", async e => {
-        if (e.getTarget().getStatus() == "403") {
+        if (e.getTarget().getStatus() == "409") {
           this.getStudyLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
           this.getStudyLogger().info(null, "The pipeline is up-to-date");

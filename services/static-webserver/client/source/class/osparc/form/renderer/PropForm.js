@@ -487,7 +487,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         label: this.tr("Input"),
         icon: "@FontAwesome5Solid/plus/14",
         marginTop: 6,
-        allowGrowX: false
+        allowGrowX: false,
+        minWidth: 70
       });
       addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
       this._add(addPortButton, {

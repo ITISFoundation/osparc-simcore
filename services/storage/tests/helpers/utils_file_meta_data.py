@@ -1,8 +1,8 @@
 from aiopg.sa.engine import Engine
+from aws_library.s3 import UploadID
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.s3_client import UploadID
 
 
 async def assert_file_meta_data_in_db(
@@ -15,7 +15,7 @@ async def assert_file_meta_data_in_db(
     expected_upload_expiration_date: bool | None,
     expected_sha256_checksum: SHA256Str | None,
 ) -> UploadID | None:
-    if expected_entry_exists and expected_file_size == None:
+    if expected_entry_exists and expected_file_size is None:
         assert True, "Invalid usage of assertion, expected_file_size cannot be None"
 
     async with aiopg_engine.acquire() as conn:

@@ -477,10 +477,6 @@ qx.Class.define("osparc.utils.Utils", {
       return window.location.hostname.includes("speag");
     },
 
-    isDevelEnv: function() {
-      return window.location.hostname.includes("master.speag") || window.location.port === "9081";
-    },
-
     addBorder: function(widget, width = 1, color = "transparent") {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
     },

@@ -16,6 +16,7 @@ from pydantic import parse_file_as
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_parameters import PathDescription
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
     JobMetadata,
@@ -136,7 +137,7 @@ async def test_get_and_update_study_job_metadata(
 
     # Creates a job (w/o running it)
     resp = await client.post(
-        f"/v0/studies/{study_id}/jobs",
+        f"/{API_VTAG}/studies/{study_id}/jobs",
         auth=auth,
         json={"values": {}},
     )
@@ -145,7 +146,7 @@ async def test_get_and_update_study_job_metadata(
 
     # Get metadata
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -161,7 +162,7 @@ async def test_get_and_update_study_job_metadata(
         "boolean": True,
     }
     resp = await client.put(
-        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
         json=jsonable_encoder(JobMetadataUpdate(metadata=my_metadata)),
     )
@@ -172,7 +173,7 @@ async def test_get_and_update_study_job_metadata(
 
     # Get metadata after update
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -182,14 +183,14 @@ async def test_get_and_update_study_job_metadata(
 
     # Delete job
     resp = await client.delete(
-        f"/v0/studies/{study_id}/jobs/{job.id}",
+        f"/{API_VTAG}/studies/{study_id}/jobs/{job.id}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
     # Get metadata -> job not found!
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND

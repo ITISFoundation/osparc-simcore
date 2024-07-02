@@ -21,7 +21,7 @@ from models_library.api_schemas_storage import (
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common._filemanager import _get_https_link_if_storage_secure

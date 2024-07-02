@@ -464,15 +464,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildAppModeLayout: function() {
-      let msg = this.tr("In order to Select a File you have three options:");
-      const options = [
-        this.tr("- Upload a New File"),
-        this.tr("- Provide a File Link"),
-        this.tr("- Select a File from other ") + osparc.product.Utils.getStudyAlias()
-      ];
-      for (let i=0; i<options.length; i++) {
-        msg += "<br>" + options[i];
-      }
+      const msg = this.tr("In order to Select a File you have three options:");
       const intro = new qx.ui.basic.Label(msg).set({
         font: "text-16",
         rich: true

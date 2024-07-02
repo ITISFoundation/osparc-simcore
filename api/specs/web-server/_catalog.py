@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
+    DEVServiceGet,
     ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
@@ -14,6 +15,7 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog._handlers import (
+    ListServiceParams,
     ServicePathParams,
     _FromServiceOutputParams,
     _ServiceInputsPathParams,
@@ -32,6 +34,33 @@ router = APIRouter(
 #
 # /catalog/services/* COLLECTION
 #
+
+
+@router.get(
+    "/dev/catalog/services/-/latest",
+    response_model=Envelope[list[DEVServiceGet]],
+)
+def dev_list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
+    pass
+
+
+@router.get(
+    "/dev/catalog/services/{service_key}/{service_version}",
+    response_model=Envelope[DEVServiceGet],
+)
+def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
+    ...
+
+
+@router.patch(
+    "/dev/catalog/services/{service_key}/{service_version}",
+    response_model=Envelope[DEVServiceGet],
+)
+def dev_update_service(
+    _path_params: Annotated[ServicePathParams, Depends()],
+    _update: ServiceUpdate,
+):
+    ...
 
 
 @router.get(

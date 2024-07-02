@@ -15,13 +15,14 @@ def clone_project_data(
     project_copy_uuid = uuidlib.uuid4()  # random project id
     project_copy["uuid"] = str(project_copy_uuid)
     project_copy.pop("id", None)
+    project_copy["name"] = f"{project['name']}-copy"
 
     # Workbench nodes shall be unique within the project context
     def _create_new_node_uuid(old_uuid: NodeIDStr) -> NodeIDStr:
         return NodeIDStr(uuidlib.uuid5(project_copy_uuid, old_uuid))
 
     nodes_map = {}
-    for node_uuid in project.get("workbench", {}).keys():
+    for node_uuid in project.get("workbench", {}):
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
     def _replace_uuids(node):

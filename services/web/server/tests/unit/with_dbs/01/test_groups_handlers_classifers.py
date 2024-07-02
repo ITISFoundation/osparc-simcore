@@ -8,7 +8,7 @@ from copy import deepcopy
 import pytest
 from aiohttp import web_exceptions
 from aioresponses.core import aioresponses
-from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.dict_tools import ConfigDict
 
 
 @pytest.fixture

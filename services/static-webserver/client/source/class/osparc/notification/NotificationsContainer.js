@@ -29,6 +29,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
       maxHeight: 250,
       backgroundColor: "background-main-3"
     });
+    osparc.utils.Utils.setIdToWidget(this, "notificationsContainer");
 
     const root = qx.core.Init.getApplication().getRoot();
     root.add(this, {
@@ -37,7 +38,6 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     });
 
     const notificationsContainer = this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(1));
-    osparc.utils.Utils.setIdToWidget(notificationsContainer, "notificationsContainer");
     const scrollContainer = new qx.ui.container.Scroll();
     scrollContainer.add(notificationsContainer);
     this._add(scrollContainer, {

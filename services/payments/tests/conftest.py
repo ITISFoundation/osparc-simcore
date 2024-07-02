@@ -11,8 +11,8 @@ import simcore_service_payments
 from faker import Faker
 from models_library.users import GroupID
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
 
 pytest_plugins = [
@@ -25,10 +25,9 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.postgres_service",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

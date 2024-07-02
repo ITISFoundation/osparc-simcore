@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
@@ -106,7 +107,7 @@ async def test_log_streaming(
     collected_messages: list[str] = []
     async with client.stream(
         "GET",
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
         auth=auth,
     ) as response:
         response.raise_for_status()

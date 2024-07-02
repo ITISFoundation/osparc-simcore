@@ -27,8 +27,8 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import WalletInfo
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
 from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,

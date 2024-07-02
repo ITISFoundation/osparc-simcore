@@ -23,8 +23,8 @@ from models_library.api_schemas_webserver.clusters import (
 )
 from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: import
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_parametrizations import (  # nopycln: import
     ExpectedResponse,
     standard_role_response,
 )
