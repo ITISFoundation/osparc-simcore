@@ -12,6 +12,7 @@ from moto.server import ThreadedMotoServer
 from pydantic import AnyHttpUrl, parse_obj_as
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
+from settings_library.ssm import SSMSettings
 
 from .helpers.host import get_localhost_ip
 from .helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -70,6 +71,27 @@ def mocked_ec2_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
+def mocked_ssm_server_settings(
+    mocked_aws_server: ThreadedMotoServer,
+    reset_aws_server_state: None,
+) -> SSMSettings:
+    return SSMSettings(
+        SSM_ACCESS_KEY_ID="xxx",
+        SSM_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        SSM_SECRET_ACCESS_KEY="xxx",  # noqa: S106
+    )
+
+
+@pytest.fixture
+def mocked_ssm_server_envs(
+    mocked_ssm_server_settings: SSMSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    changed_envs: EnvVarsDict = mocked_ssm_server_settings.dict()
     return setenvs_from_dict(monkeypatch, changed_envs)
 
 

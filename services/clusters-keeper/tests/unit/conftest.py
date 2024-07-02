@@ -87,6 +87,11 @@ def mocked_ec2_server_envs(
 
 
 @pytest.fixture
+def ec2_settings(mocked_ec2_server_settings: EC2Settings) -> EC2Settings:
+    return mocked_ec2_server_settings
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -166,7 +171,6 @@ def mocked_primary_ec2_instances_envs(
                 [aws_security_group_id]
             ),
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "PRIMARY_EC2_INSTANCES_AMI_ID": aws_ami_id,
         },
     )
     return app_environment | envs

@@ -629,10 +629,7 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    new_instance_tags = (
-        auto_scaling_mode.get_ec2_tags(app)
-        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
-    )
+    new_instance_tags = auto_scaling_mode.get_ec2_tags(app)
     capped_needed_machines = {}
     try:
         capped_needed_machines = await _cap_needed_instances(
@@ -666,7 +663,7 @@ async def _start_instances(
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
                     subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
-                    iam_instance_profile="",
+                    iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
                 number_of_instances=instance_num,

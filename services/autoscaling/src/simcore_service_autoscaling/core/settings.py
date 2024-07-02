@@ -27,12 +27,17 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.ssm import SSMSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
+
+
+class AutoscalingSSMSettings(SSMSettings):
+    ...
 
 
 class AutoscalingEC2Settings(EC2Settings):
@@ -119,6 +124,10 @@ class EC2InstancesSettings(BaseCustomSettings):
         ...,
         description="Allows to define tags that should be added to the created EC2 instance default tags. "
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+    )
+    EC2_INSTANCES_ATTACHED_IAM_PROFILE: str = Field(
+        ...,
+        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
@@ -225,6 +234,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AUTOSCALING_EC2_ACCESS: AutoscalingEC2Settings | None = Field(
+        auto_default_from_env=True
+    )
+
+    AUTOSCALING_SSM_ACCESS: AutoscalingSSMSettings | None = Field(
         auto_default_from_env=True
     )
 

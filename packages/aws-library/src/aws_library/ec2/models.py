@@ -10,9 +10,9 @@ from pydantic import (
     BaseModel,
     ByteSize,
     ConstrainedStr,
-    Extra,
     Field,
     NonNegativeFloat,
+    NonNegativeInt,
     validator,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -140,9 +140,11 @@ class EC2InstanceBootSpecific(BaseModel):
         description="time interval between pulls of images (minimum is 1 minute) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
+    buffer_count: NonNegativeInt = Field(
+        default=0, description="number of buffer EC2s to keep (defaults to 0)"
+    )
 
     class Config:
-        extra = Extra.forbid
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -185,6 +187,17 @@ class EC2InstanceBootSpecific(BaseModel):
                         "asd",
                     ],
                     "pre_pull_images_cron_interval": "01:00:00",
+                },
+                {
+                    # AMI + pre-pull + buffer count
+                    "ami_id": "ami-123456789abcdef",
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                    "buffer_count": 10,
                 },
             ]
         }
