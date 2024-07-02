@@ -88,8 +88,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__rootNodes = {};
       this.__edges = {};
       this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
-      this.__workbenchInitData = null;
-      this.__workbenchUIInitData = null;
     },
 
     // starts the dynamic services
@@ -254,9 +252,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
-    __createNode: function(study, key, version, uuid) {
-      osparc.utils.Utils.localCache.serviceToFavs(key);
-      const node = new osparc.data.model.Node(study, key, version, uuid);
+    __createNode: function(study, metadata, uuid) {
+      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+      const node = new osparc.data.model.Node(study, metadata, uuid);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
@@ -302,7 +300,18 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
 
       this.fireEvent("restartAutoSaveTimer");
-      const node = this.__createNode(this.getStudy(), key, version, nodeId);
+
+      const metadata = await osparc.service.Store.getService(key, version).catch(() => {
+        let errorMsg = qx.locale.Manager.tr("Error fetching metadata ") + key + ":" + version;
+        const errorMsgData = {
+          msg: errorMsg,
+          level: "ERROR"
+        };
+        this.fireDataEvent("showInLogger", errorMsgData);
+        osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+        return null;
+      });
+      const node = this.__createNode(this.getStudy(), metadata, nodeId);
       this.__initNodeSignals(node);
       this.__addNode(node);
 
@@ -619,31 +628,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    __deserialize: function(workbenchData, workbenchUIData) {
-      this.__deserializeNodes(workbenchData, workbenchUIData);
-      this.__deserializeEdges(workbenchData);
-    },
-
-    __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
-      const nodeIds = Object.keys(workbenchData);
-      // Create first all the nodes
-      for (let i=0; i<nodeIds.length; i++) {
-        const nodeId = nodeIds[i];
-        const nodeData = workbenchData[nodeId];
-        const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
-        this.__initNodeSignals(node);
-        this.__addNode(node);
-      }
-
-      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      this.__populateNodesData(workbenchData, workbenchUIData);
-
-      nodeIds.forEach(nodeId => {
-        const node = this.getNode(nodeId);
-        this.giveUniqueNameToNode(node, node.getLabel());
-      });
-    },
-
     giveUniqueNameToNode: function(node, label, suffix = 2) {
       const newLabel = label + "_" + suffix;
       const allModels = this.getNodes();
@@ -667,6 +651,45 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
         }
       });
+    },
+
+    __deserialize: function(workbenchInitData, workbenchUIInitData) {
+      this.__deserializeNodes(workbenchInitData, workbenchUIInitData)
+        .then(() => {
+          this.__deserializeEdges(workbenchInitData);
+          workbenchInitData = null;
+          workbenchUIInitData = null;
+        });
+    },
+
+    __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
+      const nodeIds = Object.keys(workbenchData);
+
+      const metadataPromises = [];
+      nodeIds.forEach(nodeId => {
+        const nodeData = workbenchData[nodeId];
+        metadataPromises.push(osparc.service.Store.getService(nodeData.key, nodeData.version));
+      });
+
+      return Promise.all(metadataPromises)
+        .then(values => {
+          // Create first all the nodes
+          for (let i=0; i<nodeIds.length; i++) {
+            const metadata = values[i];
+            const nodeId = nodeIds[i];
+            const node = this.__createNode(this.getStudy(), metadata, nodeId);
+            this.__initNodeSignals(node);
+            this.__addNode(node);
+          }
+
+          // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
+          this.__populateNodesData(workbenchData, workbenchUIData);
+
+          nodeIds.forEach(nodeId => {
+            const node = this.getNode(nodeId);
+            this.giveUniqueNameToNode(node, node.getLabel());
+          });
+        });
     },
 
     __deserializeEdges: function(workbenchData) {
