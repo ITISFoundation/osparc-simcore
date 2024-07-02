@@ -1,6 +1,6 @@
+import logging
 from collections.abc import Iterable
 from pathlib import Path
-from time import perf_counter
 from typing import Final
 
 import aiofiles
@@ -12,6 +12,8 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client
+
+from .logging import log_context
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 
@@ -77,36 +79,29 @@ async def upload_file_to_presigned_link(
 ) -> list[UploadedPart]:
     file_size = file.stat().st_size
 
-    start = perf_counter()
-    print(f"--> uploading {file=}")
-    async with ClientSession() as session:
-        file_chunk_size = int(file_upload_link.chunk_size)
-        num_urls = len(file_upload_link.urls)
-        last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
-        upload_tasks = []
-        for index, upload_url in enumerate(file_upload_link.urls):
-            this_file_chunk_size = (
-                file_chunk_size if (index + 1) < num_urls else last_chunk_size
-            )
-            upload_tasks.append(
-                upload_file_part(
-                    session,
-                    file,
-                    index,
-                    index * file_chunk_size,
-                    this_file_chunk_size,
-                    num_urls,
-                    upload_url,
+    with log_context(logging.INFO, msg=f"uploading {file} via {file_upload_link=}"):
+        async with ClientSession() as session:
+            file_chunk_size = int(file_upload_link.chunk_size)
+            num_urls = len(file_upload_link.urls)
+            last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
+            upload_tasks = []
+            for index, upload_url in enumerate(file_upload_link.urls):
+                this_file_chunk_size = (
+                    file_chunk_size if (index + 1) < num_urls else last_chunk_size
                 )
-            )
-        results = await logged_gather(*upload_tasks, max_concurrency=0)
-    part_to_etag = [
-        UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
-    ]
-    print(
-        f"--> upload of {file=} of {file_size=} completed in {perf_counter() - start}"
-    )
-    return part_to_etag
+                upload_tasks.append(
+                    upload_file_part(
+                        session,
+                        file,
+                        index,
+                        index * file_chunk_size,
+                        this_file_chunk_size,
+                        num_urls,
+                        upload_url,
+                    )
+                )
+            results = await logged_gather(*upload_tasks, max_concurrency=0)
+        return [UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results]
 
 
 async def delete_all_object_versions(
