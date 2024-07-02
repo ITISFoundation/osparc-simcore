@@ -1,9 +1,9 @@
 from typing import Any
 
-from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, Field
 
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
+from .projects_nodes_io import NodeID
 
 
 class _ProjectIOBase(BaseModel):
