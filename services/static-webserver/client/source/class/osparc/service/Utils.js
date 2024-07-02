@@ -117,14 +117,6 @@ qx.Class.define("osparc.service.Utils", {
       });
     },
 
-    addHits: function(servicesArray) {
-      const favServices = osparc.utils.Utils.localCache.getFavServices();
-      servicesArray.forEach(service => {
-        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
-        service.hits = found ? favServices[found]["hits"] : 0;
-      });
-    },
-
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {
@@ -175,18 +167,24 @@ qx.Class.define("osparc.service.Utils", {
 
     getVersions: function(services, key, filterDeprecates = true) {
       if (services === null) {
-        services = osparc.service.Utils.servicesCached;
+        services = osparc.service.Store.servicesCached;
       }
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
         if (filterDeprecates) {
-          versions = versions.filter(version => (services[key][version]["deprecated"] === null));
+          versions = versions.filter(version => {
+            // TODO OM. they will always have the retired field
+            if (["retired"] in services[key][version]) {
+              return false;
+            }
+            return true;
+          });
         }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
-      return versions;
+      return versions.reverse();
     },
 
     getLatest: function(services, key) {
@@ -195,7 +193,7 @@ qx.Class.define("osparc.service.Utils", {
       }
       if (key in services) {
         const versions = this.getVersions(services, key, false);
-        return services[key][versions[versions.length - 1]];
+        return services[key][versions[0]];
       }
       return null;
     },
@@ -253,7 +251,6 @@ qx.Class.define("osparc.service.Utils", {
         const v2 = srcVersion.split(".");
         return (v1[0] === v2[0] && v1[1] === v2[1]);
       });
-      versions.reverse();
 
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
       const idx = versions.indexOf(srcVersion);
@@ -349,32 +346,53 @@ qx.Class.define("osparc.service.Utils", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
-    addTSRInfo: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
+    addTSRInfo: function(service) {
+      if (osparc.data.model.Node.isComputational(service)) {
+        osparc.metadata.Quality.attachQualityToObject(service);
+      }
+    },
+
+    addTSRInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          if (osparc.data.model.Node.isComputational(service)) {
-            osparc.metadata.Quality.attachQualityToObject(service);
-          }
+          this.self().addTSRInfo(service);
         });
       });
     },
 
-    addExtraTypeInfo: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
+    addExtraTypeInfo: function(service) {
+      service["xType"] = service["type"];
+      if (["backend", "frontend"].includes(service["xType"])) {
+        if (osparc.data.model.Node.isFilePicker(service)) {
+          service["xType"] = "file";
+        } else if (osparc.data.model.Node.isParameter(service)) {
+          service["xType"] = "parameter";
+        } else if (osparc.data.model.Node.isIterator(service)) {
+          service["xType"] = "iterator";
+        } else if (osparc.data.model.Node.isProbe(service)) {
+          service["xType"] = "probe";
+        }
+      }
+    },
+
+    addExtraTypeInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          service["xType"] = service["type"];
-          if (["backend", "frontend"].includes(service["xType"])) {
-            if (osparc.data.model.Node.isFilePicker(service)) {
-              service["xType"] = "file";
-            } else if (osparc.data.model.Node.isParameter(service)) {
-              service["xType"] = "parameter";
-            } else if (osparc.data.model.Node.isIterator(service)) {
-              service["xType"] = "iterator";
-            } else if (osparc.data.model.Node.isProbe(service)) {
-              service["xType"] = "probe";
-            }
-          }
+          this.self().addExtraTypeInfo(service);
         });
+      });
+    },
+
+    addHit: function(service, favServices) {
+      const cachedHit = favServices ? favServices : osparc.utils.Utils.localCache.getFavServices();
+      const found = Object.keys(cachedHit).find(favSrv => favSrv === service["key"]);
+      service.hits = found ? cachedHit[found]["hits"] : 0;
+    },
+
+    addHits: function(servicesArray) {
+      const favServices = osparc.utils.Utils.localCache.getFavServices();
+      servicesArray.forEach(service => {
+        this.self().addHit(service, favServices);
       });
     },
 
@@ -392,6 +410,8 @@ qx.Class.define("osparc.service.Utils", {
         }
       });
     },
+
+    // TODO OM: function that filters out retired services
 
     getUniqueServicesFromWorkbench: function(workbench) {
       const services = [];
