@@ -480,6 +480,7 @@ async def folder_move(
 ) -> None:
     # TODO: make sure parent is not self
     # TODO: enforce access rights
+    # TODO: Enforce both `delete` and `write` permissions exist
     pass
 
 

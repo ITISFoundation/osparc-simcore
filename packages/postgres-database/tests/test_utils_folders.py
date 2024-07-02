@@ -213,66 +213,6 @@ async def test_folder_create(
     await _assert_folder_entires(connection, folder_count=2)
 
 
-async def test_folder_rename(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
-):
-    owner_gid = _get_random_gid(setup_users_and_groups)
-    admin_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
-    user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, admin_gid})
-    not_shared_with_gid = _get_random_gid(
-        setup_users_and_groups, {owner_gid, admin_gid, user_gid}
-    )
-
-    folder_id = await folder_create(connection, "f1", owner_gid)
-    await _assert_folder_entires(connection, folder_count=1)
-
-    # 1. rename as owner
-    await folder_rename(connection, folder_id, gids={owner_gid}, name="owner_f1")
-    await _assert_folder_entires(connection, folder_count=1)
-    await _assert_folder_name(connection, folder_id, expected_name="owner_f1")
-
-    # 2. renaming as admin user
-    await folder_share(
-        connection,
-        folder_id,
-        {owner_gid},
-        recipient_gid=admin_gid,
-        # NOTE regardless of permissions granted, admin will always get all of them
-        recipient_read=False,
-        recipient_write=False,
-        recipient_delete=False,
-        recipient_admin=True,
-    )
-    await _assert_access_rights(
-        connection, folder_id, admin_gid, read=True, write=True, delete=True, admin=True
-    )
-    await folder_rename(connection, folder_id, gids={admin_gid}, name="admin_f1")
-    await _assert_folder_name(connection, folder_id, expected_name="admin_f1")
-
-    # 3. try to rename as a regular user raises error
-    await folder_share(
-        connection,
-        folder_id,
-        {owner_gid},
-        recipient_gid=user_gid,
-        recipient_read=True,
-        recipient_write=True,
-        recipient_delete=True,
-        recipient_admin=False,
-    )
-    await _assert_access_rights(
-        connection, folder_id, user_gid, read=True, write=True, delete=True, admin=False
-    )
-    with pytest.raises(CannotRenameFolderError):
-        await folder_rename(connection, folder_id, gids={user_gid}, name="user_f1")
-
-    # 4. try to rename as a user with no access raises error
-    with pytest.raises(CannotRenameFolderError):
-        await folder_rename(
-            connection, folder_id, gids={not_shared_with_gid}, name="not_shared_with_f1"
-        )
-
-
 async def test_folder_share(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
@@ -450,6 +390,66 @@ async def test_folder_share(
                     recipient_delete=delete,
                     recipient_admin=False,
                 )
+
+
+async def test_folder_rename(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    admin_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
+    user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, admin_gid})
+    not_shared_with_gid = _get_random_gid(
+        setup_users_and_groups, {owner_gid, admin_gid, user_gid}
+    )
+
+    folder_id = await folder_create(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+
+    # 1. rename as owner
+    await folder_rename(connection, folder_id, gids={owner_gid}, name="owner_f1")
+    await _assert_folder_entires(connection, folder_count=1)
+    await _assert_folder_name(connection, folder_id, expected_name="owner_f1")
+
+    # 2. renaming as admin user
+    await folder_share(
+        connection,
+        folder_id,
+        {owner_gid},
+        recipient_gid=admin_gid,
+        # NOTE regardless of permissions granted, admin will always get all of them
+        recipient_read=False,
+        recipient_write=False,
+        recipient_delete=False,
+        recipient_admin=True,
+    )
+    await _assert_access_rights(
+        connection, folder_id, admin_gid, read=True, write=True, delete=True, admin=True
+    )
+    await folder_rename(connection, folder_id, gids={admin_gid}, name="admin_f1")
+    await _assert_folder_name(connection, folder_id, expected_name="admin_f1")
+
+    # 3. try to rename as a regular user raises error
+    await folder_share(
+        connection,
+        folder_id,
+        {owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=True,
+        recipient_admin=False,
+    )
+    await _assert_access_rights(
+        connection, folder_id, user_gid, read=True, write=True, delete=True, admin=False
+    )
+    with pytest.raises(CannotRenameFolderError):
+        await folder_rename(connection, folder_id, gids={user_gid}, name="user_f1")
+
+    # 4. try to rename as a user with no access raises error
+    with pytest.raises(CannotRenameFolderError):
+        await folder_rename(
+            connection, folder_id, gids={not_shared_with_gid}, name="not_shared_with_f1"
+        )
 
 
 async def test_folder_delete(
