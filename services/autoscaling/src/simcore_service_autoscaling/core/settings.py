@@ -125,6 +125,10 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Allows to define tags that should be added to the created EC2 instance default tags. "
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
+    EC2_INSTANCES_ATTACHED_IAM_PROFILE: str = Field(
+        ...,
+        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
+    )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
     @classmethod
