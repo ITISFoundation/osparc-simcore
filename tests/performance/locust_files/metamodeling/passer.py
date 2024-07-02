@@ -1,15 +1,22 @@
 import json
 import os
-import pathlib as pl
+from pathlib import Path
 
-input_path = pl.Path(os.environ["INPUT_FOLDER"])
-output_path = pl.Path(os.environ["OUTPUT_FOLDER"])
 
-input_file_path = input_path / "input.json"
-output_file_path = output_path / "output.json"
+def main():
 
-input_content = json.loads(input_file_path.read_text())
+    input_path = Path(os.environ["INPUT_FOLDER"])
+    output_path = Path(os.environ["OUTPUT_FOLDER"])
 
-print(input_content)
+    input_file_path = input_path / "input.json"
+    output_file_path = output_path / "output.json"
 
-output_file_path.write_text(json.dumps(input_content))
+    input_content = json.loads(input_file_path.read_text())
+
+    print(input_content)
+
+    output_file_path.write_text(json.dumps(input_content))
+
+
+if __name__ == "__main__":
+    main()
