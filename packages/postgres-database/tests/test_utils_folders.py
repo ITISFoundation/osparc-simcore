@@ -20,6 +20,7 @@ from simcore_postgres_database.utils_folders import (
     _FOLDER_NAMES_RESERVED_WINDOWS,
     CannotAlterOwnerPermissionsError,
     CannotGrantPermissionError,
+    CannotRenameFolderError,
     CouldNotDeleteMissingAccessError,
     CouldNotFindFolderError,
     FolderAlreadyExistsError,
@@ -34,6 +35,7 @@ from simcore_postgres_database.utils_folders import (
     folder_add_project,
     folder_create,
     folder_delete,
+    folder_rename,
     folder_share,
 )
 
@@ -78,6 +80,19 @@ async def _assert_access_rights(
         assert len(rows) == 1
 
 
+async def _assert_folder_name(
+    connection: SAConnection, folder_id: _FolderID, *, expected_name: str
+) -> None:
+    async with connection.execute(
+        folders.select().where(folders.c.id == folder_id)
+    ) as result:
+        rows = await result.fetchall()
+        assert rows is not None
+        assert len(rows) == 1
+        rown = rows[0]
+        assert rown.name == expected_name
+
+
 async def _assert_project_in_folder(
     connection: SAConnection,
     *,
@@ -94,45 +109,6 @@ async def _assert_project_in_folder(
         rows = await result.fetchall()
         assert rows is not None
         assert len(rows) == 1
-
-
-async def _create_folder_structure(
-    connection: SAConnection,
-    gid: _GroupID,
-    *,
-    tree_depth: NonNegativeInt,
-    subfolder_count: NonNegativeInt,
-) -> tuple[NonNegativeInt, NonNegativeInt]:
-    root_folder_id = await folder_create(connection, "root", gid)
-
-    async def _create_sub_folders(
-        parent_folder_id: NonNegativeInt,
-        current_level: NonNegativeInt,
-        max_levels: NonNegativeInt,
-        subfolder_count: NonNegativeInt,
-    ) -> NonNegativeInt:
-        if current_level > max_levels:
-            return 0
-
-        creation_count = 0
-        for i in range(subfolder_count):
-            folder_id = await folder_create(
-                connection,
-                f"{current_level}_{i}",
-                gid,
-                parent=parent_folder_id,
-            )
-            creation_count += 1
-            creation_count += await _create_sub_folders(
-                folder_id, current_level + 1, max_levels, subfolder_count
-            )
-
-        return creation_count
-
-    subfolder_count = await _create_sub_folders(
-        root_folder_id, 1, tree_depth, subfolder_count
-    )
-    return root_folder_id, subfolder_count + 1
 
 
 def _get_random_gid(
@@ -159,7 +135,7 @@ async def setup_users(
 ) -> list[RowProxy]:
     users: list[RowProxy] = []
     for _ in range(10):
-        users.append(await create_fake_user(connection))
+        users.append(await create_fake_user(connection))  # noqa: PERF401
     return users
 
 
@@ -230,6 +206,66 @@ async def test_folder_create_base_usage(
     with pytest.raises(FolderAlreadyExistsError):
         await folder_create(connection, "f1", user_gid)
     await _assert_folder_entires(connection, folder_count=2)
+
+
+async def test_folder_rename(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    admin_gid = _get_random_gid(setup_users_and_groups, {owner_gid})
+    user_gid = _get_random_gid(setup_users_and_groups, {owner_gid, admin_gid})
+    not_shared_with_gid = _get_random_gid(
+        setup_users_and_groups, {owner_gid, admin_gid, user_gid}
+    )
+
+    folder_id = await folder_create(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+
+    # 1. rename as owner
+    await folder_rename(connection, folder_id, gids={owner_gid}, name="owner_f1")
+    await _assert_folder_entires(connection, folder_count=1)
+    await _assert_folder_name(connection, folder_id, expected_name="owner_f1")
+
+    # 2. renaming as admin user
+    await folder_share(
+        connection,
+        folder_id,
+        {owner_gid},
+        recipient_gid=admin_gid,
+        # NOTE regardless of permissions granted, admin will always get all of them
+        recipient_read=False,
+        recipient_write=False,
+        recipient_delete=False,
+        recipient_admin=True,
+    )
+    await _assert_access_rights(
+        connection, folder_id, admin_gid, read=True, write=True, delete=True, admin=True
+    )
+    await folder_rename(connection, folder_id, gids={admin_gid}, name="admin_f1")
+    await _assert_folder_name(connection, folder_id, expected_name="admin_f1")
+
+    # 3. try to rename as a regular user raises error
+    await folder_share(
+        connection,
+        folder_id,
+        {owner_gid},
+        recipient_gid=user_gid,
+        recipient_read=True,
+        recipient_write=True,
+        recipient_delete=True,
+        recipient_admin=False,
+    )
+    await _assert_access_rights(
+        connection, folder_id, user_gid, read=True, write=True, delete=True, admin=False
+    )
+    with pytest.raises(CannotRenameFolderError):
+        await folder_rename(connection, folder_id, gids={user_gid}, name="user_f1")
+
+    # 4. try to rename as a user with no access raises error
+    with pytest.raises(CannotRenameFolderError):
+        await folder_rename(
+            connection, folder_id, gids={not_shared_with_gid}, name="not_shared_with_f1"
+        )
 
 
 async def test_folder_share(

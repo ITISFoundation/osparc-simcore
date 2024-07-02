@@ -14,7 +14,7 @@ from simcore_postgres_database.models.folders import (
     folders_access_rights,
     folders_to_projects,
 )
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects import postgresql
 
 _ProjectID: TypeAlias = uuid.UUID
 _GroupID: TypeAlias = PositiveInt
@@ -102,6 +102,10 @@ class NoAccessToFolderFoundrError(BasePermissionError):
 
 class NoWriteAccessToFolderError(BasePermissionError):
     msg_template = "folder folder_id={folder_id} owned by gid={gid} has no write access"
+
+
+class CannotRenameFolderError(BasePermissionError):
+    msg_template = "no folder folder_id={folder_id} owned by any of gids={gids} has 'admin' permission"
 
 
 class CouldNotFindFolderError(FoldersError):
@@ -359,7 +363,7 @@ async def folder_share(
                 admin=recipient_admin,
             ),
         }
-        insert_stmt = insert(folders_access_rights).values(**data)
+        insert_stmt = postgresql.insert(folders_access_rights).values(**data)
         upsert_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[
                 folders_access_rights.c.folder_id,
@@ -371,11 +375,29 @@ async def folder_share(
 
 
 async def folder_rename(
-    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID], *, name: str
 ) -> None:
-    # TODO:
     # admin users only can rename the folder, all other users are not allowed
-    pass
+    async with connection.begin():
+        valid_folder_id: int | None = await connection.scalar(
+            sa.select([folders.c.id])
+            .select_from(
+                folders.join(
+                    folders_access_rights,
+                    folders.c.id == folders_access_rights.c.folder_id,
+                )
+            )
+            .where(folders.c.id == folder_id)
+            .where(folders_access_rights.c.gid.in_(gids))
+            .where(folders_access_rights.c.admin.is_(True))
+        )
+        if not valid_folder_id:
+            raise CannotRenameFolderError(folder_id=folder_id, gids=gids)
+
+        # use this to change it
+        await connection.execute(
+            folders.update().where(folders.c.id == valid_folder_id).values(name=name)
+        )
 
 
 async def folder_delete(
