@@ -1,7 +1,7 @@
 import logging
 from typing import cast
 
-from aws_library.ssm.client import SimcoreSSMAPI
+from aws_library.ssm import SimcoreSSMAPI
 from fastapi import FastAPI
 from settings_library.ssm import SSMSettings
 from tenacity._asyncio import AsyncRetrying
