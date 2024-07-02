@@ -127,10 +127,17 @@ async def monitor_buffer_machines(
                     current_warm_buffer_pools[instance.type].pulling_instances.add(
                         instance
                     )
-                else:
+
+                elif await get_ssm_client(app).is_instance_connected_to_ssm_server(
+                    instance.id
+                ):
                     current_warm_buffer_pools[
                         instance.type
                     ].waiting_to_pull_instances.add(instance)
+                else:
+                    current_warm_buffer_pools[instance.type].pending_instances.add(
+                        instance
+                    )
             case _:
                 pass
     _logger.info("Current warm pools: %s", f"{current_warm_buffer_pools!r}")
