@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_catalog.services import DEVServiceGet
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     ServiceUpdate,
@@ -57,12 +57,12 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 
         items = (
             parse_obj_as(
-                list[DEVServiceGet], DEVServiceGet.Config.schema_extra["examples"]
+                list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
             ),
         )
         total_count = len(items)
 
-        return PageRpc[DEVServiceGet].create(
+        return PageRpc[ServiceGetV2].create(
             items,
             total=total_count,
             limit=limit,
@@ -82,7 +82,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = parse_obj_as(
-            DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0]
+            ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0]
         )
         got.version = service_version
         got.key = service_key
@@ -103,7 +103,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = parse_obj_as(
-            DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0]
+            ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0]
         )
         got.version = service_version
         got.key = service_key

@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.api_schemas_catalog.services import DEVServiceGet, ServiceUpdate
+from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
 from models_library.products import ProductName
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -30,17 +30,17 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[DEVServiceGet]:
+) -> PageRpc[ServiceGetV2]:
     assert app  # nosec
     assert product_name  # nosec
 
     _logger.debug("Moking list_services_paginated for %s...", f"{user_id=}")
     items = parse_obj_as(
-        list[DEVServiceGet], DEVServiceGet.Config.schema_extra["examples"]
+        list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
     )
     total_count = len(items)
 
-    return PageRpc[DEVServiceGet].create(
+    return PageRpc[ServiceGetV2].create(
         items,
         total=total_count,
         limit=limit,
@@ -58,13 +58,13 @@ async def get_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> DEVServiceGet:
+) -> ServiceGetV2:
     assert app  # nosec
     assert product_name  # nosec
     assert user_id  # nosec
 
     _logger.debug("Moking get_service for %s...", f"{user_id=}")
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
+    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
     got.key = service_key
     got.version = service_version
 
@@ -82,7 +82,7 @@ async def update_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     update: ServiceUpdate,
-) -> DEVServiceGet:
+) -> ServiceGetV2:
     """Updates editable fields of a service"""
 
     assert app  # nosec
@@ -90,7 +90,7 @@ async def update_service(
     assert user_id  # nosec
 
     _logger.debug("Moking update_service for %s...", f"{user_id=}")
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["examples"][0])
+    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
     got.key = service_key
     got.version = service_version
     return got.copy(update=update.dict(exclude_unset=True))

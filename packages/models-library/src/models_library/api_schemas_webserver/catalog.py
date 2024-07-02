@@ -243,7 +243,7 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
 # TODO: reduces
 
 
-class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
+class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
     # NOTE: will replace ServiceGet!
 
     # pylint: disable=too-many-ancestors
@@ -257,7 +257,7 @@ class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                **api_schemas_catalog_services.DEVServiceGet.Config.schema_extra[
+                **api_schemas_catalog_services.ServiceGetV2.Config.schema_extra[
                     "examples"
                 ][0],
                 "inputs": {

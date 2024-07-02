@@ -204,7 +204,7 @@ class ServiceGet(
         }
 
 
-class DEVServiceGet(BaseModel):
+class ServiceGetV2(BaseModel):
     key: ServiceKey
     version: ServiceVersion
 
@@ -254,7 +254,7 @@ class DEVServiceGet(BaseModel):
                         {
                             "version": "2.0.0",
                             "compatibility": {
-                                "can_update_to": _EXAMPLE_SLEEPER["version"],
+                                "canUpdateTo": _EXAMPLE_SLEEPER["version"],
                             },
                         },
                         {"version": "0.9.11"},
@@ -262,7 +262,7 @@ class DEVServiceGet(BaseModel):
                         {
                             "version": "0.9.8",
                             "compatibility": {
-                                "can_update_to": "0.9.11",
+                                "canUpdateTo": "0.9.11",
                             },
                         },
                         {

@@ -5,7 +5,7 @@
 import logging
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_catalog.services import DEVServiceGet, ServiceUpdate
+from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import (
@@ -33,7 +33,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[DEVServiceGet]:
+) -> PageRpc[ServiceGetV2]:
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "list_services_paginated"),
@@ -42,7 +42,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         limit=limit,
         offset=offset,
     )
-    assert parse_obj_as(PageRpc[DEVServiceGet], result) is not None  # nosec
+    assert parse_obj_as(PageRpc[ServiceGetV2], result) is not None  # nosec
     return result
 
 
@@ -55,7 +55,7 @@ async def get_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> DEVServiceGet:
+) -> ServiceGetV2:
 
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -65,7 +65,7 @@ async def get_service(
         service_key=service_key,
         service_version=service_version,
     )
-    assert parse_obj_as(DEVServiceGet, result) is not None  # nosec
+    assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
     return result
 
 
@@ -79,7 +79,7 @@ async def update_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     update: ServiceUpdate,
-) -> DEVServiceGet:
+) -> ServiceGetV2:
     """Updates editable fields of a service"""
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -90,5 +90,5 @@ async def update_service(
         service_version=service_version,
         update=update,
     )
-    assert parse_obj_as(DEVServiceGet, result) is not None  # nosec
+    assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
     return result
