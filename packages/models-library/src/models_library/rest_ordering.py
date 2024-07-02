@@ -1,7 +1,8 @@
 from enum import Enum
 
-from models_library.basic_types import IDStr
 from pydantic import BaseModel, Field
+
+from .basic_types import IDStr
 
 
 class OrderDirection(str, Enum):

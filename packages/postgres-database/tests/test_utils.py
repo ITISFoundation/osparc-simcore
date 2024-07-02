@@ -3,7 +3,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from simcore_postgres_database.utils import hide_dict_pass, hide_url_pass
+import sqlalchemy as sa
+from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils import (
+    as_postgres_sql_query_str,
+    hide_dict_pass,
+    hide_url_pass,
+)
 from yarl import URL
 
 
@@ -21,3 +27,13 @@ def test_hide_dict_pass():
         "pass": "********",
         "password": "********",
     }
+
+
+def test_as_postgres_sql_query_str():
+
+    assert (
+        as_postgres_sql_query_str(
+            sa.select(users.c.name).where(users.c.id == 1)
+        ).replace("\n", "")
+        == "SELECT users.name FROM users WHERE users.id = 1"
+    )

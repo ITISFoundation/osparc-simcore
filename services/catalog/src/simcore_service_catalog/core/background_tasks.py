@@ -18,7 +18,6 @@ from typing import Any, Final, NewType, TypeAlias, cast
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -27,6 +26,7 @@ from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..services import access_rights
 
 _logger = logging.getLogger(__name__)
@@ -37,6 +37,8 @@ ServiceVersion = NewType("ServiceVersion", str)
 ServiceDockerDataMap: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
+
+_errored = set()
 
 
 async def _list_services_in_registry(
@@ -56,12 +58,13 @@ async def _list_services_in_registry(
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError:  # noqa: PERF203
+            errored_service = service.get("key"), service.get("version")
             _logger.warning(
-                "Skipping %s:%s from the catalog of services:",
-                service.get("key"),
-                service.get("version"),
-                exc_info=True,
+                "Skipping '%s:%s' from the catalog of services",
+                *errored_service,
+                exc_info=errored_service not in _errored,
             )
+            _errored.add(errored_service)
 
     return services
 
@@ -117,10 +120,9 @@ async def _create_services_in_database(
             service_access_rights
         )
 
-        service_metadata_dict = service_metadata.dict()
         # set the service in the DB
-        await services_repo.create_service(
-            ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
+        await services_repo.create_or_update_service(
+            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
             service_access_rights,
         )
 

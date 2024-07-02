@@ -1,9 +1,9 @@
 from typing import Any, ClassVar
 
-from models_library.products import ProductName
 from pydantic import BaseModel, Field, HttpUrl
 
 from ..invitations import InvitationContent, InvitationInputs
+from ..products import ProductName
 
 _INPUTS_EXAMPLE: dict[str, Any] = {
     "issuer": "issuerid",

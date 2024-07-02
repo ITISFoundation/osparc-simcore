@@ -13,17 +13,19 @@ from ._base import BaseRepository
 
 class GroupsRepository(BaseRepository):
     async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
-        groups_in_db = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
-                sa.select(groups)
-                .select_from(
-                    user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+            return [
+                GroupAtDB.from_orm(row)
+                async for row in await conn.stream(
+                    sa.select(groups)
+                    .select_from(
+                        user_to_groups.join(
+                            groups, user_to_groups.c.gid == groups.c.gid
+                        ),
+                    )
+                    .where(user_to_groups.c.uid == user_id)
                 )
-                .where(user_to_groups.c.uid == user_id)
-            ):
-                groups_in_db.append(GroupAtDB.from_orm(row))
-        return groups_in_db
+            ]
 
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:

@@ -1,10 +1,10 @@
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from models_library.projects_nodes import InputID, InputsDict
 from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
+from ..projects_nodes import InputID, InputsDict
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState

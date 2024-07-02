@@ -37,7 +37,7 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def mock_director_service_labels(
+def mocked_director_service_labels(
     mocked_director_service_api: respx.MockRouter, app: FastAPI
 ) -> Route:
     slash = urllib.parse.quote_plus("/")
@@ -183,13 +183,14 @@ class _ServiceResourceParams:
 )
 async def test_get_service_resources(
     mocked_catalog_background_task,
-    mock_director_service_labels: Route,
+    setup_rabbitmq_and_rpc_disabled: None,
+    mocked_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
 ) -> None:
     service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
-    mock_director_service_labels.respond(json={"data": params.simcore_service_label})
+    mocked_director_service_labels.respond(json={"data": params.simcore_service_label})
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
@@ -287,6 +288,7 @@ def create_mock_director_service_labels(
 )
 async def test_get_service_resources_sim4life_case(
     mocked_catalog_background_task,
+    setup_rabbitmq_and_rpc_disabled: None,
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
@@ -307,7 +309,8 @@ async def test_get_service_resources_sim4life_case(
 
 async def test_get_service_resources_raises_errors(
     mocked_catalog_background_task,
-    mock_director_service_labels: Route,
+    setup_rabbitmq_and_rpc_disabled: None,
+    mocked_director_service_labels: Route,
     client: TestClient,
 ) -> None:
 
@@ -315,11 +318,11 @@ async def test_get_service_resources_raises_errors(
     service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     # simulate a communication error
-    mock_director_service_labels.side_effect = httpx.HTTPError
+    mocked_director_service_labels.side_effect = httpx.HTTPError
     response = client.get(f"{url}")
     assert response.status_code == httpx.codes.SERVICE_UNAVAILABLE, f"{response.text}"
     # simulate a missing service
-    mock_director_service_labels.respond(
+    mocked_director_service_labels.respond(
         httpx.codes.NOT_FOUND, json={"error": "service not found"}
     )
     response = client.get(f"{url}")

@@ -4,7 +4,6 @@ from decimal import Decimal
 from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
-from models_library.products import ProductName
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -15,6 +14,7 @@ from pydantic import (
     validator,
 )
 
+from .products import ProductName
 from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
 

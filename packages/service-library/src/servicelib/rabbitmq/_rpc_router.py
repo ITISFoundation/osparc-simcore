@@ -55,7 +55,7 @@ class RPCRouter:
                         return await func(*args, **kwargs)
 
                     except asyncio.CancelledError:
-                        _logger.debug("call was cancelled")
+                        _logger.debug("Call %s was cancelled", func.__name__)
                         raise
 
                     except Exception as exc:  # pylint: disable=broad-except
@@ -64,7 +64,10 @@ class RPCRouter:
                         ):
                             raise
 
-                        _logger.exception("Unhandled exception:")
+                        _logger.exception(
+                            "Unhandled exception on the rpc-server side."
+                            " Re-raising as RPCServerError."
+                        )
                         # NOTE: we do not return internal exceptions over RPC
                         formatted_traceback = "\n".join(
                             traceback.format_tb(exc.__traceback__)
