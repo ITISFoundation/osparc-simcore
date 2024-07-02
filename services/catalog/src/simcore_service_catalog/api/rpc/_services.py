@@ -41,7 +41,7 @@ async def list_services_paginated(
     total_count = len(items)
 
     return PageRpc[ServiceGetV2].create(
-        items,
+        items[offset : offset + limit],
         total=total_count,
         limit=limit,
         offset=offset,
