@@ -440,7 +440,7 @@ def write_compose_file_command(
 ) -> str:
     compose = {
         "services": {
-            f"{image_tag.split('/')[-1]}": {"image": image_tag}
+            f"{image_tag.split('/')[-1].replace(':','-')}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
         },
     }
