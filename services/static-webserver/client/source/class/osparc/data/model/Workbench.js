@@ -285,10 +285,26 @@ qx.Class.define("osparc.data.model.Workbench", {
           "service_version": version
         }
       };
-      await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
-        let errorMsg = qx.locale.Manager.tr("Error creating ") + key + ":" + version;
+
+      try {
+        await osparc.data.Resources.fetch("studies", "addNode", params);
+        const metadata = await osparc.service.Store.getService(key, version);
+        this.fireEvent("restartAutoSaveTimer");
+        const node = this.__createNode(this.getStudy(), metadata, nodeId);
+        this.__initNodeSignals(node);
+        this.__addNode(node);
+
+        node.populateNodeData();
+        this.giveUniqueNameToNode(node, node.getLabel());
+        node.startPollingState();
+
+        return node;
+      } catch (err) {
+        let errorMsg = "";
         if ("status" in err && err.status === 406) {
           errorMsg = key + ":" + version + qx.locale.Manager.tr(" is retired");
+        } else {
+          errorMsg = err.message || qx.locale.Manager.tr("Error creating ") + key + ":" + version;
         }
         const errorMsgData = {
           msg: errorMsg,
@@ -297,29 +313,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.fireDataEvent("showInLogger", errorMsgData);
         osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         return null;
-      });
-
-      this.fireEvent("restartAutoSaveTimer");
-
-      const metadata = await osparc.service.Store.getService(key, version).catch(() => {
-        let errorMsg = qx.locale.Manager.tr("Error fetching metadata ") + key + ":" + version;
-        const errorMsgData = {
-          msg: errorMsg,
-          level: "ERROR"
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-        return null;
-      });
-      const node = this.__createNode(this.getStudy(), metadata, nodeId);
-      this.__initNodeSignals(node);
-      this.__addNode(node);
-
-      node.populateNodeData();
-      this.giveUniqueNameToNode(node, node.getLabel());
-      node.startPollingState();
-
-      return node;
+      }
     },
 
     __initNodeSignals: function(node) {
