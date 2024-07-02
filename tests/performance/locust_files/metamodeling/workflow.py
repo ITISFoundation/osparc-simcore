@@ -60,12 +60,13 @@ class MetaModelingUser(HttpUser):
         )
         self.pool_manager = PoolManager(retries=retry_strategy)
 
+        self._input_json_uuid = None
+        self._job_uuid = None
+
         super().__init__(*args, **kwargs)
 
     def on_start(self) -> None:
         self.client.get("/v0/me", auth=self._auth)  # fail fast
-        self._input_json_uuid = None
-        self._job_uuid = None
 
     def on_stop(self) -> None:
         if self._input_json_uuid is not None:
@@ -151,9 +152,12 @@ class MetaModelingUser(HttpUser):
 
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
-        files = {"file": open(f"{file.resolve()}", "rb")}
-        response = self.client.put("/v0/files/content", files=files, auth=self._auth)
-        response.raise_for_status()
-        file_uuid = response.json().get("id")
+        with open(f"{file.resolve()}", "rb") as f:
+            files = {"file": f}
+            response = self.client.put(
+                "/v0/files/content", files=files, auth=self._auth
+            )
+            response.raise_for_status()
+            file_uuid = response.json().get("id")
         assert file_uuid is not None
         return UUID(file_uuid)
