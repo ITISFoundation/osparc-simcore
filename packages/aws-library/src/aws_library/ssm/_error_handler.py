@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 
-from ._errors import SSMAccessError
+from ._errors import SSMAccessError, SSMSendCommandInstancesNotReadyError
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
@@ -22,8 +22,15 @@ def _map_botocore_client_exception(
     )
     operation_name = botocore_error.operation_name
     match status_code, operation_name:
+        case 400, "SendCommand":
+            return SSMSendCommandInstancesNotReadyError()
+
         case _:
-            return SSMAccessError()
+            return SSMAccessError(
+                operation_name=operation_name,
+                code=status_code,
+                error=f"{botocore_error}",
+            )
 
 
 P = ParamSpec("P")
