@@ -221,21 +221,18 @@ async def monitor_buffer_machines(
     for warm_buffer_pool in current_warm_buffer_pools.values():
         if warm_buffer_pool.waiting_to_pull_instances:
             # trigger the image pulling
-            await ec2_client.set_instances_tags(
-                tuple(warm_buffer_pool.waiting_to_pull_instances),
-                tags={_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true")},
-            )
             ssm_command = await ssm_client.send_command(
                 [
                     instance.id
                     for instance in warm_buffer_pool.waiting_to_pull_instances
                 ],
-                command="docker pull nginx:latest",
+                command="docker compose -f /docker-pull.compose.yml -p buffering pull",
                 command_name=_PREPULL_COMMAND_NAME,
             )
             await ec2_client.set_instances_tags(
                 tuple(warm_buffer_pool.waiting_to_pull_instances),
                 tags={
+                    _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
                     _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
                         ssm_command.command_id
                     ),
