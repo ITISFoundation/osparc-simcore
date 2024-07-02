@@ -15,13 +15,12 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import Extra, NonNegativeInt, parse_obj_as, validate_arguments
+from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
 
 from ..._client_rpc import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
-_config = {"arbitrary_types_allowed": True, "extra": Extra.ignore}
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -33,7 +32,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ) -> PageRpc[ServiceGetV2]:
-    @validate_arguments(config=_config)
+    @validate_arguments()
     async def _call(
         product_name: ProductName,
         user_id: UserID,
@@ -57,7 +56,6 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments(config=_config)
 async def get_service(
     rpc_client: RabbitMQRPCClient,
     *,
@@ -66,10 +64,23 @@ async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
+    @validate_arguments()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            parse_obj_as(RPCMethodName, "get_service"),
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+        )
 
-    result = await rpc_client.request(
-        CATALOG_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_service"),
+    result = await _call(
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -80,7 +91,6 @@ async def get_service(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-@validate_arguments(config=_config)
 async def update_service(
     rpc_client: RabbitMQRPCClient,
     *,
@@ -91,9 +101,26 @@ async def update_service(
     update: ServiceUpdate,
 ) -> ServiceGetV2:
     """Updates editable fields of a service"""
-    result = await rpc_client.request(
-        CATALOG_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "update_service"),
+
+    @validate_arguments()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+        update: ServiceUpdate,
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            parse_obj_as(RPCMethodName, "update_service"),
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            update=update,
+        )
+
+    result = await _call(
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
