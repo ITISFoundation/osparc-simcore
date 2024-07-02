@@ -10,7 +10,7 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, ValidationError, parse_obj_as
+from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 
@@ -19,7 +19,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(ValidationError,))
+@router.expose()
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_services_paginated(
     app: FastAPI,
@@ -46,7 +46,7 @@ async def list_services_paginated(
     )
 
 
-@router.expose(reraise_if_error_type=(ValidationError,))
+@router.expose()
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_service(
     app: FastAPI,
@@ -68,7 +68,7 @@ async def get_service(
     return got
 
 
-@router.expose(reraise_if_error_type=(ValidationError,))
+@router.expose()
 @log_decorator(_logger, level=logging.DEBUG)
 async def update_service(
     app: FastAPI,
