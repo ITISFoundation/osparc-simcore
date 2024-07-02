@@ -96,3 +96,20 @@ class SimcoreSSMAPI:
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
             message=response["StatusDetails"],
         )
+
+    @ssm_exception_handler(_logger)
+    async def is_instance_connected_to_ssm_server(self, instance_id: str) -> bool:
+        response = await self.client.describe_instance_information(
+            InstanceInformationFilterList=[
+                {
+                    "key": "InstanceIds",
+                    "valueSet": [
+                        instance_id,
+                    ],
+                }
+            ],
+        )
+        assert response["InstanceInformationList"]  # nosec
+        assert len(response["InstanceInformationList"]) == 1  # nosec
+        assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
+        return response["InstanceInformationList"][0]["PingStatus"] == "Online"
