@@ -4,6 +4,7 @@ from typing import Any, ClassVar, TypeAlias
 from pydantic import BaseModel, Field
 
 from .services_types import ServiceVersion
+from .utils.change_case import snake_to_camel
 
 
 class Compatibility(BaseModel):
@@ -13,6 +14,10 @@ class Compatibility(BaseModel):
         description="Latest compatible version at this moment."
         "Current service can update to this version and still work",
     )
+
+    class Config:
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
 
 
 class ServiceRelease(BaseModel):
@@ -34,6 +39,8 @@ class ServiceRelease(BaseModel):
     compatibility: Compatibility | None = Field(default=None)
 
     class Config:
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal

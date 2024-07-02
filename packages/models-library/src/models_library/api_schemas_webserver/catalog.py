@@ -240,6 +240,9 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
         ...
 
 
+# TODO: reduces
+
+
 class CatalogServiceGet(api_schemas_catalog_services.DEVServiceGet):
     # NOTE: will replace ServiceGet!
 

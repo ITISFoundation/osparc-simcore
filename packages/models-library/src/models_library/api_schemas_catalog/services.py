@@ -1,13 +1,21 @@
 from typing import Any, ClassVar
 
 from models_library.services_history import ServiceRelease
-from pydantic import Extra, Field
+from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..emails import LowerCaseEmailStr
 from ..services import ServiceMetaDataPublished
-from ..services_access import ServiceAccessRights
+from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsApi
 from ..services_metadata_editable import ServiceMetaDataEditable
+from ..services_metadata_published import ServiceInputsDict, ServiceOutputsDict
 from ..services_resources import ServiceResourcesDict
+from ..services_types import ServiceKey, ServiceVersion
+from ..users import GroupID
+from ..utils.change_case import snake_to_camel
+from .boot_options import BootOptions
+from .emails import LowerCaseEmailStr
+from .services_authoring import Author, Badge
+from .services_enums import ServiceType
 
 
 class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
@@ -196,8 +204,33 @@ class ServiceGet(
         }
 
 
-class DEVServiceGet(ServiceGet):
-    # pylint: disable=too-many-ancestors
+class DEVServiceGet(BaseModel):
+    key: ServiceKey
+    version: ServiceVersion
+
+    name: str
+    thumbnail: HttpUrl | None = None
+    description: str
+
+    version_display: str | None = None
+
+    service_type: ServiceType
+
+    badges: list[Badge] | None = None
+
+    owner: LowerCaseEmailStr | None
+    authors: list[Author] = Field(..., min_items=1)
+
+    inputs: ServiceInputsDict
+    outputs: ServiceOutputsDict
+
+    boot_options: BootOptions | None = None
+    min_visible_inputs: NonNegativeInt | None = None
+
+    access_rights: dict[GroupID, ServiceGroupAccessRightsApi] | None
+
+    classifiers: list[str] | None
+    quality: dict[str, Any] = {}
 
     history: list[ServiceRelease] = Field(
         default=[],
@@ -206,6 +239,8 @@ class DEVServiceGet(ServiceGet):
     )
 
     class Config:
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
