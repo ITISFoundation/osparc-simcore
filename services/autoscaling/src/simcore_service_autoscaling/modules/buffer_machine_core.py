@@ -84,7 +84,11 @@ class WarmBufferPool:
 
 
 def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
-    return auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
+    base_ec2_tags = auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
+    base_ec2_tags[AWSTagKey("Name")] = AWSTagValue(
+        f"{base_ec2_tags[AWSTagKey('Name')]}-buffer"
+    )
+    return base_ec2_tags
 
 
 async def monitor_buffer_machines(
