@@ -81,7 +81,6 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
     },
     "key": "simcore/services/frontend/file-picker",
     "version": "1.0.0",
-    "integration-version": None,
     "type": "dynamic",
     "badges": None,
     "authors": [
@@ -117,7 +116,6 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "2.2.1",
     "version_display": "2 Xtreme",
-    "integration-version": "1.0.0",
     "type": "computational",
     "authors": [
         {
@@ -217,8 +215,9 @@ class ServiceGetV2(BaseModel):
 
     badges: list[Badge] | None = None
 
-    owner: LowerCaseEmailStr | None
+    contact: LowerCaseEmailStr | None
     authors: list[Author] = Field(..., min_items=1)
+    owner: LowerCaseEmailStr | None
 
     inputs: ServiceInputsDict
     outputs: ServiceOutputsDict
@@ -238,6 +237,7 @@ class ServiceGetV2(BaseModel):
     )
 
     class Config:
+        extra = Extra.forbid
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -248,7 +248,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": _EXAMPLE_SLEEPER["version"],
                             "version_display": "Summer Release",
-                            "release_date": "2024-07-20T15:00:00",
+                            "released": "2024-07-20T15:00:00",
                         },
                         {
                             "version": "2.0.0",
@@ -266,13 +266,16 @@ class ServiceGetV2(BaseModel):
                         },
                         {
                             "version": "0.9.1",
-                            "version_display": "Matterhorn",
-                            "release_date": "2024-01-20T18:49:17",
+                            "versionDisplay": "Matterhorn",
+                            "released": "2024-01-20T18:49:17",
                             "compatibility": {
                                 "can_update_to": "0.9.11",
                             },
                         },
-                        {"version": "0.9.0"},
+                        {
+                            "version": "0.9.0",
+                            "retired": "2024-07-20T15:00:00",
+                        },
                         {"version": "0.8.0"},
                         {"version": "0.1.0"},
                     ],
@@ -283,7 +286,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": _EXAMPLE_FILEPICKER["version"],
                             "version_display": "Odei Release",
-                            "release_date": "2025-03-25T00:00:00",
+                            "released": "2025-03-25T00:00:00",
                         }
                     ],
                 },
