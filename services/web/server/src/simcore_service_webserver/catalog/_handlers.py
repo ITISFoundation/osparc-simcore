@@ -34,11 +34,9 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.application_settings_utils import (
-    requires_dev_feature_enabled,
-)
 
 from .._meta import API_VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required

@@ -1,13 +1,13 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
-from models_library.products import ProductName
-from models_library.rpc_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    PageLimitInt,
-    PageRpc,
+from models_library.api_schemas_catalog.services import (
+    PageRpcServicesGetV2,
+    ServiceGetV2,
+    ServiceUpdate,
 )
+from models_library.products import ProductName
+from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
@@ -28,7 +28,7 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[ServiceGetV2]:
+) -> PageRpcServicesGetV2:
     assert app  # nosec
     assert product_name  # nosec
 
@@ -38,7 +38,7 @@ async def list_services_paginated(
     )
     total_count = len(items)
 
-    return PageRpc[ServiceGetV2].create(
+    return PageRpcServicesGetV2.create(
         items[offset : offset + limit],
         total=total_count,
         limit=limit,

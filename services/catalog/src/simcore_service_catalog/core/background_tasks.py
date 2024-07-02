@@ -60,7 +60,7 @@ async def _list_services_in_registry(
         except ValidationError:  # noqa: PERF203
             errored_service = service.get("key"), service.get("version")
             _logger.warning(
-                "Skipping %s:%s from the catalog of services:",
+                "Skipping '%s:%s' from the catalog of services",
                 *errored_service,
                 exc_info=errored_service not in _errored,
             )

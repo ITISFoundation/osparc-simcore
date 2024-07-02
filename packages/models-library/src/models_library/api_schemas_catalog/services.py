@@ -1,5 +1,6 @@
 from typing import Any, ClassVar
 
+from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
@@ -296,5 +297,10 @@ class ServiceGetV2(BaseModel):
             ]
         }
 
+
+PageRpcServicesGetV2 = PageRpc[
+    # WARNING: keep this definition in models_library and not in the RPC interface
+    ServiceGetV2
+]
 
 ServiceResourcesGet = ServiceResourcesDict
