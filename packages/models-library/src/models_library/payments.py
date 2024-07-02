@@ -1,9 +1,9 @@
 from decimal import Decimal
 from typing import Any, ClassVar, TypeAlias
 
-from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 
+from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID
 
 StripeInvoiceID: TypeAlias = str

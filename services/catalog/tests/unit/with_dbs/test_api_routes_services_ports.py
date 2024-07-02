@@ -42,7 +42,7 @@ def service_metadata(
 
 
 @pytest.fixture
-async def mock_check_service_read_access(
+async def mocked_check_service_read_access(
     mocker: MockerFixture, user_groups_ids: dict[str, Any]
 ):
     # MOCKS functionality inside "simcore_service_catalog.api.dependencies.services.check_service_read_access"
@@ -58,7 +58,7 @@ async def mock_check_service_read_access(
 
 
 @pytest.fixture
-async def mock_director_service_api(
+async def mocked_director_service_api(
     mocked_director_service_api: MockRouter,
     service_key: str,
     service_version: str,
@@ -79,10 +79,11 @@ async def mock_director_service_api(
 
 
 async def test_list_service_ports(
-    disable_service_caching: None,
+    service_caching_disabled: None,
     mocked_catalog_background_task: None,
-    mock_check_service_read_access: None,
-    mock_director_service_api: None,
+    mocked_check_service_read_access: None,
+    mocked_director_service_api: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     client: TestClient,
     product_name: str,
     user_id: int,

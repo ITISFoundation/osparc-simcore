@@ -11,7 +11,6 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-import respx
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
@@ -70,8 +69,8 @@ async def app_settings(  # starts postgres service before app starts
     # Ensures both postgres service and app environs are the same!
     assert app_settings
     assert app_settings.CATALOG_POSTGRES
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_USER == postgres_host_config["user"]
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_DB == postgres_host_config["database"]
+    assert postgres_host_config["user"] == app_settings.CATALOG_POSTGRES.POSTGRES_USER
+    assert postgres_host_config["database"] == app_settings.CATALOG_POSTGRES.POSTGRES_DB
     assert (
         app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
         == postgres_host_config["password"]
@@ -85,22 +84,6 @@ def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
-
-
-@pytest.fixture()
-def mocked_director_service_api(
-    app_settings: ApplicationSettings,
-) -> Iterator[respx.MockRouter]:
-    with respx.mock(
-        base_url=app_settings.CATALOG_DIRECTOR.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": []}
-        )
-        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------

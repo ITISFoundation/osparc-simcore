@@ -6,15 +6,19 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 
 import pytest
+import respx
 import simcore_service_catalog
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
@@ -23,11 +27,12 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.faker_users_data",
     "pytest_simcore.faker_products_data",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
 ]
 
@@ -102,5 +107,57 @@ async def app(
 
 
 @pytest.fixture
-def disable_service_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+@pytest.fixture
+def postgres_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CATALOG_POSTGRES", "null")
+
+
+#
+# rabbit-MQ
+#
+
+
+@pytest.fixture
+def setup_rabbitmq_and_rpc_disabled(mocker: MockerFixture):
+    # The following services are affected if rabbitmq is not in place
+    mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
+    mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")
+
+
+@pytest.fixture
+async def rpc_client(
+    faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client(f"catalog-client-{faker.word()}")
+
+
+#
+# director
+#
+
+
+@pytest.fixture
+def director_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CATALOG_DIRECTOR", "null")
+
+
+@pytest.fixture
+def mocked_director_service_api(
+    app_settings: ApplicationSettings,
+) -> Iterator[respx.MockRouter]:
+    assert app_settings.CATALOG_DIRECTOR
+    with respx.mock(
+        base_url=app_settings.CATALOG_DIRECTOR.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
+        respx_mock.get("/services", name="list_services").respond(
+            200, json={"data": ["one", "two"]}
+        )
+
+        yield respx_mock

@@ -4,7 +4,6 @@ from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
-from ..services_history import ServiceRelease
 from ..services_io import ServiceInput, ServiceOutput
 from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
@@ -100,37 +99,22 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["example"],
-    **{
-        "inputs": {
-            f"input{i}": example
-            for i, example in enumerate(ServiceInputGet.Config.schema_extra["examples"])
-        },
-        "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
+    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["examples"][1],
+    "inputs": {},
+    "outputs": {
+        "outFile": {
+            "displayOrder": 0,
+            "label": "File",
+            "description": "Chosen File",
+            "type": "data:*/*",
+            "fileToKeyMap": None,
+            "keyId": "outFile",
+        }
     },
 }
 
-
 _EXAMPLE_SLEEPER: dict[str, Any] = {
-    "name": "sleeper",
-    "thumbnail": None,
-    "description": "A service which awaits for time to pass, two times.",
-    "classifiers": [],
-    "quality": {},
-    "accessRights": {"1": {"execute_access": True, "write_access": False}},
-    "key": "simcore/services/comp/itis/sleeper",
-    "version": "2.2.1",
-    "version_display": "2 Xtreme",
-    "integration-version": "1.0.0",
-    "type": "computational",
-    "authors": [
-        {
-            "name": "Author Bar",
-            "email": "author@acme.com",
-            "affiliation": "ACME",
-        },
-    ],
-    "contact": "contact@acme.com",
+    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["examples"][0],
     "inputs": {
         "input_1": {
             "displayOrder": 1,
@@ -228,7 +212,6 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
             "keyId": "output_3",
         },
     },
-    "owner": "owner@acme.com",
 }
 
 
@@ -242,7 +225,9 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
     )
 
     class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _EXAMPLE_FILEPICKER}
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
+        }
 
 
 class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
@@ -255,62 +240,29 @@ class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
         ...
 
 
-class DEVServiceGet(ServiceGet):
-    # pylint: disable=too-many-ancestors
+class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
+    # NOTE: will replace ServiceGet!
 
-    history: list[ServiceRelease] = Field(
-        default=[],
-        description="history of releases for this service at this point in time, starting from the newest to the oldest."
-        " It includes current release.",
+    # pylint: disable=too-many-ancestors
+    inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
+        ..., description="inputs with extended information"
+    )
+    outputs: ServiceOutputsGetDict = Field(  # type: ignore[assignment]
+        ..., description="outputs with extended information"
     )
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
-                    "history": [
-                        {
-                            "version": _EXAMPLE_SLEEPER["version"],
-                            "version_display": "Summer Release",
-                            "release_date": "2024-07-20T15:00:00",
-                        },
-                        {
-                            "version": "2.0.0",
-                            "compatibility": {
-                                "can_update_to": _EXAMPLE_SLEEPER["version"],
-                            },
-                        },
-                        {"version": "0.9.11"},
-                        {"version": "0.9.10"},
-                        {
-                            "version": "0.9.8",
-                            "compatibility": {
-                                "can_update_to": "0.9.11",
-                            },
-                        },
-                        {
-                            "version": "0.9.1",
-                            "version_display": "Matterhorn",
-                            "release_date": "2024-01-20T18:49:17",
-                            "compatibility": {
-                                "can_update_to": "0.9.11",
-                            },
-                        },
-                        {"version": "0.9.0"},
-                        {"version": "0.8.0"},
-                        {"version": "0.1.0"},
-                    ],
+            "example": {
+                **api_schemas_catalog_services.ServiceGetV2.Config.schema_extra[
+                    "examples"
+                ][0],
+                "inputs": {
+                    f"input{i}": example
+                    for i, example in enumerate(
+                        ServiceInputGet.Config.schema_extra["examples"]
+                    )
                 },
-                {
-                    **_EXAMPLE_FILEPICKER,
-                    "history": [
-                        {
-                            "version": _EXAMPLE_FILEPICKER["version"],
-                            "version_display": "Odei Release",
-                            "release_date": "2025-03-25T00:00:00",
-                        }
-                    ],
-                },
-            ]
+                "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
+            }
         }

@@ -3,31 +3,38 @@ from typing import Any, ClassVar, Final, Generic, TypeVar
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConstrainedInt,
     Extra,
     Field,
     NonNegativeInt,
     PositiveInt,
+    parse_obj_as,
     validator,
 )
 from pydantic.generics import GenericModel
 
+from .utils.common_validators import none_to_empty_list_pre_validator
+
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
 #    interconnecting paginated calls
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
-assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+
+class PageLimitInt(ConstrainedInt):
+    ge = 1
+    lt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+
+
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = parse_obj_as(PageLimitInt, 20)
 
 
 class PageQueryParameters(BaseModel):
     """Use as pagination options in query parameters"""
 
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    limit: PageLimitInt = Field(
+        default=parse_obj_as(PageLimitInt, DEFAULT_NUMBER_OF_ITEMS_PER_PAGE),
         description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
@@ -42,7 +49,7 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     @validator("offset")
     @classmethod
-    def check_offset(cls, v, values):
+    def _check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
             msg = f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
             raise ValueError(msg)
@@ -50,7 +57,7 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     @validator("count")
     @classmethod
-    def check_count(cls, v, values):
+    def _check_count(cls, v, values):
         if v > values["limit"]:
             msg = f"count {v} bigger than limit {values['limit']}, please check"
             raise ValueError(msg)
@@ -74,15 +81,22 @@ class PageMetaInfoLimitOffset(BaseModel):
         }
 
 
-class PageLinks(BaseModel):
-    self: AnyHttpUrl
-    first: AnyHttpUrl
-    prev: AnyHttpUrl | None
-    next: AnyHttpUrl | None
-    last: AnyHttpUrl
+RefT = TypeVar("RefT")
+
+
+class PageRefs(BaseModel, Generic[RefT]):
+    self: RefT
+    first: RefT
+    prev: RefT | None
+    next: RefT | None
+    last: RefT
 
     class Config:
         extra = Extra.forbid
+
+
+class PageLinks(PageRefs[AnyHttpUrl]):
+    ...
 
 
 ItemT = TypeVar("ItemT")
@@ -97,16 +111,13 @@ class Page(GenericModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    @validator("data", pre=True)
-    @classmethod
-    def convert_none_to_empty_list(cls, v):
-        if v is None:
-            v = []
-        return v
+    _none_is_empty = validator("data", allow_reuse=True, pre=True)(
+        none_to_empty_list_pre_validator
+    )
 
     @validator("data")
     @classmethod
-    def check_data_compatible_with_meta(cls, v, values):
+    def _check_data_compatible_with_meta(cls, v, values):
         if "meta" not in values:
             # if the validation failed in meta this happens
             msg = "meta not in values"

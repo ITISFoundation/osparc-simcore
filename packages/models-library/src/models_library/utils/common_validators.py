@@ -31,6 +31,12 @@ def none_to_empty_str_pre_validator(value: Any):
     return value
 
 
+def none_to_empty_list_pre_validator(value: Any):
+    if value is None:
+        return []
+    return value
+
+
 def create_enums_pre_validator(enum_cls: type[enum.Enum]):
     """Enables parsing enums from equivalent enums
 

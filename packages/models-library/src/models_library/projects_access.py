@@ -5,10 +5,11 @@
 from enum import Enum
 from typing import Any, ClassVar
 
-from models_library.basic_types import IDStr
-from models_library.users import FirstNameStr, LastNameStr
 from pydantic import BaseModel, Extra, Field
 from pydantic.types import PositiveInt
+
+from .basic_types import IDStr
+from .users import FirstNameStr, LastNameStr
 
 
 class GroupIDStr(IDStr):

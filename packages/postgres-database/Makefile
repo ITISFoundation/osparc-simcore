@@ -129,12 +129,13 @@ down-pg down-prod: $(docker-compose-configs) ## stops pg server
 
 
 
-.PHONY: auto-doc
-auto-doc: ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
+.PHONY: doc-erd
+doc-erd: ## Creates entity relationship diagram (ERD) defined under ``simcore_postgres_database.models``
 	$(MAKE) --directory=scripts/erd run
 
-.PHONY: merge-heads check-multiple-heads
 
+
+.PHONY: merge-heads check-multiple-heads
 check-multiple-heads: ## checks that multiple postgress heads exist
 	@cd src/simcore_postgres_database; \
 	nheads=$$(alembic heads | wc -l); \

@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 from typing import Final
 
-from models_library.products import ProductName
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
+
+from .products import ProductName
 
 _MAX_LEN: Final = 40
 
