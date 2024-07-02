@@ -32,8 +32,9 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
-    Availability,
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -42,7 +43,6 @@ from models_library.generated_models.docker_rest_api import (
     ResourceObject,
     Service,
 )
-from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
@@ -155,11 +155,19 @@ def ec2_settings() -> EC2Settings:
 
 
 @pytest.fixture
+def ec2_instance_custom_tags(faker: Faker) -> dict[str, str]:
+    return {
+        "osparc-tag": faker.text(max_nb_chars=80),
+    }
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+    ec2_instance_custom_tags: dict[str, str],
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
@@ -188,13 +196,7 @@ def app_environment(
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
-            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
-                {
-                    "user_id": "32",
-                    "wallet_id": "3245",
-                    "osparc-tag": "some whatever value",
-                }
-            ),
+            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(ec2_instance_custom_tags),
         },
     )
     return mock_env_devel_environment | envs
