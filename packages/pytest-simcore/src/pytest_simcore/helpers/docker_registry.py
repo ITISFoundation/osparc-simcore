@@ -66,7 +66,7 @@ class Registry:
         assert limit > 0
         query = {"n": limit}
 
-        yield from _req(url=f"{self.data.url}/v2/_catalog", params=query, timeout=10)
+        yield from _req(url=f"{self.data.url}/v2/_catalog", params=query, timeout=None)
 
     def get_digest(self, repo_name: str, repo_reference: str) -> str:
         r = httpx.head(
