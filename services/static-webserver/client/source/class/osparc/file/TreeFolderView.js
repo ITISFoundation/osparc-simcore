@@ -128,16 +128,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const data = e.getData();
         folderTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
-
-      selectedFileLayout.addListener("fileDeleted", e => {
-        // Try to bring the user to where it was.
-        // If the folder doesn't longer exist, open the closest available parent
-        const fileMetadata = e.getData();
-        console.log(fileMetadata);
-        folderTree.populateTree(fileMetadata["locationId"]);
-        // OM?
-        folderViewer.resetFolder();
-      }, this);
     }
   }
 });
