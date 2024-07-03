@@ -129,7 +129,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
+        console.log(fileMetadata);
         foldersTree.populateTree(fileMetadata["locationId"]);
+        // OM?
+        folderViewer.resetFolder();
       }, this);
     }
   }
