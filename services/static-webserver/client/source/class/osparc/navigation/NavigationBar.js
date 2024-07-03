@@ -240,7 +240,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "credits-button":
           control = new osparc.desktop.credits.CreditsIndicatorButton();
-          osparc.utils.Utils.setIdToWidget(control, "creditsNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         case "tasks-button":
