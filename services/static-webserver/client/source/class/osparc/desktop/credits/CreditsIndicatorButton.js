@@ -21,6 +21,8 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
   construct: function() {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "creditsIndicatorButton");
+
     this.set({
       cursor: "pointer",
       padding: [3, 8]
