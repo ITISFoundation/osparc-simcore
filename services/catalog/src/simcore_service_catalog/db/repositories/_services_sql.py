@@ -183,7 +183,7 @@ def list_services_with_history_stmt2(
         access_rights=access_rights,
         limit=limit,
         offset=offset,
-    ).cte("paginated_latest_services")
+    ).cte("cte")
 
     # get all information of latest's services listed in CTE
     latest_query = (
@@ -193,7 +193,6 @@ def list_services_with_history_stmt2(
             (services_meta_data.c.key == cte.c.key)
             & (services_meta_data.c.version == cte.c.latest_version),
         )
-        .order_by(services_meta_data.c.key)
         .subquery()
     )
 
@@ -232,9 +231,7 @@ def list_services_with_history_stmt2(
 
     return (
         sa.select(
-            history_subquery.c.key,
-            latest_query.c.version,
-            latest_query.c.description,
+            latest_query,
             array_agg(
                 func.json_build_object(
                     "version",
@@ -247,10 +244,11 @@ def list_services_with_history_stmt2(
             ).label("history"),
         )
         .join(
-            latest_query,
+            history_subquery,
             latest_query.c.key == history_subquery.c.key,
         )
-        .group_by(history_subquery.c.key)
+        .group_by(history_subquery.c.key, latest_query)
+        .order_by(history_subquery.c.key)
     )
 
 

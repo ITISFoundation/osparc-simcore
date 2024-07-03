@@ -356,9 +356,9 @@ async def test_list_all_services_and_history_with_pagination(
 def test_services_sql_statements_can_be_built():
     # helper
     def _eval_and_print_stmt(func_smt, **kwargs):
-        print()
         print(f"{func_smt.__name__:*^100}")
         stmt = func_smt(**kwargs)
+        print()
         print(as_postgres_sql_query_str(stmt))
         print()
 
