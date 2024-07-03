@@ -23,8 +23,8 @@ from sqlalchemy.sql.expression import tuple_
 
 from ...models.services_db import (
     ServiceAccessRightsAtDB,
-    ServiceHistoryDB,
     ServiceMetaDataAtDB,
+    ServiceWithHistoryFromDB,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
@@ -34,6 +34,7 @@ from ._services_sql import (
     batch_get_services_stmt,
     list_services_stmt,
     list_services_with_history_stmt,
+    list_services_with_history_stmt2,
     total_count_stmt,
 )
 
@@ -214,7 +215,7 @@ class ServicesRepository(BaseRepository):
         # pagination
         limit: int | None = None,
         offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceHistoryDB]]:
+    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
 
         # get page
         stmt_total = total_count_stmt(
@@ -248,7 +249,67 @@ class ServicesRepository(BaseRepository):
 
         # compose history with latest
         items_page = [
-            ServiceHistoryDB.parse_obj({**r, **latest_services.get(r["key"], {})})
+            ServiceWithHistoryFromDB.parse_obj(
+                {**r, **latest_services.get(r["key"], {})}
+            )
+            for r in rows
+        ]
+
+        return (total_count, items_page)
+
+    async def list_latest_services(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # pagination
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
+
+        # get page
+        stmt_total = total_count_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+        )
+        stmt_page = list_services_with_history_stmt2(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            limit=limit,
+            offset=offset,
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
+            result = await conn.execute(stmt_page)
+            rows = result.fetchall()
+            assert len(rows) <= total_count  # nosec
+
+        # compose history with latest
+        items_page = [
+            ServiceWithHistoryFromDB(
+                key=r.key,
+                version=r.version,
+                # display
+                name=r.name,
+                description=r.description,
+                thumbnail=r.thumbnail,
+                # ownership
+                owner_email=r.owner_email,
+                # tagging
+                classifiers=r.classifiers,
+                quality=r.quality,
+                # lifetime
+                created=r.created,
+                modified=r.modified,
+                deprecated=r.deprecated,
+                # releases
+                history=r.history,
+            )
             for r in rows
         ]
 

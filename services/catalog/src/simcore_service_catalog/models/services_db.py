@@ -1,10 +1,10 @@
-import datetime
+from datetime import datetime
 from typing import Any, ClassVar
 
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
-from models_library.services_types import ServiceVersion
+from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
 
@@ -55,13 +55,33 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
 
 class HistoryItem(BaseModel):
     version: ServiceVersion
-    deprecated: datetime.datetime | None
-    created: datetime.datetime
+    deprecated: datetime | None
+    created: datetime
 
 
-class ServiceHistoryDB(ServiceMetaDataAtDB):
+class ServiceWithHistoryFromDB(BaseModel):
+    key: ServiceKey
+    version: ServiceVersion
+    # display
+    name: str
+    description: str
+    thumbnail: str | None
+    # ownership
     owner_email: str | None
+    # tags
+    classifiers: list[str]
+    quality: dict[str, Any]
+    # lifetime
+    created: datetime
+    modified: datetime
+    deprecated: datetime | None
+    # releases
     history: list[HistoryItem]
+
+
+assert set(HistoryItem.__fields__).issubset(  # nosec
+    set(ServiceWithHistoryFromDB.__fields__)
+)
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):

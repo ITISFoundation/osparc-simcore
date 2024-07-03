@@ -284,7 +284,7 @@ async def test_list_all_services_and_history(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
 ):
 
-    total_count, services_items = await services_repo.list_services_with_history(
+    total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
     )
     assert len(services_items) == 1
@@ -325,7 +325,7 @@ async def test_list_all_services_and_history_with_pagination(
         ]
     )
 
-    total_count, services_items = await services_repo.list_services_with_history(
+    total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
     )
     assert len(services_items) == num_services
@@ -334,7 +334,7 @@ async def test_list_all_services_and_history_with_pagination(
     for service in services_items:
         assert len(service.history) == num_versions_per_service
 
-    _, services_items = await services_repo.list_services_with_history(
+    _, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, limit=2
     )
     assert len(services_items) == 2

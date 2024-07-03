@@ -252,9 +252,15 @@ def list_services_with_history_stmt2(
         sa.select(
             latest_query.c.key,
             latest_query.c.version,
+            latest_query.c.owner_email,
             latest_query.c.name,
             latest_query.c.description,
-            latest_query.c.owner_email,
+            latest_query.c.thumbnail,
+            latest_query.c.classifiers,
+            latest_query.c.created,
+            latest_query.c.modified,
+            latest_query.c.deprecated,
+            latest_query.c.quality,
             array_agg(
                 func.json_build_object(
                     "version",
@@ -274,9 +280,15 @@ def list_services_with_history_stmt2(
             history_subquery.c.key,
             latest_query.c.key,
             latest_query.c.version,
+            latest_query.c.owner_email,
             latest_query.c.name,
             latest_query.c.description,
-            latest_query.c.owner_email,
+            latest_query.c.thumbnail,
+            latest_query.c.classifiers,
+            latest_query.c.created,
+            latest_query.c.modified,
+            latest_query.c.deprecated,
+            latest_query.c.quality,
         )
         .order_by(history_subquery.c.key)
     )
