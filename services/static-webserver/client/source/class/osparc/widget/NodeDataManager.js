@@ -129,35 +129,12 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       const reloadBtn = this.getChildControl("reload-button");
-      reloadBtn.addListener("execute", () => this.__reloadTree(), this);
       treeLayout.add(reloadBtn);
 
       const filesTree = this.getChildControl("files-tree").set({
         showLeafs: false
       });
       const folderViewer = this.getChildControl("folder-viewer");
-
-      filesTree.addListener("selectionChanged", () => {
-        const selectionData = filesTree.getSelectedItem();
-        this.__selectionChanged(selectionData);
-        if (selectionData) {
-          if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-            folderViewer.setFolder(selectionData);
-          }
-        }
-      }, this);
-      folderViewer.addListener("selectionChanged", e => {
-        const selectionData = e.getData();
-        this.__selectionChanged(selectionData);
-      }, this);
-      folderViewer.addListener("folderUp", e => {
-        const currentFolder = e.getData();
-        const parent = filesTree.getParent(currentFolder);
-        if (parent) {
-          filesTree.setSelection(new qx.data.Array([parent]));
-          folderViewer.setFolder(parent);
-        }
-      }, this);
 
       const treeFolderLayout = this.getChildControl("tree-folder-layout");
       treeLayout.add(treeFolderLayout, {
@@ -169,6 +146,39 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       });
 
       const selectedFileLayout = this.getChildControl("selected-file-layout");
+
+      reloadBtn.addListener("execute", () => this.__reloadTree(), this);
+
+      // Connections
+      filesTree.addListener("selectionChanged", () => {
+        const selectionData = filesTree.getSelectedItem();
+        if (selectionData) {
+          selectedFileLayout.setItemSelected(selectionData);
+          if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+            folderViewer.setFolder(selectionData);
+          }
+        }
+      }, this);
+      folderViewer.addListener("selectionChanged", e => {
+        const selectionData = e.getData();
+        if (selectionData) {
+          selectedFileLayout.setItemSelected(selectionData);
+        }
+      }, this);
+      folderViewer.addListener("itemSelected", e => {
+        const data = e.getData();
+        filesTree.openNodeAndParents(data);
+        filesTree.setSelection(new qx.data.Array([data]));
+      }, this);
+      folderViewer.addListener("folderUp", e => {
+        const currentFolder = e.getData();
+        const parent = filesTree.getParent(currentFolder);
+        if (parent) {
+          filesTree.setSelection(new qx.data.Array([parent]));
+          folderViewer.setFolder(parent);
+        }
+      }, this);
+
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         console.log(fileMetadata);
@@ -187,12 +197,6 @@ qx.Class.define("osparc.widget.NodeDataManager", {
         if (this.getNodeId()) {
           filesTree.populateNodeTree(this.getNodeId());
         }
-      }
-    },
-
-    __selectionChanged: function(selectionData) {
-      if (selectionData) {
-        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
       }
     }
   }

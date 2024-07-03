@@ -126,7 +126,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
-        this.__selectionChanged(selectionData);
+        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
         if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
           folderViewer.setFolder(selectionData);
         }
@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       folderViewer.addListener("selectionChanged", e => {
         const selectionData = e.getData();
-        this.__selectionChanged(selectionData);
+        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
       }, this);
       folderViewer.addListener("itemSelected", e => {
         const data = e.getData();
@@ -160,10 +160,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
       }, this);
       fileActions.add(selectedFileLayout);
-    },
-
-    __selectionChanged: function(selectedItem) {
-      this.getChildControl("selected-file-layout").setItemSelected(selectedItem);
     }
   }
 });
