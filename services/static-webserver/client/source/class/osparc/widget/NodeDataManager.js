@@ -73,9 +73,6 @@ qx.Class.define("osparc.widget.NodeDataManager", {
   },
 
   members: {
-    __filesTree: null,
-    __selectedFileLayout: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -129,7 +126,7 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       reloadBtn.addListener("execute", () => this.__reloadTree(), this);
       treeLayout.add(reloadBtn);
 
-      const filesTree = this.__filesTree = this.getChildControl("files-tree").set({
+      const filesTree = this.getChildControl("files-tree").set({
         showLeafs: false
       });
       const folderViewer = this.getChildControl("folder-viewer");
@@ -167,25 +164,31 @@ qx.Class.define("osparc.widget.NodeDataManager", {
         flex: 1
       });
 
-      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.addListener("fileDeleted", () => this.__reloadTree(), this);
+      const selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.addListener("fileDeleted", e => {
+        const fileMetadata = e.getData();
+        console.log(fileMetadata);
+        this.__reloadTree();
+        this.getChildControl("folder-viewer").resetFolder();
+      }, this);
     },
 
     __reloadTree: function() {
-      if (this.__filesTree) {
-        this.__filesTree.resetCache();
+      const filesTree = this.getChildControl("files-tree");
+      if (filesTree) {
+        filesTree.resetCache();
         if (this.getStudyId()) {
-          this.__filesTree.populateStudyTree(this.getStudyId());
+          filesTree.populateStudyTree(this.getStudyId());
         }
         if (this.getNodeId()) {
-          this.__filesTree.populateNodeTree(this.getNodeId());
+          filesTree.populateNodeTree(this.getNodeId());
         }
       }
     },
 
     __selectionChanged: function(selectionData) {
       if (selectionData) {
-        this.__selectedFileLayout.setItemSelected(selectionData);
+        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
       }
     }
   }
