@@ -8,9 +8,12 @@ NOTE: this could be used as draft for https://github.com/ITISFoundation/osparc-s
 import json
 import os
 import re
+import sys
+from collections.abc import Iterator
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import httpx
 
@@ -37,7 +40,7 @@ class Registry:
         self.data = RegistryConfig(**data)
 
     def __str__(self) -> str:
-        return f"<Docker Registry f{self.data.url}>"
+        return f"<Docker Registry '{self.data.url}'>"
 
     def api_version_check(self):
         # https://docs.docker.com/registry/spec/api/#api-version-check
@@ -63,7 +66,7 @@ class Registry:
         assert limit > 0
         query = {"n": limit}
 
-        yield from _req(url=f"{self.data.url}/v2/_catalog", params=query)
+        yield from _req(url=f"{self.data.url}/v2/_catalog", params=query, timeout=10)
 
     def get_digest(self, repo_name: str, repo_reference: str) -> str:
         r = httpx.head(
@@ -72,8 +75,7 @@ class Registry:
         )
         r.raise_for_status()
         assert r.status_code == 200
-        digest = r.headers["Docker-Content-Digest"]
-        return digest
+        return r.headers["Docker-Content-Digest"]
 
     def check_manifest(self, repo_name: RepoName, repo_reference: str) -> bool:
         r = httpx.head(
@@ -105,14 +107,12 @@ class Registry:
 
         # manifest formats and their content types: https://docs.docker.com/registry/spec/manifest-v2-1/,
         # see format https://github.com/moby/moby/issues/8093
-        manifest = r.json()
-        return manifest
+        return r.json()
 
 
 def get_labels(image_v1: str) -> dict[str, Any]:
     """image_v1: v1 compatible string encoded json for each layer"""
-    labels = json.loads(image_v1).get("config", {}).get("Labels", {})
-    return labels
+    return json.loads(image_v1).get("config", {}).get("Labels", {})
 
 
 def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
@@ -140,11 +140,10 @@ def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
     for key in labels:
         if key.startswith("simcore.service."):
             value = labels[key].strip()
-            try:
+            with suppress(json.decoder.JSONDecodeError):
+                # ignore  e.g. key=value where value is a raw name
                 value = json.loads(value)
-            except json.decoder.JSONDecodeError:
-                # e.g. key=value where value is a raw name
-                pass
+
             meta.update(**{key.removeprefix("simcore."): value})
     return meta
 
@@ -152,8 +151,8 @@ def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
 SKIP, SUCCESS, FAILED = "[skip]", "[ok]", "[failed]"
 
 
-def download_all_registry_metadata(dest_dir: Path):
-    registry = Registry()
+def download_all_registry_metadata(dest_dir: Path, **kwargs):
+    registry = Registry(**kwargs)
 
     print("Starting", registry)
 
@@ -197,7 +196,6 @@ def download_all_registry_metadata(dest_dir: Path):
 
 
 if __name__ == "__main__":
-    import sys
 
-    dest = Path(sys.argv[1])
+    dest = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
     download_all_registry_metadata(dest_dir=dest)
