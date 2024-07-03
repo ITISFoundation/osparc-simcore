@@ -1,6 +1,7 @@
 """ Handles request to the viewers redirection entrypoints
 
 """
+
 import functools
 import logging
 import urllib.parse
@@ -16,6 +17,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 
+from ..director_v2.api import update_dynamic_service_networks_in_project
 from ..products.api import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
@@ -252,6 +254,7 @@ async def get_redirection_to_viewer(request: web.Request):
             file_params.download_link,
             product_name=get_product_name(request),
         )
+        await update_dynamic_service_networks_in_project(request.app, project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
@@ -280,6 +283,7 @@ async def get_redirection_to_viewer(request: web.Request):
             service_info=_create_service_info_from(valid_service),
             product_name=get_product_name(request),
         )
+        await update_dynamic_service_networks_in_project(request.app, project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
@@ -315,6 +319,7 @@ async def get_redirection_to_viewer(request: web.Request):
             ).STUDIES_DEFAULT_FILE_THUMBNAIL,
             product_name=get_product_name(request),
         )
+        await update_dynamic_service_networks_in_project(request.app, project_id)
 
         response = _create_redirect_response_to_view_page(
             request.app,
