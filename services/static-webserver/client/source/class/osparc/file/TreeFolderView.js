@@ -91,8 +91,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
       // Connect elements
       reloadButton.addListener("execute", () => {
-        this.getChildControl("files-tree").resetCache();
-        this.getChildControl("files-tree").populateTree();
+        foldersTree.resetCache();
+        foldersTree.populateTree();
       }, this);
 
       foldersTree.addListener("selectionChanged", () => {
@@ -108,7 +108,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
       folderViewer.addListener("selectionChanged", e => {
         const selectionData = e.getData();
         if (selectionData) {
-          this.getChildControl("selected-file-layout").setItemSelected(selectionData);
+          selectedFileLayout.setItemSelected(selectionData);
         }
       }, this);
 
@@ -134,7 +134,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
-        this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
+        foldersTree.populateTree(fileMetadata["locationId"]);
       }, this);
     }
   }
