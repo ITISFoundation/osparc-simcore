@@ -42,49 +42,11 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "reload-button":
-          control = new qx.ui.form.Button().set({
-            label: this.tr("Reload"),
-            font: "text-14",
-            icon: "@FontAwesome5Solid/sync-alt/14",
-            allowGrowX: false
-          });
-          this._addToLayout(control);
-          break;
-        case "tree-folder-layout":
-          control = new qx.ui.splitpane.Pane("horizontal");
-          control.getChildControl("splitter").set({
-            width: 2,
-            backgroundColor: "scrollbar-passive"
-          });
+        case "tree-folder-view":
+          control = new osparc.file.TreeFolderView();
           this._addToLayout(control, {
             flex: 1
           });
-          break;
-        case "files-tree": {
-          const treeFolderLayout = this.getChildControl("tree-folder-layout");
-          control = new osparc.file.FilesTree().set({
-            showLeafs: false,
-            minWidth: 150,
-            width: 250
-          });
-          treeFolderLayout.add(control, 0);
-          break;
-        }
-        case "folder-viewer": {
-          const treeFolderLayout = this.getChildControl("tree-folder-layout");
-          control = new osparc.file.FolderViewer();
-          treeFolderLayout.add(control, 1);
-          break;
-        }
-        case "selected-file-layout":
-          control = new osparc.file.FileLabelWithActions().set({
-            alignY: "middle"
-          });
-          break;
-        case "actions-toolbar":
-          control = new qx.ui.toolbar.ToolBar();
-          this._addToLayout(control);
           break;
       }
 
@@ -97,8 +59,9 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       this.__buildLayout();
 
       this.addListener("appear", () => {
-        this.getChildControl("files-tree").populateTree();
-        this.getChildControl("folder-viewer").setFolder(this.getChildControl("files-tree").getModel());
+        const treeFolderView = this.getChildControl("tree-folder-view");
+        treeFolderView.getChildControl("files-tree").populateTree();
+        treeFolderView.getChildControl("folder-viewer").setFolder(treeFolderView.getChildControl("files-tree").getModel());
       }, this);
     },
 
@@ -107,59 +70,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         marginTop: 20
       });
 
-      // button for refetching data
-      const reloadBtn = this.getChildControl("reload-button");
-      reloadBtn.addListener("execute", () => {
-        this.getChildControl("files-tree").resetCache();
-        this.getChildControl("files-tree").populateTree();
-      }, this);
-
-      const filesTree = this.getChildControl("files-tree");
-      const folderViewer = this.getChildControl("folder-viewer");
-
-      const actionsToolbar = this.getChildControl("actions-toolbar");
-      const fileActions = new qx.ui.toolbar.Part();
-      const addFile = new qx.ui.toolbar.Part();
-      actionsToolbar.add(fileActions);
-      actionsToolbar.addSpacer();
-      actionsToolbar.add(addFile);
-
-      filesTree.addListener("selectionChanged", () => {
-        const selectionData = filesTree.getSelectedItem();
-        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
-        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-          folderViewer.setFolder(selectionData);
-        }
-      }, this);
-
-      folderViewer.addListener("selectionChanged", e => {
-        const selectionData = e.getData();
-        this.getChildControl("selected-file-layout").setItemSelected(selectionData);
-      }, this);
-      folderViewer.addListener("itemSelected", e => {
-        const data = e.getData();
-        filesTree.openNodeAndParents(data);
-        filesTree.setSelection(new qx.data.Array([data]));
-      }, this);
-      folderViewer.addListener("folderUp", e => {
-        const currentFolder = e.getData();
-        const parent = filesTree.getParent(currentFolder);
-        if (parent) {
-          filesTree.setSelection(new qx.data.Array([parent]));
-          folderViewer.setFolder(parent);
-        }
-      }, this);
-      folderViewer.addListener("requestDatasetFiles", e => {
-        const data = e.getData();
-        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
-      }, this);
-
-      const selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.addListener("fileDeleted", e => {
-        const fileMetadata = e.getData();
-        this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
-      }, this);
-      fileActions.add(selectedFileLayout);
+      this.getChildControl("tree-folder-view");
     }
   }
 });
