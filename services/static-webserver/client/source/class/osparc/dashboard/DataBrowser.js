@@ -72,12 +72,13 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const treeFolderView = this.getChildControl("tree-folder-view");
       const reloadButton = treeFolderView.getChildControl("reload-button");
-      const foldersTree = treeFolderView.getChildControl("files-tree");
+      reloadButton.addListener("execute", () => this.__reloadTree(), this);
+    },
 
-      reloadButton.addListener("execute", () => {
-        foldersTree.resetCache();
-        foldersTree.populateTree();
-      }, this);
+    __reloadTree: function() {
+      const foldersTree = this.getChildControl("tree-folder-view").getChildControl("files-tree");
+      foldersTree.resetCache();
+      foldersTree.populateTree();
     }
   }
 });
