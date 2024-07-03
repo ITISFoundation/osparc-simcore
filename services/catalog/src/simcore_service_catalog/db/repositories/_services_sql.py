@@ -187,12 +187,31 @@ def list_services_with_history_stmt2(
 
     # get all information of latest's services listed in CTE
     latest_query = (
-        sa.select(services_meta_data)
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            users.c.email.label("owner_email"),
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
+            services_meta_data.c.classifiers,
+            services_meta_data.c.created,
+            services_meta_data.c.modified,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.quality,
+        )
         .join(
             cte,
             (services_meta_data.c.key == cte.c.key)
             & (services_meta_data.c.version == cte.c.latest_version),
         )
+        # NOTE: owner can be NULL
+        .join(
+            user_to_groups,
+            services_meta_data.c.owner == user_to_groups.c.gid,
+            isouter=True,
+        )
+        .join(users, user_to_groups.c.uid == users.c.id, isouter=True)
         .subquery()
     )
 
@@ -231,7 +250,11 @@ def list_services_with_history_stmt2(
 
     return (
         sa.select(
-            latest_query,
+            latest_query.c.key,
+            latest_query.c.version,
+            latest_query.c.name,
+            latest_query.c.description,
+            latest_query.c.owner_email,
             array_agg(
                 func.json_build_object(
                     "version",
@@ -247,7 +270,14 @@ def list_services_with_history_stmt2(
             history_subquery,
             latest_query.c.key == history_subquery.c.key,
         )
-        .group_by(history_subquery.c.key, latest_query)
+        .group_by(
+            history_subquery.c.key,
+            latest_query.c.key,
+            latest_query.c.version,
+            latest_query.c.name,
+            latest_query.c.description,
+            latest_query.c.owner_email,
+        )
         .order_by(history_subquery.c.key)
     )
 
