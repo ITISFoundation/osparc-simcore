@@ -96,16 +96,22 @@ qx.Class.define("osparc.widget.NodeDataManager", {
             backgroundColor: "scrollbar-passive"
           });
           break;
-        case "files-tree":
+        case "files-tree": {
           control = new osparc.file.FilesTree().set({
             minWidth: 150,
             width: 200,
             backgroundColor: "transparent"
           });
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          treeFolderLayout.add(control, 0);
           break;
-        case "folder-viewer":
+        }
+        case "folder-viewer": {
           control = new osparc.file.FolderViewer();
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          treeFolderLayout.add(control, 1);
           break;
+        }
         case "selected-file-layout":
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
@@ -130,9 +136,6 @@ qx.Class.define("osparc.widget.NodeDataManager", {
         showLeafs: false
       });
       const folderViewer = this.getChildControl("folder-viewer");
-      const treeFolderLayout = this.getChildControl("tree-folder-layout");
-      treeFolderLayout.add(filesTree, 0);
-      treeFolderLayout.add(folderViewer, 1);
 
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
@@ -156,6 +159,7 @@ qx.Class.define("osparc.widget.NodeDataManager", {
         }
       }, this);
 
+      const treeFolderLayout = this.getChildControl("tree-folder-layout");
       treeLayout.add(treeFolderLayout, {
         flex: 1
       });
