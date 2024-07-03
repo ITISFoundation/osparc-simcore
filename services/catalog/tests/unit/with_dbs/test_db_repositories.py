@@ -14,9 +14,11 @@ from pydantic import EmailStr, parse_obj_as
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
+    _page_of_latest_services_stmt,
     batch_get_services_stmt,
     list_services_stmt2,
     list_services_with_history_stmt,
+    list_services_with_history_stmt2,
     total_count_stmt,
 )
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -351,31 +353,57 @@ async def test_list_all_services_and_history_with_pagination(
     #  - test with NULL owner
 
 
-def test_services_sql_statements():
+def test_services_sql_statements_can_be_built():
+    # helper
+    def _eval_and_print_stmt(func_smt, **kwargs):
+        print()
+        print(f"{func_smt.__name__:*^100}")
+        stmt = func_smt(**kwargs)
+        print(as_postgres_sql_query_str(stmt))
+        print()
 
+    # some data
     product_name = "osparc"
     user_id = 4
 
-    print(f"{total_count_stmt.__name__:*^100}")
-    stmt = total_count_stmt(
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-    )
-    print(as_postgres_sql_query_str(stmt))
+    # prints
 
-    print(f"{list_services_with_history_stmt.__name__:*^100}")
-    stmt = list_services_with_history_stmt(
+    _eval_and_print_stmt(
+        _page_of_latest_services_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
         limit=10,
         offset=None,
     )
-    print(as_postgres_sql_query_str(stmt))
 
-    print(f"{batch_get_services_stmt.__name__:*^100}")
-    stmt = batch_get_services_stmt(
+    _eval_and_print_stmt(
+        list_services_with_history_stmt2,
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+        limit=10,
+        offset=None,
+    )
+
+    _eval_and_print_stmt(
+        total_count_stmt,
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+    )
+
+    _eval_and_print_stmt(
+        list_services_with_history_stmt,
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+        limit=10,
+        offset=None,
+    )
+
+    _eval_and_print_stmt(
+        batch_get_services_stmt,
         product_name=product_name,
         selection=[
             ("simcore/services/comp/kember-cardiac-model", "1.0.0"),
@@ -383,8 +411,5 @@ def test_services_sql_statements():
             ("simcore/services/dynamic/invalid", "2.0.0"),
         ],
     )
-    print(as_postgres_sql_query_str(stmt))
 
-    print(f"{list_services_stmt2.__name__:*^100}")
-    stmt = list_services_stmt2()
-    print(as_postgres_sql_query_str(stmt))
+    _eval_and_print_stmt(list_services_stmt2)

@@ -131,6 +131,129 @@ def total_count_stmt(
     )
 
 
+def _page_of_latest_services_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    limit: int | None,
+    offset: int | None,
+):
+    return (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version.label("latest_version"),
+        )
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
+            )
+        )
+        .where(access_rights)
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest first
+        )
+        .distinct(services_meta_data.c.key)  # get only first
+        .limit(limit)
+        .offset(offset)
+    )
+
+
+def list_services_with_history_stmt2(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    limit: int | None,
+    offset: int | None,
+):
+    # get all distinct services key fitting a page
+    # and its corresponding latest version
+    cte = _page_of_latest_services_stmt(
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=access_rights,
+        limit=limit,
+        offset=offset,
+    ).cte("paginated_latest_services")
+
+    # get all information of latest's services listed in CTE
+    latest_query = (
+        sa.select(services_meta_data)
+        .join(
+            cte,
+            (services_meta_data.c.key == cte.c.key)
+            & (services_meta_data.c.version == cte.c.latest_version),
+        )
+        .order_by(services_meta_data.c.key)
+        .subquery()
+    )
+
+    # get history for every unique service-key in CTE
+    history_subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+        )
+        .select_from(
+            services_meta_data.join(
+                cte,
+                services_meta_data.c.key == cte.c.key,
+            )
+            # joins because access-rights might change per version
+            .join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
+            )
+        )
+        .where(access_rights)
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+        .subquery()
+    )
+
+    return (
+        sa.select(
+            history_subquery.c.key,
+            latest_query.c.version,
+            latest_query.c.description,
+            array_agg(
+                func.json_build_object(
+                    "version",
+                    history_subquery.c.version,
+                    "deprecated",
+                    history_subquery.c.deprecated,
+                    "created",
+                    history_subquery.c.created,
+                )
+            ).label("history"),
+        )
+        .join(
+            latest_query,
+            latest_query.c.key == history_subquery.c.key,
+        )
+        .group_by(history_subquery.c.key)
+    )
+
+
 def list_services_with_history_stmt(
     *,
     product_name: ProductName,
