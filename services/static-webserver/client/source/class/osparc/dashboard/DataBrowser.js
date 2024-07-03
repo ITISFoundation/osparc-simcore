@@ -70,7 +70,14 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         marginTop: 20
       });
 
-      this.getChildControl("tree-folder-view");
+      const treeFolderView = this.getChildControl("tree-folder-view");
+      const reloadButton = treeFolderView.getChildControl("reload-button");
+      const foldersTree = treeFolderView.getChildControl("files-tree");
+
+      reloadButton.addListener("execute", () => {
+        foldersTree.resetCache();
+        foldersTree.populateTree();
+      }, this);
     }
   }
 });

@@ -84,17 +84,12 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     __buildLayout: function() {
-      const reloadButton = this.getChildControl("reload-button");
+      this.getChildControl("reload-button");
       const foldersTree = this.getChildControl("files-tree");
       const folderViewer = this.getChildControl("folder-viewer");
       const selectedFileLayout = this.getChildControl("selected-file-layout");
 
       // Connect elements
-      reloadButton.addListener("execute", () => {
-        foldersTree.resetCache();
-        foldersTree.populateTree();
-      }, this);
-
       foldersTree.addListener("selectionChanged", () => {
         const selectionData = foldersTree.getSelectedItem();
         if (selectionData) {
