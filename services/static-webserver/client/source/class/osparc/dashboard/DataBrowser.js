@@ -60,8 +60,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       this.addListener("appear", () => {
         const treeFolderView = this.getChildControl("tree-folder-view");
-        treeFolderView.getChildControl("files-tree").populateTree();
-        treeFolderView.getChildControl("folder-viewer").setFolder(treeFolderView.getChildControl("files-tree").getModel());
+        treeFolderView.getChildControl("folder-tree").populateTree();
+        treeFolderView.getChildControl("folder-viewer").setFolder(treeFolderView.getChildControl("folder-tree").getModel());
       }, this);
     },
 
@@ -76,9 +76,14 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     __reloadTree: function() {
-      const foldersTree = this.getChildControl("tree-folder-view").getChildControl("files-tree");
+      const treeFolderView = this.getChildControl("tree-folder-view");
+
+      const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
       foldersTree.populateTree();
+
+      const folderViewer = treeFolderView.getChildControl("folder-viewer");
+      folderViewer.resetFolder();
     }
   }
 });

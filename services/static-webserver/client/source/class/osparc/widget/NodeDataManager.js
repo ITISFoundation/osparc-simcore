@@ -94,7 +94,9 @@ qx.Class.define("osparc.widget.NodeDataManager", {
     },
 
     __reloadTree: function() {
-      const foldersTree = this.getChildControl("tree-folder-view").getChildControl("files-tree");
+      const treeFolderView = this.getChildControl("tree-folder-view");
+
+      const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
       if (this.getStudyId()) {
         foldersTree.populateStudyTree(this.getStudyId());
@@ -102,6 +104,9 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       if (this.getNodeId()) {
         foldersTree.populateNodeTree(this.getNodeId());
       }
+
+      const folderViewer = treeFolderView.getChildControl("folder-viewer");
+      folderViewer.resetFolder();
     }
   }
 });

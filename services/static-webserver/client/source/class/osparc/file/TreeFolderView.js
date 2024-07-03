@@ -59,7 +59,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
             flex: 1
           });
           break;
-        case "files-tree": {
+        case "folder-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
             showLeafs: false,
@@ -87,13 +87,13 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
     __buildLayout: function() {
       this.getChildControl("reload-button");
-      const foldersTree = this.getChildControl("files-tree");
+      const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
       const selectedFileLayout = this.getChildControl("selected-file-layout");
 
       // Connect elements
-      foldersTree.addListener("selectionChanged", () => {
-        const selectionData = foldersTree.getSelectedItem();
+      folderTree.addListener("selectionChanged", () => {
+        const selectionData = folderTree.getSelectedItem();
         if (selectionData) {
           selectedFileLayout.setItemSelected(selectionData);
           if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
@@ -111,28 +111,28 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
       folderViewer.addListener("itemSelected", e => {
         const data = e.getData();
-        foldersTree.openNodeAndParents(data);
-        foldersTree.setSelection(new qx.data.Array([data]));
+        folderTree.openNodeAndParents(data);
+        folderTree.setSelection(new qx.data.Array([data]));
       }, this);
 
       folderViewer.addListener("folderUp", e => {
         const currentFolder = e.getData();
-        const parent = foldersTree.getParent(currentFolder);
+        const parent = folderTree.getParent(currentFolder);
         if (parent) {
-          foldersTree.setSelection(new qx.data.Array([parent]));
+          folderTree.setSelection(new qx.data.Array([parent]));
           folderViewer.setFolder(parent);
         }
       }, this);
 
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
-        foldersTree.requestDatasetFiles(data.locationId, data.datasetId);
+        folderTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
 
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         console.log(fileMetadata);
-        foldersTree.populateTree(fileMetadata["locationId"]);
+        folderTree.populateTree(fileMetadata["locationId"]);
         // OM?
         folderViewer.resetFolder();
       }, this);
