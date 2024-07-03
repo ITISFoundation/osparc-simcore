@@ -71,8 +71,12 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       });
 
       const treeFolderView = this.getChildControl("tree-folder-view");
+
       const reloadButton = treeFolderView.getChildControl("reload-button");
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
+
+      const selectedFileLayout = treeFolderView.getChildControl("selected-file-layout");
+      selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
@@ -84,6 +88,14 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
+    },
+
+    __fileDeleted: function(fileMetadata) {
+      // After deleting a file, try to keep the user in the same folder.
+      // If the folder doesn't longer exist, open the closest available parent
+      const treeFolderView = this.getChildControl("tree-folder-view");
+      const foldersTree = treeFolderView.getChildControl("folder-tree");
+      foldersTree.populateTree(fileMetadata["locationId"]);
     }
   }
 });

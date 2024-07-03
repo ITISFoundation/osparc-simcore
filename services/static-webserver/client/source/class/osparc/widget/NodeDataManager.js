@@ -89,9 +89,13 @@ qx.Class.define("osparc.widget.NodeDataManager", {
 
     __buildLayout: function() {
       const treeFolderView = this.getChildControl("tree-folder-view");
+      treeFolderView.getChildControl("folder-tree").setBackgroundColor("window-popup-background");
+
       const reloadButton = treeFolderView.getChildControl("reload-button");
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
-      treeFolderView.getChildControl("folder-tree").setBackgroundColor("window-popup-background");
+
+      const selectedFileLayout = treeFolderView.getChildControl("selected-file-layout");
+      selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
@@ -108,6 +112,33 @@ qx.Class.define("osparc.widget.NodeDataManager", {
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
+    },
+
+    __fileDeleted: function(fileMetadata) {
+      // After deleting a file, try to keep the user in the same folder.
+      // If the folder doesn't longer exist, open the closest available parent
+
+      console.log("fileMetadata", fileMetadata);
+      const path = fileMetadata["fileUuid"].split("/");
+
+      const treeFolderView = this.getChildControl("tree-folder-view");
+      const foldersTree = treeFolderView.getChildControl("folder-tree");
+      foldersTree.resetCache();
+
+      if (this.getStudyId()) {
+        foldersTree.populateStudyTree(this.getStudyId())
+          .then(() => {
+            console.log(path, foldersTree);
+          })
+          .catch(err => console.error(err));
+      }
+      if (this.getNodeId()) {
+        foldersTree.populateNodeTree(this.getNodeId())
+          .then(() => {
+            console.log(path, foldersTree);
+          })
+          .catch(err => console.error(err));
+      }
     }
   }
 });
