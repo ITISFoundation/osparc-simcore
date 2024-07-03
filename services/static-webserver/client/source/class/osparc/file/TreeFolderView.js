@@ -16,11 +16,13 @@
 ************************************************************************ */
 
 /**
- * --------------------------------------
+ * Reload button
+ * -------------------------------- =/- -
  * | root        |  content1  content2  |
- * |   folder1   |                      |
- * |     folder2 |                      |
+ * |   folder1   |  content3  content4  |
+ * |     folder2 |  content5  content6  |
  * --------------------------------------
+ *              selected_file   Down  Del
  */
 
 qx.Class.define("osparc.file.TreeFolderView", {
