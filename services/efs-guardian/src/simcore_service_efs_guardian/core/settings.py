@@ -41,8 +41,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "then the check is considered to have failed."
         "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
     )
-    SC_USER_ID: int | None = None
-    SC_USER_NAME: str | None = None
+    SC_USER_ID: int
+    SC_USER_NAME: str
+
+    EFS_USER_ID: int = Field(
+        description="Linux user ID that the Guardian service will run with"
+    )
+    EFS_USER_NAME: str = Field(
+        description="Linux user name that the Guardian service will run with"
+    )
+    EFS_GROUP_ID: int = Field(
+        description="Linux group ID that the EFS and Simcore linux users are part of"
+    )
+    EFS_GROUP_NAME: str = Field(
+        description="Linux group name that the EFS and Simcore linux users are part of"
+    )
 
     # RUNTIME  -----------------------------------------------------------
     EFS_GUARDIAN_DEBUG: bool = Field(
