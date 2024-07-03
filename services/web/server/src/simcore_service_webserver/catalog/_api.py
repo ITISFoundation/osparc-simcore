@@ -172,62 +172,6 @@ async def dev_update_service(
     return data
 
 
-async def dev_get_service(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    unit_registry: UnitRegistry,
-):
-    service = await _rpc.get_service(
-        app,
-        product_name=product_name,
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-    )
-
-    data = jsonable_encoder(service, exclude_unset=True)
-    await asyncio.to_thread(
-        replace_service_input_outputs,
-        data,
-        unit_registry=unit_registry,
-        **RESPONSE_MODEL_POLICY,
-    )
-    return data
-
-
-async def dev_update_service(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    update_data: dict[str, Any],
-    unit_registry: UnitRegistry,
-):
-    service = await _rpc.update_service(
-        app,
-        product_name=product_name,
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        update=ServiceUpdate.parse_obj(**update_data),
-    )
-
-    data = jsonable_encoder(service, exclude_unset=True)
-    await asyncio.to_thread(
-        replace_service_input_outputs,
-        data,
-        unit_registry=unit_registry,
-        **RESPONSE_MODEL_POLICY,
-    )
-    return data
-
-
 async def list_services(
     app: web.Application,
     *,
