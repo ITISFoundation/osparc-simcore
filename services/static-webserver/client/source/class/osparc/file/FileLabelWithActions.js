@@ -75,6 +75,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           break;
         case "download-button":
           control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
+          osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
         case "delete-button":
