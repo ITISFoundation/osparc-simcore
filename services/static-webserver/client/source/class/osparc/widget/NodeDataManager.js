@@ -118,25 +118,26 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       // After deleting a file, try to keep the user in the same folder.
       // If the folder doesn't longer exist, open the closest available parent
 
-      console.log("fileMetadata", fileMetadata);
       const path = fileMetadata["fileUuid"].split("/");
 
       const treeFolderView = this.getChildControl("tree-folder-view");
       const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
 
+      const openSameFolder = () => {
+        // drop last, which is the file
+        path.pop();
+        treeFolderView.openPath(path);
+      };
+
       if (this.getStudyId()) {
         foldersTree.populateStudyTree(this.getStudyId())
-          .then(() => {
-            console.log(path, foldersTree);
-          })
+          .then(() => openSameFolder())
           .catch(err => console.error(err));
       }
       if (this.getNodeId()) {
         foldersTree.populateNodeTree(this.getNodeId())
-          .then(() => {
-            console.log(path, foldersTree);
-          })
+          .then(() => openSameFolder())
           .catch(err => console.error(err));
       }
     }

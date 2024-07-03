@@ -128,6 +128,25 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const data = e.getData();
         folderTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
+    },
+
+    openPath: function(path) {
+      const foldersTree = this.getChildControl("folder-tree");
+      const folderViewer = this.getChildControl("folder-viewer");
+      let found = false;
+      while (!found && path.length) {
+        found = foldersTree.findItemId(path.join("/"));
+        if (found) {
+          foldersTree.openNodeAndParents(found);
+          foldersTree.setSelection(new qx.data.Array([found]));
+          foldersTree.fireEvent("selectionChanged");
+        }
+        // look for next parent
+        path.pop();
+      }
+      if (!found) {
+        folderViewer.resetFolder();
+      }
     }
   }
 });
