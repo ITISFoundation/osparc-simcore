@@ -39,10 +39,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
   },
 
   members: {
-    __filesTree: null,
-    __folderViewer: null,
-    __selectedFileLayout: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -128,8 +124,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       actionsToolbar.addSpacer();
       actionsToolbar.add(addFile);
 
-      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
         this.__selectionChanged(selectionData);
@@ -160,6 +154,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         filesTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
 
+      const selectedFileLayout = this.getChildControl("selected-file-layout");
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
         this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
@@ -168,7 +163,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     __selectionChanged: function(selectedItem) {
-      this.__selectedFileLayout.setItemSelected(selectedItem);
+      this.getChildControl("selected-file-layout").setItemSelected(selectedItem);
     }
   }
 });
