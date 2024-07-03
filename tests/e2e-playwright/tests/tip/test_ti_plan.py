@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.logging_ext import log_context
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,

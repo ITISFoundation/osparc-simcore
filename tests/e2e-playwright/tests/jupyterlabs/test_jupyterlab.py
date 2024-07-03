@@ -14,7 +14,7 @@ from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
 from pydantic import ByteSize
-from pytest_simcore.helpers.logging_ext import log_context
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import MINUTE, SECOND, ServiceType
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = (

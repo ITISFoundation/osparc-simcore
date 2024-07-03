@@ -45,7 +45,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.logging_ext import log_context
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from servicelib.aiohttp import status
