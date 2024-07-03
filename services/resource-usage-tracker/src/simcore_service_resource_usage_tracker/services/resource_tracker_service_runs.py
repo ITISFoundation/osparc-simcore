@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import shortuuid
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,

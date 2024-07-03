@@ -18,6 +18,7 @@ from pydantic import (
     validator,
 )
 
+from .basic_regex import PROPERTY_KEY_RE
 from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -29,15 +30,14 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
-
-# NOTE: WARNING the order here matters
+from .services import ServiceKey, ServiceVersion
 
 InputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
+    Json,
     str,
     PortLink,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
@@ -45,10 +45,11 @@ InputTypes = Union[
     list[Any] | dict[str, Any],  # arrays | object
 ]
 OutputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # TODO: remove when OM sends object/array instead of json-formatted strings
+    Json,
     str,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
     DownloadLink,

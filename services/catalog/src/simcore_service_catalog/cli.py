@@ -4,6 +4,7 @@ import os
 import typer
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import create_settings_command, print_as_envfile
 
 from ._meta import PROJECT_NAME
@@ -60,6 +61,17 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
                 POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
                 POSTGRES_PASSWORD=os.environ.get(
                     "POSTGRES_PASSWORD", "replace-with-postgres-password"
+                ),
+            ),
+        ),
+        CATALOG_RABBITMQ=os.environ.get(
+            "CATALOG_RABBITMQ",
+            RabbitSettings.create_from_envs(
+                RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
+                RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "True"),
+                RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
+                RABBIT_PASSWORD=os.environ.get(
+                    "RABBIT_PASSWORD", "replace-with-rabbit-password"
                 ),
             ),
         ),

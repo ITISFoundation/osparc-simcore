@@ -10,7 +10,11 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
+from servicelib.aiohttp.rest_responses import (
+    create_http_error,
+    exception_to_response,
+    get_http_error,
+)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -162,15 +166,21 @@ async def start_computation(request: web.Request) -> web.Response:
         return envelope_json_response(data, status_cls=web.HTTPCreated)
 
     except DirectorServiceError as exc:
-        return create_error_response(
-            exc,
-            reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+        return exception_to_response(
+            create_http_error(
+                exc,
+                reason=exc.reason,
+                http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            )
         )
     except UserDefaultWalletNotFoundError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPNotFound)
+        return exception_to_response(
+            create_http_error(exc, http_error_cls=web.HTTPNotFound)
+        )
     except WalletNotEnoughCreditsError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPPaymentRequired)
+        return exception_to_response(
+            create_http_error(exc, http_error_cls=web.HTTPPaymentRequired)
+        )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
@@ -203,7 +213,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except DirectorServiceError as exc:
-        return create_error_response(
+        return create_http_error(
             exc,
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
@@ -252,10 +262,10 @@ async def get_computation(request: web.Request) -> web.Response:
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:
-        return create_error_response(
+        return create_http_error(
             exc,
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
     except ValidationError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPInternalServerError)
+        return create_http_error(exc, http_error_cls=web.HTTPInternalServerError)

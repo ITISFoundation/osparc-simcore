@@ -1,8 +1,9 @@
 from contextlib import suppress
 from pathlib import Path
+from typing import cast
 
-from aiohttp import web
 from aiopg.sa.connection import SAConnection
+from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
@@ -15,13 +16,26 @@ from servicelib.utils import ensure_ends_with
 from . import db_file_meta_data
 from .exceptions import FileMetaDataNotFoundError
 from .models import FileMetaData, FileMetaDataAtDB
-from .s3 import get_s3_client
-from .s3_client import S3MetaData
 from .utils import convert_db_to_model
 
 
+async def _list_all_files_in_folder(
+    *,
+    s3_client: SimcoreS3API,
+    bucket: S3BucketName,
+    prefix: str,
+    max_files_to_list: int,
+) -> list[S3MetaData]:
+    async for s3_objects in s3_client.list_objects_paginated(
+        bucket, prefix, items_per_page=max_files_to_list
+    ):
+        # NOTE: stop immediately after listing after `max_files_to_list`
+        return cast(list[S3MetaData], s3_objects)
+    return []
+
+
 async def expand_directory(
-    app: web.Application,
+    s3_client: SimcoreS3API,
     simcore_bucket_name: S3BucketName,
     fmd: FileMetaDataAtDB,
     max_items_to_include: NonNegativeInt,
@@ -30,8 +44,9 @@ async def expand_directory(
     Scans S3 backend and returns a list S3MetaData entries which get mapped
     to FileMetaData entry.
     """
-    files_in_folder: list[S3MetaData] = await get_s3_client(app).list_files(
-        simcore_bucket_name,
+    files_in_folder: list[S3MetaData] = await _list_all_files_in_folder(
+        s3_client=s3_client,
+        bucket=simcore_bucket_name,
         prefix=ensure_ends_with(fmd.file_id, "/"),
         max_files_to_list=max_items_to_include,
     )
@@ -41,7 +56,7 @@ async def expand_directory(
                 location_id=fmd.location_id,
                 location=fmd.location,
                 bucket_name=fmd.bucket_name,
-                object_name=x.file_id,
+                object_name=cast(SimcoreS3FileID, x.object_key),
                 user_id=fmd.user_id,
                 # NOTE: to ensure users have a consistent experience the
                 # `created_at` field is inherited from the last_modified
@@ -49,7 +64,7 @@ async def expand_directory(
                 # creation of the directory, the file's creation date
                 # will not be 1 month in the passed.
                 created_at=x.last_modified,
-                file_id=x.file_id,
+                file_id=cast(SimcoreS3FileID, x.object_key),
                 file_size=parse_obj_as(ByteSize, x.size),
                 last_modified=x.last_modified,
                 entity_tag=x.e_tag,

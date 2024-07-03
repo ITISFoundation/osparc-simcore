@@ -22,6 +22,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   construct: function(resourceType) {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "resourceFilter");
+
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
     this.__tagButtons = [];

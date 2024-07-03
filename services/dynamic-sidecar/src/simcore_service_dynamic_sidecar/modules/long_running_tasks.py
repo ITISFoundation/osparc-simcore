@@ -11,6 +11,7 @@ from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -476,15 +477,18 @@ async def task_ports_inputs_pull(
         ),
         description="pulling inputs",
     ) as root_progress:
-        transferred_bytes = await nodeports.download_target_ports(
-            nodeports.PortTypeName.INPUTS,
-            mounted_volumes.disk_inputs_path,
-            port_keys=port_keys,
-            io_log_redirect_cb=functools.partial(
-                post_sidecar_log_message, app, log_level=logging.INFO
-            ),
-            progress_bar=root_progress,
-        )
+        with log_directory_changes(
+            mounted_volumes.disk_inputs_path, _logger, logging.INFO
+        ):
+            transferred_bytes = await nodeports.download_target_ports(
+                nodeports.PortTypeName.INPUTS,
+                mounted_volumes.disk_inputs_path,
+                port_keys=port_keys,
+                io_log_redirect_cb=functools.partial(
+                    post_sidecar_log_message, app, log_level=logging.INFO
+                ),
+                progress_bar=root_progress,
+            )
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
     )

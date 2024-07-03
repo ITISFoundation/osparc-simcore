@@ -11,12 +11,12 @@ from models_library.function_services_catalog import (
     is_function_service,
     iter_service_docker_data,
 )
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 
 assert is_function_service  # nosec
 
 
-def _as_dict(model_instance: ServiceDockerData) -> dict[str, Any]:
+def _as_dict(model_instance: ServiceMetaDataPublished) -> dict[str, Any]:
     # FIXME: In order to convert to ServiceOut, now we have to convert back to front-end service because of alias
     # FIXME: set the same policy for f/e and director datasets!
     return cast(dict[str, Any], model_instance.dict(by_alias=True, exclude_unset=True))

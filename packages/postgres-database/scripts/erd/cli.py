@@ -15,15 +15,17 @@ import argparse
 import importlib
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import simcore_postgres_database.models
 from simcore_postgres_database.models.base import metadata
 from sqlalchemy_schemadisplay import create_schema_graph
 
-models_folder = Path(simcore_postgres_database.models.__file__).parent
+logging.basicConfig(level=logging.INFO)
+
+_models_folder: Final = Path(simcore_postgres_database.models.__file__).parent
 # imports all models to fill "metadata"
-for p in models_folder.glob("*.py"):
+for p in _models_folder.glob("*.py"):
     if not p.name.startswith("__"):
         importlib.import_module(
             f"simcore_postgres_database.models.{p.name.removesuffix('.py')}"

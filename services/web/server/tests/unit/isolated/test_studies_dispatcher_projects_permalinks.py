@@ -11,8 +11,8 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.studies_dispatcher._projects_permalinks import (
     PermalinkNotAllowedError,

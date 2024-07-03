@@ -15,8 +15,8 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo

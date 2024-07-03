@@ -3,9 +3,10 @@
 # pylint: disable=unused-variable
 
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 from uuid import UUID
 
@@ -19,9 +20,9 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_project
-from pytest_simcore.helpers.utils_login import UserInfoDict
-from pytest_simcore.helpers.utils_projects import NewProject
+from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_repos,

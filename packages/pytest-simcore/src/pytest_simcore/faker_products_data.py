@@ -16,7 +16,7 @@ from faker import Faker
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from pydantic import EmailStr, parse_obj_as
 
-from .helpers.rawdata_fakers import random_product
+from .helpers.faker_factories import random_product
 
 _MESSAGE = (
     "If set, it overrides the fake value of `{}` fixture."

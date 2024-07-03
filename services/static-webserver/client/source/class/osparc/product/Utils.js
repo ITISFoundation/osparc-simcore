@@ -236,10 +236,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.getProductName().includes("s4l")) {
-        return false;
+      if (this.isProduct("osparc")) {
+        return true;
       }
-      return true;
+      return false;
     },
 
     showClassifiers: function() {

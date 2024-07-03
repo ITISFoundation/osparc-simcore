@@ -98,7 +98,7 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-async def _check_pipeline_not_running(
+async def _check_pipeline_not_running_or_raise_409(
     comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
 ) -> None:
     pipeline_state = utils.get_pipeline_state_from_task_states(
@@ -106,7 +106,7 @@ async def _check_pipeline_not_running(
     )
     if utils.is_pipeline_running(pipeline_state):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
         )
 
@@ -222,7 +222,7 @@ async def _try_start_pipeline(
         # 2 options here: either we have cycles in the graph or it's really done
         if find_computational_node_cycles(complete_dag):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_409_CONFLICT,
                 detail=f"Project {computation.project_id} contains cycles with computational services which are currently not supported! Please remove them.",
             )
         # there is nothing else to be run here, so we are done
@@ -267,6 +267,22 @@ async def _try_start_pipeline(
     summary="Create and optionally start a new computation",
     response_model=ComputationGet,
     status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Project or pricing details not found",
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "Service not available",
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+        },
+        status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
+        status.HTTP_409_CONFLICT: {"description": "Project already started"},
+    },
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
@@ -308,7 +324,7 @@ async def create_computation(  # noqa: PLR0913
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
         # check if current state allow to modify the computation
-        await _check_pipeline_not_running(comp_tasks_repo, computation)
+        await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
@@ -420,7 +436,9 @@ async def create_computation(  # noqa: PLR0913
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}"
         ) from e
     except ConfigurationError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
+        ) from e
     except WalletNotEnoughCreditsError as e:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{e}"

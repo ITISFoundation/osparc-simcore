@@ -32,7 +32,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -1043,7 +1043,7 @@ def test_get_new_node_docker_tags(
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
             'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
-            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
             " > /docker-pull.compose.yml"
             " && "
             'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'

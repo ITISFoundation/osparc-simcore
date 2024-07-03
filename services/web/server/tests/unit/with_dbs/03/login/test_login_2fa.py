@@ -14,9 +14,9 @@ from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from models_library.authentification import TwoFactorAuthentificationMethod
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products

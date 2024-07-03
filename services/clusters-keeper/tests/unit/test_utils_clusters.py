@@ -24,7 +24,7 @@ from models_library.clusters import (
 )
 from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
     _prepare_environment_variables,

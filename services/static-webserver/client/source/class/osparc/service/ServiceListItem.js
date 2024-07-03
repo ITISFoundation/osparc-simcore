@@ -29,6 +29,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       allowGrowX: true
     });
 
+    this.setResourceType("service");
     if (serviceModel) {
       this.setServiceModel(serviceModel);
     }

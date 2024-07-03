@@ -18,8 +18,8 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S

@@ -40,7 +40,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -99,11 +99,11 @@ def minimal_configuration(
 
 
 @pytest.fixture(scope="session")
-def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
+def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
     fake_service_path = mocks_dir / "fake_service.json"
     assert fake_service_path.exists()
     fake_service_data = json.loads(fake_service_path.read_text())
-    return ServiceDockerData(**fake_service_data)
+    return ServiceMetaDataPublished(**fake_service_data)
 
 
 @pytest.fixture
@@ -130,7 +130,7 @@ def fake_service_labels() -> dict[str, Any]:
 @pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
     fake_service_labels: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
@@ -167,7 +167,7 @@ def mocked_director_service_fcts(
 @pytest.fixture
 def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_resources: ServiceResourcesDict,
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
@@ -216,7 +216,7 @@ def mocked_catalog_service_fcts(
 @pytest.fixture
 def mocked_catalog_service_fcts_deprecated(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
 ):
     def _mocked_services_details(
@@ -571,7 +571,7 @@ async def test_create_computation_with_wallet(
     "default_pricing_plan",
     [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
-async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
+async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
@@ -601,7 +601,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
             )
         ),
     )
-    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
 
 

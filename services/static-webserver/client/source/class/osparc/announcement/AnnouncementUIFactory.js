@@ -29,6 +29,47 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
     }
   },
 
+  statics: {
+    createLoginAnnouncement: function(title, text) {
+      const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+        backgroundColor: "strong-main",
+        alignX: "center",
+        padding: 12,
+        allowGrowX: true,
+        maxWidth: 300
+      });
+      loginAnnouncement.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+
+      if (title) {
+        const titleLabel = new qx.ui.basic.Label().set({
+          value: title,
+          font: "text-16",
+          textColor: "white",
+          alignX: "center",
+          rich: true,
+          wrap: true
+        });
+        loginAnnouncement.add(titleLabel);
+      }
+
+      if (text) {
+        const descriptionLabel = new qx.ui.basic.Label().set({
+          value: text,
+          font: "text-14",
+          textColor: "white",
+          alignX: "center",
+          rich: true,
+          wrap: true
+        });
+        loginAnnouncement.add(descriptionLabel);
+      }
+
+      return loginAnnouncement;
+    }
+  },
+
   members: {
     __ribbonAnnouncement: null,
 
@@ -72,38 +113,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
 
     createLoginAnnouncement: function() {
       const announcement = this.getAnnouncement();
-
-      const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-        backgroundColor: "strong-main",
-        alignX: "center",
-        padding: 12,
-        allowGrowX: true,
-        maxWidth: 300
-      });
-      loginAnnouncement.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-
-      const titleLabel = new qx.ui.basic.Label().set({
-        value: announcement.getTitle(),
-        font: "text-16",
-        textColor: "white",
-        alignX: "center",
-        rich: true,
-        wrap: true
-      });
-      loginAnnouncement.add(titleLabel);
-
-      const descriptionLabel = new qx.ui.basic.Label().set({
-        value: announcement.getDescription(),
-        font: "text-14",
-        textColor: "white",
-        alignX: "center",
-        rich: true,
-        wrap: true
-      });
-      loginAnnouncement.add(descriptionLabel);
-
+      const loginAnnouncement = this.self().createLoginAnnouncement(announcement.getTitle(), announcement.getDescription());
       return loginAnnouncement;
     },
 

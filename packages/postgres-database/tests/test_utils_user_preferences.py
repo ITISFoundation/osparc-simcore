@@ -8,7 +8,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_user_preferences import (
     BasePreferencesRepo,

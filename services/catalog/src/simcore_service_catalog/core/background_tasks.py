@@ -17,7 +17,7 @@ from typing import Any, Final, NewType, TypeAlias, cast
 
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import iter_service_docker_data
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
@@ -35,8 +35,10 @@ _logger = logging.getLogger(__name__)
 ServiceKey = NewType("ServiceKey", str)
 ServiceVersion = NewType("ServiceVersion", str)
 ServiceDockerDataMap: TypeAlias = dict[
-    tuple[ServiceKey, ServiceVersion], ServiceDockerData
+    tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
+
+_errored = set()
 
 
 async def _list_services_in_registry(
@@ -52,16 +54,17 @@ async def _list_services_in_registry(
     }
     for service in registry_services:
         try:
-            service_data = ServiceDockerData.parse_obj(service)
+            service_data = ServiceMetaDataPublished.parse_obj(service)
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError:  # noqa: PERF203
+            errored_service = service.get("key"), service.get("version")
             _logger.warning(
-                "Skipping %s:%s from the catalog of services:",
-                service.get("key"),
-                service.get("version"),
-                exc_info=True,
+                "Skipping '%s:%s' from the catalog of services",
+                *errored_service,
+                exc_info=errored_service not in _errored,
             )
+            _errored.add(errored_service)
 
     return services
 
@@ -79,7 +82,9 @@ async def _list_services_in_database(
 async def _create_services_in_database(
     app: FastAPI,
     service_keys: set[tuple[ServiceKey, ServiceVersion]],
-    services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData],
+    services_in_registry: dict[
+        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
+    ],
 ) -> None:
     """Adds a new service in the database
 
@@ -94,7 +99,7 @@ async def _create_services_in_database(
     sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
-        service_metadata: ServiceDockerData = services_in_registry[
+        service_metadata: ServiceMetaDataPublished = services_in_registry[
             (service_key, service_version)
         ]
         ## Set deprecation date to null (is valid date value for postgres)
@@ -129,7 +134,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     Notice that a services here refers to a 2-tuple (key, version)
     """
     services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceDockerData
+        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
     ] = await _list_services_in_registry(app)
 
     services_in_db: set[

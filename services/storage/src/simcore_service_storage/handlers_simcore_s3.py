@@ -16,13 +16,13 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.s3 import S3Settings
-from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from . import sts
 from ._meta import API_VTAG
+from .dsm import get_dsm_provider
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -30,6 +30,7 @@ from .models import (
     SimcoreS3FoldersParams,
     StorageQueryParamsBase,
 )
+from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
@@ -62,13 +63,18 @@ async def _copy_folders_from_project(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
     )
-    await dsm.deep_copy_project_simcore_s3(
-        query_params.user_id,
-        body.source,
-        body.destination,
-        body.nodes_map,
-        task_progress=task_progress,
-    )
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"copying {body.source['uuid']} -> {body.destination['uuid']}",
+    ):
+        await dsm.deep_copy_project_simcore_s3(
+            query_params.user_id,
+            body.source,
+            body.destination,
+            body.nodes_map,
+            task_progress=task_progress,
+        )
 
     raise web.HTTPCreated(
         text=json_dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON

@@ -442,7 +442,6 @@ def get_docker_pull_images_on_start_bash_command(
         return ""
 
     compose = {
-        "version": '"3.8"',
         "services": {
             f"pre-pull-image-{n}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)

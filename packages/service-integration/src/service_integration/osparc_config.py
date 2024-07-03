@@ -24,12 +24,10 @@ from models_library.service_settings_labels import (
     RestartPolicy,
 )
 from models_library.service_settings_nat_rule import NATRule
-from models_library.services import (
+from models_library.services import BootOptions, ServiceMetaDataPublished, ServiceType
+from models_library.services_regex import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
-    BootOptions,
-    ServiceDockerData,
-    ServiceType,
 )
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
@@ -88,7 +86,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
         return model
 
 
-class MetadataConfig(ServiceDockerData):
+class MetadataConfig(ServiceMetaDataPublished):
     """Content of metadata.yml configuration file
 
     Details about general info and I/O configuration of the service

@@ -1,10 +1,14 @@
 from typing import Final
 
-from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from ...services import (
+    LATEST_INTEGRATION_VERSION,
+    ServiceMetaDataPublished,
+    ServiceType,
+)
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices
 
-META: Final = ServiceDockerData.parse_obj(
+META: Final = ServiceMetaDataPublished.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/file-picker",
