@@ -38,6 +38,8 @@ ServiceDockerDataMap: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
 
+_errored = set()
+
 
 async def _list_services_in_registry(
     app: FastAPI,
@@ -56,12 +58,13 @@ async def _list_services_in_registry(
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError:  # noqa: PERF203
+            errored_service = service.get("key"), service.get("version")
             _logger.warning(
-                "Skipping %s:%s from the catalog of services:",
-                service.get("key"),
-                service.get("version"),
-                exc_info=True,
+                "Skipping '%s:%s' from the catalog of services",
+                *errored_service,
+                exc_info=errored_service not in _errored,
             )
+            _errored.add(errored_service)
 
     return services
 
