@@ -13,7 +13,7 @@ from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client
 
-from .logging import log_context
+from .logging_ext import log_context
 
 _SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
 

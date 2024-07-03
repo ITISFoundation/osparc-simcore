@@ -42,7 +42,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.logging_ext import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
 from pytest_simcore.helpers.typing_env import EnvVarsDict
