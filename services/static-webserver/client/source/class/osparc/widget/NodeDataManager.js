@@ -91,6 +91,7 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       const treeFolderView = this.getChildControl("tree-folder-view");
       const reloadButton = treeFolderView.getChildControl("reload-button");
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
+      treeFolderView.getChildControl("folder-tree").setBackgroundColor("window-popup-background");
     },
 
     __reloadTree: function() {
