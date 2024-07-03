@@ -43,30 +43,30 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   HOST_GROUPID=$(stat --format=%g "${SC_DEVEL_MOUNT}")
   CONT_GROUPNAME=$(getent group "${HOST_GROUPID}" | cut --delimiter=: --fields=1)
   if [ "$HOST_USERID" -eq 0 ]; then
-    echo "$WARNING" "Folder mounted owned by root user... adding $SC_USER_NAME to root..."
-    adduser "$SC_USER_NAME" root
+    echo "$WARNING" "Folder mounted owned by root user... adding $ EFS_USER_NAME to root..."
+    adduser "$ EFS_USER_NAME" root
   else
     echo "$INFO" "Folder mounted owned by user $HOST_USERID:$HOST_GROUPID-'$CONT_GROUPNAME'..."
-    # take host's credentials in $SC_USER_NAME
+    # take host's credentials in $ EFS_USER_NAME
     if [ -z "$CONT_GROUPNAME" ]; then
-      echo "$WARNING" "Creating new group grp$SC_USER_NAME"
-      CONT_GROUPNAME=grp$SC_USER_NAME
+      echo "$WARNING" "Creating new group grp$ EFS_USER_NAME"
+      CONT_GROUPNAME=grp$ EFS_USER_NAME
       addgroup --gid "$HOST_GROUPID" "$CONT_GROUPNAME"
     else
       echo "$INFO" "group already exists"
     fi
-    echo "$INFO" "Adding $SC_USER_NAME to group $CONT_GROUPNAME..."
-    adduser "$SC_USER_NAME" "$CONT_GROUPNAME"
+    echo "$INFO" "Adding $ EFS_USER_NAME to group $CONT_GROUPNAME..."
+    adduser "$ EFS_USER_NAME" "$CONT_GROUPNAME"
 
     echo "$WARNING" "Changing ownership [this could take some time]"
-    echo "$INFO" "Changing $SC_USER_NAME:$SC_USER_NAME ($SC_USER_ID:$SC_USER_ID) to $SC_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
-    usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
+    echo "$INFO" "Changing $ EFS_USER_NAME:$ EFS_USER_NAME ($ EFS_USER_ID:$ EFS_USER_ID) to $ EFS_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
+    usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$ EFS_USER_NAME"
 
-    echo "$INFO" "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -group "$SC_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
+    echo "$INFO" "Changing group properties of files around from $ EFS_USER_ID to group $CONT_GROUPNAME"
+    find / -path /proc -prune -o -group "$ EFS_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
     # change user property of files already around
-    echo "$INFO" "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
+    echo "$INFO" "Changing ownership properties of files around from $ EFS_USER_ID to group $CONT_GROUPNAME"
+    find / -path /proc -prune -o -user "$ EFS_USER_ID" -exec chown --no-dereference "$ EFS_USER_NAME" {} \;
   fi
 fi
 
@@ -84,11 +84,11 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
     GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
     echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
   fi
-  adduser "$SC_USER_NAME" "$GROUPNAME"
+  adduser "$ EFS_USER_NAME" "$GROUPNAME"
 fi
 
 echo "$INFO Starting $* ..."
-echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
+echo "  $ EFS_USER_NAME rights    : $(id "$ EFS_USER_NAME")"
 echo "  local dir : $(ls -al)"
 
-exec gosu "$SC_USER_NAME" "$@"
+exec gosu "$ EFS_USER_NAME" "$@"

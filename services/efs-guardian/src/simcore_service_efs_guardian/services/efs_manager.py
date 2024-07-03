@@ -6,8 +6,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
-_EFS_LINUX_USER = 8006
-_EFS_GROUP_LINUX_GROUP = 8106
+from ..core.settings import get_application_settings
 
 
 @dataclass(frozen=True)
@@ -33,6 +32,8 @@ class EfsManager:
     async def create_project_specific_data_dir(
         self, project_id: ProjectID, node_id: NodeID, storage_directory_name: str
     ) -> Path:
+        settings = get_application_settings(self.app)
+
         _dir_path = (
             self._efs_mounted_path
             / self._project_specific_data_base_directory
@@ -43,9 +44,9 @@ class EfsManager:
         # Ensure the directory exists with the right parents
         Path.mkdir(_dir_path, parents=True, exist_ok=True)
         # Change the owner to user id 8006(efs) and group id 8106(efs-group)
-        os.chown(_dir_path, _EFS_LINUX_USER, _EFS_GROUP_LINUX_GROUP)
+        os.chown(_dir_path, settings.EFS_USER_ID, settings.EFS_GROUP_ID)
         # Set directory permissions to allow group write access
-        os.chmod(
+        Path.chmod(
             _dir_path, 0o770
         )  # This gives rwx permissions to user and group, and nothing to others
         return _dir_path

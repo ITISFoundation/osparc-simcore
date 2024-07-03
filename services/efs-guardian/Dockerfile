@@ -46,10 +46,13 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 # simcore-efs-user uid=8006(efs) gid=8006(efs) groups=8006(efs)
+# Currently all simcore services run as user 8004. The Guardian needs to run as a different user 8006.
 # The Guardian has access to the root directory of the EFS distributed file system
-# and can change the permissions if needed. User running services operates as a user with ID 8004.
-ENV SC_USER_ID=8006 \
-  SC_USER_NAME=efs \
+# and can change the file permissions of user 8004 if needed.
+ENV SC_USER_ID=8004 \
+  SC_USER_NAME=scu \
+  EFS_USER_ID=8006 \
+  EFS_USER_NAME=efs \
   SC_BUILD_TARGET=base \
   SC_BOOT_MODE=default
 
