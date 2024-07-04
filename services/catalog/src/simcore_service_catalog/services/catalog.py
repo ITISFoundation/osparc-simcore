@@ -5,6 +5,7 @@ from models_library.services_authoring import Author, Badge
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
 
 from ..db.repositories.services import ServicesRepository
 
@@ -28,6 +29,12 @@ async def list_services_paginated(
     # defines the order
     total_count, services_in_db = await repo.list_latest_services(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
+    )
+
+    services_access_rights: dict[
+        tuple[str, str], list[ServiceAccessRightsAtDB]
+    ] = await repo.list_services_access_rights(
+        ((s.key, s.version) for s in services_in_db), product_name=product_name
     )
 
     # # aggregates published (i.e. not editable)
@@ -66,12 +73,19 @@ async def list_services_paginated(
             outputs={},  # rg.outputs,
             boot_options=None,  # rg.boot_options,
             min_visible_inputs=None,  # rg.min_visible_inputs,
-            access_rights=db.access_rights,
+            access_rights={
+                a.gid: {
+                    "execute_access": a.execute_access,
+                    "write_access": a.write_access,
+                }
+                for a in db_ar
+            },  # db.access_rights,
             classifiers=db.classifiers,
             quality=db.quality,
             history=db.history,
         )
         for db in services_in_db
+        if (db_ar := services_access_rights.get((db.key, db.version)))
         # if (rg := services_in_registry.get((db.key, db.version)))
     ]
 
