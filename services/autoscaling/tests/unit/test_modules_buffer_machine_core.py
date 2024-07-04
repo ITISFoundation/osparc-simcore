@@ -5,7 +5,8 @@
 
 import json
 import logging
-from typing import Any, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, cast
 from unittest import mock
 
 import pytest
