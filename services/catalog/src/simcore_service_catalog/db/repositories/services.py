@@ -31,10 +31,8 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
-    batch_get_services_stmt,
+    list_latest_services_with_history_stmt,
     list_services_stmt,
-    list_services_with_history_stmt,
-    list_services_with_history_stmt2,
     total_count_stmt,
 )
 
@@ -207,56 +205,6 @@ class ServicesRepository(BaseRepository):
             return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
-    async def list_services_with_history(
-        self,
-        # access-rights
-        product_name: ProductName,
-        user_id: UserID,
-        # pagination
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
-
-        # get page
-        stmt_total = total_count_stmt(
-            product_name=product_name,
-            user_id=user_id,
-            access_rights=AccessRightsClauses.can_read,
-        )
-        stmt_page = list_services_with_history_stmt(
-            product_name=product_name,
-            user_id=user_id,
-            access_rights=AccessRightsClauses.can_read,
-            limit=limit,
-            offset=offset,
-        )
-
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt_total)
-            total_count = result.scalar() or 0
-
-            result = await conn.execute(stmt_page)
-            rows = result.mappings().fetchall()
-            assert len(rows) <= total_count  # nosec
-
-        # batch-get latest
-        latest = [(s["key"], s["history"][0]["version"]) for s in rows]
-        stmt = batch_get_services_stmt(product_name=product_name, selection=latest)
-
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt)
-            latest_services = {s["key"]: s for s in result.mappings().fetchall()}
-
-        # compose history with latest
-        items_page = [
-            ServiceWithHistoryFromDB.parse_obj(
-                {**r, **latest_services.get(r["key"], {})}
-            )
-            for r in rows
-        ]
-
-        return (total_count, items_page)
-
     async def list_latest_services(
         self,
         # access-rights
@@ -273,7 +221,7 @@ class ServicesRepository(BaseRepository):
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
         )
-        stmt_page = list_services_with_history_stmt2(
+        stmt_page = list_latest_services_with_history_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,

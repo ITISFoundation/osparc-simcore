@@ -16,9 +16,9 @@ from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     _page_of_latest_services_stmt,
     batch_get_services_stmt,
+    list_latest_services_with_history_stmt,
     list_services_stmt2,
     list_services_with_history_stmt,
-    list_services_with_history_stmt2,
     total_count_stmt,
 )
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -309,6 +309,15 @@ async def test_list_all_services_and_history_with_pagination(
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
+
+    # no services at all
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id
+    )
+    assert len(services_items) == 0
+    assert total_count == 0
+
+    # inject servcies
     num_services = 5
     num_versions_per_service = 20
     await services_db_tables_injector(
@@ -342,20 +351,21 @@ async def test_list_all_services_and_history_with_pagination(
     for service in services_items:
         assert len(service.history) == num_versions_per_service
 
-    assert parse_obj_as(
-        EmailStr, services_items[0].owner_email
-    ), "resolved own'es email"
-    assert (
-        services_items[0].version == services_items[0].history[-1].version
-    ), "resolved latest"
+        assert parse_obj_as(EmailStr, service.owner_email), "resolved own'es email"
+
+        latest_version = service.history[0].version  # latest service is first
+        assert service.version == latest_version
 
     # TODO:
     #  - test with NULL owner
+    #  - test with partial access rights to a service (i.e. some versions are not accessed)
+    #  - test different type of access rights
+    #  - test merging different group access
+    #  -
 
 
-def test_services_sql_statements_can_be_built():
-    # helper
-    def _eval_and_print_stmt(func_smt, **kwargs):
+def test_building_services_sql_statements():
+    def _check(func_smt, **kwargs):
         print(f"{func_smt.__name__:*^100}")
         stmt = func_smt(**kwargs)
         print()
@@ -366,9 +376,7 @@ def test_services_sql_statements_can_be_built():
     product_name = "osparc"
     user_id = 4
 
-    # prints
-
-    _eval_and_print_stmt(
+    _check(
         _page_of_latest_services_stmt,
         product_name=product_name,
         user_id=user_id,
@@ -377,8 +385,8 @@ def test_services_sql_statements_can_be_built():
         offset=None,
     )
 
-    _eval_and_print_stmt(
-        list_services_with_history_stmt2,
+    _check(
+        list_latest_services_with_history_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
@@ -386,14 +394,14 @@ def test_services_sql_statements_can_be_built():
         offset=None,
     )
 
-    _eval_and_print_stmt(
+    _check(
         total_count_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
     )
 
-    _eval_and_print_stmt(
+    _check(
         list_services_with_history_stmt,
         product_name=product_name,
         user_id=user_id,
@@ -402,7 +410,7 @@ def test_services_sql_statements_can_be_built():
         offset=None,
     )
 
-    _eval_and_print_stmt(
+    _check(
         batch_get_services_stmt,
         product_name=product_name,
         selection=[
@@ -412,4 +420,4 @@ def test_services_sql_statements_can_be_built():
         ],
     )
 
-    _eval_and_print_stmt(list_services_stmt2)
+    _check(list_services_stmt2)

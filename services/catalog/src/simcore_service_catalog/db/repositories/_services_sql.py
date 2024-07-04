@@ -167,7 +167,7 @@ def _page_of_latest_services_stmt(
     )
 
 
-def list_services_with_history_stmt2(
+def list_latest_services_with_history_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -236,6 +236,7 @@ def list_services_with_history_stmt2(
     )
 
     # get history for every unique service-key in CTE
+    # TODO: limit history?
     history_subquery = (
         sa.select(
             services_meta_data.c.key,
