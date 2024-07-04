@@ -374,11 +374,11 @@ qx.Class.define("osparc.file.FilesTree", {
 
     requestDatasetFiles: function(locationId, datasetId) {
       if (this.__datasets.has(datasetId)) {
-        return;
+        return null;
       }
 
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.getFilesByLocationAndDataset(locationId, datasetId)
+      return dataStore.getFilesByLocationAndDataset(locationId, datasetId)
         .then(data => {
           const {
             location,

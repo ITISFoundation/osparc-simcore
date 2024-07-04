@@ -98,6 +98,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const treeFolderView = this.getChildControl("tree-folder-view");
       const foldersTree = treeFolderView.getChildControl("folder-tree");
+      const folderViewer = treeFolderView.getChildControl("folder-viewer");
 
       const openSameFolder = () => {
         // drop last, which is the file
@@ -105,8 +106,16 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         treeFolderView.openPath(path);
       };
 
-      foldersTree.populateTree(fileMetadata["locationId"])
-        .then(() => openSameFolder())
+      folderViewer.resetFolder();
+      const locationId = fileMetadata["locationId"];
+      const datasetId = path[0];
+      foldersTree.resetCache();
+      foldersTree.populateTree()
+        .then(datasetPromises => {
+          Promise.all(datasetPromises)
+            .then(() => foldersTree.requestDatasetFiles(locationId, datasetId))
+            .then(() => openSameFolder());
+        })
         .catch(err => console.error(err));
     }
   }
