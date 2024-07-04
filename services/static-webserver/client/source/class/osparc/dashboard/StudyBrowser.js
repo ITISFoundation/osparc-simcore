@@ -137,10 +137,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           if (nStudies === 0) {
-            const store = osparc.store.Store.getInstance();
             Promise.all([
-              store.getTemplates(),
-              store.getAllServices()
+              osparc.store.Store.getInstance().getTemplates(),
+              osparc.service.Store.getServicesLatest()
             ]).then(values => {
               const templates = values[0];
               const services = values[1];
