@@ -9,13 +9,13 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Iterable
 from pprint import pprint
-from typing import Final
+from typing import AsyncIterable, Final
 
 import httpx
 import pytest
 from attr import dataclass
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -125,8 +125,20 @@ async def test_log_streaming(
     )
 
 
+@pytest.fixture
+async def mocked_job_not_found(
+    mocked_directorv2_service_api_base,
+) -> AsyncIterable[MockRouter]:
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
+
+    mocked_directorv2_service_api_base.get(
+        path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    ).mock(side_effect=_get_computation)
+    return mocked_directorv2_service_api_base
+
+
 async def test_logstreaming_job_not_found_exception(
-    mocker: MockFixture,
     app: FastAPI,
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -134,8 +146,19 @@ async def test_logstreaming_job_not_found_exception(
     solver_version: str,
     fake_log_distributor,
     fake_project_for_streaming: ProjectGet,
+    mocked_job_not_found: MockRouter,
 ):
-    mocker.patch(
-        "simcore_service_api_server.api.dependencies.rabbitmq.get_log_check_timeout",
-        return_value=0.1,
-    )
+
+    job_id: JobID = fake_project_for_streaming.uuid
+
+    async with client.stream(
+        "GET",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
+        auth=auth,
+    ) as response:
+        response.raise_for_status()
+        async for line in response.aiter_lines():
+            job_log = JobLog.parse_raw(line)
+            pprint(job_log.json())
+
+    assert fake_log_distributor.deregister_is_called
