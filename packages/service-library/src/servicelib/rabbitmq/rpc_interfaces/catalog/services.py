@@ -32,6 +32,12 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ) -> PageRpc[ServiceGetV2]:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+
+    """
+
     @validate_arguments()
     async def _call(
         product_name: ProductName,
@@ -64,6 +70,12 @@ async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+
+    """
+
     @validate_arguments()
     async def _call(
         product_name: ProductName,
@@ -100,7 +112,11 @@ async def update_service(
     service_version: ServiceVersion,
     update: ServiceUpdate,
 ) -> ServiceGetV2:
-    """Updates editable fields of a service"""
+    """Updates editable fields of a service
+
+    Raises:
+        ValidationError: on invalid arguments
+    """
 
     @validate_arguments()
     async def _call(

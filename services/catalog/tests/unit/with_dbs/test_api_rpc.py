@@ -4,6 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
+from collections.abc import Callable
+
 import pytest
 from fastapi import FastAPI
 from models_library.products import ProductName
@@ -21,6 +23,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "postgres",
 ]
 pytest_simcore_ops_services_selection = []
 
@@ -38,9 +41,32 @@ def app_environment(
     )
 
 
+@pytest.fixture
+async def fake_services_inserted_in_db(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+) -> None:
+    num_services = 5
+    num_versions_per_service = 20
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                f"simcore/services/dynamic/some-service-{n}",
+                f"{v}.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for n in range(num_services)
+            for v in range(num_versions_per_service)
+        ]
+    )
+
+
 async def test_rcp_catalog_client(
-    postgres_setup_disabled: None,
     director_setup_disabled: None,
+    fake_services_inserted_in_db: None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,

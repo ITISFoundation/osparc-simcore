@@ -33,7 +33,7 @@ async def test_get_service_access_rights(
     setup_rabbitmq_and_rpc_disabled: None,
     user: dict[str, Any],
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -43,7 +43,7 @@ async def test_get_service_access_rights(
     # create some fake services
     NUM_SERVICES = 3
     fake_services = [
-        service_catalog_faker(
+        create_fake_service_data(
             "simcore/services/dynamic/jupyterlab",
             f"1.0.{s}",
             team_access=None,
@@ -80,7 +80,7 @@ async def test_get_service_access_rights_with_more_gids(
     setup_rabbitmq_and_rpc_disabled: None,
     user: dict[str, Any],
     other_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     user_groups_ids: list[int],
     client: TestClient,
@@ -89,7 +89,7 @@ async def test_get_service_access_rights_with_more_gids(
     user_primary_gid = user["primary_gid"]
     everyone_gid, user_gid, team_gid = user_groups_ids
 
-    fake_service = service_catalog_faker(
+    fake_service = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.1",
         team_access="x",
