@@ -51,9 +51,9 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           const iframeHandler = node.getIframeHandler();
           if (iframeHandler) {
             iframeHandler.startPolling();
-            iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
-            iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
-            this.__buildLayout();
+            iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
+            iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
+            this.__iFrameChanged();
 
             this.__attachSocketEventHandlers();
           }
@@ -89,10 +89,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   },
 
   members: {
-    __buildLayout: function() {
+    __iFrameChanged: function() {
       this._removeAll();
 
       const iframeHandler = this.getNode().getIframeHandler();
+
       const loadingPage = iframeHandler.getLoadingPage();
       const iFrame = iframeHandler.getIFrame();
       const src = iFrame.getSource();
