@@ -131,42 +131,6 @@ def total_count_stmt(
     )
 
 
-def _page_of_latest_services_stmt(
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    access_rights: sa.sql.ClauseElement,
-    limit: int | None,
-    offset: int | None,
-):
-    return (
-        sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version.label("latest_version"),
-        )
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
-            ).join(
-                user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
-            )
-        )
-        .where(access_rights)
-        .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest first
-        )
-        .distinct(services_meta_data.c.key)  # get only first
-        .limit(limit)
-        .offset(offset)
-    )
-
-
 def list_latest_services_with_history_stmt(
     *,
     product_name: ProductName,

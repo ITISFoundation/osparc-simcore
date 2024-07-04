@@ -14,7 +14,6 @@ from pydantic import EmailStr, parse_obj_as
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
-    _page_of_latest_services_stmt,
     batch_get_services_stmt,
     list_latest_services_with_history_stmt,
     list_services_stmt2,
@@ -418,15 +417,6 @@ def test_building_services_sql_statements():
     # some data
     product_name = "osparc"
     user_id = 4
-
-    _check(
-        _page_of_latest_services_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
 
     _check(
         list_latest_services_with_history_stmt,
