@@ -30,8 +30,10 @@ qx.Class.define("osparc.service.Store", {
           return;
         }
 
+        // osparc.data.Resources.getInstance().getAllPages("snapshots")
         osparc.data.Resources.get("servicesDev")
-          .then(servicesArray => {
+          .then(resp => {
+            const servicesArray = resp.data;
             osparc.service.Utils.addHits(servicesArray);
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             osparc.service.Utils.addTSRInfos(servicesObj);
