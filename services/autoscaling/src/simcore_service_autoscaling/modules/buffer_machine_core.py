@@ -148,7 +148,7 @@ async def monitor_buffer_machines(
                     )
             case _:
                 pass
-    _logger.info("Current warm pools: %s", f"{current_warm_buffer_pools!r}")
+    _logger.info("Current warm pools: %s", f"{dict(current_warm_buffer_pools)!r}")
 
     # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
     allowed_instance_types = set(

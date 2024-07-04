@@ -112,6 +112,23 @@ class Cluster:
             + len(self.terminating_nodes)
         )
 
+    def __repr__(self) -> str:
+        def _get_instance_ids(
+            instances: list[AssociatedInstance] | list[NonAssociatedInstance],
+        ) -> str:
+            return f"[{','.join(n.ec2_instance.id for n in instances)}]"
+
+        return (
+            f"active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
+            f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
+            f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
+            f"reserve-drained-nodes: count={len(self.reserve_drained_nodes)} {_get_instance_ids(self.reserve_drained_nodes)}, "
+            f"pending-ec2-instances: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
+            f"broken-ec2-instances: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
+            f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
+            f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
+        )
+
 
 DaskTaskId: TypeAlias = str
 

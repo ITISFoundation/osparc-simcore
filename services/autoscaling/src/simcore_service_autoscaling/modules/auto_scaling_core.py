@@ -3,7 +3,6 @@ import collections
 import dataclasses
 import datetime
 import itertools
-import json
 import logging
 from typing import Final, cast
 
@@ -16,7 +15,6 @@ from aws_library.ec2.models import (
     Resources,
 )
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils_formatting import timedelta_as_minute_second
@@ -140,22 +138,7 @@ async def _analyze_current_cluster(
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    cluster_state = jsonable_encoder(
-        cluster,
-        include={
-            "active_nodes": True,
-            "pending_nodes": True,
-            "drained_nodes": "available_resources",
-            "reserve_drained_nodes": True,
-            "pending_ec2s": "ec2_instance",
-            "broken_ec2s": "ec2_instance",
-            "terminating_nodes": "ec2_instance",
-        },
-    )
-    _logger.info(
-        "current state: %s",
-        f"{json.dumps(cluster_state, indent=2)}",
-    )
+    _logger.info("current state: %s", f"{cluster!r}")
     return cluster
 
 
