@@ -277,4 +277,6 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    return await webserver_api.get_service_pricing_plan(solver_key, version)
+    return await webserver_api.get_service_pricing_plan(
+        solver_key=solver_key, version=version
+    )
