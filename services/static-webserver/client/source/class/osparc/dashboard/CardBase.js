@@ -102,7 +102,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (checks && myGroupId in checks) {
           const myAccessRights = checks[myGroupId];
-          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
+          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["writeAccess"];
           if (sharedWith === "my-resources") {
             return !totalAccess;
           } else if (sharedWith === "shared-with-me") {

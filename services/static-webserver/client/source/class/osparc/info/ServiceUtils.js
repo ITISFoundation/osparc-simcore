@@ -102,9 +102,9 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const myGID = osparc.auth.Data.getInstance().getGroupId();
       const ar = serviceData["accessRights"];
       if (myGID in ar) {
-        if (ar[myGID]["write_access"]) {
+        if (ar[myGID]["writeAccess"]) {
           permissions = qx.locale.Manager.tr("Write");
-        } else if (ar[myGID]["execute_access"]) {
+        } else if (ar[myGID]["executeAccess"]) {
           permissions = qx.locale.Manager.tr("Execute");
         }
       } else {
