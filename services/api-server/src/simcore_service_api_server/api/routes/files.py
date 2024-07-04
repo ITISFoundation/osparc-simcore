@@ -355,7 +355,7 @@ async def abort_multipart_upload(
         e_tag=None,
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query={"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -384,7 +384,7 @@ async def complete_multipart_upload(
         e_tag=None,
     )
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, {"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
 
     e_tag: ETag = await complete_file_upload(

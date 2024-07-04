@@ -126,7 +126,7 @@ class LogStreamer:
         except BaseBackEndError as exc:
             _logger.exception("%s", f"{exc}")
             yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
             _logger.exception(
                 "Unexpected %s: %s",
