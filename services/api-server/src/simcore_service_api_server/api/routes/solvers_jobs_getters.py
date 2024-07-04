@@ -136,7 +136,7 @@ async def list_jobs(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver.name, limit=20, offset=0
+        solver_name=solver.name, limit=20, offset=0
     )
 
     jobs: deque[Job] = deque()
@@ -180,7 +180,7 @@ async def get_jobs_page(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver.name, limit=page_params.limit, offset=page_params.offset
+        solver_name=solver.name, limit=page_params.limit, offset=page_params.offset
     )
 
     jobs: list[Job] = [
