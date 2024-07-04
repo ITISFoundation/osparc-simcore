@@ -13,6 +13,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 
+from .._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
 from ..exceptions.log_streaming_errors import (
     LogStreamerNotRegisteredError,
     LogStreamerRegistionConflictError,
@@ -137,7 +138,7 @@ class LogStreamer:
             _logger.exception("%s", f"{exc}")
             yield ErrorGet(
                 errors=[
-                    f"Apologies! An unexpected error on the server occured. We will look into it. (OEC: {error_code})"
+                    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
                 ]
             ).json() + _NEW_LINE
         finally:
