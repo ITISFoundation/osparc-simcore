@@ -122,6 +122,7 @@ async def test_if_send_command_is_mocked_by_moto(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state="running",
         expected_additional_tag_keys=[],
+        instance_filters=None,
     )
 
     # 2. this should generate a failure as current version of moto does not handle this
