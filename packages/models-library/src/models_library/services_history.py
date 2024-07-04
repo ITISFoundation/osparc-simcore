@@ -23,7 +23,9 @@ class Compatibility(BaseModel):
 class ServiceRelease(BaseModel):
     # from ServiceMetaDataPublished
     version: ServiceVersion
-    version_display: str | None = Field(default=None)
+    version_display: str | None = Field(
+        default=None, description="If None, then display `version`"
+    )
     released: datetime | None = Field(
         default=None, description="When provided, it indicates the release timestamp"
     )
