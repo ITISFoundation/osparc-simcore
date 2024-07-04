@@ -3,7 +3,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated, Any, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
@@ -20,6 +20,7 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from starlette.background import BackgroundTask
 
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -27,7 +28,14 @@ from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobLog,
+    JobMetadata,
+    JobOutputs,
+)
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
@@ -88,10 +96,15 @@ _PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_200_OK: {
+        "description": "Returns a JobLog or an ErrorGet",
+        "model": Union[JobLog, ErrorGet],
+    },
     status.HTTP_409_CONFLICT: {
         "description": "Conflict: Logs are already being streamed",
         "model": ErrorGet,
-    }
+        "content": {"application/json": {}},
+    },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 router = APIRouter()
@@ -125,7 +138,7 @@ async def list_jobs(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver_name=solver.name, limit=20, offset=0
+        solver.name, limit=20, offset=0
     )
 
     jobs: deque[Job] = deque()
@@ -169,7 +182,7 @@ async def get_jobs_page(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver_name=solver.name, limit=page_params.limit, offset=page_params.offset
+        solver.name, limit=page_params.limit, offset=page_params.offset
     )
 
     jobs: list[Job] = [
@@ -439,6 +452,8 @@ async def get_log_stream(
             log_distributor=log_distributor,
             log_check_timeout=log_check_timeout,
         )
+        await log_streamer.setup()
         return LogStreamingResponse(
             log_streamer.log_generator(),
+            background=BackgroundTask(log_streamer.teardown),
         )
