@@ -34,7 +34,7 @@ qx.Class.define("osparc.study.Utils", {
       return services;
     },
 
-    getInaccessibleServices: async function(workbench) {
+    getInaccessibleServices: function(workbench) {
       const allServices = osparc.service.Store.servicesCached;
       const unaccessibleServices = [];
       const wbServices = new Set(this.extractServices(workbench));
@@ -48,6 +48,14 @@ qx.Class.define("osparc.study.Utils", {
         }
       });
       return unaccessibleServices;
+    },
+
+    getInaccessibleServicesMsg: function(inaccessibleServices) {
+      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
+      inaccessibleServices.forEach(unaccessibleService => {
+        msg += `- ${unaccessibleService.label}:${unaccessibleService.version}<br>`;
+      });
+      return msg;
     },
 
     isWorkbenchUpdatable: async function(workbench) {
@@ -107,14 +115,6 @@ qx.Class.define("osparc.study.Utils", {
       return deprecated;
     },
 
-    getInaccessibleServicesMsg: function(inaccessibleServices) {
-      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
-      inaccessibleServices.forEach(unaccessibleService => {
-        msg += `- ${unaccessibleService.label}:${unaccessibleService.version}<br>`;
-      });
-      return msg;
-    },
-
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
@@ -153,22 +153,20 @@ qx.Class.define("osparc.study.Utils", {
                   "y": 100
                 }
               };
-              store.getInaccessibleServices(minStudyData)
-                .then(inaccessibleServices => {
-                  if (inaccessibleServices.length) {
-                    const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
-                    reject({
-                      message: msg
-                    });
-                    return;
-                  }
-                  const params = {
-                    data: minStudyData
-                  };
-                  osparc.study.Utils.createStudyAndPoll(params)
-                    .then(studyData => resolve(studyData["uuid"]))
-                    .catch(err => reject(err));
+              const inaccessibleServices = this.getInaccessibleServices(minStudyData["Workbench"])
+              if (inaccessibleServices.length) {
+                const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+                reject({
+                  message: msg
                 });
+                return;
+              }
+              const params = {
+                data: minStudyData
+              };
+              osparc.study.Utils.createStudyAndPoll(params)
+                .then(studyData => resolve(studyData["uuid"]))
+                .catch(err => reject(err));
             }
           })
           .catch(err => {
@@ -199,54 +197,51 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromTemplate: function(templateData, loadingPage) {
       return new Promise((resolve, reject) => {
-        const store = osparc.store.Store.getInstance();
-        store.getInaccessibleServices(templateData)
-          .then(inaccessibleServices => {
-            if (inaccessibleServices.length) {
-              const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
-              reject({
-                message: msg
-              });
-              return;
-            }
-            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
-            minStudyData["name"] = templateData["name"];
-            minStudyData["description"] = templateData["description"];
-            minStudyData["thumbnail"] = templateData["thumbnail"];
-            const params = {
-              url: {
-                templateId: templateData["uuid"]
-              },
-              data: minStudyData
-            };
-            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, null, {"pollTask": true});
-            const pollTasks = osparc.data.PollTasks.getInstance();
-            const interval = 1000;
-            pollTasks.createPollingTask(fetchPromise, interval)
-              .then(task => {
-                task.addListener("updateReceived", e => {
-                  const updateData = e.getData();
-                  if ("task_progress" in updateData && loadingPage) {
-                    const progress = updateData["task_progress"];
-                    loadingPage.setMessages([progress["message"]]);
-                    const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
-                      width: osparc.ui.message.Loading.LOGO_WIDTH,
-                      maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
-                    });
-                    loadingPage.addWidgetToMessages(pBar);
-                  }
-                }, this);
-                task.addListener("resultReceived", e => {
-                  const studyData = e.getData();
-                  resolve(studyData["uuid"]);
-                }, this);
-                task.addListener("pollingError", e => {
-                  const errMsg = e.getData();
-                  reject(errMsg);
-                }, this);
-              })
-              .catch(err => reject(err));
+        const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
+        if (inaccessibleServices.length) {
+          const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+          reject({
+            message: msg
           });
+          return;
+        }
+        const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+        minStudyData["name"] = templateData["name"];
+        minStudyData["description"] = templateData["description"];
+        minStudyData["thumbnail"] = templateData["thumbnail"];
+        const params = {
+          url: {
+            templateId: templateData["uuid"]
+          },
+          data: minStudyData
+        };
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, null, {"pollTask": true});
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(fetchPromise, interval)
+          .then(task => {
+            task.addListener("updateReceived", e => {
+              const updateData = e.getData();
+              if ("task_progress" in updateData && loadingPage) {
+                const progress = updateData["task_progress"];
+                loadingPage.setMessages([progress["message"]]);
+                const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
+                  width: osparc.ui.message.Loading.LOGO_WIDTH,
+                  maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
+                });
+                loadingPage.addWidgetToMessages(pBar);
+              }
+            }, this);
+            task.addListener("resultReceived", e => {
+              const studyData = e.getData();
+              resolve(studyData["uuid"]);
+            }, this);
+            task.addListener("pollingError", e => {
+              const errMsg = e.getData();
+              reject(errMsg);
+            }, this);
+          })
+          .catch(err => reject(err));
       });
     },
 

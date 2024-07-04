@@ -43,10 +43,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       return false;
     },
 
-    anyServiceInaccessible: async function(studyData) {
+    anyServiceInaccessible: function(studyData) {
       if ("workbench" in studyData) {
-        const store = osparc.store.Store.getInstance();
-        const inaccessibles = await store.getInaccessibleServices(studyData);
+        const inaccessibles = osparc.study.Utils.getInaccessibleServices(studyData["workbench"]);
         return inaccessibles.length;
       }
       return false;
@@ -107,7 +106,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         });
         this._introText.add(retiredLabel);
       }
-      if (await this.self().anyServiceInaccessible(this._studyData)) {
+      if (this.self().anyServiceInaccessible(this._studyData)) {
         let inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
         const retiredLabel = new qx.ui.basic.Label(inaccessibleText).set({
           font: "text-14",
