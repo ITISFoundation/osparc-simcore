@@ -19,7 +19,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
 )
-from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.moto import patched_aiobotocore_make_api_call
 from simcore_service_autoscaling.core.settings import EC2InstancesSettings
