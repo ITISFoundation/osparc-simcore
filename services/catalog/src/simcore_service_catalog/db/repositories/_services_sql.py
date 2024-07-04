@@ -284,6 +284,126 @@ def list_latest_services_with_history_stmt(
     )
 
 
+def get_service_with_history_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+):
+    service_meta_access_join = services_meta_data.join(
+        services_access_rights,
+        (services_meta_data.c.key == services_access_rights.c.key)
+        & (services_meta_data.c.version == services_access_rights.c.version)
+        & (services_access_rights.c.product_name == product_name),
+    ).join(
+        user_to_groups,
+        (user_to_groups.c.gid == services_access_rights.c.gid)
+        & (user_to_groups.c.uid == user_id),
+    )
+
+    service_subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.owner,
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
+            services_meta_data.c.classifiers,
+            services_meta_data.c.created,
+            services_meta_data.c.modified,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.quality,
+        )
+        .select_from(service_meta_access_join)
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+            & access_rights
+        )
+        .alias("service_subquery")
+    )
+
+    owner_subquery = (
+        sa.select(users.c.email)
+        .select_from(
+            service_subquery.join(
+                user_to_groups,
+                service_subquery.c.owner == user_to_groups.c.gid,
+                isouter=True,
+            )
+        )
+        .join(users, user_to_groups.c.uid == users.c.id, isouter=True)
+        .alias("owner_subquery")
+    )
+
+    history_subquery = (
+        sa.select(
+            array_agg(
+                func.json_build_object(
+                    "version",
+                    services_meta_data.c.version,
+                    "deprecated",
+                    services_meta_data.c.deprecated,
+                    "created",
+                    services_meta_data.c.created,
+                )
+            ).label("history"),
+        )
+        .select_from(
+            # joins because access-rights might change per version
+            service_meta_access_join
+        )
+        .where(access_rights)
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+        .alias("history_subquery")
+    )
+    return (
+        sa.select(
+            service_subquery.c.key,
+            service_subquery.c.version,
+            # display
+            service_subquery.c.name,
+            service_subquery.c.description,
+            service_subquery.c.thumbnail,
+            # ownership
+            owner_subquery.c.email.label("owner_email"),
+            # tags
+            service_subquery.c.classifiers,
+            service_subquery.c.quality,
+            # lifetime
+            service_subquery.c.created,
+            service_subquery.c.modified,
+            service_subquery.c.deprecated,
+            # releases
+            history_subquery.c.history,
+        )
+        .join(
+            history_subquery,
+            service_subquery.c.key == history_subquery.c.key,
+        )
+        .group_by(
+            history_subquery.c.key,
+            service_subquery.c.key,
+            service_subquery.c.version,
+            owner_subquery.c.email,
+            service_subquery.c.name,
+            service_subquery.c.description,
+            service_subquery.c.thumbnail,
+            service_subquery.c.classifiers,
+            service_subquery.c.created,
+            service_subquery.c.modified,
+            service_subquery.c.deprecated,
+            service_subquery.c.quality,
+        )
+    )
+
+
 def list_services_with_history_stmt(
     *,
     product_name: ProductName,
@@ -368,7 +488,7 @@ def list_services_with_history_stmt(
 
 def list_services_stmt2():
     # Subquery to get the latest version for each key
-    subquery = sa.select(
+    sq = sa.select(
         services_meta_data.c.key,
         services_meta_data.c.version,
         services_meta_data.c.description,
@@ -378,20 +498,16 @@ def list_services_stmt2():
             order_by=sa.desc(_version(services_meta_data.c.version)),
         )
         .label("row_num"),
-    ).alias("s")
+    ).alias("sq")
 
     return (
         sa.select(
-            subquery.c.key,
-            subquery.c.description,
+            sq.c.key,
+            sq.c.description,
             func.array_agg(services_meta_data.c.version).label("history"),
         )
-        .select_from(
-            subquery.join(
-                services_meta_data, subquery.c.key == services_meta_data.c.key
-            )
-        )
-        .where(subquery.c.row_num == 1)
-        .group_by(subquery.c.key, subquery.c.description)
-        .order_by(subquery.c.key)
+        .select_from(sq.join(services_meta_data, sq.c.key == services_meta_data.c.key))
+        .where(sq.c.row_num == 1)
+        .group_by(sq.c.key, sq.c.description)
+        .order_by(sq.c.key)
     )
