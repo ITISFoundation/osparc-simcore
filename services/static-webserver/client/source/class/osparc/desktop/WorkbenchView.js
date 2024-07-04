@@ -725,10 +725,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        this.__iFrameChanged(node);
-
         node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(node), this);
         iFrame.addListener("load", () => this.__iFrameChanged(node), this);
+        this.__iFrameChanged(node);
       } else {
         // This will keep what comes after at the bottom
         this.__iframePage.add(new qx.ui.core.Spacer(), {
