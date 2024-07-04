@@ -103,35 +103,21 @@ class LogStreamer:
         self._is_registered: bool = False
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
-    async def setup(self):
-        await self._log_distributor.register(self._job_id, self._queue)
-        self._is_registered = True
-
-    async def teardown(self):
-        await self._log_distributor.deregister(self._job_id)
-        self._is_registered = False
-
-    async def __aenter__(self):
-        await self.setup()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.teardown()
-
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
         return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
-        if not self._is_registered:
-            msg = f"LogStreamer for job_id={self._job_id} is not correctly registered"
-            raise LogStreamerNotRegisteredError(msg=msg)
-        done: bool = False
-        while not done:
-            try:
-                log: JobLog = await asyncio.wait_for(
-                    self._queue.get(), timeout=self._log_check_timeout
-                )
-                yield log.json() + _NEW_LINE
-            except asyncio.TimeoutError:
-                done = await self._project_done()
+        try:
+            await self._log_distributor.register(self._job_id, self._queue)
+            done: bool = False
+            while not done:
+                try:
+                    log: JobLog = await asyncio.wait_for(
+                        self._queue.get(), timeout=self._log_check_timeout
+                    )
+                    yield log.json() + _NEW_LINE
+                except asyncio.TimeoutError:
+                    done = await self._project_done()
+        finally:
+            await self._log_distributor.deregister(self._job_id)

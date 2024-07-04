@@ -20,7 +20,6 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
-from starlette.background import BackgroundTask
 
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -440,8 +439,6 @@ async def get_log_stream(
             log_distributor=log_distributor,
             log_check_timeout=log_check_timeout,
         )
-        await log_streamer.setup()
         return LogStreamingResponse(
             log_streamer.log_generator(),
-            background=BackgroundTask(log_streamer.teardown),
         )
