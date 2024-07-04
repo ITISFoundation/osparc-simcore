@@ -71,7 +71,7 @@ def minimal_configuration(
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
-    enabled_buffer_pools: EnvVarsDict,
+    with_enabled_buffer_pools: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     with_ec2_instance_allowed_types_env: EnvVarsDict,
     mocked_redis_server: None,

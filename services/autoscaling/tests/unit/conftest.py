@@ -246,9 +246,10 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def enabled_buffer_pools(
+def with_enabled_buffer_pools(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
