@@ -43,7 +43,7 @@ async def list_services_paginated(
     )
 
     assert len(items) <= total_count  # nosec
-    assert len(items) < limit  # nosec
+    assert len(items) <= limit  # nosec
 
     return PageRpcServicesGetV2.create(
         items,

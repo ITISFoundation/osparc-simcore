@@ -26,7 +26,7 @@ from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
 )
-from simcore_service_catalog.services import access_rights, catalog
+from simcore_service_catalog.services import catalog
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 

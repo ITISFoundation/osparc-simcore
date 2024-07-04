@@ -5,7 +5,7 @@ from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
-from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsApi
+from ..services_access import ServiceAccessRights
 from ..services_authoring import Author, Badge
 from ..services_enums import ServiceType
 from ..services_history import ServiceRelease
@@ -205,6 +205,15 @@ class ServiceGet(
         }
 
 
+class ServiceGroupAccessRightsV2(BaseModel):
+    execute: bool = False
+    write: bool = False
+
+    class Config:
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
+
+
 class ServiceGetV2(BaseModel):
     key: ServiceKey
     version: ServiceVersion
@@ -229,9 +238,9 @@ class ServiceGetV2(BaseModel):
     boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None
 
-    access_rights: dict[GroupID, ServiceGroupAccessRightsApi] | None
+    access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: list[str] | None
+    classifiers: list[str] | None = None
     quality: dict[str, Any] = {}
 
     history: list[ServiceRelease] = Field(

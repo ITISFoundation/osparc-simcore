@@ -1,4 +1,7 @@
-from models_library.api_schemas_catalog.services import ServiceGetV2
+from models_library.api_schemas_catalog.services import (
+    ServiceGetV2,
+    ServiceGroupAccessRightsV2,
+)
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_authoring import Author, Badge
@@ -12,9 +15,10 @@ from ..db.repositories.services import ServicesRepository
 
 def _deduce_service_type_from(key: str) -> ServiceType:
     for e in ServiceType:
-        if e.value in key:
+        tag = e.value if e != ServiceType.COMPUTATIONAL else "comp"
+        if tag in key:
             return e
-    raise ValueError
+    raise ValueError(key)
 
 
 async def list_services_paginated(
@@ -60,10 +64,10 @@ async def list_services_paginated(
             boot_options=None,  # rg.boot_options,
             min_visible_inputs=None,  # rg.min_visible_inputs,
             access_rights={
-                a.gid: {
-                    "execute_access": a.execute_access,
-                    "write_access": a.write_access,
-                }
+                a.gid: ServiceGroupAccessRightsV2.construct(
+                    execute=a.execute_access,
+                    write=a.write_access,
+                )
                 for a in db_ar
             },  # db.access_rights,
             classifiers=db.classifiers,
