@@ -93,9 +93,21 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     __fileDeleted: function(fileMetadata) {
       // After deleting a file, try to keep the user in the same folder.
       // If the folder doesn't longer exist, open the closest available parent
+
+      const path = fileMetadata["fileUuid"].split("/");
+
       const treeFolderView = this.getChildControl("tree-folder-view");
       const foldersTree = treeFolderView.getChildControl("folder-tree");
-      foldersTree.populateTree(fileMetadata["locationId"]);
+
+      const openSameFolder = () => {
+        // drop last, which is the file
+        path.pop();
+        treeFolderView.openPath(path);
+      };
+
+      foldersTree.populateTree(fileMetadata["locationId"])
+        .then(() => openSameFolder())
+        .catch(err => console.error(err));
     }
   }
 });
