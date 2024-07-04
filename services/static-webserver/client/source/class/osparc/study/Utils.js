@@ -35,24 +35,19 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     getInaccessibleServices: async function(workbench) {
-      return new Promise(resolve => {
-        const store = osparc.store.Store.getInstance();
-        store.getAllServices()
-          .then(allServices => {
-            const unaccessibleServices = [];
-            const services = new Set(this.extractServices(workbench));
-            services.forEach(srv => {
-              if (srv.key in allServices && srv.version in allServices[srv.key]) {
-                return;
-              }
-              const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
-              if (idx === -1) {
-                unaccessibleServices.push(srv);
-              }
-            });
-            resolve(unaccessibleServices);
-          });
+      const allServices = osparc.service.Store.servicesCached;
+      const unaccessibleServices = [];
+      const wbServices = new Set(this.extractServices(workbench));
+      wbServices.forEach(srv => {
+        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+          return;
+        }
+        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+        if (idx === -1) {
+          unaccessibleServices.push(srv);
+        }
       });
+      return unaccessibleServices;
     },
 
     isWorkbenchUpdatable: async function(workbench) {
