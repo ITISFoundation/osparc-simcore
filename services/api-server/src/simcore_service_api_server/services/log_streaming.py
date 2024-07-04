@@ -100,7 +100,6 @@ class LogStreamer:
         self._queue: Queue[JobLog] = Queue()
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
-        self._is_registered: bool = False
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def _project_done(self) -> bool:

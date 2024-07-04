@@ -123,3 +123,19 @@ async def test_log_streaming(
         collected_messages
         == fake_log_distributor._produced_logs[: len(collected_messages)]
     )
+
+
+async def test_logstreaming_job_not_found_exception(
+    mocker: MockFixture,
+    app: FastAPI,
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    fake_log_distributor,
+    fake_project_for_streaming: ProjectGet,
+):
+    mocker.patch(
+        "simcore_service_api_server.api.dependencies.rabbitmq.get_log_check_timeout",
+        return_value=0.1,
+    )
