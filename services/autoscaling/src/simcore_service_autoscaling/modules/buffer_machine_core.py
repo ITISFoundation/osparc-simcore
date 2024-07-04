@@ -134,6 +134,10 @@ async def monitor_buffer_machines(
 
                 elif await get_ssm_client(app).is_instance_connected_to_ssm_server(
                     instance.id
+                ) and await get_ssm_client(
+                    app
+                ).wait_for_has_instance_completed_cloud_init(
+                    instance.id
                 ):
                     current_warm_buffer_pools[
                         instance.type
