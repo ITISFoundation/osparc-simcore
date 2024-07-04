@@ -124,7 +124,7 @@ class LogStreamer:
                 except asyncio.TimeoutError:
                     done = await self._project_done()
         except BaseBackEndError as exc:
-            _logger.exception("%s", f"{exc}")
+            _logger.info("%s", f"{exc}")
             yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)

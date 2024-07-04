@@ -127,7 +127,7 @@ async def test_log_streaming(
 
 @pytest.fixture
 async def mock_job_not_found(
-    mocked_directorv2_service_api_base,
+    mocked_directorv2_service_api_base: MockRouter,
 ) -> AsyncIterable[MockRouter]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
@@ -135,7 +135,7 @@ async def mock_job_not_found(
     mocked_directorv2_service_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
     ).mock(side_effect=_get_computation)
-    return mocked_directorv2_service_api_base
+    yield mocked_directorv2_service_api_base
 
 
 async def test_logstreaming_job_not_found_exception(
