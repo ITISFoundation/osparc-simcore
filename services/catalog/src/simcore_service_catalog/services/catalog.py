@@ -12,6 +12,10 @@ from models_library.services_enums import ServiceType
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceWithHistoryFromDB,
@@ -105,16 +109,33 @@ async def get_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
 
+    db_ar = await repo.get_service_access_rights(
+        key=service_key, version=service_version, product_name=product_name
+    )
+
+    if not db_ar:
+        raise CatalogForbiddenError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
     db = await repo.get_service_w_history(
         product_name=product_name,
         user_id=user_id,
         key=service_key,
         version=service_version,
     )
-
-    db_ar = await repo.get_service_access_rights(
-        key=service_key, version=service_version, product_name=product_name
-    )
+    if not db:
+        raise CatalogItemNotFoundError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     return _to_api_model(db, db_ar)
 
@@ -133,6 +154,11 @@ async def update_service(
     assert repo  # nosec
     assert product_name  # nosec
     assert user_id  # nosec
+
+    # TODO: NotFoundError
+    # TODO: NotImplementedError
+    # TODO: InputErrors
+    # TODO: Forbidden: not enough access rights
 
     _logger.debug("Moking update_service for %s...", f"{user_id=}")
     got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])

@@ -269,7 +269,7 @@ class ServicesRepository(BaseRepository):
         # get args
         key: str,
         version: str,
-    ) -> ServiceWithHistoryFromDB:
+    ) -> ServiceWithHistoryFromDB | None:
 
         raise NotImplementedError
 

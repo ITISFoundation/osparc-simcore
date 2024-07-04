@@ -13,6 +13,10 @@ from models_library.users import UserID
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 
 from ...db.repositories.services import ServicesRepository
 from ...services import catalog
@@ -53,7 +57,7 @@ async def list_services_paginated(
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_service(
     app: FastAPI,
@@ -64,11 +68,6 @@ async def get_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
     assert app.state.engine  # nosec
-
-    # TODO: NotFoundError
-    # TODO: NotImplementedError
-    # TODO: InputErrors
-    # TODO: Forbidden: not enough access rights
 
     service = await catalog.get_service(
         repo=ServicesRepository(app.state.engine),
@@ -84,7 +83,7 @@ async def get_service(
     return service
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
 async def update_service(
     app: FastAPI,
@@ -98,11 +97,6 @@ async def update_service(
     """Updates editable fields of a service"""
 
     assert app.state.engine  # nosec
-
-    # TODO: NotFoundError
-    # TODO: NotImplementedError
-    # TODO: InputErrors
-    # TODO: Forbidden: not enough access rights
 
     service = await catalog.update_service(
         repo=ServicesRepository(app.state.engine),
