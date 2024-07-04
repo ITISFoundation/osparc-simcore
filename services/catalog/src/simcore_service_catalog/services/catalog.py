@@ -6,6 +6,7 @@ from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_authoring import Author, Badge
 from models_library.services_enums import ServiceType
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt
 from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
@@ -79,3 +80,54 @@ async def list_services_paginated(
     ]
 
     return total_count, items
+
+
+async def get_service(
+    repo: ServicesRepository,
+    # image_registry,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceGetV2:
+
+    db = await repo.get_service_w_history(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
+    )
+
+    db_ar = await repo.get_service_access_rights(
+        key=service_key, version=service_version, product_name=product_name
+    )
+
+    return ServiceGetV2(
+        key=db.key,
+        version=db.version,
+        name=db.name,
+        thumbnail=db.thumbnail or None,
+        description=db.description,
+        version_display=f"V{db.version}",  # rg.version_display,
+        type=_deduce_service_type_from(db.key),  # rg.service_type,
+        badges=[
+            Badge.Config.schema_extra["example"],
+        ],  # rg.badges,
+        contact=Author.Config.schema_extra["examples"][0]["email"],  # rg.contact,
+        authors=Author.Config.schema_extra["examples"],
+        owner=db.owner_email or None,
+        inputs={},  # rg.inputs,
+        outputs={},  # rg.outputs,
+        boot_options=None,  # rg.boot_options,
+        min_visible_inputs=None,  # rg.min_visible_inputs,
+        access_rights={
+            a.gid: ServiceGroupAccessRightsV2.construct(
+                execute=a.execute_access,
+                write=a.write_access,
+            )
+            for a in db_ar
+        },  # db.access_rights,
+        classifiers=db.classifiers,
+        quality=db.quality,
+        history=[h.to_api_model() for h in db.history],
+    )

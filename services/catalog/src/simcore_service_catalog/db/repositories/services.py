@@ -205,64 +205,6 @@ class ServicesRepository(BaseRepository):
             return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
         return None  # mypy
 
-    async def list_latest_services(
-        self,
-        # access-rights
-        product_name: ProductName,
-        user_id: UserID,
-        # pagination
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
-
-        # get page
-        stmt_total = total_count_stmt(
-            product_name=product_name,
-            user_id=user_id,
-            access_rights=AccessRightsClauses.can_read,
-        )
-        stmt_page = list_latest_services_with_history_stmt(
-            product_name=product_name,
-            user_id=user_id,
-            access_rights=AccessRightsClauses.can_read,
-            limit=limit,
-            offset=offset,
-        )
-
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt_total)
-            total_count = result.scalar() or 0
-
-            result = await conn.execute(stmt_page)
-            rows = result.fetchall()
-            assert len(rows) <= total_count  # nosec
-
-        # compose history with latest
-        items_page = [
-            ServiceWithHistoryFromDB(
-                key=r.key,
-                version=r.version,
-                # display
-                name=r.name,
-                description=r.description,
-                thumbnail=r.thumbnail,
-                # ownership
-                owner_email=r.owner_email,
-                # tagging
-                classifiers=r.classifiers,
-                quality=r.quality,
-                # lifetime
-                created=r.created,
-                modified=r.modified,
-                deprecated=r.deprecated,
-                # releases
-                history=r.history,
-            )
-            for r in rows
-        ]
-
-        return (total_count, items_page)
-
     async def create_or_update_service(
         self,
         new_service: ServiceMetaDataAtDB,
@@ -316,6 +258,80 @@ class ServicesRepository(BaseRepository):
             row = result.first()
             assert row  # nosec
         return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+
+    # NEW CRUD on services ------
+
+    async def get_service_w_history(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: str,
+        version: str,
+    ) -> ServiceWithHistoryFromDB:
+
+        raise NotImplementedError
+
+    async def list_latest_services(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # list args: pagination
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
+
+        # get page
+        stmt_total = total_count_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+        )
+        stmt_page = list_latest_services_with_history_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            limit=limit,
+            offset=offset,
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
+            result = await conn.execute(stmt_page)
+            rows = result.fetchall()
+            assert len(rows) <= total_count  # nosec
+
+        # compose history with latest
+        items_page = [
+            ServiceWithHistoryFromDB(
+                key=r.key,
+                version=r.version,
+                # display
+                name=r.name,
+                description=r.description,
+                thumbnail=r.thumbnail,
+                # ownership
+                owner_email=r.owner_email,
+                # tagging
+                classifiers=r.classifiers,
+                quality=r.quality,
+                # lifetime
+                created=r.created,
+                modified=r.modified,
+                deprecated=r.deprecated,
+                # releases
+                history=r.history,
+            )
+            for r in rows
+        ]
+
+        return (total_count, items_page)
+
+    # Service Access Rights ----
 
     async def get_service_access_rights(
         self,
@@ -416,6 +432,7 @@ class ServicesRepository(BaseRepository):
                     )
                 )
 
+    # Service Specs ---
     async def get_service_specifications(
         self,
         key: ServiceKey,

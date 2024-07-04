@@ -63,16 +63,24 @@ async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
-    assert app  # nosec
-    assert product_name  # nosec
-    assert user_id  # nosec
+    assert app.state.engine  # nosec
 
-    _logger.debug("Moking get_service for %s...", f"{user_id=}")
-    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
-    got.key = service_key
-    got.version = service_version
+    # TODO: NotFoundError
+    # TODO: NotImplementedError
+    # TODO: InputErrors
 
-    return got
+    service = await catalog.get_service(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    assert service.key == service_key  # nosec
+    assert service.version == service_version  # nosec
+
+    return service
 
 
 @router.expose()
