@@ -135,7 +135,6 @@ class LogStreamer:
                 f"{exc}",
                 extra={"error_code": error_code},
             )
-            _logger.exception("%s", f"{exc}")
             yield ErrorGet(
                 errors=[
                     MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
