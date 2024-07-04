@@ -546,8 +546,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addPlusButtonsFromServices: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
+      osparc.service.Store.getServicesLatest()
         .then(services => {
           // add new plus buttons if key services exists
           osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
