@@ -31,30 +31,14 @@ async def list_services_paginated(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
 
+    # injects access-rights
     services_access_rights: dict[
         tuple[str, str], list[ServiceAccessRightsAtDB]
     ] = await repo.list_services_access_rights(
         ((s.key, s.version) for s in services_in_db), product_name=product_name
     )
 
-    # # aggregates published (i.e. not editable)
-    # got_batch = await image_registry.batch_get_services(
-    #     services=[(s.key, s.version) for s in services_in_db],
-    #     select=[
-    #         "key",
-    #         "version",
-    #         "version_display",
-    #         "service_type",
-    #         "badges",
-    #         "contact",
-    #         "authors",
-    #         "inputs",
-    #         "outputs",
-    #         "boot_options",
-    #         "min_visible_inputs",
-    #     ],
-    # )
-    # services_in_registry = {(i.key, i.version): i for i in got_batch.items}
+    # NOTE: aggregates published (i.e. not editable) is still missing in this version
 
     items = [
         ServiceGetV2(
@@ -65,7 +49,9 @@ async def list_services_paginated(
             description=db.description,
             version_display=f"V{db.version}",  # rg.version_display,
             type=_deduce_service_type_from(db.key),  # rg.service_type,
-            badges=Badge.Config.schema_extra["example"],  # rg.badges,
+            badges=[
+                Badge.Config.schema_extra["example"],
+            ],  # rg.badges,
             contact=Author.Config.schema_extra["examples"][0]["email"],  # rg.contact,
             authors=Author.Config.schema_extra["examples"],
             owner=db.owner_email or None,
@@ -82,11 +68,10 @@ async def list_services_paginated(
             },  # db.access_rights,
             classifiers=db.classifiers,
             quality=db.quality,
-            history=db.history,
+            history=[h.to_api_model() for h in db.history],
         )
         for db in services_in_db
         if (db_ar := services_access_rights.get((db.key, db.version)))
-        # if (rg := services_in_registry.get((db.key, db.version)))
     ]
 
     return total_count, items

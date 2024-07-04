@@ -26,6 +26,7 @@ from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
 )
+from simcore_service_catalog.services import access_rights, catalog
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -302,6 +303,18 @@ async def test_list_all_services_and_history(
     assert got_versions == sorted(got_versions, reverse=True)
 
 
+async def test_listing_with_no_services(
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    total_count, services_items = await services_repo.list_latest_services(
+        product_name=target_product, user_id=user_id
+    )
+    assert len(services_items) == 0
+    assert total_count == 0
+
+
 async def test_list_all_services_and_history_with_pagination(
     target_product: ProductName,
     create_fake_service_data: Callable,
@@ -309,15 +322,7 @@ async def test_list_all_services_and_history_with_pagination(
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
-
-    # no services at all
-    total_count, services_items = await services_repo.list_latest_services(
-        product_name=target_product, user_id=user_id
-    )
-    assert len(services_items) == 0
-    assert total_count == 0
-
-    # inject servcies
+    # inject services
     num_services = 5
     num_versions_per_service = 20
     await services_db_tables_injector(
@@ -356,12 +361,58 @@ async def test_list_all_services_and_history_with_pagination(
         latest_version = service.history[0].version  # latest service is first
         assert service.version == latest_version
 
+
+async def test_list_services_paginated(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # inject services
+    num_services = 5
+    num_versions_per_service = 20
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                f"simcore/services/dynamic/some-service-{n}",
+                f"{v}.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for n in range(num_services)
+            for v in range(num_versions_per_service)
+        ]
+    )
+
     # TODO:
+    #  - move test to separate
     #  - test with NULL owner
     #  - test with partial access rights to a service (i.e. some versions are not accessed)
     #  - test different type of access rights
     #  - test merging different group access
     #  -
+
+    limit = 2
+    assert limit < num_services
+    offset = 1
+
+    total_count, items = await catalog.list_services_paginated(
+        services_repo,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    assert total_count == num_services
+    assert len(items) <= limit
+
+    for itm in items:
+        assert itm.access_rights
+        assert itm.owner is not None
+        assert itm.history[0].version == itm.version
 
 
 def test_building_services_sql_statements():
