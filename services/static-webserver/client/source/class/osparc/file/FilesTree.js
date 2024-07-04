@@ -198,10 +198,7 @@ qx.Class.define("osparc.file.FilesTree", {
         });
     },
 
-    populateTree: function(locationId = null) {
-      if (locationId) {
-        return this.__populateLocation(locationId);
-      }
+    populateTree: function() {
       return this.__populateLocations();
     },
 
@@ -317,14 +314,16 @@ qx.Class.define("osparc.file.FilesTree", {
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.getLocations()
         .then(locations => {
+          const datasetPromises = [];
           if (this.__locations.size === 0) {
             this.resetChecks();
             this.__locationsToRoot(locations);
             for (let i=0; i<locations.length; i++) {
               const locationId = locations[i]["id"];
-              this.__populateLocation(locationId);
+              datasetPromises.push(this.__populateLocation(locationId));
             }
           }
+          return datasetPromises;
         });
     },
 
@@ -522,7 +521,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const root = this.getModel();
       const items = [];
       this.__getItemsInTree(root, items);
-      return items.find(element => element.getItemId() === itemId);
+      return items.find(element => "getItemId" in element && element.getItemId() === itemId);
     },
 
     __getItemsInTree: function(item, items) {
