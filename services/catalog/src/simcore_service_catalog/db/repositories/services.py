@@ -158,7 +158,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.from_orm(row)
+            return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
         return None  # mypy
 
     async def get_service(
@@ -202,7 +202,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.from_orm(row)
+            return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
         return None  # mypy
 
     async def list_latest_services(
@@ -286,13 +286,16 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB.from_orm(row)
+            created_service = cast(
+                ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
+            )
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
                     **access_rights.dict(by_alias=True)
                 )
                 await conn.execute(insert_stmt)
+
         return created_service
 
     async def update_service(
@@ -312,7 +315,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-        return ServiceMetaDataAtDB.from_orm(row)
+        return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
 
     async def get_service_access_rights(
         self,
