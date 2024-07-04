@@ -34,7 +34,7 @@ from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_benchmark.plugin import BenchmarkFixture
-from pytest_simcore.helpers.logging import log_context
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,
