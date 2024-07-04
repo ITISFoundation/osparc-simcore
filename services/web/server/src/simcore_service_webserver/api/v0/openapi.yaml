@@ -5372,7 +5372,6 @@ components:
           title: Name
           type: string
           description: Name of the author
-          example: Jim Knopf
         email:
           title: Email
           type: string
@@ -5381,7 +5380,6 @@ components:
         affiliation:
           title: Affiliation
           type: string
-          description: Affiliation of the author
     Badge:
       title: Badge
       required:
@@ -5408,6 +5406,10 @@ components:
           type: string
           description: Link to the status
           format: uri
+      example:
+        name: osparc.io
+        image: https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
+        url: https://itisfoundation.github.io/
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -5539,7 +5541,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/ServiceGroupAccessRightsApi'
+            $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
         classifiers:
           title: Classifiers
           type: array
@@ -10061,19 +10063,17 @@ components:
           type: boolean
           description: defines whether the group can modify the service
           default: false
-    ServiceGroupAccessRightsApi:
-      title: ServiceGroupAccessRightsApi
+    ServiceGroupAccessRightsV2:
+      title: ServiceGroupAccessRightsV2
       type: object
       properties:
-        executeAccess:
-          title: Executeaccess
+        execute:
+          title: Execute
           type: boolean
-          description: defines whether the group can execute the service
           default: false
-        writeAccess:
-          title: Writeaccess
+        write:
+          title: Write
           type: boolean
-          description: defines whether the group can modify the service
           default: false
     ServiceInputGet:
       title: ServiceInputGet
@@ -10306,6 +10306,7 @@ components:
         versionDisplay:
           title: Versiondisplay
           type: string
+          description: If None, then display `version`
         released:
           title: Released
           type: string
