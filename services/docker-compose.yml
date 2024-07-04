@@ -56,7 +56,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks:
       - default
 
@@ -144,6 +144,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
       TRACING_THRIFT_COMPACT_ENDPOINT: ${TRACING_THRIFT_COMPACT_ENDPOINT}
     networks:
       - default
@@ -360,6 +365,12 @@ services:
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
+      SC_USER_ID: ${SC_USER_ID}
+      SC_USER_NAME: ${SC_USER_NAME}
+      EFS_USER_ID: ${EFS_USER_ID}
+      EFS_USER_NAME: ${EFS_USER_NAME}
+      EFS_GROUP_ID: ${EFS_GROUP_ID}
+      EFS_GROUP_NAME: ${EFS_GROUP_NAME}
       EFS_DNS_NAME: ${EFS_DNS_NAME}
       EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
       EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
@@ -1185,6 +1196,11 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
+        # middleware for limiting total inflight requests the api-server is handling
+        - traefik.http.middlewares.ensure-group-header-${SWARM_STACK_NAME}_api-server.headers.customrequestheaders.X-Inflight-Limit-Group=all
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT}
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.sourcecriterion.requestheadername=X-Inflight-Limit-Group
+        - traefik.http.middlewares.inflightreq-${SWARM_STACK_NAME}_api-server.chain.middlewares=ensure-group-header-${SWARM_STACK_NAME}_api-server,limit-reqs-${SWARM_STACK_NAME}_api-server
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services

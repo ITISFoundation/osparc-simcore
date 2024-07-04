@@ -43,6 +43,13 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         // create node
         const node = new osparc.data.model.Node(study, metadata, nodeId);
         this.setNode(node);
+
+        node.addListener("retrieveInputs", e => {
+          const data = e.getData();
+          const portKey = data["portKey"];
+          node.retrieveInputs(portKey);
+        }, this);
+
         node.initIframeHandler();
 
         const iframeHandler = node.getIframeHandler();
