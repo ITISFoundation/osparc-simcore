@@ -6,7 +6,6 @@
 from pydantic import BaseModel, Field
 
 from .users import GroupID
-from .utils.change_case import snake_to_camel
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -17,12 +16,6 @@ class ServiceGroupAccessRights(BaseModel):
     write_access: bool = Field(
         default=False, description="defines whether the group can modify the service"
     )
-
-
-class ServiceGroupAccessRightsApi(ServiceGroupAccessRights):
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
 
 
 class ServiceAccessRights(BaseModel):
