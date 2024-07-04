@@ -102,7 +102,6 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_409_CONFLICT: {
         "description": "Conflict: Logs are already being streamed",
         "model": ErrorGet,
-        "content": {"application/json": {}},
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
