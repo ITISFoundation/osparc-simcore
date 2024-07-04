@@ -287,8 +287,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
 
       try {
-        await osparc.data.Resources.fetch("studies", "addNode", params);
         const metadata = await osparc.service.Store.getService(key, version);
+        await osparc.data.Resources.fetch("studies", "addNode", params);
         this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(this.getStudy(), metadata, nodeId);
         this.__initNodeSignals(node);
