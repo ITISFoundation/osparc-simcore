@@ -93,6 +93,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this._removeAll();
 
       const iframeHandler = this.getNode().getIframeHandler();
+
       const loadingPage = iframeHandler.getLoadingPage();
       const iFrame = iframeHandler.getIFrame();
       const src = iFrame.getSource();
