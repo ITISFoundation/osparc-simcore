@@ -50,10 +50,15 @@ qx.Class.define("osparc.study.Utils", {
       return unaccessibleServices;
     },
 
-    getInaccessibleServicesMsg: function(inaccessibleServices) {
+    getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
       let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
-      inaccessibleServices.forEach(unaccessibleService => {
-        msg += `- ${unaccessibleService.label}:${unaccessibleService.version}<br>`;
+      Object.values(workbench).forEach(node => {
+        const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
+        if (inaccessibleService) {
+          const n = inaccessibleService.key.lastIndexOf("/");
+          const friendlyKey = inaccessibleService.key.substring(n + 1);
+          msg += `- ${node.label} (${friendlyKey}:${inaccessibleService.version})<br>`;
+        }
       });
       return msg;
     },
@@ -153,9 +158,9 @@ qx.Class.define("osparc.study.Utils", {
                   "y": 100
                 }
               };
-              const inaccessibleServices = this.getInaccessibleServices(minStudyData["Workbench"])
+              const inaccessibleServices = this.getInaccessibleServices(minStudyData["workbench"])
               if (inaccessibleServices.length) {
-                const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+                const msg = this.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
                 reject({
                   message: msg
                 });
@@ -199,7 +204,7 @@ qx.Class.define("osparc.study.Utils", {
       return new Promise((resolve, reject) => {
         const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
         if (inaccessibleServices.length) {
-          const msg = this.getInaccessibleServicesMsg(inaccessibleServices);
+          const msg = this.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
           reject({
             message: msg
           });

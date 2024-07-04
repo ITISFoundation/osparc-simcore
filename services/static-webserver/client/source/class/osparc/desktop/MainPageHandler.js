@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.showLoadingPage();
       const inaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
       if (inaccessibleServices.length) {
-        const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices);
+        const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
         osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         this.showDashboard();
         return;
