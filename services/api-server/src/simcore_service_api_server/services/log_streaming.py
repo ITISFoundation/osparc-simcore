@@ -7,8 +7,11 @@ from typing import Final
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 
 from ..exceptions.log_streaming_errors import (
     LogStreamerNotRegisteredError,
@@ -103,7 +106,9 @@ class LogStreamer:
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def _project_done(self) -> bool:
-        task = await self._director2_api.get_computation(self._job_id, self._user_id)
+        task = await self._director2_api.get_computation(
+            project_id=self._job_id, user_id=self._user_id
+        )
         return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
@@ -118,5 +123,22 @@ class LogStreamer:
                     yield log.json() + _NEW_LINE
                 except asyncio.TimeoutError:
                     done = await self._project_done()
+        except BaseBackEndError as exc:
+            _logger.exception("%s", f"{exc}")
+            yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
+        except Exception as exc:
+            error_code = create_error_code(exc)
+            _logger.exception(
+                "Unexpected %s: %s",
+                exc.__class__.__name__,
+                f"{exc}",
+                extra={"error_code": error_code},
+            )
+            _logger.exception("%s", f"{exc}")
+            yield ErrorGet(
+                errors=[
+                    f"Apologies! An unexpected error on the server occured. We will look into it. (OEC: {error_code})"
+                ]
+            ).json() + _NEW_LINE
         finally:
             await self._log_distributor.deregister(self._job_id)

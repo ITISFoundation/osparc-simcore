@@ -7,7 +7,7 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import Iterable
 from pprint import pprint
 from typing import AsyncIterable, Final
 
@@ -17,11 +17,13 @@ from attr import dataclass
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.projects import ProjectGet
+from pydantic import ValidationError
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
 _logger = logging.getLogger(__name__)
@@ -38,9 +40,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
         _produced_logs: list[str] = []
         deregister_is_called: bool = False
 
-        async def register(
-            self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
-        ):
+        async def register(self, job_id: JobID, callback: asyncio.Queue[JobLog]):
             self._job_id = job_id
 
             async def produce_log():
@@ -53,7 +53,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
                         log_level=logging.INFO,
                         messages=[txt],
                     )
-                    await callback(msg)
+                    await callback.put(msg)
                     await asyncio.sleep(0.1)
 
             asyncio.create_task(produce_log())
@@ -150,6 +150,7 @@ async def test_logstreaming_job_not_found_exception(
 ):
 
     job_id: JobID = fake_project_for_streaming.uuid
+    _received_error = False
 
     async with client.stream(
         "GET",
@@ -158,7 +159,13 @@ async def test_logstreaming_job_not_found_exception(
     ) as response:
         response.raise_for_status()
         async for line in response.aiter_lines():
-            job_log = JobLog.parse_raw(line)
-            pprint(job_log.json())
+            try:
+                job_log = JobLog.parse_raw(line)
+                pprint(job_log.json())
+            except ValidationError:
+                error = ErrorGet.parse_raw(line)
+                _received_error = True
+                print(error.json())
 
     assert fake_log_distributor.deregister_is_called
+    assert _received_error
