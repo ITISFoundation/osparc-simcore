@@ -386,14 +386,6 @@ async def test_list_services_paginated(
         ]
     )
 
-    # TODO:
-    #  - move test to separate
-    #  - test with NULL owner
-    #  - test with partial access rights to a service (i.e. some versions are not accessed)
-    #  - test different type of access rights
-    #  - test merging different group access
-    #  -
-
     limit = 2
     assert limit < num_services
     offset = 1

@@ -115,7 +115,6 @@ async def list_services(
     }
     # Non-detailed views from the services_repo database
     if not details:
-        # TODO: what is this used for?
         # only return a stripped down version
         # FIXME: add name, ddescription, type, etc...
         # NOTE: here validation is not necessary since key,version were already validated
@@ -129,7 +128,7 @@ async def list_services(
                 type=ServiceType.COMPUTATIONAL,
                 authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
                 contact="nodetails@nodetails.com",
-                inputs={},  # TODO: make these optional then
+                inputs={},
                 outputs={},
                 deprecated=services_in_db[(key, version)].deprecated,
             )
