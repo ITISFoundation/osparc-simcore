@@ -14,6 +14,9 @@ from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 
+from ...db.repositories.services import ServicesRepository
+from ...services import catalog
+
 _logger = logging.getLogger(__name__)
 
 router = RPCRouter()
@@ -29,17 +32,21 @@ async def list_services_paginated(
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ) -> PageRpcServicesGetV2:
-    assert app  # nosec
-    assert product_name  # nosec
+    assert app.state.engine  # nosec
 
-    _logger.debug("Moking list_services_paginated for %s...", f"{user_id=}")
-    items = parse_obj_as(
-        list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
+    total_count, items = await catalog.list_services_paginated(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
-    total_count = len(items)
+
+    assert len(items) <= total_count  # nosec
+    assert len(items) < limit  # nosec
 
     return PageRpcServicesGetV2.create(
-        items[offset : offset + limit],
+        items,
         total=total_count,
         limit=limit,
         offset=offset,
