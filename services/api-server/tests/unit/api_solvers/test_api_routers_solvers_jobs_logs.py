@@ -126,7 +126,7 @@ async def test_log_streaming(
 
 
 @pytest.fixture
-async def mocked_job_not_found(
+async def mock_job_not_found(
     mocked_directorv2_service_api_base,
 ) -> AsyncIterable[MockRouter]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
@@ -146,7 +146,7 @@ async def test_logstreaming_job_not_found_exception(
     solver_version: str,
     fake_log_distributor,
     fake_project_for_streaming: ProjectGet,
-    mocked_job_not_found: MockRouter,
+    mock_job_not_found: MockRouter,
 ):
 
     job_id: JobID = fake_project_for_streaming.uuid
