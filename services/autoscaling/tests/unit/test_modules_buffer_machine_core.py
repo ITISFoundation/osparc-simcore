@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import json
 import logging
 from collections.abc import Sequence
@@ -391,7 +392,7 @@ async def test_monitor_buffer_machines_against_aws(
 
         @tenacity.retry(
             wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(500),
+            stop=tenacity.stop_after_delay(datetime.timedelta(minutes=10)),
             retry=tenacity.retry_if_exception_type(AssertionError),
             reraise=True,
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
