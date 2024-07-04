@@ -259,8 +259,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     hasBootModes: function(metaData) {
-      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
-        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
+      if ("bootOptions" in metaData && "boot_mode" in metaData["bootOptions"] && "items" in metaData["bootOptions"]["boot_mode"]) {
+        return Object.keys(metaData["bootOptions"]["boot_mode"]["items"]).length;
       }
       return false;
     },
@@ -270,7 +270,7 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
 
-      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModesMD = nodeMetaData["bootOptions"]["boot_mode"];
       const sbItems = [];
       bootModeSB.removeAll();
       Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
