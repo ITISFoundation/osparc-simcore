@@ -174,7 +174,7 @@ async def test_monitor_buffer_machines(
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
             after=tenacity.after_log(ctx.logger, logging.INFO),
         )
-        async def _assert_ssm_command_for_pulling():
+        async def _assert_run_ssm_command_for_pulling():
             await monitor_buffer_machines(
                 initialized_app, auto_scaling_mode=DynamicAutoscaling()
             )
@@ -192,7 +192,7 @@ async def test_monitor_buffer_machines(
                 instance_filters=instance_type_filters,
             )
 
-        await _assert_ssm_command_for_pulling()
+        await _assert_run_ssm_command_for_pulling()
 
     # 3. is the command finished?
     with log_context(logging.INFO, "wait for SSM commands to finish") as ctx:
