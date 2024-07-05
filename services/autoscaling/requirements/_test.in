@@ -11,6 +11,7 @@
 --constraint _base.txt
 
 
+types-aiobotocore[ec2,s3,ssm,iam]
 asgi-lifespan
 coverage
 deepdiff

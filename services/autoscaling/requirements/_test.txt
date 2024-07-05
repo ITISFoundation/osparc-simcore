@@ -35,6 +35,10 @@ botocore==1.34.131
     #   boto3
     #   moto
     #   s3transfer
+botocore-stubs==1.34.94
+    # via
+    #   -c requirements/_base.txt
+    #   types-aiobotocore
 certifi==2024.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -298,6 +302,28 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
+types-aiobotocore==2.13.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+types-aiobotocore-ec2==2.13.0
+    # via
+    #   -c requirements/_base.txt
+    #   types-aiobotocore
+types-aiobotocore-iam==2.13.1
+    # via types-aiobotocore
+types-aiobotocore-s3==2.13.0
+    # via
+    #   -c requirements/_base.txt
+    #   types-aiobotocore
+types-aiobotocore-ssm==2.13.0
+    # via
+    #   -c requirements/_base.txt
+    #   types-aiobotocore
+types-awscrt==0.20.9
+    # via
+    #   -c requirements/_base.txt
+    #   botocore-stubs
 typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt
@@ -305,6 +331,11 @@ typing-extensions==4.11.0
     #   aws-sam-translator
     #   fakeredis
     #   pydantic
+    #   types-aiobotocore
+    #   types-aiobotocore-ec2
+    #   types-aiobotocore-iam
+    #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
 urllib3==2.2.1
     # via
     #   -c requirements/../../../requirements/constraints.txt

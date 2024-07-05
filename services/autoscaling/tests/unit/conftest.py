@@ -81,6 +81,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 pytest_plugins = [
     "pytest_simcore.aws_server",
     "pytest_simcore.aws_ec2_service",
+    "pytest_simcore.aws_iam_service",
     "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
@@ -211,6 +212,7 @@ def mocked_ec2_instances_envs(
     aws_subnet_id: str,
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+    aws_instance_profile: str,
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
@@ -227,6 +229,7 @@ def mocked_ec2_instances_envs(
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
+            "EC2_INSTANCES_ATTACHED_IAM_PROFILE": aws_instance_profile,
         },
     )
     return app_environment | envs
