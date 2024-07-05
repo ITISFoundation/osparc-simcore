@@ -75,6 +75,12 @@ def minimal_configuration(
     pass
 
 
+@pytest.fixture(autouse=True)
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+
 async def test_external_env_setup(minimal_configuration: None, ec2_client: EC2Client):
     print(await ec2_client.describe_account_attributes())
 
@@ -120,8 +126,8 @@ async def test_monitor_buffer_machines(
     ec2_client: EC2Client,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
-    ec2_pytest_tag_key: str,
     buffer_count: int,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances()
@@ -151,7 +157,7 @@ async def test_monitor_buffer_machines(
                     expected_num_instances=buffer_count,
                     expected_instance_type=next(iter(ec2_instances_allowed_types)),
                     expected_instance_state="running",
-                    expected_additional_tag_keys=[ec2_pytest_tag_key],
+                    expected_additional_tag_keys=list(ec2_instance_custom_tags),
                     instance_filters=instance_type_filters,
                 )
 
@@ -181,7 +187,7 @@ async def test_monitor_buffer_machines(
                 expected_additional_tag_keys=[
                     "pulling",
                     "ssm-command-id",
-                    ec2_pytest_tag_key,
+                    *list(ec2_instance_custom_tags),
                 ],
                 instance_filters=instance_type_filters,
             )
@@ -209,18 +215,11 @@ async def test_monitor_buffer_machines(
                 expected_num_instances=buffer_count,
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
-                expected_additional_tag_keys=[
-                    ec2_pytest_tag_key,
-                ],
+                expected_additional_tag_keys=list(ec2_instance_custom_tags),
                 instance_filters=instance_type_filters,
             )
 
         await _assert_wait_for_ssm_command_to_finish()
-
-
-@pytest.fixture
-def ec2_pytest_tag_key() -> str:
-    return "pytest"
 
 
 @pytest.fixture
@@ -259,28 +258,13 @@ def ec2_instances_allowed_types(
 
 
 @pytest.fixture
-def with_ec2_pytest_tag_key_as_custom_tag(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    ec2_pytest_tag_key: str,
-) -> EnvVarsDict:
-    monkeypatch.setenv(
-        "EC2_INSTANCES_CUSTOM_TAGS",
-        json.dumps({ec2_pytest_tag_key: "true"}),
-    )
-    return app_environment
-
-
-@pytest.fixture
 def instance_type_filters(
-    with_ec2_pytest_tag_key_as_custom_tag: EnvVarsDict, ec2_pytest_tag_key: str
+    ec2_instance_custom_tags: dict[str, str],
 ) -> Sequence[FilterTypeDef]:
     return [
         FilterTypeDef(
             Name="tag-key",
-            Values=[
-                ec2_pytest_tag_key,
-            ],
+            Values=list(ec2_instance_custom_tags),
         ),
         FilterTypeDef(
             Name="instance-state-name",
@@ -334,7 +318,7 @@ async def test_monitor_buffer_machines_against_aws(
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_client: EC2Client,
-    ec2_pytest_tag_key: str,
+    ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
 ):
     if not external_envfile_dict:
@@ -370,7 +354,7 @@ async def test_monitor_buffer_machines_against_aws(
                     expected_num_instances=buffer_count,
                     expected_instance_type=next(iter(ec2_instances_allowed_types)),
                     expected_instance_state="running",
-                    expected_additional_tag_keys=[ec2_pytest_tag_key],
+                    expected_additional_tag_keys=list(ec2_instance_custom_tags),
                     instance_filters=instance_type_filters,
                 )
 
@@ -400,7 +384,7 @@ async def test_monitor_buffer_machines_against_aws(
                 expected_additional_tag_keys=[
                     "pulling",
                     "ssm-command-id",
-                    ec2_pytest_tag_key,
+                    *list(ec2_instance_custom_tags),
                 ],
                 instance_filters=instance_type_filters,
             )
@@ -428,9 +412,7 @@ async def test_monitor_buffer_machines_against_aws(
                 expected_num_instances=buffer_count,
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
-                expected_additional_tag_keys=[
-                    ec2_pytest_tag_key,
-                ],
+                expected_additional_tag_keys=list(ec2_instance_custom_tags),
                 instance_filters=instance_type_filters,
             )
 
