@@ -106,7 +106,9 @@ async def list_files(
     SEE get_files_page for a paginated version of this function
     """
 
-    stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
+    stored_files: list[StorageFileMetaData] = await storage_client.list_files(
+        user_id=user_id
+    )
 
     # Adapts storage API model to API model
     all_files: list[File] = []

@@ -272,7 +272,7 @@ async def get_job_outputs(
                 results[name] = to_file_api_model(found[0])
             else:
                 api_file: File = await storage_client.create_soft_link(
-                    user_id, value.path, file_id
+                    user_id=user_id, target_s3_path=value.path, as_file_id=file_id
                 )
                 results[name] = api_file
         else:
