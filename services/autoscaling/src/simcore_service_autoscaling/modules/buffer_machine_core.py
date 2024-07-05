@@ -46,22 +46,13 @@ def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC
     return base_ec2_tags
 
 
-async def monitor_buffer_machines(
+async def _analyse_current_state(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
-) -> None:
-    """Buffer machine creation works like so:
-    1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
-    2. once running, a AWS SSM task is started to pull the necessary images in a controlled way
-    3. once the task is completed, the EC2 is stopped and is made available as a buffer EC2
-    4. once needed the buffer machine is started, and as it is up a SSM task is sent to connect to the swarm,
-    5. the usual then happens
-    """
+) -> BufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    # 1. Analyze the current state by type
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
@@ -105,9 +96,17 @@ async def monitor_buffer_machines(
                     )
             case _:
                 pass
-    _logger.info("Current warm pools: %s", f"{buffers_manager}")
+    _logger.info("Current buffer pools: %s", f"{buffers_manager}")
+    return buffers_manager
 
-    # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
+
+async def _terminate_unneeded_pools(
+    app: FastAPI,
+    buffers_manager: BufferPoolManager,
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     allowed_instance_types = set(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
@@ -117,7 +116,7 @@ async def monitor_buffer_machines(
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"removing warm buffer pools: {terminateable_warm_pool_types}",
+            msg=f"removing unneeded buffer pools for '{terminateable_warm_pool_types}'",
         ):
             instances_to_terminate: set[EC2InstanceData] = set()
             for ec2_type in terminateable_warm_pool_types:
@@ -127,8 +126,19 @@ async def monitor_buffer_machines(
             await ec2_client.terminate_instances(instances_to_terminate)
             for ec2_type in terminateable_warm_pool_types:
                 buffers_manager.buffer_pools.pop(ec2_type)
+    return buffers_manager
 
-    # 3 add/remove buffer instances if needed based on needed buffer counts
+
+async def _add_remove_buffer_instances(
+    app: FastAPI,
+    buffers_manager: BufferPoolManager,
+    *,
+    auto_scaling_mode: BaseAutoscaling,
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
     for (
@@ -174,6 +184,35 @@ async def monitor_buffer_machines(
         await ec2_client.terminate_instances(unneeded_instances)
         for instance in unneeded_instances:
             buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    return buffers_manager
+
+
+async def monitor_buffer_machines(
+    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+) -> None:
+    """Buffer machine creation works like so:
+    1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
+    2. once running, a AWS SSM task is started to pull the necessary images in a controlled way
+    3. once the task is completed, the EC2 is stopped and is made available as a buffer EC2
+    4. once needed the buffer machine is started, and as it is up a SSM task is sent to connect to the swarm,
+    5. the usual then happens
+    """
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    # 1. Analyze the current state by type
+    buffers_manager = await _analyse_current_state(
+        app, auto_scaling_mode=auto_scaling_mode
+    )
+    # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
+    buffers_manager = await _terminate_unneeded_pools(app, buffers_manager)
+
+    # 3 add/remove buffer instances if needed based on needed buffer counts
+    buffers_manager = await _add_remove_buffer_instances(
+        app, buffers_manager, auto_scaling_mode=auto_scaling_mode
+    )
 
     # 4. pull docker images if needed
     instances_to_stop: set[EC2InstanceData] = set()
@@ -225,7 +264,6 @@ async def monitor_buffer_machines(
             logging.INFO,
             "pending buffer instances completed pulling of images, stopping them",
         ):
-
             tag_keys_to_remove = (
                 _BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
                 _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
