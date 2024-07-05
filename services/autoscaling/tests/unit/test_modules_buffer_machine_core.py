@@ -28,7 +28,6 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
 from simcore_service_autoscaling.modules.buffer_machine_core import (
     monitor_buffer_machines,
 )
-from tenacity import AsyncRetrying
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
@@ -115,13 +114,13 @@ async def test_if_send_command_is_mocked_by_moto(
     )
 
 
-@pytest.mark.skip(reason="DEV")
 async def test_monitor_buffer_machines(
     minimal_configuration: None,
     initialized_app: FastAPI,
     ec2_client: EC2Client,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
-    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+    ec2_pytest_tag_key: str,
     buffer_count: int,
 ):
     # 0. we have no instances now
@@ -129,54 +128,94 @@ async def test_monitor_buffer_machines(
     assert not all_instances["Reservations"]
 
     # 1. run, this will create as many buffer machines as needed
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
-    )
-    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="running",
-        expected_additional_tag_keys=[
-            *ec2_instance_custom_tags.keys(),
-        ],
-        instance_filters=None,
-    )
+    with log_context(logging.INFO, "create buffer machines"):
+        await monitor_buffer_machines(
+            initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        )
+        with log_context(
+            logging.INFO, f"waiting for {buffer_count} buffer instances to be running"
+        ) as ctx:
+
+            @tenacity.retry(
+                wait=tenacity.wait_fixed(5),
+                stop=tenacity.stop_after_delay(120),
+                retry=tenacity.retry_if_exception_type(AssertionError),
+                reraise=True,
+                before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
+                after=tenacity.after_log(ctx.logger, logging.INFO),
+            )
+            async def _assert_buffer_machines_running():
+                await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+                    ec2_client,
+                    expected_num_reservations=1,
+                    expected_num_instances=buffer_count,
+                    expected_instance_type=next(iter(ec2_instances_allowed_types)),
+                    expected_instance_state="running",
+                    expected_additional_tag_keys=[ec2_pytest_tag_key],
+                    instance_filters=instance_type_filters,
+                )
+
+            await _assert_buffer_machines_running()
 
     # 2. this should now run a SSM command for pulling
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
-    )
-    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="running",
-        expected_additional_tag_keys=[
-            "pulling",
-            "ssm-command-id",
-            *ec2_instance_custom_tags.keys(),
-        ],
-        instance_filters=None,
-    )
+    with log_context(logging.INFO, "run SSM commands for pulling") as ctx:
+
+        @tenacity.retry(
+            wait=tenacity.wait_fixed(5),
+            stop=tenacity.stop_after_delay(120),
+            retry=tenacity.retry_if_exception_type(AssertionError),
+            reraise=True,
+            before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
+            after=tenacity.after_log(ctx.logger, logging.INFO),
+        )
+        async def _assert_ssm_command_for_pulling():
+            await monitor_buffer_machines(
+                initialized_app, auto_scaling_mode=DynamicAutoscaling()
+            )
+            await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+                ec2_client,
+                expected_num_reservations=1,
+                expected_num_instances=buffer_count,
+                expected_instance_type=next(iter(ec2_instances_allowed_types)),
+                expected_instance_state="running",
+                expected_additional_tag_keys=[
+                    "pulling",
+                    "ssm-command-id",
+                    ec2_pytest_tag_key,
+                ],
+                instance_filters=instance_type_filters,
+            )
+
+        await _assert_ssm_command_for_pulling()
 
     # 3. is the command finished?
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
-    )
-    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="stopped",
-        expected_additional_tag_keys=[
-            *ec2_instance_custom_tags.keys(),
-        ],
-        instance_filters=None,
-    )
+    with log_context(logging.INFO, "wait for SSM commands to finish") as ctx:
+
+        @tenacity.retry(
+            wait=tenacity.wait_fixed(5),
+            stop=tenacity.stop_after_delay(datetime.timedelta(minutes=10)),
+            retry=tenacity.retry_if_exception_type(AssertionError),
+            reraise=True,
+            before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
+            after=tenacity.after_log(ctx.logger, logging.INFO),
+        )
+        async def _assert_wait_for_ssm_command_to_finish():
+            await monitor_buffer_machines(
+                initialized_app, auto_scaling_mode=DynamicAutoscaling()
+            )
+            await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+                ec2_client,
+                expected_num_reservations=1,
+                expected_num_instances=buffer_count,
+                expected_instance_type=next(iter(ec2_instances_allowed_types)),
+                expected_instance_state="stopped",
+                expected_additional_tag_keys=[
+                    ec2_pytest_tag_key,
+                ],
+                instance_filters=instance_type_filters,
+            )
+
+        await _assert_wait_for_ssm_command_to_finish()
 
 
 @pytest.fixture
@@ -286,6 +325,7 @@ def buffer_count(
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
+@pytest.mark.skip(reason="DEV")
 async def test_monitor_buffer_machines_against_aws(
     disabled_rabbitmq: None,
     mocked_redis_server: None,
@@ -302,8 +342,6 @@ async def test_monitor_buffer_machines_against_aws(
             "This test is only for use directly with AWS server, please define --external-envfile"
         )
 
-    # in this test we consider only one type to have buffers
-
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
@@ -316,28 +354,27 @@ async def test_monitor_buffer_machines_against_aws(
         with log_context(
             logging.INFO, f"waiting for {buffer_count} buffer instances to be running"
         ) as ctx:
-            async for attempt in AsyncRetrying(
+
+            @tenacity.retry(
                 wait=tenacity.wait_fixed(5),
                 stop=tenacity.stop_after_delay(120),
                 retry=tenacity.retry_if_exception_type(AssertionError),
                 reraise=True,
                 before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
                 after=tenacity.after_log(ctx.logger, logging.INFO),
-            ):
-                with attempt:
-                    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-                        ec2_client,
-                        expected_num_reservations=1,
-                        expected_num_instances=buffer_count,
-                        expected_instance_type=next(iter(ec2_instances_allowed_types)),
-                        expected_instance_state="running",
-                        expected_additional_tag_keys=[ec2_pytest_tag_key],
-                        instance_filters=instance_type_filters,
-                    )
-                    ctx.logger.info(
-                        "%s",
-                        f"{buffer_count} buffer now running after {attempt.retry_state.retry_object.statistics}",
-                    )
+            )
+            async def _assert_buffer_machines_running():
+                await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+                    ec2_client,
+                    expected_num_reservations=1,
+                    expected_num_instances=buffer_count,
+                    expected_instance_type=next(iter(ec2_instances_allowed_types)),
+                    expected_instance_state="running",
+                    expected_additional_tag_keys=[ec2_pytest_tag_key],
+                    instance_filters=instance_type_filters,
+                )
+
+            await _assert_buffer_machines_running()
 
     # 2. this should now run a SSM command for pulling
     with log_context(logging.INFO, "run SSM commands for pulling") as ctx:
