@@ -29,10 +29,8 @@ _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-octave-python-math": re.compile(r"/api/contents"),  # old way
 }
 
-_DEFAULT_TAB_TO_WAIT_FOR: Final[str] = "README.md"
-_SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
-    "jupyter-ml-pytorch": "README.ipynb"
-}
+_DEFAULT_TAB_TO_WAIT_FOR: Final[str] = "README.ipynb"
+_SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {}
 
 
 @dataclass
