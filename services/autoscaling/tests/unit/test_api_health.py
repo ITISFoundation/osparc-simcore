@@ -60,7 +60,6 @@ async def test_status_no_rabbit(
 
 async def test_status_no_ssm(
     disabled_rabbitmq: None,
-    with_enabled_buffer_pools: EnvVarsDict,
     async_client: httpx.AsyncClient,
 ):
     response = await async_client.get("/status")
@@ -85,6 +84,7 @@ async def test_status_no_ssm(
 async def test_status(
     mocked_aws_server: ThreadedMotoServer,
     with_enabled_buffer_pools: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     async_client: httpx.AsyncClient,
 ):
     # stop the aws server...
