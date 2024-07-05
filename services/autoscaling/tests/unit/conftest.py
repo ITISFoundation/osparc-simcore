@@ -156,7 +156,12 @@ def ec2_settings() -> EC2Settings:
 
 
 @pytest.fixture
-def ec2_instance_custom_tags(faker: Faker) -> dict[str, str]:
+def ec2_instance_custom_tags(
+    faker: Faker,
+    external_envfile_dict: EnvVarsDict,
+) -> dict[str, str]:
+    if external_envfile_dict:
+        return json.loads(external_envfile_dict["EC2_INSTANCES_CUSTOM_TAGS"])
     return {"osparc-tag": faker.text(max_nb_chars=80), "pytest": faker.pystr()}
 
 

@@ -15,6 +15,7 @@ import tenacity
 from aws_library.ec2.models import EC2InstanceBootSpecific
 from faker import Faker
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -57,7 +58,9 @@ def with_ec2_instance_allowed_types_env(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances_allowed_types),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                jsonable_encoder(ec2_instances_allowed_types)
+            ),
         },
     )
     return app_environment | envs
@@ -120,8 +123,10 @@ async def test_if_send_command_is_mocked_by_moto(
 
 @pytest.fixture
 def mock_wait_for_has_instance_completed_cloud_init(
-    initialized_app: FastAPI, mocker: MockerFixture
-) -> mock.Mock:
+    external_envfile_dict: EnvVarsDict, initialized_app: FastAPI, mocker: MockerFixture
+) -> mock.Mock | None:
+    if external_envfile_dict:
+        return None
     return mocker.patch(
         "aws_library.ssm._client.SimcoreSSMAPI.wait_for_has_instance_completed_cloud_init",
         autospec=True,
@@ -131,13 +136,13 @@ def mock_wait_for_has_instance_completed_cloud_init(
 
 async def test_monitor_buffer_machines(
     minimal_configuration: None,
-    initialized_app: FastAPI,
     ec2_client: EC2Client,
+    buffer_count: int,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
-    buffer_count: int,
     ec2_instance_custom_tags: dict[str, str],
-    mock_wait_for_has_instance_completed_cloud_init: mock.Mock,
+    mock_wait_for_has_instance_completed_cloud_init: mock.Mock | None,
+    initialized_app: FastAPI,
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances()
@@ -272,10 +277,13 @@ def instance_type_filters(
     ec2_instance_custom_tags: dict[str, str],
 ) -> Sequence[FilterTypeDef]:
     return [
-        FilterTypeDef(
-            Name="tag-key",
-            Values=list(ec2_instance_custom_tags),
-        ),
+        *[
+            FilterTypeDef(
+                Name="tag-key",
+                Values=[tag_key],
+            )
+            for tag_key in ec2_instance_custom_tags
+        ],
         FilterTypeDef(
             Name="instance-state-name",
             Values=["pending", "running", "stopped"],
@@ -319,15 +327,14 @@ def buffer_count(
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
-@pytest.mark.skip(reason="DEV")
 async def test_monitor_buffer_machines_against_aws(
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
+    ec2_client: EC2Client,
     buffer_count: int,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
-    ec2_client: EC2Client,
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
 ):
