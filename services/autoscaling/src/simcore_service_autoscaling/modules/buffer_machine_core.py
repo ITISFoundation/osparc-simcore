@@ -1,8 +1,6 @@
 import logging
 from collections import defaultdict
-from collections.abc import Generator
-from dataclasses import dataclass, field
-from typing import Any, Final, cast
+from typing import Final, cast
 
 from aws_library.ec2.models import (
     AWSTagKey,
@@ -19,6 +17,7 @@ from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
+from ..models import BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
@@ -37,50 +36,6 @@ _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
 _PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
 
 _logger = logging.getLogger(__name__)
-
-
-@dataclass(kw_only=True, slots=True)
-class WarmBufferPool:
-    ready_instances: set[EC2InstanceData] = field(default_factory=set)
-    pending_instances: set[EC2InstanceData] = field(default_factory=set)
-    waiting_to_pull_instances: set[EC2InstanceData] = field(default_factory=set)
-    pulling_instances: set[EC2InstanceData] = field(default_factory=set)
-    stopping_instances: set[EC2InstanceData] = field(default_factory=set)
-
-    def __repr__(self) -> str:
-        return (
-            f"WarmBufferPool(ready-count={len(self.ready_instances)}, "
-            f"pending-count={len(self.pending_instances)}, "
-            f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
-            f"pulling-count={len(self.pulling_instances)}, "
-            f"stopping-count={len(self.stopping_instances)})"
-        )
-
-    def _sort_by_readyness(
-        self, *, invert: bool = False
-    ) -> Generator[set[EC2InstanceData], Any, None]:
-        order = (
-            self.ready_instances,
-            self.stopping_instances,
-            self.pulling_instances,
-            self.waiting_to_pull_instances,
-            self.pending_instances,
-        )
-        if invert:
-            yield from reversed(order)
-        else:
-            yield from order
-
-    def all_instances(self) -> set[EC2InstanceData]:
-        """sorted by importance: READY (stopped) > STOPPING >"""
-        gen = self._sort_by_readyness()
-        return next(gen).union(*(_ for _ in gen))
-
-    def remove_instance(self, instance: EC2InstanceData) -> None:
-        for instances in self._sort_by_readyness(invert=True):
-            if instance in instances:
-                instances.remove(instance)
-                break
 
 
 def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
@@ -113,22 +68,24 @@ async def monitor_buffer_machines(
         state_names=["stopped", "pending", "running", "stopping"],
     )
 
-    current_warm_buffer_pools: dict[InstanceTypeType, WarmBufferPool] = defaultdict(
-        WarmBufferPool
-    )
+    buffers_manager = BufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
             case "stopped":
-                current_warm_buffer_pools[instance.type].ready_instances.add(instance)
+                buffers_manager.buffer_pools[instance.type].ready_instances.add(
+                    instance
+                )
             case "pending":
-                current_warm_buffer_pools[instance.type].pending_instances.add(instance)
+                buffers_manager.buffer_pools[instance.type].pending_instances.add(
+                    instance
+                )
             case "stopping":
-                current_warm_buffer_pools[instance.type].stopping_instances.add(
+                buffers_manager.buffer_pools[instance.type].stopping_instances.add(
                     instance
                 )
             case "running":
                 if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
-                    current_warm_buffer_pools[instance.type].pulling_instances.add(
+                    buffers_manager.buffer_pools[instance.type].pulling_instances.add(
                         instance
                     )
 
@@ -139,22 +96,22 @@ async def monitor_buffer_machines(
                 ).wait_for_has_instance_completed_cloud_init(
                     instance.id
                 ):
-                    current_warm_buffer_pools[
+                    buffers_manager.buffer_pools[
                         instance.type
                     ].waiting_to_pull_instances.add(instance)
                 else:
-                    current_warm_buffer_pools[instance.type].pending_instances.add(
+                    buffers_manager.buffer_pools[instance.type].pending_instances.add(
                         instance
                     )
             case _:
                 pass
-    _logger.info("Current warm pools: %s", f"{dict(current_warm_buffer_pools)!r}")
+    _logger.info("Current warm pools: %s", f"{buffers_manager}")
 
     # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
     allowed_instance_types = set(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    if terminateable_warm_pool_types := set(current_warm_buffer_pools).difference(
+    if terminateable_warm_pool_types := set(buffers_manager.buffer_pools).difference(
         allowed_instance_types
     ):
         with log_context(
@@ -165,11 +122,11 @@ async def monitor_buffer_machines(
             instances_to_terminate: set[EC2InstanceData] = set()
             for ec2_type in terminateable_warm_pool_types:
                 instances_to_terminate = instances_to_terminate.union(
-                    current_warm_buffer_pools[ec2_type].all_instances()
+                    buffers_manager.buffer_pools[ec2_type].all_instances()
                 )
             await ec2_client.terminate_instances(instances_to_terminate)
             for ec2_type in terminateable_warm_pool_types:
-                current_warm_buffer_pools.pop(ec2_type)
+                buffers_manager.buffer_pools.pop(ec2_type)
 
     # 3 add/remove buffer instances if needed based on needed buffer counts
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
@@ -179,7 +136,7 @@ async def monitor_buffer_machines(
         ec2_boot_config,
     ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
         instance_type = cast(InstanceTypeType, ec2_type)
-        all_pool_instances = current_warm_buffer_pools[instance_type].all_instances()
+        all_pool_instances = buffers_manager.buffer_pools[instance_type].all_instances()
         if len(all_pool_instances) < ec2_boot_config.buffer_count:
             missing_instances[instance_type] += ec2_boot_config.buffer_count - len(
                 all_pool_instances
@@ -216,13 +173,13 @@ async def monitor_buffer_machines(
     if unneeded_instances:
         await ec2_client.terminate_instances(unneeded_instances)
         for instance in unneeded_instances:
-            current_warm_buffer_pools[instance.type].remove_instance(instance)
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
 
     # 4. pull docker images if needed
     instances_to_stop: set[EC2InstanceData] = set()
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     ssm_client = get_ssm_client(app)
-    for warm_buffer_pool in current_warm_buffer_pools.values():
+    for warm_buffer_pool in buffers_manager.buffer_pools.values():
         if warm_buffer_pool.waiting_to_pull_instances:
             # trigger the image pulling
             ssm_command = await ssm_client.send_command(

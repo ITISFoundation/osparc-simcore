@@ -1,9 +1,12 @@
+from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass, field
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.generated_models.docker_rest_api import Node
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -137,3 +140,57 @@ DaskTaskId: TypeAlias = str
 class DaskTask:
     task_id: DaskTaskId
     required_resources: DaskTaskResources
+
+
+@dataclass(kw_only=True, slots=True)
+class BufferPool:
+    ready_instances: set[EC2InstanceData] = field(default_factory=set)
+    pending_instances: set[EC2InstanceData] = field(default_factory=set)
+    waiting_to_pull_instances: set[EC2InstanceData] = field(default_factory=set)
+    pulling_instances: set[EC2InstanceData] = field(default_factory=set)
+    stopping_instances: set[EC2InstanceData] = field(default_factory=set)
+
+    def __repr__(self) -> str:
+        return (
+            f"BufferPool(ready-count={len(self.ready_instances)}, "
+            f"pending-count={len(self.pending_instances)}, "
+            f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
+            f"pulling-count={len(self.pulling_instances)}, "
+            f"stopping-count={len(self.stopping_instances)})"
+        )
+
+    def _sort_by_readyness(
+        self, *, invert: bool = False
+    ) -> Generator[set[EC2InstanceData], Any, None]:
+        order = (
+            self.ready_instances,
+            self.stopping_instances,
+            self.pulling_instances,
+            self.waiting_to_pull_instances,
+            self.pending_instances,
+        )
+        if invert:
+            yield from reversed(order)
+        else:
+            yield from order
+
+    def all_instances(self) -> set[EC2InstanceData]:
+        """sorted by importance: READY (stopped) > STOPPING >"""
+        gen = self._sort_by_readyness()
+        return next(gen).union(*(_ for _ in gen))
+
+    def remove_instance(self, instance: EC2InstanceData) -> None:
+        for instances in self._sort_by_readyness(invert=True):
+            if instance in instances:
+                instances.remove(instance)
+                break
+
+
+@dataclass
+class BufferPoolManager:
+    buffer_pools: dict[InstanceTypeType, BufferPool] = field(
+        default_factory=lambda: defaultdict(BufferPool)
+    )
+
+    def __repr__(self) -> str:
+        return f"BufferPoolManager({dict(self.buffer_pools)})"
