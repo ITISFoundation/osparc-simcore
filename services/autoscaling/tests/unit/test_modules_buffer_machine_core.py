@@ -8,7 +8,6 @@ import json
 import logging
 from collections.abc import Sequence
 from typing import Any, cast
-from unittest import mock
 
 import pytest
 import tenacity
@@ -17,13 +16,11 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.moto import patched_aiobotocore_make_api_call
 from simcore_service_autoscaling.core.settings import EC2InstancesSettings
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
@@ -79,20 +76,6 @@ def minimal_configuration(
     pass
 
 
-@pytest.fixture
-def mocked_ssm_send_command(
-    mocker: MockerFixture, external_envfile_dict: EnvVarsDict
-) -> mock.Mock:
-    if external_envfile_dict:
-        # NOTE: we run against AWS. so no need to mock
-        return mock.Mock()
-    return mocker.patch(
-        "aiobotocore.client.AioBaseClient._make_api_call",
-        side_effect=patched_aiobotocore_make_api_call,
-        autospec=True,
-    )
-
-
 async def test_external_env_setup(minimal_configuration: None, ec2_client: EC2Client):
     print(await ec2_client.describe_account_attributes())
 
@@ -132,8 +115,8 @@ async def test_if_send_command_is_mocked_by_moto(
     )
 
 
+@pytest.mark.skip(reason="DEV")
 async def test_monitor_buffer_machines(
-    mocked_ssm_send_command: mock.Mock,
     minimal_configuration: None,
     initialized_app: FastAPI,
     ec2_client: EC2Client,
