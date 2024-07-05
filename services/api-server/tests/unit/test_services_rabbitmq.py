@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Final, Literal
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import httpx
 import pytest
@@ -44,7 +45,6 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
-    LogStreamerNotRegisteredError,
     LogStreamerRegistionConflictError,
 )
 from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
@@ -347,14 +347,13 @@ async def log_streamer_with_distributor(
     )
 
     assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    async with LogStreamer(
+    yield LogStreamer(
         user_id=user_id,
         director2_api=d2_client,
         job_id=project_id,
         log_distributor=log_distributor,
         log_check_timeout=1,
-    ) as log_streamer:
-        yield log_streamer
+    )
 
     assert len(log_distributor._log_streamers.keys()) == 0
 
@@ -432,13 +431,20 @@ async def test_log_streamer_not_raise_with_distributor(
     assert ii == 0
 
 
+class _MockLogDistributor:
+    async def register(self, job_id: UUID, queue: asyncio.Queue):
+        return None
+
+    async def deregister(self, job_id: None):
+        return None
+
+
 async def test_log_generator(mocker: MockFixture, faker: Faker):
     mocker.patch(
         "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
-    log_streamer._is_registered = True
+    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1)  # type: ignore
 
     published_logs: list[str] = []
     for _ in range(10):
@@ -455,13 +461,6 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         collected_logs.append(job_log.messages[0])
 
     assert published_logs == collected_logs
-
-
-async def test_log_generator_context(mocker: MockFixture, faker: Faker):
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
-    with pytest.raises(LogStreamerNotRegisteredError):
-        async for log in log_streamer.log_generator():
-            print(log)
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])
