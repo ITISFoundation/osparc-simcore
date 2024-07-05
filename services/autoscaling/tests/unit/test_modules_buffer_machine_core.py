@@ -8,6 +8,7 @@ import json
 import logging
 from collections.abc import Sequence
 from typing import Any, cast
+from unittest import mock
 
 import pytest
 import tenacity
@@ -16,6 +17,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
 )
@@ -81,10 +83,6 @@ def set_log_levels_for_noisy_libraries() -> None:
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
-async def test_external_env_setup(minimal_configuration: None, ec2_client: EC2Client):
-    print(await ec2_client.describe_account_attributes())
-
-
 @pytest.mark.xfail(
     reason="moto does not handle mocking of SSM SendCommand completely. "
     "TIP: if this test passes, it will mean Moto now handles it."
@@ -120,6 +118,17 @@ async def test_if_send_command_is_mocked_by_moto(
     )
 
 
+@pytest.fixture
+def mock_wait_for_has_instance_completed_cloud_init(
+    initialized_app: FastAPI, mocker: MockerFixture
+) -> mock.Mock:
+    return mocker.patch(
+        "aws_library.ssm._client.SimcoreSSMAPI.wait_for_has_instance_completed_cloud_init",
+        autospec=True,
+        return_value=True,
+    )
+
+
 async def test_monitor_buffer_machines(
     minimal_configuration: None,
     initialized_app: FastAPI,
@@ -128,6 +137,7 @@ async def test_monitor_buffer_machines(
     instance_type_filters: Sequence[FilterTypeDef],
     buffer_count: int,
     ec2_instance_custom_tags: dict[str, str],
+    mock_wait_for_has_instance_completed_cloud_init: mock.Mock,
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances()
@@ -150,7 +160,7 @@ async def test_monitor_buffer_machines(
                 before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
                 after=tenacity.after_log(ctx.logger, logging.INFO),
             )
-            async def _assert_buffer_machines_running():
+            async def _assert_buffer_machines_running() -> None:
                 await assert_autoscaled_dynamic_warm_pools_ec2_instances(
                     ec2_client,
                     expected_num_reservations=1,
@@ -174,7 +184,7 @@ async def test_monitor_buffer_machines(
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
             after=tenacity.after_log(ctx.logger, logging.INFO),
         )
-        async def _assert_run_ssm_command_for_pulling():
+        async def _assert_run_ssm_command_for_pulling() -> None:
             await monitor_buffer_machines(
                 initialized_app, auto_scaling_mode=DynamicAutoscaling()
             )
@@ -205,7 +215,7 @@ async def test_monitor_buffer_machines(
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
             after=tenacity.after_log(ctx.logger, logging.INFO),
         )
-        async def _assert_wait_for_ssm_command_to_finish():
+        async def _assert_wait_for_ssm_command_to_finish() -> None:
             await monitor_buffer_machines(
                 initialized_app, auto_scaling_mode=DynamicAutoscaling()
             )
