@@ -9,7 +9,7 @@ import pytest
 import requests
 from aiohttp.test_utils import unused_port
 from faker import Faker
-from fastapi.encoders import jsonable_encoder
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
 from pytest_mock.plugin import MockerFixture
