@@ -65,7 +65,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                 else ComputationalAutoscaling()
             ),
         )
-        if app_settings.AUTOSCALING_NODES_MONITORING:
+        if (
+            app_settings.AUTOSCALING_NODES_MONITORING
+            and app_settings.AUTOSCALING_SSM_ACCESS
+            and app_settings.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+        ):
             app.state.autoscaler_task_buffers = start_periodic_task(
                 exclusive(
                     get_redis_client(app),
@@ -84,7 +88,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         await stop_periodic_task(app.state.autoscaler_task)
-        if app.state.autoscaler_task_buffers:
+        if hasattr(app.state, "autoscaler_task_buffers"):
             await stop_periodic_task(app.state.autoscaler_task_buffers)
 
     return _stop
