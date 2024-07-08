@@ -52,7 +52,7 @@ async def test_list_services_paginated(
     assert limit < num_services
     offset = 1
 
-    total_count, items = await catalog.list_services_paginated(
+    total_count, page_items = await catalog.list_services_paginated(
         services_repo,
         product_name=target_product,
         user_id=user_id,
@@ -61,20 +61,19 @@ async def test_list_services_paginated(
     )
 
     assert total_count == num_services
-    assert len(items) <= limit
+    assert len(page_items) <= limit
 
-    for itm in items:
-        assert itm.access_rights
-        assert itm.owner is not None
-        assert itm.history[0].version == itm.version
+    for item in page_items:
+        assert item.access_rights
+        assert item.owner is not None
+        assert item.history[0].version == item.version
 
         got = await catalog.get_service(
             services_repo,
             product_name=target_product,
             user_id=user_id,
-            service_key=itm.key,
-            service_version=itm.version,
+            service_key=item.key,
+            service_version=item.version,
         )
 
-        # FIXME: history still wrong
-        assert got.dict(exclude={"history"}) == itm.dict(exclude={"history"})
+        assert got == item

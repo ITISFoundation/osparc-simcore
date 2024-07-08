@@ -101,9 +101,8 @@ async def test_rcp_catalog_client(
     assert got.key == service_key
     assert got.version == service_version
 
-    # FIXME: history missing
-    assert got.dict(exclude={"history"}) == next(
-        item.dict(exclude={"history"})
+    assert got == next(
+        item
         for item in page.data
         if (item.key == service_key and item.version == service_version)
     )
