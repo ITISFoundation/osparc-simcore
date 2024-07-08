@@ -48,3 +48,8 @@ test: ## runs osparc locust. locust and test confiuration are specified in .env 
 	export ENV_FILE=$$(dirname $$(realpath locust_files/$${LOCUST_FILE}))/.env; \
 	if [ ! -f $${ENV_FILE} ]; then cp $$(dirname $${ENV_FILE})/.env-devel $${ENV_FILE}; fi; \
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
+
+
+.PHONY: install-dev
+install-dev: _check_venv_active ## install python tools
+	@uv pip install -r requirements.txt
