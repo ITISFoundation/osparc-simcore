@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 import botocore.exceptions
 import pytest
 from aws_library.ssm._client import SimcoreSSMAPI
+from faker import Faker
 from moto.server import ThreadedMotoServer
 from settings_library.ssm import SSMSettings
 from types_aiobotocore_ssm import SSMClient
@@ -55,3 +56,27 @@ async def test_ping(
     assert await simcore_ssm_api.ping() is False
     mocked_aws_server.start()
     assert await simcore_ssm_api.ping() is True
+
+
+async def test_send_command(
+    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI
+):
+    ...
+
+
+async def test_get_command(
+    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI, faker: Faker
+):
+    await simcore_ssm_api.get_command(faker.pystr(), command_id=faker.pystr())
+
+
+async def test_is_instance_connected_to_ssm_server(
+    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI
+):
+    ...
+
+
+async def test_wait_for_has_instance_completed_cloud_init(
+    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI
+):
+    ...

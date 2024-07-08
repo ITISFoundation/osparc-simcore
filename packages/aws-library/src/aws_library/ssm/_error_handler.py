@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 
-from ._errors import SSMAccessError, SSMSendCommandInstancesNotReadyError
+from ._errors import (
+    SSMAccessError,
+    SSMNotConnectedError,
+    SSMRuntimeError,
+    SSMSendCommandInstancesNotReadyError,
+)
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
@@ -60,10 +65,10 @@ def ssm_exception_handler(
             except botocore_exc.ClientError as exc:
                 raise _map_botocore_client_exception(exc, **kwargs) from exc
             except botocore_exc.EndpointConnectionError as exc:
-                raise SSMAccessError from exc
+                raise SSMNotConnectedError from exc
             except botocore_exc.BotoCoreError as exc:
                 logger.exception("Unexpected error in SSM client: ")
-                raise SSMAccessError from exc
+                raise SSMRuntimeError from exc
 
         wrapper.__doc__ = f"{func.__doc__}\n\n{ssm_exception_handler.__doc__}"
 
