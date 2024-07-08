@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.node.BaseNodeView", {
+qx.Class.define("osparc.node.slideshow.BaseNodeView", {
   extend: qx.ui.splitpane.Pane,
   type: "abstract",
 

@@ -20,7 +20,7 @@
   */
 
 qx.Class.define("osparc.node.FilePickerSSView", {
-  extend: osparc.node.BaseNodeView,
+  extend: osparc.node.slideshow.BaseNodeView,
 
   events: {
     "itemSelected": "qx.event.type.Event"

@@ -34,7 +34,7 @@
  */
 
 qx.Class.define("osparc.node.slideshow.NodeView", {
-  extend: osparc.node.BaseNodeView,
+  extend: osparc.node.slideshow.BaseNodeView,
 
   statics: {
     LOGGER_HEIGHT: 28,
@@ -125,7 +125,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
 
     // overridden
     _openEditAccessLevel: function() {
-      const settingsEditorLayout = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+      const settingsEditorLayout = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       const propsFormEditor = this.getNode().getPropsFormEditor();
       settingsEditorLayout.add(propsFormEditor);
       const title = this.getNode().getLabel();

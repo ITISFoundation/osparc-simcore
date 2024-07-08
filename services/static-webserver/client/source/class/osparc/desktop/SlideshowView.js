@@ -258,7 +258,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
-        view = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+        view = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
         const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);

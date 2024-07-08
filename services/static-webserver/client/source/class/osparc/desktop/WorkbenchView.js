@@ -1016,7 +1016,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         allowGrowY: false
       });
       osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
-      nodeFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
+      nodeFilesBtn.addListener("execute", () => osparc.node.slideshow.BaseNodeView.openNodeDataManager(node));
       outputsBox.add(nodeFilesBtn);
 
       const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);
