@@ -120,10 +120,14 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
 
       // add the items
+      let firstLabel = null;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        if (firstLabel === null) {
+          firstLabel = label;
+        }
         label.set({
           // override ``rich``: to false, it is required for showing the cut off ellipsis.
           // rich: false,
@@ -160,6 +164,51 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         this._row++;
 
         this._connectVisibility(item, label);
+      }
+
+      if (firstLabel) {
+        firstLabel.addListener("resize", () => this.__makeLabelsResponsive());
+      }
+    },
+
+    __makeLabelsResponsive: function() {
+      const node = this.getNode();
+      const inputs = node.getInputs();
+      const portIds = Object.keys(inputs);
+      let extendedVersion = false;
+      if (portIds) {
+        const label = this._getLabelFieldChild(portIds[0]).child;
+        extendedVersion = label.getSize().width > 300;
+      }
+      if (extendedVersion) {
+        // Extend description of Settings
+        for (const portId in inputs) {
+          if (inputs[portId].description) {
+            this._getLabelFieldChild(portId).child.set({
+              value: inputs[portId].label + ". " + inputs[portId].description + ":",
+              toolTipText: inputs[portId].label + "<br>" + inputs[portId].description
+            });
+
+            this._getInfoFieldChild(portId).child.exclude();
+
+            this._getCtrlFieldChild(portId).child.set({
+              minWidth: 150
+            });
+          }
+        }
+      } else {
+        for (const portId in inputs) {
+          this._getLabelFieldChild(portId).child.set({
+            value: inputs[portId].label,
+            toolTipText: inputs[portId].label
+          });
+
+          this._getInfoFieldChild(portId).child.show();
+
+          this._getCtrlFieldChild(portId).child.set({
+            minWidth: 50
+          });
+        }
       }
     },
 
