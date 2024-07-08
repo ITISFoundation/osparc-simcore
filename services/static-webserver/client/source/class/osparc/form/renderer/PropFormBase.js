@@ -125,8 +125,14 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
         const label = this._createLabel(names[i], item);
         label.set({
-          rich: false, // override, required for showing the cut off ellipses
+          // override ``rich``: to false, it is required for showing the cut off ellipsis.
+          // rich: false,
           toolTipText: names[i]
+        });
+        // leave ``rich`` set to true. Ellipsis wil be handled here:
+        label.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap"
         });
         label.setBuddy(item);
         this._add(label, {
