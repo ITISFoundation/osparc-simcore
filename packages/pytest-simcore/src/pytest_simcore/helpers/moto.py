@@ -1,16 +1,17 @@
 import warnings
 from copy import deepcopy
+from typing import Any
 
 import aiobotocore.client
 
-# NOTE: send_command is not completely patched by moto, therefore we need this specific mock
-# https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
-# this might change with new versions of moto
 # Original botocore _make_api_call function
-orig = aiobotocore.client.AioBaseClient._make_api_call
+orig = aiobotocore.client.AioBaseClient._make_api_call  # noqa: SLF001
 
 
-def _patch_send_command(self, operation_name, api_params):
+def _patch_send_command(self, operation_name, api_params) -> Any:
+    # NOTE: send_command is not completely patched by moto, therefore we need this specific mock
+    # https://docs.getmoto.org/en/latest/docs/services/patching_other_services.html
+    # this might change with new versions of moto
     warnings.warn(
         "moto is missing SendCommand mock with InstanceIds as Targets, therefore it is manually mocked."
         " TIP: periodically check if it gets updated https://docs.getmoto.org/en/latest/docs/services/ssm.html#ssm",
@@ -36,7 +37,9 @@ def _patch_send_command(self, operation_name, api_params):
     return orig(self, operation_name, new_api_params)
 
 
-def _patch_describe_instance_information(self, operation_name, api_params):
+def _patch_describe_instance_information(
+    self, operation_name, api_params
+) -> dict[str, Any]:
     warnings.warn(
         "moto is missing the describe_instance_information function, therefor it is manually mocked."
         "TIP: periodically check if it gets updated https://docs.getmoto.org/en/latest/docs/services/ssm.html#ssm",
