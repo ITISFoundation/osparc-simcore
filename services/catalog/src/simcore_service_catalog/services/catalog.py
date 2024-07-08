@@ -130,7 +130,7 @@ async def get_service(
             product_name=product_name,
         )
 
-    db = await repo.get_service_w_history(
+    db = await repo.get_service_with_history(
         product_name=product_name,
         user_id=user_id,
         key=service_key,

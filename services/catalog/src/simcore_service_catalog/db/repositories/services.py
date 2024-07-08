@@ -31,6 +31,7 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    get_service_history_stmt,
     get_service_stmt2,
     list_latest_services_with_history_stmt,
     list_services_stmt,
@@ -269,7 +270,7 @@ class ServicesRepository(BaseRepository):
 
     # NEW CRUD on services ------
 
-    async def get_service_w_history(
+    async def get_service_with_history(
         self,
         # access-rights
         product_name: ProductName,
@@ -286,32 +287,45 @@ class ServicesRepository(BaseRepository):
             service_key=key,
             service_version=version,
         )
+
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt_get)
-            r = result.one_or_none()
-            return (
-                ServiceWithHistoryFromDB(
-                    key=r.key,
-                    version=r.version,
-                    # display
-                    name=r.name,
-                    description=r.description,
-                    thumbnail=r.thumbnail,
-                    # ownership
-                    owner_email=r.owner_email,
-                    # tagging
-                    classifiers=r.classifiers,
-                    quality=r.quality,
-                    # lifetime
-                    created=r.created,
-                    modified=r.modified,
-                    deprecated=r.deprecated,
-                    # releases
-                    history=[],  # TODO: r.history,
-                )
-                if r
-                else None
+            row = result.one_or_none()
+
+        if row:
+            stmt_history = get_service_history_stmt(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=AccessRightsClauses.can_read,
+                service_key=key,
             )
+            async with self.db_engine.begin() as conn:
+                result = await conn.execute(stmt_history)
+                row_h = result.one_or_none()
+
+        return (
+            ServiceWithHistoryFromDB(
+                key=row.key,
+                version=row.version,
+                # display
+                name=row.name,
+                description=row.description,
+                thumbnail=row.thumbnail,
+                # ownership
+                owner_email=row.owner_email,
+                # tagging
+                classifiers=row.classifiers,
+                quality=row.quality,
+                # lifetime
+                created=row.created,
+                modified=row.modified,
+                deprecated=row.deprecated,
+                # releases
+                history=row_h.history if row_h else [],
+            )
+            if row
+            else None
+        )
 
     async def list_latest_services(
         self,

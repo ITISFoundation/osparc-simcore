@@ -339,6 +339,58 @@ def get_service_stmt2(
     )
 
 
+def get_service_history_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+):
+    history_subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+        )
+        .select_from(
+            # joins because access-rights might change per version
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+        )
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
+        .order_by(
+            services_meta_data.c.key,
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+        )
+        .subquery()
+    )
+
+    return sa.select(
+        array_agg(
+            func.json_build_object(
+                "version",
+                history_subquery.c.version,
+                "deprecated",
+                history_subquery.c.deprecated,
+                "created",
+                history_subquery.c.created,
+            )
+        ).label("history"),
+    ).group_by(history_subquery.c.key)
+
+
 def list_services_with_history_stmt(
     *,
     product_name: ProductName,
