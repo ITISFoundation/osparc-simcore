@@ -292,7 +292,7 @@ def get_service_with_history_stmt(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ):
-    service_meta_access_join = services_meta_data.join(
+    _service_meta_access_join = services_meta_data.join(
         services_access_rights,
         (services_meta_data.c.key == services_access_rights.c.key)
         & (services_meta_data.c.version == services_access_rights.c.version)
@@ -303,39 +303,11 @@ def get_service_with_history_stmt(
         & (user_to_groups.c.uid == user_id),
     )
 
-    service_subquery = (
-        sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version,
-            services_meta_data.c.owner,
-            services_meta_data.c.name,
-            services_meta_data.c.description,
-            services_meta_data.c.thumbnail,
-            services_meta_data.c.classifiers,
-            services_meta_data.c.created,
-            services_meta_data.c.modified,
-            services_meta_data.c.deprecated,
-            services_meta_data.c.quality,
-        )
-        .select_from(service_meta_access_join)
-        .where(
-            (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-            & access_rights
-        )
-        .alias("service_subquery")
-    )
-
     owner_subquery = (
         sa.select(users.c.email)
-        .select_from(
-            service_subquery.join(
-                user_to_groups,
-                service_subquery.c.owner == user_to_groups.c.gid,
-                isouter=True,
-            )
-        )
-        .join(users, user_to_groups.c.uid == users.c.id, isouter=True)
+        .select_from(user_to_groups.join(users, user_to_groups.c.uid == users.c.id))
+        .where(user_to_groups.c.gid == services_meta_data.c.owner)
+        .limit(1)
         .alias("owner_subquery")
     )
 
@@ -354,52 +326,40 @@ def get_service_with_history_stmt(
         )
         .select_from(
             # joins because access-rights might change per version
-            service_meta_access_join
+            _service_meta_access_join
         )
-        .where(access_rights)
+        .where((services_meta_data.c.key == service_key) & access_rights)
         .order_by(
-            services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
         .alias("history_subquery")
     )
+
     return (
         sa.select(
-            service_subquery.c.key,
-            service_subquery.c.version,
+            services_meta_data.c.key,
+            services_meta_data.c.version,
             # display
-            service_subquery.c.name,
-            service_subquery.c.description,
-            service_subquery.c.thumbnail,
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
             # ownership
             owner_subquery.c.email.label("owner_email"),
             # tags
-            service_subquery.c.classifiers,
-            service_subquery.c.quality,
+            services_meta_data.c.classifiers,
+            services_meta_data.c.quality,
             # lifetime
-            service_subquery.c.created,
-            service_subquery.c.modified,
-            service_subquery.c.deprecated,
+            services_meta_data.c.created,
+            services_meta_data.c.modified,
+            services_meta_data.c.deprecated,
             # releases
             history_subquery.c.history,
         )
-        .join(
-            history_subquery,
-            service_subquery.c.key == history_subquery.c.key,
-        )
-        .group_by(
-            history_subquery.c.key,
-            service_subquery.c.key,
-            service_subquery.c.version,
-            owner_subquery.c.email,
-            service_subquery.c.name,
-            service_subquery.c.description,
-            service_subquery.c.thumbnail,
-            service_subquery.c.classifiers,
-            service_subquery.c.created,
-            service_subquery.c.modified,
-            service_subquery.c.deprecated,
-            service_subquery.c.quality,
+        .select_from(_service_meta_access_join)
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+            & access_rights
         )
     )
 
