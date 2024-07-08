@@ -4,16 +4,17 @@ services:
     ports:
       - "8089:8089"
     volumes:
-      - .:/mnt/locust
+      - ./locust_files:/mnt/locust
+      - ./locust_report:/mnt/reporting
     command: >
-      -f /mnt/locust/${LOCUST_FILE} --html /reporting/locust_html.html --master
+      -f /mnt/locust/${LOCUST_FILE} --html /mnt/reporting/locust_html.html --master
     env_file:
       - ${ENV_FILE}
 
   worker:
     image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
-      - .:/mnt/locust
+      - ./locust_files:/mnt/locust
     command: >
       -f /mnt/locust/${LOCUST_FILE} --worker --master-host master
     env_file:

@@ -27,7 +27,8 @@ class LocustAuth(BaseSettings):
 class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.auth = LocustAuth()
+        _auth = LocustAuth()
+        self.auth = (_auth.SC_USER_NAME, _auth.SC_PASSWORD)
 
     @task(10)
     def get_root(self):
