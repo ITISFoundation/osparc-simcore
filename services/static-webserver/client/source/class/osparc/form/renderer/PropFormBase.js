@@ -175,7 +175,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const inputs = node.getInputs();
       let extendedVersion = false;
 
-      let columnWidth = null;
+      let firstColumnWidth = null;
       const firstElement = this.getLayout().getCellWidget(0, 0);
       const secondElement = this.getLayout().getCellWidget(0, 1);
       if (firstElement && secondElement) {
@@ -184,18 +184,17 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         if (firstCellBounds && secondCellBounds) {
           const left1 = firstCellBounds.left;
           const left2 = secondCellBounds.left;
-          columnWidth = left2 - left1;
-          extendedVersion = columnWidth > 300;
-        } else {
-          setTimeout(() => this.__makeLabelsResponsive(), 100);
-          return;
+          firstColumnWidth = left2 - left1;
+          extendedVersion = firstColumnWidth > 300;
         }
-      } else {
+      }
+      if (firstColumnWidth === null) {
+        // not rendered yet
         setTimeout(() => this.__makeLabelsResponsive(), 100);
         return;
       }
 
-      console.log("First column", columnWidth);
+      console.log("First column", firstColumnWidth);
 
       if (extendedVersion) {
         // Extend description of Settings
