@@ -239,6 +239,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
     ec2_client: EC2Client,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -256,6 +257,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -276,6 +278,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     assert fake_node.Description
     assert fake_node.Description.Resources
@@ -309,6 +312,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
 
@@ -392,6 +396,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     expected_ec2_type: InstanceTypeType,
     async_docker_client: aiodocker.Docker,
     with_drain_nodes_labelled: bool,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -423,6 +428,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -531,6 +537,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     assert len(instances) == 1
     assert "PrivateDnsName" in instances[0]
@@ -593,6 +600,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # check rabbit messages were sent
@@ -614,6 +622,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     # the node shall be waiting before draining
     mock_docker_set_node_availability.assert_not_called()
@@ -683,6 +692,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # we artifically set the node to drain
@@ -712,6 +722,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # now changing the last update timepoint will trigger the node removal process
@@ -729,6 +740,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
@@ -761,6 +773,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="terminated",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
 
@@ -820,6 +833,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_docker_set_node_availability: mock.Mock,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -861,6 +875,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         expected_num_instances=scale_up_params.expected_num_instances,
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -907,6 +922,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     short_ec2_instance_max_start_time: datetime.timedelta,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -941,6 +957,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         expected_num_instances=1,
         expected_instance_type=expected_ec2_type,
         expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -982,6 +999,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             expected_num_instances=1,
             expected_instance_type=expected_ec2_type,
             expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
         )
         assert mock_find_node_with_name_returns_none.call_count == i + 1
         mock_docker_tag_node.assert_not_called()

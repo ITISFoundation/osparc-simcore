@@ -13,6 +13,7 @@ async def assert_autoscaled_computational_ec2_instances(
     expected_num_instances: int,
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
+    expected_additional_tag_keys: list[str],
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -24,7 +25,7 @@ async def assert_autoscaled_computational_ec2_instances(
             "io.simcore.autoscaling.dask-scheduler_url",
             "user_id",
             "wallet_id",
-            "osparc-tag",
+            *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
     )
@@ -37,6 +38,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_num_instances: int,
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
+    expected_additional_tag_keys: list[str],
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -47,9 +49,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
-            "user_id",
-            "wallet_id",
-            "osparc-tag",
+            *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
     )

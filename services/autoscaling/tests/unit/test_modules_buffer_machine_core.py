@@ -327,7 +327,14 @@ def buffer_count(
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
+@pytest.fixture
+def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
+    if not external_envfile_dict:
+        pytest.skip("Skipping test since external-envfile is not set")
+
+
 async def test_monitor_buffer_machines_against_aws(
+    skip_if_external_envfile_dict: None,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
