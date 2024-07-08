@@ -121,6 +121,7 @@ async def get_service(
         key=service_key, version=service_version, product_name=product_name
     )
     if not db_ar:
+        # FIXME: Could be not found as well
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -175,6 +176,7 @@ async def update_service(
         key=service_key, version=service_version, product_name=product_name
     )
     if not db_ar:
+        # FIXME: can be not found as well
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
