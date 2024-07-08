@@ -33,7 +33,7 @@ class LocustSettings(BaseSettings):
     def validate_run_time(cls, v: str):
         result = parse("{hour:d}h{min:d}m{sec:d}s", v)
         if not isinstance(result, Result):
-            raise ValueError("Could not parse time")
+            return v
         hour = result.named.get("hour")
         min = result.named.get("min")
         sec = result.named.get("sec")

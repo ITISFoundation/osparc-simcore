@@ -1,4 +1,7 @@
 locust
-tenacity
+locust-plugins
 parse
+tenacity
+
+
 -e .
