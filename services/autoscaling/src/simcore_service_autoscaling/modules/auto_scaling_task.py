@@ -65,10 +65,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                 else ComputationalAutoscaling()
             ),
         )
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         if (
             app_settings.AUTOSCALING_NODES_MONITORING
             and app_settings.AUTOSCALING_SSM_ACCESS
-            and app_settings.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+            and app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
         ):
             app.state.autoscaler_task_buffers = start_periodic_task(
                 exclusive(
