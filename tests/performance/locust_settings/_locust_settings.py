@@ -1,7 +1,10 @@
 from datetime import timedelta
 
-from pydantic import AnyHttpUrl, Field, PositiveInt
+from parse import Result, parse
+from pydantic import AnyHttpUrl, Field, PositiveInt, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from ._dump_dotenv import dump_dotenv
 
 
 def _timedelta_serializer(td: timedelta) -> str:
@@ -25,6 +28,19 @@ class LocustSettings(BaseSettings):
     LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
     LOCUST_RUN_TIME: timedelta = Field(default=...)
 
+    @field_validator("LOCUST_RUN_TIME", mode="before")
+    @classmethod
+    def validate_run_time(cls, v: str):
+        result = parse("{hour:d}h{min:d}m{sec:d}s", v)
+        if not isinstance(result, Result):
+            raise ValueError("Could not parse time")
+        hour = result.named.get("hour")
+        min = result.named.get("min")
+        sec = result.named.get("sec")
+        if hour is None or min is None or sec is None:
+            raise ValueError("Could not parse time")
+        return timedelta(hours=hour, minutes=min, seconds=sec)
+
 
 if __name__ == "__main__":
-    print(LocustSettings().model_dump_json())
+    dump_dotenv(LocustSettings())

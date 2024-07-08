@@ -1,2 +1,4 @@
-pydantic
-pydantic-settings
+locust
+tenacity
+parse
+-e .

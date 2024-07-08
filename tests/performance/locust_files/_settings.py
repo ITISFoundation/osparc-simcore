@@ -1,4 +1,4 @@
-from locust_settings import LocustSettings
+from locust_settings import LocustSettings, dump_dotenv
 from pydantic import Field
 
 
@@ -8,4 +8,4 @@ class LoadTestSettings(LocustSettings):
 
 
 if __name__ == "__main__":
-    print(LoadTestSettings().model_dump_json())
+    dump_dotenv(LoadTestSettings())
