@@ -1,3 +1,4 @@
+faker
 locust
 locust-plugins
 parse
