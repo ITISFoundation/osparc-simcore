@@ -11,16 +11,6 @@ from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
 from pydantic import EmailStr, parse_obj_as
-from simcore_postgres_database.utils import as_postgres_sql_query_str
-from simcore_service_catalog.db.repositories._services_sql import (
-    AccessRightsClauses,
-    batch_get_services_stmt,
-    get_service_with_history_stmt,
-    list_latest_services_with_history_stmt,
-    list_services_stmt2,
-    list_services_with_history_stmt,
-    total_count_stmt,
-)
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
@@ -405,62 +395,3 @@ async def test_list_services_paginated(
         assert itm.access_rights
         assert itm.owner is not None
         assert itm.history[0].version == itm.version
-
-
-def test_building_services_sql_statements():
-    def _check(func_smt, **kwargs):
-        print(f"{func_smt.__name__:*^100}")
-        stmt = func_smt(**kwargs)
-        print()
-        print(as_postgres_sql_query_str(stmt))
-        print()
-
-    # some data
-    product_name = "osparc"
-    user_id = 4
-
-    _check(
-        get_service_with_history_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        service_key="simcore/services/comp/kember-cardiac-model",
-        service_version="1.0.0",
-    )
-
-    _check(
-        list_latest_services_with_history_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
-
-    _check(
-        total_count_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-    )
-
-    _check(
-        list_services_with_history_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
-
-    _check(
-        batch_get_services_stmt,
-        product_name=product_name,
-        selection=[
-            ("simcore/services/comp/kember-cardiac-model", "1.0.0"),
-            ("simcore/services/comp/human-gb-0d-cardiac-model", "1.0.0"),
-            ("simcore/services/dynamic/invalid", "2.0.0"),
-        ],
-    )
-
-    _check(list_services_stmt2)

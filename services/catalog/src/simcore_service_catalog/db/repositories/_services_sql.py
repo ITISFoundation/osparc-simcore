@@ -329,6 +329,12 @@ def get_service_with_history_stmt(
             _service_meta_access_join
         )
         .where((services_meta_data.c.key == service_key) & access_rights)
+        .group_by(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+        )
         .order_by(
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
