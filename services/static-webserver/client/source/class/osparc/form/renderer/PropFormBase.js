@@ -166,20 +166,28 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         this._connectVisibility(item, label);
       }
 
-      if (firstLabel) {
-        firstLabel.addListener("resize", () => this.__makeLabelsResponsive());
-      }
+      this.addListener("appear", () => this.__makeLabelsResponsive());
+      this.addListener("resize", () => this.__makeLabelsResponsive());
     },
 
     __makeLabelsResponsive: function() {
       const node = this.getNode();
       const inputs = node.getInputs();
-      const portIds = Object.keys(inputs);
       let extendedVersion = false;
-      if (portIds) {
-        const label = this._getLabelFieldChild(portIds[0]).child;
-        extendedVersion = label.getSize().width > 300;
+
+      const firstElement = this.getLayout().getCellWidget(0, 0);
+      const secondElement = this.getLayout().getCellWidget(0, 1);
+      const firstCellBounds = firstElement.getBounds();
+      const secondCellBounds = secondElement.getBounds();
+      let columnWidth = null;
+      if (firstCellBounds && secondCellBounds) {
+        const left1 = firstCellBounds.left;
+        const left2 = secondCellBounds.left;
+        columnWidth = left2 - left1;
+        console.log("First column", columnWidth);
+        extendedVersion = columnWidth > 200;
       }
+
       if (extendedVersion) {
         // Extend description of Settings
         for (const portId in inputs) {
