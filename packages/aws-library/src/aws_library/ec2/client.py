@@ -2,7 +2,7 @@ import contextlib
 import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import cast
+from typing import Sequence, cast
 
 import aioboto3
 import botocore.exceptions
@@ -22,6 +22,7 @@ from .errors import (
     EC2TooManyInstancesError,
 )
 from .models import (
+    AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -274,6 +275,24 @@ class SimcoreEC2API:
         )
         return all_instances
 
+    async def stop_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
+        try:
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"stopping instances {[i.id for i in instance_datas]}",
+            ):
+                await self.client.stop_instances(
+                    InstanceIds=[i.id for i in instance_datas]
+                )
+        except botocore.exceptions.ClientError as exc:
+            if (
+                exc.response.get("Error", {}).get("Code", "")
+                == "InvalidInstanceID.NotFound"
+            ):
+                raise EC2InstanceNotFoundError from exc
+            raise  # pragma: no cover
+
     async def terminate_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> None:
@@ -295,7 +314,7 @@ class SimcoreEC2API:
             raise  # pragma: no cover
 
     async def set_instances_tags(
-        self, instances: list[EC2InstanceData], *, tags: EC2Tags
+        self, instances: Sequence[EC2InstanceData], *, tags: EC2Tags
     ) -> None:
         try:
             with log_context(
@@ -309,6 +328,24 @@ class SimcoreEC2API:
                         {"Key": tag_key, "Value": tag_value}
                         for tag_key, tag_value in tags.items()
                     ],
+                )
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidID":
+                raise EC2InstanceNotFoundError from exc
+            raise  # pragma: no cover
+
+    async def remove_instances_tags(
+        self, instances: Sequence[EC2InstanceData], *, tag_keys: Iterable[AWSTagKey]
+    ) -> None:
+        try:
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"removing {tag_keys=} of instances '[{[i.id for i in instances]}]'",
+            ):
+                await self.client.delete_tags(
+                    Resources=[i.id for i in instances],
+                    Tags=[{"Key": tag_key} for tag_key in tag_keys],
                 )
         except botocore.exceptions.ClientError as exc:
             if exc.response.get("Error", {}).get("Code", "") == "InvalidID":
