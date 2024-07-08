@@ -176,8 +176,9 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       let extendedVersion = false;
 
       let firstColumnWidth = null;
-      const firstElement = this.getLayout().getCellWidget(0, 0);
-      const secondElement = this.getLayout().getCellWidget(0, 1);
+      const grid = this.getLayout()
+      const firstElement = grid.getCellWidget(0, 0);
+      const secondElement = grid.getCellWidget(0, 1);
       if (firstElement && secondElement) {
         const firstCellBounds = firstElement.getBounds();
         const secondCellBounds = secondElement.getBounds();
@@ -207,9 +208,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
             this._getInfoFieldChild(portId).child.hide();
 
-            this._getCtrlFieldChild(portId).child.set({
-              minWidth: 150
-            });
+            grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 150);
           }
         }
       } else {
@@ -221,9 +220,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
           this._getInfoFieldChild(portId).child.show();
 
-          this._getCtrlFieldChild(portId).child.set({
-            minWidth: 50
-          });
+          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
         }
       }
     },
