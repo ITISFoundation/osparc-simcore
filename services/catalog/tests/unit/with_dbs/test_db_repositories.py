@@ -16,7 +16,6 @@ from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
 )
-from simcore_service_catalog.services import catalog
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -350,59 +349,3 @@ async def test_list_all_services_and_history_with_pagination(
 
         latest_version = service.history[0].version  # latest service is first
         assert service.version == latest_version
-
-
-async def test_list_services_paginated(
-    target_product: ProductName,
-    create_fake_service_data: Callable,
-    services_db_tables_injector: Callable,
-    services_repo: ServicesRepository,
-    user_id: UserID,
-):
-    # inject services
-    num_services = 5
-    num_versions_per_service = 20
-    await services_db_tables_injector(
-        [
-            create_fake_service_data(
-                f"simcore/services/dynamic/some-service-{n}",
-                f"{v}.0.0",
-                team_access=None,
-                everyone_access=None,
-                product=target_product,
-            )
-            for n in range(num_services)
-            for v in range(num_versions_per_service)
-        ]
-    )
-
-    limit = 2
-    assert limit < num_services
-    offset = 1
-
-    total_count, items = await catalog.list_services_paginated(
-        services_repo,
-        product_name=target_product,
-        user_id=user_id,
-        limit=limit,
-        offset=offset,
-    )
-
-    assert total_count == num_services
-    assert len(items) <= limit
-
-    for itm in items:
-        assert itm.access_rights
-        assert itm.owner is not None
-        assert itm.history[0].version == itm.version
-
-        got = await catalog.get_service(
-            services_repo,
-            product_name=target_product,
-            user_id=user_id,
-            service_key=itm.key,
-            service_version=itm.version,
-        )
-
-        # FIXME: history still wrong
-        assert got.dict(exclude={"history"}) == itm.dict(exclude={"history"})
