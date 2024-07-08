@@ -244,18 +244,25 @@ class ServicesRepository(BaseRepository):
     async def update_service(
         self, patched_service: ServiceMetaDataAtDB
     ) -> ServiceMetaDataAtDB:
-        # update the services_meta_data table
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                services_meta_data.update()
-                .where(
-                    (services_meta_data.c.key == patched_service.key)
-                    & (services_meta_data.c.version == patched_service.version)
-                )
-                .values(**patched_service.dict(by_alias=True, exclude_unset=True))
-                .returning(literal_column("*"))
+
+        stmt_update = (
+            services_meta_data.update()
+            .where(
+                (services_meta_data.c.key == patched_service.key)
+                & (services_meta_data.c.version == patched_service.version)
             )
+            .values(
+                **patched_service.dict(
+                    by_alias=True,
+                    exclude_unset=True,
+                    exclude={"key", "version"},
+                )
+            )
+            .returning(literal_column("*"))
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_update)
             row = result.first()
             assert row  # nosec
         return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))

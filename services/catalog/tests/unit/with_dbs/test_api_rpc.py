@@ -115,9 +115,7 @@ async def test_rcp_catalog_client(
         service_version=service_version,
         update={
             "name": "foo",
-            "thumbnail": None,
             "description": "bar",
-            "classifiers": None,
         },
     )
 

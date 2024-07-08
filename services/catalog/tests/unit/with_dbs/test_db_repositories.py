@@ -349,3 +349,42 @@ async def test_list_all_services_and_history_with_pagination(
 
         latest_version = service.history[0].version  # latest service is first
         assert service.version == latest_version
+
+
+async def test_get_and_update_service_meta_data(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+
+    # inject service
+    service_key = "simcore/services/dynamic/some-service"
+    service_version = "1.2.3"
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                service_key,
+                service_version,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+        ]
+    )
+
+    got = await services_repo.get_service(service_key, service_version)
+    assert got is not None
+    assert got.key == service_key
+    assert got.version == service_version
+
+    updated = await services_repo.update_service(
+        ServiceMetaDataAtDB.construct(
+            key=service_key, version=service_version, name="foo"
+        )
+    )
+
+    assert got.copy(update={"name": "foo"}) == updated
+
+    assert await services_repo.get_service(service_key, service_version) == updated
