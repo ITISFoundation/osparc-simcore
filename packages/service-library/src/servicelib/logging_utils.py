@@ -4,10 +4,10 @@ This codes originates from this article
 
 SEE also https://github.com/Delgan/loguru for a future alternative
 """
+
 import asyncio
 import functools
 import logging
-import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -187,11 +187,11 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                     )
                 except:
                     # log exception if occurs in function
-                    logger_obj.error(
+                    logger_obj.log(
+                        level,
                         "Exception: %s",
-                        sys.exc_info()[1],
                         extra=extra_args,
-                        exc_info=log_traceback,
+                        stack_info=log_traceback,
                     )
                     raise
                 # Return function value
@@ -210,11 +210,11 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                     )
                 except:
                     # log exception if occurs in function
-                    logger_obj.error(
+                    logger_obj.log(
+                        level,
                         "Exception: %s",
-                        sys.exc_info()[1],
                         extra=extra_args,
-                        exc_info=log_traceback,
+                        stack_info=log_traceback,
                     )
                     raise
                 # Return function value
