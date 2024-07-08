@@ -87,6 +87,11 @@ def mocked_ec2_server_envs(
 
 
 @pytest.fixture
+def ec2_settings(mocked_ec2_server_settings: EC2Settings) -> EC2Settings:
+    return mocked_ec2_server_settings
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,

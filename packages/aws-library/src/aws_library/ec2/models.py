@@ -10,7 +10,6 @@ from pydantic import (
     BaseModel,
     ByteSize,
     ConstrainedStr,
-    Extra,
     Field,
     NonNegativeFloat,
     validator,
@@ -142,7 +141,6 @@ class EC2InstanceBootSpecific(BaseModel):
     )
 
     class Config:
-        extra = Extra.forbid
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
