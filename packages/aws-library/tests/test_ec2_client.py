@@ -16,6 +16,7 @@ from aws_library.ec2.errors import (
     EC2TooManyInstancesError,
 )
 from aws_library.ec2.models import (
+    AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -493,7 +494,7 @@ async def test_set_instance_tags(
 
     # now remove some, this should do nothing
     await simcore_ec2_api.remove_instances_tags(
-        created_instances, tag_keys=["whatever_i_dont_exist"]
+        created_instances, tag_keys=[AWSTagKey("whatever_i_dont_exist")]
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -504,7 +505,7 @@ async def test_set_instance_tags(
         expected_state="running",
     )
     # now remove some real ones
-    tag_key_to_remove = random.choice(list(new_tags))
+    tag_key_to_remove = random.choice(list(new_tags))  # noqa: S311
     await simcore_ec2_api.remove_instances_tags(
         created_instances, tag_keys=[tag_key_to_remove]
     )
