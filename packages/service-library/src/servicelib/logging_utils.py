@@ -169,7 +169,9 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool = False):
+def log_decorator(
+    logger=None, level: int = logging.DEBUG, *, log_traceback: bool = False
+):
     # Build logger object
     logger_obj = logger or _logger
 
@@ -191,7 +193,7 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                         level,
                         "Exception: %s",
                         extra=extra_args,
-                        stack_info=log_traceback,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
@@ -214,7 +216,7 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                         level,
                         "Exception: %s",
                         extra=extra_args,
-                        stack_info=log_traceback,
+                        exc_info=log_traceback,
                     )
                     raise
                 # Return function value
