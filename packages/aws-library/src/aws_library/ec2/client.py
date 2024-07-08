@@ -2,7 +2,7 @@ import contextlib
 import logging
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Sequence, cast
+from typing import cast
 
 import aioboto3
 import botocore.exceptions
