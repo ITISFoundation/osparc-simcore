@@ -284,7 +284,7 @@ def list_latest_services_with_history_stmt(
     )
 
 
-def get_service_with_history_stmt(
+def get_service_stmt2(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -292,53 +292,22 @@ def get_service_with_history_stmt(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ):
-    _service_meta_access_join = services_meta_data.join(
-        services_access_rights,
-        (services_meta_data.c.key == services_access_rights.c.key)
-        & (services_meta_data.c.version == services_access_rights.c.version)
-        & (services_access_rights.c.product_name == product_name),
-    ).join(
-        user_to_groups,
-        (user_to_groups.c.gid == services_access_rights.c.gid)
-        & (user_to_groups.c.uid == user_id),
-    )
 
     owner_subquery = (
         sa.select(users.c.email)
-        .select_from(user_to_groups.join(users, user_to_groups.c.uid == users.c.id))
-        .where(user_to_groups.c.gid == services_meta_data.c.owner)
+        .select_from(
+            user_to_groups.join(
+                users,
+                user_to_groups.c.uid == users.c.id,
+            )
+        )
+        .where(
+            (user_to_groups.c.gid == services_meta_data.c.owner)
+            & (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+        )
         .limit(1)
         .alias("owner_subquery")
-    )
-
-    history_subquery = (
-        sa.select(
-            array_agg(
-                func.json_build_object(
-                    "version",
-                    services_meta_data.c.version,
-                    "deprecated",
-                    services_meta_data.c.deprecated,
-                    "created",
-                    services_meta_data.c.created,
-                )
-            ).label("history"),
-        )
-        .select_from(
-            # joins because access-rights might change per version
-            _service_meta_access_join
-        )
-        .where((services_meta_data.c.key == service_key) & access_rights)
-        .group_by(
-            services_meta_data.c.key,
-            services_meta_data.c.version,
-            services_meta_data.c.deprecated,
-            services_meta_data.c.created,
-        )
-        .order_by(
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
-        )
-        .alias("history_subquery")
     )
 
     return (
@@ -359,9 +328,20 @@ def get_service_with_history_stmt(
             services_meta_data.c.modified,
             services_meta_data.c.deprecated,
             # releases
-            history_subquery.c.history,
+            # TODO: history
         )
-        .select_from(_service_meta_access_join)
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version)
+                & (services_access_rights.c.product_name == product_name),
+            ).join(
+                user_to_groups,
+                (user_to_groups.c.gid == services_access_rights.c.gid)
+                & (user_to_groups.c.uid == user_id),
+            )
+        )
         .where(
             (services_meta_data.c.key == service_key)
             & (services_meta_data.c.version == service_version)

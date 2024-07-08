@@ -7,7 +7,7 @@ from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     batch_get_services_stmt,
-    get_service_with_history_stmt,
+    get_service_stmt2,
     list_latest_services_with_history_stmt,
     list_services_stmt2,
     list_services_with_history_stmt,
@@ -25,15 +25,15 @@ def test_building_services_sql_statements():
 
     # some data
     product_name = "osparc"
-    user_id = 4
+    user_id = 425  # 4
 
     _check(
-        get_service_with_history_stmt,
+        get_service_stmt2,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        service_key="simcore/services/comp/kember-cardiac-model",
-        service_version="1.0.0",
+        service_key="simcore/services/comp/isolve",
+        service_version="2.0.85",
     )
 
     _check(
