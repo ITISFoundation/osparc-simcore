@@ -129,7 +129,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           // rich: false,
           toolTipText: names[i]
         });
-        // leave ``rich`` set to true. Ellipsis wil be handled here:
+        // leave ``rich`` set to true. Ellipsis will be handled here:
         label.getContentElement().setStyles({
           "text-overflow": "ellipsis",
           "white-space": "nowrap"
