@@ -292,22 +292,12 @@ def get_service_stmt2(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ):
-
     owner_subquery = (
         sa.select(users.c.email)
-        .select_from(
-            user_to_groups.join(
-                users,
-                user_to_groups.c.uid == users.c.id,
-            )
-        )
-        .where(
-            (user_to_groups.c.gid == services_meta_data.c.owner)
-            & (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-        )
+        .select_from(user_to_groups.join(users, user_to_groups.c.uid == users.c.id))
+        .where(user_to_groups.c.gid == services_meta_data.c.owner)
         .limit(1)
-        .alias("owner_subquery")
+        .scalar_subquery()
     )
 
     return (
@@ -319,7 +309,7 @@ def get_service_stmt2(
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
             # ownership
-            owner_subquery.c.email.label("owner_email"),
+            owner_subquery.label("owner_email"),
             # tags
             services_meta_data.c.classifiers,
             services_meta_data.c.quality,
@@ -334,17 +324,16 @@ def get_service_stmt2(
             services_meta_data.join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
+                & (services_meta_data.c.version == services_access_rights.c.version),
             ).join(
-                user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
+                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
             )
         )
         .where(
             (services_meta_data.c.key == service_key)
             & (services_meta_data.c.version == service_version)
+            & (user_to_groups.c.uid == user_id)
+            & (services_access_rights.c.product_name == product_name)
             & access_rights
         )
     )

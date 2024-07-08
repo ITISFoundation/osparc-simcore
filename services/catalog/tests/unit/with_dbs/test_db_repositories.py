@@ -395,3 +395,14 @@ async def test_list_services_paginated(
         assert itm.access_rights
         assert itm.owner is not None
         assert itm.history[0].version == itm.version
+
+        got = await catalog.get_service(
+            services_repo,
+            product_name=target_product,
+            user_id=user_id,
+            service_key=itm.key,
+            service_version=itm.version,
+        )
+
+        # FIXME: history still wrong
+        assert got.dict(exclude={"history"}) == itm.dict(exclude={"history"})

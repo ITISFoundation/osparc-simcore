@@ -31,6 +31,7 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    get_service_stmt2,
     list_latest_services_with_history_stmt,
     list_services_stmt,
     total_count_stmt,
@@ -267,11 +268,43 @@ class ServicesRepository(BaseRepository):
         product_name: ProductName,
         user_id: UserID,
         # get args
-        key: str,
-        version: str,
+        key: ServiceKey,
+        version: ServiceVersion,
     ) -> ServiceWithHistoryFromDB | None:
 
-        raise NotImplementedError
+        stmt_get = get_service_stmt2(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            service_key=key,
+            service_version=version,
+        )
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_get)
+            r = result.one_or_none()
+            return (
+                ServiceWithHistoryFromDB(
+                    key=r.key,
+                    version=r.version,
+                    # display
+                    name=r.name,
+                    description=r.description,
+                    thumbnail=r.thumbnail,
+                    # ownership
+                    owner_email=r.owner_email,
+                    # tagging
+                    classifiers=r.classifiers,
+                    quality=r.quality,
+                    # lifetime
+                    created=r.created,
+                    modified=r.modified,
+                    deprecated=r.deprecated,
+                    # releases
+                    history=[],  # TODO: r.history,
+                )
+                if r
+                else None
+            )
 
     async def list_latest_services(
         self,
