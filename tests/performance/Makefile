@@ -52,4 +52,4 @@ test: ## runs osparc locust. locust and test confiuration are specified in .env 
 
 .PHONY: install-dev
 install-dev: _check_venv_active ## install python tools
-	@uv pip install -r requirements.txt
+	@uv pip install -e .

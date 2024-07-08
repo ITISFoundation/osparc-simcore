@@ -1,0 +1,10 @@
+[project]
+name = "locust_settings"
+version = "0.0.0"
+dependencies = [
+    "pydantic",
+    "pydantic-settings",
+]
+
+[tool.setuptools]
+py-modules = ['locust_settings']
