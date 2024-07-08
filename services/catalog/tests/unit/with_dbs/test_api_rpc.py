@@ -133,3 +133,8 @@ async def test_rcp_catalog_client(
         service_version=service_version,
     )
     assert got == updated
+
+    # TODO: test NotFoundError
+    # TODO: test NotImplementedError
+    # TODO: test InputErrors
+    # TODO: test Forbidden: not enough access rights

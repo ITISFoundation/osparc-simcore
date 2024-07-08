@@ -88,9 +88,15 @@ async def list_services_paginated(
     ] = await repo.list_services_access_rights(
         ((s.key, s.version) for s in services_in_db), product_name=product_name
     )
+    if not services_access_rights:
+        # TODO: is there a faster way to check this. Avoid calling list_latest_service first
+        raise CatalogForbiddenError(
+            name="any service",
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     # NOTE: aggregates published (i.e. not editable) is still missing in this version
-
     items = [
         _to_api_model(db, db_ar)
         for db in services_in_db
@@ -112,7 +118,6 @@ async def get_service(
     db_ar = await repo.get_service_access_rights(
         key=service_key, version=service_version, product_name=product_name
     )
-
     if not db_ar:
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
