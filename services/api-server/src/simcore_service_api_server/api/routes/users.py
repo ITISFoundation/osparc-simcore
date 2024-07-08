@@ -37,5 +37,5 @@ async def update_my_profile(
         AuthSession, Security(get_webserver_session, scopes=["write"])
     ],
 ) -> Profile:
-    profile: Profile = await webserver_session.update_me(profile_update)
+    profile: Profile = await webserver_session.update_me(profile_update=profile_update)
     return profile
