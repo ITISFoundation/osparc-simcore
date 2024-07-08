@@ -19,7 +19,7 @@
   *
   */
 
-qx.Class.define("osparc.node.FilePickerSSView", {
+qx.Class.define("osparc.node.slideshow.FilePickerView", {
   extend: osparc.node.slideshow.BaseNodeView,
 
   events: {

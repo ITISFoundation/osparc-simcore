@@ -264,7 +264,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         view.add(renderer);
       } else {
         if (node.isFilePicker()) {
-          view = new osparc.node.FilePickerSSView();
+          view = new osparc.node.slideshow.FilePickerView();
           view.getOutputsButton().hide();
         } else {
           view = new osparc.node.slideshow.NodeView();
