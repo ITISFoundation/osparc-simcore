@@ -1,17 +1,17 @@
 from typing import Any, ClassVar
 
-from pydantic import Field
+from pydantic import AnyHttpUrl, Field, SecretStr
 
 from .base import BaseCustomSettings
 
 
 class SSMSettings(BaseCustomSettings):
-    SSM_ACCESS_KEY_ID: str
-    SSM_ENDPOINT: str | None = Field(
+    SSM_ACCESS_KEY_ID: SecretStr
+    SSM_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
     )
     SSM_REGION_NAME: str = "us-east-1"
-    SSM_SECRET_ACCESS_KEY: str
+    SSM_SECRET_ACCESS_KEY: SecretStr
 
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
