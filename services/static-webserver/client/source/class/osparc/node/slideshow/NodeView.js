@@ -27,13 +27,13 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeView = new osparc.node.NodeView();
+ *   let nodeView = new osparc.node.slideshow.NodeView();
  *   nodeView.setNode(workbench.getNode1());
  *   this.getRoot().add(nodeView);
  * </pre>
  */
 
-qx.Class.define("osparc.node.NodeView", {
+qx.Class.define("osparc.node.slideshow.NodeView", {
   extend: osparc.node.BaseNodeView,
 
   statics: {
