@@ -278,16 +278,19 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __applyFolder: function(folder) {
-      if (folder.getLoaded && !folder.getLoaded()) {
-        this.fireDataEvent("requestDatasetFiles", {
-          locationId: folder.getLocation(),
-          datasetId: folder.getPath()
-        });
+      if (folder) {
+        if (folder.getLoaded && !folder.getLoaded()) {
+          this.fireDataEvent("requestDatasetFiles", {
+            locationId: folder.getLocation(),
+            datasetId: folder.getPath()
+          });
+        }
+
+        folder.getChildren().addListener("change", () => {
+          this.__reloadFolderContent();
+        }, this);
       }
 
-      folder.getChildren().addListener("change", () => {
-        this.__reloadFolderContent();
-      }, this);
       this.__reloadFolderContent();
     },
 
