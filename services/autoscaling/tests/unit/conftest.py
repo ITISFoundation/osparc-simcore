@@ -52,6 +52,7 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
+    AutoscalingEC2Settings,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import (
@@ -141,6 +142,11 @@ def with_labelize_drain_nodes(
             "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
         },
     )
+
+
+@pytest.fixture
+def ec2_settings() -> EC2Settings:
+    return AutoscalingEC2Settings.create_from_envs()
 
 
 @pytest.fixture
