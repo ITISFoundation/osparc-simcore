@@ -135,7 +135,9 @@ class SimcoreSSMAPI:
             command_name="cloud-init status",
         )
         # wait for command to complete
-        waiter = self._client.get_waiter("command_executed")
+        waiter = self._client.get_waiter(  # pylint: disable=assignment-from-no-return
+            "command_executed"
+        )
         try:
             await waiter.wait(
                 CommandId=cloud_init_status_command.command_id,
