@@ -11,17 +11,19 @@ from models_library.services_authoring import Author, Badge
 from models_library.services_enums import ServiceType
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
+    ServiceMetaDataAtDB,
     ServiceWithHistoryFromDB,
 )
 
 from ..db.repositories.services import ServicesRepository
+from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
 
@@ -160,13 +162,84 @@ async def update_service(
     assert product_name  # nosec
     assert user_id  # nosec
 
-    # TODO: NotFoundError
-    # TODO: NotImplementedError
-    # TODO: InputErrors
-    # TODO: Forbidden: not enough access rights
+    if is_function_service(service_key):
+        raise CatalogForbiddenError(
+            name=f"function service {service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
-    _logger.debug("Moking update_service for %s...", f"{user_id=}")
-    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
-    got.key = service_key
-    got.version = service_version
-    return got.copy(update=update.dict(exclude_unset=True))
+    db_ar = await repo.get_service_access_rights(
+        key=service_key, version=service_version, product_name=product_name
+    )
+    if not db_ar:
+        raise CatalogForbiddenError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    # Updates service_meta_data
+    db = await repo.update_service(
+        ServiceMetaDataAtDB(
+            key=service_key,
+            version=service_version,
+            **update.dict(exclude_unset=True),
+        )
+    )
+    if not db:
+        raise CatalogItemNotFoundError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    # Updates service_access_rights (they can be added/removed/modified)
+    if update.access_rights:
+
+        # before
+        current_access_rights = await repo.get_service_access_rights(
+            service_key, service_version, product_name=product_name
+        )
+        before_gids = [r.gid for r in current_access_rights]
+
+        # new
+        new_access_rights = [
+            ServiceAccessRightsAtDB(
+                key=service_key,
+                version=service_version,
+                gid=gid,
+                execute_access=rights.execute_access,
+                write_access=rights.write_access,
+                product_name=product_name,
+            )
+            for gid, rights in update.access_rights.items()
+        ]
+        await repo.upsert_service_access_rights(new_access_rights)
+
+        # then delete the ones that were removed
+        remove_gids = [gid for gid in before_gids if gid not in update.access_rights]
+        deleted_access_rights = [
+            ServiceAccessRightsAtDB(
+                key=service_key,
+                version=service_version,
+                gid=gid,
+                product_name=product_name,
+            )
+            for gid in remove_gids
+        ]
+        await repo.delete_service_access_rights(deleted_access_rights)
+
+    return await get_service(
+        repo=repo,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
