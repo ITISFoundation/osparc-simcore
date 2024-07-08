@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import dataclasses
 from collections.abc import AsyncIterator
 
 import botocore.exceptions
@@ -58,12 +59,6 @@ async def test_ping(
     assert await simcore_ssm_api.ping() is True
 
 
-async def test_send_command(
-    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI
-):
-    ...
-
-
 @pytest.fixture
 def fake_command_id(faker: Faker) -> str:
     return faker.pystr(min_chars=36, max_chars=36)
@@ -77,6 +72,31 @@ async def test_get_command(
 ):
     with pytest.raises(SSMInvalidCommandIdError):
         await simcore_ssm_api.get_command(faker.pystr(), command_id=fake_command_id)
+
+
+async def test_send_command(
+    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI, faker: Faker
+):
+    command_name = faker.word()
+    target_instance_id = faker.pystr()
+    sent_command = await simcore_ssm_api.send_command(
+        instance_ids=[target_instance_id],
+        command=faker.text(),
+        command_name=command_name,
+    )
+    assert sent_command
+    assert sent_command.command_id
+    assert sent_command.name == command_name
+    assert sent_command.instance_ids == [target_instance_id]
+    assert sent_command.status == "Success"
+
+    got = await simcore_ssm_api.get_command(
+        target_instance_id, command_id=sent_command.command_id
+    )
+    assert dataclasses.asdict(got) == {
+        **dataclasses.asdict(sent_command),
+        "message": "Success",
+    }
 
 
 async def test_is_instance_connected_to_ssm_server(
