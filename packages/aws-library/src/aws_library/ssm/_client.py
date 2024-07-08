@@ -2,9 +2,11 @@ import contextlib
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import cast
+from typing import Final, cast
 
 import aioboto3
+import botocore
+import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from servicelib.logging_utils import log_decorator
 from settings_library.ssm import SSMSettings
@@ -15,6 +17,9 @@ from ._error_handler import ssm_exception_handler
 from ._errors import SSMCommandExecutionError
 
 _logger = logging.getLogger(__name__)
+
+_AWS_WAIT_MAX_DELAY: Final[int] = 5
+_AWS_WAIT_NUM_RETRIES: Final[int] = 3
 
 
 @dataclass(frozen=True)
@@ -28,9 +33,9 @@ class SSMCommand:
 
 @dataclass(frozen=True)
 class SimcoreSSMAPI:
-    client: SSMClient
-    session: aioboto3.Session
-    exit_stack: contextlib.AsyncExitStack
+    _client: SSMClient
+    _session: aioboto3.Session
+    _exit_stack: contextlib.AsyncExitStack
 
     @classmethod
     async def create(cls, settings: SSMSettings) -> "SimcoreSSMAPI":
@@ -50,11 +55,11 @@ class SimcoreSSMAPI:
         return cls(ec2_client, session, exit_stack)
 
     async def close(self) -> None:
-        await self.exit_stack.aclose()
+        await self._exit_stack.aclose()
 
     async def ping(self) -> bool:
         try:
-            await self.client.list_commands(MaxResults=1)
+            await self._client.list_commands(MaxResults=1)
             return True
         except Exception:  # pylint: disable=broad-except
             return False
@@ -67,7 +72,7 @@ class SimcoreSSMAPI:
     ) -> SSMCommand:
         # NOTE: using Targets instead of instances as this is limited to 50 instances
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.send_command
-        response = await self.client.send_command(
+        response = await self._client.send_command(
             Targets=[{"Key": "InstanceIds", "Values": instance_ids}],
             DocumentName="AWS-RunShellScript",
             Comment=command_name,
@@ -89,7 +94,7 @@ class SimcoreSSMAPI:
     @ssm_exception_handler(_logger)
     async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
 
-        response = await self.client.get_command_invocation(
+        response = await self._client.get_command_invocation(
             CommandId=command_id, InstanceId=instance_id
         )
 
@@ -104,7 +109,7 @@ class SimcoreSSMAPI:
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
     async def is_instance_connected_to_ssm_server(self, instance_id: str) -> bool:
-        response = await self.client.describe_instance_information(
+        response = await self._client.describe_instance_information(
             InstanceInformationFilterList=[
                 {
                     "key": "InstanceIds",
@@ -130,14 +135,23 @@ class SimcoreSSMAPI:
             command_name="cloud-init status",
         )
         # wait for command to complete
-        waiter = self.client.get_waiter("command_executed")
-        await waiter.wait(
-            CommandId=cloud_init_status_command.command_id, InstanceId=instance_id
-        )
-        response = await self.client.get_command_invocation(
+        waiter = self._client.get_waiter("command_executed")
+        try:
+            await waiter.wait(
+                CommandId=cloud_init_status_command.command_id,
+                InstanceId=instance_id,
+                WaiterConfig={
+                    "Delay": _AWS_WAIT_MAX_DELAY,
+                    "MaxAttempts": _AWS_WAIT_NUM_RETRIES,
+                },
+            )
+        except botocore.exceptions.WaiterError as exc:
+            msg = f"Timed-out waiting for {instance_id} to complete cloud-init"
+            raise SSMCommandExecutionError(details=msg) from exc
+        response = await self._client.get_command_invocation(
             CommandId=cloud_init_status_command.command_id, InstanceId=instance_id
         )
         if response["Status"] != "Success":
             raise SSMCommandExecutionError(details=response["StatusDetails"])
         # check if cloud-init is done
-        return bool(response["StandardOutputContent"] == "status: done\n")
+        return bool("status: done" in response["StandardOutputContent"])

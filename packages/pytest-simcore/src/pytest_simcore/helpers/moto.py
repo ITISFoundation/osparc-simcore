@@ -41,7 +41,7 @@ def _patch_describe_instance_information(
     self, operation_name, api_params
 ) -> dict[str, Any]:
     warnings.warn(
-        "moto is missing the describe_instance_information function, therefor it is manually mocked."
+        "moto is missing the describe_instance_information function, therefore it is manually mocked."
         "TIP: periodically check if it gets updated https://docs.getmoto.org/en/latest/docs/services/ssm.html#ssm",
         UserWarning,
         stacklevel=1,

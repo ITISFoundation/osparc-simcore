@@ -7,10 +7,11 @@ from botocore import exceptions as botocore_exc
 
 from ._errors import (
     SSMAccessError,
-    SSMInvalidCommandIdError,
+    SSMInvalidCommandError,
     SSMNotConnectedError,
     SSMRuntimeError,
     SSMSendCommandInstancesNotReadyError,
+    SSMTimeoutError,
 )
 
 if TYPE_CHECKING:
@@ -31,8 +32,10 @@ def _map_botocore_client_exception(
         case 400, "SendCommand":
             return SSMSendCommandInstancesNotReadyError()
         case 400, "GetCommandInvocation":
-            if "InvalidCommandId" in botocore_error.response["Error"]["Message"]:
-                return SSMInvalidCommandIdError(command_id=kwargs["command_id"])
+            assert "Error" in botocore_error.response  # nosec
+            assert "Message" in botocore_error.response["Error"]  # nosec
+            return SSMInvalidCommandError(command_id=kwargs["command_id"])
+
         case _:
             return SSMAccessError(
                 operation_name=operation_name,
@@ -67,6 +70,8 @@ def ssm_exception_handler(
                 return await func(self, *args, **kwargs)
             except botocore_exc.ClientError as exc:
                 raise _map_botocore_client_exception(exc, **kwargs) from exc
+            except botocore_exc.WaiterError as exc:
+                raise SSMTimeoutError(details=f"{exc}") from exc
             except botocore_exc.EndpointConnectionError as exc:
                 raise SSMNotConnectedError from exc
             except botocore_exc.BotoCoreError as exc:

@@ -1,7 +1,8 @@
 from ._client import SimcoreSSMAPI
 from ._errors import (
     SSMAccessError,
-    SSMInvalidCommandIdError,
+    SSMCommandExecutionError,
+    SSMInvalidCommandError,
     SSMNotConnectedError,
     SSMRuntimeError,
     SSMSendCommandInstancesNotReadyError,
@@ -13,7 +14,8 @@ __all__: tuple[str, ...] = (
     "SSMNotConnectedError",
     "SSMRuntimeError",
     "SSMSendCommandInstancesNotReadyError",
-    "SSMInvalidCommandIdError",
+    "SSMInvalidCommandError",
+    "SSMCommandExecutionError",
 )
 
 # nopycln: file

@@ -16,6 +16,10 @@ class SSMAccessError(SSMRuntimeError):
     )
 
 
+class SSMTimeoutError(SSMAccessError):
+    msg_template: str = "Timeout while accessing SSM backend: {details}"
+
+
 class SSMSendCommandInstancesNotReadyError(SSMAccessError):
     msg_template: str = "Instance not ready to receive commands"
 
@@ -24,5 +28,5 @@ class SSMCommandExecutionError(SSMAccessError):
     msg_template: str = "Command execution error: {details}"
 
 
-class SSMInvalidCommandIdError(SSMAccessError):
+class SSMInvalidCommandError(SSMAccessError):
     msg_template: str = "Invalid command ID: {command_id}"
