@@ -31,13 +31,7 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
-.PHONY: up down run
-up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
-	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); \
-	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	docker compose --file docker-compose.yml up --scale worker=4
-
+.PHONY: down
 down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
