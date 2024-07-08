@@ -23,9 +23,9 @@ async def ssm_client(
     exit_stack = contextlib.AsyncExitStack()
     session_client = session.client(
         "ssm",
-        endpoint_url=mocked_ssm_server_settings.SSM_ENDPOINT,
-        aws_access_key_id=mocked_ssm_server_settings.SSM_ACCESS_KEY_ID,
-        aws_secret_access_key=mocked_ssm_server_settings.SSM_SECRET_ACCESS_KEY,
+        endpoint_url=f"{mocked_ssm_server_settings.SSM_ENDPOINT}",
+        aws_access_key_id=mocked_ssm_server_settings.SSM_ACCESS_KEY_ID.get_secret_value(),
+        aws_secret_access_key=mocked_ssm_server_settings.SSM_SECRET_ACCESS_KEY.get_secret_value(),
         region_name=mocked_ssm_server_settings.SSM_REGION_NAME,
     )
     assert isinstance(session_client, ClientCreatorContext)
