@@ -166,8 +166,8 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         this._connectVisibility(item, label);
       }
 
-      this.addListener("appear", () => this.__makeLabelsResponsive());
-      this.addListener("resize", () => this.__makeLabelsResponsive());
+      this.addListener("appear", () => this.__makeLabelsResponsive(), this);
+      this.addListener("resize", () => this.__makeLabelsResponsive(), this);
     },
 
     __makeLabelsResponsive: function() {
@@ -175,18 +175,27 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const inputs = node.getInputs();
       let extendedVersion = false;
 
+      let columnWidth = null;
       const firstElement = this.getLayout().getCellWidget(0, 0);
       const secondElement = this.getLayout().getCellWidget(0, 1);
-      const firstCellBounds = firstElement.getBounds();
-      const secondCellBounds = secondElement.getBounds();
-      let columnWidth = null;
-      if (firstCellBounds && secondCellBounds) {
-        const left1 = firstCellBounds.left;
-        const left2 = secondCellBounds.left;
-        columnWidth = left2 - left1;
-        console.log("First column", columnWidth);
-        extendedVersion = columnWidth > 200;
+      if (firstElement && secondElement) {
+        const firstCellBounds = firstElement.getBounds();
+        const secondCellBounds = secondElement.getBounds();
+        if (firstCellBounds && secondCellBounds) {
+          const left1 = firstCellBounds.left;
+          const left2 = secondCellBounds.left;
+          columnWidth = left2 - left1;
+          extendedVersion = columnWidth > 300;
+        } else {
+          setTimeout(() => this.__makeLabelsResponsive(), 100);
+          return;
+        }
+      } else {
+        setTimeout(() => this.__makeLabelsResponsive(), 100);
+        return;
       }
+
+      console.log("First column", columnWidth);
 
       if (extendedVersion) {
         // Extend description of Settings
@@ -197,7 +206,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
               toolTipText: inputs[portId].label + "<br>" + inputs[portId].description
             });
 
-            this._getInfoFieldChild(portId).child.exclude();
+            this._getInfoFieldChild(portId).child.hide();
 
             this._getCtrlFieldChild(portId).child.set({
               minWidth: 150
