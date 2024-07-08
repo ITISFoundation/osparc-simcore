@@ -99,6 +99,11 @@ async def test_rcp_catalog_client(
     )
     assert got.key == service_key
     assert got.version == service_version
+    assert got == next(
+        item
+        for item in page.data
+        if (item.key == service_key and item.version == service_version)
+    )
 
     updated = await update_service(
         rpc_client,
@@ -117,3 +122,14 @@ async def test_rcp_catalog_client(
     assert updated.key == got.key
     assert updated.version == got.version
     assert updated.name == "foo"
+    assert updated.description == "bar"
+    assert not updated.classifiers
+
+    got = await get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    assert got == updated
