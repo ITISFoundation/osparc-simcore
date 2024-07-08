@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 
 import botocore.exceptions
 import pytest
-from aws_library.ssm._client import SimcoreSSMAPI
+from aws_library.ssm import SimcoreSSMAPI, SSMInvalidCommandIdError
 from faker import Faker
 from moto.server import ThreadedMotoServer
 from settings_library.ssm import SSMSettings
@@ -64,10 +64,19 @@ async def test_send_command(
     ...
 
 
+@pytest.fixture
+def fake_command_id(faker: Faker) -> str:
+    return faker.pystr(min_chars=36, max_chars=36)
+
+
 async def test_get_command(
-    mocked_aws_server: ThreadedMotoServer, simcore_ssm_api: SimcoreSSMAPI, faker: Faker
+    mocked_aws_server: ThreadedMotoServer,
+    simcore_ssm_api: SimcoreSSMAPI,
+    faker: Faker,
+    fake_command_id: str,
 ):
-    await simcore_ssm_api.get_command(faker.pystr(), command_id=faker.pystr())
+    with pytest.raises(SSMInvalidCommandIdError):
+        await simcore_ssm_api.get_command(faker.pystr(), command_id=fake_command_id)
 
 
 async def test_is_instance_connected_to_ssm_server(

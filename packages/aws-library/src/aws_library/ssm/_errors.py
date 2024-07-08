@@ -22,3 +22,7 @@ class SSMSendCommandInstancesNotReadyError(SSMAccessError):
 
 class SSMCommandExecutionError(SSMAccessError):
     msg_template: str = "Command execution error: {details}"
+
+
+class SSMInvalidCommandIdError(SSMAccessError):
+    msg_template: str = "Invalid command ID: {command_id}"

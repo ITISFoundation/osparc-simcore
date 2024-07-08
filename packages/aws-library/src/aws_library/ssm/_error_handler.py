@@ -7,6 +7,7 @@ from botocore import exceptions as botocore_exc
 
 from ._errors import (
     SSMAccessError,
+    SSMInvalidCommandIdError,
     SSMNotConnectedError,
     SSMRuntimeError,
     SSMSendCommandInstancesNotReadyError,
@@ -29,7 +30,9 @@ def _map_botocore_client_exception(
     match status_code, operation_name:
         case 400, "SendCommand":
             return SSMSendCommandInstancesNotReadyError()
-
+        case 400, "GetCommandInvocation":
+            if "InvalidCommandId" in botocore_error.response["Error"]["Message"]:
+                return SSMInvalidCommandIdError(command_id=kwargs["command_id"])
         case _:
             return SSMAccessError(
                 operation_name=operation_name,
