@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogItemNotFoundError
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     get_service,
     list_services_paginated,
@@ -134,7 +135,30 @@ async def test_rcp_catalog_client(
     )
     assert got == updated
 
-    # TODO: test NotFoundError
-    # TODO: test NotImplementedError
-    # TODO: test InputErrors
-    # TODO: test Forbidden: not enough access rights
+
+async def test_rcp_service_not_found_error(
+    director_setup_disabled: None,
+    fake_services_inserted_in_db: None,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+
+    with pytest.raises(CatalogItemNotFoundError, match="unknown"):
+        await get_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="simcore/services/dynamic/unknown",
+            service_version="1.0.0",
+        )
+
+    with pytest.raises(ValidationError, match="service_key"):
+        await get_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="wrong-format/unknown",
+            service_version="1.0.0",
+        )

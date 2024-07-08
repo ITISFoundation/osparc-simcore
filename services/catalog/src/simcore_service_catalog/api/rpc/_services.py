@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogForbiddenError,))
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_services_paginated(
     app: FastAPI,

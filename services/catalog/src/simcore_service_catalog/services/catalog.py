@@ -91,7 +91,6 @@ async def list_services_paginated(
         ((s.key, s.version) for s in services_in_db), product_name=product_name
     )
     if not services_access_rights:
-        # TODO: is there a faster way to check this. Avoid calling list_latest_service first
         raise CatalogForbiddenError(
             name="any service",
             user_id=user_id,
@@ -118,11 +117,12 @@ async def get_service(
 ) -> ServiceGetV2:
 
     db_ar = await repo.get_service_access_rights(
-        key=service_key, version=service_version, product_name=product_name
+        key=service_key,
+        version=service_version,
+        product_name=product_name,
     )
     if not db_ar:
-        # FIXME: Could be not found as well
-        raise CatalogForbiddenError(
+        raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -137,7 +137,7 @@ async def get_service(
         version=service_version,
     )
     if not db:
-        raise CatalogItemNotFoundError(
+        raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -176,8 +176,7 @@ async def update_service(
         key=service_key, version=service_version, product_name=product_name
     )
     if not db_ar:
-        # FIXME: can be not found as well
-        raise CatalogForbiddenError(
+        raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -194,7 +193,7 @@ async def update_service(
         )
     )
     if not db:
-        raise CatalogItemNotFoundError(
+        raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
