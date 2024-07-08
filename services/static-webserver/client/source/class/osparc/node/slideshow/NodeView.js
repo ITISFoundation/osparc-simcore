@@ -50,6 +50,31 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
   members: {
     __loggerPanel: null,
 
+    __extendDescriptions: function() {
+      // Extend description of Settings
+      const node = this.getNode();
+      const propsForm = node.getPropsForm();
+      const inputs = node.getInputs();
+      for (const key in inputs) {
+        if (inputs[key].description) {
+          // eslint-disable-next-line no-underscore-dangle
+          const label = propsForm._getLabelFieldChild(key).child;
+          label.set({
+            value: inputs[key].label + ". " + inputs[key].description + ":",
+            toolTipText: inputs[key].label + "<br>" + inputs[key].description
+          });
+
+          // eslint-disable-next-line no-underscore-dangle
+          propsForm._getInfoFieldChild(key).child.exclude();
+
+          // eslint-disable-next-line no-underscore-dangle
+          propsForm._getCtrlFieldChild(key).child.set({
+            minWidth: 150
+          });
+        }
+      }
+    },
+
     // overridden
     _addSettings: function() {
       this._settingsLayout.removeAll();
@@ -57,12 +82,12 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const node = this.getNode();
       const propsForm = node.getPropsForm();
       if (propsForm && node.hasInputs()) {
-        propsForm.addListener("changeChildVisibility", () => {
-          this.__checkSettingsVisibility();
-        }, this);
+        propsForm.addListener("changeChildVisibility", () => this.__checkSettingsVisibility(), this);
         this._settingsLayout.add(propsForm);
       }
       this.__checkSettingsVisibility();
+
+      this.__extendDescriptions();
 
       this._mainView.add(this._settingsLayout);
     },
