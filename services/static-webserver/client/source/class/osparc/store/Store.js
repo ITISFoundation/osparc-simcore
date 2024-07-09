@@ -442,55 +442,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    /**
-     * @param {String} key
-     * @param {String} version
-     * @param {Boolean} reload
-     */
-    getService: function(key, version, reload = false) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(key, version)
-        };
-        osparc.data.Resources.getOne("services", params, null, !reload)
-          .then(serviceData => {
-            osparc.service.Utils.addTSRInfo(serviceData);
-            osparc.service.Utils.addExtraTypeInfo(serviceData);
-            resolve(serviceData);
-          });
-      });
-    },
-
-    /**
-     * This functions does the needed processing in order to have a working list of services and DAGs.
-     * @param {Boolean} reload
-     */
-    getAllServices: function(reload = false, includeRetired = true) {
-      return new Promise(resolve => {
-        let allServices = [];
-        osparc.data.Resources.get("services", null, !reload)
-          .then(services => {
-            allServices = services;
-          })
-          .catch(err => console.error("getServices failed", err))
-          .finally(() => {
-            let servicesObj = {};
-            if (includeRetired) {
-              servicesObj = osparc.service.Utils.convertArrayToObject(allServices);
-            } else {
-              const nonDepServices = allServices.filter(service => !(osparc.service.Utils.isRetired(service) || osparc.service.Utils.isDeprecated(service)));
-              servicesObj = osparc.service.Utils.convertArrayToObject(nonDepServices);
-            }
-            osparc.service.Utils.addTSRInfos(servicesObj);
-            osparc.service.Utils.addExtraTypeInfos(servicesObj);
-            if (includeRetired) {
-              osparc.service.Utils.servicesCached = servicesObj;
-            }
-            resolve(servicesObj);
-          });
-      });
-    },
-
     __getGroups: function(group) {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
