@@ -1099,7 +1099,7 @@ services:
         "--databases",
         "8",
         "--appendonly",
-        "yes",
+        "yes"
       ]
     networks:
       - default
