@@ -106,20 +106,16 @@ async def assert_ec2_instances(
             assert instance["InstanceType"] == expected_instance_type
             assert "Tags" in instance
             assert instance["Tags"]
-            expected_tag_keys = [
+            expected_tag_keys = {
                 *expected_instance_tag_keys,
                 "io.simcore.autoscaling.version",
                 "Name",
-            ]
-            instance_tag_keys = [tag["Key"] for tag in instance["Tags"] if "Key" in tag]
-            for tag_key in instance_tag_keys:
-                assert (
-                    tag_key in expected_tag_keys
-                ), f"instance has additional unexpected {tag_key=} vs {expected_tag_keys=}"
-            for tag in expected_instance_tag_keys:
-                assert (
-                    tag in instance_tag_keys
-                ), f"instance missing {tag=} vs {instance_tag_keys=}"
+            }
+            instance_tag_keys = {tag["Key"] for tag in instance["Tags"] if "Key" in tag}
+
+            assert (
+                instance_tag_keys == expected_tag_keys
+            ), f"{instance_tag_keys} != {expected_tag_keys}"
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
