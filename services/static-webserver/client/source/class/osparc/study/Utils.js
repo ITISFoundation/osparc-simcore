@@ -114,57 +114,55 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
-        const store = osparc.store.Store.getInstance();
-        store.getAllServices()
-          .then(services => {
-            if (key in services) {
-              const service = version ? osparc.service.Utils.getFromObject(services, key, version) : osparc.service.Utils.getLatest(key);
-              const newUuid = osparc.utils.Utils.uuidV4();
-              const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
-              if (newStudyLabel === undefined) {
-                newStudyLabel = service["name"];
-              }
-              if (existingStudies) {
-                const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
-                minStudyData["name"] = title;
-              } else {
-                minStudyData["name"] = newStudyLabel;
-              }
-              if (service["thumbnail"]) {
-                minStudyData["thumbnail"] = service["thumbnail"];
-              }
-              minStudyData["workbench"][newUuid] = {
-                "key": service["key"],
-                "version": service["version"],
-                "label": service["name"]
-              };
-              if (!("ui" in minStudyData)) {
-                minStudyData["ui"] = {};
-              }
-              if (!("workbench" in minStudyData["ui"])) {
-                minStudyData["ui"]["workbench"] = {};
-              }
-              minStudyData["ui"]["workbench"][newUuid] = {
-                "position": {
-                  "x": 250,
-                  "y": 100
-                }
-              };
-              const inaccessibleServices = this.getInaccessibleServices(minStudyData["workbench"])
-              if (inaccessibleServices.length) {
-                const msg = this.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
-                reject({
-                  message: msg
-                });
-                return;
-              }
-              const params = {
-                data: minStudyData
-              };
-              osparc.study.Utils.createStudyAndPoll(params)
-                .then(studyData => resolve(studyData["uuid"]))
-                .catch(err => reject(err));
+        const promises = version ? [osparc.service.Store.getService(key, version)] : [];
+        Promise.all(promises)
+          .then(() => {
+            const service = version ? osparc.service.Store.getMetaData(key, version) : osparc.service.Utils.getLatest(key);
+            const newUuid = osparc.utils.Utils.uuidV4();
+            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+            if (newStudyLabel === undefined) {
+              newStudyLabel = service["name"];
             }
+            if (existingStudies) {
+              const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
+              minStudyData["name"] = title;
+            } else {
+              minStudyData["name"] = newStudyLabel;
+            }
+            if (service["thumbnail"]) {
+              minStudyData["thumbnail"] = service["thumbnail"];
+            }
+            minStudyData["workbench"][newUuid] = {
+              "key": service["key"],
+              "version": service["version"],
+              "label": service["name"]
+            };
+            if (!("ui" in minStudyData)) {
+              minStudyData["ui"] = {};
+            }
+            if (!("workbench" in minStudyData["ui"])) {
+              minStudyData["ui"]["workbench"] = {};
+            }
+            minStudyData["ui"]["workbench"][newUuid] = {
+              "position": {
+                "x": 250,
+                "y": 100
+              }
+            };
+            const inaccessibleServices = this.getInaccessibleServices(minStudyData["workbench"])
+            if (inaccessibleServices.length) {
+              const msg = this.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
+              reject({
+                message: msg
+              });
+              return;
+            }
+            const params = {
+              data: minStudyData
+            };
+            osparc.study.Utils.createStudyAndPoll(params)
+              .then(studyData => resolve(studyData["uuid"]))
+              .catch(err => reject(err));
           })
           .catch(err => {
             osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
