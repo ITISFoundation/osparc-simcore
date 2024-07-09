@@ -162,7 +162,6 @@ qx.Class.define("osparc.service.Utils", {
         versions = versions.concat(Object.keys(serviceVersions));
         if (filterDeprecates) {
           versions = versions.filter(version => {
-            // TODO OM. they will always have the retired field
             if (["retired"] in services[key][version]) {
               return false;
             }
