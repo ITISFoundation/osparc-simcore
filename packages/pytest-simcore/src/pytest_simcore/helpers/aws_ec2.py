@@ -113,9 +113,7 @@ async def assert_ec2_instances(
             }
             instance_tag_keys = {tag["Key"] for tag in instance["Tags"] if "Key" in tag}
 
-            assert (
-                instance_tag_keys == expected_tag_keys
-            ), f"{instance_tag_keys} != {expected_tag_keys}"
+            assert instance_tag_keys == expected_tag_keys
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
