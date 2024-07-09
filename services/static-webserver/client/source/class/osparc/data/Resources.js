@@ -1295,8 +1295,9 @@ qx.Class.define("osparc.data.Resources", {
         };
         this.fetch(resource, endpoint, params, null, options)
           .then(resp => {
-            const data = resp["data"];
-            const meta = resp["_meta"];
+            // sometimes there is a kind of a double "data"
+            const meta = ("_meta" in resp["data"]) ? resp["data"]["_meta"] : resp["_meta"];
+            const data = ("_meta" in resp["data"]) ? resp["data"]["data"] : resp["data"];
             resources = [...resources, ...data];
             const allRequests = [];
             for (let i=offset+meta.limit; i<meta.total; i+=meta.limit) {
@@ -1305,7 +1306,14 @@ qx.Class.define("osparc.data.Resources", {
             }
             Promise.all(allRequests)
               .then(resps => {
-                resps.forEach(respData => resources = [...resources, ...respData]);
+                // sometimes there is a kind of a double "data"
+                resps.forEach(respData => {
+                  if ("data" in respData) {
+                    resources = [...resources, ...respData["data"]]
+                  } else {
+                    resources = [...resources, ...respData]
+                  }
+                });
                 resolve(resources);
               })
               .catch(err => {
