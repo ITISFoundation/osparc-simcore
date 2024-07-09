@@ -87,7 +87,7 @@ export DOCKER_REGISTRY  ?= itisfoundation
 
 
 
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
