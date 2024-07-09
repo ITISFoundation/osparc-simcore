@@ -22,6 +22,13 @@
                 "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png"
             }
         }, {
+            "application": "s4lengine",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life Engineering",
+                "replace_me_og_description": "Sim4Life for Engineers - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png"
+            }
+        }, {
             "application": "s4ldesktop",
             "replacements": {
                 "replace_me_og_title": "Sim4Life (Desktop)",
