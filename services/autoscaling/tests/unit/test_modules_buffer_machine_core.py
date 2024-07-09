@@ -6,6 +6,7 @@
 import datetime
 import json
 import logging
+import random
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, cast
 from unittest import mock
@@ -324,6 +325,54 @@ async def test_monitor_buffer_machines_terminates_unneeded_instances(
         instance_filters=instance_type_filters,
     )
     # this will terminate the supernumerary instances
+    await monitor_buffer_machines(
+        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+
+@pytest.fixture
+def unneeded_instance_type(
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+) -> InstanceTypeType:
+    random_type = next(iter(ec2_instances_allowed_types))
+    while random_type in ec2_instances_allowed_types:
+        random_type = random.choice(InstanceTypeType.__args__)  # noqa: S311
+    return random_type
+
+
+async def test_monitor_buffer_machines_terminates_unneeded_pool(
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    buffer_count: int,
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    instance_type_filters: Sequence[FilterTypeDef],
+    ec2_instance_custom_tags: dict[str, str],
+    initialized_app: FastAPI,
+    create_buffer_machines: Callable[[int, InstanceTypeType], Awaitable[list[str]]],
+    unneeded_instance_type: InstanceTypeType,
+):
+    # have too many machines of accepted type
+    buffer_machines_unneeded = await create_buffer_machines(5, unneeded_instance_type)
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=len(buffer_machines_unneeded),
+        expected_instance_type=unneeded_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+    # this will terminate the unwanted buffer pool and replace with the expected ones
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
