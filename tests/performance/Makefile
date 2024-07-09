@@ -40,7 +40,7 @@ test: ## runs osparc locust. locust and test confiuration are specified in .env 
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
 	export ENV_FILE=$$(realpath .env); \
-	if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!!" && exit 1; fi; \
+	if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi; \
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
 
 
