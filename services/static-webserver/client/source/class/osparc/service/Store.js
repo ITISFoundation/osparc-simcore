@@ -69,6 +69,13 @@ qx.Class.define("osparc.service.Store", {
       });
     },
 
+    getMetaData: function(key, version) {
+      if (this.__isInCache(key, version)) {
+        return this.servicesCached[key][version];
+      }
+      return null;
+    },
+
     __addToCache: function(service) {
       const key = service.key;
       const version = service.version;

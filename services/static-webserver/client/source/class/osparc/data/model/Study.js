@@ -290,8 +290,8 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metaData = osparc.service.Utils.getMetaData(node["key"], node["version"]);
-        if (osparc.data.model.Node.isComputational(metaData)) {
+        const metaData = osparc.service.Store.getMetaData(node["key"], node["version"]);
+        if (metaData && osparc.data.model.Node.isComputational(metaData)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;
           nCompNodes++;
@@ -432,23 +432,6 @@ qx.Class.define("osparc.data.model.Study", {
         const progressReport = nodeProgressData["progress_report"];
         node.setNodeProgressSequence(progressType, progressReport);
       }
-    },
-
-    computeStudyProgress: function() {
-      const nodes = this.getWorkbench().getNodes();
-      let nCompNodes = 0;
-      let overallProgress = 0;
-      Object.values(nodes).forEach(node => {
-        if (node.isComputational()) {
-          const progress = node.getStatus().getProgress();
-          overallProgress += progress ? progress : 0;
-          nCompNodes++;
-        }
-      });
-      if (nCompNodes === 0) {
-        return null;
-      }
-      return overallProgress/nCompNodes;
     },
 
     isLocked: function() {
