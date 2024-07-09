@@ -65,7 +65,7 @@ async def fake_services_inserted_in_db(
     )
 
 
-async def test_rcp_catalog_client(
+async def test_rpc_catalog_client(
     director_setup_disabled: None,
     fake_services_inserted_in_db: None,
     app: FastAPI,
@@ -135,7 +135,7 @@ async def test_rcp_catalog_client(
     assert got == updated
 
 
-async def test_rcp_service_not_found_error(
+async def test_rpc_service_not_found_error(
     director_setup_disabled: None,
     fake_services_inserted_in_db: None,
     app: FastAPI,
