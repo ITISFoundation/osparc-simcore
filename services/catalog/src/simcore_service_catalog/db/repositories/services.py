@@ -32,7 +32,7 @@ from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
     get_service_history_stmt,
-    get_service_stmt2,
+    get_service_stmt,
     list_latest_services_with_history_stmt,
     list_services_stmt,
     total_count_stmt,
@@ -280,7 +280,7 @@ class ServicesRepository(BaseRepository):
         version: ServiceVersion,
     ) -> ServiceWithHistoryFromDB | None:
 
-        stmt_get = get_service_stmt2(
+        stmt_get = get_service_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,

@@ -44,7 +44,7 @@ def list_services_stmt(
 
         stmt = (
             sa.select(
-                [services_meta_data],
+                services_meta_data,
             )
             .distinct(services_meta_data.c.key, services_meta_data.c.version)
             .select_from(services_meta_data.join(services_access_rights))
@@ -104,7 +104,6 @@ def list_latest_services_with_history_stmt(
     access_rights: sa.sql.ClauseElement,
     limit: int | None,
     offset: int | None,
-    limit_history: int | None = 50,
 ):
     # get all distinct services key fitting a page
     # and its corresponding latest version
@@ -196,7 +195,6 @@ def list_latest_services_with_history_stmt(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
-        .limit(limit_history)
         .subquery()
     )
 
@@ -217,7 +215,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.created,
             latest_query.c.modified,
             latest_query.c.deprecated,
-            # releases
+            # releases (NOTE: at some points we should limit this list?)
             array_agg(
                 func.json_build_object(
                     "version",
@@ -251,7 +249,7 @@ def list_latest_services_with_history_stmt(
     )
 
 
-def get_service_stmt2(
+def get_service_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -284,7 +282,7 @@ def get_service_stmt2(
             services_meta_data.c.created,
             services_meta_data.c.modified,
             services_meta_data.c.deprecated,
-            # releases
+            # w/o releases history!
         )
         .select_from(
             services_meta_data.join(

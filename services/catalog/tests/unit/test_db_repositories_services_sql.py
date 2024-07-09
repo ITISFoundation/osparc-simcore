@@ -7,7 +7,7 @@ from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
     get_service_history_stmt,
-    get_service_stmt2,
+    get_service_stmt,
     list_latest_services_with_history_stmt,
     total_count_stmt,
 )
@@ -34,7 +34,7 @@ def test_building_services_sql_statements():
     )
 
     _check(
-        get_service_stmt2,
+        get_service_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,

@@ -327,6 +327,7 @@ async def test_list_all_services_and_history_with_pagination(
             for v in range(num_versions_per_service)
         ]
     )
+    expected_latest_version = f"{num_versions_per_service-1}.0.0"
 
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
@@ -336,6 +337,7 @@ async def test_list_all_services_and_history_with_pagination(
 
     for service in services_items:
         assert len(service.history) == num_versions_per_service
+        assert service.version == expected_latest_version
 
     _, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, limit=2
@@ -347,8 +349,8 @@ async def test_list_all_services_and_history_with_pagination(
 
         assert parse_obj_as(EmailStr, service.owner_email), "resolved own'es email"
 
-        latest_version = service.history[0].version  # latest service is first
-        assert service.version == latest_version
+        expected_latest_version = service.history[0].version  # latest service is first
+        assert service.version == expected_latest_version
 
 
 async def test_get_and_update_service_meta_data(
