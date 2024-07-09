@@ -6,7 +6,7 @@
 import datetime
 import json
 import logging
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, cast
 from unittest import mock
 
@@ -24,16 +24,20 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_autoscaling.core.settings import EC2InstancesSettings
+from simcore_service_autoscaling.core.settings import (
+    ApplicationSettings,
+    EC2InstancesSettings,
+)
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.buffer_machine_core import (
+    _get_buffer_ec2_tags,
     monitor_buffer_machines,
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 
 @pytest.fixture
@@ -146,7 +150,7 @@ async def test_monitor_buffer_machines(
     initialized_app: FastAPI,
 ):
     # 0. we have no instances now
-    all_instances = await ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
 
     # 1. run, this will create as many buffer machines as needed
@@ -236,6 +240,102 @@ async def test_monitor_buffer_machines(
             )
 
         await _assert_wait_for_ssm_command_to_finish()
+
+
+@pytest.fixture
+async def create_buffer_machines(
+    ec2_client: EC2Client,
+    aws_ami_id: str,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+) -> Callable[[int, InstanceTypeType], Awaitable[list[str]]]:
+    async def _do(num: int, instance_type: InstanceTypeType) -> list[str]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+
+        resource_tags: list[TagTypeDef] = [
+            {"Key": tag_key, "Value": tag_value}
+            for tag_key, tag_value in _get_buffer_ec2_tags(
+                initialized_app, DynamicAutoscaling()
+            ).items()
+        ]
+        with log_context(
+            logging.INFO, f"creating {num} buffer machines of {instance_type}"
+        ):
+            instances = await ec2_client.run_instances(
+                ImageId=aws_ami_id,
+                MaxCount=num,
+                MinCount=num,
+                InstanceType=instance_type,
+                KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                IamInstanceProfile={
+                    "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+                },
+                TagSpecifications=[
+                    {"ResourceType": "instance", "Tags": resource_tags},
+                    {"ResourceType": "volume", "Tags": resource_tags},
+                    {"ResourceType": "network-interface", "Tags": resource_tags},
+                ],
+                UserData="echo 'I am pytest'",
+            )
+            instance_ids = [
+                i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
+            ]
+
+        waiter = ec2_client.get_waiter("instance_exists")
+        await waiter.wait(InstanceIds=instance_ids)
+        instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+        assert "Reservations" in instances
+        assert instances["Reservations"]
+        assert "Instances" in instances["Reservations"][0]
+        assert len(instances["Reservations"][0]["Instances"]) == num
+        for instance in instances["Reservations"][0]["Instances"]:
+            assert "State" in instance
+            assert "Name" in instance["State"]
+            assert instance["State"]["Name"] == "running"
+
+        return instance_ids
+
+    return _do
+
+
+async def test_monitor_buffer_machines_terminates_unneeded_instances(
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    buffer_count: int,
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    instance_type_filters: Sequence[FilterTypeDef],
+    ec2_instance_custom_tags: dict[str, str],
+    initialized_app: FastAPI,
+    create_buffer_machines: Callable[[int, InstanceTypeType], Awaitable[list[str]]],
+):
+    # have too many machines of accepted type
+    buffer_machines = await create_buffer_machines(
+        buffer_count + 5, next(iter(list(ec2_instances_allowed_types)))
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=len(buffer_machines),
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    # this will terminate the supernumerary instances
+    await monitor_buffer_machines(
+        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
 
 
 @pytest.fixture
