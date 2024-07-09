@@ -8,12 +8,11 @@ from servicelib.redis_utils import exclusive
 
 from ..core.settings import ApplicationSettings
 from ..utils.redis import create_lock_key_and_value
-from .auto_scaling_core import auto_scale_cluster
-from .auto_scaling_mode_computational import ComputationalAutoscaling
 from .auto_scaling_mode_dynamic import DynamicAutoscaling
+from .buffer_machine_core import monitor_buffer_machines
 from .redis import get_redis_client
 
-_TASK_NAME: Final[str] = "Autoscaling EC2 instances"
+_TASK_NAME_BUFFER: Final[str] = "Autoscaling Buffer Machines Pool"
 
 _logger = logging.getLogger(__name__)
 
@@ -24,18 +23,18 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         lock_key, lock_value = create_lock_key_and_value(app)
         assert lock_key  # nosec
         assert lock_value  # nosec
-        app.state.autoscaler_task = start_periodic_task(
-            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
-                auto_scale_cluster
-            ),
+
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+        app.state.buffers_pool_task = start_periodic_task(
+            exclusive(
+                get_redis_client(app),
+                lock_key=f"{lock_key}_buffers_pool",
+                lock_value=lock_value,
+            )(monitor_buffer_machines),
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
-            task_name=_TASK_NAME,
+            task_name=_TASK_NAME_BUFFER,
             app=app,
-            auto_scaling_mode=(
-                DynamicAutoscaling()
-                if app_settings.AUTOSCALING_NODES_MONITORING is not None
-                else ComputationalAutoscaling()
-            ),
+            auto_scaling_mode=(DynamicAutoscaling()),
         )
 
     return _startup
@@ -44,17 +43,21 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         await stop_periodic_task(app.state.autoscaler_task)
+        if hasattr(app.state, "buffers_pool_task"):
+            await stop_periodic_task(app.state.buffers_pool_task)
 
     return _stop
 
 
-def setup(app: FastAPI) -> None:
+def setup(app: FastAPI):
     app_settings: ApplicationSettings = app.state.settings
     if any(
         s is None
         for s in [
             app_settings.AUTOSCALING_EC2_ACCESS,
             app_settings.AUTOSCALING_EC2_INSTANCES,
+            app_settings.AUTOSCALING_SSM_ACCESS,
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
         ]
     ) or all(
         s is None
@@ -64,8 +67,11 @@ def setup(app: FastAPI) -> None:
         ]
     ):
         _logger.warning(
-            "the autoscaling background task is disabled by settings, nothing will happen!"
+            "%s task is disabled by settings, there will be no buffer v2!",
+            _TASK_NAME_BUFFER,
         )
         return
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+    if app_settings.AUTOSCALING_NODES_MONITORING:
+        # NOTE: currently only available for dynamic autoscaling
+        app.add_event_handler("startup", on_app_startup(app))
+        app.add_event_handler("shutdown", on_app_shutdown(app))
