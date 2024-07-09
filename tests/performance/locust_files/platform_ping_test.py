@@ -7,7 +7,7 @@ import logging
 import locust_plugins
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
-from pydantic import Field, SecretStr
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 logging.basicConfig(level=logging.INFO)
@@ -20,8 +20,8 @@ assert locust_plugins  # nosec
 
 
 class LocustAuth(BaseSettings):
-    SC_USER_NAME: SecretStr = Field(default=..., examples=["<your username>"])
-    SC_PASSWORD: SecretStr = Field(default=..., examples=["<your password>"])
+    SC_USER_NAME: str = Field(default=..., examples=["<your username>"])
+    SC_PASSWORD: str = Field(default=..., examples=["<your password>"])
 
 
 class WebApiUser(FastHttpUser):
@@ -29,8 +29,8 @@ class WebApiUser(FastHttpUser):
         super().__init__(*args, **kwargs)
         _auth = LocustAuth()
         self.auth = (
-            _auth.SC_USER_NAME.get_secret_value(),
-            _auth.SC_PASSWORD.get_secret_value(),
+            _auth.SC_USER_NAME,
+            _auth.SC_PASSWORD,
         )
 
     @task(10)
