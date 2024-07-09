@@ -31,13 +31,7 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
-.PHONY: up down run
-up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
-	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); \
-	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	docker compose --file docker-compose.yml up --scale worker=4
-
+.PHONY: down
 down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
@@ -45,6 +39,11 @@ down: ## stops and removes osparc locust containers
 test: ## runs osparc locust. locust and test confiuration are specified in .env file next to target file
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
-	export ENV_FILE=$$(dirname $$(realpath locust_files/$${LOCUST_FILE}))/.env; \
-	if [ ! -f $${ENV_FILE} ]; then cp $$(dirname $${ENV_FILE})/.env-devel $${ENV_FILE}; fi; \
+	export ENV_FILE=$$(realpath .env); \
+	if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi; \
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
+
+
+.PHONY: install-dev
+install-dev: _check_venv_active ## install python tools
+	@uv pip install -r requirements.txt
