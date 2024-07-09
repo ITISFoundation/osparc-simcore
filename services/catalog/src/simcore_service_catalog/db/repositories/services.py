@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import packaging.version
 import sqlalchemy as sa
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
@@ -234,14 +235,11 @@ class ServicesRepository(BaseRepository):
                 ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
             )
 
-            insert_stmt = pg_insert(services_access_rights).values(
-                [
-                    access_rights.dict(by_alias=True)
-                    for access_rights in new_service_access_rights
-                ]
-            )
-            await conn.execute(insert_stmt)
-
+            for access_rights in new_service_access_rights:
+                insert_stmt = pg_insert(services_access_rights).values(
+                    **jsonable_encoder(access_rights, by_alias=True)
+                )
+                await conn.execute(insert_stmt)
         return created_service
 
     async def update_service(
