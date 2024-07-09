@@ -15,6 +15,8 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
+from ..exceptions.errors import DirectorUnresponsiveError
+
 _logger = logging.getLogger(__name__)
 
 MINUTE = 60
@@ -28,43 +30,6 @@ _director_startup_retry_policy = {
     "before_sleep": before_sleep_log(_logger, logging.WARNING),
     "reraise": True,
 }
-
-
-class UnresponsiveServiceError(RuntimeError):
-    pass
-
-
-async def setup_director(app: FastAPI) -> None:
-    if settings := app.state.settings.CATALOG_DIRECTOR:
-        with log_context(
-            _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
-        ):
-
-            client = DirectorApi(base_url=settings.base_url, app=app)
-
-            async for attempt in AsyncRetrying(**_director_startup_retry_policy):
-                with attempt:
-                    if not await client.is_responsive():
-                        with suppress(Exception):
-                            await client.close()
-                        msg = "Director-v0 is not responsive"
-                        raise UnresponsiveServiceError(msg)
-
-                _logger.info(
-                    "Connection to director-v0 succeded [%s]",
-                    json_dumps(attempt.retry_state.retry_object.statistics),
-                )
-
-            # set when connected
-            app.state.director_api = client
-
-
-async def close_director(app: FastAPI) -> None:
-    client: DirectorApi | None
-    if client := app.state.director_api:
-        await client.close()
-
-    _logger.debug("Director client closed successfully")
 
 
 def _safe_request(
@@ -170,3 +135,35 @@ class DirectorApi:
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
+
+
+async def setup_director(app: FastAPI) -> None:
+    if settings := app.state.settings.CATALOG_DIRECTOR:
+        with log_context(
+            _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
+        ):
+
+            client = DirectorApi(base_url=settings.base_url, app=app)
+
+            async for attempt in AsyncRetrying(**_director_startup_retry_policy):
+                with attempt:
+                    if not await client.is_responsive():
+                        with suppress(Exception):
+                            await client.close()
+                        raise DirectorUnresponsiveError
+
+                _logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
+
+            # set when connected
+            app.state.director_api = client
+
+
+async def close_director(app: FastAPI) -> None:
+    client: DirectorApi | None
+    if client := app.state.director_api:
+        await client.close()
+
+    _logger.debug("Director client closed successfully")
