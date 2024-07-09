@@ -491,36 +491,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getInaccessibleServices: function(studyData) {
-      return new Promise((resolve, reject) => {
-        const inaccessibleServices = [];
-        const nodes = Object.values(studyData.workbench);
-        nodes.forEach(node => {
-          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
-          if (idx === -1) {
-            inaccessibleServices.push({
-              key: node["key"],
-              version: node["version"],
-              label: node["label"]
-            });
-          }
-        });
-        this.getAllServices()
-          .then(services => {
-            nodes.forEach(node => {
-              if (osparc.service.Utils.getFromObject(services, node.key, node.version)) {
-                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
-                if (idx !== -1) {
-                  inaccessibleServices.splice(idx, 1);
-                }
-              }
-            });
-          })
-          .catch(err => console.error("failed getting services", err))
-          .finally(() => resolve(inaccessibleServices));
-      });
-    },
-
     __getGroups: function(group) {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
