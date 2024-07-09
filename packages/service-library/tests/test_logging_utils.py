@@ -22,9 +22,10 @@ _logger = logging.getLogger(__name__)
 async def test_error_regression_async_def(
     caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
 ):
-    @log_decorator(logger, log_traceback=log_traceback)
+    @log_decorator(logger, logging.ERROR, log_traceback=log_traceback)
     async def _raising_error() -> None:
-        raise RuntimeError("Raising as expected")
+        msg = "Raising as expected"
+        raise RuntimeError(msg)
 
     caplog.clear()
 
@@ -41,9 +42,10 @@ async def test_error_regression_async_def(
 async def test_error_regression_def(
     caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
 ):
-    @log_decorator(logger, log_traceback=log_traceback)
+    @log_decorator(logger, logging.ERROR, log_traceback=log_traceback)
     def _raising_error() -> None:
-        raise RuntimeError("Raising as expected")
+        msg = "Raising as expected"
+        raise RuntimeError(msg)
 
     caplog.clear()
 

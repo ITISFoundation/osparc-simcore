@@ -26,5 +26,8 @@ exclude_lines =
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstract(((class|static)?method)|property)
 
+    # Don't complain about type checking
+    if TYPE_CHECKING:
+
 ignore_errors = True
 show_missing = True
