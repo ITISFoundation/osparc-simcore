@@ -45,12 +45,10 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
     const servicesInStudy = osparc.study.Utils.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          this._services = services;
-          this._populateLayout();
-        });
+      const promises = [];
+      servicesInStudy.forEach(srv => promises.push(osparc.service.Store.getService(srv.key, srv.version)));
+      Promise.all(servicesInStudy)
+        .then(() => this._populateLayout());
     } else {
       this.__populateEmptyLayout();
     }
@@ -69,7 +67,6 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
   members: {
     _studyData: null,
-    _services: null,
     _introText: null,
     __grid: null,
     _servicesGrid: null,
@@ -171,7 +168,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         });
         this.__grid.setRowHeight(i, 24);
 
-        const nodeMetaData = osparc.service.Utils.getFromObject(this._services, node["key"], node["version"]);
+        const nodeMetaData = osparc.service.Store.getMetaData(node["key"], node["version"]);
         if (nodeMetaData === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
