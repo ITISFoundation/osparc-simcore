@@ -173,11 +173,9 @@ async def test_get_service_labels(
         assert web_response.status == 200, await web_response.text()
 
         services_enveloped = await web_response.json()
-        got_labels = services_enveloped["data"]
-        assert got_labels.pop("io.simcore.image.digest").startswith('sha256:')
+        labels = services_enveloped["data"]
 
-        labels_expected = service["docker_labels"]
-        assert got_labels == labels_expected
+        assert service["docker_labels"] == labels
 
 
 async def test_services_extras_by_key_version_get(

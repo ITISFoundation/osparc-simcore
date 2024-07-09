@@ -233,6 +233,8 @@ async def test_get_image_details(
             aiohttp_mock_app, service_description["key"], service_description["version"]
         )
 
+        assert details.pop("image_digest").startswith("sha")
+
         assert details == service_description
 
 

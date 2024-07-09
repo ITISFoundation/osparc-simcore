@@ -96,13 +96,9 @@ async def get_service_labels(
         service_version,
     )
     try:
-        service_labels, image_manifest_digest = await registry_proxy.get_image_labels(
+        service_labels, _ = await registry_proxy.get_image_labels(
             request.app, service_key, service_version
         )
-        
-        # Adds manifest as extra key in the response similar to org.opencontainers.image.base.digest
-        # at https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
-        service_labels.update({"io.simcore.image.digest":image_manifest_digest})
 
         return web.json_response(data=dict(data=service_labels))
     except exceptions.ServiceNotAvailableError as err:
