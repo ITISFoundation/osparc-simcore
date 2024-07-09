@@ -94,8 +94,6 @@ async def _analyse_current_state(
                     buffers_manager.buffer_pools[instance.type].pending_instances.add(
                         instance
                     )
-            case _:
-                pass
     _logger.info("Current buffer pools: %s", f"{buffers_manager}")
     return buffers_manager
 
@@ -249,8 +247,6 @@ async def monitor_buffer_machines(
                 match ssm_command.status:
                     case "Success":
                         instances_to_stop.add(instance)
-                    case "Pending" | "InProgress":
-                        pass
                     case _:
                         _logger.error(
                             "image pulling on buffer failed: %s",
