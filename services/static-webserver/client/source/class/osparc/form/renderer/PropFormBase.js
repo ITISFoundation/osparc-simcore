@@ -180,32 +180,17 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       const extendedVersion = firstColumnWidth > 300;
 
-      const node = this.getNode();
-      const inputs = node.getInputs();
-      if (extendedVersion) {
-        // Extend description of Settings
-        for (const portId in inputs) {
-          if (inputs[portId].description) {
-            this._getLabelFieldChild(portId).child.set({
-              value: inputs[portId].label + ". " + inputs[portId].description + ":",
-              toolTipText: inputs[portId].label + "<br>" + inputs[portId].description
-            });
-
-            this._getInfoFieldChild(portId).child.hide();
-
-            grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 150);
-          }
-        }
-      } else {
-        for (const portId in inputs) {
+      const inputs = this.getNode().getInputs();
+      for (const portId in inputs) {
+        if (inputs[portId].description) {
           this._getLabelFieldChild(portId).child.set({
-            value: inputs[portId].label,
-            toolTipText: inputs[portId].label
+            value: extendedVersion ? inputs[portId].label + ". " + inputs[portId].description + ":" : inputs[portId].label,
+            toolTipText: extendedVersion ? inputs[portId].label + "<br>" + inputs[portId].description : inputs[portId].label
           });
 
-          this._getInfoFieldChild(portId).child.show();
+          this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
 
-          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
+          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, extendedVersion ? 150 : 50);
         }
       }
     },
