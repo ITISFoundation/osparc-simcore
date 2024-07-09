@@ -13,4 +13,4 @@ class CatalogItemNotFoundError(CatalogApiBaseError):
 
 
 class CatalogForbiddenError(CatalogApiBaseError):
-    msg_template = "Does not have sufficient rights to access {name}"
+    msg_template = "Insufficient access rights for {name}"
