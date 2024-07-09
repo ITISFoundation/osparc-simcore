@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.auth.BlurredLoginPageS4LEngineering", {
-  extend: qx.ui.embed.Html,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
@@ -28,9 +28,16 @@ qx.Class.define("osparc.auth.BlurredLoginPageS4LEngineering", {
 
   members: {
     __loadHtml: function() {
-      const iframe = new qx.ui.embed.Html();
-      iframe.setSource("osparc/S4LEngine_ComingSoon.html");
-      this._add(iframe);
+      const htmlEmbed = new qx.ui.embed.Html();
+      this._add(htmlEmbed);
+
+      // Fetch the HTML file
+      const req = new qx.io.request.Xhr("resource/osparc/S4LEngine_ComingSoon.html");
+      req.addListener("success", function(e) {
+        var response = e.getTarget().getResponse();
+        htmlEmbed.setHtml(response);
+      });
+      req.send();
     }
   }
 });
