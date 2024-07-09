@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from parse import Result, parse
-from pydantic import AnyHttpUrl, Field, PositiveInt, field_validator
+from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ._dump_dotenv import dump_dotenv
@@ -27,6 +27,8 @@ class LocustSettings(BaseSettings):
     LOCUST_PRINT_STATS: bool = Field(default=True)
     LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
     LOCUST_RUN_TIME: timedelta = Field(default=...)
+    LOCUST_CHECK_AVG_RESPONSE_TIME: PositiveInt = Field(default=200)
+    LOCUST_CHECK_FAIL_RATIO: PositiveFloat = Field(default=0.01, ge=0.0, le=1.0)
 
     @field_validator("LOCUST_RUN_TIME", mode="before")
     @classmethod
