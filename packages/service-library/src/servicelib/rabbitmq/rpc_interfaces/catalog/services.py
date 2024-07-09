@@ -35,7 +35,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     """
     Raises:
         ValidationError: on invalid arguments
-
+        CatalogForbiddenError: no access-rights to list services
     """
 
     @validate_arguments()
@@ -73,7 +73,8 @@ async def get_service(
     """
     Raises:
         ValidationError: on invalid arguments
-
+        CatalogItemNotFoundError: service not found in catalog
+        CatalogForbiddenError: not access rights to read this service
     """
 
     @validate_arguments()
@@ -116,6 +117,8 @@ async def update_service(
 
     Raises:
         ValidationError: on invalid arguments
+        CatalogItemNotFoundError: service not found in catalog
+        CatalogForbiddenError: not access rights to read this service
     """
 
     @validate_arguments()

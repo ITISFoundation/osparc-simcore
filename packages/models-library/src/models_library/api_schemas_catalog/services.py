@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
 from ..services_access import ServiceAccessRights
-from ..services_authoring import Author, Badge
+from ..services_authoring import Author
 from ..services_enums import ServiceType
 from ..services_history import ServiceRelease
 from ..services_metadata_editable import ServiceMetaDataEditable
@@ -86,7 +86,6 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
     "key": "simcore/services/frontend/file-picker",
     "version": "1.0.0",
     "type": "dynamic",
-    "badges": None,
     "authors": [
         {
             "name": "Red Pandas",
@@ -225,8 +224,6 @@ class ServiceGetV2(BaseModel):
     version_display: str | None = None
 
     service_type: ServiceType = Field(default=..., alias="type")
-
-    badges: list[Badge] | None = None
 
     contact: LowerCaseEmailStr | None
     authors: list[Author] = Field(..., min_items=1)
