@@ -234,11 +234,13 @@ class ServicesRepository(BaseRepository):
                 ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
             )
 
-            for access_rights in new_service_access_rights:
-                insert_stmt = pg_insert(services_access_rights).values(
-                    **access_rights.dict(by_alias=True)
-                )
-                await conn.execute(insert_stmt)
+            insert_stmt = pg_insert(services_access_rights).values(
+                [
+                    access_rights.dict(by_alias=True)
+                    for access_rights in new_service_access_rights
+                ]
+            )
+            await conn.execute(insert_stmt)
 
         return created_service
 

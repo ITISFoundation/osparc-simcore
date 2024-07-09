@@ -104,8 +104,8 @@ async def test_create_services(
     fake_service, *fake_access_rights = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.0",
-        team_access=None,
-        everyone_access=None,
+        team_access="x",
+        everyone_access="x",
     )
 
     # validation
