@@ -184,11 +184,13 @@ typer==0.12.3
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   faststream
-types-aiobotocore==2.12.3
+types-aiobotocore==2.13.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==2.12.3
+types-aiobotocore-ec2==2.13.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.12.3
+types-aiobotocore-s3==2.13.0
+    # via types-aiobotocore
+types-aiobotocore-ssm==2.13.0
     # via types-aiobotocore
 types-awscrt==0.20.9
     # via botocore-stubs
@@ -205,6 +207,7 @@ typing-extensions==4.11.0
     #   types-aiobotocore
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
 urllib3==2.2.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
