@@ -240,6 +240,9 @@ async def _handle_pool_image_pulling(
             match ssm_command.status:
                 case "Success":
                     instances_to_stop.add(instance)
+                case "InProgress" | "Pending":
+                    # do nothing we pass
+                    pass
                 case _:
                     _logger.error(
                         "image pulling on buffer failed: %s",
