@@ -36,23 +36,24 @@ def _deduce_service_type_from(key: str) -> ServiceType:
     raise ValueError(key)
 
 
-def _to_api_model(
-    db: ServiceWithHistoryFromDB, db_ar: list[ServiceAccessRightsAtDB]
+def _db_to_api_model(
+    service_db: ServiceWithHistoryFromDB,
+    access_rights_db: list[ServiceAccessRightsAtDB],
 ) -> ServiceGetV2:
     return ServiceGetV2(
-        key=db.key,
-        version=db.version,
-        name=db.name,
-        thumbnail=db.thumbnail or None,
-        description=db.description,
-        version_display=f"V{db.version}",  # rg.version_display,
-        type=_deduce_service_type_from(db.key),  # rg.service_type,
+        key=service_db.key,
+        version=service_db.version,
+        name=service_db.name,
+        thumbnail=service_db.thumbnail or None,
+        description=service_db.description,
+        version_display=f"V{service_db.version}",  # rg.version_display,
+        type=_deduce_service_type_from(service_db.key),  # rg.service_type,
         badges=[
             Badge.Config.schema_extra["example"],
         ],  # rg.badges,
         contact=Author.Config.schema_extra["examples"][0]["email"],  # rg.contact,
         authors=Author.Config.schema_extra["examples"],
-        owner=db.owner_email or None,
+        owner=service_db.owner_email or None,
         inputs={},  # rg.inputs,
         outputs={},  # rg.outputs,
         boot_options=None,  # rg.boot_options,
@@ -62,17 +63,16 @@ def _to_api_model(
                 execute=a.execute_access,
                 write=a.write_access,
             )
-            for a in db_ar
+            for a in access_rights_db
         },  # db.access_rights,
-        classifiers=db.classifiers,
-        quality=db.quality,
-        history=[h.to_api_model() for h in db.history],
+        classifiers=service_db.classifiers,
+        quality=service_db.quality,
+        history=[h.to_api_model() for h in service_db.history],
     )
 
 
 async def list_services_paginated(
     repo: ServicesRepository,
-    # image_registry,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
@@ -80,17 +80,17 @@ async def list_services_paginated(
 ) -> tuple[NonNegativeInt, list[ServiceGetV2]]:
 
     # defines the order
-    total_count, services_in_db = await repo.list_latest_services(
+    total_count, services = await repo.list_latest_services(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
 
     # injects access-rights
-    services_access_rights: dict[
+    access_rights: dict[
         tuple[str, str], list[ServiceAccessRightsAtDB]
     ] = await repo.list_services_access_rights(
-        ((s.key, s.version) for s in services_in_db), product_name=product_name
+        ((s.key, s.version) for s in services), product_name=product_name
     )
-    if not services_access_rights:
+    if not access_rights:
         raise CatalogForbiddenError(
             name="any service",
             user_id=user_id,
@@ -99,9 +99,9 @@ async def list_services_paginated(
 
     # NOTE: aggregates published (i.e. not editable) is still missing in this version
     items = [
-        _to_api_model(db, db_ar)
-        for db in services_in_db
-        if (db_ar := services_access_rights.get((db.key, db.version)))
+        _db_to_api_model(s, ar)
+        for s in services
+        if (ar := access_rights.get((s.key, s.version)))
     ]
 
     return total_count, items
@@ -116,12 +116,12 @@ async def get_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
 
-    db_ar = await repo.get_service_access_rights(
+    access_rights = await repo.get_service_access_rights(
         key=service_key,
         version=service_version,
         product_name=product_name,
     )
-    if not db_ar:
+    if not access_rights:
         raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -130,13 +130,13 @@ async def get_service(
             product_name=product_name,
         )
 
-    db = await repo.get_service_with_history(
+    service = await repo.get_service_with_history(
         product_name=product_name,
         user_id=user_id,
         key=service_key,
         version=service_version,
     )
-    if not db:
+    if not service:
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -145,7 +145,7 @@ async def get_service(
             product_name=product_name,
         )
 
-    return _to_api_model(db, db_ar)
+    return _db_to_api_model(service, access_rights)
 
 
 async def update_service(
@@ -157,11 +157,6 @@ async def update_service(
     service_version: ServiceVersion,
     update: ServiceUpdate,
 ) -> ServiceGetV2:
-    assert repo  # nosec
-
-    assert repo  # nosec
-    assert product_name  # nosec
-    assert user_id  # nosec
 
     if is_function_service(service_key):
         raise CatalogForbiddenError(
@@ -172,10 +167,9 @@ async def update_service(
             product_name=product_name,
         )
 
-    db_ar = await repo.get_service_access_rights(
+    if not await repo.get_service_access_rights(
         key=service_key, version=service_version, product_name=product_name
-    )
-    if not db_ar:
+    ):
         raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -185,14 +179,13 @@ async def update_service(
         )
 
     # Updates service_meta_data
-    db = await repo.update_service(
+    if not await repo.update_service(
         ServiceMetaDataAtDB(
             key=service_key,
             version=service_version,
             **update.dict(exclude_unset=True),
         )
-    )
-    if not db:
+    ):
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -226,7 +219,7 @@ async def update_service(
 
         # then delete the ones that were removed
         remove_gids = [gid for gid in before_gids if gid not in update.access_rights]
-        deleted_access_rights = [
+        delete_access_rights = [
             ServiceAccessRightsAtDB(
                 key=service_key,
                 version=service_version,
@@ -235,7 +228,7 @@ async def update_service(
             )
             for gid in remove_gids
         ]
-        await repo.delete_service_access_rights(deleted_access_rights)
+        await repo.delete_service_access_rights(delete_access_rights)
 
     return await get_service(
         repo=repo,
