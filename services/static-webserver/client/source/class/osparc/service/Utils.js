@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = osparc.service.Utils.getLatest(services, key);
+ *   let latestSrv = osparc.service.Utils.getLatest(key, services);
  * </pre>
  */
 
@@ -174,8 +174,10 @@ qx.Class.define("osparc.service.Utils", {
       return versions.reverse();
     },
 
-    getLatest: function(key) {
-      const services = osparc.service.Utils.servicesCached;
+    getLatest: function(key, services) {
+      if (services === null) {
+        services = osparc.service.Store.servicesCached;
+      }
       if (key in services) {
         const versions = this.getVersions(key, false);
         return services[key][versions[0]];
@@ -303,14 +305,14 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getFilePicker: function() {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
+      return this.self().getLatest("simcore/services/frontend/file-picker");
     },
 
     getParametersMetadata: function() {
       const parametersMetadata = [];
       for (const key in this.servicesCached) {
         if (key.includes("simcore/services/frontend/parameter/")) {
-          const latest = this.self().getLatest(this.servicesCached, key);
+          const latest = this.self().getLatest(key);
           if (latest) {
             parametersMetadata.push(latest);
           }
@@ -320,15 +322,15 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getParameterMetadata: function(type) {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
+      return this.self().getLatest("simcore/services/frontend/parameter/"+type);
     },
 
     getProbeMetadata: function(type) {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/iterator-consumer/probe/"+type);
+      return this.self().getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
     getNodesGroup: function() {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
+      return this.self().getLatest("simcore/services/frontend/nodes-group");
     },
 
     addTSRInfo: function(service) {

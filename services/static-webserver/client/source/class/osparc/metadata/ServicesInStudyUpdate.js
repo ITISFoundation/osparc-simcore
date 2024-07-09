@@ -222,7 +222,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           });
         }
 
-        const latestMetadata = osparc.service.Utils.getLatest(this._services, node["key"]);
+        const latestMetadata = osparc.service.Utils.getLatest(node["key"], this._services);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });
