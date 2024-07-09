@@ -454,6 +454,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/dev/catalog/services/-/latest"
           },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/dev/catalog/services/-/latest?offset={offset}&limit={limit}"
+          },
           getOne: {
             method: "GET",
             url: statics.API + "/dev/catalog/services/{key}/{version}"
