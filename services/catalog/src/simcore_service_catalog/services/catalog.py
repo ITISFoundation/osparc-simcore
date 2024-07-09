@@ -7,7 +7,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
-from models_library.services_authoring import Author, Badge
+from models_library.services_authoring import Author
 from models_library.services_enums import ServiceType
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -48,9 +48,6 @@ def _db_to_api_model(
         description=service_db.description,
         version_display=f"V{service_db.version}",  # rg.version_display,
         type=_deduce_service_type_from(service_db.key),  # rg.service_type,
-        badges=[
-            Badge.Config.schema_extra["example"],
-        ],  # rg.badges,
         contact=Author.Config.schema_extra["examples"][0]["email"],  # rg.contact,
         authors=Author.Config.schema_extra["examples"],
         owner=service_db.owner_email or None,
