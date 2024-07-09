@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Final, cast
+from typing import Final, TypeAlias, cast
 
 from aws_library.ec2.models import (
     AWSTagKey,
@@ -17,7 +17,7 @@ from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import BufferPoolManager
+from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
@@ -185,6 +185,54 @@ async def _add_remove_buffer_instances(
     return buffers_manager
 
 
+InstancesToStop: TypeAlias = set[EC2InstanceData]
+InstancesToTerminate: TypeAlias = set[EC2InstanceData]
+
+
+async def _handle_pool_image_pulling(
+    app: FastAPI, pool: BufferPool
+) -> tuple[InstancesToStop, InstancesToTerminate]:
+    ec2_client = get_ec2_client(app)
+    ssm_client = get_ssm_client(app)
+    if pool.waiting_to_pull_instances:
+        # trigger the image pulling
+        ssm_command = await ssm_client.send_command(
+            [instance.id for instance in pool.waiting_to_pull_instances],
+            command="docker compose -f /docker-pull.compose.yml -p buffering pull",
+            command_name=_PREPULL_COMMAND_NAME,
+        )
+        await ec2_client.set_instances_tags(
+            tuple(pool.waiting_to_pull_instances),
+            tags={
+                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
+                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
+                    ssm_command.command_id
+                ),
+            },
+        )
+
+    instances_to_stop: set[EC2InstanceData] = set()
+    broken_instances_to_terminate: set[EC2InstanceData] = set()
+    # wait for the image pulling to complete
+    for instance in pool.pulling_instances:
+        if ssm_command_id := instance.tags.get(
+            _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
+        ):
+            ssm_command = await ssm_client.get_command(
+                instance.id, command_id=ssm_command_id
+            )
+            match ssm_command.status:
+                case "Success":
+                    instances_to_stop.add(instance)
+                case _:
+                    _logger.error(
+                        "image pulling on buffer failed: %s",
+                        f"{ssm_command.status}: {ssm_command.message}",
+                    )
+                    broken_instances_to_terminate.add(instance)
+    return instances_to_stop, broken_instances_to_terminate
+
+
 async def monitor_buffer_machines(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> None:
@@ -215,45 +263,14 @@ async def monitor_buffer_machines(
     # 4. pull docker images if needed
     instances_to_stop: set[EC2InstanceData] = set()
     broken_instances_to_terminate: set[EC2InstanceData] = set()
-    ssm_client = get_ssm_client(app)
-    for warm_buffer_pool in buffers_manager.buffer_pools.values():
-        if warm_buffer_pool.waiting_to_pull_instances:
-            # trigger the image pulling
-            ssm_command = await ssm_client.send_command(
-                [
-                    instance.id
-                    for instance in warm_buffer_pool.waiting_to_pull_instances
-                ],
-                command="docker compose -f /docker-pull.compose.yml -p buffering pull",
-                command_name=_PREPULL_COMMAND_NAME,
-            )
-            await ec2_client.set_instances_tags(
-                tuple(warm_buffer_pool.waiting_to_pull_instances),
-                tags={
-                    _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                    _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
-                        ssm_command.command_id
-                    ),
-                },
-            )
-        # wait for the image pulling to complete
-        for instance in warm_buffer_pool.pulling_instances:
-            if ssm_command_id := instance.tags.get(
-                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
-            ):
-                ssm_command = await ssm_client.get_command(
-                    instance.id, command_id=ssm_command_id
-                )
-                match ssm_command.status:
-                    case "Success":
-                        instances_to_stop.add(instance)
-                    case _:
-                        _logger.error(
-                            "image pulling on buffer failed: %s",
-                            f"{ssm_command.status}: {ssm_command.message}",
-                        )
-                        broken_instances_to_terminate.add(instance)
-
+    for pool in buffers_manager.buffer_pools.values():
+        (
+            pool_instances_to_stop,
+            pool_instances_to_terminate,
+        ) = await _handle_pool_image_pulling(app, pool)
+        instances_to_stop.update(pool_instances_to_stop)
+        broken_instances_to_terminate.update(pool_instances_to_terminate)
+    # 5. now stop and terminate if necessary
     if instances_to_stop:
         with log_context(
             _logger,
@@ -271,8 +288,6 @@ async def monitor_buffer_machines(
             await ec2_client.stop_instances(instances_to_stop)
     if broken_instances_to_terminate:
         with log_context(
-            _logger,
-            logging.WARNING,
-            "pending buffer instances failed to pull images, terminating them",
+            _logger, logging.WARNING, "broken buffer instances, terminating them"
         ):
             await ec2_client.terminate_instances(broken_instances_to_terminate)
