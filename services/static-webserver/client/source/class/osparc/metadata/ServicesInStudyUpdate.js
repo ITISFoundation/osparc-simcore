@@ -185,7 +185,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
@@ -197,7 +196,10 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14"
         });
-        this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
+        const nodeMetadata = osparc.service.Store.getMetaData(node["key"], node["version"]);
+        if (nodeMetadata) {
+          this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
+        }
         this._servicesGrid.add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION

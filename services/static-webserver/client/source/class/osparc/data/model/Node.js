@@ -388,7 +388,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     __applyNewMetaData: function(newV, oldV) {
       if (oldV !== null) {
-        this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
+        const metadata = osparc.service.Store.getMetaData(this.getKey(), this.getVersion());
+        if (metadata) {
+          this.__metaData = metadata;
+        }
       }
     },
 

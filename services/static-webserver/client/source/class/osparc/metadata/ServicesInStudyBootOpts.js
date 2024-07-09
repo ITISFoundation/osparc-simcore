@@ -25,7 +25,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       if ("workbench" in studyData) {
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
-          const metadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+          const metadata = osparc.service.Store.getMetaData(node["key"], node["version"]);
           if (metadata && osparc.data.model.Node.hasBootModes(metadata)) {
             return true;
           }

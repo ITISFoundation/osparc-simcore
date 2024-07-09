@@ -141,7 +141,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
-          const metadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+          const metadata = osparc.service.Store.getMetaData(node["key"], node["version"]);
           if (metadata === null) {
             osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
             return;
