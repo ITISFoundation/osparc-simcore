@@ -226,7 +226,6 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @router.post(
     "/content",
     response_model=ClientFileUploadData,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
@@ -289,7 +288,6 @@ async def get_file(
     ":search",
     response_model=Page[File],
     responses=_FILE_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def search_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -320,7 +318,6 @@ async def search_files_page(
 
 @router.delete(
     "/{file_id}",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=_FILE_STATUS_CODES,
 )
 async def delete_file(
@@ -340,7 +337,6 @@ async def delete_file(
 
 @router.post(
     "/{file_id}:abort",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
 async def abort_multipart_upload(
@@ -367,7 +363,6 @@ async def abort_multipart_upload(
 @router.post(
     "/{file_id}:complete",
     response_model=File,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect

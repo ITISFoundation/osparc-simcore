@@ -77,7 +77,7 @@ class UUIDStr(ConstrainedStr):
 class IDStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
-    max_length = 50
+    max_length = 100
 
 
 # auto-incremented primary-key IDs

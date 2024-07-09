@@ -3,6 +3,7 @@
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
+import functools
 import json
 import logging
 
@@ -13,7 +14,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
-    ProjectUpdate,
+    ProjectPatch,
 )
 from models_library.generics import Envelope
 from models_library.projects import Project
@@ -30,6 +31,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -59,6 +61,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNotFoundError,
+    ProjectOwnerNotFoundInTheProjectAccessRightsError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
@@ -77,6 +80,23 @@ RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUI
 
 
 _logger = logging.getLogger(__name__)
+
+
+def _handle_projects_exceptions(handler: Handler):
+    @functools.wraps(handler)
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+
+    return _wrapper
+
 
 routes = web.RouteTableDef()
 
@@ -452,22 +472,24 @@ async def replace_project(request: web.Request):
         raise web.HTTPNotFound from exc
 
 
-@routes.patch(f"/{VTAG}/projects/{{project_id}}", name="update_project")
+@routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")
-async def update_project(request: web.Request):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+@_handle_projects_exceptions
+async def patch_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    project_update = await parse_request_body_as(ProjectUpdate, request)
+    project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    assert db  # nosec
-    assert req_ctx  # nosec
-    assert path_params  # nosec
-    assert project_update  # nosec
+    await projects_api.patch_project(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        project_patch=project_patch,
+    )
 
-    raise NotImplementedError
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #

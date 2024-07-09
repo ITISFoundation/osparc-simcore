@@ -3,3 +3,4 @@ assets
 report.html
 .e2e-playwright-env.txt
 .e2e-playwright-jupyterlab-env.txt
+report.xml

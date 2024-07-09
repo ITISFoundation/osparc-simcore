@@ -119,6 +119,10 @@ qx.Class.define("osparc.auth.LoginPage", {
         }
         case "login-view": {
           control = new osparc.auth.ui.LoginView();
+          control.addListener("done", msg => {
+            control.resetValues();
+            this.fireDataEvent("done", msg);
+          }, this);
           this.getChildControl("pages-stack").add(control);
           break;
         }
@@ -248,12 +252,6 @@ qx.Class.define("osparc.auth.LoginPage", {
       } else if (urlFragment.params && urlFragment.params.registered) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
       }
-
-      // Transitions between pages
-      login.addListener("done", msg => {
-        login.resetValues();
-        this.fireDataEvent("done", msg);
-      }, this);
 
       login.addListener("toRegister", () => {
         pages.setSelection([registration]);

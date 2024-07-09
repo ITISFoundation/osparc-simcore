@@ -25,6 +25,10 @@ class ProjectInvalidUsageError(BaseProjectError):
     ...
 
 
+class ProjectOwnerNotFoundInTheProjectAccessRightsError(BaseProjectError):
+    msg_template = "Project owner gid with required permissions was not found in the project access rights"
+
+
 class ProjectInvalidRightsError(BaseProjectError):
     msg_template = (
         "User '{user_id}' has no rights to access project with uuid '{project_uuid}'"

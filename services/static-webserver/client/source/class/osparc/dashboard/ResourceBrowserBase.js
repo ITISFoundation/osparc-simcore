@@ -31,8 +31,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
     this._showLoadingPage(this.tr("Starting..."));
 
     this.addListener("appear", () => this._moreResourcesRequired());
@@ -184,7 +182,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           scroll.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
           control = this._createLayout();
           scroll.add(control);
-          this._add(scroll, {
+          this._addToMainLayout(scroll, {
             flex: 1
           });
           break;
@@ -207,7 +205,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _createResourcesLayout: function() {
       const topBar = this.__createTopBar();
-      this._add(topBar);
+      this._addToMainLayout(topBar);
 
       const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
@@ -215,7 +213,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         paddingRight: 8,
         alignY: "middle"
       });
-      this._add(toolbar);
+      this._addToMainLayout(toolbar);
 
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
@@ -226,7 +224,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
-      this._add(resourcesContainer);
+      this._addToMainLayout(resourcesContainer);
     },
 
     __createTopBar: function() {
@@ -329,12 +327,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _showMainLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
-    },
-
     _checkLoggedIn: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
@@ -381,6 +373,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+      this._showLoadingPage(this.tr("Starting ") + osparc.product.Utils.getStudyAlias());
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 

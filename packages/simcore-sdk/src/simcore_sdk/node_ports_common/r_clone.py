@@ -172,9 +172,6 @@ async def _get_folder_size(
     return rclone_folder_size_result.bytes
 
 
-_DISABLE_RCLONE_MULTI_THREADED: Final[int] = 1
-
-
 async def _sync_sources(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
@@ -222,8 +219,6 @@ async def _sync_sources(
             # filter options
             *_get_exclude_filters(exclude_patterns),
             "--links",
-            "--multi-thread-streams",
-            f"{_DISABLE_RCLONE_MULTI_THREADED}",
         )
 
         async with progress_bar.sub_progress(
