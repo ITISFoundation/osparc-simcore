@@ -18,7 +18,7 @@ from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
     create_data_response,
-    create_error_response,
+    create_http_error,
     is_enveloped_from_map,
     is_enveloped_from_text,
     wrap_as_envelope,
@@ -44,7 +44,7 @@ def error_middleware_factory(
     _is_prod: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-        resp = create_error_response(
+        http_error = create_http_error(
             err,
             "Unexpected Server error",
             web.HTTPInternalServerError,
@@ -58,11 +58,11 @@ def error_middleware_factory(
                 request.remote,
                 request.method,
                 request.path,
-                resp.status,
+                http_error.status,
                 exc_info=err,
                 stack_info=True,
             )
-        raise resp
+        raise http_error
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
@@ -115,22 +115,22 @@ def error_middleware_factory(
             raise
 
         except NotImplementedError as err:
-            error_response = create_error_response(
+            http_error = create_http_error(
                 err,
                 f"{err}",
                 web.HTTPNotImplemented,
                 skip_internal_error_details=_is_prod,
             )
-            raise error_response from err
+            raise http_error from err
 
         except asyncio.TimeoutError as err:
-            error_response = create_error_response(
+            http_error = create_http_error(
                 err,
                 f"{err}",
                 web.HTTPGatewayTimeout,
                 skip_internal_error_details=_is_prod,
             )
-            raise error_response from err
+            raise http_error from err
 
         except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)

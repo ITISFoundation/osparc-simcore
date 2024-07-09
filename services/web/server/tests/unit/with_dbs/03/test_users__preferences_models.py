@@ -13,7 +13,7 @@ from models_library.user_preferences import (
     PreferenceIdentifier,
     PreferenceName,
 )
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.users._preferences_models import (

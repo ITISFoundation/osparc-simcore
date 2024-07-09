@@ -15,7 +15,7 @@ import jsonref
 import pytest
 import respx
 from pydantic import parse_file_as
-from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_openapi import _determine_path
 from pytest_simcore.helpers.httpx_calls_capture_parameters import (
     CapturedParameter,

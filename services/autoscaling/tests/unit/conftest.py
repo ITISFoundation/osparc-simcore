@@ -7,10 +7,10 @@ import dataclasses
 import datetime
 import json
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -45,13 +45,14 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
+    AutoscalingEC2Settings,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import (
@@ -81,7 +82,6 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -142,6 +142,11 @@ def with_labelize_drain_nodes(
             "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
         },
     )
+
+
+@pytest.fixture
+def ec2_settings() -> EC2Settings:
+    return AutoscalingEC2Settings.create_from_envs()
 
 
 @pytest.fixture
@@ -524,7 +529,7 @@ async def create_service(
         diff = DeepDiff(
             task_template,
             service.Spec.TaskTemplate.dict(exclude_unset=True),
-            exclude_paths=excluded_paths,
+            exclude_paths=list(excluded_paths),
         )
         assert not diff, f"{diff}"
         assert service.Spec.Labels == base_labels
@@ -684,7 +689,9 @@ def cluster() -> Callable[..., Cluster]:
                 drained_nodes=[],
                 reserve_drained_nodes=[],
                 pending_ec2s=[],
+                broken_ec2s=[],
                 disconnected_nodes=[],
+                terminating_nodes=[],
                 terminated_instances=[],
             ),
             **cluter_overrides,
@@ -782,7 +789,7 @@ def patch_ec2_client_start_aws_instances_min_number_of_instances(
 def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
     list_of_instances = [
         EC2InstanceType(
-            name=faker.pystr(),
+            name=random.choice(get_args(InstanceTypeType)),  # noqa: S311
             resources=Resources(cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
@@ -842,3 +849,31 @@ def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
     num_machines_in_buffer = 5
     monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
     return num_machines_in_buffer
+
+
+@pytest.fixture
+def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
+        autospec=True,
+        return_value=None,
+    )
+
+
+@pytest.fixture(scope="session")
+def short_ec2_instance_max_start_time() -> datetime.timedelta:
+    return datetime.timedelta(seconds=10)
+
+
+@pytest.fixture
+def with_short_ec2_instances_max_start_time(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    short_ec2_instance_max_start_time: datetime.timedelta,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_MAX_START_TIME": f"{short_ec2_instance_max_start_time}",
+        },
+    )

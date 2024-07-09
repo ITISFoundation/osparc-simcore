@@ -1,27 +1,43 @@
 coverage==7.5.1
-    # via pytest-cov
+    # via
+    #   -r requirements/_test.in
+    #   pytest-cov
 exceptiongroup==1.2.1
-    # via pytest
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 iniconfig==2.0.0
-    # via pytest
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 packaging==24.0
     # via
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pytest==8.2.0
     # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
 pytest-cov==5.0.0
+    # via -r requirements/_test.in
 pytest-instafail==0.5.0
+    # via -r requirements/_test.in
 pytest-runner==6.0.1
+    # via -r requirements/_test.in
 pytest-sugar==1.0.0
+    # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via
+    #   -c requirements/_base.txt
     #   coverage
     #   pytest

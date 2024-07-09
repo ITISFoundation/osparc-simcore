@@ -113,6 +113,8 @@ qx.Class.define("osparc.widget.NodeOptions", {
         const startStopButton = new osparc.node.StartStopButton();
         startStopButton.setNode(node);
         this._add(startStopButton);
+
+        startStopButton.getChildControl("stop-button").bind("visibility", instructions, "visibility");
       }
 
       sections.forEach(section => this._add(section));

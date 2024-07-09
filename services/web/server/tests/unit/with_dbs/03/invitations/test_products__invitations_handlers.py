@@ -17,9 +17,9 @@ from models_library.api_schemas_webserver.product import (
 )
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 

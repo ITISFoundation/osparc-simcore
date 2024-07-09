@@ -75,8 +75,10 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
     EC2_INSTANCES_NAME_PREFIX: str = Field(
         default="autoscaling",
@@ -98,9 +100,19 @@ class EC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
+    EC2_INSTANCES_TIME_BEFORE_DRAINING: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=20),
+        description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, is automatically capped)"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (0<=T<=59 minutes, is automatically capped)"
+        description="Time after which an EC2 instance may being the termination process (0<=T<=59 minutes, is automatically capped)"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+    EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=30),
+        description="Time after which an EC2 instance is terminated after draining"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
@@ -109,9 +121,22 @@ class EC2InstancesSettings(BaseCustomSettings):
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
 
+    @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
+    @classmethod
+    def ensure_draining_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
+        if value < datetime.timedelta(seconds=10):
+            value = datetime.timedelta(seconds=10)
+        elif value > datetime.timedelta(minutes=1):
+            value = datetime.timedelta(minutes=1)
+        return value
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def ensure_time_is_in_range(cls, value):
+    def ensure_termination_delay_time_is_in_range(
+        cls, value: datetime.timedelta
+    ) -> datetime.timedelta:
         if value < datetime.timedelta(minutes=0):
             value = datetime.timedelta(minutes=0)
         elif value > datetime.timedelta(minutes=59):
@@ -125,11 +150,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        if all(parse_obj_as(InstanceTypeType, key) for key in value):
-            return value
-
-        msg = "Invalid instance type name"
-        raise ValueError(msg)
+        parse_obj_as(list[InstanceTypeType], list(value))
+        return value
 
 
 class NodesMonitoringSettings(BaseCustomSettings):

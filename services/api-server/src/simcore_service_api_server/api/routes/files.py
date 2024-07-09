@@ -30,6 +30,7 @@ from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
@@ -39,7 +40,6 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -106,7 +106,9 @@ async def list_files(
     SEE get_files_page for a paginated version of this function
     """
 
-    stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
+    stored_files: list[StorageFileMetaData] = await storage_client.list_files(
+        user_id=user_id
+    )
 
     # Adapts storage API model to API model
     all_files: list[File] = []
@@ -355,7 +357,7 @@ async def abort_multipart_upload(
         e_tag=None,
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query={"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -384,7 +386,7 @@ async def complete_multipart_upload(
         e_tag=None,
     )
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, {"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
 
     e_tag: ETag = await complete_file_upload(

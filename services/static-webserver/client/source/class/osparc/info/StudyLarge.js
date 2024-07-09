@@ -20,21 +20,15 @@ qx.Class.define("osparc.info.StudyLarge", {
   extend: osparc.info.CardLarge,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param study {osparc.data.model.Study} Study model
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
   construct: function(study, openOptions = true) {
     this.base(arguments);
 
-    if (study instanceof osparc.data.model.Study) {
-      this.setStudy(study);
-    } else if (study instanceof Object) {
-      const studyModel = new osparc.data.model.Study(study);
-      this.setStudy(studyModel);
-
-      if ("resourceType" in study) {
-        this.__isTemplate = study["resourceType"] === "template";
-      }
+    this.setStudy(study);
+    if ("resourceType" in study) {
+      this.__isTemplate = study["resourceType"] === "template";
     }
 
     if (openOptions !== undefined) {
@@ -45,9 +39,7 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Data",
-    "updateService": "qx.event.type.Data",
-    "updateTags": "qx.event.type.Data"
+    "updateStudy": "qx.event.type.Data"
   },
 
   properties: {
@@ -245,9 +237,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
-          "name": newLabel
-        });
+        this.__patchStudy("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -309,9 +299,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__updateStudy({
-          "thumbnail": validUrl
-        });
+        this.__patchStudy("thumbnail", validUrl);
       }, this);
       thumbnailEditor.addListener("cancel", () => win.close());
     },
@@ -324,24 +312,24 @@ qx.Class.define("osparc.info.StudyLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
-          "description": newDescription
-        });
+        this.__patchStudy("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __updateStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __patchStudy: function(fieldKey, value) {
+      this.getStudy().patchStudy(fieldKey, value)
         .then(studyData => {
+          studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

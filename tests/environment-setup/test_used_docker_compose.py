@@ -76,7 +76,9 @@ repo_dir = current_dir.parent.parent
 
 
 def _skip_not_useful_docker_composes(p) -> bool:
-    return "osparc-gateway-server" not in f"{p}" and "manual" not in f"{p}"
+    result = "osparc-gateway-server" not in f"{p}" and "manual" not in f"{p}"
+    result &= "tests/performance" not in f"{p}"
+    return result
 
 
 compose_paths = filter(
@@ -113,9 +115,7 @@ def test_validate_compose_file(
 ):
     assert compose_path.exists()
     compose = yaml.safe_load(compose_path.read_text())
-    print(
-        str(compose_path.relative_to(repo_dir)), "-> version=", compose.get("version")
-    )
+    print(str(compose_path.relative_to(repo_dir)))
 
     # NOTE: with docker stack config, the .env file MUST be alongside the docker-compose file
 
@@ -134,4 +134,4 @@ def test_validate_compose_file(
     )
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
-    assert compose["version"] == "3.8"
+    assert "version" not in compose

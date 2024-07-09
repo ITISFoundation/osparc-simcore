@@ -4,8 +4,8 @@
 
 
 import pytest
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"

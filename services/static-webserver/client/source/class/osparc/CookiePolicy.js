@@ -52,6 +52,24 @@ qx.Class.define("osparc.CookiePolicy", {
 
     declineCookies: function() {
       osparc.utils.Utils.cookie.deleteCookie(this.COOKIES_ACCEPTED_NAME);
+    },
+
+    getITISPrivacyPolicyLink: function(linkText = "Privacy Policy") {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const link = `<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: ${color}' target='_blank'>${linkText}</a>`;
+      return link;
+    },
+
+    getS4LPrivacyPolicyLink: function(linkText = "Privacy Policy") {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const link = `<a href=https://sim4life.swiss/privacy/ style='color: ${color}' target='_blank'>${linkText}</a>`;
+      return link;
+    },
+
+    getZMTEULALink: function(linkText = "end users license agreement (EULA)") {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const link = `<a href='https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt' style='color: ${color}' target='_blank''>${linkText}</a>`;
+      return link;
     }
   },
 
@@ -60,9 +78,8 @@ qx.Class.define("osparc.CookiePolicy", {
       let control;
       switch (id) {
         case "cookie-text": {
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const textLink = `<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`;
-          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink;
+          const link = osparc.CookiePolicy.getITISPrivacyPolicyLink("Privacy Policy");
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
@@ -73,9 +90,8 @@ qx.Class.define("osparc.CookiePolicy", {
           break;
         }
         case "cookie-text-s4l": {
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const textLink = `<a href=https://sim4life.swiss/privacy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`;
-          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink;
+          const link = osparc.CookiePolicy.getS4LPrivacyPolicyLink("Privacy Policy");
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + link + ".";
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });

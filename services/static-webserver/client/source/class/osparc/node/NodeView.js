@@ -74,8 +74,10 @@ qx.Class.define("osparc.node.NodeView", {
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
-        this.__iFrameChanged();
+        const node = this.getNode();
+        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(), this);
         iFrame.addListener("load", () => this.__iFrameChanged());
+        this.__iFrameChanged();
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {
@@ -150,8 +152,10 @@ qx.Class.define("osparc.node.NodeView", {
     __iFrameChanged: function() {
       this._iFrameLayout.removeAll();
 
-      const loadingPage = this.getNode().getLoadingPage();
-      const iFrame = this.getNode().getIFrame();
+      const node = this.getNode();
+
+      const loadingPage = node.getLoadingPage();
+      const iFrame = node.getIFrame();
       const src = iFrame.getSource();
       const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
       this._iFrameLayout.add(iFrameView, {

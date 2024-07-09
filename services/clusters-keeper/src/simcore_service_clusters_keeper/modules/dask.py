@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Coroutine
-from typing import Any
+from typing import Any, Final
 
 import distributed
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
@@ -18,6 +18,9 @@ async def _wrap_client_async_routine(
     return await client_coroutine
 
 
+_CONNECTION_TIMEOUT: Final[str] = "5"
+
+
 async def ping_scheduler(
     url: AnyUrl, authentication: InternalClusterAuthentication
 ) -> bool:
@@ -31,13 +34,13 @@ async def ping_scheduler(
                 require_encryption=True,
             )
         async with distributed.Client(
-            url, asynchronous=True, timeout="5", security=security
+            url, asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
         ):
             ...
         return True
     except OSError:
         _logger.info(
-            "osparc-dask-scheduler %s ping timed-out, the machine is likely still starting...",
+            "osparc-dask-scheduler %s ping timed-out, the machine is likely still starting/hanged or broken...",
             url,
         )
 
@@ -55,7 +58,9 @@ async def is_scheduler_busy(
             tls_client_key=f"{authentication.tls_client_key}",
             require_encryption=True,
         )
-    async with distributed.Client(url, asynchronous=True, security=security) as client:
+    async with distributed.Client(
+        url, asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
+    ) as client:
         datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
         _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
         num_processing_tasks = 0

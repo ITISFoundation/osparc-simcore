@@ -10,7 +10,6 @@
 #   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
 #
-version: "3.8"
 x-common-environment: &common_environment
   SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 services:
@@ -69,6 +68,14 @@ services:
     ports:
       - "8000"
       - "3010:3000"
+
+  efs-guardian:
+    environment:
+      <<: *common_environment
+      EFS_GUARDIAN_REMOTE_DEBUGGING_PORT : 3000
+    ports:
+      - "8013:8000"
+      - "3020:3000"
 
   invitations:
     environment:

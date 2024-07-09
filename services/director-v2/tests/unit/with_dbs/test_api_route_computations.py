@@ -10,6 +10,7 @@ import json
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
+from decimal import Decimal
 from pathlib import Path
 from random import choice
 from typing import Any
@@ -29,6 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingUnitGet,
 )
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
@@ -38,7 +40,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -97,11 +99,11 @@ def minimal_configuration(
 
 
 @pytest.fixture(scope="session")
-def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
+def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
     fake_service_path = mocks_dir / "fake_service.json"
     assert fake_service_path.exists()
     fake_service_data = json.loads(fake_service_path.read_text())
-    return ServiceDockerData(**fake_service_data)
+    return ServiceMetaDataPublished(**fake_service_data)
 
 
 @pytest.fixture
@@ -128,7 +130,7 @@ def fake_service_labels() -> dict[str, Any]:
 @pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
     fake_service_labels: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
@@ -165,7 +167,7 @@ def mocked_director_service_fcts(
 @pytest.fixture
 def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_resources: ServiceResourcesDict,
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
@@ -214,7 +216,7 @@ def mocked_catalog_service_fcts(
 @pytest.fixture
 def mocked_catalog_service_fcts_deprecated(
     minimal_app: FastAPI,
-    fake_service_details: ServiceDockerData,
+    fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
 ):
     def _mocked_services_details(
@@ -291,18 +293,37 @@ def mocked_resource_usage_tracker_service_fcts(
             200, json=jsonable_encoder(default_pricing_plan, by_alias=True)
         )
 
+    def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=jsonable_encoder(
+                (
+                    default_pricing_plan.pricing_units[0]
+                    if default_pricing_plan.pricing_units
+                    else PricingUnitGet.Config.schema_extra["examples"][0]
+                ),
+                by_alias=True,
+            ),
+        )
+
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+
         respx_mock.get(
             re.compile(
                 r"services/(?P<service_key>simcore/services/(comp|dynamic|frontend)/[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+)/pricing-plan.+"
             ),
             name="get_service_default_pricing_plan",
         ).mock(side_effect=_mocked_service_default_pricing_plan)
+
+        respx_mock.get(
+            re.compile(r"pricing-plans/(?P<pricing_plan_id>\d+)/pricing-units.+"),
+            name="get_pricing_unit",
+        ).mock(side_effect=_mocked_get_pricing_unit)
 
         yield respx_mock
 
@@ -384,7 +405,11 @@ async def test_create_computation(
 
 @pytest.fixture
 def wallet_info(faker: Faker) -> WalletInfo:
-    return WalletInfo(wallet_id=faker.pyint(), wallet_name=faker.name())
+    return WalletInfo(
+        wallet_id=faker.pyint(),
+        wallet_name=faker.name(),
+        wallet_credit_amount=Decimal(faker.pyint(min_value=12, max_value=129312)),
+    )
 
 
 @pytest.fixture
@@ -483,12 +508,16 @@ async def test_create_computation_with_wallet(
     assert response.status_code == status.HTTP_201_CREATED, response.text
     if default_pricing_plan_aws_ec2_type:
         mocked_clusters_keeper_service_get_instance_type_details.assert_called()
-        assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(
-            [
-                v
-                for v in proj.workbench.values()
-                if to_node_class(v.key) != NodeClass.FRONTEND
-            ]
+        assert (
+            mocked_resource_usage_tracker_service_fcts.calls.call_count
+            == len(
+                [
+                    v
+                    for v in proj.workbench.values()
+                    if to_node_class(v.key) != NodeClass.FRONTEND
+                ]
+            )
+            * 2
         )
         # check the project nodes were really overriden now
         async with aiopg_engine.acquire() as connection:
@@ -540,9 +569,9 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
-async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
+async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
@@ -572,13 +601,13 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
             )
         ),
     )
-    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
 
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,

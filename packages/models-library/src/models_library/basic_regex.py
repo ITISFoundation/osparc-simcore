@@ -75,3 +75,5 @@ DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
     r"(?::(?P<docker_tag>[\w][\w.-]{0,127}))?"
     r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
+
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)

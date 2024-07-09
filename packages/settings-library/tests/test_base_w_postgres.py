@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 import pytest
 from pydantic import Field, ValidationError
-from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 from settings_library.basic_types import PortInt
 

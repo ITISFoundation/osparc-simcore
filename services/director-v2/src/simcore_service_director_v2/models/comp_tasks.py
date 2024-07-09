@@ -10,12 +10,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
-from models_library.services import (
-    SERVICE_KEY_RE,
-    ServiceInputsDict,
-    ServiceOutput,
-    ServicePortKey,
-)
+from models_library.services import ServiceInputsDict, ServiceOutput, ServicePortKey
+from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
 from pydantic import BaseModel, ByteSize, Extra, Field, parse_obj_as, validator
 from pydantic.types import PositiveInt

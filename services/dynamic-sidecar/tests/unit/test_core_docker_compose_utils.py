@@ -25,7 +25,6 @@ from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
 SLEEP_TIME_S = 60
 COMPOSE_SPEC_SAMPLE = {
-    "version": "3.8",
     "services": {
         "my-test-container": {
             "environment": [

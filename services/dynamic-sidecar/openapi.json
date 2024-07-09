@@ -1189,7 +1189,8 @@
           "unit": {
             "type": "string",
             "title": "Unit",
-            "description": "Units, when it refers to a physical quantity"
+            "description": "Units, when it refers to a physical quantity",
+            "deprecated": true
           },
           "widget": {
             "allOf": [

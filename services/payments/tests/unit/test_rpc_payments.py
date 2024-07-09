@@ -14,8 +14,8 @@ from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.payments import UserInvoiceAddress
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
@@ -37,7 +37,7 @@ def app_environment(
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
@@ -49,7 +49,7 @@ def app_environment(
             **app_environment,
             **rabbit_env_vars_dict,
             **postgres_env_vars_dict,
-            **external_environment,
+            **external_envfile_dict,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )

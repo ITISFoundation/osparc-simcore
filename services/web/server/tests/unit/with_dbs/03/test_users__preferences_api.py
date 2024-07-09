@@ -17,8 +17,8 @@ from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from pydantic import BaseModel
 from pydantic.fields import ModelField
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )

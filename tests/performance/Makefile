@@ -3,7 +3,7 @@
 #
 include ../../scripts/common.Makefile
 
-LOCUST_VERSION=2.5.1
+LOCUST_VERSION=2.29.1
 export LOCUST_VERSION
 
 # UTILS
@@ -42,9 +42,9 @@ down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
 .PHONY: test
-test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
+test: ## runs osparc locust. locust and test confiuration are specified in .env file next to target file
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
-	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.01 --check-avg-response-time=$(if $(resp_time),$(resp_time),200)"; \
+	export ENV_FILE=$$(dirname $$(realpath locust_files/$${LOCUST_FILE}))/.env; \
+	if [ ! -f $${ENV_FILE} ]; then cp $$(dirname $${ENV_FILE})/.env-devel $${ENV_FILE}; fi; \
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master

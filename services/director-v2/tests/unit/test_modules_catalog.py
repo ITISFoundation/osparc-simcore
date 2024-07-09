@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 import respx
-from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -27,11 +26,6 @@ def minimal_catalog_config(
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return UserID(faker.pyint(min_value=1))
 
 
 def test_get_catalog_client_instance(

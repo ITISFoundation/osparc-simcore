@@ -16,11 +16,11 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.logging_utils import log_context
 from settings_library.docker_registry import RegistrySettings
 
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -101,11 +101,11 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
 
 @pytest.fixture
 def external_registry_settings(
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ) -> RegistrySettings | None:
-    if external_environment:
+    if external_envfile_dict:
         config = {
-            field: external_environment.get(field, None)
+            field: external_envfile_dict.get(field, None)
             for field in RegistrySettings.__fields__
         }
         return RegistrySettings.parse_obj(config)

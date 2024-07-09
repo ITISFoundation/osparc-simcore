@@ -9,9 +9,10 @@ import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-import pytest
 from models_library.api_schemas_catalog.services import ServiceGet
-from models_library.services import ServiceDockerData
+from models_library.products import ProductName
+from models_library.services import ServiceMetaDataPublished
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from respx.router import MockRouter
 from starlette import status
@@ -26,26 +27,21 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.fixture
-def disable_service_caching(monkeypatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", 1)
-
-
 async def test_list_services_with_details(
-    mock_catalog_background_task: None,
-    director_mockup: MockRouter,
-    client: TestClient,
-    user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    mocked_catalog_background_task: None,
+    setup_rabbitmq_and_rpc_disabled: None,
+    mocked_director_service_api: MockRouter,
+    user_id: UserID,
+    target_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
     benchmark,
 ):
-    target_product = products_names[-1]
     # create some fake services
     NUM_SERVICES = 1000
     fake_services = [
-        service_catalog_faker(
+        create_fake_service_data(
             "simcore/services/dynamic/jupyterlab",
             f"1.0.{s}",
             team_access=None,
@@ -60,15 +56,18 @@ async def test_list_services_with_details(
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "true"})
 
     # now fake the director such that it returns half the services
-    fake_registry_service_data = ServiceDockerData.Config.schema_extra["examples"][0]
+    fake_registry_service_data = ServiceMetaDataPublished.Config.schema_extra[
+        "examples"
+    ][0]
 
-    director_mockup.get("/services", name="list_services").respond(
+    mocked_director_service_api.get("/services", name="list_services").respond(
         200,
         json={
             "data": [
                 {
                     **fake_registry_service_data,
-                    **{"key": s[0]["key"], "version": s[0]["version"]},
+                    "key": s[0]["key"],
+                    "version": s[0]["version"],
                 }
                 for s in fake_services[::2]
             ]
@@ -85,22 +84,23 @@ async def test_list_services_with_details(
 
 
 async def test_list_services_without_details(
-    mock_catalog_background_task: None,
-    director_mockup: MockRouter,
-    client: TestClient,
+    mocked_catalog_background_task: None,
+    mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    target_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
     benchmark,
 ):
-    target_product = products_names[-1]
+
     # injects fake data in db
     NUM_SERVICES = 1000
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 SERVICE_KEY,
                 f"1.0.{s}",
                 team_access=None,
@@ -127,21 +127,22 @@ async def test_list_services_without_details(
 
 
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
-    disable_service_caching,
-    mock_catalog_background_task: None,
-    director_mockup: MockRouter,
-    client: TestClient,
+    service_caching_disabled,
+    mocked_catalog_background_task: None,
+    mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    target_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
+
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -158,24 +159,21 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 
 
 async def test_list_services_without_details_with_another_product_returns_other_services(
-    disable_service_caching: None,
-    mock_catalog_background_task: None,
-    director_mockup: MockRouter,
-    client: TestClient,
+    service_caching_disabled: None,
+    mocked_catalog_background_task: None,
+    mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    target_product: ProductName,
+    other_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
-    # injects fake data in db
     NUM_SERVICES = 15
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -187,33 +185,29 @@ async def test_list_services_without_details_with_another_product_returns_other_
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(
-        f"{url}", headers={"x-simcore-products-name": products_names[0]}
-    )
+    response = client.get(f"{url}", headers={"x-simcore-products-name": other_product})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
 
 
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
-    disable_service_caching,
-    mock_catalog_background_task,
-    director_mockup: MockRouter,
-    client: TestClient,
+    service_caching_disabled,
+    mocked_catalog_background_task,
+    mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    target_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
+
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -234,22 +228,20 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
 
 
 async def test_list_services_that_are_deprecated(
-    disable_service_caching,
-    mock_catalog_background_task,
-    director_mockup: MockRouter,
-    client: TestClient,
+    service_caching_disabled,
+    mocked_catalog_background_task,
+    setup_rabbitmq_and_rpc_disabled: None,
+    mocked_director_service_api: MockRouter,
     user_id: int,
-    products_names: list[str],
-    service_catalog_faker: Callable,
+    target_product: ProductName,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
+    client: TestClient,
 ):
-    target_product = products_names[-1]
-    assert (
-        len(products_names) > 1
-    ), "please adjust the fixture to have the right number of products"
+
     # injects fake data in db
     deprecation_date = datetime.utcnow() + timedelta(days=1)
-    deprecated_service = service_catalog_faker(
+    deprecated_service = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.1",
         team_access=None,
@@ -270,17 +262,17 @@ async def test_list_services_that_are_deprecated(
     assert received_service.deprecated == deprecation_date
 
     # for details, the director must return the same service
-    fake_registry_service_data = ServiceDockerData.Config.schema_extra["examples"][0]
-    director_mockup.get("/services", name="list_services").respond(
+    fake_registry_service_data = ServiceMetaDataPublished.Config.schema_extra[
+        "examples"
+    ][0]
+    mocked_director_service_api.get("/services", name="list_services").respond(
         200,
         json={
             "data": [
                 {
                     **fake_registry_service_data,
-                    **{
-                        "key": deprecated_service[0]["key"],
-                        "version": deprecated_service[0]["version"],
-                    },
+                    "key": deprecated_service[0]["key"],
+                    "version": deprecated_service[0]["version"],
                 }
             ]
         },

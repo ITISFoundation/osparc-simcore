@@ -5,7 +5,7 @@
 import itertools
 import logging
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from copy import deepcopy
 from typing import Any, Literal, Optional
 
@@ -14,7 +14,7 @@ from models_library.basic_types import MD5Str, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
@@ -49,7 +49,9 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
     """
 
     # select iterable nodes
-    iterable_nodes_defs: list[ServiceDockerData] = []  # schemas of iterable nodes
+    iterable_nodes_defs: list[
+        ServiceMetaDataPublished
+    ] = []  # schemas of iterable nodes
     iterable_nodes: list[Node] = []  # iterable nodes
     iterable_nodes_ids: list[NodeID] = []
 
@@ -69,9 +71,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
         assert node_def.inputs  # nosec
 
         node_call = _function_nodes.catalog.get_implementation(node.key, node.version)
-        g: Generator[NodeOutputsDict, None, None] = node_call(
-            **{name: node.inputs[name] for name in node_def.inputs}
-        )
+        g = node_call(**{name: node.inputs[name] for name in node_def.inputs})
         assert isinstance(g, Iterator)  # nosec
         nodes_generators.append(g)
 

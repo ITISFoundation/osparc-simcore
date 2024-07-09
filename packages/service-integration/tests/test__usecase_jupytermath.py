@@ -7,8 +7,9 @@ import json
 import os
 import shutil
 import subprocess
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import pytest
 import yaml
@@ -118,10 +119,9 @@ def compose_spec_reference(tests_data_dir: Path) -> dict[str, Any]:
     Digest: sha256:279a297b49f1fddb26289d205d4ba5acca1bb8e7bedadcfce00f821873935c03
     Status: Downloaded newer image for itisfoundation/ci-service-integration-library:v1.0.1-dev-25
     """
-    compose_spec = yaml.safe_load(
+    return yaml.safe_load(
         (tests_data_dir / "docker-compose_jupyter-math_ad51f53.yml").read_text()
     )
-    return compose_spec
 
 
 def test_ooil_compose_wo_arguments(

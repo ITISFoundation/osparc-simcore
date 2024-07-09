@@ -17,7 +17,6 @@ def cmd(tmp_path: Path, sleep: int):
     docker_compose = tmp_path / "docker_compose.yml"
     docker_compose.write_text(
         f"""\
-version: "3.8"
 services:
   my-container:
     environment:

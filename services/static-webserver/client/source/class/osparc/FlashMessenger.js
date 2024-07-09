@@ -41,7 +41,7 @@ qx.Class.define("osparc.FlashMessenger", {
     this.__messages = new qx.data.Array();
 
     this.__messageContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-      zIndex: 110000
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX
     });
     const root = qx.core.Init.getApplication().getRoot();
     root.add(this.__messageContainer, {

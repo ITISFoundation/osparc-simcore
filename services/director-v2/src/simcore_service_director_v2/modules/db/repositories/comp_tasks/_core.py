@@ -10,6 +10,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from models_library.wallets import WalletInfo
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
@@ -94,7 +95,7 @@ class CompTasksRepository(BaseRepository):
         user_id: UserID,
         product_name: str,
         rut_client: ResourceUsageTrackerClient,
-        is_wallet: bool,
+        wallet_info: WalletInfo | None,
         rabbitmq_rpc_client: RabbitMQRPCClient,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
@@ -110,7 +111,7 @@ class CompTasksRepository(BaseRepository):
                 product_name=product_name,
                 connection=conn,
                 rut_client=rut_client,
-                is_wallet=is_wallet,
+                wallet_info=wallet_info,
                 rabbitmq_rpc_client=rabbitmq_rpc_client,
             )
             # get current tasks

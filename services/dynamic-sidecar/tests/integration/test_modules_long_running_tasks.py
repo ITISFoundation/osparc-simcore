@@ -4,10 +4,11 @@
 
 
 import filecmp
+import os
 import shutil
 from collections.abc import AsyncIterable, Iterable
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 from unittest.mock import AsyncMock
 
 import aioboto3
@@ -22,10 +23,11 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
-from pytest_simcore.helpers.rawdata_fakers import random_project
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
+from pydantic import AnyUrl, parse_obj_as
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
@@ -156,6 +158,31 @@ def state_paths_to_legacy_archives(
 
 
 @pytest.fixture
+async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
+    storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
+    storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
+
+    def correct_ip(url: AnyUrl):
+
+        assert storage_host is not None
+        assert storage_port is not None
+
+        return AnyUrl.build(
+            scheme=url.scheme,
+            host=storage_host,
+            port=storage_port,
+            path=url.path,
+            query=url.query,
+        )
+
+    # NOTE: Mock to ensure container IP agrees with host IP when testing
+    mocker.patch(
+        "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
+        correct_ip,
+    )
+
+
+@pytest.fixture
 async def restore_legacy_state_archives(
     test_client: TestClient,
     user_id: UserID,
@@ -163,6 +190,7 @@ async def restore_legacy_state_archives(
     node_id: NodeID,
     state_paths_to_legacy_archives: dict[Path, Path],
 ) -> None:
+
     tasks = []
     for legacy_archive_zip in state_paths_to_legacy_archives.values():
         s3_path = f"{project_id}/{node_id}/{legacy_archive_zip.name}"
@@ -339,6 +367,7 @@ def _get_expected_s3_objects(
 
 @pytest.mark.parametrize("repeat_count", [1, 2])
 async def test_legacy_state_open_and_clone(
+    simcore_storage_service: None,
     restore_legacy_state_archives: None,
     state_paths_to_legacy_archives: dict[Path, Path],
     expected_contents_paths: dict[Path, Path],
@@ -399,6 +428,7 @@ async def test_legacy_state_open_and_clone(
 
 @pytest.mark.parametrize("repeat_count", [1, 2])
 async def test_state_open_and_close(
+    simcore_storage_service: None,
     test_client: TestClient,
     state_paths_to_legacy_archives: dict[Path, Path],
     expected_contents_paths: dict[Path, Path],

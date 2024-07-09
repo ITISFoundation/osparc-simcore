@@ -4,12 +4,19 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, status
-from fastapi.exceptions import HTTPException
+from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
+from simcore_service_api_server.exceptions.backend_errors import (
+    ProjectAlreadyStartedError,
+)
 
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -23,7 +30,7 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...services.jobs import replace_custom_metadata, start_project, stop_project
 from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -33,9 +40,7 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 
@@ -67,7 +72,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "model": ErrorGet,
     },
     status.HTTP_404_NOT_FOUND: {
-        "description": "Job not found",
+        "description": "Job/wallet/pricing details not found",
         "model": ErrorGet,
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -88,6 +93,9 @@ async def create_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
+    hidden: Annotated[bool, Query()] = True,
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ):
     """Creates a job in a specific release with given inputs.
 
@@ -107,7 +115,12 @@ async def create_job(
     _logger.debug("Creating Job '%s'", pre_job.name)
 
     project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
-    new_project: ProjectGet = await webserver_api.create_project(project_in)
+    new_project: ProjectGet = await webserver_api.create_project(
+        project_in,
+        is_hidden=hidden,
+        parent_project_uuid=x_simcore_parent_project_uuid,
+        parent_node_id=x_simcore_parent_node_id,
+    )
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
 
@@ -149,8 +162,23 @@ async def delete_job(
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=JobStatus,
-    responses=JOBS_STATUS_CODES,
+    responses=JOBS_STATUS_CODES
+    | {
+        status.HTTP_200_OK: {
+            "description": "Job already started",
+            "model": JobStatus,
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Configuration error",
+            "model": ErrorGet,
+        },
+    },
 )
 async def start_job(
     request: Request,
@@ -165,18 +193,31 @@ async def start_job(
     """Starts job job_id created with the solver solver_key:version
 
     New in *version 0.4.3*: cluster_id
+    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
     """
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    await start_project(
-        request=request,
-        job_id=job_id,
-        expected_job_name=job_name,
-        webserver_api=webserver_api,
-        cluster_id=cluster_id,
-    )
+    try:
+        await start_project(
+            request=request,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=webserver_api,
+            cluster_id=cluster_id,
+        )
+    except ProjectAlreadyStartedError:
+        job_status = await inspect_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+            user_id=user_id,
+            director2_api=director2_api,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
+        )
     return await inspect_job(
         solver_key=solver_key,
         version=version,
@@ -221,7 +262,7 @@ async def inspect_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    task = await director2_api.get_computation(job_id, user_id)
+    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
 
@@ -247,24 +288,15 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.update_project_metadata(
-            project_id=job_id, metadata=update.metadata
-        )
-        return JobMetadata(
+    return await replace_custom_metadata(
+        job_name=job_name,
+        job_id=job_id,
+        update=update,
+        webserver_api=webserver_api,
+        self_url=url_for(
+            "replace_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "replace_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )

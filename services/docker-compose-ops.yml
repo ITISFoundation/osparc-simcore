@@ -17,7 +17,6 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: "3.8"
 
 services:
   adminer:
@@ -83,7 +82,7 @@ services:
         user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,
         announcements:${REDIS_HOST}:${REDIS_PORT}:5,
         distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6,
-        distributed_caches:${REDIS_HOST}:${REDIS_PORT}:7
+        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"

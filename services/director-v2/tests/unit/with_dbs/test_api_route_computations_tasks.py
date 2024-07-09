@@ -22,8 +22,8 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_obj_as, parse_raw_as
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
@@ -101,12 +101,12 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
 
 
 @pytest.fixture
-def user(registered_user: Callable[..., dict[str, Any]]):
+def user(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
     return registered_user()
 
 
 @pytest.fixture
-def user_id(user):
+def user_id(user: dict[str, Any]):
     return user["id"]
 
 

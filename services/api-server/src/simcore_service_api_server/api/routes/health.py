@@ -3,9 +3,10 @@ import datetime
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
+from servicelib.aiohttp import status
 
 from ..._meta import API_VERSION, PROJECT_NAME
 from ...core.health_checker import ApiServerHealthChecker, get_health_checker
@@ -19,16 +20,15 @@ from ..dependencies.services import get_api_client
 router = APIRouter()
 
 
-class HealtchCheckException(RuntimeError):
-    """Failed a health check"""
-
-
 @router.get("/", include_in_schema=False, response_class=PlainTextResponse)
 async def check_service_health(
     health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)]
 ):
     if not health_checker.healthy:
-        raise HealtchCheckException()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy"
+        )
+
     return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
 
 

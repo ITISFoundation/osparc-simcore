@@ -4,8 +4,8 @@
 
 import shutil
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 import service_integration
@@ -14,11 +14,13 @@ from typer.testing import CliRunner
 
 pytest_plugins = [
     "pytest_simcore.pydantic_models",
-    "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.repository_paths",
 ]
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_CURRENT_DIR = (
+    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+)
 
 
 @pytest.fixture(scope="session")
@@ -30,24 +32,27 @@ def package_dir() -> Path:
 
 @pytest.fixture(scope="session")
 def tests_data_dir() -> Path:
-    pdir = CURRENT_DIR / "data"
+    pdir = _CURRENT_DIR / "data"
     assert pdir.exists()
     return pdir
 
 
 @pytest.fixture
-def project_file_path(tests_data_dir, tmp_path) -> Path:
+def docker_compose_overwrite_path(tests_data_dir, tmp_path) -> Path:
+    name = "docker-compose.overwrite.yml"
     dst = shutil.copy(
-        src=tests_data_dir / "docker-compose.overwrite.yml",
-        dst=tmp_path / "docker-compose.overwrite.yml",
+        src=tests_data_dir / name,
+        dst=tmp_path / name,
     )
     return Path(dst)
 
 
 @pytest.fixture
 def metadata_file_path(tests_data_dir, tmp_path) -> Path:
+    name = "metadata.yml"
     dst = shutil.copy(
-        src=tests_data_dir / "metadata.yml", dst=tmp_path / "metadata.yml"
+        src=tests_data_dir / name,
+        dst=tmp_path / name,
     )
     return Path(dst)
 

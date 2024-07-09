@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.ec2 import (
     _APPLICATION_TAG_KEY,
@@ -15,11 +15,6 @@ from simcore_service_clusters_keeper.utils.ec2 import (
     creation_ec2_tags,
     get_cluster_name,
 )
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

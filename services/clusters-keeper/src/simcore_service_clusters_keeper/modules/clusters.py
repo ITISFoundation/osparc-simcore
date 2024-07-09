@@ -1,6 +1,7 @@
-import datetime
 import logging
+from collections.abc import Iterable
 
+import arrow
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
     AWSTagKey,
@@ -96,15 +97,17 @@ async def create_cluster(
     return new_ec2_instance_data
 
 
-async def get_all_clusters(app: FastAPI) -> list[EC2InstanceData]:
+async def get_all_clusters(app: FastAPI) -> set[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
-    ec2_instance_data: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
-        key_names=[
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
-        ],
-        tags=all_created_ec2_instances_filter(app_settings),
-        state_names=["running"],
+    ec2_instance_data: set[EC2InstanceData] = set(
+        await get_ec2_client(app).get_instances(
+            key_names=[
+                app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
+            ],
+            tags=all_created_ec2_instances_filter(app_settings),
+            state_names=["running"],
+        )
     )
     return ec2_instance_data
 
@@ -159,9 +162,11 @@ async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> 
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(
             [instance],
-            tags={HEARTBEAT_TAG_KEY: f"{datetime.datetime.now(datetime.timezone.utc)}"},
+            tags={HEARTBEAT_TAG_KEY: AWSTagValue(arrow.utcnow().datetime.isoformat())},
         )
 
 
-async def delete_clusters(app: FastAPI, *, instances: list[EC2InstanceData]) -> None:
+async def delete_clusters(
+    app: FastAPI, *, instances: Iterable[EC2InstanceData]
+) -> None:
     await get_ec2_client(app).terminate_instances(instances)

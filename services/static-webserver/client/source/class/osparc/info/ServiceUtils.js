@@ -32,10 +32,10 @@ qx.Class.define("osparc.info.ServiceUtils", {
     /**
       * @param serviceData {Object} Serialized Service Object
       */
-    createNodeId: function(instaceUuid) {
+    createNodeId: function(instanceUuid) {
       const label = osparc.info.Utils.createId();
       label.set({
-        value: instaceUuid
+        value: instanceUuid
       });
       return label;
     },
@@ -292,6 +292,22 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const title = serviceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
+    },
+
+    patchServiceData: function(serviceData, fieldKey, value) {
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          serviceData["key"],
+          serviceData["version"]
+        ),
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("services", "patch", params)
+        .then(() => {
+          serviceData[fieldKey] = value;
+        });
     }
   }
 });

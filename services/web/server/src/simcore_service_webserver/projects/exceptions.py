@@ -1,8 +1,10 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+
 from typing import Any
 
 import redis.exceptions
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 
 from ..errors import WebServerBaseError
@@ -82,6 +84,23 @@ class NodeNotFoundError(BaseProjectError):
         self.project_uuid = project_uuid
 
 
+class ParentNodeNotFoundError(BaseProjectError):
+    msg_template = "Parent node '{node_uuid}' not found"
+
+    def __init__(self, *, project_uuid: str | None, node_uuid: str, **ctx):
+        super().__init__(**ctx)
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid
+
+
+class ParentProjectNotFoundError(BaseProjectError):
+    msg_template = "Parent project '{project_uuid}' not found"
+
+    def __init__(self, *, project_uuid: str | None, **ctx):
+        super().__init__(**ctx)
+        self.project_uuid = project_uuid
+
+
 ProjectLockError = redis.exceptions.LockError
 
 
@@ -111,11 +130,76 @@ class PermalinkFactoryError(BaseProjectError):
 
 
 class ProjectNodeResourcesInvalidError(BaseProjectError):
-    ...
+    msg_template = "Invalid resource associated to node"
+
+
+class InvalidContainerInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = (
+        "Incompatible '{container_name}' cannot be applied on any of {resource_keys}"
+    )
+
+
+class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = "Incompatible '{image_name}' cannot be applied on {container_name}:{expected_image}"
+
+
+class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
+
+
+class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
+    msg_template = (
+        "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
+    )
 
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
     ...
+
+
+class ProjectNodeRequiredInputsNotSetError(BaseProjectError):
+    ...
+
+
+class ProjectNodeConnectionsMissingError(ProjectNodeRequiredInputsNotSetError):
+    msg_template = "Missing '{joined_unset_required_inputs}' connection(s) to '{node_with_required_inputs}'"
+
+    def __init__(
+        self,
+        *,
+        unset_required_inputs: list[str],
+        node_with_required_inputs: NodeID,
+        **ctx,
+    ):
+        super().__init__(
+            joined_unset_required_inputs=", ".join(unset_required_inputs),
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+            **ctx,
+        )
+        self.unset_required_inputs = unset_required_inputs
+        self.node_with_required_inputs = node_with_required_inputs
+
+
+class ProjectNodeOutputPortMissingValueError(ProjectNodeRequiredInputsNotSetError):
+    msg_template = "Missing: {joined_start_message}"
+
+    def __init__(
+        self,
+        *,
+        unset_outputs_in_upstream: list[tuple[str, str]],
+        **ctx,
+    ):
+        start_messages = [
+            f"'{input_key}' of '{service_name}'"
+            for input_key, service_name in unset_outputs_in_upstream
+        ]
+        super().__init__(
+            joined_start_message=", ".join(start_messages),
+            unset_outputs_in_upstream=unset_outputs_in_upstream,
+            **ctx,
+        )
+        self.unset_outputs_in_upstream = unset_outputs_in_upstream
 
 
 class DefaultPricingUnitNotFoundError(BaseProjectError):

@@ -22,9 +22,9 @@ from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID, UserID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_payment_transaction
+from pytest_simcore.helpers.faker_factories import random_payment_transaction
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.models.db_to_api import to_payments_api_model

@@ -17,7 +17,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
 from models_library.utils.json_serialization import json_dumps
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_utils import get_code_display_name
@@ -85,7 +85,7 @@ class _ExpectedResponseTuple(NamedTuple):
     ok: int
     created: int
     no_content: int
-    forbidden: int
+    confict: int
 
     # pylint: disable=no-member
     def __str__(self) -> str:
@@ -105,7 +105,7 @@ def standard_role_response():
                     ok=status.HTTP_401_UNAUTHORIZED,
                     created=status.HTTP_401_UNAUTHORIZED,
                     no_content=status.HTTP_401_UNAUTHORIZED,
-                    forbidden=status.HTTP_401_UNAUTHORIZED,
+                    confict=status.HTTP_401_UNAUTHORIZED,
                 ),
             ),
             pytest.param(
@@ -114,7 +114,7 @@ def standard_role_response():
                     ok=status.HTTP_200_OK,
                     created=status.HTTP_201_CREATED,
                     no_content=status.HTTP_204_NO_CONTENT,
-                    forbidden=status.HTTP_403_FORBIDDEN,
+                    confict=status.HTTP_409_CONFLICT,
                 ),
             ),
             pytest.param(
@@ -123,7 +123,7 @@ def standard_role_response():
                     ok=status.HTTP_200_OK,
                     created=status.HTTP_201_CREATED,
                     no_content=status.HTTP_204_NO_CONTENT,
-                    forbidden=status.HTTP_403_FORBIDDEN,
+                    confict=status.HTTP_409_CONFLICT,
                 ),
             ),
             pytest.param(
@@ -132,7 +132,7 @@ def standard_role_response():
                     ok=status.HTTP_200_OK,
                     created=status.HTTP_201_CREATED,
                     no_content=status.HTTP_204_NO_CONTENT,
-                    forbidden=status.HTTP_403_FORBIDDEN,
+                    confict=status.HTTP_409_CONFLICT,
                 ),
             ),
         ],
@@ -390,7 +390,7 @@ async def test_start_stop_computation(
     if not error:
         # starting again should be disallowed, since it's already running
         resp = await client.post(f"{url_start}")
-        assert resp.status == expected.forbidden
+        assert resp.status == expected.confict
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id

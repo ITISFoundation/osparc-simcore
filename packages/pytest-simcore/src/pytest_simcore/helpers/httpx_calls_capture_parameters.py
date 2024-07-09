@@ -133,3 +133,9 @@ class CapturedParameter(BaseModel):
 class PathDescription(BaseModel):
     path: str
     path_parameters: list[CapturedParameter]
+
+    def to_path_regex(self) -> str:
+        path_regex: str = f"{self.path}"
+        for param in self.path_parameters:
+            path_regex = path_regex.replace("{" + param.name + "}", param.respx_lookup)
+        return path_regex

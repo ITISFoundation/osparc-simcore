@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections.abc import Coroutine
 from typing import Annotated, Final, cast
 
 import httpx
@@ -79,12 +78,11 @@ async def list_tracked_dynamic_services(
     user_id: UserID | None = None,
     project_id: ProjectID | None = None,
 ) -> list[DynamicServiceGet]:
-    legacy_running_services: list[DynamicServiceGet] = cast(
-        list[DynamicServiceGet],
-        await director_v0_client.get_running_services(user_id, project_id),
+    legacy_running_services = await director_v0_client.get_running_services(
+        user_id, project_id
     )
 
-    get_stack_statuse_tasks: list[Coroutine] = [
+    get_stack_statuse_tasks = [
         scheduler.get_stack_status(service_uuid)
         for service_uuid in scheduler.list_services(
             user_id=user_id, project_id=project_id
@@ -92,11 +90,12 @@ async def list_tracked_dynamic_services(
     ]
 
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
-    dynamic_sidecar_running_services: list[DynamicServiceGet] = cast(
-        list[DynamicServiceGet], await asyncio.gather(*get_stack_statuse_tasks)
-    )
+    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuse_tasks)
 
-    return legacy_running_services + dynamic_sidecar_running_services
+    return cast(
+        list[DynamicServiceGet],
+        legacy_running_services + dynamic_sidecar_running_services,
+    )  # mypy
 
 
 @router.post(

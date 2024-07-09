@@ -89,6 +89,8 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    FLOATING_Z_INDEX: 110000,
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,
@@ -412,6 +414,22 @@ qx.Class.define("osparc.utils.Utils", {
       return daysBetween;
     },
 
+    createReleaseNotesLink: function() {
+      const versionLink = new osparc.ui.basic.LinkLabel();
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+      let text = "osparc-simcore ";
+      text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      text += platformName.length ? ` (${platformName})` : "";
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      versionLink.set({
+        value: text,
+        url
+      });
+      return versionLink;
+    },
+
     expirationMessage: function(daysToExpiration) {
       let msg = "";
       if (daysToExpiration === 0) {
@@ -457,10 +475,6 @@ qx.Class.define("osparc.utils.Utils", {
 
     isInZ43: function() {
       return window.location.hostname.includes("speag");
-    },
-
-    isDevelEnv: function() {
-      return window.location.hostname.includes("master.speag") || window.location.port === "9081";
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {

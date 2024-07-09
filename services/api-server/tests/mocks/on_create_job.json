@@ -20,17 +20,17 @@
    "type": "computational",
    "authors": [
     {
-     "name": "Francisco Higgins",
-     "email": "linda35@example.net",
-     "affiliation": "Grant Ltd"
+     "name": "Kimberly Wilson",
+     "email": "christopher72@example.org",
+     "affiliation": "Ford, Collins and Villarreal"
     },
     {
-     "name": "Stacey Lee",
-     "email": "michael80@example.net",
-     "affiliation": "Blevins-Cantrell"
+     "name": "Daniel Jones",
+     "email": "fschmitt@example.net",
+     "affiliation": "Ayala-Anderson"
     }
    ],
-   "contact": "luis44@example.org",
+   "contact": "jlozano@example.net",
    "inputs": {
     "input_1": {
      "displayOrder": 1.0,
@@ -119,7 +119,7 @@
      "bootOptions": null
     }
    },
-   "prjOwner": "ginamiller@example.org",
+   "prjOwner": "robertsmith@example.org",
    "accessRights": {},
    "tags": [],
    "classifiers": [],
@@ -248,7 +248,7 @@
       }
      }
     },
-    "prjOwner": "sbarnes@example.com",
+    "prjOwner": "rhondakelly@example.net",
     "accessRights": {
      "3": {
       "read": true,

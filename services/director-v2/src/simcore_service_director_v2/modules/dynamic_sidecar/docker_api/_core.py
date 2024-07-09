@@ -145,7 +145,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             # service will be running.
             sorted_tasks = sorted(
                 service_associated_tasks,
-                key=lambda task: task["UpdatedAt"],  # type:ignore
+                key=lambda task: task["UpdatedAt"],
             )
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]

@@ -16,6 +16,9 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
+from servicelib.utils import unused_port
 from settings_library.node_ports import StorageAuthSettings
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -195,13 +198,14 @@ def get_prometheus_monitoring_networks(
     )
 
 
-def _get_mounts(
+async def _get_mounts(
     *,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     app_settings: AppSettings,
     has_quota_support: bool,
+    rpc_client: RabbitMQRPCClient,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -251,10 +255,44 @@ def _get_mounts(
                 volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
             )
         )
+
+    # We check whether user has access to EFS feature
+    use_efs = False
+    efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
+    if (
+        efs_settings
+        and scheduler_data.user_id in efs_settings.EFS_ONLY_ENABLED_FOR_USERIDS
+    ):
+        use_efs = True
+
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
+        if use_efs:
+            assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
+
+            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
+                path_to_mount
+            ).strip("_")
+            await efs_manager.create_project_specific_data_dir(
+                rpc_client,
+                project_id=scheduler_data.project_id,
+                node_id=scheduler_data.node_uuid,
+                storage_directory_name=_storage_directory_name,
+            )
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_efs(
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
+                    efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
+                    storage_directory_name=_storage_directory_name,
+                )
+            )
         # for now only enable this with dev features enabled
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
@@ -332,6 +370,8 @@ def _get_ports(
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
+                "PublishedPort": unused_port(),
+                "PublishMode": "host",
             }
         )
 
@@ -341,12 +381,14 @@ def _get_ports(
                 {
                     "Protocol": "tcp",
                     "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUGGING_PORT,
+                    "PublishedPort": unused_port(),
+                    "PublishMode": "host",
                 }
             )
     return ports
 
 
-def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
+async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -359,6 +401,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
     telemetry_enabled: bool,
+    rpc_client: RabbitMQRPCClient,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -370,12 +413,13 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
-    mounts = _get_mounts(
+    mounts = await _get_mounts(
         scheduler_data=scheduler_data,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         app_settings=app_settings,
         has_quota_support=has_quota_support,
+        rpc_client=rpc_client,
     )
 
     ports = _get_ports(

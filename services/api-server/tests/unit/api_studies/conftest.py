@@ -9,7 +9,7 @@ from uuid import UUID
 
 import pytest
 from faker import Faker
-from pytest_simcore.helpers.faker_webserver import (
+from pytest_simcore.helpers.webserver_fake_ports_data import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
 from simcore_service_api_server.models.schemas.studies import StudyID

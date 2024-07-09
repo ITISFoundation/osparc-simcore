@@ -3,6 +3,7 @@
 # pylint: disable=unused-import
 
 from collections.abc import Iterator
+from unittest import mock
 
 import pytest
 import requests
@@ -10,11 +11,14 @@ from aiohttp.test_utils import unused_port
 from faker import Faker
 from moto.server import ThreadedMotoServer
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
+from settings_library.ssm import SSMSettings
 
-from .helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
+from .helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from .helpers.moto import patched_aiobotocore_make_api_call
 
 
 @pytest.fixture(scope="module")
@@ -70,6 +74,42 @@ def mocked_ec2_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
+def with_patched_ssm_server(
+    mocker: MockerFixture, external_envfile_dict: EnvVarsDict
+) -> mock.Mock:
+    if external_envfile_dict:
+        # NOTE: we run against AWS. so no need to mock
+        return mock.Mock()
+    return mocker.patch(
+        "aiobotocore.client.AioBaseClient._make_api_call",
+        side_effect=patched_aiobotocore_make_api_call,
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mocked_ssm_server_settings(
+    mocked_aws_server: ThreadedMotoServer,
+    with_patched_ssm_server: mock.Mock,
+    reset_aws_server_state: None,
+) -> SSMSettings:
+    return SSMSettings(
+        SSM_ACCESS_KEY_ID="xxx",
+        SSM_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        SSM_SECRET_ACCESS_KEY="xxx",  # noqa: S106
+    )
+
+
+@pytest.fixture
+def mocked_ssm_server_envs(
+    mocked_ssm_server_settings: SSMSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    changed_envs: EnvVarsDict = mocked_ssm_server_settings.dict()
     return setenvs_from_dict(monkeypatch, changed_envs)
 
 

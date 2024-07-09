@@ -337,7 +337,6 @@ class DaskClient:
             if (self.cluster_type != ClusterTypeInModel.ON_DEMAND) and (
                 self.backend.gateway is None
             ):
-                _logger.warning("cluster type: %s", self.cluster_type)
                 dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,

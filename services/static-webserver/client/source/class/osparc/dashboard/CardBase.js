@@ -50,8 +50,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SHARED_ORGS: "@FontAwesome5Solid/users/13",
     SHARED_ALL: "@FontAwesome5Solid/globe/13",
     PERM_READ: "@FontAwesome5Solid/eye/13",
-    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/13",
-    MODE_GUIDED: "@FontAwesome5Solid/play/13",
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
@@ -105,16 +103,37 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (checks && myGroupId in checks) {
           const myAccessRights = checks[myGroupId];
           const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
-          if (sharedWith === "my-studies") {
+          if (sharedWith === "my-resources") {
             return !totalAccess;
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
           } else if (sharedWith === "shared-with-everyone") {
-            return !Object.keys(checks).includes("1");
+            const store = osparc.store.Store.getInstance();
+            const everyoneGroupIds = [
+              store.getEveryoneProductGroup()["gid"],
+              store.getEveryoneGroup()["gid"]
+            ];
+            const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
+            return !found;
           }
           return false;
         }
+        // if we get here, it means that it was shared-with-me via an organization
+        if (sharedWith === "shared-with-me") {
+          return false;
+        }
         return true;
+      }
+      return false;
+    },
+
+    filterServiceType: function(resourceType, metaData, serviceType) {
+      if (serviceType && resourceType === "service") {
+        if (metaData && metaData.type) {
+          const matches = metaData.type === serviceType;
+          return !matches;
+        }
+        return false;
       }
       return false;
     },
@@ -299,23 +318,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
-      let owner = "";
-      let defaultHits = null;
+      let owner = null;
       let workbench = null;
+      let defaultHits = null;
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "template":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
-          uuid = resourceData.key ? resourceData.key : uuid;
-          owner = resourceData.owner ? resourceData.owner : owner;
+          uuid = resourceData.key ? resourceData.key : null;
+          owner = resourceData.owner ? resourceData.owner : "";
           defaultHits = 0;
           break;
       }
@@ -418,12 +437,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
       if (workbench === null) {
         // it is a service
         return;
+      }
+
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
       }
 
       // Updatable study
@@ -748,7 +768,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       Promise.all([
         store.getGroupEveryone(),
         store.getProductEveryone(),
-        store.getVisibleMembers(),
+        store.getReachableMembers(),
         store.getGroupsOrganizations()
       ])
         .then(values => {
@@ -893,13 +913,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _filterTags: function(tags) {
-      const checks = this.getTags().map(tag => tag.name);
+      const checks = this.getTags().map(tag => tag.id);
       return this.self().filterTags(checks, tags);
     },
 
     _filterSharedWith: function(sharedWith) {
       const checks = this.getAccessRights();
       return this.self().filterSharedWith(checks, sharedWith);
+    },
+
+    _filterServiceType: function(serviceType) {
+      const resourceType = this.getResourceType();
+      const resourceData = this.getResourceData();
+      return this.self().filterServiceType(resourceType, resourceData, serviceType);
     },
 
     _filterClassifiers: function(classifiers) {
@@ -922,6 +948,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this._filterSharedWith(data.sharedWith)) {
         return true;
       }
+      if (this._filterServiceType(data.serviceType)) {
+        return true;
+      }
       if (this._filterClassifiers(data.classifiers)) {
         return true;
       }
@@ -941,6 +970,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (data.sharedWith) {
+        return true;
+      }
+      if ("serviceType" in data) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {

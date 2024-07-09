@@ -19,9 +19,10 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
-    ProjectNodesDuplicateNode,
-    ProjectNodesNodeNotFound,
-    ProjectNodesProjectNotFound,
+    ProjectNodesDuplicateNodeError,
+    ProjectNodesNodeNotFoundError,
+    ProjectNodesNonUniqueNodeFoundError,
+    ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
 )
 
@@ -57,6 +58,7 @@ async def registered_project(
 @pytest.fixture
 def projects_nodes_repo_of_invalid_project(faker: Faker) -> ProjectNodesRepo:
     invalid_project_uuid = faker.uuid4(cast_to=None)
+    assert isinstance(invalid_project_uuid, uuid.UUID)
     repo = ProjectNodesRepo(project_uuid=invalid_project_uuid)
     assert repo
     return repo
@@ -72,23 +74,14 @@ def projects_nodes_repo(registered_project: dict[str, Any]) -> ProjectNodesRepo:
 @pytest.fixture
 def create_fake_projects_node(
     faker: Faker,
-    create_fake_node_id: Callable[[], uuid.UUID],
 ) -> Callable[..., ProjectNodeCreate]:
     def _creator() -> ProjectNodeCreate:
         node = ProjectNodeCreate(
-            node_id=create_fake_node_id(),
+            node_id=uuid.uuid4(),
             required_resources=faker.pydict(allowed_types=(str,)),
         )
         assert node
         return node
-
-    return _creator
-
-
-@pytest.fixture
-def create_fake_node_id(faker: Faker) -> Callable[[], uuid.UUID]:
-    def _creator() -> uuid.UUID:
-        return faker.uuid4(cast_to=None)
 
     return _creator
 
@@ -98,7 +91,7 @@ async def test_create_projects_nodes_raises_if_project_not_found(
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    with pytest.raises(ProjectNodesProjectNotFound):
+    with pytest.raises(ProjectNodesProjectNotFoundError):
         await projects_nodes_repo_of_invalid_project.add(
             connection,
             nodes=[create_fake_projects_node()],
@@ -110,6 +103,9 @@ async def test_create_projects_nodes(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
+
+    assert await projects_nodes_repo.add(connection, nodes=[]) == []
+
     new_nodes = await projects_nodes_repo.add(
         connection,
         nodes=[create_fake_projects_node()],
@@ -128,7 +124,7 @@ async def test_create_twice_same_projects_nodes_raises(
     new_nodes = await projects_nodes_repo.add(connection, nodes=[node_create])
     assert new_nodes
     assert len(new_nodes) == 1
-    with pytest.raises(ProjectNodesDuplicateNode):
+    with pytest.raises(ProjectNodesDuplicateNodeError):
         await projects_nodes_repo.add(
             connection,
             nodes=[node_create],
@@ -166,21 +162,19 @@ async def test_list_project_nodes(
 async def test_get_project_node_of_invalid_project_raises(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
 ):
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo_of_invalid_project.get(
-            connection, node_id=create_fake_node_id()
+            connection, node_id=uuid.uuid4()
         )
 
 
 async def test_get_project_node_of_empty_project_raises(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
 ):
-    with pytest.raises(ProjectNodesNodeNotFound):
-        await projects_nodes_repo.get(connection, node_id=create_fake_node_id())
+    with pytest.raises(ProjectNodesNodeNotFoundError):
+        await projects_nodes_repo.get(connection, node_id=uuid.uuid4())
 
 
 async def test_get_project_node(
@@ -205,7 +199,6 @@ async def test_update_project_node_of_invalid_node_raises(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
-    create_fake_node_id: Callable[[], uuid.UUID],
     faker: Faker,
 ):
     new_nodes = await projects_nodes_repo.add(
@@ -215,10 +208,10 @@ async def test_update_project_node_of_invalid_node_raises(
     assert len(new_nodes) == 1
     assert new_nodes[0]
     assert new_nodes[0].created == new_nodes[0].modified
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.update(
             connection,
-            node_id=create_fake_node_id(),
+            node_id=uuid.uuid4(),
             required_resources={faker.pystr(): faker.pyint()},
         )
 
@@ -227,7 +220,6 @@ async def test_update_project_node(
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
-    create_fake_node_id: Callable[[], uuid.UUID],
     faker: Faker,
 ):
     new_nodes = await projects_nodes_repo.add(
@@ -252,10 +244,9 @@ async def test_update_project_node(
 async def test_delete_invalid_node_does_nothing(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
-    create_fake_node_id: Callable[[], uuid.UUID],
 ):
     await projects_nodes_repo_of_invalid_project.delete(
-        connection, node_id=create_fake_node_id()
+        connection, node_id=uuid.uuid4()
     )
 
 
@@ -277,7 +268,7 @@ async def test_delete_node(
     assert received_node == new_nodes[0]
     await projects_nodes_repo.delete(connection, node_id=new_nodes[0].node_id)
 
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.get(connection, node_id=new_nodes[0].node_id)
 
 
@@ -302,7 +293,7 @@ async def test_delete_project_delete_all_nodes(
     await _delete_project(connection, projects_nodes_repo.project_uuid)
 
     # the project cannot be found anymore (the link in projects_to_projects_nodes is auto-removed)
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await projects_nodes_repo.get(connection, node_id=new_nodes[0].node_id)
 
     # the underlying projects_nodes should also be gone, thanks to migration
@@ -378,9 +369,9 @@ async def test_get_project_id_from_node_id(
 
     for project_id_to_node_ids_map in list_of_project_id_node_ids_map:
         project_id = next(iter(project_id_to_node_ids_map))
-        random_node_id = random.choice(
+        random_node_id = random.choice(  # noqa: S311
             project_id_to_node_ids_map[project_id]
-        )  # noqa: S311
+        )
         received_project_id = await ProjectNodesRepo.get_project_id_from_node_id(
             connection, node_id=random_node_id
         )
@@ -393,7 +384,40 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
     projects_nodes_repo: ProjectNodesRepo,
     faker: Faker,
 ):
-    with pytest.raises(ProjectNodesNodeNotFound):
+    random_uuid = faker.uuid4(cast_to=None)
+    assert isinstance(random_uuid, uuid.UUID)
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await ProjectNodesRepo.get_project_id_from_node_id(
-            connection, node_id=faker.uuid4(cast_to=None)
+            connection, node_id=random_uuid
+        )
+
+
+async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same_node_id_exist(
+    pg_engine: Engine,
+    connection: SAConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    registered_user: RowProxy,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    project1 = await create_fake_project(connection, registered_user)
+    project1_repo = ProjectNodesRepo(project_uuid=project1.uuid)
+
+    project2 = await create_fake_project(connection, registered_user)
+    project2_repo = ProjectNodesRepo(project_uuid=project2.uuid)
+
+    shared_node = create_fake_projects_node()
+
+    project1_nodes = await project1_repo.add(connection, nodes=[shared_node])
+    assert len(project1_nodes) == 1
+    project2_nodes = await project2_repo.add(connection, nodes=[shared_node])
+    assert len(project2_nodes) == 1
+    assert project1_nodes[0].dict(
+        include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
+    ) == project2_nodes[0].dict(
+        include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
+    )
+    with pytest.raises(ProjectNodesNonUniqueNodeFoundError):
+        await ProjectNodesRepo.get_project_id_from_node_id(
+            connection, node_id=project1_nodes[0].node_id
         )

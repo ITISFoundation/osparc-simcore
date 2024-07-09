@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.errors import InvalidTextRepresentation, UniqueViolation
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,

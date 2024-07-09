@@ -4,13 +4,13 @@
 # pylint: disable=unused-variable
 
 import json
-import os
 import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 from unittest import mock
+from unittest.mock import MagicMock
 
 import aiohttp.test_utils
 import httpx
@@ -18,9 +18,9 @@ import pytest
 import respx
 import yaml
 from asgi_lifespan import LifespanManager
-from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from httpx import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -33,17 +33,13 @@ from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
-from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
-from pydantic import HttpUrl, parse_obj_as
-from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.httpx_calls_capture_model import (
-    HttpApiCallCaptureModel,
-    PathDescription,
-)
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pydantic import EmailStr, HttpUrl, parse_obj_as
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
@@ -52,32 +48,26 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
 
-# (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
-SideEffectCallback: TypeAlias = Callable[
-    [httpx.Request, dict[str, Any], HttpApiCallCaptureModel], dict[str, Any]
-]
-
-## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
-
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_env_vars: EnvVarsDict,
+    backend_env_vars_overrides: EnvVarsDict,
 ) -> EnvVarsDict:
-    """Config that disables many plugins e.g. database or tracing"""
     env_vars = setenvs_from_dict(
         monkeypatch,
         {
             **default_app_env_vars,
             "WEBSERVER_HOST": "webserver",
-            "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
+            "API_SERVER_LOG_CHECK_TIMEOUT_SECONDS": "1",
+            **backend_env_vars_overrides,
         },
     )
 
@@ -99,8 +89,21 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
 
 
 @pytest.fixture
-def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
+def app(
+    mock_missing_plugins: EnvVarsDict,
+    create_httpx_async_client_spy_if_enabled: Callable,
+    patch_lrt_response_urls: Callable,
+    spy_httpx_calls_enabled: bool,
+) -> FastAPI:
     """Inits app on a light environment"""
+
+    if spy_httpx_calls_enabled:
+        create_httpx_async_client_spy_if_enabled(
+            "simcore_service_api_server.utils.client_base.AsyncClient"
+        )
+
+        patch_lrt_response_urls()
+
     return init_app()
 
 
@@ -126,6 +129,7 @@ async def client(
         headers={"Content-Type": "application/json"},
         transport=ASGITransport(app=app),
     ) as httpx_async_client:
+        assert isinstance(httpx_async_client, httpx.AsyncClient)
         yield httpx_async_client
 
 
@@ -133,7 +137,14 @@ async def client(
 
 
 @pytest.fixture
-def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
+def auth(
+    mocker: MockerFixture,
+    app: FastAPI,
+    user_id: UserID,
+    user_email: EmailStr,
+    user_api_key: str,
+    user_api_secret: str,
+) -> HTTPBasicAuth:
     """
     Auth mocking repositories and db engine (i.e. does not require db up)
 
@@ -151,15 +162,15 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     mocker.patch(
         "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
         autospec=True,
-        return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
+        return_value=UserAndProductTuple(user_id=user_id, product_name="osparc"),
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_active_user_email",
         autospec=True,
-        return_value=faker.email(),
+        return_value=user_email,
     )
 
-    return HTTPBasicAuth(faker.word(), faker.password())
+    return HTTPBasicAuth(user_api_key, user_api_secret)
 
 
 @pytest.fixture
@@ -245,6 +256,7 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 def mocked_directorv2_service_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
@@ -256,7 +268,7 @@ def mocked_directorv2_service_api_base(
     with respx.mock(
         base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+        assert_all_mocked=True,
     ) as respx_mock:
         assert openapi
         assert (
@@ -268,12 +280,18 @@ def mocked_directorv2_service_api_base(
             json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
         )
 
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
+
         yield respx_mock
 
 
 @pytest.fixture
 def mocked_webserver_service_api_base(
-    app: FastAPI, webserver_service_openapi_specs: dict[str, Any]
+    app: FastAPI,
+    webserver_service_openapi_specs: dict[str, Any],
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
@@ -290,7 +308,6 @@ def mocked_webserver_service_api_base(
     with respx.mock(
         base_url=settings.API_SERVER_WEBSERVER.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
     ) as respx_mock:
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
@@ -298,7 +315,6 @@ def mocked_webserver_service_api_base(
             "version": "1.0.0",
             "api_version": "1.0.0",
         }
-
         respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
@@ -306,12 +322,19 @@ def mocked_webserver_service_api_base(
             status.HTTP_200_OK, json=response_body
         )
 
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
+
         yield respx_mock
 
 
 @pytest.fixture
 def mocked_storage_service_api_base(
-    app: FastAPI, storage_service_openapi_specs: dict[str, Any], faker: Faker
+    app: FastAPI,
+    storage_service_openapi_specs: dict[str, Any],
+    faker: Faker,
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to strage API
@@ -328,9 +351,9 @@ def mocked_storage_service_api_base(
     with respx.mock(
         base_url=settings.API_SERVER_STORAGE.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
+
         respx_mock.get(path="/v0/", name="health_check").respond(
             status.HTTP_200_OK,
             json=Envelope[HealthCheck](
@@ -356,12 +379,18 @@ def mocked_storage_service_api_base(
             ).dict(),
         )
 
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
+
         yield respx_mock
 
 
 @pytest.fixture
 def mocked_catalog_service_api_base(
-    app: FastAPI, catalog_service_openapi_specs: dict[str, Any]
+    app: FastAPI,
+    catalog_service_openapi_specs: dict[str, Any],
+    services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
@@ -374,15 +403,18 @@ def mocked_catalog_service_api_base(
     with respx.mock(
         base_url=settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get("/v0/").respond(
             status.HTTP_200_OK,
             text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
         )
         respx_mock.get("/v0/meta").respond(
-            status.HTTP_200_OK, json=schemas["Meta"]["example"]
+            status.HTTP_200_OK, json=schemas["BaseMeta"]["example"]
         )
+
+        # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
+        if not services_mocks_enabled:
+            respx_mock.stop()
 
         yield respx_mock
 
@@ -407,8 +439,39 @@ def mocked_solver_job_outputs(mocker) -> None:
 
 
 @pytest.fixture
+def patch_lrt_response_urls(mocker: MockerFixture):
+    """
+    Callable that patches webserver._get_lrt_urls helper
+    when running in spy mode
+    """
+
+    def _() -> MagicMock:
+        def _get_lrt_urls(lrt_response: httpx.Response):
+            # NOTE: this function is needed to mock
+            data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+            assert data is not None  # nosec
+
+            def _patch(href):
+                return lrt_response.request.url.copy_with(
+                    raw_path=httpx.URL(href).raw_path
+                )
+
+            data.status_href = _patch(data.status_href)
+            data.result_href = _patch(data.result_href)
+
+            return data.status_href, data.result_href
+
+        return mocker.patch(
+            "simcore_service_api_server.services.webserver._get_lrt_urls",
+            side_effect=_get_lrt_urls,
+        )
+
+    return _
+
+
+@pytest.fixture
 def patch_webserver_long_running_project_tasks(
-    app: FastAPI, faker: Faker
+    app: FastAPI, faker: Faker, services_mocks_enabled: bool
 ) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
@@ -484,41 +547,44 @@ def patch_webserver_long_running_project_tasks(
         # that preserves the resultswith state
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        long_running_task_workflow = _LongRunningProjectTasks()
+        if services_mocks_enabled:
+            long_running_task_workflow = _LongRunningProjectTasks()
 
-        webserver_mock_router.post(
-            path__regex="/projects",
-            name="create_projects",
-        ).mock(side_effect=long_running_task_workflow.create_project_task)
+            webserver_mock_router.post(
+                path__regex="/projects",
+                name="create_projects",
+            ).mock(side_effect=long_running_task_workflow.create_project_task)
 
-        webserver_mock_router.post(
-            path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
-            name="project_clone",
-        ).mock(side_effect=long_running_task_workflow.clone_project_task)
+            webserver_mock_router.post(
+                path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+                name="project_clone",
+            ).mock(side_effect=long_running_task_workflow.clone_project_task)
 
-        # Tasks routes ----------------
+            # Tasks routes ----------------
 
-        webserver_mock_router.get(
-            path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
-            name="get_task_status",
-        ).respond(
-            status.HTTP_200_OK,
-            json={
-                "data": jsonable_encoder(
-                    TaskStatus(
-                        task_progress=TaskProgress(message="fake job done", percent=1),
-                        done=True,
-                        started="2018-07-01T11:13:43Z",
-                    ),
-                    by_alias=True,
-                )
-            },
-        )
+            webserver_mock_router.get(
+                path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
+                name="get_task_status",
+            ).respond(
+                status.HTTP_200_OK,
+                json={
+                    "data": jsonable_encoder(
+                        TaskStatus(
+                            task_progress=TaskProgress(
+                                message="fake job done", percent=1
+                            ),
+                            done=True,
+                            started="2018-07-01T11:13:43Z",
+                        ),
+                        by_alias=True,
+                    )
+                },
+            )
 
-        webserver_mock_router.get(
-            path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
-            name="get_task_result",
-        ).mock(side_effect=long_running_task_workflow.get_result)
+            webserver_mock_router.get(
+                path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
+                name="get_task_result",
+            ).mock(side_effect=long_running_task_workflow.get_result)
 
         return webserver_mock_router
 
@@ -526,103 +592,10 @@ def patch_webserver_long_running_project_tasks(
 
 
 @pytest.fixture
-@respx.mock(assert_all_mocked=False)
-def respx_mock_from_capture() -> (
-    Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]], list[respx.MockRouter]
-    ]
-):
-    def _generate_mock(
-        respx_mock: list[respx.MockRouter],
-        capture_path: Path,
-        side_effects_callbacks: list[SideEffectCallback],
-    ) -> list[respx.MockRouter]:
-        assert capture_path.is_file()
-        assert capture_path.suffix == ".json"
-
-        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
-        )
-
-        if len(side_effects_callbacks) > 0:
-            assert len(side_effects_callbacks) == len(captures)
-
-        assert isinstance(respx_mock, list)
-        for router in respx_mock:
-            assert (
-                router._bases
-            ), "the base_url must be set before the fixture is extended"
-
-        def _get_correct_mock_router_for_capture(
-            respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
-        ) -> respx.MockRouter:
-            for router in respx_mock:
-                if capture.host == router._bases["host"].value:
-                    return router
-            msg = f"Missing respx.MockRouter for capture with {capture.host}"
-            raise RuntimeError(msg)
-
-        class CaptureSideEffect:
-            def __init__(
-                self,
-                capture: HttpApiCallCaptureModel,
-                side_effect: SideEffectCallback | None,
-            ):
-                self._capture = capture
-                self._side_effect_callback = side_effect
-
-            def __call__(self, request: httpx.Request, **kwargs) -> httpx.Response:
-                capture = self._capture
-                assert isinstance(capture.path, PathDescription)
-                status_code: int = capture.status_code
-                response_body: dict[str, Any] | list | None = capture.response_body
-                assert {param.name for param in capture.path.path_parameters} == set(
-                    kwargs.keys()
-                )
-                if self._side_effect_callback:
-                    response_body = self._side_effect_callback(request, kwargs, capture)
-                return httpx.Response(status_code=status_code, json=response_body)
-
-        side_effects: list[CaptureSideEffect] = []
-        for ii, capture in enumerate(captures):
-            url_path: PathDescription | str = capture.path
-            assert isinstance(url_path, PathDescription)
-
-            # path
-            path_regex: str = str(url_path.path)
-            for param in url_path.path_parameters:
-                path_regex = path_regex.replace(
-                    "{" + param.name + "}", param.respx_lookup
-                )
-
-            # response
-            side_effect = CaptureSideEffect(
-                capture=capture,
-                side_effect=side_effects_callbacks[ii]
-                if len(side_effects_callbacks)
-                else None,
-            )
-
-            router = _get_correct_mock_router_for_capture(respx_mock, capture)
-            r = router.request(
-                capture.method.upper(),
-                url=None,
-                path__regex=f"^{path_regex}$",
-            ).mock(side_effect=side_effect)
-
-            assert r.side_effect == side_effect
-            side_effects.append(side_effect)
-
-        return respx_mock
-
-    return _generate_mock
-
-
-@pytest.fixture
 def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
     openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
     if openapi_file.is_file():
-        os.remove(openapi_file)
+        openapi_file.unlink()
     subprocess.run(
         "make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True
     )

@@ -120,4 +120,4 @@ pull_test_data: $(DOT_ENV_FILE) _httpx ## downloads tests data from registry (th
 	@set -o allexport; \
 	source $<; \
 	set +o allexport; \
-	python3 "$(PACKAGES_DIR)/pytest-simcore/src/pytest_simcore/helpers/utils_docker_registry.py" $(DOWNLOADED_TEST_DATA_DIR)
+	python3 "$(PACKAGES_DIR)/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py" $(DOWNLOADED_TEST_DATA_DIR)

@@ -28,6 +28,8 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.LOADER);
 
     this._applyFetching(false);
+
+    this.getChildControl("footer").exclude();
   },
 
   members: {

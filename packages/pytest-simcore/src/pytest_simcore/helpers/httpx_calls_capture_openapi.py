@@ -1,10 +1,11 @@
+from contextlib import suppress
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import Any, Final, Literal
 from urllib.parse import unquote
 
 import httpx
 import jsonref
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.storage import StorageSettings
@@ -21,34 +22,54 @@ from .httpx_calls_capture_parameters import (
     PathDescription,
 )
 
-service_hosts = Literal["storage", "catalog", "webserver", "director-v2"]
-
 assert CapturedParameterSchema  # nosec
 
 
-def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
-    url: str
-    if host == "storage":
-        settings = StorageSettings.create_from_envs()
-        url = settings.base_url + "/dev/doc/swagger.json"
-    elif host == "catalog":
-        settings = CatalogSettings.create_from_envs()
-        url = settings.base_url + "/api/v0/openapi.json"
-    elif host == "webserver":
-        settings = WebServerSettings.create_from_envs()
-        url = settings.base_url + "/dev/doc/swagger.json"
-    elif host == "director-v2":
-        settings = DirectorV2Settings.create_from_envs()
-        url = settings.base_url + "/api/v2/openapi.json"
-    else:
-        msg = f"{host=} has not been added yet to the testing system. Please do so yourself"
+_AIOHTTP_PATH: Final[str] = "/dev/doc/swagger.json"
+_FASTAPI_PATH: Final[str] = "/api/{}/openapi.json"
+
+ServiceHostNames = Literal[
+    "storage",
+    "catalog",
+    "webserver",
+    "director-v2",
+]
+
+settings_classes: Final = [
+    ("STORAGE", StorageSettings, _AIOHTTP_PATH),
+    ("CATALOG", CatalogSettings, _FASTAPI_PATH),
+    ("WEBSERVER", WebServerSettings, _AIOHTTP_PATH),
+    ("DIRECTOR_V2", DirectorV2Settings, _FASTAPI_PATH),
+]
+
+
+def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
+    openapi_url = None
+    target = (url.host, url.port)
+
+    for prefix, cls, openapi_path in settings_classes:
+        with suppress(ValidationError):
+            settings = cls.create_from_envs()
+            base_url = httpx.URL(settings.base_url)
+            if (base_url.host, base_url.port) == target:
+                vtag = getattr(settings, f"{prefix}_VTAG")
+                openapi_url = settings.base_url + openapi_path.format(vtag)
+                break
+
+    if not openapi_url:
+        msg = f"{url=} has not been added yet to the testing system. Please do so yourself"
         raise OpenApiSpecError(msg)
-    with httpx.Client() as session:
-        response = session.get(url)
-        response.raise_for_status()
-        openapi_spec = jsonref.loads(response.read().decode("utf8"))
-        assert isinstance(openapi_spec, dict)
-        return openapi_spec
+
+    response = httpx.get(openapi_url)
+    response.raise_for_status()
+
+    if not response.content:
+        msg = f"Cannot retrieve OAS from {openapi_url=}"
+        raise RuntimeError(msg)
+    openapi_spec = jsonref.loads(response.read().decode("utf8"))
+
+    assert isinstance(openapi_spec, dict)
+    return openapi_spec
 
 
 def _get_params(
@@ -110,11 +131,10 @@ def _determine_path(
     raise PathNotInOpenApiSpecError(msg)
 
 
-def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
-    assert response.url.host in get_args(
-        service_hosts
-    ), f"{response.url.host} is not in {service_hosts} - please add it yourself"
-    openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
+def enhance_path_description_from_openapi_spec(
+    response: httpx.Response,
+) -> PathDescription:
+    openapi_spec: dict[str, Any] = _get_openapi_specs(response.url)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     )

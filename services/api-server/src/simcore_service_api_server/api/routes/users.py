@@ -3,9 +3,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Security, status
 
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.profiles import Profile, ProfileUpdate
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
@@ -37,5 +37,5 @@ async def update_my_profile(
         AuthSession, Security(get_webserver_session, scopes=["write"])
     ],
 ) -> Profile:
-    profile: Profile = await webserver_session.update_me(profile_update)
+    profile: Profile = await webserver_session.update_me(profile_update=profile_update)
     return profile

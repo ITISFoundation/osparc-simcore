@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM python:${PYTHON_VERSION}-slim-bookworm as base
 #
 #  USAGE:
 #     cd sercices/dynamic-sidecar
@@ -12,8 +12,8 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:24.0.5-1~debian.10~buster"
-ENV DOCKER_COMPOSE_APT_VERSION="2.20.2-1~debian.10~buster"
+ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
+ENV DOCKER_COMPOSE_APT_VERSION="2.27.1-1~debian.12~bookworm"
 
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
@@ -102,7 +102,7 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -176,18 +176,13 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# disabled healthcheck as director-v2 is already taking care of it
-# in oder to have similar performance a more aggressive healethcek
-# would be required.
-# removing the healthchek would not cause any issues at this point
-# NOTE: When adding a healthcheck
-# - remove UpdateHealth - no longer required
-# - remove WaitForSidecarAPI  - no longer required
-# - After `get_dynamic_sidecar_placement` inside CreateSidecars call
-#   (the sidecar's API will be up and running; guaranteed by the docker engine healthck).
-#   Add the following line `scheduler_data.dynamic_sidecar.is_ready = True`
-#   The healthcheck guarantees that the API is available
-HEALTHCHECK NONE
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=30s \
+  --start-interval=1s \
+  --retries=5 \
+  CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
 

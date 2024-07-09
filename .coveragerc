@@ -22,9 +22,12 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
-
+    if __name__ == __main__.:
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstract(((class|static)?method)|property)
+
+    # Don't complain about type checking
+    if TYPE_CHECKING:
 
 ignore_errors = True
 show_missing = True

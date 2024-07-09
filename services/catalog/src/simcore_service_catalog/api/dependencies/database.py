@@ -1,5 +1,6 @@
 import logging
-from typing import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
+from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
@@ -7,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...db.repositories._base import BaseRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _get_db_engine(request: Request) -> AsyncEngine:
@@ -18,7 +19,7 @@ def _get_db_engine(request: Request) -> AsyncEngine:
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:
     async def _get_repo(
-        engine: AsyncEngine = Depends(_get_db_engine),
+        engine: Annotated[AsyncEngine, Depends(_get_db_engine)],
     ) -> AsyncGenerator[BaseRepository, None]:
         # NOTE: 2 different ideas were tried here with not so good
         # 1st one was acquiring a connection per repository which lead to the following issue https://github.com/ITISFoundation/osparc-simcore/pull/1966

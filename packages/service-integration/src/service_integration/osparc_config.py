@@ -8,13 +8,13 @@ integrates with osparc.
     - config should provide enough information about that context to allow
         - build an image
         - run an container
-    on a single command call.
+      on a single command call.
     -
 """
 
 import logging
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NamedTuple
+from typing import Any, Final, Literal
 
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
@@ -24,12 +24,10 @@ from models_library.service_settings_labels import (
     RestartPolicy,
 )
 from models_library.service_settings_nat_rule import NATRule
-from models_library.services import (
+from models_library.services import BootOptions, ServiceMetaDataPublished, ServiceType
+from models_library.services_regex import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
-    BootOptions,
-    ServiceDockerData,
-    ServiceType,
 )
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
@@ -43,13 +41,15 @@ from pydantic.fields import Field
 from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
-from .errors import ConfigNotFound
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
 _logger = logging.getLogger(__name__)
 
-CONFIG_FOLDER_NAME = ".osparc"
+OSPARC_CONFIG_DIRNAME: Final[str] = ".osparc"
+OSPARC_CONFIG_COMPOSE_SPEC_NAME: Final[str] = "docker-compose.overwrite.yml"
+OSPARC_CONFIG_METADATA_NAME: Final[str] = "metadata.yml"
+OSPARC_CONFIG_RUNTIME_NAME: Final[str] = "runtime.yml"
 
 
 SERVICE_KEY_FORMATS = {
@@ -58,20 +58,14 @@ SERVICE_KEY_FORMATS = {
 }
 
 
-## MODELS ---------------------------------------------------------------------------------
-#
-# Project config -> stored in repo's basedir/.osparc
-#
-
-
-class DockerComposeOverwriteCfg(ComposeSpecification):
-    """picks up configurations used to overwrite the docker-compuse output"""
+class DockerComposeOverwriteConfig(ComposeSpecification):
+    """Content of docker-compose.overwrite.yml configuration file"""
 
     @classmethod
     def create_default(
         cls, service_name: str | None = None
-    ) -> "DockerComposeOverwriteCfg":
-        model: "DockerComposeOverwriteCfg" = cls.parse_obj(
+    ) -> "DockerComposeOverwriteConfig":
+        model: "DockerComposeOverwriteConfig" = cls.parse_obj(
             {
                 "services": {
                     service_name: {
@@ -85,22 +79,23 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
         return model
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
+    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "DockerComposeOverwriteCfg" = cls.parse_obj(data)
+        model: "DockerComposeOverwriteConfig" = cls.parse_obj(data)
         return model
 
 
-class MetaConfig(ServiceDockerData):
-    """Details about general info and I/O configuration of the service
+class MetadataConfig(ServiceMetaDataPublished):
+    """Content of metadata.yml configuration file
 
+    Details about general info and I/O configuration of the service
     Necessary for both image- and runtime-spec
     """
 
     @validator("contact")
     @classmethod
-    def check_contact_in_authors(cls, v, values):
+    def _check_contact_in_authors(cls, v, values):
         """catalog service relies on contact and author to define access rights"""
         authors_emails = {author.email for author in values["authors"]}
         if v not in authors_emails:
@@ -109,18 +104,18 @@ class MetaConfig(ServiceDockerData):
         return v
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "MetaConfig":
+    def from_yaml(cls, path: Path) -> "MetadataConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "MetaConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.parse_obj(data)
         return model
 
     @classmethod
-    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetaConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetadataConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        model: "MetaConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.parse_obj(data)
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
@@ -194,7 +189,7 @@ class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
         allow_population_by_field_name = True
 
 
-def _get_alias_generator(field_name: str) -> str:
+def _underscore_as_minus(field_name: str) -> str:
     return field_name.replace("_", "-")
 
 
@@ -240,7 +235,7 @@ class RuntimeConfig(BaseModel):
         return v
 
     class Config:
-        alias_generator = _get_alias_generator
+        alias_generator = _underscore_as_minus
         allow_population_by_field_name = True
         extra = Extra.forbid
 
@@ -261,55 +256,3 @@ class RuntimeConfig(BaseModel):
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
         return labels
-
-
-## FILES -----------------------------------------------------------
-
-
-class ConfigFileDescriptor(NamedTuple):
-    glob_pattern: str
-    required: bool = True
-
-
-class ConfigFilesStructure:
-    """
-    Defines config file structure and how they
-    map to the models
-    """
-
-    FILES_GLOBS: ClassVar[dict] = {
-        DockerComposeOverwriteCfg.__name__: ConfigFileDescriptor(
-            glob_pattern="docker-compose.overwrite.y*ml", required=False
-        ),
-        MetaConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
-        RuntimeConfig.__name__: ConfigFileDescriptor(glob_pattern="runtime.y*ml"),
-    }
-
-    @staticmethod
-    def config_file_path(scope: Literal["user", "project"]) -> Path:
-        basedir = Path.cwd()  # assumes project is in CWD
-        if scope == "user":
-            basedir = Path.home()
-        return basedir / ".osparc" / "service-integration.json"
-
-    def search(self, start_dir: Path) -> dict[str, Path]:
-        """Tries to match of any of file layouts
-        and returns associated config files
-        """
-        found = {
-            configtype: list(start_dir.rglob(pattern))
-            for configtype, (pattern, required) in self.FILES_GLOBS.items()
-            if required
-        }
-
-        if not found:
-            raise ConfigNotFound(basedir=start_dir)
-
-        raise NotImplementedError("TODO")
-
-        # TODO:
-        # scenarios:
-        #   .osparc/meta, [runtime]
-        #   .osparc/{service-name}/meta, [runtime]
-
-        # metadata is required, runtime is optional?

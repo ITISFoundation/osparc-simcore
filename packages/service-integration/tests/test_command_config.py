@@ -3,11 +3,12 @@
 # pylint: disable=unused-variable
 import os
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 import yaml
+from service_integration.osparc_config import OSPARC_CONFIG_DIRNAME
 
 
 @pytest.fixture
@@ -21,11 +22,12 @@ def tmp_compose_spec(tests_data_dir: Path, tmp_path: Path):
 def test_create_new_osparc_config(
     run_program_with_args: Callable, tmp_compose_spec: Path
 ):
-    osparc_dir = tmp_compose_spec.parent / ".osparc"
+    osparc_dir = tmp_compose_spec.parent / OSPARC_CONFIG_DIRNAME
     assert not osparc_dir.exists()
 
     result = run_program_with_args(
         "config",
+        "create",
         "--from-spec-file",
         str(tmp_compose_spec),
     )

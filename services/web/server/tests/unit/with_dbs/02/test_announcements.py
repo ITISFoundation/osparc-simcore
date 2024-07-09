@@ -17,9 +17,9 @@ import simcore_service_webserver.announcements._models
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import BaseModel, ValidationError
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.aiohttp import status
 from settings_library.redis import RedisDatabase, RedisSettings

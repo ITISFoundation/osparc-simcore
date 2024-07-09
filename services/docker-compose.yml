@@ -1,4 +1,3 @@
-version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
@@ -14,8 +13,8 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
-      API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: ${API_SERVER_DEV_HTTP_CALLS_LOGS_PATH}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
 
       CATALOG_HOST: ${CATALOG_HOST}
@@ -23,8 +22,6 @@ services:
 
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
-
-      API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
 
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -59,7 +56,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks:
       - default
 
@@ -87,10 +84,13 @@ services:
       EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
       EC2_INSTANCES_MACHINES_BUFFER: ${EC2_INSTANCES_MACHINES_BUFFER}
       EC2_INSTANCES_MAX_INSTANCES: ${EC2_INSTANCES_MAX_INSTANCES}
+      EC2_INSTANCES_MAX_START_TIME: ${EC2_INSTANCES_MAX_START_TIME}
       EC2_INSTANCES_NAME_PREFIX: ${EC2_INSTANCES_NAME_PREFIX}
       EC2_INSTANCES_SECURITY_GROUP_IDS: ${EC2_INSTANCES_SECURITY_GROUP_IDS}
       EC2_INSTANCES_SUBNET_ID: ${EC2_INSTANCES_SUBNET_ID}
       EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
+      EC2_INSTANCES_TIME_BEFORE_DRAINING: ${EC2_INSTANCES_TIME_BEFORE_DRAINING}
+      EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${EC2_INSTANCES_TIME_BEFORE_TERMINATION}
       EC2_INSTANCES_CUSTOM_TAGS: ${EC2_INSTANCES_CUSTOM_TAGS}
 
       AUTOSCALING_NODES_MONITORING: ${AUTOSCALING_NODES_MONITORING} # dyn autoscaling envvar
@@ -130,7 +130,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
+      CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
       CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
       CATALOG_PROFILING: ${CATALOG_PROFILING}
@@ -144,6 +144,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
       TRACING_THRIFT_COMPACT_ENDPOINT: ${TRACING_THRIFT_COMPACT_ENDPOINT}
     networks:
       - default
@@ -192,9 +197,11 @@ services:
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
       CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: ${CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES}
       WORKERS_EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
+      WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}
       WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
       WORKERS_EC2_INSTANCES_KEY_NAME: ${WORKERS_EC2_INSTANCES_KEY_NAME}
       WORKERS_EC2_INSTANCES_MAX_INSTANCES: ${WORKERS_EC2_INSTANCES_MAX_INSTANCES}
+      WORKERS_EC2_INSTANCES_MAX_START_TIME: ${WORKERS_EC2_INSTANCES_MAX_START_TIME}
       WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: ${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
       WORKERS_EC2_INSTANCES_SUBNET_ID: ${WORKERS_EC2_INSTANCES_SUBNET_ID}
       WORKERS_EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
@@ -297,6 +304,11 @@ services:
       R_CLONE_OPTION_TRANSFERS: ${R_CLONE_OPTION_TRANSFERS}
       R_CLONE_PROVIDER: ${R_CLONE_PROVIDER}
 
+      EFS_DNS_NAME: ${EFS_DNS_NAME}
+      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
+      EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
+      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
+
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -339,6 +351,30 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
     secrets: *dask_tls_secrets
+
+  efs-guardian:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
+      RABBIT_USER: ${RABBIT_USER}
+      SC_USER_ID: ${SC_USER_ID}
+      SC_USER_NAME: ${SC_USER_NAME}
+      EFS_USER_ID: ${EFS_USER_ID}
+      EFS_USER_NAME: ${EFS_USER_NAME}
+      EFS_GROUP_ID: ${EFS_GROUP_ID}
+      EFS_GROUP_NAME: ${EFS_GROUP_NAME}
+      EFS_DNS_NAME: ${EFS_DNS_NAME}
+      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
+      EFS_ONLY_ENABLED_FOR_USERIDS: ${EFS_ONLY_ENABLED_FOR_USERIDS}
+      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -502,7 +538,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
       AIODEBUG_SLOW_DURATION_SECS: ${AIODEBUG_SLOW_DURATION_SECS}
 
@@ -708,7 +744,7 @@ services:
   wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<: *webserver_environment
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
@@ -721,7 +757,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
@@ -805,7 +841,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_GC_LOGLEVEL}
 
@@ -898,8 +934,6 @@ services:
           cpus: "1.0"
           memory: 1024M
 
-    networks:
-      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -1162,6 +1196,11 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
+        # middleware for limiting total inflight requests the api-server is handling
+        - traefik.http.middlewares.ensure-group-header-${SWARM_STACK_NAME}_api-server.headers.customrequestheaders.X-Inflight-Limit-Group=all
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.amount=${TRAEFIK_API_SERVER_INFLIGHTREQ_AMOUNT}
+        - traefik.http.middlewares.limit-reqs-${SWARM_STACK_NAME}_api-server.inflightreq.sourcecriterion.requestheadername=X-Inflight-Limit-Group
+        - traefik.http.middlewares.inflightreq-${SWARM_STACK_NAME}_api-server.chain.middlewares=ensure-group-header-${SWARM_STACK_NAME}_api-server,limit-reqs-${SWARM_STACK_NAME}_api-server
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services

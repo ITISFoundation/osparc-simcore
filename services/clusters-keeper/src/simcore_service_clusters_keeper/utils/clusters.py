@@ -3,8 +3,9 @@ import datetime
 import functools
 import json
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
+import arrow
 import yaml
 from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from fastapi.encoders import jsonable_encoder
@@ -98,6 +99,7 @@ def _prepare_environment_variables(
         f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
+        f"WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
     ]
 
@@ -160,27 +162,17 @@ def _convert_ec2_state_to_cluster_state(
             return ClusterState.STOPPED
 
 
-_EC2_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=1)
-_DASK_SCHEDULER_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(
-    minutes=1
-)
-
-
 def _create_eta(
     instance_launch_time: datetime.datetime,
     *,
     dask_scheduler_ready: bool,
+    max_cluster_start_time: datetime.timedelta,
 ) -> datetime.timedelta:
-    now = datetime.datetime.now(datetime.timezone.utc)
-    estimated_time_to_running = (
-        instance_launch_time
-        + _EC2_INSTANCE_MAX_START_TIME
-        + _DASK_SCHEDULER_READYNESS_MAX_TIME
-        - now
-    )
+    now = arrow.utcnow().datetime
+    estimated_time_to_running = instance_launch_time + max_cluster_start_time - now
     if dask_scheduler_ready is True:
         estimated_time_to_running = datetime.timedelta(seconds=0)
-    return estimated_time_to_running
+    return cast(datetime.timedelta, estimated_time_to_running)  # mypy
 
 
 def create_cluster_from_ec2_instance(
@@ -190,6 +182,7 @@ def create_cluster_from_ec2_instance(
     *,
     dask_scheduler_ready: bool,
     cluster_auth: InternalClusterAuthentication,
+    max_cluster_start_time: datetime.timedelta,
 ) -> OnDemandCluster:
     return OnDemandCluster(
         endpoint=get_scheduler_url(instance),
@@ -199,6 +192,8 @@ def create_cluster_from_ec2_instance(
         wallet_id=wallet_id,
         dask_scheduler_ready=dask_scheduler_ready,
         eta=_create_eta(
-            instance.launch_time, dask_scheduler_ready=dask_scheduler_ready
+            instance.launch_time,
+            dask_scheduler_ready=dask_scheduler_ready,
+            max_cluster_start_time=max_cluster_start_time,
         ),
     )

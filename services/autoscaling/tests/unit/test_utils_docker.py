@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import Any
 
 import aiodocker
+import arrow
 import pytest
 from aws_library.ec2.models import EC2InstanceData, Resources
 from deepdiff import DeepDiff
@@ -31,11 +32,14 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
+    _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
     Node,
@@ -46,22 +50,30 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_node_used_resources,
     compute_tasks_needed_resources,
     find_node_with_name,
+    get_docker_login_on_start_bash_command,
     get_docker_pull_images_crontab,
     get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     get_new_node_docker_tags,
+    get_node_empty_since,
+    get_node_last_readyness_update,
+    get_node_termination_started_since,
     get_node_total_resources,
+    get_task_instance_restriction,
     get_worker_nodes,
     is_node_osparc_ready,
     is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     set_node_availability,
+    set_node_begin_termination_process,
+    set_node_found_empty,
     set_node_osparc_ready,
     tag_node,
 )
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @pytest.fixture
@@ -320,12 +332,12 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     diff = DeepDiff(
         pending_tasks[0],
         service_tasks[0],
-        exclude_paths={
+        exclude_paths=[
             "UpdatedAt",
             "Version",
             "root['Status']['Err']",
             "root['Status']['Timestamp']",
-        },
+        ],
     )
     assert not diff, f"{diff}"
 
@@ -388,12 +400,12 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     diff = DeepDiff(
         pending_tasks[0],
         service_tasks[0],
-        exclude_paths={
+        exclude_paths=[
             "UpdatedAt",
             "Version",
             "root['Status']['Err']",
             "root['Status']['Timestamp']",
-        },
+        ],
     )
     assert not diff, f"{diff}"
 
@@ -563,6 +575,61 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
     )
 
 
+@pytest.mark.parametrize(
+    "placement_constraints, expected_instance_type",
+    [
+        (None, None),
+        (["blahblah==true", "notsoblahblah!=true"], None),
+        (["blahblah==true", "notsoblahblah!=true", "node.labels.blahblah==true"], None),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}==true",
+            ],
+            None,
+        ),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}==t3.medium",
+            ],
+            "t3.medium",
+        ),
+    ],
+)
+async def test_get_task_instance_restriction(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str] | None, str, list[str] | None],
+        Awaitable[Service],
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    faker: Faker,
+    placement_constraints: list[str] | None,
+    expected_instance_type: InstanceTypeType | None,
+):
+    # this one has no instance restriction
+    service = await create_service(
+        task_template,
+        None,
+        "pending" if placement_constraints else "running",
+        placement_constraints,
+    )
+    assert service.Spec
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(filters={"service": service.Spec.Name}),
+    )
+    instance_type_or_none = await get_task_instance_restriction(
+        autoscaling_docker, service_tasks[0]
+    )
+    assert instance_type_or_none == expected_instance_type
+
+
 async def test_compute_tasks_needed_resources(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -595,6 +662,7 @@ async def test_compute_tasks_needed_resources(
     )
     all_tasks = service_tasks
     for s in services:
+        assert s.Spec
         service_tasks = parse_obj_as(
             list[Task],
             await autoscaling_docker.tasks.list(filters={"service": s.Spec.Name}),
@@ -653,7 +721,7 @@ async def test_compute_node_used_resources_with_service(
 
     # 3. if we look for services with some other label, they should then become invisible again
     node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node, service_labels=[faker.pystr()]
+        autoscaling_docker, host_node, service_labels=[DockerLabelKey(faker.pystr())]
     )
     assert node_used_resources == Resources(cpus=0, ram=ByteSize(0))
     # 4. if we look for services with 1 correct label, they should then become visible again
@@ -796,6 +864,17 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
+
+
+def test_get_docker_login_on_start_bash_command():
+    registry_settings = RegistrySettings(
+        **RegistrySettings.Config.schema_extra["examples"][0]
+    )
+    returned_command = get_docker_login_on_start_bash_command(registry_settings)
+    assert (
+        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | docker login --username {registry_settings.REGISTRY_USER} --password-stdin {registry_settings.resolved_registry_url}'
+        == returned_command
+    )
 
 
 async def test_try_get_node_with_name(
@@ -964,7 +1043,7 @@ def test_get_new_node_docker_tags(
         (
             ["nginx", "itisfoundation/simcore/services/dynamic/service:23.5.5"],
             'echo "services:\n  pre-pull-image-0:\n    image: nginx\n  pre-pull-image-1:\n    '
-            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
+            'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
             " > /docker-pull.compose.yml"
             " && "
             'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
@@ -1082,6 +1161,8 @@ async def test_set_node_osparc_ready(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
+    host_node_last_readyness_update = get_node_last_readyness_update(host_node)
+    assert host_node_last_readyness_update
     # set the node to drain
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=False
@@ -1089,6 +1170,9 @@ async def test_set_node_osparc_ready(
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # the node is also not osparc ready
     assert not is_node_osparc_ready(updated_node)
+    # the node readyness label was not updated here
+    updated_last_readyness = get_node_last_readyness_update(updated_node)
+    assert updated_last_readyness == host_node_last_readyness_update
 
     # this implicitely make the node active as well
     updated_node = await set_node_osparc_ready(
@@ -1096,12 +1180,90 @@ async def test_set_node_osparc_ready(
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
+    updated_last_readyness = get_node_last_readyness_update(updated_node)
+    assert updated_last_readyness > host_node_last_readyness_update
     # make it not osparc ready
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    assert get_node_last_readyness_update(updated_node) > updated_last_readyness
+
+
+async def test_set_node_found_empty(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    assert host_node.Spec
+    assert host_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in host_node.Spec.Labels
+
+    # the date does not exist as nothing was done
+    node_empty_since = await get_node_empty_since(host_node)
+    assert node_empty_since is None
+
+    # now we set it to empty
+    updated_node = await set_node_found_empty(autoscaling_docker, host_node, empty=True)
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY in updated_node.Spec.Labels
+
+    # we can get that empty date back
+    node_empty_since = await get_node_empty_since(updated_node)
+    assert node_empty_since is not None
+    assert node_empty_since < arrow.utcnow().datetime
+
+    # now we remove the empty label
+    updated_node = await set_node_found_empty(
+        autoscaling_docker, host_node, empty=False
+    )
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.Spec.Labels
+
+    # we can't get a date anymore
+    node_empty_since = await get_node_empty_since(updated_node)
+    assert node_empty_since is None
+
+
+async def test_set_node_begin_termination_process(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    assert host_node.Spec
+    assert host_node.Spec.Labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in host_node.Spec.Labels
+
+    # the termination was not started, therefore no date
+    assert get_node_termination_started_since(host_node) is None
+
+    updated_node = await set_node_begin_termination_process(
+        autoscaling_docker, host_node
+    )
+    assert updated_node.Spec
+    assert updated_node.Spec.Labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in updated_node.Spec.Labels
+
+    await asyncio.sleep(1)
+
+    returned_termination_started_at = get_node_termination_started_since(updated_node)
+    assert returned_termination_started_at is not None
+    assert arrow.utcnow().datetime > returned_termination_started_at
 
 
 async def test_attach_node(

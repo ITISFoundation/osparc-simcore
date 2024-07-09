@@ -29,6 +29,8 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
     this.set({
       cursor: "not-allowed"
     });
+
+    this.getChildControl("footer").exclude();
   },
 
   properties: {
@@ -114,8 +116,6 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
       this.getChildControl("progress-bar").set({
         visibility: showProgressBar ? "visible" : "excluded"
       });
-
-      // this._getChildren().forEach(item => item.setOpacity(0.8));
     },
 
     isLocked: function() {

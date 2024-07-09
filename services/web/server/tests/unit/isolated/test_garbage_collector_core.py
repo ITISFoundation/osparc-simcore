@@ -9,9 +9,13 @@ from unittest import mock
 import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
@@ -22,11 +26,6 @@ from simcore_service_webserver.users.exceptions import UserNotFoundError
 MODULE_GC_CORE_ORPHANS: Final[
     str
 ] = "simcore_service_webserver.garbage_collector._core_orphans"
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
@@ -205,11 +204,16 @@ async def test_remove_orphaned_services(
     else:
         mock_get_user_role.assert_not_called()
         mock_has_write_permission.assert_not_called()
+
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
-        node_id=fake_running_service.node_uuid,
-        simcore_user_agent=mock.ANY,
-        save_state=expected_save_state,
+        dynamic_service_stop=DynamicServiceStop(
+            user_id=fake_running_service.user_id,
+            project_id=fake_running_service.project_id,
+            node_id=fake_running_service.node_uuid,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            save_state=expected_save_state,
+        ),
     )
 
 
@@ -243,9 +247,13 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
     mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
-        node_id=fake_running_service.node_uuid,
-        simcore_user_agent=mock.ANY,
-        save_state=False,
+        dynamic_service_stop=DynamicServiceStop(
+            user_id=fake_running_service.user_id,
+            project_id=fake_running_service.project_id,
+            node_id=fake_running_service.node_uuid,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            save_state=False,
+        ),
     )
 
 

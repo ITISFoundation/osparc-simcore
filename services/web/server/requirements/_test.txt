@@ -1,65 +1,104 @@
 aiohttp==3.8.5
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   aioresponses
     #   pytest-aiohttp
 aioresponses==0.7.6
+    # via -r requirements/_test.in
 aiosignal==1.2.0
-    # via aiohttp
-alembic==1.8.1
-async-timeout==4.0.2
     # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+alembic==1.8.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+async-timeout==4.0.3
+    # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   redis
 attrs==21.4.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   hypothesis
     #   jsonschema
     #   pytest-docker
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   requests
 charset-normalizer==2.0.12
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   requests
 click==8.1.3
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 coverage==7.5.1
-    # via pytest-cov
-docker==6.1.3
+    # via
+    #   -r requirements/_test.in
+    #   pytest-cov
+docker==7.1.0
+    # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via
+    #   -c requirements/_base.txt
     #   hypothesis
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==19.6.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 flaky==3.8.1
+    # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
 greenlet==2.0.2
-    # via sqlalchemy
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 hypothesis==6.91.0
+    # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
 idna==3.3
     # via
+    #   -c requirements/_base.txt
     #   requests
     #   yarl
 iniconfig==2.0.0
     # via pytest
 jsonref==1.1.0
+    # via -r requirements/_test.in
 jsonschema==3.2.0
     # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
 mako==1.2.2
-    # via alembic
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   alembic
 markupsafe==2.1.1
-    # via mako
+    # via
+    #   -c requirements/_base.txt
+    #   mako
 multidict==6.0.2
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
 mypy==1.10.0
@@ -67,11 +106,16 @@ mypy==1.10.0
 mypy-extensions==1.0.0
     # via mypy
 openapi-schema-validator==0.2.3
-    # via openapi-spec-validator
+    # via
+    #   -c requirements/_base.txt
+    #   openapi-spec-validator
 openapi-spec-validator==0.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 packaging==23.1
     # via
-    #   docker
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
@@ -81,9 +125,12 @@ pprintpp==0.4.0
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pyrsistent==0.18.1
-    # via jsonschema
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pytest==7.4.4
     # via
+    #   -r requirements/_test.in
     #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-benchmark
@@ -95,40 +142,74 @@ pytest==7.4.4
     #   pytest-sugar
     #   pytest-xdist
 pytest-aiohttp==1.0.5
+    # via -r requirements/_test.in
 pytest-asyncio==0.21.2
-    # via pytest-aiohttp
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/_test.in
+    #   pytest-aiohttp
 pytest-benchmark==4.0.0
+    # via -r requirements/_test.in
 pytest-cov==5.0.0
+    # via -r requirements/_test.in
 pytest-docker==3.1.1
+    # via -r requirements/_test.in
 pytest-icdiff==0.9
+    # via -r requirements/_test.in
 pytest-instafail==0.5.0
+    # via -r requirements/_test.in
 pytest-mock==3.14.0
+    # via -r requirements/_test.in
 pytest-runner==6.0.1
+    # via -r requirements/_test.in
 pytest-sugar==1.0.0
+    # via -r requirements/_test.in
 pytest-xdist==3.6.1
+    # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 python-dotenv==1.0.1
+    # via -r requirements/_test.in
 pyyaml==6.0.1
-    # via openapi-spec-validator
-redis==4.5.4
-requests==2.31.0
-    # via docker
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   openapi-spec-validator
+redis==5.0.4
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+requests==2.32.2
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 setuptools==69.1.1
     # via
+    #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-spec-validator
 six==1.16.0
     # via
+    #   -c requirements/_base.txt
     #   jsonschema
     #   python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==1.4.47
-    # via alembic
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+    #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 tenacity==8.0.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
@@ -136,16 +217,20 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-typing-extensions==4.3.0
+typing-extensions==4.12.0
     # via
+    #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==1.26.11
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   docker
     #   requests
-websocket-client==1.6.4
-    # via docker
 websockets==12.0
+    # via -r requirements/_test.in
 yarl==1.5.1
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp

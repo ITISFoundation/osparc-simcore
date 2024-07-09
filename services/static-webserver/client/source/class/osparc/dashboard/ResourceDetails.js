@@ -23,6 +23,18 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     this.__resourceData = resourceData;
 
+    this.__resourceModel = null;
+    switch (resourceData["resourceType"]) {
+      case "study":
+      case "template":
+        this.__resourceModel = new osparc.data.model.Study(resourceData);
+        break;
+      case "service":
+        this.__resourceModel = new osparc.data.model.Service(resourceData);
+        break;
+    }
+    this.__resourceModel["resourceType"] = resourceData["resourceType"];
+
     this.__addPages();
   },
 
@@ -69,6 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
   members: {
     __resourceData: null,
+    __resourceModel: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -120,7 +133,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __openTapped: function() {
       if (this.__resourceData["resourceType"] !== "study") {
-        // Nothing to pre-check
+        // Template or Service, nothing to pre-check
         this.__openResource();
         return;
       }
@@ -312,33 +325,31 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
-        const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
+        const resourceModel = this.__resourceModel;
+        let infoCard = null;
+        if (osparc.utils.Resources.isService(resourceData)) {
+          infoCard = new osparc.info.ServiceLarge(resourceData, null, false);
+          infoCard.addListener("updateService", e => {
+            const updatedData = e.getData();
+            if (osparc.utils.Resources.isService(resourceData)) {
+              this.fireDataEvent("updateService", updatedData);
+            }
+          });
+        } else {
+          infoCard = new osparc.info.StudyLarge(resourceModel, false);
+          infoCard.addListener("updateStudy", e => {
+            const updatedData = e.getData();
+            if (osparc.utils.Resources.isStudy(resourceData)) {
+              this.fireDataEvent("updateStudy", updatedData);
+            } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+              this.fireDataEvent("updateTemplate", updatedData);
+            }
+          });
+          infoCard.addListener("openTags", () => this.openTags());
+        }
         infoCard.addListener("openAccessRights", () => this.openAccessRights());
         infoCard.addListener("openClassifiers", () => this.openClassifiers());
         infoCard.addListener("openQuality", () => this.openQuality());
-        infoCard.addListener("openTags", () => this.openTags());
-        infoCard.addListener("updateStudy", e => {
-          const updatedData = e.getData();
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            this.fireDataEvent("updateStudy", updatedData);
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            this.fireDataEvent("updateTemplate", updatedData);
-          }
-        });
-        infoCard.addListener("updateService", e => {
-          const updatedData = e.getData();
-          if (osparc.utils.Resources.isService(resourceData)) {
-            this.fireDataEvent("updateService", updatedData);
-          }
-        });
-        infoCard.addListener("updateTags", e => {
-          const updatedData = e.getData();
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            this.fireDataEvent("updateStudy", updatedData);
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            this.fireDataEvent("updateTemplate", updatedData);
-          }
-        });
         page.addToContent(infoCard);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
@@ -404,7 +415,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        const preview = new osparc.study.StudyPreview(resourceData);
+        const resourceModel = this.__resourceModel;
+        const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);

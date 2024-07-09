@@ -1,48 +1,82 @@
 aiohttp==3.9.3
-    # via pytest-aiohttp
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   pytest-aiohttp
 aiosignal==1.3.1
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 alembic==1.13.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 anyio==4.3.0
-    # via httpx
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
+asgi-lifespan==2.1.0
+    # via -r requirements/_test.in
 async-timeout==4.0.3
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==23.2.0
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   pytest-docker
     #   referencing
 certifi==2024.2.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 coverage==7.5.1
     # via pytest-cov
-docker==7.0.0
+docker==7.1.0
+    # via -r requirements/_test.in
 exceptiongroup==1.2.0
     # via
+    #   -c requirements/_base.txt
     #   anyio
     #   pytest
 faker==25.0.1
+    # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
 greenlet==3.0.3
-    # via sqlalchemy
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.14.0
-    # via httpcore
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
 httpcore==1.0.4
-    # via httpx
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 httpx==0.27.0
-    # via respx
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   respx
 idna==3.6
     # via
+    #   -c requirements/_base.txt
     #   anyio
     #   httpx
     #   requests
@@ -50,14 +84,25 @@ idna==3.6
 iniconfig==2.0.0
     # via pytest
 jsonschema==4.21.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 jsonschema-specifications==2023.7.1
-    # via jsonschema
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 mako==1.3.2
-    # via alembic
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   alembic
 markupsafe==2.1.5
-    # via mako
+    # via
+    #   -c requirements/_base.txt
+    #   mako
 multidict==6.0.5
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
 mypy==1.10.0
@@ -66,15 +111,17 @@ mypy-extensions==1.0.0
     # via mypy
 packaging==24.0
     # via
-    #   docker
+    #   -c requirements/_base.txt
     #   pytest
 pluggy==1.5.0
     # via pytest
 ptvsd==4.3.2
+    # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pytest==8.2.0
     # via
+    #   -r requirements/_test.in
     #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-benchmark
@@ -82,34 +129,55 @@ pytest==8.2.0
     #   pytest-docker
     #   pytest-mock
 pytest-aiohttp==1.0.5
+    # via -r requirements/_test.in
 pytest-asyncio==0.21.2
-    # via pytest-aiohttp
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   pytest-aiohttp
 pytest-benchmark==4.0.0
+    # via -r requirements/_test.in
 pytest-cov==5.0.0
+    # via -r requirements/_test.in
 pytest-docker==3.1.1
+    # via -r requirements/_test.in
 pytest-mock==3.14.0
+    # via -r requirements/_test.in
 pytest-runner==6.0.1
+    # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 referencing==0.29.3
     # via
+    #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.2
     # via docker
 respx==0.21.1
+    # via -r requirements/_test.in
 rpds-py==0.18.0
     # via
+    #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   -c requirements/_base.txt
+    #   python-dateutil
 sniffio==1.3.1
     # via
+    #   -c requirements/_base.txt
     #   anyio
+    #   asgi-lifespan
     #   httpx
 sqlalchemy==1.4.52
-    # via alembic
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+    #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 tomli==2.0.1
@@ -119,13 +187,17 @@ tomli==2.0.1
     #   pytest
 typing-extensions==4.10.0
     # via
+    #   -c requirements/_base.txt
     #   alembic
     #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.2.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
 yarl==1.9.4
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp

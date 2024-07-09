@@ -519,7 +519,7 @@ class Service(BaseModel):
     ) = None
     oom_kill_disable: bool | None = None
     oom_score_adj: conint(ge=-1000, le=1000) | None = None
-    pid: str | None | None = None
+    pid: str | None = None
     pids_limit: float | str | None = None
     platform: str | None = None
     ports: list[PortInt | str | Port] | None = None
