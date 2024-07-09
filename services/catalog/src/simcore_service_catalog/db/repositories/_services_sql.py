@@ -285,7 +285,6 @@ def get_service_stmt2(
             services_meta_data.c.modified,
             services_meta_data.c.deprecated,
             # releases
-            # TODO: history
         )
         .select_from(
             services_meta_data.join(
