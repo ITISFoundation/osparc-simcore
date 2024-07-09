@@ -15,18 +15,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from ._dump_dotenv import dump_dotenv
 
 
-def _timedelta_serializer(td: timedelta) -> str:
-    total_seconds = int(td.total_seconds())
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{hours}h{minutes}m{seconds}s"
-
-
-def _remove_trailing_backslash(url: AnyHttpUrl):
-    s = f"{url}"
-    return s.rstrip("/")
-
-
 class LocustSettings(BaseSettings):
     model_config = SettingsConfigDict(cli_parse_args=True)
 
