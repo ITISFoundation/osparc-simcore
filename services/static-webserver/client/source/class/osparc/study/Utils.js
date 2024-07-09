@@ -69,7 +69,7 @@ qx.Class.define("osparc.study.Utils", {
       const isUpdatable = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
-          return "compatibility" in serviceMD && "canUpdateTo" in serviceMD["compatibility"]
+          return "compatibility" in serviceMD && "canUpdateTo" in serviceMD["compatibility"];
         }
         return false;
       });
@@ -77,41 +77,39 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isWorkbenchRetired: function(workbench) {
+      const allServices = osparc.service.Store.servicesCached;
       const services = new Set(this.extractServices(workbench));
-      const filtered = [];
-      services.forEach(srv => {
-        const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
-        if (idx === -1) {
-          filtered.push(srv);
-        }
-      });
-      const retired = filtered.some(srv => {
-        const srvMetadata = osparc.service.Utils.getMetaData(srv["key"], srv["version"]);
-        if (srvMetadata) {
-          return osparc.service.Utils.isRetired(srvMetadata);
+      const isRetired = Array.from(services).some(srv => {
+        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+          const serviceMD = allServices[srv.key][srv.version];
+          if ("retired" in serviceMD) {
+            const retirementDate = new Date(serviceMD["retired"]);
+            const currentDate = new Date();
+            return retirementDate < currentDate;
+          }
+          return false;
         }
         return false;
       });
-      return retired;
+      return isRetired;
     },
 
     isWorkbenchDeprecated: function(workbench) {
+      const allServices = osparc.service.Store.servicesCached;
       const services = new Set(this.extractServices(workbench));
-      const filtered = [];
-      services.forEach(srv => {
-        const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
-        if (idx === -1) {
-          filtered.push(srv);
-        }
-      });
-      const deprecated = filtered.some(srv => {
-        const srvMetadata = osparc.service.Utils.getMetaData(srv["key"], srv["version"]);
-        if (srvMetadata) {
-          return osparc.service.Utils.isDeprecated(srvMetadata);
+      const isRetired = Array.from(services).some(srv => {
+        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+          const serviceMD = allServices[srv.key][srv.version];
+          if ("retired" in serviceMD) {
+            const retirementDate = new Date(serviceMD["retired"]);
+            const currentDate = new Date();
+            return retirementDate > currentDate;
+          }
+          return false;
         }
         return false;
       });
-      return deprecated;
+      return isRetired;
     },
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
