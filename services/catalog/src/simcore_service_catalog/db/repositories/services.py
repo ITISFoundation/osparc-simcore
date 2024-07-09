@@ -329,6 +329,7 @@ class ServicesRepository(BaseRepository):
 
     async def list_latest_services(
         self,
+        *,
         # access-rights
         product_name: ProductName,
         user_id: UserID,
