@@ -87,6 +87,8 @@ async def services_by_key_version_get(
 async def get_service_labels(
     request: web.Request, service_key: str, service_version: str
 ) -> web.Response:
+    # GET /services/{service_key}/{service_version}/labels
+
     log.debug(
         "Retrieving service labels %s with service_key %s, service_version %s",
         request,
@@ -94,9 +96,14 @@ async def get_service_labels(
         service_version,
     )
     try:
-        service_labels = await registry_proxy.get_image_labels(
+        service_labels, image_manifest_digest = await registry_proxy.get_image_labels(
             request.app, service_key, service_version
         )
+        
+        # Adds manifest as extra key in the response similar to org.opencontainers.image.base.digest
+        # at https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+        service_labels.update({"io.simcore.image.digest":image_manifest_digest})
+
         return web.json_response(data=dict(data=service_labels))
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
@@ -106,10 +113,10 @@ async def get_service_labels(
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
 
-# GET /service_extras/{service_key}/{service_version}
 async def service_extras_by_key_version_get(
     request: web.Request, service_key: str, service_version: str
 ) -> web.Response:
+    # GET /service_extras/{service_key}/{service_version}
     log.debug(
         "Client does service_extras_by_key_version_get request %s with service_key %s, service_version %s",
         request,

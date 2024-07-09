@@ -6,7 +6,7 @@ import logging
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, AsyncIterator, Dict, List, Tuple
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
 from aiohttp.client import ClientTimeout
@@ -243,9 +243,11 @@ async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     logger.debug("Found %s image tags in %s", len(image_tags), image_key)
     return image_tags
 
+_DOCKER_CONTENT_DIGEST_HEADER = "Docker-Content-Digest"
+async def get_image_digest(app: web.Application, image: str, tag: str) -> Optional[str]:
+    """ Returns image manifest digest number or None if fails to obtain it
 
-async def get_image_digest(app: web.Application, image: str, tag: str) -> str | None:
-    """ Returns the hash sha256 of a given image:tag
+    The manifest digest is essentially a SHA256 hash of the image manifest
 
     SEE https://distribution.github.io/distribution/spec/api/#digest-header
     """
@@ -253,28 +255,35 @@ async def get_image_digest(app: web.Application, image: str, tag: str) -> str | 
     _, headers = await registry_request(app, path)
 
     headers = headers or {}
-    return headers.get("Docker-Content-Digest","")
+    return headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
 
 
-async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
+async def get_image_labels(app: web.Application, image: str, tag: str) -> Tuple[Dict, Optional[str]]:
+    """ Returns image labels and the image manifest digest """
+
     logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
-    request_result, _ = await registry_request(app, path)
+    request_result, headers = await registry_request(app, path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
     container_config = v1_compatibility_key.get(
         "container_config", v1_compatibility_key["config"]
     )
     labels = container_config["Labels"]
+
+    headers = headers or {}
+    manifest_digest =  headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+
     logger.debug("retrieved labels of image %s:%s", image, tag)
-    return labels
+
+    return (labels, manifest_digest)
 
 
 async def get_image_details(
     app: web.Application, image_key: str, image_tag: str
 ) -> Dict:
     image_tags: Dict = {}
-    labels = await get_image_labels(app, image_key, image_tag)
+    labels, _ = await get_image_labels(app, image_key, image_tag)
     if not labels:
         return image_tags
     for key in labels:
@@ -334,7 +343,7 @@ async def list_services(app: web.Application, service_type: ServiceType) -> List
 async def list_interactive_service_dependencies(
     app: web.Application, service_key: str, service_tag: str
 ) -> List[Dict]:
-    image_labels = await get_image_labels(app, service_key, service_tag)
+    image_labels, _ = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
@@ -415,7 +424,7 @@ async def get_service_extras(
         }
     }
 
-    labels = await get_image_labels(app, image_key, image_tag)
+    labels, _ = await get_image_labels(app, image_key, image_tag)
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     if config.SERVICE_RUNTIME_SETTINGS in labels:
