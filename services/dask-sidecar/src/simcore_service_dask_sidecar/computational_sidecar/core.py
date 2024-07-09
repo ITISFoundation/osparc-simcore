@@ -92,7 +92,9 @@ class ComputationalSidecar:
                 )
             else:
                 local_input_data_file[input_key] = input_params
-        await asyncio.gather(*download_tasks)
+        # NOTE: temporary solution until new version is created
+        for task in download_tasks:
+            await task
         input_data_file.write_text(json.dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")

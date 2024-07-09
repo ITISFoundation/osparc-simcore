@@ -79,15 +79,20 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __reloadCollaborators: function() {
-      let includeEveryone = false;
+      let includeProductEveryone = false;
       if (this.__showOrganizations === false) {
-        includeEveryone = false;
+        includeProductEveryone = false;
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
+        // studies can't be shared with ProductEveryone
+        includeProductEveryone = false;
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
+        // only users with permissions can share templates with ProductEveryone
+        includeProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
-        includeEveryone = true;
-      } else {
-        includeEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+        // all users can share services with ProductEveryone
+        includeProductEveryone = true;
       }
-      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeEveryone)
+      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addEditors();
@@ -126,20 +131,14 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       });
 
       let existingCollabs = [];
-      if (this.__resourceData) {
-        if (this.__resourceData["accessRights"]) {
-          // study/template/wallet
-          if (this.__resourceData["resourceType"] === "wallet") {
-            // array of objects
-            existingCollabs = this.__resourceData["accessRights"].map(collab => collab["gid"]);
-          } else {
-            // object
-            existingCollabs = Object.keys(this.__resourceData["accessRights"]);
-          }
-        } else if (this.__resourceData["access_rights"]) {
-          // service
+      if (this.__resourceData && this.__resourceData["accessRights"]) {
+        // study/template/service/wallet
+        if (this.__resourceData["resourceType"] === "wallet") {
+          // array of objects
+          existingCollabs = this.__resourceData["accessRights"].map(collab => collab["gid"]);
+        } else {
           // object
-          existingCollabs = Object.keys(this.__resourceData["access_rights"]);
+          existingCollabs = Object.keys(this.__resourceData["accessRights"]);
         }
       }
 

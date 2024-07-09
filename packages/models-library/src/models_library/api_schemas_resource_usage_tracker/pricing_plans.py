@@ -2,7 +2,6 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel
 
 from ..resource_tracker import (
@@ -13,6 +12,7 @@ from ..resource_tracker import (
     PricingUnitId,
     UnitExtraInfo,
 )
+from ..services_types import ServiceKey, ServiceVersion
 
 
 class PricingUnitGet(BaseModel):

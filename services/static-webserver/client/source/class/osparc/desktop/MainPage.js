@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(null, null));
+    this._setLayout(new qx.ui.layout.VBox());
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
@@ -78,10 +78,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__listenToWalletSocket();
         this.__attachHandlers();
       });
-  },
-
-  statics: {
-    MIN_STUDIES_PER_ROW: 4
   },
 
   members: {
@@ -213,26 +209,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         paddingBottom: 6
       });
       this.__navBar.addDashboardTabButtons(tabsBar);
-      const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
-      dashboard.setMinWidth(this.self().MIN_STUDIES_PER_ROW * itemWidth + 8);
-      const fitResourceCards = () => {
-        const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*150 - 8) / itemWidth);
-        const newWidth = nStudies * itemWidth + 8;
-        if (newWidth > dashboard.getMinWidth()) {
-          dashboard.setWidth(newWidth);
-        } else {
-          dashboard.setWidth(dashboard.getMinWidth());
-        }
-      };
-      fitResourceCards();
-      window.addEventListener("resize", () => fitResourceCards());
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      dashboardLayout.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      dashboardLayout.add(dashboard);
-      dashboardLayout.add(new qx.ui.core.Widget(), {
+      dashboardLayout.add(dashboard, {
         flex: 1
       });
       return dashboardLayout;

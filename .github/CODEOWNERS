@@ -29,6 +29,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/director*/                      @sanderegg @pcrespov @GitHK
 /services/docker-compose*.yml             @sanderegg @mrnicegyu11 @YuryHrytsuk
 /services/dynamic-sidecar/                @GitHK
+/services/efs-guardian/                   @matusdrobuliak66
 /services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
 /services/osparc-gateway-server/          @sanderegg

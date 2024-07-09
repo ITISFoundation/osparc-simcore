@@ -21,6 +21,9 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import NodeID
@@ -31,9 +34,9 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
@@ -389,7 +392,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
         def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             self.running_services_uuids.append(
-                kwargs["rpc_dynamic_service_create"].node_uuid
+                kwargs["dynamic_service_start"].node_uuid
             )
 
     # let's count the started services
@@ -512,7 +515,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(
-                kwargs["rpc_dynamic_service_create"].node_uuid
+                kwargs["dynamic_service_start"].node_uuid
             )
 
     # let's count the started services
@@ -634,6 +637,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_node(
     client: TestClient,
+    logged_user: dict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
@@ -681,9 +685,13 @@ async def test_delete_node(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
-                node_id=NodeID(node_id),
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=False,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=logged_user["id"],
+                    project_id=user_project["uuid"],
+                    node_id=NodeID(node_id),
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=False,
+                ),
             )
             mocked_director_v2_api[
                 "dynamic_scheduler.api.stop_dynamic_service"

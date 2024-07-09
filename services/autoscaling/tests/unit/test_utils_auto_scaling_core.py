@@ -10,14 +10,15 @@ import re
 from collections.abc import Callable
 from random import choice, shuffle
 
+import arrow
 import pytest
 from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData
@@ -27,6 +28,9 @@ from simcore_service_autoscaling.utils.auto_scaling_core import (
     get_machine_buffer_type,
     node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
+)
+from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
 )
 
 
@@ -314,6 +318,7 @@ def test_sort_empty_drained_nodes(
     assert sort_drained_nodes(app_settings, [], random_fake_available_instances) == (
         [],
         [],
+        [],
     )
 
 
@@ -328,6 +333,7 @@ def test_sort_drained_nodes(
     machine_buffer_type = get_machine_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
     _NUM_NODE_WITH_TYPE_BUFFER = 3 * mock_machines_buffer
+    _NUM_NODES_TERMINATING = 13
     fake_drained_nodes = []
     for _ in range(_NUM_DRAINED_NODES):
         fake_node = create_fake_node()
@@ -354,10 +360,31 @@ def test_sort_drained_nodes(
             fake_ec2_instance_data_override={"type": machine_buffer_type.name},
         )
         fake_drained_nodes.append(fake_associated_instance)
+
+    for _ in range(_NUM_NODES_TERMINATING):
+        fake_node = create_fake_node()
+        assert fake_node.Spec
+        assert fake_node.Spec.Labels
+        fake_node.Spec.Labels[
+            _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY
+        ] = arrow.utcnow().datetime.isoformat()
+        fake_associated_instance = create_associated_instance(
+            fake_node,
+            terminateable_time=False,
+            fake_ec2_instance_data_override={"type": machine_buffer_type.name},
+        )
+        fake_drained_nodes.append(fake_associated_instance)
     shuffle(fake_drained_nodes)
 
-    assert len(fake_drained_nodes) == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER
-    sorted_drained_nodes, sorted_buffer_drained_nodes = sort_drained_nodes(
+    assert (
+        len(fake_drained_nodes)
+        == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER + _NUM_NODES_TERMINATING
+    )
+    (
+        sorted_drained_nodes,
+        sorted_buffer_drained_nodes,
+        terminating_nodes,
+    ) = sort_drained_nodes(
         app_settings, fake_drained_nodes, random_fake_available_instances
     )
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -365,12 +392,17 @@ def test_sort_drained_nodes(
         mock_machines_buffer
         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
-    assert (
-        len(sorted_drained_nodes)
-        == len(fake_drained_nodes)
+    assert len(sorted_drained_nodes) == (
+        _NUM_DRAINED_NODES
+        + _NUM_NODE_WITH_TYPE_BUFFER
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
     assert (
         len(sorted_buffer_drained_nodes)
         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
+    assert len(terminating_nodes) == _NUM_NODES_TERMINATING
+    for n in terminating_nodes:
+        assert n.node.Spec
+        assert n.node.Spec.Labels
+        assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in n.node.Spec.Labels

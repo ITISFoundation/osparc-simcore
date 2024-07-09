@@ -195,11 +195,6 @@ def fake_project_id() -> ProjectID:
 
 
 @pytest.fixture
-def user_id() -> PositiveInt:
-    return 1
-
-
-@pytest.fixture
 def mock_docker_calls(mocker: MockerFixture) -> Iterable[dict[str, AsyncMock]]:
     requires_dynamic_sidecar_mock = AsyncMock()
     requires_dynamic_sidecar_mock.return_value = True

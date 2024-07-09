@@ -100,6 +100,14 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                     method_name=namespaced_method_name, incoming_message=e.args[1]
                 ) from e
             raise
+        except ModuleNotFoundError as err:
+            # SEE https://github.com/ITISFoundation/osparc-simcore/blob/b1aee64ae207a6ed3e965ff7869c74a312109de7/services/catalog/src/simcore_service_catalog/api/rpc/_services.py#L41-L46
+            err.msg += (
+                "\nTIP: All i/o rpc parameters MUST be shared by client and server sides. "
+                "Careful with Generics instanciated on the server side. "
+                "Use instead a TypeAlias in a common library."
+            )
+            raise
 
     async def register_handler(
         self,

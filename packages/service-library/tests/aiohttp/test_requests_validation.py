@@ -15,6 +15,7 @@ from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -62,6 +63,23 @@ class MyRequestQueryParams(BaseModel):
         return cls(is_ok=faker.pybool(), label=faker.word())
 
 
+class MyRequestHeadersParams(BaseModel):
+    user_agent: str = Field(alias="X-Simcore-User-Agent")
+    optional_header: str | None = Field(default=None, alias="X-Simcore-Optional-Header")
+
+    class Config:
+        allow_population_by_field_name = False
+
+    @classmethod
+    def create_fake(cls, faker: Faker):
+        return cls(
+            **{
+                "X-Simcore-User-Agent": faker.pystr(),
+                "X-Simcore-Optional-Header": faker.word(),
+            }
+        )
+
+
 class Sub(BaseModel):
     a: float = 33
 
@@ -101,6 +119,9 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
         query_params = parse_request_query_parameters_as(
             MyRequestQueryParams, request, use_enveloped_error_v1=False
         )
+        headers_params = parse_request_headers_as(
+            MyRequestHeadersParams, request, use_enveloped_error_v1=False
+        )
         body = await parse_request_body_as(
             MyBody, request, use_enveloped_error_v1=False
         )
@@ -112,6 +133,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
                 "queries": query_params.dict(),
                 "body": body.dict(),
                 "context": context.dict(),
+                "headers": headers_params.dict(),
             },
             dumps=json_dumps,
         )
@@ -123,8 +145,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
         # request context
         request[RQT_USERID_KEY] = 42
         request["RQT_IGNORE_CONTEXT"] = "not interesting"
-        resp = await handler(request)
-        return resp
+        return await handler(request)
 
     app = web.Application(
         middlewares=[
@@ -143,9 +164,8 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
 
 
 @pytest.fixture
-def path_params(faker: Faker):
-    path_params = MyRequestPathParams.create_fake(faker)
-    return path_params
+def path_params(faker: Faker) -> MyRequestPathParams:
+    return MyRequestPathParams.create_fake(faker)
 
 
 @pytest.fixture
@@ -158,17 +178,24 @@ def body(faker: Faker) -> MyBody:
     return MyBody.create_fake(faker)
 
 
+@pytest.fixture
+def headers_params(faker: Faker) -> MyRequestHeadersParams:
+    return MyRequestHeadersParams.create_fake(faker)
+
+
 async def test_parse_request_as(
     client: TestClient,
     path_params: MyRequestPathParams,
     query_params: MyRequestQueryParams,
     body: MyBody,
+    headers_params: MyRequestHeadersParams,
 ):
     assert client.app
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         json=body.dict(),
+        headers=headers_params.dict(by_alias=True),
     )
     assert r.status == status.HTTP_200_OK, f"{await r.text()}"
 
@@ -181,18 +208,21 @@ async def test_parse_request_as(
         "secret": client.app[APP_SECRET_KEY],
         "user_id": 42,
     }
+    assert got["headers"] == jsonable_encoder(headers_params.dict())
 
 
 async def test_parse_request_with_invalid_path_params(
     client: TestClient,
     query_params: MyRequestQueryParams,
     body: MyBody,
+    headers_params: MyRequestHeadersParams,
 ):
 
     r = await client.get(
         "/projects/invalid-uuid",
         params=query_params.as_params(),
         json=body.dict(),
+        headers=headers_params.dict(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -216,12 +246,14 @@ async def test_parse_request_with_invalid_query_params(
     client: TestClient,
     path_params: MyRequestPathParams,
     body: MyBody,
+    headers_params: MyRequestHeadersParams,
 ):
 
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params={},
         json=body.dict(),
+        headers=headers_params.dict(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -245,12 +277,14 @@ async def test_parse_request_with_invalid_body(
     client: TestClient,
     path_params: MyRequestPathParams,
     query_params: MyRequestQueryParams,
+    headers_params: MyRequestHeadersParams,
 ):
 
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         json={"invalid": "body"},
+        headers=headers_params.dict(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -281,13 +315,47 @@ async def test_parse_request_with_invalid_json_body(
     client: TestClient,
     path_params: MyRequestPathParams,
     query_params: MyRequestQueryParams,
+    headers_params: MyRequestHeadersParams,
 ):
 
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         data=b"[ 1 2, 3 'broken-json' ]",
+        headers=headers_params.dict(by_alias=True),
     )
 
     body = await r.text()
     assert r.status == status.HTTP_400_BAD_REQUEST, body
+
+
+async def test_parse_request_with_invalid_headers_params(
+    client: TestClient,
+    path_params: MyRequestPathParams,
+    query_params: MyRequestQueryParams,
+    body: MyBody,
+    headers_params: MyRequestHeadersParams,
+):
+
+    r = await client.get(
+        f"/projects/{path_params.project_uuid}",
+        params=query_params.as_params(),
+        json=body.dict(),
+        headers=headers_params.dict(),  # we pass the wrong names
+    )
+    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
+
+    response_body = await r.json()
+    assert response_body["error"].pop("resource")
+    assert response_body == {
+        "error": {
+            "msg": "Invalid parameter/s 'X-Simcore-User-Agent' in request headers",
+            "details": [
+                {
+                    "loc": "X-Simcore-User-Agent",
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                }
+            ],
+        }
+    }

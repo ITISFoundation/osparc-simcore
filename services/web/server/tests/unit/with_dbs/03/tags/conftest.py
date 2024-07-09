@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
@@ -132,7 +132,6 @@ async def template_project(
         project_data,
         client.app,
         user_id=None,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
         product_name=osparc_product_name,
     ) as template_project:

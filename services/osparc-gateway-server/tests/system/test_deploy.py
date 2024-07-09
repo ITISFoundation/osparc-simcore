@@ -12,7 +12,7 @@ import aiohttp
 import dask_gateway
 import pytest
 from faker import Faker
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

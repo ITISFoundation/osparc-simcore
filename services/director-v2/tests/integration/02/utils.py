@@ -21,7 +21,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import PositiveInt, parse_obj_as
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -529,13 +529,19 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
     result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
-    assert "verify: Service converged" in result
+    assert (
+        "verify: Service converged" in result
+        or f"verify: Service {service_name} converged" in result
+    )
 
     # Finally forward the port on a random assigned port.
     result = run_command(
         f"docker service update {service_name} --publish-add :{internal_port}"
     )
-    assert "verify: Service converged" in result
+    assert (
+        "verify: Service converged" in result
+        or f"verify: Service {service_name} converged" in result
+    )
 
     # inspect service and fetch the port
     async with aiodocker.Docker() as docker_client:

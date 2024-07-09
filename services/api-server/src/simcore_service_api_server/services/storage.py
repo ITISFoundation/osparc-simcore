@@ -17,9 +17,9 @@ from pydantic import AnyUrl, PositiveInt
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
+from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from .service_exception_handling import service_exception_mapper
 
 _logger = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ class StorageApi(BaseServiceClientApi):
     @_exception_mapper({})
     async def list_files(
         self,
+        *,
         user_id: int,
     ) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
@@ -115,7 +116,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper({})
     async def get_download_link(
-        self, user_id: int, file_id: UUID, file_name: str
+        self, *, user_id: int, file_id: UUID, file_name: str
     ) -> AnyUrl:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
@@ -133,7 +134,7 @@ class StorageApi(BaseServiceClientApi):
         return link
 
     @_exception_mapper({})
-    async def delete_file(self, user_id: int, quoted_storage_file_id: str) -> None:
+    async def delete_file(self, *, user_id: int, quoted_storage_file_id: str) -> None:
         response = await self.client.delete(
             f"/locations/{self.SIMCORE_S3_ID}/files/{quoted_storage_file_id}",
             params={"user_id": user_id},
@@ -142,7 +143,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper({})
     async def get_upload_links(
-        self, user_id: int, file_id: UUID, file_name: str
+        self, *, user_id: int, file_id: UUID, file_name: str
     ) -> FileUploadSchema:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
@@ -158,7 +159,7 @@ class StorageApi(BaseServiceClientApi):
         return enveloped_data.data
 
     async def create_complete_upload_link(
-        self, file: File, query: dict[str, str] | None = None
+        self, *, file: File, query: dict[str, str] | None = None
     ) -> URL:
         url = URL(
             f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
@@ -168,7 +169,7 @@ class StorageApi(BaseServiceClientApi):
         return url
 
     async def create_abort_upload_link(
-        self, file: File, query: dict[str, str] | None = None
+        self, *, file: File, query: dict[str, str] | None = None
     ) -> URL:
         url = URL(
             f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
@@ -179,7 +180,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper({})
     async def create_soft_link(
-        self, user_id: int, target_s3_path: str, as_file_id: UUID
+        self, *, user_id: int, target_s3_path: str, as_file_id: UUID
     ) -> File:
         assert len(target_s3_path.split("/")) == 3  # nosec
 

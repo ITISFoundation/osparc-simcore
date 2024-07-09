@@ -1,9 +1,11 @@
 astroid==3.1.0
     # via pylint
 black==24.4.2
+    # via -r requirements/../../../requirements/devenv.txt
 build==1.2.1
     # via pip-tools
 bump2version==1.0.1
+    # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
 click==8.1.7
@@ -20,7 +22,9 @@ filelock==3.14.0
 identify==2.5.36
     # via pre-commit
 isort==5.13.2
-    # via pylint
+    # via
+    #   -r requirements/../../../requirements/devenv.txt
+    #   pylint
 markdown-it-py==3.0.0
     # via rich
 mccabe==0.7.0
@@ -33,6 +37,7 @@ nodeenv==1.8.0
     # via pre-commit
 packaging==24.0
     # via
+    #   -c requirements/_test.txt
     #   black
     #   build
 pathspec==0.12.1
@@ -40,24 +45,31 @@ pathspec==0.12.1
 pip==24.0
     # via pip-tools
 pip-tools==7.4.1
+    # via -r requirements/../../../requirements/devenv.txt
 platformdirs==4.2.1
     # via
     #   black
     #   pylint
     #   virtualenv
 pre-commit==3.7.0
+    # via -r requirements/../../../requirements/devenv.txt
 pygments==2.18.0
     # via rich
 pylint==3.1.0
+    # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
 pyyaml==6.0.1
-    # via pre-commit
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_test.txt
+    #   pre-commit
 rich==13.7.1
     # via typer
 ruff==0.4.3
+    # via -r requirements/../../../requirements/devenv.txt
 setuptools==69.5.1
     # via
     #   nodeenv
@@ -66,6 +78,7 @@ shellingham==1.5.4
     # via typer
 tomli==2.0.1
     # via
+    #   -c requirements/_test.txt
     #   black
     #   build
     #   pip-tools
@@ -73,8 +86,11 @@ tomli==2.0.1
 tomlkit==0.12.4
     # via pylint
 typer==0.12.3
+    # via -r requirements/_tools.in
 typing-extensions==4.11.0
     # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   astroid
     #   black
     #   typer

@@ -359,7 +359,7 @@ def find_changed_node_keys(
             continue
         # if the entry was modified put the new one
         modified_entry = {k: new_dict[k]}
-        if isinstance(new_dict[k], dict):
+        if isinstance(current_dict[k], dict) and isinstance(new_dict[k], dict):
             modified_entry = {
                 k: find_changed_node_keys(
                     current_dict[k], new_dict[k], look_for_removed_keys=True

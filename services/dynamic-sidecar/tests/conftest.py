@@ -21,7 +21,7 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     setenvs_from_dict,
     setenvs_from_envfile,
@@ -36,13 +36,13 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -108,11 +108,6 @@ def state_paths_dirs(container_base_dir: Path) -> list[Path]:
 @pytest.fixture
 def state_exclude_dirs(container_base_dir: Path) -> list[Path]:
     return [container_base_dir / f"exclude_{i}" for i in range(4)]
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

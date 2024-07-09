@@ -284,15 +284,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       // first, update the name if necessary
       const titleSelection = this.getChildControl("title-field").getValue();
       if (this.__studyData["name"] !== titleSelection) {
-        const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(this.__studyData);
-        studyDataCopy.name = titleSelection;
-        const params = {
-          url: {
-            "studyId": studyDataCopy["uuid"]
-          },
-          data: studyDataCopy
-        };
-        await osparc.data.Resources.fetch("studies", "put", params);
+        await this.__updateName(this.__studyData, titleSelection);
       }
 
       // second, update the wallet if necessary
@@ -321,6 +313,15 @@ qx.Class.define("osparc.study.StudyOptions", {
         this.fireEvent("startStudy");
         openButton.setFetching(false);
       }
+    },
+
+    __updateName: function(studyData, name) {
+      return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+        .catch(err => {
+          console.error(err);
+          const msg = this.tr("Something went wrong Renaming");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
+        });
     }
   }
 });

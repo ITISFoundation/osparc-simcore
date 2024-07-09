@@ -16,11 +16,14 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
@@ -72,8 +75,10 @@ async def test_delete_project(
 
     await _request_delete_project(client, user_project, expected.no_content)
 
+    user_id: int = logged_user["id"]
+
     tasks = _crud_api_delete.get_scheduled_tasks(
-        project_uuid=user_project["uuid"], user_id=logged_user["id"]
+        project_uuid=user_project["uuid"], user_id=user_id
     )
 
     if expected.no_content == status.HTTP_204_NO_CONTENT:
@@ -91,9 +96,13 @@ async def test_delete_project(
         expected_calls = [
             call(
                 app=client.app,
-                node_id=service.node_uuid,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=True,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=user_id,
+                    project_id=service.project_id,
+                    node_id=service.node_uuid,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=True,
+                ),
                 progress=mock.ANY,
             )
             for service in fakes

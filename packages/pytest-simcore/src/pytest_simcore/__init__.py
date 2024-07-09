@@ -1,16 +1,13 @@
 # Collection of tests fixtures for integration testing
 from importlib.metadata import version
-from pathlib import Path
 
 import pytest
 
 __version__: str = version("pytest-simcore")
 
 
-def pytest_addoption(parser):
-    simcore_group = parser.getgroup(
-        "simcore", description="options related to pytest simcore"
-    )
+def pytest_addoption(parser: pytest.Parser):
+    simcore_group = parser.getgroup("simcore", description="pytest-simcore options")
     simcore_group.addoption(
         "--keep-docker-up",
         action="store_true",
@@ -18,16 +15,11 @@ def pytest_addoption(parser):
         help="Keep stack/registry up after fixtures closes",
     )
 
-    simcore_group.addoption(
-        "--external-envfile",
-        action="store",
-        type=Path,
-        default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
-    )
 
-    # DUMMY
-    parser.addini("HELLO", "Dummy pytest.ini setting")
+@pytest.fixture(scope="session")
+def keep_docker_up(request: pytest.FixtureRequest) -> bool:
+    flag: bool = bool(request.config.getoption(name="--keep-docker-up", default=False))
+    return flag
 
 
 @pytest.fixture

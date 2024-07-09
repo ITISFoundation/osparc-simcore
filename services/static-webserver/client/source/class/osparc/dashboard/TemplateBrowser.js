@@ -138,7 +138,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (!card.isLocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
-        this._openDetailsView(templateData);
+        this._openResourceDetails(templateData);
       }
       this.resetSelection();
     },
@@ -189,6 +189,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       this._addGroupByButton();
       this._addViewModeButton();
+
+      this._addResourceFilter();
 
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
@@ -249,17 +251,15 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __updateTemplates: async function(uniqueTemplatesData) {
       for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
-        osparc.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
-        const params = {
-          url: {
-            "studyId": studyData["uuid"]
-          },
-          data: studyData
-        };
-        await osparc.data.Resources.fetch("studies", "put", params)
-          .then(updatedData => {
-            this._updateTemplateData(updatedData);
-          })
+        const templatePromises = [];
+        for (const nodeId in studyData["workbench"]) {
+          const newVersion = osparc.metadata.ServicesInStudyUpdate.getLatestVersion(studyData, nodeId)
+          if (newVersion) {
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, "version", newVersion));
+          }
+        }
+        Promise.all(templatePromises)
+          .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
             if ("message" in err) {
               osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -364,20 +364,15 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
 
-      const params = {
-        url: {
-          "studyId": studyData.uuid
-        }
-      };
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
-        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
-        params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch("templates", "put", params);
+        delete arCopy[myGid];
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch("templates", "delete", params, studyData.uuid);
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))

@@ -109,6 +109,11 @@ async def _process_start_event(
         project_name=msg.project_name,
         node_id=msg.node_id,
         node_name=msg.node_name,
+        parent_project_id=msg.parent_project_id,
+        root_parent_project_id=msg.root_parent_project_id,
+        root_parent_project_name=msg.root_parent_project_name,
+        parent_node_id=msg.parent_node_id,
+        root_parent_node_id=msg.root_parent_node_id,
         service_key=msg.service_key,
         service_version=msg.service_version,
         service_type=service_type,
@@ -181,7 +186,7 @@ async def _process_heartbeat_event(
         _logger.info("Nothing to update: %s", msg)
         return
 
-    if running_service.wallet_id and running_service.pricing_unit_cost:
+    if running_service.wallet_id and running_service.pricing_unit_cost is not None:
         # Compute currently used credits
         computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
@@ -263,7 +268,7 @@ async def _process_stop_event(
         _logger.error("Nothing to update. This should not happen investigate.")
         return
 
-    if running_service.wallet_id and running_service.pricing_unit_cost:
+    if running_service.wallet_id and running_service.pricing_unit_cost is not None:
         # Compute currently used credits
         computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,

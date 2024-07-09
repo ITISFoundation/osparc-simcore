@@ -20,7 +20,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.settings import AppSettings
@@ -41,9 +41,6 @@ pytest_simcore_core_services_selection = [
 def disable_modules_setup(mock_exclusive: None, mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.core.application"
     mocker.patch(f"{module_base}.db.setup", autospec=True, return_value=False)
-    mocker.patch(
-        f"{module_base}.api_keys_manager.setup", autospec=True, return_value=False
-    )
     mocker.patch(
         f"{module_base}.resource_usage_tracker_client.setup",
         autospec=True,
@@ -91,11 +88,6 @@ async def socketio_server(
 
     async with socketio_server_factory(settings.DIRECTOR_V2_RABBITMQ) as server:
         yield server
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint()
 
 
 @pytest.fixture

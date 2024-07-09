@@ -22,8 +22,8 @@ from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from yarl import URL
@@ -35,8 +35,8 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -251,11 +251,6 @@ def file_on_s3_server(
 @pytest.fixture
 def job_id() -> str:
     return "some_incredible_string"
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

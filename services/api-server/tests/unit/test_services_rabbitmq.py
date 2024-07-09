@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Final, Literal
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import httpx
 import pytest
@@ -26,9 +27,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import ValidationError
 from pytest_mock import MockerFixture, MockFixture
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     delenvs_from_dict,
     setenvs_from_dict,
@@ -44,8 +45,7 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
-    LogStreamerNotRegistered,
-    LogStreamerRegistionConflict,
+    LogStreamerRegistionConflictError,
 )
 from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
@@ -54,19 +54,14 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = []
 
-_logger = logging.getLogger()
-_faker: Faker = Faker()
-
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
-    mocker: MockerFixture,
 ) -> EnvVarsDict:
     # do not init other services
-
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
         monkeypatch,
@@ -84,21 +79,6 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
     mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return parse_obj_as(UserID, faker.pyint())
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return parse_obj_as(ProjectID, faker.uuid4())
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> NodeID:
-    return parse_obj_as(NodeID, faker.uuid4())
 
 
 @pytest.fixture
@@ -154,7 +134,7 @@ async def test_subscribe_publish_receive_logs(
 
 
 @asynccontextmanager
-async def rabbit_consuming_context(
+async def _rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
@@ -207,7 +187,7 @@ async def test_multiple_producers_and_single_consumer(
 ):
     await produce_logs("lost", project_id)
 
-    async with rabbit_consuming_context(app, project_id) as consumer_message_handler:
+    async with _rabbit_consuming_context(app, project_id) as consumer_message_handler:
         # multiple producers
         asyncio.gather(
             *[
@@ -239,7 +219,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(LogStreamerRegistionConflict):
+    with pytest.raises(LogStreamerRegistionConflictError):
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -367,14 +347,13 @@ async def log_streamer_with_distributor(
     )
 
     assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    async with LogStreamer(
+    yield LogStreamer(
         user_id=user_id,
         director2_api=d2_client,
         job_id=project_id,
         log_distributor=log_distributor,
         log_check_timeout=1,
-    ) as log_streamer:
-        yield log_streamer
+    )
 
     assert len(log_distributor._log_streamers.keys()) == 0
 
@@ -452,13 +431,20 @@ async def test_log_streamer_not_raise_with_distributor(
     assert ii == 0
 
 
+class _MockLogDistributor:
+    async def register(self, job_id: UUID, queue: asyncio.Queue):
+        return None
+
+    async def deregister(self, job_id: None):
+        return None
+
+
 async def test_log_generator(mocker: MockFixture, faker: Faker):
     mocker.patch(
         "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
-    log_streamer._is_registered = True
+    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1)  # type: ignore
 
     published_logs: list[str] = []
     for _ in range(10):
@@ -475,13 +461,6 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         collected_logs.append(job_log.messages[0])
 
     assert published_logs == collected_logs
-
-
-async def test_log_generator_context(mocker: MockFixture, faker: Faker):
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
-    with pytest.raises(LogStreamerNotRegistered):
-        async for log in log_streamer.log_generator():
-            print(log)
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])

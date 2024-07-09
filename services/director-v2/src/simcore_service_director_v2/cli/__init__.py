@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Final
 
+import rich
 import typer
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -9,6 +10,7 @@ from settings_library.utils_cli import create_settings_command
 
 from ..core.settings import AppSettings
 from ..meta import PROJECT_NAME
+from ..modules.osparc_variables import substitutions
 from ._close_and_save_service import async_close_and_save_service
 from ._core import (
     async_free_service_disk_space,
@@ -26,8 +28,9 @@ DEFAULT_TASK_UPDATE_INTERVAL_S: Final[int] = 1
 
 main = typer.Typer(name=PROJECT_NAME)
 
-log = logging.getLogger(__name__)
-main.command()(create_settings_command(settings_cls=AppSettings, logger=log))
+_logger = logging.getLogger(__name__)
+
+main.command()(create_settings_command(settings_cls=AppSettings, logger=_logger))
 
 
 @main.command()
@@ -122,3 +125,10 @@ def close_and_save_service(
             update_interval,
         )
     )
+
+
+@main.command()
+def osparc_variables():
+    """Lists all registered osparc session variables"""
+    for name in substitutions.list_osparc_session_variables():
+        rich.print(name)

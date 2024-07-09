@@ -126,11 +126,6 @@ def service_version() -> str:
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return ProjectID(faker.uuid4())
 

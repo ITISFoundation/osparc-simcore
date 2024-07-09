@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": "Orchestrates the pipeline of services defined by the user",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "servers": [
     {
@@ -88,15 +88,23 @@
               }
             }
           },
+          "404": {
+            "description": "Project or pricing details not found"
+          },
+          "406": {
+            "description": "Cluster not found"
+          },
+          "503": {
+            "description": "Service not available"
+          },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "description": "Configuration error"
+          },
+          "402": {
+            "description": "Payment required"
+          },
+          "409": {
+            "description": "Project already started"
           }
         }
       }
@@ -2494,7 +2502,8 @@
           },
           "wallet_info": {
             "wallet_id": 1,
-            "wallet_name": "My Wallet"
+            "wallet_name": "My Wallet",
+            "wallet_credit_amount": 10
           },
           "pricing_info": {
             "pricing_plan_id": 1,
@@ -3859,12 +3868,17 @@
           "wallet_name": {
             "type": "string",
             "title": "Wallet Name"
+          },
+          "wallet_credit_amount": {
+            "type": "number",
+            "title": "Wallet Credit Amount"
           }
         },
         "type": "object",
         "required": [
           "wallet_id",
-          "wallet_name"
+          "wallet_name",
+          "wallet_credit_amount"
         ],
         "title": "WalletInfo"
       },

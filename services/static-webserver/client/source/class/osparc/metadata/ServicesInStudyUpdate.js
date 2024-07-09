@@ -52,31 +52,17 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       return false;
     },
 
-    updateService: function(studyData, nodeId, newVersion) {
+    getLatestVersion: function(studyData, nodeId) {
       if (nodeId in studyData["workbench"]) {
-        if (newVersion === undefined) {
-          const node = studyData["workbench"][nodeId];
-          newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
-        }
-        for (const id in studyData["workbench"]) {
-          if (id === nodeId) {
-            studyData["workbench"][nodeId]["version"] = newVersion;
+        const node = studyData["workbench"][nodeId];
+        if (osparc.service.Utils.isUpdatable(node)) {
+          const newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
+          if (newVersion["version"] !== node["version"]) {
+            return newVersion["version"];
           }
         }
       }
-    },
-
-    updateAllServices: function(studyData, updatableNodeIds) {
-      for (const nodeId in studyData["workbench"]) {
-        if (updatableNodeIds && !updatableNodeIds.includes(nodeId)) {
-          continue;
-        }
-        const node = studyData["workbench"][nodeId];
-        if (osparc.service.Utils.isUpdatable(node)) {
-          const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
-          this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
-        }
-      }
+      return null;
     },
 
     colorVersionLabel: function(versionLabel, metadata) {
@@ -137,16 +123,17 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }
     },
 
-    __updateService: function(nodeId, newVersion, button) {
-      this.setEnabled(false);
-      this.self().updateService(this._studyData, nodeId, newVersion);
-      this._updateStudy(button);
+    __updateService: async function(nodeId, newVersion, button) {
+      await this._patchNode(nodeId, "version", newVersion, button);
     },
 
-    __updateAllServices: function(updatableNodeIds, button) {
-      this.setEnabled(false);
-      this.self().updateAllServices(this._studyData, updatableNodeIds);
-      this._updateStudy(button);
+    __updateAllServices: async function(updatableNodeIds, button) {
+      for (const updatableNodeId of updatableNodeIds) {
+        const newVersion = this.self().getLatestVersion(this._studyData, updatableNodeId);
+        if (newVersion) {
+          await this.__updateService(updatableNodeId, newVersion, button);
+        }
+      }
     },
 
     _populateHeader: function() {

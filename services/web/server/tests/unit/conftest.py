@@ -15,8 +15,8 @@ from unittest.mock import MagicMock
 import pytest
 import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_projects import empty_project_data
+from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.webserver_projects import empty_project_data
 from simcore_service_webserver.rest._utils import (
     get_openapi_specs_path,
     load_openapi_specs,

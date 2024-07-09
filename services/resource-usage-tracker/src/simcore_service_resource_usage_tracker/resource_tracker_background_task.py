@@ -94,7 +94,7 @@ async def _close_unhealthy_service(
         return
 
     # 2. Close the billing transaction (as not billed)
-    if running_service.wallet_id and running_service.pricing_unit_cost:
+    if running_service.wallet_id and running_service.pricing_unit_cost is not None:
         computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
             running_service.last_heartbeat_at,

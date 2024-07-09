@@ -230,7 +230,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         osparc.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
         extraInfo.push({
-          label: this.tr("QUAILITY"),
+          label: this.tr("QUALITY"),
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getEditButton(),
@@ -345,9 +345,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateService({
-          "name": newLabel
-        });
+        this.__patchService("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -363,7 +361,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openAccessRights: function() {
       const permissionsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
-      permissionsView.addListener("updateService", e => {
+      permissionsView.addListener("updateAccessRights", e => {
         const updatedServiceData = e.getData();
         this.setService(updatedServiceData);
         this.fireDataEvent("updateService", updatedServiceData);
@@ -404,9 +402,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();
-        this.__updateService({
-          "thumbnail": validUrl
-        });
+        this.__patchService("thumbnail", validUrl);
       }, this);
       thumbnailEditor.addListener("cancel", () => win.close());
     },
@@ -418,31 +414,24 @@ qx.Class.define("osparc.info.ServiceLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateService({
-          "description": newDescription
-        });
+        this.__patchService("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __updateService: function(data) {
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this.getService()["key"],
-          this.getService()["version"]
-        ),
-        data: data
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.setService(serviceData);
-          this.fireDataEvent("updateService", serviceData);
+    __patchService: function(key, value) {
+      const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
+      osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, key, value)
+        .then(() => {
+          this.setService(serviceDataCopy);
+          this.fireDataEvent("updateService", this.getService());
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

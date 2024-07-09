@@ -3,12 +3,12 @@
 # pylint: disable=unused-variable
 
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 import yaml
-from service_integration.commands.metadata import TargetVersionChoices
+from service_integration.cli._metadata import TargetVersionChoices
 
 
 @pytest.fixture

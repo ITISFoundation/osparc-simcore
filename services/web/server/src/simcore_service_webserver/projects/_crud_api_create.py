@@ -32,9 +32,15 @@ from ..storage.api import (
 )
 from ..users.api import get_user_fullname
 from . import projects_api
+from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ParentNodeNotFoundError,
+    ParentProjectNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .models import ProjectDict
 from .utils import NodesMap, clone_project_document, default_copy_project_name
 
@@ -210,8 +216,9 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(
+async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, PLR0913
     task_progress: TaskProgress,
+    *,
     request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
@@ -221,6 +228,8 @@ async def create_project(
     product_name: str,
     predefined_project: ProjectDict | None,
     simcore_user_agent: str,
+    parent_project_uuid: ProjectID | None,
+    parent_node_id: NodeID | None,
 ) -> None:
     """Implements TaskProtocol for 'create_projects' handler
 
@@ -286,9 +295,15 @@ async def create_project(
             hidden=copy_data,
             project_nodes=project_nodes,
         )
-        task_progress.update(
-            message=f"inserted project {new_project['uuid']=} into the db"
+        # add parent linking if needed
+        await set_project_ancestors(
+            request.app,
+            user_id=user_id,
+            project_uuid=new_project["uuid"],
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
         )
+        task_progress.update()
 
         # 4. deep copy source project's files
         if copy_file_coro:
@@ -303,7 +318,7 @@ async def create_project(
         await api.update_dynamic_service_networks_in_project(
             request.app, ProjectID(new_project["uuid"])
         )
-        task_progress.update(message="updated network information in directorv2")
+        task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await api.create_or_update_pipeline(
@@ -320,7 +335,7 @@ async def create_project(
             is_template=as_template,
             app=request.app,
         )
-        task_progress.update(message=f"appended state to {new_project['uuid']}")
+        task_progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
@@ -341,6 +356,16 @@ async def create_project(
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
+
+    except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+        if project_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(
+                app=request.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                simcore_user_agent=simcore_user_agent,
+            )
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     except asyncio.CancelledError:
         log.warning(

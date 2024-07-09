@@ -38,7 +38,6 @@ info: ## displays package info
 	@echo ' PACKAGE_VERSION      : ${PACKAGE_VERSION}'
 
 
-
 #
 # SUBTASKS
 #

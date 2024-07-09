@@ -34,7 +34,7 @@ qx.Class.define("osparc.ui.form.FileInput", {
     });
     this.getContentElement().add(this.__input);
 
-    this.__selectBtn = new qx.ui.form.Button(this.tr("Select a file..."));
+    this.__selectBtn = new qx.ui.form.Button(this.tr("Select File..."));
     this._add(this.__selectBtn);
 
     this.__selectedFiles = new qx.ui.basic.Label();
@@ -62,6 +62,10 @@ qx.Class.define("osparc.ui.form.FileInput", {
     __input: null,
     __selectBtn: null,
     __selectedFiles: null,
+
+    getButton: function() {
+      return this.__selectBtn;
+    },
 
     __attachEventHandlers: function() {
       this.__input.addListener("change", () => {

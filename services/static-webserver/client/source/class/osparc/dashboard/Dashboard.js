@@ -42,8 +42,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
     this.set({
-      contentPaddingTop: 15,
-      contentPaddingLeft: 0,
+      contentPadding: this.self().PADDING,
+      contentPaddingBottom: 0,
       barPosition: "top"
     });
 
@@ -69,6 +69,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       init: "dashboard",
       refine: true
     }
+  },
+
+  statics: {
+    PADDING: 15
   },
 
   members: {
@@ -162,7 +166,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getVisibleMembers());
+      preResourcePromises.push(store.getAllGroupsAndMembers());
       preResourcePromises.push(store.getAllServices(true));
       if (permissions.canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));

@@ -10,7 +10,11 @@ from typing import Any
 import pytest
 import yaml
 from models_library.service_settings_labels import SimcoreServiceSettingLabelEntry
-from service_integration.osparc_config import MetaConfig, RuntimeConfig, SettingsItem
+from service_integration.osparc_config import (
+    MetadataConfig,
+    RuntimeConfig,
+    SettingsItem,
+)
 
 
 @pytest.fixture
@@ -44,7 +48,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
 def test_load_from_labels(
     labels: dict[str, str], labels_fixture_name: str, tmp_path: Path
 ):
-    meta_cfg = MetaConfig.from_labels_annotations(labels)
+    meta_cfg = MetadataConfig.from_labels_annotations(labels)
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
     assert runtime_cfg.callbacks_mapping is not None
 
@@ -56,7 +60,7 @@ def test_load_from_labels(
         config_path = (
             tmp_path / f"{model.__class__.__name__.lower()}-{labels_fixture_name}.yml"
         )
-        with open(config_path, "wt") as fh:
+        with open(config_path, "w") as fh:
             data = json.loads(
                 model.json(exclude_unset=True, by_alias=True, exclude_none=True)
             )

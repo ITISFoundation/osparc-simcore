@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from collections.abc import AsyncIterator, Callable
 from random import randint
-from typing import Any, AsyncIterator, Callable, Dict
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -32,7 +33,7 @@ async def mock_db_manager(
     project_id: str,
     node_uuid: str,
 ) -> AsyncIterator[Callable]:
-    def _mock_db_manager(port_cfg: Dict[str, Any]) -> DBManager:
+    def _mock_db_manager(port_cfg: dict[str, Any]) -> DBManager:
         async def mock_get_ports_configuration_from_node_uuid(*args, **kwargs) -> str:
             return json.dumps(port_cfg)
 
@@ -57,4 +58,4 @@ async def mock_db_manager(
         db_manager = DBManager()
         return db_manager
 
-    yield _mock_db_manager
+    return _mock_db_manager

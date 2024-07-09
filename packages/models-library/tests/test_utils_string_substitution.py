@@ -15,7 +15,7 @@ from models_library.utils.string_substitution import (
     substitute_all_legacy_identifiers,
     upgrade_identifier,
 )
-from pytest_simcore.helpers.utils_envs import load_dotenv
+from pytest_simcore.helpers.monkeypatch_envs import load_dotenv
 
 
 @pytest.mark.parametrize(

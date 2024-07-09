@@ -22,7 +22,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
@@ -217,11 +217,6 @@ async def cleanup_test_dynamic_sidecar_service(
     assert (
         await async_docker_client.services.delete(dynamic_sidecar_service_name) is True
     )
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

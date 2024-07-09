@@ -17,15 +17,21 @@ import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from models_library.utils.json_serialization import json_dumps
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
@@ -55,6 +61,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -66,8 +73,7 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.websocket_client",
+    "pytest_simcore.socketio_client",
 ]
 
 
@@ -168,15 +174,18 @@ def monkeypatch_setenv_from_app_config(
 
 
 @pytest.fixture
-def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
+async def request_create_project() -> (  # noqa: C901, PLR0915
+    AsyncIterator[Callable[..., Awaitable[ProjectDict]]]
+):
     """this fixture allows to create projects through the webserver interface
-
-        NOTE: a next iteration should take care of cleaning up created projects
 
     Returns:
         Callable[..., Awaitable[ProjectDict]]: _description_
     """
     # pylint: disable=too-many-statements
+
+    created_project_uuids = []
+    used_clients = []
 
     async def _setup(
         client: TestClient,
@@ -185,6 +194,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
     ):
         # Pre-defined fields imposed by required properties in schema
         project_data: ProjectDict = {}
@@ -238,8 +249,16 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             url = url.update_query(as_template=f"{as_template}")
         if copy_data is not None:
             url = url.update_query(copy_data=f"{copy_data}")
-
-        return url, project_data, expected_data
+        headers = {}
+        if parent_project_uuid is not None:
+            headers |= {
+                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
+            }
+        if parent_node_id is not None:
+            headers |= {
+                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
+            }
+        return url, project_data, expected_data, headers
 
     async def _creator(
         client: TestClient,
@@ -252,16 +271,20 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        parent_project_uuid: ProjectID | None = None,
+        parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
-        url, project_data, expected_data = await _setup(
+        url, project_data, expected_data, headers = await _setup(
             client,
             project=project,
             from_study=from_study,
             as_template=as_template,
             copy_data=copy_data,
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
         )
 
-        resp = await client.post(f"{url}", json=project_data)
+        resp = await client.post(f"{url}", json=project_data, headers=headers)
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_accepted_response)
         if error:
@@ -357,6 +380,14 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 
+        created_project_uuids.append(new_project["uuid"])
+        used_clients.append(client)
+
         return new_project
 
-    return _creator
+    yield _creator
+
+    # cleanup projects
+    for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
+        url = client.app.router["delete_project"].url_for(project_id=project_uuid)
+        await client.delete(url.path)

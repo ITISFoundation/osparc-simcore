@@ -5,7 +5,7 @@
 import httpx
 import pytest
 from moto.server import ThreadedMotoServer
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.api.health import _StatusGet
 from starlette import status
 

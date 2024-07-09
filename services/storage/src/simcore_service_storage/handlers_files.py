@@ -278,7 +278,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         ),
     )
     request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
-    complete_task_state_url = request.url.join(
+    ip_addr, port = request.transport.get_extra_info(
+        "sockname"
+    )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+    route = (
         request.app.router["is_completed_upload_file"]
         .url_for(
             location_id=f"{path_params.location_id}",
@@ -287,9 +290,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         )
         .with_query(user_id=query_params.user_id)
     )
+    complete_task_state_url = f"{request.url.scheme}://{ip_addr}:{port}{route}"
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
-            state=parse_obj_as(AnyUrl, f"{complete_task_state_url}")
+            state=parse_obj_as(AnyUrl, complete_task_state_url)
         )
     )
     return web.json_response(

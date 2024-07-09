@@ -1,9 +1,9 @@
 import logging
-from contextlib import suppress
 from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI
+from httpx import AsyncClient
 
 from .app_data import AppDataMixin
 
@@ -29,8 +29,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp = await self.client.get(self.health_check_path, timeout=1)
             resp.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError) as err:
-            _logger.error("%s not responsive: %s", self.service_name, err)
+        except (httpx.HTTPStatusError, httpx.RequestError):
             return False
 
     ping = is_responsive  # alias
@@ -50,19 +49,8 @@ def setup_client_instance(
 
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
-    # Http client class
-    client: httpx.AsyncClient = httpx.AsyncClient(base_url=api_baseurl)
-    with suppress(AttributeError):
-        # NOTE that this is a general function with no guarantees as when is going to be used.
-        # Here, 'AttributeError' might be raied when app.state.settings is still not initialized
-        if capture_path := app.state.settings.API_SERVER_DEV_HTTP_CALLS_LOGS_PATH:
-            from pytest_simcore.helpers.httpx_client_base_dev import (
-                AsyncClientForDevelopmentOnly,
-            )
-
-            client = AsyncClientForDevelopmentOnly(
-                capture_file=capture_path, base_url=api_baseurl
-            )
+    # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
+    client = AsyncClient(base_url=api_baseurl)
 
     # events
     def _create_instance() -> None:

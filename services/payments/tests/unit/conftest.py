@@ -25,9 +25,8 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
+from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import payments_transactions
@@ -193,7 +192,7 @@ async def app(
 @pytest.fixture
 def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
     """
-    If external_environment is present, then this mock is not really used
+    If external_envfile_dict is present, then this mock is not really used
     and instead the test runs against some real services
     """
     settings: ApplicationSettings = app.state.settings
@@ -383,10 +382,10 @@ def mock_payments_gateway_service_or_none(
     mock_payments_gateway_service_api_base: MockRouter,
     mock_payments_routes: Callable,
     mock_payments_methods_routes: Callable,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ) -> MockRouter | None:
     # EITHER tests against external payments-gateway
-    if payments_gateway_url := external_environment.get("PAYMENTS_GATEWAY_URL"):
+    if payments_gateway_url := external_envfile_dict.get("PAYMENTS_GATEWAY_URL"):
         print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
         mock_payments_gateway_service_api_base.stop()
         return None
@@ -405,7 +404,7 @@ def mock_payments_gateway_service_or_none(
 @pytest.fixture
 def mock_payments_stripe_api_base(app: FastAPI) -> Iterator[MockRouter]:
     """
-    If external_environment is present, then this mock is not really used
+    If external_envfile_dict is present, then this mock is not really used
     and instead the test runs against some real services
     """
     settings: ApplicationSettings = app.state.settings
@@ -452,7 +451,10 @@ def mock_payments_stripe_routes(faker: Faker) -> Callable:
 
 
 @pytest.fixture(scope="session")
-def external_stripe_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
+def external_stripe_environment(
+    request: pytest.FixtureRequest,
+    external_envfile_dict: EnvVarsDict,
+) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.
@@ -460,16 +462,11 @@ def external_stripe_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     This technique allows reusing the same tests to check against
     external development/production servers
     """
-    envs = {}
-    if envfile := request.config.getoption("--external-envfile"):
-        assert isinstance(envfile, Path)
-        assert envfile.is_file()
-        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
-        envs = load_dotenv(envfile)
-        assert "PAYMENTS_STRIPE_API_SECRET" in envs
-        assert "PAYMENTS_STRIPE_URL" in envs
-
-    return envs
+    if external_envfile_dict:
+        assert "PAYMENTS_STRIPE_API_SECRET" in external_envfile_dict
+        assert "PAYMENTS_STRIPE_URL" in external_envfile_dict
+        return external_envfile_dict
+    return {}
 
 
 @pytest.fixture(scope="session")

@@ -7,7 +7,7 @@
 import pytest
 from fastapi import FastAPI, status
 from models_library.payments import StripeInvoiceID
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.services.stripe import StripeApi, setup_stripe

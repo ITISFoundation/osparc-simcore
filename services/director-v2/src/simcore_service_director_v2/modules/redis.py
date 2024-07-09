@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from servicelib.redis import RedisClientsManager
+from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase
 
 from ..core.settings import AppSettings
@@ -10,9 +10,12 @@ def setup(app: FastAPI) -> None:
         settings: AppSettings = app.state.settings
 
         app.state.redis_clients_manager = redis_clients_manager = RedisClientsManager(
-            databases={
-                RedisDatabase.LOCKS,
-                RedisDatabase.DISTRIBUTED_IDENTIFIERS,
+            databases_configs={
+                RedisManagerDBConfig(db)
+                for db in (
+                    RedisDatabase.LOCKS,
+                    RedisDatabase.DISTRIBUTED_IDENTIFIERS,
+                )
             },
             settings=settings.REDIS,
         )

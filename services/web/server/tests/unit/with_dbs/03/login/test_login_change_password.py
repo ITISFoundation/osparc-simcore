@@ -5,8 +5,8 @@
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import LoggedUser
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.login._constants import (

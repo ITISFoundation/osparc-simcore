@@ -10,9 +10,9 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFound
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFoundError
 from simcore_service_director_v2.modules.db.repositories.projects import (
     ProjectsRepository,
 )
@@ -121,5 +121,5 @@ async def test_get_project_id_from_node(
         )
 
     not_existing_node_id = faker.uuid4(cast_to=None)
-    with pytest.raises(ProjectNodesNodeNotFound):
+    with pytest.raises(ProjectNodesNodeNotFoundError):
         await project_repository.get_project_id_from_node(not_existing_node_id)

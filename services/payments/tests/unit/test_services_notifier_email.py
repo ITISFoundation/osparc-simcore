@@ -13,10 +13,10 @@ from faker import Faker
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
@@ -36,38 +36,27 @@ from simcore_service_payments.services.notifier_email import (
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    external_environment: EnvVarsDict,
-    docker_compose_service_payments_env_vars: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_env_vars,
-            **external_environment,
+            **docker_compose_service_environment_dict,
+            **external_envfile_dict,
         },
     )
 
 
-@pytest.fixture(scope="session")
-def external_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-email", default=None)
-    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
-
-
-@pytest.fixture
-def user_email(user_email: EmailStr, external_email: EmailStr | None) -> EmailStr:
-    if external_email:
-        print("📧 EXTERNAL using in test", f"{external_email=}")
-        return external_email
-    return user_email
-
-
 @pytest.fixture
 def smtp_mock_or_none(
-    mocker: MockerFixture, external_email: EmailStr | None
+    mocker: MockerFixture,
+    is_external_user_email: bool,
+    user_email: EmailStr,
 ) -> MagicMock | None:
-    if not external_email:
+    if not is_external_user_email:
         return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
+    print("🚨 Emails might be sent to", f"{user_email=}")
     return None
 
 
@@ -97,7 +86,6 @@ async def test_send_email_workflow(
     tmp_path: Path,
     faker: Faker,
     transaction: PaymentsTransactionsDB,
-    external_email: str | None,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
@@ -107,7 +95,7 @@ async def test_send_email_workflow(
     """
     Example of usage with external email and envfile
 
-        > pytest --external-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
+        > pytest --faker-user-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
     """
 
     settings = SMTPSettings.create_from_envs()

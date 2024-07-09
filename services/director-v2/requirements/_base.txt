@@ -1,18 +1,64 @@
 aio-pika==9.4.1
-aiocache==0.12.2
-aiodebug==2.3.0
-aiodocker==0.21.0
-aiofiles==23.2.1
-aiohttp==3.9.3
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
+aiocache==0.12.2
+    # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
+aiodebug==2.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
+aiofiles==23.2.1
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+aiohttp==3.9.5
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
     #   dask-gateway
 aiopg==1.4.0
+    # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiormq==6.8.0
     # via aio-pika
 aiosignal==1.3.1
     # via aiohttp
 alembic==1.13.1
+    # via
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==4.3.0
     # via
     #   fast-depends
@@ -21,6 +67,16 @@ anyio==4.3.0
     #   starlette
     #   watchfiles
 arrow==1.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.3
     # via
     #   aiohttp
@@ -37,12 +93,31 @@ attrs==23.2.0
 bidict==0.23.1
     # via python-socketio
 blosc==1.11.1
+    # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 certifi==2024.2.2
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
 click==8.1.7
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   dask-gateway
     #   distributed
@@ -50,15 +125,20 @@ click==8.1.7
     #   uvicorn
 cloudpickle==3.0.0
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-dask==2023.3.2
+dask==2024.5.1
     # via
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
 dask-gateway==2024.1.0
-distributed==2023.3.2
+    # via -r requirements/_base.in
+distributed==2024.5.1
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   dask-gateway
 dnspython==2.6.1
@@ -67,19 +147,45 @@ email-validator==2.1.1
     # via
     #   fastapi
     #   pydantic
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via anyio
 fast-depends==2.4.2
     # via faststream
 fastapi==0.99.1
-    # via prometheus-fastapi-instrumentator
-faststream==0.5.2
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
+    #   prometheus-fastapi-instrumentator
+faststream==0.5.10
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.3.1
-    # via dask
+fsspec==2024.5.0
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
 greenlet==3.0.3
     # via sqlalchemy
 h11==0.14.0
@@ -92,41 +198,110 @@ httpcore==1.0.5
 httptools==0.6.1
     # via uvicorn
 httpx==0.27.0
-    # via fastapi
-idna==3.6
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
+    #   fastapi
+idna==3.7
     # via
     #   anyio
     #   email-validator
     #   httpx
     #   yarl
 importlib-metadata==7.1.0
-    # via dask
-itsdangerous==2.1.2
-    # via fastapi
-jinja2==3.1.3
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
+itsdangerous==2.2.0
+    # via fastapi
+jinja2==3.1.4
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   fastapi
-jsonschema==4.21.1
+jsonschema==4.22.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2023.7.1
     # via jsonschema
 locket==1.0.0
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   partd
 lz4==4.3.3
-mako==1.3.2
-    # via alembic
+    # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+mako==1.3.5
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   jinja2
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.0.8
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   aiocache
     #   distributed
 multidict==6.0.5
@@ -134,62 +309,195 @@ multidict==6.0.5
     #   aiohttp
     #   yarl
 networkx==3.3
+    # via -r requirements/_base.in
 numpy==1.26.4
+    # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 ordered-set==4.1.0
-orjson==3.10.0
-    # via fastapi
+    # via -r requirements/_base.in
+orjson==3.10.3
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/_base.in
+    #   fastapi
 packaging==24.0
     # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
 pamqp==3.3.0
     # via aiormq
-partd==1.4.1
-    # via dask
+partd==1.4.2
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask
 pint==0.23
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 prometheus-client==0.20.0
-    # via prometheus-fastapi-instrumentator
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 psutil==5.9.8
-    # via distributed
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
 pydantic==1.10.15
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
     #   fast-depends
     #   fastapi
-pygments==2.17.2
+pygments==2.18.0
     # via rich
 pyinstrument==4.6.2
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
 python-dotenv==1.0.1
     # via
     #   pydantic
     #   uvicorn
-python-engineio==4.9.0
+python-engineio==4.9.1
     # via python-socketio
 python-multipart==0.0.9
     # via fastapi
 python-socketio==5.11.2
+    # via -r requirements/_base.in
 pyyaml==6.0.1
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   dask-gateway
     #   distributed
     #   fastapi
     #   uvicorn
-redis==5.0.3
-    # via aiocache
+redis==5.0.4
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
+    #   aiocache
 referencing==0.29.3
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rich==13.7.1
-    # via typer
-rpds-py==0.18.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/_base.in
+    #   typer
+rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
@@ -204,28 +512,92 @@ sniffio==1.3.1
     #   anyio
     #   httpx
 sortedcontainers==2.4.0
-    # via distributed
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 sqlalchemy==1.4.52
     # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
 starlette==0.27.0
-    # via fastapi
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 tblib==3.0.0
-    # via distributed
-tenacity==8.2.3
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+tenacity==8.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 toolz==0.12.1
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
     #   partd
 tornado==6.4
     # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-tqdm==4.66.2
-typer==0.12.1
-    # via faststream
+tqdm==4.66.4
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+typer==0.12.3
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+    #   faststream
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.11.0
@@ -240,12 +612,51 @@ typing-extensions==4.11.0
     #   pydantic
     #   typer
     #   uvicorn
-ujson==5.9.0
-    # via fastapi
-urllib3==2.0.7
-    # via distributed
+ujson==5.10.0
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
+urllib3==2.2.1
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
 uvicorn==0.29.0
-    # via fastapi
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   fastapi
 uvloop==0.19.0
     # via uvicorn
 watchfiles==0.21.0
@@ -256,10 +667,16 @@ wsproto==1.2.0
     # via simple-websocket
 yarl==1.9.4
     # via
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
 zict==3.0.0
-    # via distributed
-zipp==3.18.1
-    # via importlib-metadata
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   distributed
+zipp==3.18.2
+    # via
+    #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   importlib-metadata

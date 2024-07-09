@@ -21,10 +21,10 @@ from faker import Faker
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
@@ -93,7 +93,6 @@ async def published_project(
         user_id=None,
         as_template=True,  # <--IS a template
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
@@ -119,7 +118,6 @@ async def unpublished_project(
         user_id=None,
         as_template=True,
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project

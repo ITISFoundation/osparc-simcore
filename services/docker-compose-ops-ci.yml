@@ -17,7 +17,6 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: "3.8"
 
 services:
   minio:

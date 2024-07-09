@@ -20,12 +20,12 @@ qx.Class.define("osparc.share.Collaborators", {
   type: "abstract",
 
   /**
-    * @param serializedData {Object} Object containing the Serialized Data
+    * @param serializedDataCopy {Object} Object containing the Serialized Data
     */
-  construct: function(serializedData, initCollabs = []) {
+  construct: function(serializedDataCopy, initCollabs = []) {
     this.base(arguments);
 
-    this._serializedData = serializedData;
+    this._serializedDataCopy = serializedDataCopy;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -150,7 +150,7 @@ qx.Class.define("osparc.share.Collaborators", {
   },
 
   members: {
-    _serializedData: null,
+    _serializedDataCopy: null,
     _resourceType: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
@@ -182,13 +182,13 @@ qx.Class.define("osparc.share.Collaborators", {
           });
           break;
         case "study-link":
-          control = this.self().createStudyLinkSection(this._serializedData);
+          control = this.self().createStudyLinkSection(this._serializedDataCopy);
           this._add(control);
           // excluded by default
           control.exclude();
           break;
         case "template-link":
-          control = this.self().createTemplateLinkSection(this._serializedData);
+          control = this.self().createTemplateLinkSection(this._serializedDataCopy);
           this._add(control);
           // excluded by default
           control.exclude();
@@ -224,7 +224,7 @@ qx.Class.define("osparc.share.Collaborators", {
         allowGrowX: false
       });
       addCollaboratorBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedDataCopy);
         collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this._addEditors(e.getData(), cb);
@@ -318,20 +318,20 @@ qx.Class.define("osparc.share.Collaborators", {
       if (
         (this._resourceType === "study") &&
         // check the study is shared
-        (Object.keys(this._serializedData["accessRights"]).length > 1) &&
+        (Object.keys(this._serializedDataCopy["accessRights"]).length > 1) &&
         // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
-        (this._serializedData["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
+        (this._serializedDataCopy["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
       ) {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
         })).set({
           allowGrowX: false,
-          visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
+          visibility: Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
         leaveButton.addListener("execute", () => {
-          let msg = this._serializedData["name"] + " " + this.tr("will no longer be listed.");
-          if (!osparc.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
+          let msg = this._serializedDataCopy["name"] + " " + this.tr("will no longer be listed.");
+          if (!osparc.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedDataCopy, myGid)) {
             msg += "<br>";
             msg += this.tr("If you remove yourself, there won't be any other Owners.");
           }
@@ -355,7 +355,12 @@ qx.Class.define("osparc.share.Collaborators", {
     _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const accessRights = this._serializedData["accessRights"];
+      const store = osparc.store.Store.getInstance();
+      const everyoneGIds = [
+        store.getEveryoneProductGroup()["gid"],
+        store.getEveryoneGroup()["gid"]
+      ];
+      const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
@@ -363,6 +368,7 @@ qx.Class.define("osparc.share.Collaborators", {
           // Do not override collaborator object
           const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
+            // user
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(
               `${"first_name" in collaborator && collaborator["first_name"] != null ?
@@ -370,6 +376,11 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
+          } else if (everyoneGIds.includes(parseInt(gid))) {
+            // everyone product or everyone
+            if (collaborator["thumbnail"] === null) {
+              collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            }
           }
           collaborator["accessRights"] = accessRights[gid];
           collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();

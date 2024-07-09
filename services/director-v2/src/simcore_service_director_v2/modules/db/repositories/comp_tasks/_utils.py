@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from decimal import Decimal
 from typing import Any, Final, cast
 
 import aiopg.sa
@@ -15,15 +16,15 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.resource_tracker import HardwareInfo, PricingInfo
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import (
-    ServiceDockerData,
     ServiceKey,
     ServiceKeyVersion,
+    ServiceMetaDataPublished,
     ServiceVersion,
 )
 from models_library.services_resources import (
@@ -34,6 +35,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS, WalletInfo
 from pydantic import parse_obj_as
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
@@ -45,8 +47,13 @@ from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
 )
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 
-from .....core.errors import ClustersKeeperNotAvailableError, ConfigurationError
+from .....core.errors import (
+    ClustersKeeperNotAvailableError,
+    ConfigurationError,
+    WalletNotEnoughCreditsError,
+)
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from .....models.pricing import PricingInfo
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.comp_scheduler import COMPLETED_STATES
 from .....utils.computations import to_node_class
@@ -65,7 +72,7 @@ _logger = logging.getLogger(__name__)
 #
 # Examples are nodes like file-picker or parameter/*
 #
-_FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
+_FRONTEND_SERVICES_CATALOG: dict[str, ServiceMetaDataPublished] = {
     meta.key: meta for meta in iter_service_docker_data()
 }
 
@@ -75,14 +82,17 @@ async def _get_service_details(
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> ServiceDockerData:
+) -> ServiceMetaDataPublished:
     service_details = await catalog_client.get_service(
         user_id,
         node.key,
         node.version,
         product_name,
     )
-    return ServiceDockerData.construct(**service_details)
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.construct(
+        **service_details
+    )
+    return obj
 
 
 def _compute_node_requirements(
@@ -126,7 +136,9 @@ async def _get_node_infos(
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[ServiceDockerData | None, ServiceExtras | None, SimcoreServiceLabels | None]:
+) -> tuple[
+    ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None
+]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
@@ -135,7 +147,7 @@ async def _get_node_infos(
         )
 
     result: tuple[
-        ServiceDockerData, ServiceExtras, SimcoreServiceLabels
+        ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels
     ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
         director_client.get_service_extras(node.key, node.version),
@@ -201,17 +213,12 @@ async def _get_pricing_and_hardware_infos(
     # this will need to move away and be in sync.
     if output:
         pricing_plan_id, pricing_unit_id = output
-        pricing_unit_get = await rut_client.get_pricing_unit(
-            product_name, pricing_plan_id, pricing_unit_id
-        )
-        pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-        aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
     else:
         (
             pricing_plan_id,
             pricing_unit_id,
-            pricing_unit_cost_id,
-            aws_ec2_instances,
+            _,
+            _,
         ) = await rut_client.get_default_pricing_and_hardware_info(
             product_name, node_key, node_version
         )
@@ -222,10 +229,17 @@ async def _get_pricing_and_hardware_infos(
             pricing_unit_id=pricing_unit_id,
         )
 
+    pricing_unit_get = await rut_client.get_pricing_unit(
+        product_name, pricing_plan_id, pricing_unit_id
+    )
+    pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+    aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
+
     pricing_info = PricingInfo(
         pricing_plan_id=pricing_plan_id,
         pricing_unit_id=pricing_unit_id,
         pricing_unit_cost_id=pricing_unit_cost_id,
+        pricing_unit_cost=pricing_unit_get.current_cost_per_unit,
     )
     hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
     return pricing_info, hardware_info
@@ -323,7 +337,7 @@ async def generate_tasks_list_from_project(
     product_name: str,
     connection: aiopg.sa.connection.SAConnection,
     rut_client: ResourceUsageTrackerClient,
-    is_wallet: bool,
+    wallet_info: WalletInfo | None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
@@ -373,17 +387,29 @@ async def generate_tasks_list_from_project(
         pricing_info, hardware_info = await _get_pricing_and_hardware_infos(
             connection,
             rut_client,
-            is_wallet=is_wallet,
+            is_wallet=bool(wallet_info),
             project_id=project.uuid,
             node_id=NodeID(node_id),
             product_name=product_name,
             node_key=node.key,
             node_version=node.version,
         )
+        # Check for zero credits (if pricing unit is greater than 0).
+        if (
+            wallet_info
+            and pricing_info
+            and pricing_info.pricing_unit_cost > Decimal(0)
+            and wallet_info.wallet_credit_amount <= ZERO_CREDITS
+        ):
+            raise WalletNotEnoughCreditsError(
+                wallet_name=wallet_info.wallet_name,
+                wallet_credit_amount=wallet_info.wallet_credit_amount,
+            )
+
         assert rabbitmq_rpc_client  # nosec
         await _update_project_node_resources_from_hardware_info(
             connection,
-            is_wallet=is_wallet,
+            is_wallet=bool(wallet_info),
             project_id=project.uuid,
             node_id=NodeID(node_id),
             hardware_info=hardware_info,
@@ -420,7 +446,9 @@ async def generate_tasks_list_from_project(
             last_heartbeat=None,
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
-            pricing_info=pricing_info.dict() if pricing_info else None,
+            pricing_info=pricing_info.dict(exclude={"pricing_unit_cost"})
+            if pricing_info
+            else None,
             hardware_info=hardware_info,
         )
 

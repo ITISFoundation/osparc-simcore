@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from urllib.parse import quote
 
-from ..services import Author, ServiceDockerData, ServiceKey, ServiceVersion
+from ..services import Author, ServiceKey, ServiceMetaDataPublished, ServiceVersion
 from ._settings import AUTHORS, FunctionServiceSettings
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class ServiceNotFound(KeyError):
 
 @dataclass
 class _Record:
-    meta: ServiceDockerData
+    meta: ServiceMetaDataPublished
     implementation: Callable | None = None
     is_under_development: bool = False
 
@@ -44,14 +44,14 @@ class FunctionServices:
 
     def add(
         self,
-        meta: ServiceDockerData,
+        meta: ServiceMetaDataPublished,
         implementation: Callable | None = None,
         is_under_development: bool = False,
     ):
         """
         raises ValueError
         """
-        if not isinstance(meta, ServiceDockerData):
+        if not isinstance(meta, ServiceMetaDataPublished):
             msg = f"Expected ServiceDockerData, got {type(meta)}"
             raise ValueError(msg)
 
@@ -89,7 +89,7 @@ class FunctionServices:
                 continue
             yield key, value
 
-    def iter_metadata(self) -> Iterator[ServiceDockerData]:
+    def iter_metadata(self) -> Iterator[ServiceMetaDataPublished]:
         """WARNING: this function might skip services marked as 'under development'"""
         for _, f in self._items():
             yield f.meta
@@ -115,7 +115,7 @@ class FunctionServices:
 
     def get_metadata(
         self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceDockerData:
+    ) -> ServiceMetaDataPublished:
         """raises ServiceNotFound"""
         try:
             func = self._functions[(service_key, service_version)]

@@ -28,9 +28,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from settings_library.rabbit import RabbitSettings
 from starlette import status
 from starlette.testclient import TestClient
@@ -596,7 +596,7 @@ async def test_run_computation(
         cluster_id=DEFAULT_CLUSTER_ID,
     )
 
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
     with pytest.raises(
@@ -835,7 +835,7 @@ async def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_403_FORBIDDEN}"):
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
         await create_pipeline(
             async_client,
             project=sleepers_project,
@@ -1035,7 +1035,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
         },
     )
     assert (
-        response.status_code == status.HTTP_403_FORBIDDEN
+        response.status_code == status.HTTP_409_CONFLICT
     ), f"response code is {response.status_code}, error: {response.text}"
 
     # still this pipeline shall be createable if we do not want to start it

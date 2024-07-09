@@ -33,7 +33,7 @@ class SMTPSettings(BaseCustomSettings):
 
     @root_validator
     @classmethod
-    def both_credentials_must_be_set(cls, values):
+    def _both_credentials_must_be_set(cls, values):
         username = values.get("SMTP_USERNAME")
         password = values.get("SMTP_PASSWORD")
 
@@ -45,7 +45,7 @@ class SMTPSettings(BaseCustomSettings):
 
     @root_validator
     @classmethod
-    def enabled_tls_required_authentication(cls, values):
+    def _enabled_tls_required_authentication(cls, values):
         smtp_protocol = values.get("SMTP_PROTOCOL")
 
         username = values.get("SMTP_USERNAME")

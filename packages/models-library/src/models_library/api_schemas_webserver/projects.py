@@ -10,7 +10,11 @@ from typing import Any, Literal, TypeAlias
 from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import HttpUrlWithCustomMinLength, IDStr
+from ..basic_types import (
+    HttpUrlWithCustomMinLength,
+    LongTruncatedStr,
+    ShortTruncatedStr,
+)
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
@@ -85,8 +89,8 @@ class ProjectListItem(ProjectGet):
 
 class ProjectReplace(InputSchema):
     uuid: ProjectID
-    name: str
-    description: str
+    name: ShortTruncatedStr
+    description: LongTruncatedStr
     thumbnail: HttpUrlWithCustomMinLength | None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -107,8 +111,8 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectUpdate(InputSchema):
-    name: str = FieldNotRequired()
-    description: str = FieldNotRequired()
+    name: ShortTruncatedStr = FieldNotRequired()
+    description: LongTruncatedStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     workbench: NodesDict = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
@@ -118,13 +122,9 @@ class ProjectUpdate(InputSchema):
     quality: dict[str, Any] = FieldNotRequired()
 
 
-ProjectName: TypeAlias = IDStr
-ProjectDescription: TypeAlias = IDStr
-
-
 class ProjectPatch(InputSchema):
-    name: ProjectName = FieldNotRequired()
-    description: ProjectDescription = FieldNotRequired()
+    name: ShortTruncatedStr = FieldNotRequired()
+    description: LongTruncatedStr = FieldNotRequired()
     thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
     classifiers: list[ClassifierID] = FieldNotRequired()

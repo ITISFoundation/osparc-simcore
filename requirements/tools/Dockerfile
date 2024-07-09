@@ -8,8 +8,8 @@
 #   - Can be installed with pyenv (SEE pyenv install --list )
 #
 #
-ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM python:${PYTHON_VERSION}-slim-bookworm as base
 
 ENV VIRTUAL_ENV=/home/scu/.venv
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 RUN uv venv "${VIRTUAL_ENV}"
 

@@ -16,8 +16,8 @@ from models_library.api_schemas_payments.errors import (
     PaymentNotFoundError,
 )
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
@@ -37,7 +37,7 @@ pytest_simcore_ops_services_selection = [
 def app_environment(
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
@@ -49,7 +49,7 @@ def app_environment(
         {
             **app_environment,
             **postgres_env_vars_dict,
-            **external_environment,
+            **external_envfile_dict,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
@@ -66,10 +66,10 @@ def app(
 
 @pytest.fixture
 async def client(
-    client: httpx.AsyncClient, external_environment: EnvVarsDict
+    client: httpx.AsyncClient, external_envfile_dict: EnvVarsDict
 ) -> AsyncIterator[httpx.AsyncClient]:
     # EITHER tests against external payments API
-    if external_base_url := external_environment.get("PAYMENTS_SERVICE_API_BASE_URL"):
+    if external_base_url := external_envfile_dict.get("PAYMENTS_SERVICE_API_BASE_URL"):
         # If there are external secrets, build a new client and point to `external_base_url`
         print(
             "🚨 EXTERNAL: tests running against external payment API at",

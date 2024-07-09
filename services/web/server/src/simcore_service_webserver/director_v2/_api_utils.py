@@ -1,7 +1,7 @@
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.wallets import WalletID, WalletInfo
 from pydantic import parse_obj_as
 
 from ..application_settings import get_application_settings
@@ -10,7 +10,6 @@ from ..projects import api as projects_api
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_api
-from ..wallets.errors import WalletNotEnoughCreditsError
 
 
 async def get_wallet_info(
@@ -54,8 +53,8 @@ async def get_wallet_info(
         wallet_id=project_wallet_id,
         product_name=product_name,
     )
-    if wallet.available_credits <= ZERO_CREDITS:
-        raise WalletNotEnoughCreditsError(
-            reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
-        )
-    return WalletInfo(wallet_id=project_wallet_id, wallet_name=wallet.name)
+    return WalletInfo(
+        wallet_id=project_wallet_id,
+        wallet_name=wallet.name,
+        wallet_credit_amount=wallet.available_credits,
+    )

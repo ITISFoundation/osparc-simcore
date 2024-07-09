@@ -3,31 +3,19 @@
 # pylint: disable=unused-variable
 
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
-import pytest
 import yaml
-
-
-@pytest.fixture
-def compose_file_path(metadata_file_path: Path) -> Path:
-    # TODO: should pass with non-existing docker-compose-meta.yml file
-    compose_file_path: Path = metadata_file_path.parent / "docker-compose-meta.yml"
-    assert not compose_file_path.exists()
-
-    # minimal
-    compose_file_path.write_text(
-        yaml.dump({"services": {"osparc-python-runner": {"build": {"labels": {}}}}})
-    )
-    return compose_file_path
+from service_integration.compose_spec_model import ComposeSpecification
+from service_integration.osparc_config import MetadataConfig
 
 
 def test_make_docker_compose_meta(
     run_program_with_args: Callable,
-    project_file_path: Path,
+    docker_compose_overwrite_path: Path,
     metadata_file_path: Path,
-    compose_file_path: Path,
+    tmp_path: Path,
 ):
     """
     docker-compose-build.yml: $(metatada)
@@ -35,25 +23,33 @@ def test_make_docker_compose_meta(
         simcore-service-integrator compose --metadata $< --to-spec-file $@
     """
 
+    target_compose_specs = tmp_path / "docker-compose.yml"
+    metadata_cfg = MetadataConfig.from_yaml(metadata_file_path)
+
     result = run_program_with_args(
         "compose",
         "--metadata",
         str(metadata_file_path),
         "--to-spec-file",
-        compose_file_path,
+        target_compose_specs,
     )
     assert result.exit_code == os.EX_OK, result.output
 
-    assert compose_file_path.exists()
+    # produces a compose spec
+    assert target_compose_specs.exists()
 
-    compose_cfg = yaml.safe_load(compose_file_path.read_text())
-    metadata_cfg = yaml.safe_load(metadata_file_path.read_text())
+    # valid compose specs
+    compose_cfg = ComposeSpecification.parse_obj(
+        yaml.safe_load(target_compose_specs.read_text())
+    )
+    assert compose_cfg.services
 
-    # TODO: compare labels vs metadata
-    service_name = metadata_cfg["key"].split("/")[-1]
-    compose_labels = compose_cfg["services"][service_name]["build"]["labels"]
+    # compose labels vs metadata fild
+    compose_labels = compose_cfg.services[metadata_cfg.service_name()].build.labels
 
     assert compose_labels
-    # schema of expected
+    assert isinstance(compose_labels.__root__, dict)
 
-    # deserialize content and should fit metadata_cfg
+    assert (
+        MetadataConfig.from_labels_annotations(compose_labels.__root__) == metadata_cfg
+    )

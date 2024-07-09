@@ -1,17 +1,18 @@
 from typing import Final
 
-from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
+from ...services import ServiceMetaDataPublished, ServiceType
+from ...services_constants import LATEST_INTEGRATION_VERSION
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
-def _create_metadata(type_name: str) -> ServiceDockerData:
+def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
     """
     Represents a parameter (e.g. "x":5) in a study
 
     This is a parametrized node (or param-node in short)
     """
-    meta = ServiceDockerData.parse_obj(
+    meta = ServiceMetaDataPublished.parse_obj(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/{type_name}",
@@ -44,7 +45,7 @@ META_NUMBER: Final = _create_metadata(type_name="number")
 META_BOOL: Final = _create_metadata(type_name="boolean")
 META_INT: Final = _create_metadata(type_name="integer")
 META_STR: Final = _create_metadata(type_name="string")
-META_ARRAY: Final = ServiceDockerData.parse_obj(
+META_ARRAY: Final = ServiceMetaDataPublished.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/array",

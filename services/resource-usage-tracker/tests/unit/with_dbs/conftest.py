@@ -19,8 +19,8 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -98,6 +98,11 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
             "project_name": faker.word(),
             "node_id": faker.uuid4(),
             "node_name": faker.word(),
+            "parent_project_id": faker.uuid4(),
+            "root_parent_project_id": faker.uuid4(),
+            "root_parent_project_name": faker.pystr(),
+            "parent_node_id": faker.uuid4(),
+            "root_parent_node_id": faker.uuid4(),
             "service_key": "simcore/services/dynamic/jupyter-smash",
             "service_version": "3.0.7",
             "service_type": "DYNAMIC_SERVICE",
@@ -238,6 +243,11 @@ def random_rabbit_message_start(
             "project_name": faker.pystr(),
             "node_id": faker.uuid4(),
             "node_name": faker.pystr(),
+            "parent_project_id": faker.uuid4(),
+            "root_parent_project_id": faker.uuid4(),
+            "root_parent_project_name": faker.pystr(),
+            "parent_node_id": faker.uuid4(),
+            "root_parent_node_id": faker.uuid4(),
             "service_key": "simcore/services/comp/itis/sleeper",
             "service_version": "2.1.6",
             "service_type": "computational",

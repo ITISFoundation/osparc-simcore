@@ -11,8 +11,8 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings

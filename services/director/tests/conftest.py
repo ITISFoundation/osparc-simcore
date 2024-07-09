@@ -18,7 +18,6 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
     "pytest_simcore.pytest_global_environs",
 ]
 

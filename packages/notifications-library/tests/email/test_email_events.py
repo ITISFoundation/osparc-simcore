@@ -2,7 +2,13 @@
 These tests can be run against external configuration
 
 cd packages/notifications-library
-pytest --external-envfile=.my-env --external-support-email=support@email.com  --external-user-email=my@email.com tests/email
+make install-dev
+
+pytest \
+    --external-envfile=.my-env \
+    --faker-support-email=support@email.com  \
+    --faker-user-email=my@email.com \
+    tests/email
 
 """
 

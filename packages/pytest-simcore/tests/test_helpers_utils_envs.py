@@ -1,7 +1,7 @@
 from pathlib import Path
 from textwrap import dedent
 
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, load_dotenv
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, load_dotenv
 
 
 def test_load_envfile(tmp_path: Path):

@@ -18,6 +18,10 @@ class ProjectMetadataDict(TypedDict, total=False):
     parent_node_name: str
     parent_project_id: ProjectID
     parent_project_name: str
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
+    root_parent_node_id: NodeID
+    root_parent_node_name: str
 
 
 class RunMetadataDict(TypedDict, total=False):

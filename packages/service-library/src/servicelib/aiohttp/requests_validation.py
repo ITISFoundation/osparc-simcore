@@ -173,6 +173,21 @@ def parse_request_query_parameters_as(
         return model
 
 
+def parse_request_headers_as(
+    parameters_schema_cls: type[ModelClass],
+    request: web.Request,
+    *,
+    use_enveloped_error_v1: bool = True,
+) -> ModelClass:
+    with handle_validation_as_http_error(
+        error_msg_template="Invalid parameter/s '{failed}' in request headers",
+        resource_name=request.rel_url.path,
+        use_error_v1=use_enveloped_error_v1,
+    ):
+        data = dict(request.headers)
+        return parameters_schema_cls.parse_obj(data)
+
+
 async def parse_request_body_as(
     model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,

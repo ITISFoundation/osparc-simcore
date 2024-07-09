@@ -1,10 +1,9 @@
 # pylint: disable=too-many-arguments
-# pylint: disable=W0613
 
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated, Any, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
@@ -16,22 +15,34 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS
 from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
-from starlette.background import BackgroundTask
 
+from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobLog,
+    JobMetadata,
+    JobOutputs,
+)
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.director_v2 import DirectorV2Api
+from ...services.jobs import (
+    get_custom_metadata,
+    raise_if_job_not_associated_with_solver,
+)
 from ...services.log_streaming import LogDistributor, LogStreamer
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
@@ -41,10 +52,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCredits, MissingWallet
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
@@ -87,10 +95,14 @@ _PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_200_OK: {
+        "description": "Returns a JobLog or an ErrorGet",
+        "model": Union[JobLog, ErrorGet],
+    },
     status.HTTP_409_CONFLICT: {
         "description": "Conflict: Logs are already being streamed",
         "model": ErrorGet,
-    }
+    },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 router = APIRouter()
@@ -124,7 +136,7 @@ async def list_jobs(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver.name, limit=20, offset=0
+        solver_name=solver.name, limit=20, offset=0
     )
 
     jobs: deque[Job] = deque()
@@ -168,7 +180,7 @@ async def get_jobs_page(
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
     projects_page = await webserver_api.get_projects_w_solver_page(
-        solver.name, limit=page_params.limit, offset=page_params.offset
+        solver_name=solver.name, limit=page_params.limit, offset=page_params.offset
     )
 
     jobs: list[Job] = [
@@ -229,15 +241,16 @@ async def get_job_outputs(
     assert len(node_ids) == 1  # nosec
 
     product_price = await webserver_api.get_product_price()
-    if product_price is not None:
+    if product_price.usd_per_credit is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
-            msg = f"Job {project.uuid} does not have an associated wallet."
-            raise MissingWallet(msg)
+            raise MissingWalletError(job_id=project.uuid)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
-        if wallet_with_credits.available_credits < 0.0:
-            msg = f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
-            raise InsufficientCredits(msg)
+        if wallet_with_credits.available_credits <= ZERO_CREDITS:
+            raise InsufficientCreditsError(
+                wallet_name=wallet_with_credits.name,
+                wallet_credit_amount=wallet_with_credits.available_credits,
+            )
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
@@ -259,7 +272,7 @@ async def get_job_outputs(
                 results[name] = to_file_api_model(found[0])
             else:
                 api_file: File = await storage_client.create_soft_link(
-                    user_id, value.path, file_id
+                    user_id=user_id, target_s3_path=value.path, as_file_id=file_id
                 )
                 results[name] = api_file
         else:
@@ -292,16 +305,17 @@ async def get_job_output_logfile(
 
     project_id = job_id
 
-    logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(
+    log_link_map = await director2_api.get_computation_logs(
         user_id=user_id, project_id=project_id
     )
+    logs_urls = log_link_map.log_links
 
     _logger.debug(
         "Found %d logfiles for %s %s: %s",
         len(logs_urls),
         f"{project_id=}",
         f"{user_id=}",
-        list(logs_urls.keys()),
+        list(elm.download_link for elm in logs_urls),
     )
 
     # if more than one node? should rezip all of them??
@@ -309,7 +323,8 @@ async def get_job_output_logfile(
         len(logs_urls) <= 1
     ), "Current version only supports one node per solver"
 
-    for presigned_download_link in logs_urls.values():
+    for log_link in logs_urls:
+        presigned_download_link = log_link.download_link
         _logger.info(
             "Redirecting '%s' to %s ...",
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
@@ -345,25 +360,17 @@ async def get_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    try:
-        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
-        return JobMetadata(
+    return await get_custom_metadata(
+        job_name=job_name,
+        job_id=job_id,
+        webserver_api=webserver_api,
+        self_url=url_for(
+            "get_job_custom_metadata",
+            solver_key=solver_key,
+            version=version,
             job_id=job_id,
-            metadata=project_metadata.custom,
-            url=url_for(
-                "get_job_custom_metadata",
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            ),
-        )
-
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} ",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+        ),
+    )
 
 
 @router.get(
@@ -428,6 +435,8 @@ async def get_log_stream(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     log_check_timeout: Annotated[NonNegativeInt, Depends(get_log_check_timeout)],
 ):
+    assert request  # nosec
+
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
@@ -441,8 +450,6 @@ async def get_log_stream(
             log_distributor=log_distributor,
             log_check_timeout=log_check_timeout,
         )
-        await log_streamer.setup()
         return LogStreamingResponse(
             log_streamer.log_generator(),
-            background=BackgroundTask(log_streamer.teardown),
         )

@@ -9,7 +9,7 @@ from typing import Any, NamedTuple
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_group
+from pytest_simcore.helpers.faker_factories import random_group
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.services import (

@@ -9,7 +9,7 @@ import pytest
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp.client_exceptions import ClientConnectionError
 from aioresponses import aioresponses
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from simcore_sdk.node_ports_common.storage_client import retry_request
 
 _ROUTE_ALWAYS_200_OK: Final[str] = "http://always-200-ok"

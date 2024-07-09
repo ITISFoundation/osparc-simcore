@@ -11,8 +11,9 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import parse_file_as
-from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
     JobInputs,
@@ -102,7 +103,7 @@ async def test_get_and_update_job_metadata(
 ):
     # create Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         json=JobInputs(
             values={
@@ -118,7 +119,7 @@ async def test_get_and_update_job_metadata(
 
     # Get metadata
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -129,7 +130,7 @@ async def test_get_and_update_job_metadata(
     # Update metadata
     my_metadata = {"number": 3.14, "integer": 42, "string": "foo", "boolean": True}
     resp = await client.patch(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
         json=JobMetadataUpdate(metadata=my_metadata).dict(),
     )
@@ -140,7 +141,7 @@ async def test_get_and_update_job_metadata(
 
     # Get metadata after update
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -150,14 +151,14 @@ async def test_get_and_update_job_metadata(
 
     # Delete job
     resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
     # Get metadata -> job not found!
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND

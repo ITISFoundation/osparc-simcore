@@ -3,7 +3,6 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-version: "3.8"
 x-common-environment: &common-environment
   # Enforces *_DEBUG option in all services. ONLY allowed in devel-mode!
   DEBUG : "true"
@@ -100,6 +99,14 @@ services:
 
     volumes:
       - ./director-v2:/devel/services/director-v2
+      - ../packages:/devel/packages
+
+  efs-guardian:
+    environment:
+      <<: *common-environment
+      EFS_GUARDIAN_LOGLEVEL: DEBUG
+    volumes:
+      - ./efs-guardian:/devel/services/efs-guardian
       - ../packages:/devel/packages
 
   static-webserver:

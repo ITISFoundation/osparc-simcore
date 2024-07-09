@@ -2,10 +2,10 @@
 
 """
 
-from pydantic import BaseModel, Field
-from pydantic.types import PositiveInt
 
-GroupId = PositiveInt
+from pydantic import BaseModel, Field
+
+from .users import GroupID
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -19,7 +19,7 @@ class ServiceGroupAccessRights(BaseModel):
 
 
 class ServiceAccessRights(BaseModel):
-    access_rights: dict[GroupId, ServiceGroupAccessRights] | None = Field(
+    access_rights: dict[GroupID, ServiceGroupAccessRights] | None = Field(
         None,
         alias="accessRights",
         description="service access rights per group id",

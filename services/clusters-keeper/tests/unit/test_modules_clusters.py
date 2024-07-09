@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper._meta import VERSION as APP_VERSION
 from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 from simcore_service_clusters_keeper.core.settings import (
@@ -35,11 +35,6 @@ from simcore_service_clusters_keeper.utils.ec2 import (
     HEARTBEAT_TAG_KEY,
 )
 from types_aiobotocore_ec2 import EC2Client
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture

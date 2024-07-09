@@ -1,22 +1,29 @@
 certifi==2024.2.2
-    # via requests
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.3.2
     # via requests
 coverage==7.5.1
-    # via pytest-cov
-docker==7.0.0
+    # via
+    #   -r requirements/_test.in
+    #   pytest-cov
+docker==7.1.0
+    # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via pytest
 faker==25.0.1
+    # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
 idna==3.7
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 iniconfig==2.0.0
     # via pytest
 packaging==24.0
     # via
-    #   docker
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
@@ -25,6 +32,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 pytest==8.2.0
     # via
+    #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
@@ -32,21 +40,39 @@ pytest==8.2.0
     #   pytest-mock
     #   pytest-sugar
 pytest-asyncio==0.21.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 pytest-cov==5.0.0
+    # via -r requirements/_test.in
 pytest-icdiff==0.9
+    # via -r requirements/_test.in
 pytest-instafail==0.5.0
+    # via -r requirements/_test.in
 pytest-mock==3.14.0
+    # via -r requirements/_test.in
 pytest-runner==6.0.1
+    # via -r requirements/_test.in
 pytest-sugar==1.0.0
+    # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 python-dotenv==1.0.1
+    # via -r requirements/_test.in
 pyyaml==6.0.1
-requests==2.31.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
+requests==2.32.2
     # via docker
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   -c requirements/_base.txt
+    #   python-dateutil
 tenacity==8.2.3
+    # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
@@ -55,5 +81,6 @@ tomli==2.0.1
     #   pytest
 urllib3==2.2.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests

@@ -7,27 +7,23 @@ from typing import Final
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 
+from .._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
+from ..exceptions.log_streaming_errors import (
+    LogStreamerNotRegisteredError,
+    LogStreamerRegistionConflictError,
+)
 from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
 _logger = logging.getLogger(__name__)
 
 _NEW_LINE: Final[str] = "\n"
-
-
-class LogDistributionBaseException(Exception):
-    pass
-
-
-class LogStreamerNotRegistered(LogDistributionBaseException):
-    pass
-
-
-class LogStreamerRegistionConflict(LogDistributionBaseException):
-    pass
 
 
 class LogDistributor:
@@ -66,15 +62,14 @@ class LogDistributor:
             queue = self._log_streamers.get(item.job_id)
             if queue is None:
                 msg = f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-                raise LogStreamerNotRegistered(msg)
+                raise LogStreamerNotRegisteredError(job_id=item.job_id, details=msg)
             await queue.put(item)
             return True
         return False
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
-            msg = f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
-            raise LogStreamerRegistionConflict(msg)
+            raise LogStreamerRegistionConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -82,8 +77,8 @@ class LogDistributor:
 
     async def deregister(self, job_id: JobID):
         if job_id not in self._log_streamers:
-            msg = f"No stream was connected to {job_id=}."
-            raise LogStreamerNotRegistered(msg)
+            msg = f"No stream was connected to {job_id}."
+            raise LogStreamerNotRegisteredError(details=msg, job_id=job_id)
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -109,38 +104,41 @@ class LogStreamer:
         self._queue: Queue[JobLog] = Queue()
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
-        self._is_registered: bool = False
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
-    async def setup(self):
-        await self._log_distributor.register(self._job_id, self._queue)
-        self._is_registered = True
-
-    async def teardown(self):
-        await self._log_distributor.deregister(self._job_id)
-        self._is_registered = False
-
-    async def __aenter__(self):
-        await self.setup()
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.teardown()
-
     async def _project_done(self) -> bool:
-        task = await self._director2_api.get_computation(self._job_id, self._user_id)
+        task = await self._director2_api.get_computation(
+            project_id=self._job_id, user_id=self._user_id
+        )
         return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
-        if not self._is_registered:
-            msg = f"LogStreamer for job_id={self._job_id} is not correctly registered"
-            raise LogStreamerNotRegistered(msg)
-        done: bool = False
-        while not done:
-            try:
-                log: JobLog = await asyncio.wait_for(
-                    self._queue.get(), timeout=self._log_check_timeout
-                )
-                yield log.json() + _NEW_LINE
-            except asyncio.TimeoutError:
-                done = await self._project_done()
+        try:
+            await self._log_distributor.register(self._job_id, self._queue)
+            done: bool = False
+            while not done:
+                try:
+                    log: JobLog = await asyncio.wait_for(
+                        self._queue.get(), timeout=self._log_check_timeout
+                    )
+                    yield log.json() + _NEW_LINE
+                except asyncio.TimeoutError:
+                    done = await self._project_done()
+        except BaseBackEndError as exc:
+            _logger.info("%s", f"{exc}")
+            yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
+        except Exception as exc:  # pylint: disable=W0718
+            error_code = create_error_code(exc)
+            _logger.exception(
+                "Unexpected %s: %s",
+                exc.__class__.__name__,
+                f"{exc}",
+                extra={"error_code": error_code},
+            )
+            yield ErrorGet(
+                errors=[
+                    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
+                ]
+            ).json() + _NEW_LINE
+        finally:
+            await self._log_distributor.deregister(self._job_id)

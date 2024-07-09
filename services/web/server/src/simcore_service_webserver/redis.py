@@ -3,7 +3,7 @@ import logging
 import redis.asyncio as aioredis
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.redis import RedisClientSDK, RedisClientsManager
+from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._constants import APP_SETTINGS_KEY
@@ -32,13 +32,16 @@ async def setup_redis_client(app: web.Application):
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
     app[_APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
-        databases={
-            RedisDatabase.RESOURCES,
-            RedisDatabase.LOCKS,
-            RedisDatabase.VALIDATION_CODES,
-            RedisDatabase.SCHEDULED_MAINTENANCE,
-            RedisDatabase.USER_NOTIFICATIONS,
-            RedisDatabase.ANNOUNCEMENTS,
+        databases_configs={
+            RedisManagerDBConfig(db)
+            for db in (
+                RedisDatabase.RESOURCES,
+                RedisDatabase.LOCKS,
+                RedisDatabase.VALIDATION_CODES,
+                RedisDatabase.SCHEDULED_MAINTENANCE,
+                RedisDatabase.USER_NOTIFICATIONS,
+                RedisDatabase.ANNOUNCEMENTS,
+            )
         },
         settings=redis_settings,
     )

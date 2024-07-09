@@ -64,9 +64,11 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     )
     # BUFFER is not exposed since we set it to 0
     WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        default=datetime.timedelta(minutes=1),
+        description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
     WORKERS_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
@@ -88,6 +90,12 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
+    WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=1),
+        description="Time after which an EC2 instance may be terminated (min 0 max 1 minute) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
     WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Time after which an EC2 instance may be terminated (min 0, max 59 minutes) "
@@ -107,11 +115,8 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        if all(parse_obj_as(InstanceTypeType, key) for key in value):
-            return value
-
-        msg = "Invalid instance type name"
-        raise ValueError(msg)
+        parse_obj_as(list[InstanceTypeType], list(value))
+        return value
 
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
@@ -169,6 +174,14 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ..., description="Password for accessing prometheus data"
     )
 
+    PRIMARY_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=2),
+        description="Usual time taken an EC2 instance with the given AMI takes to startup and be ready to receive jobs "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+        "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
+        "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
+    )
+
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
@@ -176,11 +189,8 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        if all(parse_obj_as(InstanceTypeType, key) for key in value):
-            return value
-
-        msg = "Invalid instance type name"
-        raise ValueError(msg)
+        parse_obj_as(list[InstanceTypeType], list(value))
+        return value
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod

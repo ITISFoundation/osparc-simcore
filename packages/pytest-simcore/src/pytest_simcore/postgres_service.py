@@ -10,14 +10,15 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
-from .helpers.utils_postgres import PostgresTestConfig, migrated_pg_tables_context
+from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
+from .helpers.postgres_tools import PostgresTestConfig, migrated_pg_tables_context
 
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
@@ -200,7 +201,7 @@ def postgres_db(
         yield postgres_engine
 
 
-@pytest.fixture()
+@pytest.fixture
 async def aiopg_engine(
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator:
@@ -216,10 +217,10 @@ async def aiopg_engine(
         await engine.wait_closed()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def sqlalchemy_async_engine(
     postgres_db: sa.engine.Engine,
-) -> AsyncIterator:
+) -> AsyncIterator[AsyncEngine]:
     # NOTE: prevent having to import this if latest sqlalchemy not installed
     from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -232,7 +233,7 @@ async def sqlalchemy_async_engine(
     await engine.dispose()
 
 
-@pytest.fixture()
+@pytest.fixture
 def postgres_env_vars_dict(postgres_dsn: PostgresTestConfig) -> EnvVarsDict:
     return {
         "POSTGRES_USER": postgres_dsn["user"],
@@ -244,7 +245,7 @@ def postgres_env_vars_dict(postgres_dsn: PostgresTestConfig) -> EnvVarsDict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def postgres_host_config(
     postgres_dsn: PostgresTestConfig,
     postgres_env_vars_dict: EnvVarsDict,

@@ -20,6 +20,7 @@ SERVICES_AND_EXIT_CODES = [
     ("dask-sidecar", 0),
     ("datcore-adapter", 0),
     ("director-v2", 0),
+    ("efs-guardian", 0),
     ("migration", 143),
     ("static-webserver", 15),
     ("storage", 0),

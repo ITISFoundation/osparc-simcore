@@ -15,7 +15,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
-from pytest_simcore.helpers.utils_services import list_fake_file_consumers
+from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,

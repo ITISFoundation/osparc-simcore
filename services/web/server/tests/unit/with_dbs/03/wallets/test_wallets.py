@@ -23,8 +23,8 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
