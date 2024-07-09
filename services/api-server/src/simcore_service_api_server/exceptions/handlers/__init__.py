@@ -5,6 +5,7 @@ from simcore_service_api_server.exceptions.backend_errors import BaseBackEndErro
 from starlette import status
 from starlette.exceptions import HTTPException
 
+from ..._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
 from ..custom_errors import CustomBaseError
 from ..log_streaming_errors import LogStreamingBaseError
 from ._custom_errors import custom_error_handler
@@ -14,8 +15,6 @@ from ._http_exceptions import http_exception_handler
 from ._httpx_client_exceptions import handle_httpx_client_exceptions
 from ._log_streaming_errors import log_handling_error_handler
 from ._validation_errors import http422_error_handler
-
-MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
 
 
 def setup(app: FastAPI, *, is_debug: bool = False):
