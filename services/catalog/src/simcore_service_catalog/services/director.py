@@ -2,11 +2,13 @@ import asyncio
 import functools
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.utils.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -17,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 MINUTE = 60
 
-director_startup_retry_policy = {
+_director_startup_retry_policy = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
@@ -34,27 +36,27 @@ class UnresponsiveServiceError(RuntimeError):
 
 async def setup_director(app: FastAPI) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
-        # init client-api
-        _logger.debug("Setup director at %s ...", f"{settings.base_url=}")
-        client = DirectorApi(base_url=settings.base_url, app=app)
+        with log_context(
+            _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
+        ):
 
-        # check that the director is accessible
-        try:
-            async for attempt in AsyncRetrying(**director_startup_retry_policy):
+            client = DirectorApi(base_url=settings.base_url, app=app)
+
+            async for attempt in AsyncRetrying(**_director_startup_retry_policy):
                 with attempt:
                     if not await client.is_responsive():
+                        with suppress(Exception):
+                            await client.close()
                         msg = "Director-v0 is not responsive"
                         raise UnresponsiveServiceError(msg)
 
-                    _logger.info(
-                        "Connection to director-v0 succeded [%s]",
-                        json_dumps(attempt.retry_state.retry_object.statistics),
-                    )
-        except UnresponsiveServiceError:
-            await client.close()
-            raise
+                _logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
 
-        app.state.director_api = client
+            # set when connected
+            app.state.director_api = client
 
 
 async def close_director(app: FastAPI) -> None:
@@ -65,10 +67,7 @@ async def close_director(app: FastAPI) -> None:
     _logger.debug("Director client closed successfully")
 
 
-# DIRECTOR API CLASS ---------------------------------------------
-
-
-def safe_request(
+def _safe_request(
     request_func: Callable[..., Awaitable[httpx.Response]]
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
@@ -153,12 +152,12 @@ class DirectorApi:
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    @safe_request
+    @_safe_request
     async def get(self, path: str) -> httpx.Response:
         # temp solution: default timeout increased to 20"
         return await self.client.get(path, timeout=20.0)
 
-    @safe_request
+    @_safe_request
     async def put(self, path: str, body: dict) -> httpx.Response:
         return await self.client.put(path, json=body)
 
@@ -166,8 +165,8 @@ class DirectorApi:
         try:
             _logger.debug("checking director-v0 is responsive")
             health_check_path: str = "/"
-            result = await self.client.head(health_check_path, timeout=1.0)
-            result.raise_for_status()
+            response = await self.client.head(health_check_path, timeout=1.0)
+            response.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
