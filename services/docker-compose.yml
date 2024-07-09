@@ -1100,8 +1100,6 @@ services:
         "8",
         "--appendonly",
         "yes",
-        "--requirepass",
-        "${REDIS_PASSWORD}"
       ]
     networks:
       - default
@@ -1109,7 +1107,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 30s
       retries: 50
