@@ -82,7 +82,7 @@ qx.Class.define("osparc.study.Utils", {
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
-          if ("retired" in serviceMD) {
+          if ("retired" in serviceMD && serviceMD["retired"]) {
             const retirementDate = new Date(serviceMD["retired"]);
             const currentDate = new Date();
             return retirementDate < currentDate;
@@ -100,7 +100,7 @@ qx.Class.define("osparc.study.Utils", {
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
-          if ("retired" in serviceMD) {
+          if ("retired" in serviceMD && serviceMD["retired"]) {
             const retirementDate = new Date(serviceMD["retired"]);
             const currentDate = new Date();
             return retirementDate > currentDate;
