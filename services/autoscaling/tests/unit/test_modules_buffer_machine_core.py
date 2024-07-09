@@ -485,6 +485,7 @@ def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
 
 async def test_monitor_buffer_machines_against_aws(
     skip_if_external_envfile_dict: None,
+    disable_buffers_pool_background_task: None,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
