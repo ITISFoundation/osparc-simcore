@@ -1,3 +1,6 @@
+# pylint: disable=unused-argument
+# pylint: disable=no-self-use
+
 from datetime import timedelta
 
 from parse import Result, parse
@@ -36,11 +39,11 @@ class LocustSettings(BaseSettings):
         if not isinstance(result, Result):
             return v
         hour = result.named.get("hour")
-        min = result.named.get("min")
+        _min = result.named.get("min")
         sec = result.named.get("sec")
-        if hour is None or min is None or sec is None:
+        if hour is None or _min is None or sec is None:
             raise ValueError("Could not parse time")
-        return timedelta(hours=hour, minutes=min, seconds=sec)
+        return timedelta(hours=hour, minutes=_min, seconds=sec)
 
     @field_serializer("LOCUST_RUN_TIME")
     def serialize_run_time(self, td: timedelta, info: SerializationInfo) -> str:
