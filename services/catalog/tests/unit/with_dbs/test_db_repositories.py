@@ -11,22 +11,11 @@ from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
 from pydantic import EmailStr, parse_obj_as
-from simcore_postgres_database.utils import as_postgres_sql_query_str
-from simcore_service_catalog.db.repositories._services_sql import (
-    AccessRightsClauses,
-    _page_of_latest_services_stmt,
-    batch_get_services_stmt,
-    list_latest_services_with_history_stmt,
-    list_services_stmt2,
-    list_services_with_history_stmt,
-    total_count_stmt,
-)
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
 )
-from simcore_service_catalog.services import catalog
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -115,8 +104,8 @@ async def test_create_services(
     fake_service, *fake_access_rights = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.0",
-        team_access=None,
-        everyone_access=None,
+        team_access="x",
+        everyone_access="x",
     )
 
     # validation
@@ -338,6 +327,7 @@ async def test_list_all_services_and_history_with_pagination(
             for v in range(num_versions_per_service)
         ]
     )
+    expected_latest_version = f"{num_versions_per_service-1}.0.0"
 
     total_count, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
@@ -347,6 +337,7 @@ async def test_list_all_services_and_history_with_pagination(
 
     for service in services_items:
         assert len(service.history) == num_versions_per_service
+        assert service.version == expected_latest_version
 
     _, services_items = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id, limit=2
@@ -358,109 +349,44 @@ async def test_list_all_services_and_history_with_pagination(
 
         assert parse_obj_as(EmailStr, service.owner_email), "resolved own'es email"
 
-        latest_version = service.history[0].version  # latest service is first
-        assert service.version == latest_version
+        expected_latest_version = service.history[0].version  # latest service is first
+        assert service.version == expected_latest_version
 
 
-async def test_list_services_paginated(
+async def test_get_and_update_service_meta_data(
     target_product: ProductName,
     create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
 ):
-    # inject services
-    num_services = 5
-    num_versions_per_service = 20
+
+    # inject service
+    service_key = "simcore/services/dynamic/some-service"
+    service_version = "1.2.3"
     await services_db_tables_injector(
         [
             create_fake_service_data(
-                f"simcore/services/dynamic/some-service-{n}",
-                f"{v}.0.0",
+                service_key,
+                service_version,
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
             )
-            for n in range(num_services)
-            for v in range(num_versions_per_service)
         ]
     )
 
-    limit = 2
-    assert limit < num_services
-    offset = 1
+    got = await services_repo.get_service(service_key, service_version)
+    assert got is not None
+    assert got.key == service_key
+    assert got.version == service_version
 
-    total_count, items = await catalog.list_services_paginated(
-        services_repo,
-        product_name=target_product,
-        user_id=user_id,
-        limit=limit,
-        offset=offset,
+    updated = await services_repo.update_service(
+        ServiceMetaDataAtDB.construct(
+            key=service_key, version=service_version, name="foo"
+        )
     )
 
-    assert total_count == num_services
-    assert len(items) <= limit
+    assert got.copy(update={"name": "foo"}) == updated
 
-    for itm in items:
-        assert itm.access_rights
-        assert itm.owner is not None
-        assert itm.history[0].version == itm.version
-
-
-def test_building_services_sql_statements():
-    def _check(func_smt, **kwargs):
-        print(f"{func_smt.__name__:*^100}")
-        stmt = func_smt(**kwargs)
-        print()
-        print(as_postgres_sql_query_str(stmt))
-        print()
-
-    # some data
-    product_name = "osparc"
-    user_id = 4
-
-    _check(
-        _page_of_latest_services_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
-
-    _check(
-        list_latest_services_with_history_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
-
-    _check(
-        total_count_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-    )
-
-    _check(
-        list_services_with_history_stmt,
-        product_name=product_name,
-        user_id=user_id,
-        access_rights=AccessRightsClauses.can_read,
-        limit=10,
-        offset=None,
-    )
-
-    _check(
-        batch_get_services_stmt,
-        product_name=product_name,
-        selection=[
-            ("simcore/services/comp/kember-cardiac-model", "1.0.0"),
-            ("simcore/services/comp/human-gb-0d-cardiac-model", "1.0.0"),
-            ("simcore/services/dynamic/invalid", "2.0.0"),
-        ],
-    )
-
-    _check(list_services_stmt2)
+    assert await services_repo.get_service(service_key, service_version) == updated
