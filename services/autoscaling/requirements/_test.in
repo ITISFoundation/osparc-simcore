@@ -23,7 +23,6 @@ moto[server]
 psutil
 pytest
 pytest-asyncio
-pytest-clarity
 pytest-cov
 pytest-mock
 pytest-runner
