@@ -171,32 +171,17 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     },
 
     __makeLabelsResponsive: function() {
-      const node = this.getNode();
-      const inputs = node.getInputs();
-      let extendedVersion = false;
-
-      let firstColumnWidth = null;
       const grid = this.getLayout()
-      const firstElement = grid.getCellWidget(0, 0);
-      const secondElement = grid.getCellWidget(0, 1);
-      if (firstElement && secondElement) {
-        const firstCellBounds = firstElement.getBounds();
-        const secondCellBounds = secondElement.getBounds();
-        if (firstCellBounds && secondCellBounds) {
-          const left1 = firstCellBounds.left;
-          const left2 = secondCellBounds.left;
-          firstColumnWidth = left2 - left1;
-          extendedVersion = firstColumnWidth > 300;
-        }
-      }
+      const firstColumnWidth = osparc.utils.Utils.getGridsFirstColumnWidth(grid);
       if (firstColumnWidth === null) {
         // not rendered yet
         setTimeout(() => this.__makeLabelsResponsive(), 100);
         return;
       }
+      const extendedVersion = firstColumnWidth > 300;
 
-      console.log("First column", firstColumnWidth);
-
+      const node = this.getNode();
+      const inputs = node.getInputs();
       if (extendedVersion) {
         // Extend description of Settings
         for (const portId in inputs) {
