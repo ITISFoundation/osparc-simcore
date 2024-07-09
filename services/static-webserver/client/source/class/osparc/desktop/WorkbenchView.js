@@ -999,11 +999,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         spacing: spacing*2
       }));
 
+      this.__serviceOptionsPage.bind("width", vBox, "width");
+
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const inputsForm = node.getPropsForm().set({
-          allowGrowX: false
-        });
+        const inputsForm = node.getPropsForm();
         const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
         inputs._innerContainer.set({
           margin: spacing
