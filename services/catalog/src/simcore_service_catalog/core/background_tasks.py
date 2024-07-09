@@ -38,7 +38,7 @@ ServiceDockerDataMap: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
 
-_errored = set()
+_error_already_logged = set()
 
 
 async def _list_services_in_registry(
@@ -48,7 +48,7 @@ async def _list_services_in_registry(
     registry_services = cast(list[dict[str, Any]], await client.get("/services"))
 
     services: ServiceDockerDataMap = {
-        # services w/o associated image
+        # functional-service: services w/o associated image
         (s.key, s.version): s
         for s in iter_service_docker_data()
     }
@@ -59,12 +59,14 @@ async def _list_services_in_registry(
 
         except ValidationError:  # noqa: PERF203
             errored_service = service.get("key"), service.get("version")
-            _logger.warning(
-                "Skipping '%s:%s' from the catalog of services",
-                *errored_service,
-                exc_info=errored_service not in _errored,
-            )
-            _errored.add(errored_service)
+            if errored_service not in _error_already_logged:
+                _logger.warning(
+                    "Skipping '%s:%s' from the catalog of services! So far %s invalid services in registry.",
+                    *errored_service,
+                    len(_error_already_logged) + 1,
+                    exc_info=True,
+                )
+                _error_already_logged.add(errored_service)
 
     return services
 
