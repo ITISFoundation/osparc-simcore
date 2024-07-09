@@ -93,6 +93,10 @@ class MetadataConfig(ServiceMetaDataPublished):
     Necessary for both image- and runtime-spec
     """
 
+    image_digest: str | None = Field(
+        None, description="this is NOT a label", exclude=True
+    )
+
     @validator("contact")
     @classmethod
     def _check_contact_in_authors(cls, v, values):
