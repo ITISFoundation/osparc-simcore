@@ -7,7 +7,7 @@ LOCUST_VERSION=2.5.1
 export LOCUST_VERSION
 
 # UTILS
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.

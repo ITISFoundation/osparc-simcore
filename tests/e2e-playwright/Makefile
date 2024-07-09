@@ -80,7 +80,7 @@ install-ci-up-simcore: install-ci
 
 
 
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 .PHONY: test-sleepers
 test-sleepers: _check_venv_active ## runs sleepers test on local deploy
