@@ -452,12 +452,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.study.Utils.isWorkbenchUpdatable(workbench)
-          .then(updatable => {
-            if (updatable) {
-              this.setUpdatable("updatable");
-            }
-          });
+        const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
+        if (updatable) {
+          this.setUpdatable("updatable");
+        }
       }
 
       // Block card

@@ -63,23 +63,17 @@ qx.Class.define("osparc.study.Utils", {
       return msg;
     },
 
-    isWorkbenchUpdatable: async function(workbench) {
-      return new Promise(resolve => {
-        const store = osparc.store.Store.getInstance();
-        store.getAllServices()
-          .then(allServices => {
-            const services = new Set(this.extractServices(workbench));
-            const filtered = [];
-            services.forEach(srv => {
-              const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
-              if (idx === -1) {
-                filtered.push(srv);
-              }
-            });
-            const isUpdatable = filtered.some(srv => osparc.service.Utils.isUpdatable(srv));
-            resolve(isUpdatable);
-          });
+    isWorkbenchUpdatable: function(workbench) {
+      const allServices = osparc.service.Store.servicesCached;
+      const services = new Set(this.extractServices(workbench));
+      const isUpdatable = Array.from(services).some(srv => {
+        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+          const serviceMD = allServices[srv.key][srv.version];
+          return "compatibility" in serviceMD && "canUpdateTo" in serviceMD["compatibility"]
+        }
+        return false;
       });
+      return isUpdatable;
     },
 
     isWorkbenchRetired: function(workbench) {
