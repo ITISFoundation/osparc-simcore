@@ -1,3 +1,19 @@
+"""Main entrypoint to manage buffer machines.
+
+A buffer machine is a stopped pre-initialized EC2 instance with pre-pulled Docker images in its
+EBS-based storage volume.
+
+To create a ready buffer machine, one needs to first start the EC2 instance via EC2 API,
+then via SSM api pull the Docker images to the EBS volume and finally stop the EC2 instance.
+
+Open features:
+    - handle changes in pre-pulled images (when the pre-pull images for a specific type changes),
+    currently one needs to terminate all the buffer machines to get an upgrade,
+    - use a cheap EC2 to prepare the buffer instead of the final instance type,
+    - possibly copy already initialized EBS volumes, instead of pulling again,
+    - possibly recycle de-activated EC2s instead of terminating them,
+"""
+
 import logging
 from collections import defaultdict
 from typing import Final, TypeAlias, cast
