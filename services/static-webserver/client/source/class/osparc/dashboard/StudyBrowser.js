@@ -526,10 +526,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(services, serviceKey, newButtonInfo) {
+    __addNewStudyFromServiceButtons: function(serviceKey, newButtonInfo) {
       const mode = this._resourcesContainer.getMode();
       // Make sure we have access to that service
-      const versions = osparc.service.Utils.getVersions(services, serviceKey);
+      const versions = osparc.service.Utils.getVersions(serviceKey);
       if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
         const desc = newButtonInfo.description;
@@ -546,19 +546,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addPlusButtonsFromServices: function() {
-      osparc.service.Store.getServicesLatest()
-        .then(services => {
-          // add new plus buttons if key services exists
-          osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
-            .then(newStudiesData => {
-              const product = osparc.product.Utils.getProductName()
-              if (product in newStudiesData) {
-                const newButtonsInfo = newStudiesData[product].resources;
-                newButtonsInfo.forEach(newButtonInfo => {
-                  this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonInfo);
-                });
-              }
+      // add new plus buttons if key services exists
+      osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+        .then(newStudiesData => {
+          const product = osparc.product.Utils.getProductName()
+          if (product in newStudiesData) {
+            const newButtonsInfo = newStudiesData[product].resources;
+            newButtonsInfo.forEach(newButtonInfo => {
+              this.__addNewStudyFromServiceButtons(newButtonInfo.expectedKey, newButtonInfo);
             });
+          }
         });
     },
 

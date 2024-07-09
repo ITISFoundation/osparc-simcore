@@ -132,17 +132,6 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    convertObjectToArray: function(servicesObject) {
-      let services = [];
-      for (const key in servicesObject) {
-        const serviceVersions = servicesObject[key];
-        for (const serviceVersion in serviceVersions) {
-          services.push(serviceVersions[serviceVersion]);
-        }
-      }
-      return services;
-    },
-
     getFromObject: function(services, key, version) {
       if (services === null) {
         services = osparc.service.Utils.servicesCached;
@@ -165,10 +154,8 @@ qx.Class.define("osparc.service.Utils", {
       return null;
     },
 
-    getVersions: function(services, key, filterDeprecates = true) {
-      if (services === null) {
-        services = osparc.service.Store.servicesCached;
-      }
+    getVersions: function(key, filterDeprecates = true) {
+      const services = osparc.service.Store.servicesCached;
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
@@ -187,12 +174,10 @@ qx.Class.define("osparc.service.Utils", {
       return versions.reverse();
     },
 
-    getLatest: function(services, key) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
+    getLatest: function(key) {
+      const services = osparc.service.Utils.servicesCached;
       if (key in services) {
-        const versions = this.getVersions(services, key, false);
+        const versions = this.getVersions(key, false);
         return services[key][versions[0]];
       }
       return null;
@@ -244,7 +229,7 @@ qx.Class.define("osparc.service.Utils", {
       if (services === null) {
         services = osparc.service.Utils.servicesCached;
       }
-      let versions = this.getVersions(services, srcKey, false);
+      let versions = this.getVersions(srcKey, false);
       // only allow patch versions
       versions = versions.filter(version => {
         const v1 = version.split(".");

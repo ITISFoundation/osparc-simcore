@@ -141,7 +141,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       const serviceKey = this.getServiceModel().getKey();
       const selectBox = this.__versionsBox;
       selectBox.removeAll();
-      const versions = osparc.service.Utils.getVersions(null, serviceKey);
+      const versions = osparc.service.Utils.getVersions(serviceKey);
       const latest = new qx.ui.form.ListItem(this.self().LATEST);
       selectBox.add(latest);
       versions.forEach(version => selectBox.add(new qx.ui.form.ListItem(version)));
