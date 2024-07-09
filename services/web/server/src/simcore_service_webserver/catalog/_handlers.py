@@ -41,7 +41,7 @@ from ..login.decorators import login_required
 from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, client
+from . import _api, _handlers_errors, client
 from ._api import CatalogRequestContext
 from .exceptions import DefaultPricingUnitForServiceNotFoundError
 
@@ -81,6 +81,7 @@ class ListServiceParams(PageQueryParameters):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     query_params = parse_request_query_parameters_as(ListServiceParams, request)
@@ -117,6 +118,7 @@ async def dev_list_services_latest(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_get_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
@@ -143,6 +145,7 @@ async def dev_get_service(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)

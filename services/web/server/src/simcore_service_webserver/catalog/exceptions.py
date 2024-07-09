@@ -1,4 +1,11 @@
 """Defines the different exceptions that may arise in the catalog subpackage"""
+
+
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
+
 from ..errors import WebServerBaseError
 
 
@@ -22,3 +29,14 @@ class DefaultPricingUnitForServiceNotFoundError(BaseCatalogError):
         super().__init__(**ctxs)
         self.service_key = service_key
         self.service_version = service_version
+
+
+assert CatalogForbiddenError  # nosec
+assert CatalogItemNotFoundError  # nosec
+
+
+__all__: tuple[str, ...] = (
+    "CatalogForbiddenError",
+    "CatalogItemNotFoundError",
+    "DefaultPricingUnitForServiceNotFoundError",
+)

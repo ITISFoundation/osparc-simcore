@@ -10,9 +10,13 @@ from models_library.products import ProductName
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 
 from ...db.repositories.services import ServicesRepository
 from ...services import catalog
@@ -22,7 +26,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogForbiddenError,))
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_services_paginated(
     app: FastAPI,
@@ -53,7 +57,7 @@ async def list_services_paginated(
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_service(
     app: FastAPI,
@@ -63,19 +67,23 @@ async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
-    assert app  # nosec
-    assert product_name  # nosec
-    assert user_id  # nosec
+    assert app.state.engine  # nosec
 
-    _logger.debug("Moking get_service for %s...", f"{user_id=}")
-    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
-    got.key = service_key
-    got.version = service_version
+    service = await catalog.get_service(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
 
-    return got
+    assert service.key == service_key  # nosec
+    assert service.version == service_version  # nosec
+
+    return service
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
 async def update_service(
     app: FastAPI,
@@ -88,12 +96,18 @@ async def update_service(
 ) -> ServiceGetV2:
     """Updates editable fields of a service"""
 
-    assert app  # nosec
-    assert product_name  # nosec
-    assert user_id  # nosec
+    assert app.state.engine  # nosec
 
-    _logger.debug("Moking update_service for %s...", f"{user_id=}")
-    got = parse_obj_as(ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0])
-    got.key = service_key
-    got.version = service_version
-    return got.copy(update=update.dict(exclude_unset=True))
+    service = await catalog.update_service(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        update=update,
+    )
+
+    assert service.key == service_key  # nosec
+    assert service.version == service_version  # nosec
+
+    return service

@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogItemNotFoundError
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     get_service,
     list_services_paginated,
@@ -64,7 +65,7 @@ async def fake_services_inserted_in_db(
     )
 
 
-async def test_rcp_catalog_client(
+async def test_rpc_catalog_client(
     director_setup_disabled: None,
     fake_services_inserted_in_db: None,
     app: FastAPI,
@@ -100,6 +101,12 @@ async def test_rcp_catalog_client(
     assert got.key == service_key
     assert got.version == service_version
 
+    assert got == next(
+        item
+        for item in page.data
+        if (item.key == service_key and item.version == service_version)
+    )
+
     updated = await update_service(
         rpc_client,
         product_name=product_name,
@@ -108,12 +115,49 @@ async def test_rcp_catalog_client(
         service_version=service_version,
         update={
             "name": "foo",
-            "thumbnail": None,
             "description": "bar",
-            "classifiers": None,
         },
     )
 
     assert updated.key == got.key
     assert updated.version == got.version
     assert updated.name == "foo"
+    assert updated.description == "bar"
+    assert not updated.classifiers
+
+    got = await get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    assert got == updated
+
+
+async def test_rpc_service_not_found_error(
+    director_setup_disabled: None,
+    fake_services_inserted_in_db: None,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+
+    with pytest.raises(CatalogItemNotFoundError, match="unknown"):
+        await get_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="simcore/services/dynamic/unknown",
+            service_version="1.0.0",
+        )
+
+    with pytest.raises(ValidationError, match="service_key"):
+        await get_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="wrong-format/unknown",
+            service_version="1.0.0",
+        )

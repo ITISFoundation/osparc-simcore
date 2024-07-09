@@ -49,3 +49,9 @@ class WebApiUser(FastHttpUser):
     def on_stop(self):
         self.client.post("/v0/auth/logout")
         print("Stopping", self.email)
+
+
+if __name__ == "__main__":
+    from locust_settings import LocustSettings, dump_dotenv
+
+    dump_dotenv(LocustSettings())
