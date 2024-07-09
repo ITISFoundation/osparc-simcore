@@ -69,6 +69,7 @@ def with_ec2_instance_allowed_types_env(
 @pytest.fixture
 def minimal_configuration(
     disabled_rabbitmq: None,
+    disable_buffers_pool_background_task: None,
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,

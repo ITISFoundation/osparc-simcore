@@ -252,10 +252,22 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_buffers_pool_background_task(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.stop_periodic_task",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 def with_enabled_buffer_pools(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
