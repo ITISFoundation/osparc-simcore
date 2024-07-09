@@ -38,7 +38,7 @@ ServiceDockerDataMap: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
 
-_error_already_logged = set()
+_error_already_logged: set[tuple[str, str]] = set()
 
 
 async def _list_services_in_registry(
