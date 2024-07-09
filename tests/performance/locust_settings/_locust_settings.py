@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=no-self-use
+# pylint: disable=no-name-in-module
 
 from datetime import timedelta
 
