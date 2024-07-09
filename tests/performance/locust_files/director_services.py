@@ -29,3 +29,9 @@ class WebApiUser(FastHttpUser):
 
     def on_stop(self):  # pylint: disable=no-self-use
         print("Stopping")
+
+
+if __name__ == "__main__":
+    from locust_settings import LocustSettings, dump_dotenv
+
+    dump_dotenv(LocustSettings())
