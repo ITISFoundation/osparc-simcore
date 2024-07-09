@@ -1,6 +1,9 @@
 import json
+from typing import TypeVar
 
 from pydantic_settings import BaseSettings
+
+T = TypeVar
 
 
 def dump_dotenv(settings: BaseSettings):
