@@ -44,7 +44,7 @@ def list_services_stmt(
 
         stmt = (
             sa.select(
-                [services_meta_data],
+                services_meta_data,
             )
             .distinct(services_meta_data.c.key, services_meta_data.c.version)
             .select_from(services_meta_data.join(services_access_rights))
@@ -73,40 +73,6 @@ class AccessRightsClauses:
     )
 
 
-def batch_get_services_stmt(
-    product_name: ProductName, selection: list[tuple[ServiceKey, ServiceVersion]]
-):
-    # WARNING: access-rights to the selection is not considered!
-    return (
-        sa.select(
-            services_meta_data,
-            users.c.email.label("owner_email"),
-        )
-        .distinct(services_meta_data.c.key, services_meta_data.c.version)
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
-            )
-            # NOTE: owner can be NULL
-            .join(
-                user_to_groups,
-                services_meta_data.c.owner == user_to_groups.c.gid,
-                isouter=True,
-            ).join(users, user_to_groups.c.uid == users.c.id, isouter=True)
-        )
-        .where(
-            or_(
-                (services_meta_data.c.key == key)
-                & (services_meta_data.c.version == version)
-                for key, version in selection
-            )
-        )
-    )
-
-
 def total_count_stmt(
     *,
     product_name: ProductName,
@@ -128,42 +94,6 @@ def total_count_stmt(
             )
         )
         .where(access_rights)
-    )
-
-
-def _page_of_latest_services_stmt(
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    access_rights: sa.sql.ClauseElement,
-    limit: int | None,
-    offset: int | None,
-):
-    return (
-        sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version.label("latest_version"),
-        )
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
-            ).join(
-                user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
-            )
-        )
-        .where(access_rights)
-        .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest first
-        )
-        .distinct(services_meta_data.c.key)  # get only first
-        .limit(limit)
-        .offset(offset)
     )
 
 
@@ -236,7 +166,6 @@ def list_latest_services_with_history_stmt(
     )
 
     # get history for every unique service-key in CTE
-    # TODO: limit history?
     history_subquery = (
         sa.select(
             services_meta_data.c.key,
@@ -286,7 +215,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.created,
             latest_query.c.modified,
             latest_query.c.deprecated,
-            # releases
+            # releases (NOTE: at some points we should limit this list?)
             array_agg(
                 func.json_build_object(
                     "version",
@@ -320,42 +249,68 @@ def list_latest_services_with_history_stmt(
     )
 
 
-def list_services_with_history_stmt(
+def get_service_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
-    limit: int | None,
-    offset: int | None,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
 ):
-    #
-    # Common Table Expression (CTE) to select distinct service names with pagination.
-    # This allows limiting the subquery to the required pagination instead of paginating at the last query.
-    # SEE https://learnsql.com/blog/cte-with-examples/
-    #
-    cte = (
-        sa.select(services_meta_data.c.key)
-        .distinct()
+    owner_subquery = (
+        sa.select(users.c.email)
+        .select_from(user_to_groups.join(users, user_to_groups.c.uid == users.c.id))
+        .where(user_to_groups.c.gid == services_meta_data.c.owner)
+        .limit(1)
+        .scalar_subquery()
+    )
+
+    return (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            # display
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
+            # ownership
+            owner_subquery.label("owner_email"),
+            # tags
+            services_meta_data.c.classifiers,
+            services_meta_data.c.quality,
+            # lifetime
+            services_meta_data.c.created,
+            services_meta_data.c.modified,
+            services_meta_data.c.deprecated,
+            # w/o releases history!
+        )
         .select_from(
             services_meta_data.join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
+                & (services_meta_data.c.version == services_access_rights.c.version),
             ).join(
-                user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
+                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
             )
         )
-        .where(access_rights)
-        .order_by(services_meta_data.c.key)  # NOTE: add here the order
-        .limit(limit)
-        .offset(offset)
-        .cte("paginated_services")
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+            & (user_to_groups.c.uid == user_id)
+            & (services_access_rights.c.product_name == product_name)
+            & access_rights
+        )
     )
 
-    subquery = (
+
+def get_service_history_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+):
+    history_subquery = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
@@ -363,23 +318,22 @@ def list_services_with_history_stmt(
             services_meta_data.c.created,
         )
         .select_from(
-            services_meta_data.join(
-                cte,
-                services_meta_data.c.key == cte.c.key,
-            )
             # joins because access-rights might change per version
-            .join(
+            services_meta_data.join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
+                & (services_meta_data.c.version == services_access_rights.c.version),
             ).join(
                 user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
+                (user_to_groups.c.gid == services_access_rights.c.gid),
             )
         )
-        .where(access_rights)
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_access_rights.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+            & access_rights
+        )
         .order_by(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
@@ -388,46 +342,14 @@ def list_services_with_history_stmt(
     )
 
     return sa.select(
-        subquery.c.key,
         array_agg(
             func.json_build_object(
                 "version",
-                subquery.c.version,
+                history_subquery.c.version,
                 "deprecated",
-                subquery.c.deprecated,
+                history_subquery.c.deprecated,
                 "created",
-                subquery.c.created,
+                history_subquery.c.created,
             )
         ).label("history"),
-    ).group_by(subquery.c.key)
-
-
-def list_services_stmt2():
-    # Subquery to get the latest version for each key
-    subquery = sa.select(
-        services_meta_data.c.key,
-        services_meta_data.c.version,
-        services_meta_data.c.description,
-        func.row_number()
-        .over(
-            partition_by=services_meta_data.c.key,
-            order_by=sa.desc(_version(services_meta_data.c.version)),
-        )
-        .label("row_num"),
-    ).alias("s")
-
-    return (
-        sa.select(
-            subquery.c.key,
-            subquery.c.description,
-            func.array_agg(services_meta_data.c.version).label("history"),
-        )
-        .select_from(
-            subquery.join(
-                services_meta_data, subquery.c.key == services_meta_data.c.key
-            )
-        )
-        .where(subquery.c.row_num == 1)
-        .group_by(subquery.c.key, subquery.c.description)
-        .order_by(subquery.c.key)
-    )
+    ).group_by(history_subquery.c.key)
