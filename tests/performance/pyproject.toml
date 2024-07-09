@@ -2,7 +2,7 @@
 name = "locust_settings"
 version = "0.0.0"
 dependencies = [
-    "pydantic",
+    "pydantic>=2.0",
     "pydantic-settings",
 ]
 
