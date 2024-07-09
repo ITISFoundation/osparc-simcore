@@ -196,7 +196,7 @@ class CatalogApi(BaseServiceClientApi):
         return releases
 
     async def get_latest_release(
-        self, user_id: int, solver_key: SolverKeyId, *, product_name: str
+        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
     ) -> Solver:
         releases = await self.list_solver_releases(
             user_id=user_id, solver_key=solver_key, product_name=product_name

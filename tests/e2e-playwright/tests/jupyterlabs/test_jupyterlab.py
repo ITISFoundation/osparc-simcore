@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
+import contextlib
 import json
 import logging
 import re
@@ -21,18 +22,15 @@ _WAITING_FOR_SERVICE_TO_START: Final[int] = (
     10 * MINUTE
 )  # NOTE: smash is 13Gib, math 2Gib
 _WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL: Final[int] = 10 * SECOND
+_DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(
+    r"/api/contents/workspace"
+)
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
-    "jupyter-math": re.compile(r"/api/contents/workspace"),
-    "jupyter-smash": re.compile(r"/api/contents/workspace"),
-    "jupyter-smash-8-0-0": re.compile(r"/api/contents/workspace"),
-    "jupyter-octave-python-math": re.compile(r"/api/contents"),
+    "jupyter-octave-python-math": re.compile(r"/api/contents"),  # old way
 }
 
-_SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
-    "jupyter-math": "README.ipynb",
-    "jupyter-smash": "README.ipynb",
-    "jupyter-smash-8-0-0": "README.ipynb",
-}
+_DEFAULT_TAB_TO_WAIT_FOR: Final[str] = "README.ipynb"
+_SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {}
 
 
 @dataclass
@@ -73,9 +71,12 @@ def test_jupyterlab(
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with log_context(
-        logging.INFO, f"Waiting for {service_key} responsive"
+        logging.INFO,
+        f"Waiting for {service_key} to be responsive (waiting for {_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
     ), page.expect_response(
-        _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR[service_key],
+        _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(
+            service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR
+        ),
         timeout=_WAITING_FOR_SERVICE_TO_START,
     ):
         create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None)
@@ -87,12 +88,19 @@ def test_jupyterlab(
         )
         return
 
+    if service_key == "jupyter-ml-pytorch":
+        with contextlib.suppress(TimeoutError):
+            iframe.get_by_role("button", name="Select", exact=True).click()
+
     with log_context(
         logging.INFO,
-        f"Waiting for {_SERVICE_NAME_TAB_TO_WAIT_FOR[service_key]} to become visible",
+        f"Waiting for {_SERVICE_NAME_TAB_TO_WAIT_FOR.get(service_key, _DEFAULT_TAB_TO_WAIT_FOR)} to become visible",
     ):
         iframe.get_by_role(
-            "tab", name=_SERVICE_NAME_TAB_TO_WAIT_FOR[service_key]
+            "tab",
+            name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(
+                service_key, _DEFAULT_TAB_TO_WAIT_FOR
+            ),
         ).wait_for(state="visible")
     if large_file_size:
         with log_context(
@@ -130,6 +138,11 @@ def test_jupyterlab(
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
 
+    if service_key == "jupyter-ml-pytorch":
+        print(
+            f"skipping any more complicated stuff since this is {service_key=} which is different from the others"
+        )
+        return
     # Wait until iframe is shown and create new notebook with print statement
     with log_context(logging.INFO, "Running new notebook"):
         iframe.get_by_role("button", name="New Launcher").click()

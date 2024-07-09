@@ -108,7 +108,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
           } else if (sharedWith === "shared-with-everyone") {
-            return !Object.keys(checks).includes("1");
+            const store = osparc.store.Store.getInstance();
+            const everyoneGroupIds = [
+              store.getEveryoneProductGroup()["gid"],
+              store.getEveryoneGroup()["gid"]
+            ];
+            const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
+            return !found;
           }
           return false;
         }

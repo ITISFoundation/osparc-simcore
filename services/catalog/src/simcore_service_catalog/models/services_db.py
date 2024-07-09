@@ -1,17 +1,13 @@
-"""
-
-NOTE: to dump json-schema from CLI use
-    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
-"""
-
+from datetime import datetime
 from typing import Any, ClassVar
 
-from pydantic import Field
+from models_library.services_access import ServiceGroupAccessRights
+from models_library.services_base import ServiceKeyVersion
+from models_library.services_history import ServiceRelease
+from models_library.services_metadata_editable import ServiceMetaDataEditable
+from models_library.services_types import ServiceKey, ServiceVersion
+from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
-
-from .services_access import ServiceGroupAccessRights
-from .services_base import ServiceKeyVersion
-from .services_metadata_editable import ServiceMetaDataEditable
 
 # -------------------------------------------------------------------
 # Databases models
@@ -56,6 +52,44 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                 },
             }
         }
+
+
+class HistoryItem(BaseModel):
+    version: ServiceVersion
+    deprecated: datetime | None
+    created: datetime
+
+    def to_api_model(self) -> ServiceRelease:
+        return ServiceRelease.construct(
+            version=self.version,
+            released=self.created,
+            retired=self.deprecated,
+        )
+
+
+class ServiceWithHistoryFromDB(BaseModel):
+    key: ServiceKey
+    version: ServiceVersion
+    # display
+    name: str
+    description: str
+    thumbnail: str | None
+    # ownership
+    owner_email: str | None
+    # tags
+    classifiers: list[str]
+    quality: dict[str, Any]
+    # lifetime
+    created: datetime
+    modified: datetime
+    deprecated: datetime | None
+    # releases
+    history: list[HistoryItem]
+
+
+assert set(HistoryItem.__fields__).issubset(  # nosec
+    set(ServiceWithHistoryFromDB.__fields__)
+)
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):

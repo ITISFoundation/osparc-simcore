@@ -87,7 +87,7 @@ export DOCKER_REGISTRY  ?= itisfoundation
 
 
 
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
@@ -124,11 +124,8 @@ __check_defined = \
 .PHONY: help
 
 help: ## help on rule's targets
-ifeq ($(IS_WIN),)
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-else
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
+	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
 	python ./scripts/test_python_version.py
@@ -459,14 +456,13 @@ push-version: tag-version
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				printf "\033[31mError: 'uv' is not installed.\033[0m\n"; \
-				printf "To install 'uv', run the following command:\n"; \
-				printf "\033[34mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m\n"; \
-				exit 1; \
+				curl -LsSf https://astral.sh/uv/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
+		# upgrading uv
+		-@uv self --quiet update
 
 
 .venv: .check-uv-installed

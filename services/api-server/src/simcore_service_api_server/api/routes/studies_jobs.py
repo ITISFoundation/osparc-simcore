@@ -143,11 +143,15 @@ async def create_study_job(
         node_id = file_param_nodes[node_label]
 
         await webserver_api.update_node_outputs(
-            project.uuid, node_id, NodeOutputs(outputs={"outFile": file_link})
+            project_id=project.uuid,
+            node_id=node_id,
+            new_node_outputs=NodeOutputs(outputs={"outFile": file_link}),
         )
 
     if len(new_project_inputs) > 0:
-        await webserver_api.update_project_inputs(project.uuid, new_project_inputs)
+        await webserver_api.update_project_inputs(
+            project_id=project.uuid, new_inputs=new_project_inputs
+        )
 
     assert job.name == _compose_job_resource_name(study_id, job.id)
 
@@ -275,7 +279,7 @@ async def inspect_study_job(
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    task = await director2_api.get_computation(job_id, user_id)
+    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
 
@@ -294,7 +298,7 @@ async def get_study_job_outputs(
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Getting Job Outputs for '%s'", job_name)
 
-    project_outputs = await webserver_api.get_project_outputs(job_id)
+    project_outputs = await webserver_api.get_project_outputs(project_id=job_id)
     job_outputs: JobOutputs = await create_job_outputs_from_project_outputs(
         job_id, project_outputs, user_id, storage_client
     )

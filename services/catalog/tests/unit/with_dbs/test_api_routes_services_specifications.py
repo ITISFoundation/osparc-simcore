@@ -173,7 +173,7 @@ async def test_get_service_specifications(
     user: dict[str, Any],
     user_groups_ids: list[int],
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     sqlalchemy_async_engine: AsyncEngine,
@@ -183,7 +183,7 @@ async def test_get_service_specifications(
     SERVICE_VERSION = "0.0.1"
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 SERVICE_KEY,
                 SERVICE_VERSION,
                 team_access=None,
@@ -266,7 +266,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     user: dict[str, Any],
     user_groups_ids: list[int],
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
@@ -290,7 +290,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         *[
             services_db_tables_injector(
                 [
-                    service_catalog_faker(
+                    create_fake_service_data(
                         SERVICE_KEY,
                         version,
                         team_access=None,

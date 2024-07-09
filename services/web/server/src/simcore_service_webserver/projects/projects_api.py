@@ -387,6 +387,7 @@ async def update_project_node_resources_from_hardware_info(
         new_ram_value = int(
             selected_ec2_instance_type.ram
             - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+            - _SIDECARS_OPS_SAFE_RAM_MARGIN
         )
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down

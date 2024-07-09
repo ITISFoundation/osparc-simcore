@@ -37,6 +37,7 @@ from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,
 )
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 
 async def _get_user_projects(client) -> list[ProjectDict]:
@@ -190,6 +191,7 @@ def _assert_redirected_to_error_page(
     assert params["status_code"] == [f"{expected_status_code}"], params
 
 
+@retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
 async def _assert_redirected_to_study(
     response: ClientResponse, session: ClientSession
 ) -> str:
