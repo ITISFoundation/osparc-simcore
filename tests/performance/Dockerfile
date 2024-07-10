@@ -6,6 +6,8 @@ FROM locustio/locust:${LOCUST_VERSION}
 RUN pip3 --version && \
   pip3 install \
   faker \
-  python-dotenv \
-  locust-plugins==2.1.1 &&\
+  locust-plugins \
+  pydantic \
+  pydantic-settings \
+  tenacity &&\
   pip3 freeze --verbose

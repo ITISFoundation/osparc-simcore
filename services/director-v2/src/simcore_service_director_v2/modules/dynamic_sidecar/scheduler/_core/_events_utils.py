@@ -1,5 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
+import asyncio
 import json
 import logging
 from typing import Any, cast
@@ -275,6 +276,11 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
+
+    # used for debuug, normally sleeps 0
+    await asyncio.sleep(
+        settings.DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL.total_seconds()
+    )
 
     # only try to save the status if :
     # - it is requested to save the state

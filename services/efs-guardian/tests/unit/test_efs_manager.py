@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from faker import Faker
@@ -45,12 +46,17 @@ async def test_rpc_create_project_specific_data_dir(
     _node_id = faker.uuid4()
     _storage_directory_name = faker.name()
 
-    result = await efs_manager.create_project_specific_data_dir(
-        rpc_client,
-        project_id=_project_id,
-        node_id=_node_id,
-        storage_directory_name=_storage_directory_name,
-    )
+    with patch(
+        "simcore_service_efs_guardian.services.efs_manager.os.chown"
+    ) as mocked_chown:
+        result = await efs_manager.create_project_specific_data_dir(
+            rpc_client,
+            project_id=_project_id,
+            node_id=_node_id,
+            storage_directory_name=_storage_directory_name,
+        )
+        mocked_chown.assert_called_once()
+
     assert isinstance(result, Path)
     _expected_path = (
         aws_efs_settings.EFS_MOUNTED_PATH

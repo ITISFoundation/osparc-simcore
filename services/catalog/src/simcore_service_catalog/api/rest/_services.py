@@ -9,7 +9,6 @@ from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -17,6 +16,7 @@ from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
+from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
@@ -33,32 +33,31 @@ _logger = logging.getLogger(__name__)
 ServicesSelection: TypeAlias = set[tuple[str, str]]
 
 
-def _prepare_service_details(
-    service_in_registry: dict[str, Any],
-    service_in_db: ServiceMetaDataAtDB,
+def _compose_service_details(
+    service_in_registry: dict[str, Any],  # published part
+    service_in_db: ServiceMetaDataAtDB,  # editable part
     service_access_rights_in_db: list[ServiceAccessRightsAtDB],
     service_owner: str | None,
 ) -> ServiceGet | None:
     # compose service from registry and DB
-    composed_service = service_in_registry
-    composed_service.update(
+    service = service_in_registry
+    service.update(
         service_in_db.dict(exclude_unset=True, exclude={"owner"}),
         access_rights={rights.gid: rights for rights in service_access_rights_in_db},
         owner=service_owner if service_owner else None,
     )
 
     # validate the service
-    validated_service = None
     try:
-        validated_service = ServiceGet(**composed_service)
+        return ServiceGet(**service)
     except ValidationError as exc:
         _logger.warning(
-            "could not validate service [%s:%s]: %s",
-            composed_service.get("key"),
-            composed_service.get("version"),
+            "Could not validate service [%s:%s]: %s",
+            service.get("key"),
+            service.get("version"),
             exc,
         )
-    return validated_service
+    return None
 
 
 def _build_cache_key(fct, *_, **kwargs):
@@ -166,7 +165,7 @@ async def list_services(
         *[
             asyncio.get_event_loop().run_in_executor(
                 None,
-                _prepare_service_details,
+                _compose_service_details,
                 s,
                 services_in_db[s["key"], s["version"]],
                 services_access_rights[s["key"], s["version"]],

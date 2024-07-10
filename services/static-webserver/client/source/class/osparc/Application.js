@@ -42,8 +42,6 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
-      this.__preventAutofillBrowserStyles();
-
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
@@ -51,6 +49,17 @@ qx.Class.define("osparc.Application", {
       }
 
       await this.__preloadCalls();
+
+      this.__preventAutofillBrowserStyles();
+      this.__loadCommonCss();
+      this.__updateTabName();
+      this.__updateFavicon();
+
+      if (qx.core.Environment.get("product.name") === "s4lengine") {
+        const view = new osparc.auth.BlurredLoginPageS4LEngineering();
+        this.__loadView(view);
+        return;
+      }
 
       const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
       intlTelInput.init();
@@ -82,11 +91,6 @@ qx.Class.define("osparc.Application", {
 
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
-
-      this.__loadCommonCss();
-
-      this.__updateTabName();
-      this.__updateFavicon();
 
       this.__initRouting();
       this.__startupChecks();

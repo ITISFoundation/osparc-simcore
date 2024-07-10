@@ -29,10 +29,11 @@ pytest_simcore_ops_services_selection = [
 
 async def test_list_services_with_details(
     mocked_catalog_background_task: None,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_api: MockRouter,
     user_id: UserID,
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
     benchmark,
@@ -40,7 +41,7 @@ async def test_list_services_with_details(
     # create some fake services
     NUM_SERVICES = 1000
     fake_services = [
-        service_catalog_faker(
+        create_fake_service_data(
             "simcore/services/dynamic/jupyterlab",
             f"1.0.{s}",
             team_access=None,
@@ -85,9 +86,10 @@ async def test_list_services_with_details(
 async def test_list_services_without_details(
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
     benchmark,
@@ -98,7 +100,7 @@ async def test_list_services_without_details(
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 SERVICE_KEY,
                 f"1.0.{s}",
                 team_access=None,
@@ -125,12 +127,13 @@ async def test_list_services_without_details(
 
 
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
-    disable_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -139,7 +142,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     NUM_SERVICES = 1
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -156,20 +159,21 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 
 
 async def test_list_services_without_details_with_another_product_returns_other_services(
-    disable_service_caching: None,
+    service_caching_disabled: None,
     mocked_catalog_background_task: None,
     mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
     other_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
     NUM_SERVICES = 15
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -188,12 +192,13 @@ async def test_list_services_without_details_with_another_product_returns_other_
 
 
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
-    disable_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task,
     mocked_director_service_api: MockRouter,
+    setup_rabbitmq_and_rpc_disabled: None,
     user_id: int,
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
@@ -202,7 +207,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     NUM_SERVICES = 1
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 f"1.0.{s}",
                 team_access=None,
@@ -223,19 +228,20 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
 
 
 async def test_list_services_that_are_deprecated(
-    disable_service_caching,
+    service_caching_disabled,
     mocked_catalog_background_task,
+    setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_api: MockRouter,
     user_id: int,
     target_product: ProductName,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
 
     # injects fake data in db
     deprecation_date = datetime.utcnow() + timedelta(days=1)
-    deprecated_service = service_catalog_faker(
+    deprecated_service = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.1",
         team_access=None,

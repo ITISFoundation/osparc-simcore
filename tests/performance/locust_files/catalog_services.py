@@ -6,15 +6,12 @@ import logging
 from time import time
 
 import faker
-from dotenv import load_dotenv
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
 
 fake = faker.Faker()
-
-load_dotenv()  # take environment variables from .env
 
 
 class WebApiUser(FastHttpUser):
@@ -58,3 +55,9 @@ class WebApiUser(FastHttpUser):
 
     def on_stop(self):
         print("Stopping", self.email)
+
+
+if __name__ == "__main__":
+    from locust_settings import LocustSettings, dump_dotenv
+
+    dump_dotenv(LocustSettings())

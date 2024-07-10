@@ -4,10 +4,10 @@ This codes originates from this article
 
 SEE also https://github.com/Delgan/loguru for a future alternative
 """
+
 import asyncio
 import functools
 import logging
-import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -169,7 +169,9 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool = False):
+def log_decorator(
+    logger=None, level: int = logging.DEBUG, *, log_traceback: bool = False
+):
     # Build logger object
     logger_obj = logger or _logger
 
@@ -187,9 +189,9 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                     )
                 except:
                     # log exception if occurs in function
-                    logger_obj.error(
+                    logger_obj.log(
+                        level,
                         "Exception: %s",
-                        sys.exc_info()[1],
                         extra=extra_args,
                         exc_info=log_traceback,
                     )
@@ -210,9 +212,9 @@ def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool =
                     )
                 except:
                     # log exception if occurs in function
-                    logger_obj.error(
+                    logger_obj.log(
+                        level,
                         "Exception: %s",
-                        sys.exc_info()[1],
                         extra=extra_args,
                         exc_info=log_traceback,
                     )
