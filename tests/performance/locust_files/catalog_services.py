@@ -3,6 +3,7 @@
 #
 
 import logging
+from pathlib import Path
 from time import time
 
 import faker
@@ -60,4 +61,8 @@ class WebApiUser(FastHttpUser):
 if __name__ == "__main__":
     from locust_settings import LocustSettings, dump_dotenv
 
-    dump_dotenv(LocustSettings())
+    dump_dotenv(
+        LocustSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(Path(__file__).parent.parent)
+        )
+    )

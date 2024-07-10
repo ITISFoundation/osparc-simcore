@@ -3,6 +3,7 @@
 #
 
 import logging
+from pathlib import Path
 
 import locust_plugins
 from locust import task
@@ -58,4 +59,8 @@ if __name__ == "__main__":
     class LoadTestSettings(LocustAuth, LocustSettings):
         pass
 
-    dump_dotenv(LoadTestSettings())
+    dump_dotenv(
+        LoadTestSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(Path(__file__).parent.parent)
+        )
+    )
