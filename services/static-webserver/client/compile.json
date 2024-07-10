@@ -87,6 +87,22 @@
     {
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
+      "name": "s4lengine",
+      "title": "Sim4Life Engineering",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.s4l.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "s4lengine"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4ldesktop",
       "title": "Sim4Life Desktop",
       "include": [
