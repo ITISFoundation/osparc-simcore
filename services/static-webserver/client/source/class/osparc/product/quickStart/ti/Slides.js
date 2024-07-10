@@ -26,7 +26,7 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
     footerLinks: function() {
       const footerLinks = [];
 
-      const videoText = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
+      const videoText = osparc.utils.Utils.createHTMLLink("TIP video", "https://youtu.be/-ZE6yOJ3ipw");
       const videoLabel = new qx.ui.basic.Label(videoText).set({
         textAlign: "center",
         rich : true
@@ -40,12 +40,13 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
       });
       const manuals = osparc.store.Support.getManuals();
       if (manuals.length > 0) {
-        manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
+        const manualText = osparc.utils.Utils.createHTMLLink("Documentation", manuals[0].url);
+        manualsLabel.setValue(manualText);
         manualsLabel.show();
       }
       footerLinks.push(manualsLabel);
 
-      const licenseText = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
+      const licenseText = osparc.utils.Utils.createHTMLLink("Privacy Policy", "https://itis.swiss/meta-navigation/privacy-policy/");
       const licenseLabel = new qx.ui.basic.Label(licenseText).set({
         textAlign: "center",
         rich : true

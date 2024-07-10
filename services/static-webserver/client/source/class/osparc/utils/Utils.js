@@ -464,6 +464,11 @@ qx.Class.define("osparc.utils.Utils", {
       return msg;
     },
 
+    createHTMLLink: function(text, link) {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      return `<a href=${link} style='color: ${color}' target='_blank'>${text}</a>`;
+    },
+
     getNameFromEmail: function(email) {
       return email.split("@")[0];
     },
