@@ -6,6 +6,9 @@
 # pylint: disable=unused-variable
 
 
+import urllib.parse
+from typing import Any
+
 import pytest
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -30,6 +33,7 @@ def app_environment(
 
 
 async def test_director_client_high_level_api(
+    setup_background_tasks_disabled: None,
     setup_rabbitmq_and_rpc_disabled: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,
@@ -57,3 +61,29 @@ async def test_director_client_high_level_api(
         await director_api.get_service(expected_service.key, expected_service.version)
         == expected_service
     )
+
+
+async def test_director_client_low_level_api(
+    setup_background_tasks_disabled: None,
+    setup_rabbitmq_and_rpc_disabled: None,
+    mocked_director_service_api: MockRouter,
+    expected_director_list_services: list[dict[str, Any]],
+    app: FastAPI,
+):
+    director_api = get_director_api(app)
+
+    expected_service = expected_director_list_services[0]
+    key = expected_service["key"]
+    version = expected_service["version"]
+
+    service_extras = await director_api.get(
+        f"/service_extras/{urllib.parse.quote_plus(key)}/{version}"
+    )
+
+    assert service_extras
+
+    service_labels = await director_api.get(
+        f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
+    )
+
+    assert service_labels
