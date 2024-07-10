@@ -28,7 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def services_repo(sqlalchemy_async_engine: AsyncEngine):
+def services_repo(sqlalchemy_async_engine: AsyncEngine) -> ServicesRepository:
     return ServicesRepository(sqlalchemy_async_engine)
 
 
