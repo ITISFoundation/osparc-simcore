@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -59,3 +60,13 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
 
     print(build_spec.json(exclude_unset=True, indent=2))
     print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
+
+
+def test_image_digest_is_not_a_label_annotation(tests_data_dir: Path):
+    meta_cfg = MetadataConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
+
+    assert meta_cfg.image_digest is None
+    meta_cfg.image_digest = hashlib.sha256(b"this is the image manifest").hexdigest()
+
+    annotations = meta_cfg.to_labels_annotations()
+    assert not any("digest" in key for key in annotations)

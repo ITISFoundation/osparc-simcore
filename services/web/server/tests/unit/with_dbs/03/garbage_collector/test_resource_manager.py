@@ -130,7 +130,6 @@ def client(
     assert cfg["rest"]["version"] == API_VTAG
     assert cfg["rest"]["enabled"]
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
 
     # sets TTL of a resource after logout
     cfg["resource_manager"][

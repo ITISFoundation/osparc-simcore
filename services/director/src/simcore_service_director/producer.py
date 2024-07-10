@@ -122,7 +122,7 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 async def _read_service_settings(
     app: web.Application, key: str, tag: str, settings_name: str
 ) -> Dict:
-    image_labels = await registry_proxy.get_image_labels(app, key, tag)
+    image_labels, _ = await registry_proxy.get_image_labels(app, key, tag)
     settings = (
         json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
     )
