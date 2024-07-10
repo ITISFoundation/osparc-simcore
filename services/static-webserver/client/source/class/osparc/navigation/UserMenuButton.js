@@ -49,7 +49,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     store.addListener("changeContextWallet", () => this.__bindWalletToHalo());
 
     const preferencesSettings = osparc.Preferences.getInstance();
-    preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateHaloCredits());
+    preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateHaloColor());
 
     const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const icon = this.getChildControl("icon");
@@ -77,25 +77,39 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
+    __forceNullColor: null,
+
     __bindWalletToHalo: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
-        this.__updateHaloCredits();
-        contextWallet.addListener("changeCreditsAvailable", () => this.__updateHaloCredits());
+        // In TIP, a tool that can be used for free.
+        // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
+        // Note: Since we can fetch payments per wallet, for now rely on the available credits.
+        if (osparc.product.Utils.isProduct("tis")) {
+          const credits = contextWallet.getCreditsAvailable();
+          this.__forceNullColor = credits === 0;
+        }
+
+        this.__updateHaloColor();
+        contextWallet.addListener("changeCreditsAvailable", () => this.__updateHaloColor());
       }
     },
 
-    __updateHaloCredits: function() {
+    __updateHaloColor: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
         const credits = contextWallet.getCreditsAvailable();
         if (credits !== null) {
-          const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make halo red
-          const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-          const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
-          osparc.service.StatusUI.getStatusHalo(this, color1, progress);
+          if (this.__forceNullColor) {
+            osparc.service.StatusUI.getStatusHalo(this, null, 100);
+          } else {
+            const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make halo red
+            const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+            const color = qx.theme.manager.Color.getInstance().resolve(creditsColor);
+            osparc.service.StatusUI.getStatusHalo(this, color, progress);
+          }
         }
       }
     },
