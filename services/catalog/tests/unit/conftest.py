@@ -168,9 +168,72 @@ def director_service_openapi_specs(
 
 
 @pytest.fixture
+def expected_director_list_services() -> list[dict[str, Any]]:
+    """This fixture has at least TWO purposes:
+
+    1. can be used as a reference to check the results at the other end
+    2. can be used to change responses of the director API downstream (override fixture)
+
+    """
+    return [
+        {
+            "image_digest": hashlib.sha256(
+                f"simcore/services/comp/ans-model:{major}".encode()
+            ).hexdigest(),
+            "authors": [
+                {
+                    "name": "John Smith",
+                    "email": "smith@acme.com",
+                    "affiliation": "ACME",
+                }
+            ],
+            "contact": "smith@acme.com",
+            "description": "Autonomous Nervous System Network model",
+            "inputs": {
+                "input_1": {
+                    "displayOrder": 1,
+                    "label": "Simulation time",
+                    "description": "Duration of the simulation",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "type": "number",
+                        "x_unit": "milli-second",
+                    },
+                    "defaultValue": 2,
+                }
+            },
+            "integration-version": "1.0.0",
+            "key": "simcore/services/comp/ans-model",
+            "name": "Autonomous Nervous System Network model",
+            "outputs": {
+                "output_1": {
+                    "displayOrder": 1,
+                    "label": "ANS output",
+                    "description": "Output of simulation of Autonomous Nervous System Network model",
+                    "type": "data:*/*",
+                    "fileToKeyMap": {"ANS_output.txt": "output_1"},
+                },
+                "output_2": {
+                    "displayOrder": 2,
+                    "label": "Stimulation parameters",
+                    "description": "stim_param.txt file containing the input provided in the inputs port",
+                    "type": "data:*/*",
+                    "fileToKeyMap": {"ANS_stim_param.txt": "output_2"},
+                },
+            },
+            "thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png",
+            "type": "computational",
+            "version": f"{major}.0.0",
+        }
+        for major in range(1, 4)
+    ]
+
+
+@pytest.fixture
 def mocked_director_service_api(
     app_settings: ApplicationSettings,
     director_service_openapi_specs: dict[str, Any],
+    expected_director_list_services: list[dict[str, Any]],
 ) -> Iterator[respx.MockRouter]:
     assert app_settings.CATALOG_DIRECTOR
     with respx.mock(
@@ -196,72 +259,21 @@ def mocked_director_service_api(
             },
         )
 
-        _services = [
-            {
-                "image_digest": hashlib.sha256(
-                    f"simcore/services/comp/ans-model:{major}".encode()
-                ).hexdigest(),
-                "authors": [
-                    {
-                        "name": "John Smith",
-                        "email": "smith@acme.com",
-                        "affiliation": "ACME",
-                    }
-                ],
-                "contact": "smith@acme.com",
-                "description": "Autonomous Nervous System Network model",
-                "inputs": {
-                    "input_1": {
-                        "displayOrder": 1,
-                        "label": "Simulation time",
-                        "description": "Duration of the simulation",
-                        "type": "ref_contentSchema",
-                        "contentSchema": {
-                            "type": "number",
-                            "x_unit": "milli-second",
-                        },
-                        "defaultValue": 2,
-                    }
-                },
-                "integration-version": "1.0.0",
-                "key": "simcore/services/comp/ans-model",
-                "name": "Autonomous Nervous System Network model",
-                "outputs": {
-                    "output_1": {
-                        "displayOrder": 1,
-                        "label": "ANS output",
-                        "description": "Output of simulation of Autonomous Nervous System Network model",
-                        "type": "data:*/*",
-                        "fileToKeyMap": {"ANS_output.txt": "output_1"},
-                    },
-                    "output_2": {
-                        "displayOrder": 2,
-                        "label": "Stimulation parameters",
-                        "description": "stim_param.txt file containing the input provided in the inputs port",
-                        "type": "data:*/*",
-                        "fileToKeyMap": {"ANS_stim_param.txt": "output_2"},
-                    },
-                },
-                "thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png",
-                "type": "computational",
-                "version": f"{major}.0.0",
-            }
-            for major in range(1, 4)
-        ]
-
         @respx_mock.get(
             path__regex=r"/services$",
             name="list_services",
         )
         def list_services(request):
-            return httpx.Response(status.HTTP_200_OK, json={"data": _services})
+            return httpx.Response(
+                status.HTTP_200_OK, json={"data": expected_director_list_services}
+            )
 
         @respx_mock.get(
             path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
             name="get_service",
         )
         def get_service(request, service_key, service_version):
-            for service in _services:
+            for service in expected_director_list_services:
                 if (
                     service["key"] == service_key
                     and service["version"] == service_version
