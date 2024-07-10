@@ -29,10 +29,6 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
   members: {
     __forceNullColor: null,
 
-    setForceNullColor: function(force) {
-      this.__forceNullColor = force;
-    },
-
     __updateWallet: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
