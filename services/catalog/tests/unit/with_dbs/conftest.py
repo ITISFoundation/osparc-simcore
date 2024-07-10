@@ -460,15 +460,19 @@ async def create_fake_service_data(
 
 
 @pytest.fixture
-def mocked_catalog_background_task(mocker: MockerFixture) -> None:
+def setup_background_tasks_disabled(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
-    mocker.patch(
-        "simcore_service_catalog.core.events.start_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_catalog.core.events.stop_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
+
+    def _factory(name):
+        async def _side_effect(app: FastAPI):
+            assert app
+            print(f"Disabled background tasks. Skipping execution of {name}")
+
+        return _side_effect
+
+    for name in ("start_registry_sync_task", "stop_registry_sync_task"):
+        mocker.patch(
+            f"simcore_service_catalog.core.events.{name}",
+            side_effect=_factory(name),
+            autospec=True,
+        )

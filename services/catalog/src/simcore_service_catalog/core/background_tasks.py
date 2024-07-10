@@ -18,6 +18,7 @@ from typing import Final, NewType, TypeAlias
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from packaging.version import Version
+from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.services.registry import get_registered_services_map
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -102,7 +103,8 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    services_in_registry_map = await get_registered_services_map(app)
+    director_api = get_director_api(app)
+    services_in_registry_map = await get_registered_services_map(director_api)
 
     services_in_db: set[
         tuple[ServiceKey, ServiceVersion]
@@ -163,6 +165,18 @@ async def _ensure_published_templates_accessible(
         await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
+async def _run_sync_services(app: FastAPI):
+    default_product: Final[str] = app.state.default_product_name
+    engine: AsyncEngine = app.state.engine
+
+    # check that the list of services is in sync with the registry
+    await _ensure_registry_and_database_are_synced(app)
+
+    # check that the published services are available to everyone
+    # (templates are published to GUESTs, so their services must be also accessible)
+    await _ensure_published_templates_accessible(engine, default_product)
+
+
 async def _sync_services_task(app: FastAPI) -> None:
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
@@ -171,12 +185,7 @@ async def _sync_services_task(app: FastAPI) -> None:
         try:
             _logger.debug("Syncing services between registry and database...")
 
-            # check that the list of services is in sync with the registry
-            await _ensure_registry_and_database_are_synced(app)
-
-            # check that the published services are available to everyone
-            # (templates are published to GUESTs, so their services must be also accessible)
-            await _ensure_published_templates_accessible(engine, default_product)
+            await _run_sync_services(app)
 
             await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 
