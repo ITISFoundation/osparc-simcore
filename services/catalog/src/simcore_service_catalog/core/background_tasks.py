@@ -13,16 +13,14 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Final, NewType, TypeAlias, cast
+from typing import Final, NewType, TypeAlias
 
 from fastapi import FastAPI
-from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceMetaDataPublished
 from packaging.version import Version
-from pydantic import ValidationError
+from simcore_service_catalog.services.registry import get_registered_services_map
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
@@ -39,36 +37,6 @@ ServiceDockerDataMap: TypeAlias = dict[
 ]
 
 _error_already_logged: set[tuple[str, str]] = set()
-
-
-async def _list_services_in_registry(
-    app: FastAPI,
-) -> ServiceDockerDataMap:
-    client = get_director_api(app)
-    registry_services = cast(list[dict[str, Any]], await client.get("/services"))
-
-    services: ServiceDockerDataMap = {
-        # functional-service: services w/o associated image
-        (s.key, s.version): s
-        for s in iter_service_docker_data()
-    }
-    for service in registry_services:
-        try:
-            service_data = ServiceMetaDataPublished.parse_obj(service)
-            services[(service_data.key, service_data.version)] = service_data
-
-        except ValidationError:  # noqa: PERF203
-            errored_service = service.get("key"), service.get("version")
-            if errored_service not in _error_already_logged:
-                _logger.warning(
-                    "Skipping '%s:%s' from the catalog of services! So far %s invalid services in registry.",
-                    *errored_service,
-                    len(_error_already_logged) + 1,
-                    exc_info=True,
-                )
-                _error_already_logged.add(errored_service)
-
-    return services
 
 
 async def _list_services_in_database(
@@ -134,16 +102,14 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-    ] = await _list_services_in_registry(app)
+    services_in_registry_map = await get_registered_services_map(app)
 
     services_in_db: set[
         tuple[ServiceKey, ServiceVersion]
     ] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
-    missing_services_in_db = set(services_in_registry.keys()) - services_in_db
+    missing_services_in_db = set(services_in_registry_map.keys()) - services_in_db
     if missing_services_in_db:
         _logger.debug(
             "Missing services in db: %s",
@@ -152,7 +118,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
         # update db
         await _create_services_in_database(
-            app, missing_services_in_db, services_in_registry
+            app, missing_services_in_db, services_in_registry_map
         )
 
 

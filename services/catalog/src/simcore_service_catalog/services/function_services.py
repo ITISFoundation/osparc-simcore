@@ -22,19 +22,22 @@ def _as_dict(model_instance: ServiceMetaDataPublished) -> dict[str, Any]:
     return cast(dict[str, Any], model_instance.dict(by_alias=True, exclude_unset=True))
 
 
-def get_function_service(key, version) -> dict[str, Any]:
+def get_function_service_as_model(key, version) -> ServiceMetaDataPublished:
     try:
-        found = next(
+        return next(
             s
             for s in iter_service_docker_data()
             if s.key == key and s.version == version
         )
-        return _as_dict(found)
     except StopIteration as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Frontend service '{key}:{version}' not found",
         ) from err
+
+
+def get_function_service_as_dict(key, version) -> dict[str, Any]:
+    return _as_dict(get_function_service_as_model(key=key, version=version))
 
 
 def setup_function_services(app: FastAPI):
@@ -52,7 +55,7 @@ def setup_function_services(app: FastAPI):
 
 
 __all__: tuple[str, ...] = (
-    "get_function_service",
+    "get_function_service_as_dict",
     "is_function_service",
     "setup_function_services",
 )
