@@ -155,6 +155,10 @@ def mocked_director_service_api(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+
+        # TODO: extend mock of director with real responsens
+
+
         respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
         respx_mock.get("/services", name="list_services").respond(
             200, json={"data": ["one", "two"]}

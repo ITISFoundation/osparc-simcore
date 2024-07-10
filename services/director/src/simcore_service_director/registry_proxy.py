@@ -282,23 +282,23 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Tuple[
 async def get_image_details(
     app: web.Application, image_key: str, image_tag: str
 ) -> Dict:
-    service_metadata_published: Dict = {}
+    image_details: Dict = {}
     labels, image_manifest_digest = await get_image_labels(app, image_key, image_tag)
 
     if image_manifest_digest:
         # Adds manifest as extra key in the response similar to org.opencontainers.image.base.digest
-        # at https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
-        service_metadata_published.update({"image_digest":image_manifest_digest})
+        # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+        image_details.update({"image_digest":image_manifest_digest})
 
     if not labels:
-        return service_metadata_published
+        return image_details
     for key in labels:
         if not key.startswith("io.simcore."):
             continue
         try:
             label_data = json.loads(labels[key])
             for label_key in label_data.keys():
-                service_metadata_published[label_key] = label_data[label_key]
+                image_details[label_key] = label_data[label_key]
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Error while decoding json formatted data from %s:%s",
@@ -308,7 +308,7 @@ async def get_image_details(
             # silently skip this repo
             return {}
 
-    return service_metadata_published
+    return image_details
 
 
 async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:

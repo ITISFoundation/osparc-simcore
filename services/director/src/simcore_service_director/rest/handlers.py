@@ -99,12 +99,14 @@ async def get_service_labels(
         service_labels, _ = await registry_proxy.get_image_labels(
             request.app, service_key, service_version
         )
-
         return web.json_response(data=dict(data=service_labels))
+
     except exceptions.ServiceNotAvailableError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
+
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
+
     except Exception as err:
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
