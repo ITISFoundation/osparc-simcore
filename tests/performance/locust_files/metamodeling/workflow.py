@@ -27,18 +27,20 @@ _MAX_WAIT_SECONDS: Final[int] = 60
 
 
 class UserSettings(BaseSettings):
-    osparc_api_key: str = Field(default=...)
-    osparc_api_secret: str = Field(default=...)
+    OSPARC_API_KEY: str = Field(default=...)
+    OSPARC_API_SECRET: str = Field(default=...)
 
-    template_uuid: UUID = Field(default=...)
+    TEMPLATE_UUID: UUID = Field(
+        default=..., examples=["2ed6b0a1-f1a8-4495-8d65-d516f58b7ae0"]
+    )
 
 
 class MetaModelingUser(HttpUser):
     def __init__(self, *args, **kwargs):
         self._user_settings = UserSettings()
         self._auth = HTTPBasicAuth(
-            username=self._user_settings.osparc_api_key,
-            password=self._user_settings.osparc_api_secret,
+            username=self._user_settings.OSPARC_API_KEY,
+            password=self._user_settings.OSPARC_API_SECRET,
         )
         retry_strategy = Retry(
             total=4,
@@ -76,7 +78,7 @@ class MetaModelingUser(HttpUser):
             response.raise_for_status()
         if self._job_uuid is not None:
             response = self.client.delete(
-                f"/v0/studies/{self._user_settings.template_uuid}/jobs/{self._job_uuid}",
+                f"/v0/studies/{self._user_settings.TEMPLATE_UUID}/jobs/{self._job_uuid}",
                 name="/v0/studies/[study_id]/jobs/[job_id]",
             )
             response.raise_for_status()
@@ -97,7 +99,7 @@ class MetaModelingUser(HttpUser):
 
         # create job
         response = self.client.post(
-            f"/v0/studies/{self._user_settings.template_uuid}/jobs",
+            f"/v0/studies/{self._user_settings.TEMPLATE_UUID}/jobs",
             json={
                 "values": {"InputFile1": f"{self._input_json_uuid}"},
             },
@@ -111,7 +113,7 @@ class MetaModelingUser(HttpUser):
 
         # start job
         response = self.client.post(
-            f"/v0/studies/{self._user_settings.template_uuid}/jobs/{self._job_uuid}:start",
+            f"/v0/studies/{self._user_settings.TEMPLATE_UUID}/jobs/{self._job_uuid}:start",
             auth=self._auth,
             name="/v0/studies/[study_id]/jobs/[job_id]:start",
         )
@@ -124,7 +126,7 @@ class MetaModelingUser(HttpUser):
         ):
             with attempt:
                 response = self.client.post(
-                    f"/v0/studies/{self._user_settings.template_uuid}/jobs/{self._job_uuid}:inspect",
+                    f"/v0/studies/{self._user_settings.TEMPLATE_UUID}/jobs/{self._job_uuid}:inspect",
                     auth=self._auth,
                     name="/v0/studies/[study_id]/jobs/[job_id]:inspect",
                 )
@@ -138,7 +140,7 @@ class MetaModelingUser(HttpUser):
         assert state == "SUCCESS"
 
         response = self.client.post(
-            f"/v0/studies/{self._user_settings.template_uuid}/jobs/{self._job_uuid}/outputs",
+            f"/v0/studies/{self._user_settings.TEMPLATE_UUID}/jobs/{self._job_uuid}/outputs",
             auth=self._auth,
             name="/v0/studies/[study_id]/jobs/[job_id]/outputs",
         )
@@ -161,3 +163,18 @@ class MetaModelingUser(HttpUser):
             file_uuid = response.json().get("id")
         assert file_uuid is not None
         return UUID(file_uuid)
+
+
+if __name__ == "__main__":
+    from locust_settings import LocustSettings, dump_dotenv
+
+    class MetaModelingSettings(UserSettings, LocustSettings):
+        pass
+
+    dump_dotenv(
+        MetaModelingSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(
+                Path(__file__).parent.parent.parent
+            )
+        )
+    )

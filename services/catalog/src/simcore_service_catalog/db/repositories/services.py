@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import packaging.version
 import sqlalchemy as sa
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
@@ -31,6 +32,8 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    get_service_history_stmt,
+    get_service_stmt,
     list_latest_services_with_history_stmt,
     list_services_stmt,
     total_count_stmt,
@@ -205,12 +208,132 @@ class ServicesRepository(BaseRepository):
             return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
         return None  # mypy
 
-    async def list_latest_services(
+    async def create_or_update_service(
+        self,
+        new_service: ServiceMetaDataAtDB,
+        new_service_access_rights: list[ServiceAccessRightsAtDB],
+    ) -> ServiceMetaDataAtDB:
+        for access_rights in new_service_access_rights:
+            if (
+                access_rights.key != new_service.key
+                or access_rights.version != new_service.version
+            ):
+                msg = f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
+                raise ValueError(msg)
+
+        async with self.db_engine.begin() as conn:
+            # NOTE: this ensure proper rollback in case of issue
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                services_meta_data.insert()
+                .values(**new_service.dict(by_alias=True))
+                .returning(literal_column("*"))
+            )
+            row = result.first()
+            assert row  # nosec
+            created_service = cast(
+                ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
+            )
+
+            for access_rights in new_service_access_rights:
+                insert_stmt = pg_insert(services_access_rights).values(
+                    **jsonable_encoder(access_rights, by_alias=True)
+                )
+                await conn.execute(insert_stmt)
+        return created_service
+
+    async def update_service(
+        self, patched_service: ServiceMetaDataAtDB
+    ) -> ServiceMetaDataAtDB:
+
+        stmt_update = (
+            services_meta_data.update()
+            .where(
+                (services_meta_data.c.key == patched_service.key)
+                & (services_meta_data.c.version == patched_service.version)
+            )
+            .values(
+                **patched_service.dict(
+                    by_alias=True,
+                    exclude_unset=True,
+                    exclude={"key", "version"},
+                )
+            )
+            .returning(literal_column("*"))
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_update)
+            row = result.first()
+            assert row  # nosec
+        return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+
+    # NEW CRUD on services ------
+
+    async def get_service_with_history(
         self,
         # access-rights
         product_name: ProductName,
         user_id: UserID,
-        # pagination
+        # get args
+        key: ServiceKey,
+        version: ServiceVersion,
+    ) -> ServiceWithHistoryFromDB | None:
+
+        stmt_get = get_service_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            service_key=key,
+            service_version=version,
+        )
+
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_get)
+            row = result.one_or_none()
+
+        if row:
+            stmt_history = get_service_history_stmt(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=AccessRightsClauses.can_read,
+                service_key=key,
+            )
+            async with self.db_engine.begin() as conn:
+                result = await conn.execute(stmt_history)
+                row_h = result.one_or_none()
+
+        return (
+            ServiceWithHistoryFromDB(
+                key=row.key,
+                version=row.version,
+                # display
+                name=row.name,
+                description=row.description,
+                thumbnail=row.thumbnail,
+                # ownership
+                owner_email=row.owner_email,
+                # tagging
+                classifiers=row.classifiers,
+                quality=row.quality,
+                # lifetime
+                created=row.created,
+                modified=row.modified,
+                deprecated=row.deprecated,
+                # releases
+                history=row_h.history if row_h else [],
+            )
+            if row
+            else None
+        )
+
+    async def list_latest_services(
+        self,
+        *,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
@@ -263,59 +386,7 @@ class ServicesRepository(BaseRepository):
 
         return (total_count, items_page)
 
-    async def create_or_update_service(
-        self,
-        new_service: ServiceMetaDataAtDB,
-        new_service_access_rights: list[ServiceAccessRightsAtDB],
-    ) -> ServiceMetaDataAtDB:
-        for access_rights in new_service_access_rights:
-            if (
-                access_rights.key != new_service.key
-                or access_rights.version != new_service.version
-            ):
-                msg = f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
-                raise ValueError(msg)
-
-        async with self.db_engine.begin() as conn:
-            # NOTE: this ensure proper rollback in case of issue
-            result = await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                services_meta_data.insert()
-                .values(**new_service.dict(by_alias=True))
-                .returning(literal_column("*"))
-            )
-            row = result.first()
-            assert row  # nosec
-            created_service = cast(
-                ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
-            )
-
-            for access_rights in new_service_access_rights:
-                insert_stmt = pg_insert(services_access_rights).values(
-                    **access_rights.dict(by_alias=True)
-                )
-                await conn.execute(insert_stmt)
-
-        return created_service
-
-    async def update_service(
-        self, patched_service: ServiceMetaDataAtDB
-    ) -> ServiceMetaDataAtDB:
-        # update the services_meta_data table
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                services_meta_data.update()
-                .where(
-                    (services_meta_data.c.key == patched_service.key)
-                    & (services_meta_data.c.version == patched_service.version)
-                )
-                .values(**patched_service.dict(by_alias=True, exclude_unset=True))
-                .returning(literal_column("*"))
-            )
-            row = result.first()
-            assert row  # nosec
-        return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+    # Service Access Rights ----
 
     async def get_service_access_rights(
         self,
@@ -416,6 +487,7 @@ class ServicesRepository(BaseRepository):
                     )
                 )
 
+    # Service Specs ---
     async def get_service_specifications(
         self,
         key: ServiceKey,

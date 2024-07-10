@@ -472,6 +472,13 @@
           ]
         }
       }
+    },
+    "image_digest": {
+      "type": "string",
+      "description": "Image manifest digest. Provides a 'footprint' for the service image",
+      "examples": [
+        "sha256:b7c8f6a401cb12d7fe36970b6927e03cb429b395fc9f2b0104291e12b81a5100"
+      ]
     }
   }
 }

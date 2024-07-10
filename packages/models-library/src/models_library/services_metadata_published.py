@@ -161,6 +161,12 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         description="regexp pattern for detecting computational service's progress",
     )
 
+    # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+    image_digest: str | None = Field(
+        None,
+        description="Image manifest digest. Note that this is NOT injected as an image label",
+    )
+
     class Config:
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid

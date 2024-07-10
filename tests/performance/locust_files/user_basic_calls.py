@@ -4,6 +4,7 @@
 
 import logging
 import time
+from pathlib import Path
 
 import faker
 from locust import task
@@ -91,3 +92,13 @@ class WebApiUser(FastHttpUser):
 
     def on_stop(self):
         self.logout(self.email)
+
+
+if __name__ == "__main__":
+    from locust_settings import LocustSettings, dump_dotenv
+
+    dump_dotenv(
+        LocustSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(Path(__file__).parent.parent)
+        )
+    )

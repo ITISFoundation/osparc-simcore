@@ -3096,7 +3096,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5503,11 +5503,6 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/ServiceType'
-        badges:
-          title: Badges
-          type: array
-          items:
-            $ref: '#/components/schemas/Badge'
         contact:
           title: Contact
           type: string
