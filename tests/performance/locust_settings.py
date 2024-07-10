@@ -29,12 +29,22 @@ class LocustSettings(BaseSettings):
     LOCUST_HOST: AnyHttpUrl = Field(
         default=..., examples=["https://api.osparc-master.speag.com"]
     )
-    LOCUST_LOCUSTFILE: Path = Field(default=...)
+    LOCUST_LOCUSTFILE: Path = Field(
+        default=...,
+        description="Test file. Path should be relative to `locust_files` dir",
+    )
     LOCUST_PRINT_STATS: bool = Field(default=True)
     LOCUST_RUN_TIME: timedelta = Field(default=...)
     LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
-    LOCUST_TIMESCALE: NonNegativeInt = Field(default=1, ge=0, le=1)
-    LOCUST_USERS: PositiveInt = Field(default=...)
+    LOCUST_TIMESCALE: NonNegativeInt = Field(
+        default=1,
+        ge=0,
+        le=1,
+        description="Send locust data to Timescale db for reading in Grafana dashboards",
+    )
+    LOCUST_USERS: PositiveInt = Field(
+        default=..., description="Number of locust users you want to spawn"
+    )
 
     PGHOST: str = Field(default="postgres")
     PGPASSWORD: str = Field(default="password")
