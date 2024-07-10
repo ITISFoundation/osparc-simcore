@@ -179,7 +179,21 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __extraInfo: function() {
-      const extraInfo = [{
+      const extraInfo = [];
+
+      if (this.getNodeId()) {
+        extraInfo.push({
+          label: this.tr("SERVICE ID"),
+          view: this.__createNodeId(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyNodeIdToClipboard,
+            ctx: this
+          }
+        });
+      }
+
+      extraInfo.push({
         label: this.tr("KEY"),
         view: this.__createKey(),
         action: {
@@ -207,7 +221,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
-      }];
+      });
 
       if (
         osparc.product.Utils.showClassifiers() &&
@@ -240,18 +254,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
         });
       }
 
-      if (this.getNodeId()) {
-        extraInfo.splice(0, 0, {
-          label: this.tr("SERVICE ID"),
-          view: this.__createNodeId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyNodeIdToClipboard,
-            ctx: this
-          }
-        });
-      }
-
       return extraInfo;
     },
 
@@ -271,7 +273,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createVersion: function() {
-      return osparc.info.ServiceUtils.createVersion(this.getService()["version"]);
+      let version = this.getService()["version"];
+      if (this.getService()["versionDisplay"]) {
+        version += " " + this.getService()["versionDisplay"]
+      }
+      return osparc.info.ServiceUtils.createVersion(version);
     },
 
     __createContact: function() {
