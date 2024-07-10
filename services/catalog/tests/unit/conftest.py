@@ -246,7 +246,8 @@ def mocked_director_service_api(
         openapi = deepcopy(director_service_openapi_specs)
         assert Version(openapi["info"]["version"]) == Version("0.1.0")
 
-        # Validate responses against OAS
+        # HEATHCHECK
+        assert openapi["paths"].get("/")
         respx_mock.head("/", name="healthcheck").respond(
             200,
             json={
@@ -259,6 +260,9 @@ def mocked_director_service_api(
             },
         )
 
+        # LIST
+        assert openapi["paths"].get("/services")
+
         @respx_mock.get(
             path__regex=r"/services$",
             name="list_services",
@@ -267,6 +271,9 @@ def mocked_director_service_api(
             return httpx.Response(
                 status.HTTP_200_OK, json={"data": expected_director_list_services}
             )
+
+        # GET
+        assert openapi["paths"].get("/services/{service_key}/{service_version}")
 
         @respx_mock.get(
             path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
@@ -288,16 +295,24 @@ def mocked_director_service_api(
                 status.HTTP_404_NOT_FOUND, json={"error": "Service not found"}
             )
 
-        # @respx_mock.get(
-        #     path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$", name="get_service_labels"
-        # )
-        # def get_service_labels(request):
-        #     raise NotImplementedError
+        # GET LABELS
+        assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
 
-        # @respx_mock.get(
-        #     path__regex=r"/services_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$", name="get_service_extras"
-        # )
-        # def get_service_extras(request):
-        #     raise NotImplementedError
+        @respx_mock.get(
+            path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
+            name="get_service_labels",
+        )
+        def get_service_labels(request):
+            raise NotImplementedError
+
+        # GET EXTRAS
+        assert openapi["paths"].get("/service_extras/{service_key}/{service_version}")
+
+        @respx_mock.get(
+            path__regex=r"/services_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
+            name="get_service_extras",
+        )
+        def get_service_extras(request):
+            raise NotImplementedError
 
         yield respx_mock
