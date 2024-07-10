@@ -178,7 +178,7 @@ qx.Class.define("osparc.service.Utils", {
         services = osparc.service.Store.servicesCached;
       }
       if (key in services) {
-        const versions = this.getVersions(key, false);
+        const versions = this.getVersions(key, true);
         return services[key][versions[0]];
       }
       return null;

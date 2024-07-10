@@ -86,7 +86,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
   },
 
   members: {
-    __allServicesList: null,
+    __servicesLatest: null,
     __filteredServicesObj: null,
     __textFilter: null,
     __contextLeftNodeId: null,
@@ -124,7 +124,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     __createListLayout: function() {
       // Services list
-      this.__allServicesList = [];
+      this.__servicesLatest = [];
       this.__filteredServicesObj = {};
 
       const serviceList = this.__serviceList = new osparc.service.ServiceList("serviceCatalog").set({
@@ -196,12 +196,11 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     },
 
     __populateList: function() {
-      this.__allServicesList = [];
+      this.__servicesLatest = [];
       osparc.service.Store.getServicesLatest()
         .then(servicesLatest => {
           Object.keys(servicesLatest).forEach(key => {
-            const serviceLatest = servicesLatest[key];
-            this.__allServicesList.push(serviceLatest);
+            this.__servicesLatest.push(servicesLatest[key]);
           });
           this.__updateList();
         });
@@ -210,7 +209,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     __updateList: function() {
       osparc.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
       const filteredServices = [];
-      this.__allServicesList.forEach(service => {
+      this.__servicesLatest.forEach(service => {
         if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
           filteredServices.push(service);
         } else {
@@ -230,8 +229,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
-        let service = osparc.service.Utils.getLatest(filteredServicesObj, key);
-        service = osparc.utils.Utils.deepCloneObject(service);
+        const service = osparc.utils.Utils.deepCloneObject(filteredServicesObj[key]);
         osparc.service.Utils.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
