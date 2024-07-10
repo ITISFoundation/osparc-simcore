@@ -171,4 +171,10 @@ if __name__ == "__main__":
     class MetaModelingSettings(UserSettings, LocustSettings):
         pass
 
-    dump_dotenv(MetaModelingSettings())
+    dump_dotenv(
+        MetaModelingSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(
+                Path(__file__).parent.parent.parent
+            )
+        )
+    )

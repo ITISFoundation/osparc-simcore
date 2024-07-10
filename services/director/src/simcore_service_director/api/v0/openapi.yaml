@@ -466,6 +466,11 @@ paths:
                                 - default
                                 - items
                           additionalProperties: true
+                        image_digest:
+                          title: Image Manifest digest
+                          description: Provides a unique footprint (hash) of the image manifest
+                          type: string
+                          example: sha256:b7c8f6a401cb12d7fe36970b6927e03cb429b395fc9f2b0104291e12b81a5100
                   error:
                     nullable: true
                     default: null
@@ -905,6 +910,11 @@ paths:
                                 - default
                                 - items
                           additionalProperties: true
+                        image_digest:
+                          title: Image Manifest digest
+                          description: Provides a unique footprint (hash) of the image manifest
+                          type: string
+                          example: sha256:b7c8f6a401cb12d7fe36970b6927e03cb429b395fc9f2b0104291e12b81a5100
                   error:
                     nullable: true
                     default: null
@@ -2758,6 +2768,12 @@ components:
                       - default
                       - items
                 additionalProperties: true
+              image_digest:
+                title: Image Manifest digest
+                description: Provides a unique footprint (hash) of the image manifest
+                type: string
+                example: sha256:b7c8f6a401cb12d7fe36970b6927e03cb429b395fc9f2b0104291e12b81a5100
+
         error:
           nullable: true
           default: null

@@ -7,6 +7,7 @@ RUN pip3 --version && \
   pip3 install \
   faker \
   locust-plugins \
+  locust-plugins[dashboards] \
   pydantic \
   pydantic-settings \
   tenacity &&\
