@@ -62,7 +62,7 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 dashboards-down:
 	@locust-compose down
 
-.PHONY: install-ci install-dev install
+.PHONY: install-ci install-dev
 
 install-dev:
 	@uv pip install -r requirements/requirements-dev.txt
