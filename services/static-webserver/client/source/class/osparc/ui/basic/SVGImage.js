@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     imageColor: {
       check: "String",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeImageColor",
       apply: "__applyImageColor"
     },
@@ -157,9 +157,12 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param keywordOrRgb {string} predefined keyword or rgb in the folloing format "0,255,0"
+      * @param keywordOrRgb {string} predefined keyword or rgb in the following format "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
+      if (keywordOrRgb === null) {
+        keywordOrRgb = "text";
+      }
       let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
       if (filterValue === null) {
         const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
