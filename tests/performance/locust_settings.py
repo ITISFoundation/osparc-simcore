@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 # pylint: disable=no-name-in-module
 
+import json
 from datetime import timedelta
 from pathlib import Path
 
@@ -17,8 +18,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from ._dump_dotenv import dump_dotenv
 
 
 class LocustSettings(BaseSettings):
@@ -70,4 +69,8 @@ class LocustSettings(BaseSettings):
 
 
 if __name__ == "__main__":
-    dump_dotenv(LocustSettings())
+    settings = LocustSettings()
+    result = [
+        f"{key}={val}" for key, val in json.loads(settings.model_dump_json()).items()
+    ]
+    print("\n".join(result))

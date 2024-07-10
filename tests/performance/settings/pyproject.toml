@@ -1,7 +1,0 @@
-[project]
-name = "locust-settings"
-version = "0.0.0"
-dependencies = [
-    "pydantic>=2.0",
-    "pydantic-settings",
-]
