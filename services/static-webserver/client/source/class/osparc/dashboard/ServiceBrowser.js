@@ -67,7 +67,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             if (!key.includes("simcore/services/frontend/")) {
               servicesList.push(serviceLatest);
             }
-            // TODO OM: filter out retired services
+            // filter out retired services
+            if (!servicesLatest[key]["retired"]) {
+              servicesList.push(serviceLatest);
+            }
           });
           this.__setResourcesToList(servicesList);
         })

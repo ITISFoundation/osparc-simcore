@@ -273,11 +273,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createVersion: function() {
-      let version = this.getService()["version"];
-      if (this.getService()["versionDisplay"]) {
-        version += " " + this.getService()["versionDisplay"]
-      }
-      return osparc.info.ServiceUtils.createVersion(version);
+      const version = this.getService()["version"]
+      const versionDisplay = this.getService()["versionDisplay"];
+      const versionTxt = versionDisplay ? `${versionDisplay} (${version})` : version;
+      return osparc.info.ServiceUtils.createVersion(versionTxt);
     },
 
     __createContact: function() {
