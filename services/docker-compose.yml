@@ -281,6 +281,7 @@ services:
       DIRECTOR_V2_PUBLIC_API_BASE_URL: ${DIRECTOR_V2_PUBLIC_API_BASE_URL}
       DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS}
       DIRECTOR_V2_PROFILING: ${DIRECTOR_V2_PROFILING}
+      DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: ${DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL}
 
       DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: ${DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED}
       DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: ${DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS}
@@ -502,7 +503,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/s4lacad`,`/s4ldesktop`,`/s4ldesktopacad`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/s4lacad/`,`/s4ldesktop/`,`/s4ldesktopacad/`,`/tis/`,`/transpiled/`,`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/s4lacad`,`/s4lengine`,`/s4ldesktop`,`/s4ldesktopacad`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/s4lacad/`,`/s4lengine/`,`/s4ldesktop/`,`/s4ldesktopacad/`,`/tis/`,`/transpiled/`,`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
