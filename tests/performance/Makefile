@@ -6,6 +6,9 @@ include ../../scripts/common.Makefile
 LOCUST_VERSION=2.29.1
 export LOCUST_VERSION
 
+ENV_FILE=$(shell pwd)/.env
+export ENV_FILE
+
 # UTILS
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
@@ -36,14 +39,23 @@ down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
 .PHONY: test
-test: ## runs osparc locust. locust and test confiuration are specified in .env file next to target file
-	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); \
-	export ENV_FILE=$$(realpath .env); \
+test: ## runs osparc locust. Locust and test configuration are specified in ENV_FILE
 	if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi; \
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
 
+.PHONY: install-ci install-dev install
 
-.PHONY: install-dev
-install-dev: _check_venv_active ## install python tools
+install-dev: install
+install-ci: install
+
+install: _check_venv_active ## install python tools
 	@uv pip install -r requirements.txt
+
+
+.PHONY: dashboards-up dashboards-down
+
+dashboards-up: ## Create Grafana dashboard for inspecting locust results. See dashboard on localhost:3000
+	locust-compose up --exit-code-from=grafana
+
+dashboards-down:
+	locust-compose down
