@@ -9,6 +9,8 @@ export LOCUST_VERSION
 ENV_FILE=$(shell pwd)/.env
 export ENV_FILE
 
+NETWORK_NAME=dashboards_timenet
+
 # UTILS
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
@@ -40,7 +42,11 @@ down: ## stops and removes osparc locust containers
 
 .PHONY: test
 test: ## runs osparc locust. Locust and test configuration are specified in ENV_FILE
-	if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi; \
+	@if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi;
+	@if ! docker network ls | grep -q $(NETWORK_NAME); then \
+		docker network create $(NETWORK_NAME); \
+		echo "Created docker network $(NETWORK_NAME)"; \
+	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
 
 .PHONY: install-ci install-dev install
@@ -56,6 +62,10 @@ install: _check_venv_active ## install python tools
 
 dashboards-up: ## Create Grafana dashboard for inspecting locust results. See dashboard on localhost:3000
 	@echo "View your dashboard on localhost:3000"
+	@if docker network ls | grep -q $(NETWORK_NAME); then \
+		docker network rm $(NETWORK_NAME); \
+		echo "Removed docker network $(NETWORK_NAME)"; \
+	fi
 	@locust-compose up
 
 dashboards-down:
