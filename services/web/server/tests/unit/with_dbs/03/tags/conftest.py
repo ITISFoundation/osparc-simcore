@@ -48,7 +48,6 @@ def client(
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection

@@ -6,15 +6,21 @@
 # pylint: disable=unused-variable
 
 
+import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
+import httpx
 import pytest
 import respx
 import simcore_service_catalog
+import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from packaging.version import Version
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -146,8 +152,25 @@ def director_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
+def director_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    openapi_path = (
+        osparc_simcore_services_dir
+        / "director"
+        / "src"
+        / "simcore_service_director"
+        / "api"
+        / "v0"
+        / "openapi.yaml"
+    )
+    return yaml.safe_load(openapi_path.read_text())
+
+
+@pytest.fixture
 def mocked_director_service_api(
     app_settings: ApplicationSettings,
+    director_service_openapi_specs: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
     assert app_settings.CATALOG_DIRECTOR
     with respx.mock(
@@ -155,9 +178,103 @@ def mocked_director_service_api(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": ["one", "two"]}
+
+        # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
+        openapi = deepcopy(director_service_openapi_specs)
+        assert Version(openapi["info"]["version"]) == Version("0.1.0")
+
+        # Validate responses against OAS
+        respx_mock.head("/", name="healthcheck").respond(
+            200,
+            json={
+                "data": {
+                    "name": "simcore-service-director",
+                    "status": "SERVICE_RUNNING",
+                    "api_version": "0.1.0",
+                    "version": "0.1.0",
+                }
+            },
         )
+
+        _services = [
+            {
+                "image_digest": hashlib.sha256(
+                    f"simcore/services/comp/ans-model:{major}".encode()
+                ).hexdigest(),
+                "authors": [
+                    {
+                        "name": "John Smith",
+                        "email": "smith@acme.com",
+                        "affiliation": "ACME",
+                    }
+                ],
+                "contact": "smith@acme.com",
+                "description": "Autonomous Nervous System Network model",
+                "inputs": {
+                    "input_1": {
+                        "displayOrder": 1,
+                        "label": "Simulation time",
+                        "description": "Duration of the simulation",
+                        "type": "ref_contentSchema",
+                        "contentSchema": {
+                            "type": "number",
+                            "x_unit": "milli-second",
+                        },
+                        "defaultValue": 2,
+                    }
+                },
+                "integration-version": "1.0.0",
+                "key": "simcore/services/comp/ans-model",
+                "name": "Autonomous Nervous System Network model",
+                "outputs": {
+                    "output_1": {
+                        "displayOrder": 1,
+                        "label": "ANS output",
+                        "description": "Output of simulation of Autonomous Nervous System Network model",
+                        "type": "data:*/*",
+                        "fileToKeyMap": {"ANS_output.txt": "output_1"},
+                    },
+                    "output_2": {
+                        "displayOrder": 2,
+                        "label": "Stimulation parameters",
+                        "description": "stim_param.txt file containing the input provided in the inputs port",
+                        "type": "data:*/*",
+                        "fileToKeyMap": {"ANS_stim_param.txt": "output_2"},
+                    },
+                },
+                "thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png",
+                "type": "computational",
+                "version": f"{major}.0.0",
+            }
+            for major in range(1, 4)
+        ]
+
+        respx_mock.get("/services", name="list_services").respond(
+            status.HTTP_200_OK,
+            json={"data": _services},
+        )
+
+        @respx_mock.get(r"/services/(?P<services_key>\w+)/(?P<service_version>\w+)")
+        def get_service(request):
+            key = request.path_params["services_key"]
+            version = request.path_params["service_version"]
+            for service in _services:
+                if service["key"] == key and service["version"] == version:
+                    return httpx.Response(status.HTTP_200_OK, json={"data": service})
+            return httpx.Response(
+                status.HTTP_404_NOT_FOUND, json={"error": "Service not found"}
+            )
+
+        @respx_mock.get(
+            r"/services/(?P<services_key>\w+)/(?P<service_version>\w+)/labels"
+        )
+        def get_service_labels(request):
+            raise NotImplementedError
+
+        @respx_mock.get(
+            r"/services_extras/(?P<services_key>\w+)/(?P<service_version>\w+)"
+        )
+        def get_service_extras(request):
+            raise NotImplementedError
 
         yield respx_mock

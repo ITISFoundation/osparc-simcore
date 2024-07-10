@@ -24,7 +24,6 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory):
 
     exclude = {
         "tracing",
-        "director",
         "smtp",
         "storage",
         "activity",
