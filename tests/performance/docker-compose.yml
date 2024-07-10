@@ -5,8 +5,9 @@ services:
       - "8089:8089"
     volumes:
       - ./locust_files:/home/locust/locust_files
+      - ./locust_report:/home/locust/locust_report
     command: >
-      --master
+      --master --html=locust_report/locust_html.html
     env_file:
       - ${ENV_FILE}
     networks:
