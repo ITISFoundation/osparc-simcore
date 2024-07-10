@@ -127,6 +127,22 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    getGridsFirstColumnWidth: function(grid) {
+      let firstColumnWidth = null;
+      const firstElement = grid.getCellWidget(0, 0);
+      const secondElement = grid.getCellWidget(0, 1);
+      if (firstElement && secondElement) {
+        const firstCellBounds = firstElement.getBounds();
+        const secondCellBounds = secondElement.getBounds();
+        if (firstCellBounds && secondCellBounds) {
+          const left1 = firstCellBounds.left;
+          const left2 = secondCellBounds.left;
+          firstColumnWidth = left2 - left1;
+        }
+      }
+      return firstColumnWidth;
+    },
+
     makeButtonBlink: function(button, nTimes = 1) {
       const onTime = 1000;
       const oldBgColor = button.getBackgroundColor();
@@ -586,7 +602,7 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes, decimals = 2, isDecimalColapsed = true) {
+    bytesToSize: function(bytes, decimals = 2, isDecimalCollapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
       }
@@ -595,7 +611,7 @@ qx.Class.define("osparc.utils.Utils", {
       const dm = decimals < 0 ? 0 : decimals;
 
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return `${isDecimalColapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
+      return `${isDecimalCollapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {
