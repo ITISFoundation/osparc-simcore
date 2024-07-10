@@ -174,7 +174,7 @@ def mocked_director_service_api(
 ) -> Iterator[respx.MockRouter]:
     assert app_settings.CATALOG_DIRECTOR
     with respx.mock(
-        base_url=app_settings.CATALOG_DIRECTOR.base_url,
+        base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
@@ -249,32 +249,43 @@ def mocked_director_service_api(
             for major in range(1, 4)
         ]
 
-        respx_mock.get("/services", name="list_services").respond(
-            status.HTTP_200_OK,
-            json={"data": _services},
+        @respx_mock.get(
+            path__regex=r"/services$",
+            name="list_services",
         )
+        def list_services(request):
+            return httpx.Response(status.HTTP_200_OK, json={"data": _services})
 
-        @respx_mock.get(r"/services/(?P<services_key>\w+)/(?P<service_version>\w+)")
-        def get_service(request):
-            key = request.path_params["services_key"]
-            version = request.path_params["service_version"]
+        @respx_mock.get(
+            path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
+            name="get_service",
+        )
+        def get_service(request, service_key, service_version):
             for service in _services:
-                if service["key"] == key and service["version"] == version:
-                    return httpx.Response(status.HTTP_200_OK, json={"data": service})
+                if (
+                    service["key"] == service_key
+                    and service["version"] == service_version
+                ):
+                    single_service_list = [
+                        service,
+                    ]  # NOTE: this is a defect in director's API
+                    return httpx.Response(
+                        status.HTTP_200_OK, json={"data": single_service_list}
+                    )
             return httpx.Response(
                 status.HTTP_404_NOT_FOUND, json={"error": "Service not found"}
             )
 
-        @respx_mock.get(
-            r"/services/(?P<services_key>\w+)/(?P<service_version>\w+)/labels"
-        )
-        def get_service_labels(request):
-            raise NotImplementedError
+        # @respx_mock.get(
+        #     path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$", name="get_service_labels"
+        # )
+        # def get_service_labels(request):
+        #     raise NotImplementedError
 
-        @respx_mock.get(
-            r"/services_extras/(?P<services_key>\w+)/(?P<service_version>\w+)"
-        )
-        def get_service_extras(request):
-            raise NotImplementedError
+        # @respx_mock.get(
+        #     path__regex=r"/services_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$", name="get_service_extras"
+        # )
+        # def get_service_extras(request):
+        #     raise NotImplementedError
 
         yield respx_mock
