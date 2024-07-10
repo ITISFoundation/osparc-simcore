@@ -49,15 +49,6 @@ test: ## runs osparc locust. Locust and test configuration are specified in ENV_
 	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
 
-.PHONY: install-ci install-dev install
-
-install-dev: install
-install-ci: install
-
-install: _check_venv_active ## install python tools
-	@uv pip install -r requirements.txt
-
-
 .PHONY: dashboards-up dashboards-down
 
 dashboards-up: ## Create Grafana dashboard for inspecting locust results. See dashboard on localhost:3000
@@ -70,3 +61,11 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 
 dashboards-down:
 	@locust-compose down
+
+.PHONY: install-ci install-dev install
+
+install-dev:
+	@uv pip install -r requirements/requirements-dev.txt
+
+install-ci: install
+	@uv pip install -r requirements/requirements-ci.txt
