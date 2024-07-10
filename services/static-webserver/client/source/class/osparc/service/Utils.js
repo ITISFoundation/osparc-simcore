@@ -174,7 +174,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getLatest: function(key, services) {
-      if (services === null) {
+      if (!services) {
         services = osparc.service.Store.servicesCached;
       }
       if (key in services) {

@@ -229,7 +229,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
-        const service = osparc.utils.Utils.deepCloneObject(filteredServicesObj[key]);
+        let service = osparc.service.Utils.getLatest(key);
+        service = osparc.utils.Utils.deepCloneObject(service);
         osparc.service.Utils.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
