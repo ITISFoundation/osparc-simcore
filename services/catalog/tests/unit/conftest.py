@@ -259,7 +259,10 @@ def mocked_director_service_api(
     director_service_openapi_specs: dict[str, Any],
     expected_director_list_services: list[dict[str, Any]],
 ) -> Iterator[respx.MockRouter]:
-    assert app_settings.CATALOG_DIRECTOR
+    assert (
+        app_settings.CATALOG_DIRECTOR
+    ), "Check dependency on fixture `director_setup_disabled`"
+
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
         assert_all_called=False,
@@ -305,7 +308,7 @@ def mocked_director_service_api(
         assert openapi["paths"].get("/services/{service_key}/{service_version}")
 
         @respx_mock.get(
-            path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
+            path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
             name="get_service",
         )
         def _get_service(request, service_key, service_version):
@@ -329,7 +332,7 @@ def mocked_director_service_api(
         assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
 
         @respx_mock.get(
-            path__regex=r"/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
+            path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
             name="get_service_labels",
         )
         def _get_service_labels(request, service_key, service_version):
@@ -377,7 +380,7 @@ def mocked_director_service_api(
         assert openapi["paths"].get("/service_extras/{service_key}/{service_version}")
 
         @respx_mock.get(
-            path__regex=r"/service_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
+            path__regex=r"^/service_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
             name="get_service_extras",
         )
         def _get_service_extras(request, service_key, service_version):
