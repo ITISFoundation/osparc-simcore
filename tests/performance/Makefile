@@ -55,7 +55,7 @@ install: _check_venv_active ## install python tools
 .PHONY: dashboards-up dashboards-down
 
 dashboards-up: ## Create Grafana dashboard for inspecting locust results. See dashboard on localhost:3000
-	locust-compose up --exit-code-from=grafana
+	locust-compose up
 
 dashboards-down:
 	locust-compose down
