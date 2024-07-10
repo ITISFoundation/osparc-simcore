@@ -130,7 +130,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       }
     },
 
-    getRepresenationPosition: function() {
+    getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
         const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
