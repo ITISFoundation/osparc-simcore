@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 from typing import Any, Final, Literal
 
+from models_library.basic_types import SHA256Str
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
     ContainerSpec,
@@ -93,8 +94,10 @@ class MetadataConfig(ServiceMetaDataPublished):
     Necessary for both image- and runtime-spec
     """
 
-    image_digest: str | None = Field(
-        None, description="this is NOT a label", exclude=True
+    image_digest: SHA256Str | None = Field(
+        None,
+        description="this is NOT a label, therefore it is EXCLUDED to export",
+        exclude=True,
     )
 
     @validator("contact")
