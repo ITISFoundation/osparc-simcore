@@ -37,6 +37,14 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
+        // In TIP, a tool that can be used for free.
+        // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
+        // Note: Since we can fetch payments per wallet, for now rely on the available credits.
+        if (osparc.product.Utils.isProduct("tis")) {
+          const credits = contextWallet.getCreditsAvailable();
+          this.__forceNullColor = credits === 0;
+        }
+
         contextWallet.addListener("changeCreditsAvailable", this.__updateColor, this);
         this.__updateColor();
       }
