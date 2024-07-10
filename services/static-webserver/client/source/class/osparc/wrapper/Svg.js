@@ -132,6 +132,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    /* ANNOTATIONS */
+
     getRectAttributes: function(rect) {
       const rectAttrs = rect.node.attributes;
       return {
@@ -272,6 +274,33 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
+    updateText: function(representation, label) {
+      if (representation.type === "text") {
+        representation.text(label);
+      } else if (representation.type === "svg") {
+        // nested
+        representation["textChild"].innerText = label;
+      }
+    },
+
+    updateTextColor: function(text, color) {
+      text.font({
+        fill: color
+      });
+    },
+
+    updateTextSize: function(text, size) {
+      text.font({
+        size: size + "px"
+      });
+    },
+
+    showBoundingBox: function(draw, show) {
+      console.log(draw, show);
+    },
+
+    /* / ANNOTATIONS */
+
     drawDashedRect: function(draw, width, height, x, y) {
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
       const rect = draw.rect(width, height)
@@ -333,27 +362,6 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     removeItem: function(item) {
       item.remove();
-    },
-
-    updateText: function(representation, label) {
-      if (representation.type === "text") {
-        representation.text(label);
-      } else if (representation.type === "svg") {
-        // nested
-        representation["textChild"].innerText = label;
-      }
-    },
-
-    updateTextColor: function(text, color) {
-      text.font({
-        fill: color
-      });
-    },
-
-    updateTextSize: function(text, size) {
-      text.font({
-        size: size + "px"
-      });
     },
 
     updateCurveDashes: function(curve, dashed) {
