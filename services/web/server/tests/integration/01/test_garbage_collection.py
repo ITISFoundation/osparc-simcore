@@ -148,7 +148,6 @@ def client(
     assert cfg["rest"]["enabled"]
 
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["resource_manager"].update(
         {
             "garbage_collection_interval_seconds": GARBAGE_COLLECTOR_INTERVAL,  # increase speed of garbage collection
