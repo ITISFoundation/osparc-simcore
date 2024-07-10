@@ -269,19 +269,12 @@ def mocked_director_service_api(
             r"/services/(?P<services_key>\w+)/(?P<service_version>\w+)/labels"
         )
         def get_service_labels(request):
-            return httpx.Response(200, json={"labels": ["label1", "label2"]})
+            raise NotImplementedError
 
         @respx_mock.get(
             r"/services_extras/(?P<services_key>\w+)/(?P<service_version>\w+)"
         )
         def get_service_extras(request):
-            key = request.path_params["services_key"]
-            version = request.path_params["service_version"]
-            for service in _services:
-                if service["key"] == key and service["version"] == version:
-                    return httpx.Response(status.HTTP_200_OK, json={"extra": "data"})
-            return httpx.Response(
-                status.HTTP_404_NOT_FOUND, json={"error": "Service not found"}
-            )
+            raise NotImplementedError
 
         yield respx_mock
