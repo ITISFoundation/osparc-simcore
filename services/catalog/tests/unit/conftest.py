@@ -21,6 +21,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from packaging.version import Version
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -192,7 +193,9 @@ def director_service_openapi_specs(
 
 
 @pytest.fixture
-def expected_director_list_services() -> list[dict[str, Any]]:
+def expected_director_list_services(
+    user_email: EmailStr, user_first_name: str, user_last_name: str
+) -> list[dict[str, Any]]:
     """This fixture has at least TWO purposes:
 
     1. can be used as a reference to check the results at the other end
@@ -206,12 +209,12 @@ def expected_director_list_services() -> list[dict[str, Any]]:
             ).hexdigest(),
             "authors": [
                 {
-                    "name": "John Smith",
-                    "email": "smith@acme.com",
+                    "name": f"{user_first_name} {user_last_name}",
+                    "email": user_email,
                     "affiliation": "ACME",
                 }
             ],
-            "contact": "smith@acme.com",
+            "contact": user_email,
             "description": "Autonomous Nervous System Network model",
             "inputs": {
                 "input_1": {
