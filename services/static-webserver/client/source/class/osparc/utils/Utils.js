@@ -456,8 +456,7 @@ qx.Class.define("osparc.utils.Utils", {
       const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
       let msg = "";
       msg += qx.locale.Manager.tr("To use all ");
-      const color = qx.theme.manager.Color.getInstance().resolve("text");
-      msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+      msg += this.createHTMLLink(productName + " features", manualLink);
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
       msg += mailto;
