@@ -123,7 +123,7 @@ def postgres_setup_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def setup_background_tasks_disabled(mocker: MockerFixture) -> None:
+def background_tasks_setup_disabled(mocker: MockerFixture) -> None:
     """patch the setup of the background task so we can call it manually"""
 
     def _factory(name):
@@ -131,7 +131,7 @@ def setup_background_tasks_disabled(mocker: MockerFixture) -> None:
             assert app
             print(
                 "TEST",
-                setup_background_tasks_disabled.__name__,
+                background_tasks_setup_disabled.__name__,
                 "Disabled background tasks. Skipping execution of",
                 name,
             )
@@ -152,7 +152,7 @@ def setup_background_tasks_disabled(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def setup_rabbitmq_and_rpc_disabled(mocker: MockerFixture):
+def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
     mocker.patch("simcore_service_catalog.core.application.setup_rabbitmq")
     mocker.patch("simcore_service_catalog.core.application.setup_rpc_api_routes")

@@ -166,6 +166,7 @@ async def _ensure_published_templates_accessible(
 
 
 async def _run_sync_services(app: FastAPI):
+    # FIXME: need to guarantee that these are in place!
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
@@ -178,9 +179,6 @@ async def _run_sync_services(app: FastAPI):
 
 
 async def _sync_services_task(app: FastAPI) -> None:
-    default_product: Final[str] = app.state.default_product_name
-    engine: AsyncEngine = app.state.engine
-
     while app.state.registry_syncer_running:
         try:
             _logger.debug("Syncing services between registry and database...")

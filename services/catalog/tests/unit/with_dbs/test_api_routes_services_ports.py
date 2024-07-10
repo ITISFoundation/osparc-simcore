@@ -80,10 +80,10 @@ async def mocked_director_service_api(
 
 async def test_list_service_ports(
     service_caching_disabled: None,
-    setup_background_tasks_disabled: None,
+    background_tasks_setup_disabled: None,
     mocked_check_service_read_access: None,
     mocked_director_service_api: None,
-    setup_rabbitmq_and_rpc_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     product_name: str,
     user_id: int,

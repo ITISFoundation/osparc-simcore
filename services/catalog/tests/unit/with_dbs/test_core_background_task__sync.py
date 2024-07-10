@@ -32,8 +32,8 @@ def services_repo(app: FastAPI) -> ServicesRepository:
 
 
 async def test_registry_sync_task(
-    setup_background_tasks_disabled: None,
-    setup_rabbitmq_and_rpc_disabled: None,
+    background_tasks_setup_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     expected_director_list_services: list[dict[str, Any]],
     user_id: UserID,
