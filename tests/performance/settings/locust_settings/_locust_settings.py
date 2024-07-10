@@ -3,11 +3,13 @@
 # pylint: disable=no-name-in-module
 
 from datetime import timedelta
+from pathlib import Path
 
 from parse import Result, parse
 from pydantic import (
     AnyHttpUrl,
     Field,
+    NonNegativeInt,
     PositiveFloat,
     PositiveInt,
     SerializationInfo,
@@ -22,16 +24,23 @@ from ._dump_dotenv import dump_dotenv
 class LocustSettings(BaseSettings):
     model_config = SettingsConfigDict(cli_parse_args=True)
 
+    LOCUST_CHECK_AVG_RESPONSE_TIME: PositiveInt = Field(default=200)
+    LOCUST_CHECK_FAIL_RATIO: PositiveFloat = Field(default=0.01, ge=0.0, le=1.0)
+    LOCUST_HEADLESS: bool = Field(default=True)
     LOCUST_HOST: AnyHttpUrl = Field(
         default=..., examples=["https://api.osparc-master.speag.com"]
     )
-    LOCUST_USERS: PositiveInt = Field(default=...)
-    LOCUST_HEADLESS: bool = Field(default=True)
+    LOCUST_LOCUSTFILE: Path = Field(default=...)
     LOCUST_PRINT_STATS: bool = Field(default=True)
-    LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
     LOCUST_RUN_TIME: timedelta = Field(default=...)
-    LOCUST_CHECK_AVG_RESPONSE_TIME: PositiveInt = Field(default=200)
-    LOCUST_CHECK_FAIL_RATIO: PositiveFloat = Field(default=0.01, ge=0.0, le=1.0)
+    LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
+    LOCUST_TIMESCALE: NonNegativeInt = Field(default=1, ge=0, le=1)
+    LOCUST_USERS: PositiveInt = Field(default=...)
+
+    PGHOST: str = Field(default="postgres")
+    PGPASSWORD: str = Field(default="password")
+    PGPORT: int = Field(default=5432)
+    PGUSER: str = Field(default="postgres")
 
     @field_validator("LOCUST_RUN_TIME", mode="before")
     @classmethod
