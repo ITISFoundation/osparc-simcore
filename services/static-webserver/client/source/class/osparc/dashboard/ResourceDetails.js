@@ -18,10 +18,11 @@
 qx.Class.define("osparc.dashboard.ResourceDetails", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function(resourceData) {
+  construct: function(resourceData, resourceModel) {
     this.base(arguments);
 
     this.__resourceData = resourceData;
+    this.__resourceModel = resourceModel;
 
     this.__resourceModel = null;
     switch (resourceData["resourceType"]) {
@@ -137,6 +138,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__openResource();
         return;
       }
+
       this.__openButton.setFetching(true);
       const params = {
         url: {
@@ -350,6 +352,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         infoCard.addListener("openAccessRights", () => this.openAccessRights());
         infoCard.addListener("openClassifiers", () => this.openClassifiers());
         infoCard.addListener("openQuality", () => this.openQuality());
+
         page.addToContent(infoCard);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);

@@ -415,6 +415,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
+    _updateCard: function(resourceData) {
+      const cards = this._resourcesContainer.getCards();
+      const found = cards.filter(c => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(c) && c.getUuid() === resourceData["uuid"]);
+      found.forEach(f => {
+        // since we are passing and object, the property change won't be triggered. reset the value first
+        f.setResourceData({});
+        f.setResourceData(resourceData);
+      });
+    },
+
     _removeResourceCards: function() {
       const cards = this._resourcesContainer.getCards();
       for (let i=cards.length-1; i>=0; i--) {
@@ -488,8 +498,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return openButton;
     },
 
-    _openResourceDetails: function(resourceData) {
-      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+    _openResourceDetails: function(resourceData, resourceModel) {
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData, resourceModel);
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));

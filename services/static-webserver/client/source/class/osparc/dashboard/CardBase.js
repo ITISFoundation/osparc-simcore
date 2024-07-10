@@ -222,7 +222,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     workbench: {
-      check: "Object",
+      check: "osparc.data.model.Workbench",
       nullable: true,
       apply: "__applyWorkbench"
     },
@@ -312,49 +312,70 @@ qx.Class.define("osparc.dashboard.CardBase", {
       dragover : true
     },
 
+    __resourceModel: null,
+
     isResourceType: function(resourceType) {
       return this.getResourceType() === resourceType;
     },
 
     __applyResourceData: function(resourceData) {
-      let uuid = null;
-      let owner = null;
-      let workbench = null;
-      let defaultHits = null;
-      switch (resourceData["resourceType"]) {
-        case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : null;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
-          workbench = resourceData.workbench ? resourceData.workbench : {};
-          break;
-        case "template":
-          uuid = resourceData.uuid ? resourceData.uuid : null;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : "";
-          workbench = resourceData.workbench ? resourceData.workbench : {};
-          break;
-        case "service":
-          uuid = resourceData.key ? resourceData.key : null;
-          owner = resourceData.owner ? resourceData.owner : "";
-          defaultHits = 0;
-          break;
-      }
+      if (resourceData["resourceType"]) {
+        this.set({
+          resourceType: resourceData.resourceType
+        });
 
-      this.set({
-        resourceType: resourceData.resourceType,
-        uuid,
-        title: resourceData.name,
-        description: resourceData.description,
-        owner,
-        accessRights: resourceData.accessRights ? resourceData.accessRights : {},
-        lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
-        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
-        state: resourceData.state ? resourceData.state : {},
-        classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
-        quality: resourceData.quality ? resourceData.quality : null,
-        uiMode: resourceData.ui && resourceData.ui.mode ? resourceData.ui.mode : null,
-        hits: resourceData.hits ? resourceData.hits : defaultHits,
-        workbench
-      });
+        let model = null;
+        switch (resourceData["resourceType"]) {
+          case "study":
+          case "template":
+            model = new osparc.data.model.Study(resourceData);
+            model["resourceType"] = resourceData["resourceType"];
+            break;
+          case "service":
+            model = new osparc.data.model.Service(resourceData);
+            model["resourceType"] = resourceData["resourceType"];
+            break;
+        }
+        if (model) {
+          this.__bindModelToCard(model);
+        }
+      }
+    },
+
+    getResourceModel: function() {
+      return this.__resourceModel;
+    },
+
+    __bindModelToCard: function(model) {
+      this.__resourceModel = model;
+      if (model instanceof osparc.data.model.Study) {
+        model.bind("uuid", this, "uuid");
+        model.bind("name", this, "title");
+        model.bind("description", this, "description");
+        model.bind("workbench", this, "workbench");
+        model.bind("prjOwner", this, "owner");
+        model.bind("accessRights", this, "accessRights");
+        model.bind("lastChangeDate", this, "lastChangeDate");
+        model.bind("thumbnail", this, "icon", {
+          converter: t => t || this.self().PRODUCT_ICON
+        });
+        model.bind("state", this, "state");
+        model.bind("classifiers", this, "classifiers");
+        model.bind("quality", this, "quality");
+        model.getUi().bind("mode", this, "uiMode");
+      } else if (model instanceof osparc.data.model.Service) {
+        model.bind("key", this, "uuid");
+        model.bind("name", this, "title");
+        model.bind("description", this, "description");
+        model.bind("owner", this, "owner");
+        model.bind("accessRights", this, "accessRights");
+        model.bind("thumbnail", this, "icon", {
+          converter: t => t || this.self().PRODUCT_ICON
+        });
+        model.bind("classifiers", this, "classifiers");
+        model.bind("quality", this, "quality");
+        model.bind("hits", this, "hits");
+      }
     },
 
     __applyUuid: function(value, old) {
@@ -442,17 +463,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return;
       }
 
+      const workbenchData = workbench.serialize();
       if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+        this.setEmptyWorkbench(Object.keys(workbenchData).length === 0);
       }
 
       // Updatable study
-      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.isWorkbenchRetired(workbenchData)) {
         this.setUpdatable("retired");
-      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbenchData)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.study.Utils.isWorkbenchUpdatable(workbench)
+        osparc.study.Utils.isWorkbenchUpdatable(workbenchData)
           .then(updatable => {
             if (updatable) {
               this.setUpdatable("updatable");
@@ -461,7 +483,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.study.Utils.getInaccessibleServices(workbench)
+      osparc.study.Utils.getInaccessibleServices(workbenchData)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.__enableCard(false);
@@ -699,7 +721,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __openMoreOptions: function() {
-      const resourceData = this.getResourceData();
+      const resourceData = this.__resourceModel.serialize();
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       [

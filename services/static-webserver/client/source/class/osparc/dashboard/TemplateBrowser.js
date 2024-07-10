@@ -138,7 +138,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (!card.isLocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
-        this._openResourceDetails(templateData);
+        this._openResourceDetails(templateData, card.getResourceModel());
       }
       this.resetSelection();
     },

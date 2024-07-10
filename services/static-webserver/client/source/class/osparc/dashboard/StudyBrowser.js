@@ -333,7 +333,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this._openResourceDetails(studyData);
+        this._openResourceDetails(studyData, item.getResourceModel());
         this.resetSelection();
       }
     },
@@ -867,7 +867,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._reloadCards();
+      this._updateCard(studyData);
     },
 
     __removeFromStudyList: function(studyId) {
