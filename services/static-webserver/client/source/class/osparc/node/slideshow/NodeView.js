@@ -27,14 +27,14 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeView = new osparc.node.NodeView();
+ *   let nodeView = new osparc.node.slideshow.NodeView();
  *   nodeView.setNode(workbench.getNode1());
  *   this.getRoot().add(nodeView);
  * </pre>
  */
 
-qx.Class.define("osparc.node.NodeView", {
-  extend: osparc.node.BaseNodeView,
+qx.Class.define("osparc.node.slideshow.NodeView", {
+  extend: osparc.node.slideshow.BaseNodeView,
 
   statics: {
     LOGGER_HEIGHT: 28,
@@ -57,9 +57,7 @@ qx.Class.define("osparc.node.NodeView", {
       const node = this.getNode();
       const propsForm = node.getPropsForm();
       if (propsForm && node.hasInputs()) {
-        propsForm.addListener("changeChildVisibility", () => {
-          this.__checkSettingsVisibility();
-        }, this);
+        propsForm.addListener("changeChildVisibility", () => this.__checkSettingsVisibility(), this);
         this._settingsLayout.add(propsForm);
       }
       this.__checkSettingsVisibility();
@@ -125,7 +123,7 @@ qx.Class.define("osparc.node.NodeView", {
 
     // overridden
     _openEditAccessLevel: function() {
-      const settingsEditorLayout = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+      const settingsEditorLayout = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       const propsFormEditor = this.getNode().getPropsFormEditor();
       settingsEditorLayout.add(propsFormEditor);
       const title = this.getNode().getLabel();
