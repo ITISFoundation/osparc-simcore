@@ -298,7 +298,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         return null;
       });
-      const nodeId = resp["nodeId"];
+      const nodeId = resp["node_id"];
 
       this.fireEvent("restartAutoSaveTimer");
       const node = this.__createNode(this.getStudy(), key, version, nodeId);
