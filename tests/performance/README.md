@@ -11,7 +11,7 @@ In the [locust_files] folder are located the test files.
 1. All settings are passed to the locust container as environment variables in `.env`. To generate locust env vars, run `locust_settings.py` with appropriate settings and pipe it to `.env`:
 ```bash
 python locust_settings.py --LOCUST_HOST=https://api.osparc-master.speag.com  \
---LOCUST_USERS=100 --LOCUST_RUN_TIME=0:10:00 > .env
+--LOCUST_USERS=100 --LOCUST_RUN_TIME=0:10:00 --LOCUST_LOCUSTFILE=locust_files/platform_ping_test.py > .env
 ```
 2. Add settings related to your locust file. E.g. if your file expects to find an environment variable `MYENVVAR` you add it to `.env`:
 ```bash
