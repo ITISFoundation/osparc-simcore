@@ -35,6 +35,8 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
 
 async def test_status_no_rabbit(
     disabled_rabbitmq: None,
+    mocked_ssm_server_envs: EnvVarsDict,
+    with_enabled_buffer_pools: EnvVarsDict,
     async_client: httpx.AsyncClient,
 ):
     response = await async_client.get("/status")
@@ -49,12 +51,40 @@ async def test_status_no_rabbit(
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is True
 
+    assert status_response.ssm.is_enabled is True
+    assert status_response.ssm.is_responsive is True
+
+    assert status_response.docker.is_enabled is True
+    assert status_response.docker.is_responsive is True
+
+
+async def test_status_no_ssm(
+    disabled_rabbitmq: None,
+    async_client: httpx.AsyncClient,
+):
+    response = await async_client.get("/status")
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_200_OK
+    status_response = _StatusGet.parse_obj(response.json())
+    assert status_response
+
+    assert status_response.rabbitmq.is_enabled is False
+    assert status_response.rabbitmq.is_responsive is False
+
+    assert status_response.ec2.is_enabled is True
+    assert status_response.ec2.is_responsive is True
+
+    assert status_response.ssm.is_enabled is False
+    assert status_response.ssm.is_responsive is False
+
     assert status_response.docker.is_enabled is True
     assert status_response.docker.is_responsive is True
 
 
 async def test_status(
     mocked_aws_server: ThreadedMotoServer,
+    with_enabled_buffer_pools: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     async_client: httpx.AsyncClient,
 ):
     # stop the aws server...
@@ -72,6 +102,9 @@ async def test_status(
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is False
 
+    assert status_response.ssm.is_enabled is True
+    assert status_response.ssm.is_responsive is False
+
     assert status_response.docker.is_enabled is True
     assert status_response.docker.is_responsive is True
     # restart the server
@@ -88,6 +121,9 @@ async def test_status(
 
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is True
+
+    assert status_response.ssm.is_enabled is True
+    assert status_response.ssm.is_responsive is True
 
     assert status_response.docker.is_enabled is True
     assert status_response.docker.is_responsive is True
