@@ -9,12 +9,13 @@
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import httpx
 import pytest
 import respx
 import simcore_service_catalog
+import simcore_service_catalog.core.events
 import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -22,7 +23,7 @@ from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from packaging.version import Version
 from pydantic import EmailStr
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -99,42 +100,106 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
 
 
+class AppLifeSpanSpyTargets(NamedTuple):
+    on_startup: MockType
+    on_shutdown: MockType
+
+
+@pytest.fixture
+def spy_app(mocker: MockerFixture) -> AppLifeSpanSpyTargets:
+    # Used to ensure startup/teardown workflows using different fixtures
+    # work as expected
+    return AppLifeSpanSpyTargets(
+        on_startup=mocker.spy(
+            simcore_service_catalog.core.events,
+            "_flush_started_banner",
+        ),
+        on_shutdown=mocker.spy(
+            simcore_service_catalog.core.events,
+            "_flush_finished_banner",
+        ),
+    )
+
+
 @pytest.fixture
 async def app(
-    app_settings: ApplicationSettings, is_pdb_enabled: bool
+    app_settings: ApplicationSettings,
+    is_pdb_enabled: bool,
+    spy_app: AppLifeSpanSpyTargets,
 ) -> AsyncIterator[FastAPI]:
     """
     NOTE that this app was started when the fixture is setup
     and shutdown when the fixture is tear-down
     """
+
+    # create instance
     assert app_environment
-    the_test_app = create_app(settings=app_settings)
+    app_under_test = create_app(settings=app_settings)
+
+    assert spy_app.on_startup.call_count == 0
+    assert spy_app.on_shutdown.call_count == 0
+
     async with LifespanManager(
-        the_test_app,
+        app_under_test,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
-        yield the_test_app
+        assert spy_app.on_startup.call_count == 1
+        assert spy_app.on_shutdown.call_count == 0
+
+        yield app_under_test
+
+    assert spy_app.on_startup.call_count == 1
+    assert spy_app.on_shutdown.call_count == 1
 
 
 @pytest.fixture
-def client(app: FastAPI) -> Iterator[TestClient]:
-    with TestClient(app) as cli:
-        # FIXME: this way we ensure the events are run in the application
+def client(
+    app_settings: ApplicationSettings, spy_app: AppLifeSpanSpyTargets
+) -> Iterator[TestClient]:
+    # NOTE: DO NOT add `app` as a dependency since it is already initialized
+
+    # create instance
+    assert app_environment
+    app_under_test = create_app(settings=app_settings)
+
+    assert spy_app.on_startup.call_count == 0
+    assert spy_app.on_shutdown.call_count == 0
+
+    with TestClient(app_under_test) as cli:
+
+        assert spy_app.on_startup.call_count == 1
+        assert spy_app.on_shutdown.call_count == 0
+
         yield cli
 
+    assert spy_app.on_startup.call_count == 1
+    assert spy_app.on_shutdown.call_count == 1
+
 
 @pytest.fixture
-async def aclient(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+async def aclient(
+    app: FastAPI, spy_app: AppLifeSpanSpyTargets
+) -> AsyncIterator[httpx.AsyncClient]:
     # NOTE: Avoids TestClient since `app` fixture already runs LifespanManager
     # Otherwise `with TestClient` will call twice start/shutdown events
+
+    assert spy_app.on_startup.call_count == 1
+    assert spy_app.on_shutdown.call_count == 0
+
     async with httpx.AsyncClient(
         base_url="http://catalog.testserver.io",
         headers={"Content-Type": "application/json"},
         transport=httpx.ASGITransport(app=app),
     ) as acli:
         assert isinstance(acli._transport, httpx.ASGITransport)
+        assert spy_app.on_startup.call_count == 1
+        assert spy_app.on_shutdown.call_count == 0
+
         yield acli
+
+    assert spy_app.on_startup.call_count == 1
+    assert spy_app.on_shutdown.call_count == 0
 
 
 @pytest.fixture
