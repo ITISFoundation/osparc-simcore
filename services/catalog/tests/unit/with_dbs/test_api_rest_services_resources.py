@@ -13,7 +13,6 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.services_resources import (
     BootMode,
@@ -38,7 +37,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mocked_director_service_labels(
-    mocked_director_service_api_base: respx.MockRouter, app: FastAPI
+    mocked_director_service_api_base: respx.MockRouter,
 ) -> Route:
     """
     Customizes mock for labels entrypoints at the director service's API
@@ -212,7 +211,7 @@ async def test_get_service_resources(
 
 @pytest.fixture
 def create_mock_director_service_labels(
-    mocked_director_service_api_base: respx.MockRouter, app: FastAPI
+    mocked_director_service_api_base: respx.MockRouter,
 ) -> Callable:
     def factory(services_labels: dict[str, dict[str, Any]]) -> None:
         for service_name, data in services_labels.items():

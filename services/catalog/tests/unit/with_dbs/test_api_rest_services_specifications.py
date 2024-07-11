@@ -12,7 +12,6 @@ from typing import Any
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
@@ -142,7 +141,6 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     background_tasks_setup_disabled,
     mocked_director_service_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
-    app: FastAPI,
     client: TestClient,
     user_id: UserID,
     user: dict[str, Any],
@@ -160,14 +158,16 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     service_specs = ServiceSpecificationsGet.parse_obj(response.json())
     assert service_specs
 
-    assert service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+    assert (
+        service_specs
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+    )
 
 
 async def test_get_service_specifications(
     background_tasks_setup_disabled,
     mocked_director_service_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
-    app: FastAPI,
     client: TestClient,
     user_id: UserID,
     user: dict[str, Any],
@@ -202,7 +202,10 @@ async def test_get_service_specifications(
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecificationsGet.parse_obj(response.json())
     assert service_specs
-    assert service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+    assert (
+        service_specs
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+    )
 
     everyone_gid, user_gid, team_gid = user_groups_ids
     # let's inject some rights for everyone group
@@ -260,7 +263,6 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     background_tasks_setup_disabled,
     mocked_director_service_api: respx.MockRouter,
     rabbitmq_and_rpc_setup_disabled: None,
-    app: FastAPI,
     client: TestClient,
     user_id: UserID,
     user: dict[str, Any],
@@ -328,7 +330,8 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecificationsGet.parse_obj(response.json())
         assert service_specs
         assert (
-            service_specs == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+            service_specs
+            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
         )
 
     # check version between first index and second all return the specs of the first
@@ -371,10 +374,10 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         if version in versions_with_specs:
             assert (
                 service_specs
-                != app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+                != client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
             )
         else:
             assert (
                 service_specs
-                == app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+                == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
             )

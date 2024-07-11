@@ -163,7 +163,9 @@ def client(
     assert app_environment
     app_under_test = create_app(settings=app_settings)
 
-    assert spy_app.on_startup.call_count == 0
+    assert (
+        spy_app.on_startup.call_count == 0
+    ), "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
     assert spy_app.on_shutdown.call_count == 0
 
     with TestClient(app_under_test) as cli:
