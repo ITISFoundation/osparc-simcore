@@ -51,7 +51,7 @@ async def _safe_cancel(context: Context) -> None:
                 await context.task
     except RuntimeError as e:
         if "Event loop is closed" in f"{e}":
-            logger.info("event loop is closed and could not cancel %s", context)
+            logger.warning("event loop is closed and could not cancel %s", context)
         else:
             raise
 
