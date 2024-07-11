@@ -67,7 +67,7 @@ dashboards-down:
 install-dev:
 	@uv pip install -r requirements/requirements-dev.txt
 
-install-ci: install
+install-ci:
 	@uv pip install -r requirements/requirements-ci.txt
 
 
