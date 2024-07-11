@@ -51,20 +51,23 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def setup(app: FastAPI):
     app_settings: ApplicationSettings = app.state.settings
-    if any(
-        s is None
-        for s in [
-            app_settings.AUTOSCALING_EC2_ACCESS,
-            app_settings.AUTOSCALING_EC2_INSTANCES,
-            app_settings.AUTOSCALING_SSM_ACCESS,
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
-        ]
-    ) or all(
-        s is None
-        for s in [
-            app_settings.AUTOSCALING_NODES_MONITORING,
-            app_settings.AUTOSCALING_DASK,
-        ]
+    if (
+        any(
+            s is None
+            for s in [
+                app_settings.AUTOSCALING_EC2_ACCESS,
+                app_settings.AUTOSCALING_EC2_INSTANCES,
+                app_settings.AUTOSCALING_SSM_ACCESS,
+            ]
+        )
+        or all(
+            s is None
+            for s in [
+                app_settings.AUTOSCALING_NODES_MONITORING,
+                app_settings.AUTOSCALING_DASK,
+            ]
+        )
+        or not app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
     ):
         _logger.warning(
             "%s task is disabled by settings, there will be no buffer v2!",
