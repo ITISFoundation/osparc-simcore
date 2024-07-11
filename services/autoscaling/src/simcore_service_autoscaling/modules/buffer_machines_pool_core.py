@@ -39,7 +39,9 @@ from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
 
-_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "buffer-machine")
+_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "io.simcore.autoscaling.buffer_machine"
+)
 _BUFFER_MACHINE_EC2_TAGS: EC2Tags = {
     _BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "true")
 }
