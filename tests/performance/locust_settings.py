@@ -5,6 +5,7 @@
 import json
 from datetime import timedelta
 from pathlib import Path
+from typing import Final
 
 from parse import Result, parse
 from pydantic import (
@@ -18,6 +19,11 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_TEST_DIR: Final[Path] = Path(__file__).parent.resolve()
+_LOCUST_FILES_DIR: Final[Path] = _TEST_DIR / "locust_files"
+assert _TEST_DIR.is_dir()
+assert _LOCUST_FILES_DIR.is_dir()
 
 
 class LocustSettings(BaseSettings):
@@ -63,6 +69,16 @@ class LocustSettings(BaseSettings):
         if hour is None or _min is None or sec is None:
             raise ValueError("Could not parse time")
         return timedelta(hours=hour, minutes=_min, seconds=sec)
+
+    @field_validator("LOCUST_LOCUSTFILE", mode="after")
+    @classmethod
+    def validate_locust_file(cls, v: Path) -> Path:
+        v = v.resolve()
+        if not v.is_file():
+            raise ValueError(f"{v} must be an existing file")
+        if not v.is_relative_to(_LOCUST_FILES_DIR):
+            raise ValueError(f"{v} must be a test file relative to {_LOCUST_FILES_DIR}")
+        return v.relative_to(_TEST_DIR)
 
     @field_serializer("LOCUST_RUN_TIME")
     def serialize_run_time(self, td: timedelta, info: SerializationInfo) -> str:
