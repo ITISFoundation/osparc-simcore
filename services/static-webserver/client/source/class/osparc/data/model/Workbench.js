@@ -76,7 +76,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
-    __rootNodes: null,
+    __nodes: null,
     __edges: null,
 
     getWorkbenchInitData: function() {
@@ -85,7 +85,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     // deserializes the workbenchInitData
     buildWorkbench: function() {
-      this.__rootNodes = {};
+      this.__nodes = {};
       this.__edges = {};
       this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
       this.__workbenchInitData = null;
@@ -181,7 +181,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getNodes: function() {
-      let nodes = Object.assign({}, this.__rootNodes);
+      let nodes = Object.assign({}, this.__nodes);
       return nodes;
     },
 
@@ -504,7 +504,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __addNode: function(node) {
       const nodeId = node.getNodeId();
-      this.__rootNodes[nodeId] = node;
+      this.__nodes[nodeId] = node;
       this.fireEvent("pipelineChanged");
     },
 
@@ -530,10 +530,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             this.removeEdge(connectedEdgeId, nodeId);
           });
 
-          const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
-          if (isTopLevel) {
-            delete this.__rootNodes[nodeId];
-          }
+          delete this.__nodes[nodeId];
 
           // remove it from ui model
           if (this.getStudy()) {
