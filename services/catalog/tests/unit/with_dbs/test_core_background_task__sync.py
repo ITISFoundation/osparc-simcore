@@ -41,7 +41,6 @@ async def cleanup_service_meta_data_db_content(sqlalchemy_async_engine: AsyncEng
 
 
 async def test_registry_sync_task(
-    cleanup_service_meta_data_db_content: None,
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
@@ -49,6 +48,7 @@ async def test_registry_sync_task(
     user: dict[str, Any],
     app: FastAPI,
     services_repo: ServicesRepository,
+    cleanup_service_meta_data_db_content: None,
 ):
 
     assert app.state
