@@ -1,0 +1,2 @@
+--requirement _base.txt
+locust-plugins
