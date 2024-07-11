@@ -1,12 +1,28 @@
-"""  service manifest API
+""" Services Manifest API Documentation
 
-Manifest: A detailed list, historically used to describe items being entered or shipped, implying finalized data (i.e. READ-ONLY)
+The `services.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
+traditionally used to denote items that are recorded as part of an official inventory or log, emphasizing the immutable nature of the data.
 
-Services can be included in the manifest in TWO possible ways:
-    - pushing an image w/ labels+tags in a `docker registry` (e.g. sleeper,...)
-    - defining a `function service` in the code (e.g. FilePicker, ...)
+### Service Registration
+Services are registered within the manifest in two distinct methods:
 
-The first type of services are mostly "user services" while the second is mostly "framework services".
+1. **Docker Registry Integration:**
+   - Services can be registered by pushing a Docker image, complete with appropriate labels and tags, to a Docker registry.
+   - Example services include user-oriented applications like `sleeper`.
+
+2. **Function Service Definition:**
+   - Services can also be directly defined in the codebase as function services, which typically support framework operations.
+   - Examples include utility services like `FilePicker`.
+
+### Service Types
+- **User Services:** These are generally services registered through the Docker registry method, catering primarily to end-user functionalities.
+- **Framework Services:** These services are usually defined programmatically within the code and are integral to the framework's infrastructure.
+
+### Usage
+This API is designed for read-only interactions, allowing users to retrieve information about registered services but not to modify the registry.
+This ensures data integrity and consistency across the system.
+
+
 """
 
 import logging
