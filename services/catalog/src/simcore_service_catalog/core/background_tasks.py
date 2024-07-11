@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from packaging.version import Version
 from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.services.registry import get_registered_services_map
+from simcore_service_catalog.services import manifest
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db.repositories.groups import GroupsRepository
@@ -104,14 +104,14 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     Notice that a services here refers to a 2-tuple (key, version)
     """
     director_api = get_director_api(app)
-    services_in_registry_map = await get_registered_services_map(director_api)
+    services_in_manifest_map = await manifest.get_services_map(director_api)
 
     services_in_db: set[
         tuple[ServiceKey, ServiceVersion]
     ] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
-    missing_services_in_db = set(services_in_registry_map.keys()) - services_in_db
+    missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
     if missing_services_in_db:
         _logger.debug(
             "Missing services in db: %s",
@@ -120,7 +120,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
         # update db
         await _create_services_in_database(
-            app, missing_services_in_db, services_in_registry_map
+            app, missing_services_in_db, services_in_manifest_map
         )
 
 

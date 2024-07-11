@@ -8,7 +8,7 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from ..dependencies.services import (
     AccessInfo,
     check_service_read_access,
-    get_service_from_registry,
+    get_service_from_manifest,
 )
 from ._constants import RESPONSE_MODEL_POLICY
 
@@ -25,7 +25,7 @@ router = APIRouter()
 )
 async def list_service_ports(
     _user: Annotated[AccessInfo, Depends(check_service_read_access)],
-    service: Annotated[ServiceMetaDataPublished, Depends(get_service_from_registry)],
+    service: Annotated[ServiceMetaDataPublished, Depends(get_service_from_manifest)],
 ):
     ports: list[ServicePortGet] = []
 

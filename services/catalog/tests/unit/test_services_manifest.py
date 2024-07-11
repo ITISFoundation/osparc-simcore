@@ -13,11 +13,8 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
+from simcore_service_catalog.services import manifest
 from simcore_service_catalog.services.director import DirectorApi
-from simcore_service_catalog.services.registry import (
-    get_registered_service,
-    get_registered_services_map,
-)
 
 
 @pytest.fixture
@@ -34,7 +31,7 @@ def app_environment(
     )
 
 
-async def test_registered_services(
+async def test_services_manifest_api(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,
@@ -45,7 +42,7 @@ async def test_registered_services(
     assert isinstance(director_api, DirectorApi)
 
     # LIST
-    all_services_map = await get_registered_services_map(director_api)
+    all_services_map = await manifest.get_services_map(director_api)
     assert mocked_director_service_api["list_services"].called
 
     for service in all_services_map.values():
@@ -61,7 +58,7 @@ async def test_registered_services(
 
     # GET
     for expected_service in all_services_map.values():
-        service = await get_registered_service(
+        service = await manifest.get_service(
             expected_service.key, expected_service.version, director_api
         )
 

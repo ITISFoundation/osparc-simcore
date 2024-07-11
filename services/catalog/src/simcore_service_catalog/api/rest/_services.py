@@ -22,7 +22,7 @@ from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
-from ..dependencies.services import get_service_from_registry
+from ..dependencies.services import get_service_from_manifest
 from ._constants import (
     DIRECTOR_CACHING_TTL,
     LIST_SERVICES_CACHING_TTL,
@@ -191,8 +191,8 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_in_registry: Annotated[
-        ServiceMetaDataPublished, Depends(get_service_from_registry)
+    service_in_manifest: Annotated[
+        ServiceMetaDataPublished, Depends(get_service_from_manifest)
     ],
     groups_repository: Annotated[
         GroupsRepository, Depends(get_repository(GroupsRepository))
@@ -214,8 +214,8 @@ async def get_service(
         )
     # check the user has access to this service and to which extent
     service_in_db = await services_repo.get_service(
-        service_in_registry.key,
-        service_in_registry.version,
+        service_in_manifest.key,
+        service_in_manifest.version,
         gids=[group.gid for group in user_groups],
         write_access=True,
         product_name=x_simcore_products_name,
@@ -225,8 +225,8 @@ async def get_service(
         service_access_rights: list[
             ServiceAccessRightsAtDB
         ] = await services_repo.get_service_access_rights(
-            service_in_registry.key,
-            service_in_registry.version,
+            service_in_manifest.key,
+            service_in_manifest.version,
             product_name=x_simcore_products_name,
         )
         service_data["access_rights"] = {
@@ -235,8 +235,8 @@ async def get_service(
     else:
         # check if we have executable rights
         service_in_db = await services_repo.get_service(
-            service_in_registry.key,
-            service_in_registry.version,
+            service_in_manifest.key,
+            service_in_manifest.version,
             gids=[group.gid for group in user_groups],
             execute_access=True,
             product_name=x_simcore_products_name,
@@ -255,10 +255,10 @@ async def get_service(
         )
 
     # access is allowed, override some of the values with what is in the db
-    service_in_registry = service_in_registry.copy(
+    service_in_manifest = service_in_manifest.copy(
         update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
     )
-    service_data.update(service_in_registry.dict(exclude_unset=True, by_alias=True))
+    service_data.update(service_in_manifest.dict(exclude_unset=True, by_alias=True))
     return service_data
 
 
@@ -369,7 +369,7 @@ async def update_service(
     # now return the service
     return await get_service(
         user_id=user_id,
-        service_in_registry=await get_service_from_registry(
+        service_in_manifest=await get_service_from_manifest(
             service_key, service_version, director_client
         ),
         groups_repository=groups_repository,

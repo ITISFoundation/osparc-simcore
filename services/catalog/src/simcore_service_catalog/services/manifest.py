@@ -1,6 +1,12 @@
-""" NOTE that this not refer ONLY to the docker registry but rather access to all published services both
-    - as images in the docker-registry
-    - as code in function-services
+"""  service manifest API
+
+Manifest: A detailed list, historically used to describe items being entered or shipped, implying finalized data (i.e. READ-ONLY)
+
+Services can be included in the manifest in TWO possible ways:
+    - pushing an image w/ labels+tags in a `docker registry` (e.g. sleeper,...)
+    - defining a `function service` in the code (e.g. FilePicker, ...)
+
+The first type of services are mostly "user services" while the second is mostly "framework services".
 """
 
 import logging
@@ -25,7 +31,7 @@ ServiceMetaDataPublishedMap: TypeAlias = dict[
 _error_already_logged: set[tuple[str, str]] = set()
 
 
-async def get_registered_services_map(
+async def get_services_map(
     director_client: DirectorApi,
 ) -> ServiceMetaDataPublishedMap:
     """Lists all services registered either in code (functional services) or the docker registry"""
@@ -58,7 +64,7 @@ async def get_registered_services_map(
     return services
 
 
-async def get_registered_service(
+async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: DirectorApi,

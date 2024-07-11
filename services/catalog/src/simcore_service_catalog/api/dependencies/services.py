@@ -15,7 +15,7 @@ from servicelib.fastapi.dependencies import get_app
 from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...services import registry
+from ...services import manifest
 from ...services.director import DirectorApi
 from .database import get_repository
 from .director import get_director_api
@@ -83,7 +83,7 @@ async def check_service_read_access(
     )
 
 
-async def get_service_from_registry(
+async def get_service_from_manifest(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
@@ -92,7 +92,7 @@ async def get_service_from_registry(
     Retrieves service metadata from the docker registry via the director
     """
     try:
-        return await registry.get_registered_service(
+        return await manifest.get_service(
             service_key=service_key,
             service_version=service_version,
             director_client=director_client,
