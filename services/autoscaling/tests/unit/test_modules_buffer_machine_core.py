@@ -33,7 +33,7 @@ from simcore_service_autoscaling.core.settings import (
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
-from simcore_service_autoscaling.modules.buffer_machine_core import (
+from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
     _get_buffer_ec2_tags,
     monitor_buffer_machines,
 )
