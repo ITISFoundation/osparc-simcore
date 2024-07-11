@@ -13,6 +13,7 @@ async def assert_autoscaled_computational_ec2_instances(
     expected_num_instances: int,
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
+    expected_additional_tag_keys: list[str],
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -24,7 +25,7 @@ async def assert_autoscaled_computational_ec2_instances(
             "io.simcore.autoscaling.dask-scheduler_url",
             "user_id",
             "wallet_id",
-            "osparc-tag",
+            *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
     )
@@ -37,6 +38,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_num_instances: int,
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
+    expected_additional_tag_keys: list[str],
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -47,9 +49,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
-            "user_id",
-            "wallet_id",
-            "osparc-tag",
+            *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
     )
@@ -74,7 +74,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
-            "buffer-machine",
+            "io.simcore.autoscaling.buffer_machine",
             *expected_additional_tag_keys,
         ],
         expected_user_data=[],
@@ -106,20 +106,14 @@ async def assert_ec2_instances(
             assert instance["InstanceType"] == expected_instance_type
             assert "Tags" in instance
             assert instance["Tags"]
-            expected_tag_keys = [
+            expected_tag_keys = {
                 *expected_instance_tag_keys,
                 "io.simcore.autoscaling.version",
                 "Name",
-            ]
-            instance_tag_keys = [tag["Key"] for tag in instance["Tags"] if "Key" in tag]
-            for tag_key in instance_tag_keys:
-                assert (
-                    tag_key in expected_tag_keys
-                ), f"instance has additional unexpected {tag_key=} vs {expected_tag_keys=}"
-            for tag in expected_instance_tag_keys:
-                assert (
-                    tag in instance_tag_keys
-                ), f"instance missing {tag=} vs {instance_tag_keys=}"
+            }
+            instance_tag_keys = {tag["Key"] for tag in instance["Tags"] if "Key" in tag}
+
+            assert instance_tag_keys == expected_tag_keys
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
