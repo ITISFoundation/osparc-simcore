@@ -120,8 +120,7 @@ def _merge_env_vars(
                 key, value = env_var.split("=")
                 yield key, value
         else:
-            for key, value in env_vars.items():
-                yield key, value
+            yield from env_vars.items()
 
     # pylint: disable=unnecessary-comprehension
     dict_spec_env_vars = {k: v for k, v in _gen_parts_env_vars(compose_spec_env_vars)}
