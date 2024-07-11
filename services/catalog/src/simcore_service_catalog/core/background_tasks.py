@@ -166,7 +166,6 @@ async def _ensure_published_templates_accessible(
 
 
 async def _run_sync_services(app: FastAPI):
-    # FIXME: need to guarantee that these are in place!
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 

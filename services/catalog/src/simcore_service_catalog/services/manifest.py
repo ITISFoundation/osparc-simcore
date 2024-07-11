@@ -77,7 +77,6 @@ async def get_service(
             key=service_key, version=service_version
         )
     else:
-        # FIXME: error handling here for errors with director
         service = await director_client.get_service(
             service_key=service_key, service_version=service_version
         )
