@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.node.BaseNodeView", {
+qx.Class.define("osparc.node.slideshow.BaseNodeView", {
   extend: qx.ui.splitpane.Pane,
   type: "abstract",
 
@@ -48,15 +48,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
         layout: new qx.ui.layout.VBox(10)
       });
       return settingsGroupBox;
-    },
-
-    openNodeDataManager: function(node) {
-      const nodeDataManager = new osparc.widget.NodeDataManager(null, node.getNodeId());
-      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
-        appearance: "service-window"
-      });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
   },
 

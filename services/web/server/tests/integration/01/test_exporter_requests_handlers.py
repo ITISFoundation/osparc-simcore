@@ -156,7 +156,6 @@ def client(
     assert cfg["rest"]["enabled"]
 
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["exporter"]["enabled"] = True
 
     monkeypatch_setenv_from_app_config(cfg)

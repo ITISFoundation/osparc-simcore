@@ -1,8 +1,0 @@
-faker
-locust
-locust-plugins
-parse
-tenacity
-
-
-settings/

@@ -8,6 +8,8 @@
 
 import pytest
 from fastapi import FastAPI
+from models_library.services_metadata_published import ServiceMetaDataPublished
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -47,4 +49,8 @@ async def test_director_client_setup(
     assert mocked_director_service_api["list_services"].called
 
     # returns un-enveloped response
-    assert data == ["one", "two"]
+    got_services = parse_obj_as(list[ServiceMetaDataPublished], data)
+
+    services_image_digest = {service.image_digest for service in got_services}
+    assert None not in services_image_digest
+    assert len(services_image_digest) == len(got_services)
