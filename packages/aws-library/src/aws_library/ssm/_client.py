@@ -120,9 +120,13 @@ class SimcoreSSMAPI:
             ],
         )
         assert response["InstanceInformationList"]  # nosec
-        assert len(response["InstanceInformationList"]) == 1  # nosec
-        assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
-        return bool(response["InstanceInformationList"][0]["PingStatus"] == "Online")
+        if response["InstanceInformationList"]:
+            assert len(response["InstanceInformationList"]) == 1  # nosec
+            assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
+            return bool(
+                response["InstanceInformationList"][0]["PingStatus"] == "Online"
+            )
+        return False
 
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
