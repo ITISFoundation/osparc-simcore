@@ -8,15 +8,14 @@ Services are registered within the manifest in two distinct methods:
 
 1. **Docker Registry Integration:**
    - Services can be registered by pushing a Docker image, complete with appropriate labels and tags, to a Docker registry.
+   - These are generally services registered through the Docker registry method, catering primarily to end-user functionalities.
    - Example services include user-oriented applications like `sleeper`.
 
 2. **Function Service Definition:**
    - Services can also be directly defined in the codebase as function services, which typically support framework operations.
+   - These services are usually defined programmatically within the code and are integral to the framework's infrastructure.
    - Examples include utility services like `FilePicker`.
 
-### Service Types
-- **User Services:** These are generally services registered through the Docker registry method, catering primarily to end-user functionalities.
-- **Framework Services:** These services are usually defined programmatically within the code and are integral to the framework's infrastructure.
 
 ### Usage
 This API is designed for read-only interactions, allowing users to retrieve information about registered services but not to modify the registry.
