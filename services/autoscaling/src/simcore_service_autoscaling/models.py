@@ -147,6 +147,7 @@ class BufferPool:
     ready_instances: set[EC2InstanceData] = field(default_factory=set)
     pending_instances: set[EC2InstanceData] = field(default_factory=set)
     waiting_to_pull_instances: set[EC2InstanceData] = field(default_factory=set)
+    waiting_to_stop_instances: set[EC2InstanceData] = field(default_factory=set)
     pulling_instances: set[EC2InstanceData] = field(default_factory=set)
     stopping_instances: set[EC2InstanceData] = field(default_factory=set)
 
@@ -155,6 +156,7 @@ class BufferPool:
             f"BufferPool(ready-count={len(self.ready_instances)}, "
             f"pending-count={len(self.pending_instances)}, "
             f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
+            f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
             f"pulling-count={len(self.pulling_instances)}, "
             f"stopping-count={len(self.stopping_instances)})"
         )
@@ -165,6 +167,7 @@ class BufferPool:
         order = (
             self.ready_instances,
             self.stopping_instances,
+            self.waiting_to_stop_instances,
             self.pulling_instances,
             self.waiting_to_pull_instances,
             self.pending_instances,

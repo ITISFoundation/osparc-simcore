@@ -103,9 +103,16 @@ async def _analyse_current_state(
                 ).wait_for_has_instance_completed_cloud_init(
                     instance.id
                 ):
-                    buffers_manager.buffer_pools[
+                    if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                         instance.type
-                    ].waiting_to_pull_instances.add(instance)
+                    ].pre_pull_images:
+                        buffers_manager.buffer_pools[
+                            instance.type
+                        ].waiting_to_pull_instances.add(instance)
+                    else:
+                        buffers_manager.buffer_pools[
+                            instance.type
+                        ].waiting_to_stop_instances.add(instance)
                 else:
                     buffers_manager.buffer_pools[instance.type].pending_instances.add(
                         instance
@@ -203,6 +210,9 @@ async def _add_remove_buffer_instances(
 
 InstancesToStop: TypeAlias = set[EC2InstanceData]
 InstancesToTerminate: TypeAlias = set[EC2InstanceData]
+_DOCKER_PULL_COMMAND: Final[
+    str
+] = "docker compose -f /docker-pull.compose.yml -p buffering pull"
 
 
 async def _handle_pool_image_pulling(
@@ -214,7 +224,7 @@ async def _handle_pool_image_pulling(
         # trigger the image pulling
         ssm_command = await ssm_client.send_command(
             [instance.id for instance in pool.waiting_to_pull_instances],
-            command="docker compose -f /docker-pull.compose.yml -p buffering pull",
+            command=_DOCKER_PULL_COMMAND,
             command_name=_PREPULL_COMMAND_NAME,
         )
         await ec2_client.set_instances_tags(
@@ -227,7 +237,7 @@ async def _handle_pool_image_pulling(
             },
         )
 
-    instances_to_stop: set[EC2InstanceData] = set()
+    instances_to_stop: set[EC2InstanceData] = pool.waiting_to_stop_instances
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
