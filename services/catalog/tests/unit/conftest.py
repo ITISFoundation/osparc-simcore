@@ -8,7 +8,6 @@
 
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -257,24 +256,29 @@ def expected_director_list_services(
 
 
 @pytest.fixture
-def mocked_director_service_api(
+def mocked_director_service_api_base(
     app_settings: ApplicationSettings,
     director_service_openapi_specs: dict[str, Any],
-    expected_director_list_services: list[dict[str, Any]],
 ) -> Iterator[respx.MockRouter]:
+    """
+    BASIC fixture to mock director service API
+
+    Use `mocked_director_service_api_base` to customize the mocks
+
+    """
     assert (
         app_settings.CATALOG_DIRECTOR
     ), "Check dependency on fixture `director_setup_disabled`"
+
+    # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
+    openapi = director_service_openapi_specs
+    assert Version(openapi["info"]["version"]) == Version("0.1.0")
 
     with respx.mock(
         base_url=app_settings.CATALOG_DIRECTOR.base_url,  # NOTE: it include v0/
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
-        # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
-        openapi = deepcopy(director_service_openapi_specs)
-        assert Version(openapi["info"]["version"]) == Version("0.1.0")
 
         # HEATHCHECK
         assert openapi["paths"].get("/")
@@ -290,123 +294,141 @@ def mocked_director_service_api(
             },
         )
 
-        def _search(service_key, service_version):
-            try:
-                return next(
-                    s
-                    for s in expected_director_list_services
-                    if (s["key"] == service_key and s["version"] == service_version)
-                )
-            except StopIteration:
-                return None
-
-        # LIST
-        assert openapi["paths"].get("/services")
-
-        respx_mock.get(path__regex=r"/services$", name="list_services").respond(
-            status.HTTP_200_OK, json={"data": expected_director_list_services}
-        )
-
-        # GET
-        assert openapi["paths"].get("/services/{service_key}/{service_version}")
-
-        @respx_mock.get(
-            path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
-            name="get_service",
-        )
-        def _get_service(request, service_key, service_version):
-            if found := _search(service_key, service_version):
-                # NOTE: this is a defect in director's API
-                single_service_list = [found]
-                return httpx.Response(
-                    status.HTTP_200_OK, json={"data": single_service_list}
-                )
-            return httpx.Response(
-                status.HTTP_404_NOT_FOUND,
-                json={
-                    "data": {
-                        "status": status.HTTP_404_NOT_FOUND,
-                        "message": f"The service {service_key}:{service_version}  does not exist",
-                    }
-                },
-            )
-
-        # GET LABELS
-        assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
-
-        @respx_mock.get(
-            path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
-            name="get_service_labels",
-        )
-        def _get_service_labels(request, service_key, service_version):
-            if found := _search(service_key, service_version):
-                return httpx.Response(
-                    status_code=status.HTTP_200_OK,
-                    json={
-                        "data": {
-                            "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
-                            "io.simcore.contact": '{"contact": "john@acme.com"}',
-                            "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
-                            "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
-                            "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
-                            "io.simcore.key": '{"key": "xxxxx"}'.replace(
-                                "xxxxx", found["key"]
-                            ),
-                            "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
-                            "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
-                            "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
-                            "io.simcore.type": '{"type": "computational"}',
-                            "io.simcore.version": '{"version": "xxxxx"}'.replace(
-                                "xxxxx", found["version"]
-                            ),
-                            "maintainer": "iavarone",
-                            "org.label-schema.build-date": "2023-04-17T08:04:15Z",
-                            "org.label-schema.schema-version": "1.0",
-                            "org.label-schema.vcs-ref": "",
-                            "org.label-schema.vcs-url": "",
-                            "simcore.service.restart-policy": "no-restart",
-                            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
-                        }
-                    },
-                )
-            return httpx.Response(
-                status.HTTP_404_NOT_FOUND,
-                json={
-                    "data": {
-                        "status": status.HTTP_404_NOT_FOUND,
-                        "message": f"The service {service_key}:{service_version}  does not exist",
-                    }
-                },
-            )
-
-        # GET EXTRAS
-        assert openapi["paths"].get("/service_extras/{service_key}/{service_version}")
-
-        @respx_mock.get(
-            path__regex=r"^/service_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
-            name="get_service_extras",
-        )
-        def _get_service_extras(request, service_key, service_version):
-            if _search(service_key, service_version):
-                return httpx.Response(
-                    status.HTTP_200_OK,
-                    json={
-                        "data": {
-                            "node_requirements": {"CPU": 4, "RAM": 2147483648},
-                            "build_date": "2023-04-17T08:04:15Z",
-                            "vcs_ref": "",
-                            "vcs_url": "",
-                        }
-                    },
-                )
-            return httpx.Response(
-                status.HTTP_404_NOT_FOUND,
-                json={
-                    "data": {
-                        "status": status.HTTP_404_NOT_FOUND,
-                        "message": f"The service {service_key}:{service_version}  does not exist",
-                    }
-                },
-            )
-
         yield respx_mock
+
+
+@pytest.fixture
+def mocked_director_service_api(
+    mocked_director_service_api_base: respx.MockRouter,
+    director_service_openapi_specs: dict[str, Any],
+    expected_director_list_services: list[dict[str, Any]],
+) -> respx.MockRouter:
+    """
+    STANDARD fixture to mock director service API
+
+    To customize the  mock responses use `mocked_director_service_api_base` instead
+    """
+    # alias
+    openapi = director_service_openapi_specs
+    respx_mock = mocked_director_service_api_base
+
+    def _search(service_key, service_version):
+        try:
+            return next(
+                s
+                for s in expected_director_list_services
+                if (s["key"] == service_key and s["version"] == service_version)
+            )
+        except StopIteration:
+            return None
+
+    # LIST
+    assert openapi["paths"].get("/services")
+
+    respx_mock.get(path__regex=r"/services$", name="list_services").respond(
+        status.HTTP_200_OK, json={"data": expected_director_list_services}
+    )
+
+    # GET
+    assert openapi["paths"].get("/services/{service_key}/{service_version}")
+
+    @respx_mock.get(
+        path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
+        name="get_service",
+    )
+    def _get_service(request, service_key, service_version):
+        if found := _search(service_key, service_version):
+            # NOTE: this is a defect in director's API
+            single_service_list = [found]
+            return httpx.Response(
+                status.HTTP_200_OK, json={"data": single_service_list}
+            )
+        return httpx.Response(
+            status.HTTP_404_NOT_FOUND,
+            json={
+                "data": {
+                    "status": status.HTTP_404_NOT_FOUND,
+                    "message": f"The service {service_key}:{service_version}  does not exist",
+                }
+            },
+        )
+
+    # GET LABELS
+    assert openapi["paths"].get("/services/{service_key}/{service_version}/labels")
+
+    @respx_mock.get(
+        path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$",
+        name="get_service_labels",
+    )
+    def _get_service_labels(request, service_key, service_version):
+        if found := _search(service_key, service_version):
+            return httpx.Response(
+                status_code=status.HTTP_200_OK,
+                json={
+                    "data": {
+                        "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
+                        "io.simcore.contact": '{"contact": "john@acme.com"}',
+                        "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
+                        "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
+                        "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
+                        "io.simcore.key": '{"key": "xxxxx"}'.replace(
+                            "xxxxx", found["key"]
+                        ),
+                        "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
+                        "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
+                        "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
+                        "io.simcore.type": '{"type": "computational"}',
+                        "io.simcore.version": '{"version": "xxxxx"}'.replace(
+                            "xxxxx", found["version"]
+                        ),
+                        "maintainer": "iavarone",
+                        "org.label-schema.build-date": "2023-04-17T08:04:15Z",
+                        "org.label-schema.schema-version": "1.0",
+                        "org.label-schema.vcs-ref": "",
+                        "org.label-schema.vcs-url": "",
+                        "simcore.service.restart-policy": "no-restart",
+                        "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
+                    }
+                },
+            )
+        return httpx.Response(
+            status.HTTP_404_NOT_FOUND,
+            json={
+                "data": {
+                    "status": status.HTTP_404_NOT_FOUND,
+                    "message": f"The service {service_key}:{service_version}  does not exist",
+                }
+            },
+        )
+
+    # GET EXTRAS
+    assert openapi["paths"].get("/service_extras/{service_key}/{service_version}")
+
+    @respx_mock.get(
+        path__regex=r"^/service_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
+        name="get_service_extras",
+    )
+    def _get_service_extras(request, service_key, service_version):
+        if _search(service_key, service_version):
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json={
+                    "data": {
+                        "node_requirements": {"CPU": 4, "RAM": 2147483648},
+                        "build_date": "2023-04-17T08:04:15Z",
+                        "vcs_ref": "",
+                        "vcs_url": "",
+                    }
+                },
+            )
+        return httpx.Response(
+            status.HTTP_404_NOT_FOUND,
+            json={
+                "data": {
+                    "status": status.HTTP_404_NOT_FOUND,
+                    "message": f"The service {service_key}:{service_version}  does not exist",
+                }
+            },
+        )
+
+    return respx_mock

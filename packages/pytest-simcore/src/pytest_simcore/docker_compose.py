@@ -175,11 +175,11 @@ def simcore_docker_compose(
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
-    print(
-        HEADER_STR.format("simcore docker-compose"),
-        json.dumps(compose_specs),
-        HEADER_STR.format("-"),
-    )
+    # print(
+    #     HEADER_STR.format("simcore docker-compose"),
+    #     json.dumps(compose_specs),
+    #     HEADER_STR.format("-"),
+    # )
     return compose_specs
 
 
