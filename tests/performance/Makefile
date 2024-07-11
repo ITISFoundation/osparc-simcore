@@ -69,3 +69,9 @@ install-dev:
 
 install-ci: install
 	@uv pip install -r requirements/requirements-ci.txt
+
+
+.PHONY: config
+config:
+	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
+	@python locust_settings.py $(input) | tee .env
