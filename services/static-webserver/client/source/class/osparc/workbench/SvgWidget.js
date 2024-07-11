@@ -117,9 +117,14 @@ qx.Class.define("osparc.workbench.SvgWidget", {
       return osparc.wrapper.Svg.drawNodeUI(this.__canvas, width, height, radius, x, y);
     },
 
-    drawBoundingBox: function(representation) {
-      console.log("representation", representation);
-      return osparc.wrapper.Svg.drawDashedRect(this.__canvas, 100, 200, 300, 400);
+    drawBoundingBox: function(annotation) {
+      const offset = 10;
+      const bBox = annotation.getRepresentation().bbox();
+      const width = bBox.width + 2*offset;
+      const height = bBox.height + 2*offset;
+      const x = bBox.x - offset;
+      const y = bBox.y - offset;
+      return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
     }
   }
 });

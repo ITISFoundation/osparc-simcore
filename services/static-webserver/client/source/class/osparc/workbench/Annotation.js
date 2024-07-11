@@ -188,11 +188,11 @@ qx.Class.define("osparc.workbench.Annotation", {
           case "text": {
             if (selected) {
               if (!("bBox" in representation.node)) {
-                const bBox = this.__svgLayer.drawBoundingBox(representation);
+                const bBox = this.__svgLayer.drawBoundingBox(this);
                 representation.node["bBox"] = bBox;
               }
             } else if ("bBox" in representation.node) {
-              this.__svgLayer.removeItem(representation.node["bBox"]);
+              osparc.wrapper.Svg.removeItem(representation.node["bBox"]);
               delete representation.node["bBox"];
             }
             break;
