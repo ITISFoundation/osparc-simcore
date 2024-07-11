@@ -527,7 +527,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           // remove first the connected edges
           const connectedEdges = this.getConnectedEdges(nodeId);
           connectedEdges.forEach(connectedEdgeId => {
-            this.removeEdge(connectedEdgeId);
+            this.removeEdge(connectedEdgeId, nodeId);
           });
 
           const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
@@ -586,28 +586,32 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    removeEdge: function(edgeId) {
+    removeEdge: function(edgeId, postRemoveNodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
         return false;
       }
 
       const edge = this.getEdge(edgeId);
       if (edge) {
-        const inputNodeId = edge.getInputNodeId();
-        const outputNodeId = edge.getOutputNodeId();
-        const node = this.getNode(outputNodeId);
-        if (node) {
-          node.removeInputNode(inputNodeId);
-          node.removeNodePortConnections(inputNodeId);
+        const rightNodeId = edge.getOutputNodeId();
+        const leftNodeId = edge.getInputNodeId();
+        const rightNode = this.getNode(rightNodeId);
+        if (rightNode) {
+          if (rightNodeId !== postRemoveNodeId) {
+            // no need to make any changes to a just removed node (it would trigger a patch call)
+            rightNode.removeInputNode(leftNodeId);
+            rightNode.removeNodePortConnections(leftNodeId);
+          }
+
           delete this.__edges[edgeId];
 
           const edges = Object.values(this.__edges);
-          if (edges.findIndex(edg => edg.getInputNodeId() === inputNodeId) === -1) {
-            const nodeLeft = this.getNode(inputNodeId);
+          if (edges.findIndex(edg => edg.getInputNodeId() === leftNodeId) === -1) {
+            const nodeLeft = this.getNode(leftNodeId);
             nodeLeft.setOutputConnected(false);
           }
-          if (edges.findIndex(edg => edg.getOutputNodeId() === outputNodeId) === -1) {
-            const nodeRight = this.getNode(outputNodeId);
+          if (edges.findIndex(edg => edg.getOutputNodeId() === rightNodeId) === -1) {
+            const nodeRight = this.getNode(rightNodeId);
             nodeRight.setInputConnected(false);
           }
 
