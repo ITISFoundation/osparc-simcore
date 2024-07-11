@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     imageColor: {
       check: "String",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeImageColor",
       apply: "__applyImageColor"
     },
@@ -73,7 +73,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
             filter = "invert(10%) sepia(4%) saturate(19%) hue-rotate(354deg) brightness(102%) contrast(86%)";
           } else {
             // ThemeDark #D8D8D8
-            filter = "invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%)";
+            filter = "invert(94%) sepia(0%) saturate(1442%) hue-rotate(148deg) brightness(97%) contrast(84%)";
           }
           break;
         case "strong-main": // it depends on the product
@@ -157,9 +157,12 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
     },
 
     /**
-      * @param keywordOrRgb {string} predefined keyword or rgb in the folloing format "0,255,0"
+      * @param keywordOrRgb {string} predefined keyword or rgb in the following format "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
+      if (keywordOrRgb === null) {
+        keywordOrRgb = "text";
+      }
       let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
       if (filterValue === null) {
         const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
