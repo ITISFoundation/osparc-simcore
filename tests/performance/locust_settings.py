@@ -96,7 +96,7 @@ class LocustSettings(BaseSettings):
 
 if __name__ == "__main__":
     settings = LocustSettings()
-    result = [
+    env_vars = [
         f"{key}={val}" for key, val in json.loads(settings.model_dump_json()).items()
     ]
-    print("\n".join(result))
+    print("\n".join(env_vars))
