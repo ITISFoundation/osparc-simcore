@@ -34,7 +34,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 
 from .director import DirectorApi
-from .function_services import get_function_service_as_model, is_function_service
+from .function_services import get_function_service, is_function_service
 
 _logger = logging.getLogger(__name__)
 
@@ -89,9 +89,7 @@ async def get_service(
     Retrieves service metadata from the docker registry via the director and accounting
     """
     if is_function_service(service_key):
-        service = get_function_service_as_model(
-            key=service_key, version=service_version
-        )
+        service = get_function_service(key=service_key, version=service_version)
     else:
         service = await director_client.get_service(
             service_key=service_key, service_version=service_version
