@@ -205,19 +205,19 @@ async def services_db_tables_injector(
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
-    Can use service_catalog_faker to generate inputs
+    Can use `create_fake_service_data` to generate inputs
 
     Example:
         await services_db_tables_injector(
             [
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.1",
                     team_access=None,
                     everyone_access=None,
                     product=target_product,
                 ),
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.7",
                     team_access=None,
@@ -370,7 +370,7 @@ async def create_fake_service_data(
 
 
     Example:
-        fake_service, *fake_access_rights = service_catalog_faker(
+        fake_service, *fake_access_rights = create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
                 team_access=None,

@@ -258,7 +258,7 @@ async def get_service(
     service_in_registry = service_in_registry.copy(
         update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
     )
-    service_data.update(service_in_registry.dict(exclude_unset=True))
+    service_data.update(service_in_registry.dict(exclude_unset=True, by_alias=True))
     return service_data
 
 
