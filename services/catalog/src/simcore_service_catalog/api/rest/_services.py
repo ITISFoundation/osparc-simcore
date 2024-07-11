@@ -15,6 +15,11 @@ from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette.requests import Request
 
+from ..._constants import (
+    DIRECTOR_CACHING_TTL,
+    LIST_SERVICES_CACHING_TTL,
+    RESPONSE_MODEL_POLICY,
+)
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -23,11 +28,6 @@ from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_manifest
-from ._constants import (
-    DIRECTOR_CACHING_TTL,
-    LIST_SERVICES_CACHING_TTL,
-    RESPONSE_MODEL_POLICY,
-)
 
 _logger = logging.getLogger(__name__)
 
