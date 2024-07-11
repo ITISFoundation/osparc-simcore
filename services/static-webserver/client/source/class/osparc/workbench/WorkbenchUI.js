@@ -523,7 +523,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }, this);
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
-          const reprPos = annotation.getRepresenationPosition();
+          const reprPos = annotation.getRepresentationPosition();
           const xDiff = reprPos.x - annotation.initPos.x;
           const yDiff = reprPos.y - annotation.initPos.y;
           this.__itemMoving(annotation.getId(), xDiff, yDiff);
