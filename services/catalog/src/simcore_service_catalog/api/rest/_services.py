@@ -118,7 +118,6 @@ async def list_services(
     # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
-        # FIXME: add name, ddescription, type, etc...
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         return [

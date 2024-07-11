@@ -13,10 +13,11 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Final, NewType, TypeAlias
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
+from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.services import manifest
@@ -30,19 +31,10 @@ from ..services import access_rights
 
 _logger = logging.getLogger(__name__)
 
-# NOTE: by PC I tried to unify with models_library.services but there are other inconsistencies so I leave if for another time!
-ServiceKey = NewType("ServiceKey", str)
-ServiceVersion = NewType("ServiceVersion", str)
-ServiceDockerDataMap: TypeAlias = dict[
-    tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-]
-
-_error_already_logged: set[tuple[str, str]] = set()
-
 
 async def _list_services_in_database(
     db_engine: AsyncEngine,
-) -> set[tuple[ServiceKey, ServiceVersion]]:
+):
     services_repo = ServicesRepository(db_engine=db_engine)
     return {
         (service.key, service.version)

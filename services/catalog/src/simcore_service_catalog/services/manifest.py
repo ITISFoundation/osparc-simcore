@@ -39,34 +39,35 @@ from .function_services import get_function_service, is_function_service
 _logger = logging.getLogger(__name__)
 
 
-ServiceMetaDataPublishedMap: TypeAlias = dict[
+ServiceMetaDataPublishedDict: TypeAlias = dict[
     tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
 ]
 
 
-_error_already_logged: set[tuple[str, str]] = set()
+_error_already_logged: set[tuple[str | None, str | None]] = set()
 
 
 async def get_services_map(
     director_client: DirectorApi,
-) -> ServiceMetaDataPublishedMap:
-    """Lists all services registered either in code (functional services) or the docker registry"""
-    registry_services = cast(
+) -> ServiceMetaDataPublishedDict:
+
+    # NOTE: using Low-level API to avoid validation
+    services_in_registry = cast(
         list[dict[str, Any]], await director_client.get("/services")
     )
 
     # NOTE: functional-services are services w/o associated image
-    services: ServiceMetaDataPublishedMap = {
+    services: ServiceMetaDataPublishedDict = {
         (s.key, s.version): s for s in iter_service_docker_data()
     }
-    for service in registry_services:
+    for service in services_in_registry:
         try:
             service_data = ServiceMetaDataPublished.parse_obj(service)
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError:  # noqa: PERF203
-            # NOTE: this is necessary until director API response does NOT provides any guarantee
-
+            # NOTE: this is necessary since registry DOES NOT provides any guarantee of the meta-data
+            # in the labels, i.e. it is not validated
             errored_service = (service.get("key"), service.get("version"))
             if errored_service not in _error_already_logged:
                 _logger.warning(
