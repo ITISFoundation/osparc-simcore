@@ -1,11 +1,12 @@
 # pylint: disable=not-context-manager
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import itertools
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
@@ -13,8 +14,6 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
@@ -75,14 +74,6 @@ async def app_settings(  # starts postgres service before app starts
         == postgres_host_config["password"]
     )
     return app_settings
-
-
-@pytest.fixture
-def client(app: FastAPI) -> Iterator[TestClient]:
-    # NOTE: sync client since we use benchmarch fixture!
-    with TestClient(app) as cli:
-        # Note: this way we ensure the events are run in the application
-        yield cli
 
 
 # DATABASE tables fixtures -----------------------------------

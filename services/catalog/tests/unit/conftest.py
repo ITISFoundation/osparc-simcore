@@ -19,6 +19,7 @@ import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.testclient import TestClient
 from packaging.version import Version
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
@@ -102,6 +103,10 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 async def app(
     app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
+    """
+    NOTE that this app was started when the fixture is setup
+    and shutdown when the fixture is tear-down
+    """
     assert app_environment
     the_test_app = create_app(settings=app_settings)
     async with LifespanManager(
@@ -110,6 +115,26 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield the_test_app
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    with TestClient(app) as cli:
+        # FIXME: this way we ensure the events are run in the application
+        yield cli
+
+
+@pytest.fixture
+async def aclient(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    # NOTE: Avoids TestClient since `app` fixture already runs LifespanManager
+    # Otherwise `with TestClient` will call twice start/shutdown events
+    async with httpx.AsyncClient(
+        base_url="http://catalog.testserver.io",
+        headers={"Content-Type": "application/json"},
+        transport=httpx.ASGITransport(app=app),
+    ) as acli:
+        assert isinstance(acli._transport, httpx.ASGITransport)
+        yield acli
 
 
 @pytest.fixture
