@@ -13,12 +13,14 @@ from .._meta import (
     APP_STARTED_DYNAMIC_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
-from ..modules.auto_scaling_task import setup as setup_background_task
+from ..modules.auto_scaling_task import setup as setup_auto_scaler_background_task
+from ..modules.buffer_machines_pool_task import setup as setup_buffer_machines_pool_task
 from ..modules.docker import setup as setup_docker
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.instrumentation import setup as setup_instrumentation
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
+from ..modules.ssm import setup as setup_ssm
 from .settings import ApplicationSettings
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
@@ -61,9 +63,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_docker(app)
     setup_rabbitmq(app)
     setup_ec2(app)
+    setup_ssm(app)
     setup_redis(app)
-    # autoscaler background task
-    setup_background_task(app)
+
+    setup_auto_scaler_background_task(app)
+    setup_buffer_machines_pool_task(app)
 
     # ERROR HANDLERS
 
