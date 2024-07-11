@@ -3,6 +3,7 @@
 #
 
 import logging
+from pathlib import Path
 from uuid import UUID
 
 import faker
@@ -82,4 +83,8 @@ if __name__ == "__main__":
     class LoadTestSettings(TemplateSettings, LocustSettings):
         pass
 
-    dump_dotenv(LoadTestSettings())
+    dump_dotenv(
+        LoadTestSettings(
+            LOCUST_LOCUSTFILE=Path(__file__).relative_to(Path(__file__).parent.parent)
+        )
+    )

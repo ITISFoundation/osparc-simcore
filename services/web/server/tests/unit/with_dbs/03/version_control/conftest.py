@@ -90,7 +90,6 @@ def app_cfg(
         "clusters",
         "computation",
         "diagnostics",
-        "director",
         "groups",
         "publications",
         "garbage_collector",

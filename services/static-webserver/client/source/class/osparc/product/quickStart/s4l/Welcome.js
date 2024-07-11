@@ -114,8 +114,8 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
       });
       const manuals = osparc.store.Support.getManuals();
       if (manuals.length > 0) {
-        const color = qx.theme.manager.Color.getInstance().resolve("text");
-        docLink.setValue(`<a href=${manuals[0].url} style='color: ${color}' target='_blank'>Documentation</a>`);
+        const link = osparc.utils.Utils.createHTMLLink("Documentation", manuals[0].url);
+        docLink.setValue(link);
         docLink.show();
       }
       footerItems.push(docLink);
@@ -127,9 +127,8 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
       });
       osparc.store.Support.getLicenseURL()
         .then(licenseUrl => {
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const textLink = `<a href=${licenseUrl} style='color: ${color}' target='_blank'>Licensing</a>`;
-          licenseLink.setValue(textLink);
+          const link = osparc.utils.Utils.createHTMLLink("Licensing", licenseUrl);
+          licenseLink.setValue(link);
           licenseLink.show();
         });
       footerItems.push(licenseLink);

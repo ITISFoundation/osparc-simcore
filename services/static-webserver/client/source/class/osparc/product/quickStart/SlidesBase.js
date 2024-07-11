@@ -102,8 +102,13 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
       if (idx > -1 && idx < selectables.length) {
         this.__currentIdx = idx;
         this.__stack.setSelection([selectables[idx]]);
-        this.__prevBtn.setEnabled(idx !== 0);
-        this.__nextBtn.setEnabled(idx !== selectables.length-1);
+        const firstSlide = (idx === 0);
+        const lastSlide = (idx === selectables.length-1);
+        this.__prevBtn.setEnabled(!firstSlide);
+        this.__nextBtn.setEnabled(!lastSlide);
+        this.set({
+          showClose: lastSlide
+        });
       }
       this.__slideCounter.removeAll();
       for (let i=0; i<selectables.length; i++) {

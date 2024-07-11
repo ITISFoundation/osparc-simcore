@@ -31,11 +31,6 @@ db:
     password: ${POSTGRES_PASSWORD}
     port: ${POSTGRES_PORT}
     user: ${POSTGRES_USER}
-director:
-  enabled: true
-  host: ${DIRECTOR_HOST}
-  port: ${DIRECTOR_PORT}
-  version: v0
 director-v2:
   enabled: true
 exporter:

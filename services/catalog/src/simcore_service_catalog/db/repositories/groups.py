@@ -6,7 +6,7 @@ from models_library.groups import GroupAtDB
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 
-from ...exceptions.db_errors import RepositoryError
+from ...exceptions.errors import UninitializedGroupError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
@@ -34,8 +34,9 @@ class GroupsRepository(BaseRepository):
             )
             row = result.first()
         if not row:
-            msg = f"{GroupType.EVERYONE} groups was never initialized"
-            raise RepositoryError(msg)
+            raise UninitializedGroupError(
+                group=GroupType.EVERYONE, repo_cls=GroupsRepository
+            )
         return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
