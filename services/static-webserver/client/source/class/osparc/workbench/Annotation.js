@@ -185,9 +185,18 @@ qx.Class.define("osparc.workbench.Annotation", {
       if (representation) {
         switch (this.getType()) {
           case "rect":
-          case "text":
-            osparc.wrapper.Svg.showBoundingBox(representation, selected);
+          case "text": {
+            if (selected) {
+              if (!("bBox" in representation.node)) {
+                const bBox = this.__svgLayer.drawBoundingBox(representation);
+                representation.node["bBox"] = bBox;
+              }
+            } else if ("bBox" in representation.node) {
+              this.__svgLayer.removeItem(representation.node["bBox"]);
+              delete representation.node["bBox"];
+            }
             break;
+          }
         }
       }
     },

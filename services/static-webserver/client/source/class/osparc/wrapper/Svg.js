@@ -295,18 +295,6 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
-    showBoundingBox: function(draw, show) {
-      if (show) {
-        if (!("bBox" in draw.node)) {
-          const bBox = this.self().drawDashedRect(draw, 100, 50, 20, 20)
-          draw.node["bBox"] = bBox;
-        }
-      } else if ("bBox" in draw.node) {
-        this.self().removeItem(draw.node["bBox"]);
-        delete draw.node["bBox"];
-      }
-    },
-
     /* / ANNOTATIONS */
 
     drawDashedRect: function(draw, width, height, x, y) {
