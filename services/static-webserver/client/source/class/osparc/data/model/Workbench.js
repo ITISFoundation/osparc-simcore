@@ -524,13 +524,14 @@ qx.Class.define("osparc.data.model.Workbench", {
         const removed = await node.removeNode();
         if (removed) {
           this.fireEvent("restartAutoSaveTimer");
+
+          delete this.__nodes[nodeId];
+
           // remove first the connected edges
           const connectedEdges = this.getConnectedEdges(nodeId);
           connectedEdges.forEach(connectedEdgeId => {
-            this.removeEdge(connectedEdgeId, nodeId);
+            this.removeEdge(connectedEdgeId);
           });
-
-          delete this.__nodes[nodeId];
 
           // remove it from ui model
           if (this.getStudy()) {
@@ -583,7 +584,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    removeEdge: function(edgeId, postRemoveNodeId) {
+    removeEdge: function(edgeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.edge.delete", true)) {
         return false;
       }
@@ -592,28 +593,31 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (edge) {
         const rightNodeId = edge.getOutputNodeId();
         const leftNodeId = edge.getInputNodeId();
+
         const rightNode = this.getNode(rightNodeId);
         if (rightNode) {
-          if (rightNodeId !== postRemoveNodeId) {
-            // no need to make any changes to a just removed node (it would trigger a patch call)
-            rightNode.removeInputNode(leftNodeId);
-            rightNode.removeNodePortConnections(leftNodeId);
-          }
-
-          delete this.__edges[edgeId];
-
-          const edges = Object.values(this.__edges);
-          if (edges.findIndex(edg => edg.getInputNodeId() === leftNodeId) === -1) {
-            const nodeLeft = this.getNode(leftNodeId);
-            nodeLeft.setOutputConnected(false);
-          }
-          if (edges.findIndex(edg => edg.getOutputNodeId() === rightNodeId) === -1) {
-            const nodeRight = this.getNode(rightNodeId);
-            nodeRight.setInputConnected(false);
-          }
-
-          return true;
+          // no need to make any changes to a just removed node (it would trigger a patch call)
+          rightNode.removeInputNode(leftNodeId);
+          rightNode.removeNodePortConnections(leftNodeId);
         }
+
+        delete this.__edges[edgeId];
+
+        // update the port decorations (remove dot if there are no more connections)
+        const edges = Object.values(this.__edges);
+        if (edges.findIndex(edg => edg.getInputNodeId() === leftNodeId) === -1) {
+          const leftNode = this.getNode(leftNodeId);
+          if (leftNode) {
+            leftNode.setOutputConnected(false);
+          }
+        }
+        if (edges.findIndex(edg => edg.getOutputNodeId() === rightNodeId) === -1) {
+          if (rightNode) {
+            rightNode.setInputConnected(false);
+          }
+        }
+
+        return true;
       }
       return false;
     },
