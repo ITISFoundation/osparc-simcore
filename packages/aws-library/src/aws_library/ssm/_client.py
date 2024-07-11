@@ -77,6 +77,10 @@ class SimcoreSSMAPI:
             DocumentName="AWS-RunShellScript",
             Comment=command_name,
             Parameters={"commands": [command]},
+            CloudWatchOutputConfig={
+                "CloudWatchOutputEnabled": True,
+                "CloudWatchLogGroupName": "simcore-ssm-logs",
+            },
         )
         assert response["Command"]  # nosec
         assert "Comment" in response["Command"]  # nosec
