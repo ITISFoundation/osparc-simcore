@@ -2,13 +2,20 @@
 # pylint: disable=unused-argument
 
 from inspect import signature
+from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
+from models_library.services_types import RunID
+from pytest_mock import MockerFixture
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 from simcore_service_dynamic_sidecar.core.validation import (
     _connect_user_services,
     parse_compose_spec,
+    validate_compose_spec,
 )
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 
 @pytest.fixture
@@ -128,4 +135,45 @@ def test_inject_backend_networking(
     assert (
         DEFAULT_USER_SERVICES_NETWORK_NAME
         in parsed_compose_spec["services"]["iseg-web"]["networks"]
+    )
+
+
+@pytest.fixture
+def mock_get_volume_by_label(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.mounted_fs.get_volume_by_label",
+        autospec=True,
+        return_value={"Mountpoint": "/fake/mount"},
+    )
+
+
+@pytest.fixture
+def no_internet_spec(project_tests_dir: Path) -> str:
+    no_intenret_file = project_tests_dir / "mocks" / "internet_blocked_spec.yaml"
+    return no_intenret_file.read_text()
+
+
+@pytest.fixture
+def fake_mounted_volumes() -> MountedVolumes:
+    return MountedVolumes(
+        run_id=RunID.create(),
+        node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
+        inputs_path=Path("/"),
+        outputs_path=Path("/"),
+        user_preferences_path=None,
+        state_paths=[],
+        state_exclude=set(),
+        compose_namespace="",
+        dy_volumes=Path("/"),
+    )
+
+
+async def test_regression_validate_compose_spec(
+    mock_get_volume_by_label: None,
+    app: FastAPI,
+    no_internet_spec: str,
+    fake_mounted_volumes: MountedVolumes,
+):
+    await validate_compose_spec(
+        app.state.settings, no_internet_spec, fake_mounted_volumes
     )

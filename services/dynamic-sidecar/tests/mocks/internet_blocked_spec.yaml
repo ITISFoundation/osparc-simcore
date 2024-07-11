@@ -1,0 +1,141 @@
+networks:
+  dy-sidecar_a019b83f-7cce-46bf-90cf-d02f7f0f089a:
+    driver: overlay
+    external: true
+    name: dy-sidecar_a019b83f-7cce-46bf-90cf-d02f7f0f089a
+  egress-0:
+    internal: true
+  production-simcore_interactive_services_subnet:
+    driver: overlay
+    external: true
+    name: production-simcore_interactive_services_subnet
+  with-internet:
+    internal: false
+services:
+  egress-0:
+    command: "fake"
+    environment:
+      OSPARC_NODE_ID: a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      OSPARC_STUDY_ID: ef60eaa6-3f52-11ef-9745-0242ac172e8c
+    image: envoyproxy/envoy:v1.25-latest
+    labels:
+      - io.simcore.runtime.cpu-limit=0
+      - io.simcore.runtime.memory-limit=0
+      - io.simcore.runtime.node-id=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      - io.simcore.runtime.product-name=s4llite
+      - io.simcore.runtime.project-id=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - io.simcore.runtime.simcore-user-agent=undefined
+      - io.simcore.runtime.swarm-stack-name=production-simcore
+      - io.simcore.runtime.user-id=47568
+    networks:
+      egress-0:
+        aliases:
+          - ip-10-1-0-25.ec2.internal
+      with-internet: null
+  rt-web-lite:
+    cpus: 0.5
+    depends_on:
+      - s4l-core
+    environment:
+      - DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs
+      - DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs
+      - DY_SIDECAR_STATE_PATHS=[""/home/smu/work/workspace""]
+      - SIMCORE_NANO_CPUS_LIMIT=500000000
+      - SIMCORE_MEMORY_BYTES_LIMIT=1073741824
+      - OSPARC_STUDY_ID=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - OSPARC_NODE_ID=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+    image: registry.osparc.io/simcore/services/dynamic/sim4life-lite:2.0.106
+    init: true
+    labels:
+      - io.simcore.runtime.cpu-limit=0.5
+      - io.simcore.runtime.memory-limit=1073741824
+      - io.simcore.runtime.node-id=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      - io.simcore.runtime.product-name=s4llite
+      - io.simcore.runtime.project-id=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - io.simcore.runtime.simcore-user-agent=undefined
+      - io.simcore.runtime.swarm-stack-name=production-simcore
+      - io.simcore.runtime.user-id=47568
+    mem_limit: 1073741824
+    mem_reservation: 1073741824
+    networks:
+      dy-sidecar_a019b83f-7cce-46bf-90cf-d02f7f0f089a: null
+  s4l-core:
+    cpus: 3.5
+    depends_on:
+      - egress-0
+    environment:
+      - DISPLAY=
+      - DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs
+      - DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs
+      - DY_SIDECAR_STATE_PATHS=[""/home/smu/work/workspace""]
+      - SIMCORE_NANO_CPUS_LIMIT=3500000000
+      - SIMCORE_MEMORY_BYTES_LIMIT=17179869184
+      - OSPARC_STUDY_ID=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - OSPARC_NODE_ID=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+    image: registry.osparc.io/simcore/services/dynamic/s4l-core-lite:2.0.106
+    init: true
+    labels:
+      - io.simcore.runtime.cpu-limit=3.5
+      - io.simcore.runtime.memory-limit=17179869184
+      - io.simcore.runtime.node-id=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      - io.simcore.runtime.product-name=s4llite
+      - io.simcore.runtime.project-id=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - io.simcore.runtime.simcore-user-agent=undefined
+      - io.simcore.runtime.swarm-stack-name=production-simcore
+      - io.simcore.runtime.user-id=47568
+    mem_limit: 17179869184
+    mem_reservation: 17179869184
+    networks:
+      egress-0: null
+    runtime: nvidia
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+  s4l-core-stream:
+    cpus: 0.5
+    environment:
+      - DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs
+      - DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs
+      - DY_SIDECAR_STATE_PATHS=[""/home/smu/work/workspace""]
+      - SIMCORE_NANO_CPUS_LIMIT=500000000
+      - SIMCORE_MEMORY_BYTES_LIMIT=1073741824
+      - OSPARC_STUDY_ID=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - OSPARC_NODE_ID=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+    image: registry.osparc.io/simcore/services/dynamic/s4l-core-stream:2.0.106
+    init: true
+    labels:
+      - io.simcore.runtime.cpu-limit=0.5
+      - io.simcore.runtime.memory-limit=1073741824
+      - io.simcore.runtime.node-id=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      - io.simcore.runtime.product-name=s4llite
+      - io.simcore.runtime.project-id=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - io.simcore.runtime.simcore-user-agent=undefined
+      - io.simcore.runtime.swarm-stack-name=production-simcore
+      - io.simcore.runtime.user-id=47568
+    mem_limit: 1073741824
+    mem_reservation: 1073741824
+    networks:
+      with-internet: null
+  sym-server:
+    cpus: 0.5
+    environment:
+      - DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs
+      - DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs
+      - DY_SIDECAR_STATE_PATHS=[""/home/smu/work/workspace""]
+      - SIMCORE_NANO_CPUS_LIMIT=500000000
+      - SIMCORE_MEMORY_BYTES_LIMIT=2147483648
+      - OSPARC_STUDY_ID=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - OSPARC_NODE_ID=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+    image: registry.osparc.io/simcore/services/dynamic/sym-server-dy:2.0.106
+    init: true
+    labels:
+      - io.simcore.runtime.cpu-limit=0.5
+      - io.simcore.runtime.memory-limit=2147483648
+      - io.simcore.runtime.node-id=a019b83f-7cce-46bf-90cf-d02f7f0f089a
+      - io.simcore.runtime.product-name=s4llite
+      - io.simcore.runtime.project-id=ef60eaa6-3f52-11ef-9745-0242ac172e8c
+      - io.simcore.runtime.simcore-user-agent=undefined
+      - io.simcore.runtime.swarm-stack-name=production-simcore
+      - io.simcore.runtime.user-id=47568
+    mem_limit: 2147483648
+    mem_reservation: 2147483648
+version: \'2.3\'
