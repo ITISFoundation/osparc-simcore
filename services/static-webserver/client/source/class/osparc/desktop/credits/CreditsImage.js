@@ -27,10 +27,14 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
   },
 
   members: {
+    __forceNullColor: null,
+
     __updateWallet: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
+        this.__forceNullColor = osparc.product.Utils.forceNullCreditsColor(contextWallet);
+
         contextWallet.addListener("changeCreditsAvailable", this.__updateColor, this);
         this.__updateColor();
       }
@@ -40,9 +44,13 @@ qx.Class.define("osparc.desktop.credits.CreditsImage", {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (contextWallet) {
-        const credits = contextWallet.getCreditsAvailable();
-        const creditsColorKeyword = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-        this.setImageColor(creditsColorKeyword);
+        if (this.__forceNullColor) {
+          this.setImageColor(null);
+        } else {
+          const credits = contextWallet.getCreditsAvailable();
+          const creditsColorKeyword = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+          this.setImageColor(creditsColorKeyword);
+        }
       }
     }
   }
