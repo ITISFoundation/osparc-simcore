@@ -87,7 +87,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
   },
 
   members: {
-    _addEditors: function(gids, cb) {
+    _addEditors: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -108,8 +108,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding editor(s)"), "ERROR");
-        })
-        .finally(() => cb());
+        });
     },
 
     _deleteMember: function(collaborator, item) {
