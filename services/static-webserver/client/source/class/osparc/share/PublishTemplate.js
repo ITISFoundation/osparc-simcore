@@ -120,6 +120,12 @@ qx.Class.define("osparc.share.PublishTemplate", {
 
       this.__rbManager.addListener("changeSelection", this.__onChangeSelection, this);
       this.__rbManager.setSelection([]);
+
+      const addCollaborators = new osparc.share.AddCollaborators(this.__serializedDataCopy);
+      addCollaborators.addListener("addCollaborators", e => {
+        console.log("addCollaborators", e.getData());
+      }, this);
+      this._add(addCollaborators);
     },
 
     __onChangeSelection: function() {

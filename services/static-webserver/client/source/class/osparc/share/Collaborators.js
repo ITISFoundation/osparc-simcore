@@ -208,7 +208,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __createAddCollaboratorSection: function() {
-      const addCollaborators = new osparc.share.AddCollaborators(this._resourceType, this._serializedDataCopy);
+      const addCollaborators = new osparc.share.AddCollaborators(this._serializedDataCopy);
       addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
       return addCollaborators;
     },
