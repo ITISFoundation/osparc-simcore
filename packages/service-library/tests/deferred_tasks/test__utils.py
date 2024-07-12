@@ -64,7 +64,7 @@ async def _assert_call_count(
     handler: HandlerCallWrapper,
     *,
     expected_count: NonNegativeInt,
-    operator: Callable = operator.eq
+    operation: Callable = operator.eq
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.01),
@@ -75,7 +75,7 @@ async def _assert_call_count(
         with attempt:
             assert handler.mock
             count = len(handler.mock.call_args_list)
-            assert operator(count) == expected_count
+            assert operation(count) == expected_count
 
 
 async def test_handler_called_as_expected(
@@ -127,14 +127,14 @@ async def test_handler_nacks_message(
             "", queue="nacked_message_no_deco", exchange=rabbit_exchange
         )
         await _assert_call_count(
-            nacked_message_no_deco, expected_count=10, operator=operator.gt
+            nacked_message_no_deco, expected_count=10, operation=operator.gt
         )
 
         await test_broker.publish(
             "", queue="nacked_message_with_deco", exchange=rabbit_exchange
         )
         await _assert_call_count(
-            nacked_message_with_deco, expected_count=10, operator=operator.gt
+            nacked_message_with_deco, expected_count=10, operation=operator.gt
         )
 
 
@@ -194,7 +194,7 @@ async def test_handler_unintended_error(
             "", queue="unintended_error_no_deco", exchange=rabbit_exchange
         )
         await _assert_call_count(
-            unintended_error_no_deco, expected_count=10, operator=operator.gt
+            unintended_error_no_deco, expected_count=10, operation=operator.gt
         )
 
         await test_broker.publish(
