@@ -61,7 +61,10 @@ def rabbit_exchange() -> RabbitExchange:
 
 
 async def _assert_call_count(
-    handler: HandlerCallWrapper, *, expected_count: NonNegativeInt, operator=operator.eq
+    handler: HandlerCallWrapper,
+    *,
+    expected_count: NonNegativeInt,
+    operator: Callable = operator.eq
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.01),
