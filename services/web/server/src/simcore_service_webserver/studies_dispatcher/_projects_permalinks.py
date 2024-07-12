@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID, ProjectIDStr
 from pydantic import HttpUrl, parse_obj_as
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 from ..db.plugin import get_database_engine
@@ -78,13 +79,37 @@ async def permalink_factory(
     # NOTE: next iterations will mobe this as part of the project repository pattern
     engine = get_database_engine(request.app)
     async with engine.acquire() as conn:
-        stmt = sa.select(
-            projects.c.uuid,
-            projects.c.type,
-            # MD: check
-            projects.c.access_rights,
-            projects.c.published,
-        ).where(projects.c.uuid == f"{project_uuid}")
+        # Helper subquery that prepares access rights data in
+        # backwards compatible json type.
+        access_rights_subquery = (
+            sa.select(
+                project_to_groups.c.project_uuid,
+                sa.func.jsonb_object_agg(
+                    project_to_groups.c.gid,
+                    sa.func.jsonb_build_object(
+                        "read",
+                        project_to_groups.c.read,
+                        "write",
+                        project_to_groups.c.write,
+                        "delete",
+                        project_to_groups.c.delete,
+                    ),
+                ).label("access_rights"),
+            )
+            .where(project_to_groups.c.project_uuid == f"{project_uuid}")
+            .group_by(project_to_groups.c.project_uuid)
+        ).subquery("access_rights_subquery")
+
+        stmt = (
+            sa.select(
+                projects.c.uuid,
+                projects.c.type,
+                access_rights_subquery.c.access_rights,
+                projects.c.published,
+            )
+            .select_from(projects.join(access_rights_subquery, isouter=True))
+            .where(projects.c.uuid == f"{project_uuid}")
+        )
         result = await conn.execute(stmt)
         row = await result.first()
         if not row:

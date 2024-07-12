@@ -151,7 +151,6 @@ class ProjectDBAPI(BaseProjectDB):
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
                         try:
-                            # MD: Check here!
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
                                 .values(**insert_values)
@@ -665,7 +664,6 @@ class ProjectDBAPI(BaseProjectDB):
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
         async with self.engine.acquire() as conn:
-            # MD: check
             # now update it
             result: ResultProxy = await conn.execute(
                 projects.update()
@@ -678,6 +676,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
             result_row_count: int = result.rowcount
             assert result_row_count == 1  # nosec
+            # TODO: MD: Update project_to_groups table!!!
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
@@ -817,7 +816,6 @@ class ProjectDBAPI(BaseProjectDB):
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
 
-            # MD: Check
             result = await db_connection.execute(
                 projects.update()
                 .values(**convert_to_db_names(new_project_data))
