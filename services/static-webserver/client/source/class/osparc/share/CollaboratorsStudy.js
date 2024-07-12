@@ -128,14 +128,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
   },
 
   members: {
-    _canIDelete: function() {
-      return osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
-    },
-
-    _canIWrite: function() {
-      return osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
-    },
-
     _addEditors: function(gids, cb) {
       if (gids.length === 0) {
         return;

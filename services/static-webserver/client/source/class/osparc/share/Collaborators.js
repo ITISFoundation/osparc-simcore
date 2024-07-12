@@ -332,6 +332,14 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
+      let showOptions = false;
+      if (this.__resourceType === "service") {
+        // service
+        showOptions = osparc.service.Utils.canIWrite(this.__serializedDataCopy["accessRights"]);
+      } else {
+        // study or template
+        showOptions = osparc.data.model.Study.canIDelete(this.__serializedDataCopy["accessRights"]);
+      }
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
@@ -353,21 +361,13 @@ qx.Class.define("osparc.share.Collaborators", {
             }
           }
           collaborator["accessRights"] = accessRights[gid];
-          collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
+          collaborator["showOptions"] = showOptions;
           collaborator["resourceType"] = this._resourceType;
           collaboratorsList.push(collaborator);
         }
       });
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
-    },
-
-    _canIDelete: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _canIWrite: function() {
-      throw new Error("Abstract method called!");
     },
 
     _addEditors: function(gids) {
