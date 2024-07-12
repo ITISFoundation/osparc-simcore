@@ -63,7 +63,6 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         alignX: "right"
       });
       publishTemplateBtn.addListener("execute", () => this.__publishTemplate(), this);
-      shareWith.bind("ready", publishTemplateBtn, "enabled");
       this._add(publishTemplateBtn);
     },
 

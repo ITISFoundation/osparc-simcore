@@ -55,15 +55,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
       });
   },
 
-  properties: {
-    ready: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeReady"
-    }
-  },
-
   statics: {
     SharingOpts: {
       "me": {
@@ -113,7 +104,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
         this.__rbManager.add(rb);
       }
 
-      this.__rbManager.addListener("changeSelection", this.__onChangeSelection, this);
       this.__rbManager.setSelection([]);
 
       const addCollaborators = new osparc.share.AddCollaborators(this.__serializedDataCopy);
@@ -123,26 +113,13 @@ qx.Class.define("osparc.share.PublishTemplate", {
       });
       addCollaborators.addListener("addCollaborators", e => {
         console.log("addCollaborators", e.getData());
+        // show selected list, it will be consumed by getSelectedGroups
       }, this);
       this._add(addCollaborators);
     },
 
-    __onChangeSelection: function() {
-      const selection = this.__rbManager.getSelection();
-      this.setReady(Boolean(selection.length));
-
-      this.__myOrgs.setVisibility(this.__isGroupSelected("orgs") ? "visible" : "excluded");
-    },
-
-    __isGroupSelected: function(groupKey) {
-      const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].contextId === this.self().SharingOpts[groupKey].contextId) {
-        return true;
-      }
-      return false;
-    },
-
     getSelectedGroups: function() {
+      // whatever was selected in AddCollaborators
       let groupIDs = [];
       const selections = this.__rbManager.getSelection();
       if (selections.length) {
