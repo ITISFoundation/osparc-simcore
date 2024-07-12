@@ -185,8 +185,22 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
+    __fullOptions: function() {
+      let fullOptions = false;
+      if (this._resourceType === "service") {
+        // service
+        fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+      } else {
+        // study or template
+        fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+      }
+      return fullOptions;
+    },
+
     __buildLayout: function() {
-      this._createChildControlImpl("add-collaborator");
+      if (this.__fullOptions()) {
+        this._createChildControlImpl("add-collaborator");
+      }
       this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
@@ -332,14 +346,7 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      let showOptions = false;
-      if (this._resourceType === "service") {
-        // service
-        showOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
-      } else {
-        // study or template
-        showOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
-      }
+      const showOptions = this.__fullOptions();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];

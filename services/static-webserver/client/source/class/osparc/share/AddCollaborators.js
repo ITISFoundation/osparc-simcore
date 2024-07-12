@@ -26,13 +26,11 @@ qx.Class.define("osparc.share.AddCollaborators", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param resourceType {String} resourceType
     * @param serializedDataCopy {Object} Object containing the Serialized Data
     */
-  construct: function(resourceType, serializedDataCopy) {
+  construct: function(serializedDataCopy) {
     this.base(arguments);
 
-    this.__resourceType = resourceType;
     this.__serializedDataCopy = serializedDataCopy;
 
     this._setLayout(new qx.ui.layout.VBox(5));
@@ -45,20 +43,9 @@ qx.Class.define("osparc.share.AddCollaborators", {
   },
 
   members: {
-    __resourceType: null,
     __serializedDataCopy: null,
 
     __buildLayout: function() {
-      let canIShare = false;
-      if (this.__resourceType === "service") {
-        // service
-        canIShare = osparc.service.Utils.canIWrite(this.__serializedDataCopy["accessRights"]);
-      } else {
-        // study or template
-        canIShare = osparc.data.model.Study.canIDelete(this.__serializedDataCopy["accessRights"]);
-      }
-      this.setVisibility(canIShare ? "visible" : "excluded");
-
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       this._add(label);
 

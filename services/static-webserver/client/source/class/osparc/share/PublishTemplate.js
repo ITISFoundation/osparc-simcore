@@ -20,7 +20,6 @@
  * - Private
  * - My organizations
  * - Product everyone
- * - Everyone
  */
 
 qx.Class.define("osparc.share.PublishTemplate", {
