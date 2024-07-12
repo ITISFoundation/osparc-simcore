@@ -333,12 +333,12 @@ qx.Class.define("osparc.share.Collaborators", {
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       let showOptions = false;
-      if (this.__resourceType === "service") {
+      if (this._resourceType === "service") {
         // service
-        showOptions = osparc.service.Utils.canIWrite(this.__serializedDataCopy["accessRights"]);
+        showOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
       } else {
         // study or template
-        showOptions = osparc.data.model.Study.canIDelete(this.__serializedDataCopy["accessRights"]);
+        showOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
       }
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
