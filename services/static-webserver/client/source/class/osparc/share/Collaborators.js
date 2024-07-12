@@ -195,13 +195,15 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      let canIShare = false;
       if (this._resourceType === "service") {
         // service
-        vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+        canIShare = osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
       } else {
         // study or template
-        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
+        canIShare = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
       }
+      vBox.setVisibility(canIShare ? "visible" : "excluded");
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
