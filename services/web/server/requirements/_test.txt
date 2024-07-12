@@ -206,7 +206,7 @@ sqlalchemy==1.4.47
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-tenacity==8.4.1
+tenacity==8.5.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
