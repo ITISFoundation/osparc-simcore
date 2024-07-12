@@ -86,11 +86,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
     __myOrgs: null,
 
     __buildLayout: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" accessible to:"),
-        font: "text-14"
-      }));
-
       this.__rbManager = new qx.ui.form.RadioGroup().set({
         allowEmptySelection: true
       });
@@ -122,6 +117,10 @@ qx.Class.define("osparc.share.PublishTemplate", {
       this.__rbManager.setSelection([]);
 
       const addCollaborators = new osparc.share.AddCollaborators(this.__serializedDataCopy);
+      addCollaborators.getChildControl("intro-text").set({
+        value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
+        font: "text-14"
+      });
       addCollaborators.addListener("addCollaborators", e => {
         console.log("addCollaborators", e.getData());
       }, this);
