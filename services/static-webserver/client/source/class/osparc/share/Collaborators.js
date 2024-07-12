@@ -202,15 +202,21 @@ qx.Class.define("osparc.share.Collaborators", {
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+
       const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      vBox.add(label);
+      label.set({allowGrowX: true});
+      header.add(label, {
+        flex: 1
+      });
 
       const rolesLayout = osparc.data.Roles.createRolesStudyResourceInfo();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
       }
-      vBox.add(rolesLayout);
+      header.add(rolesLayout);
+      vBox.add(header);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",

@@ -50,12 +50,12 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
     __buildLayout: function() {
       let canIShare = false;
-      if (this._resourceType === "service") {
+      if (this.__resourceType === "service") {
         // service
-        canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+        canIShare = osparc.service.Utils.canIWrite(this.__serializedDataCopy["accessRights"]);
       } else {
         // study or template
-        canIShare = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+        canIShare = osparc.data.model.Study.canIDelete(this.__serializedDataCopy["accessRights"]);
       }
       this.setVisibility(canIShare ? "visible" : "excluded");
 
