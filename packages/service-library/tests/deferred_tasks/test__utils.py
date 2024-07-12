@@ -75,7 +75,7 @@ async def _assert_call_count(
         with attempt:
             assert handler.mock
             count = len(handler.mock.call_args_list)
-            assert operation(count) == expected_count
+            assert operation(count, expected_count)
 
 
 async def test_handler_called_as_expected(
