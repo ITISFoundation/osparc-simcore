@@ -336,6 +336,8 @@ class BaseProjectDB:
         # this retrieves the projects where user is owner
         user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
+        # Helper subquery that prepares access rights data in
+        # backwards compatible json type.
         access_rights_subquery = (
             select(
                 project_to_groups.c.project_uuid,

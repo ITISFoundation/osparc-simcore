@@ -33,6 +33,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -47,6 +48,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import func, literal_column
+from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_
 from tenacity import TryAgain
@@ -338,7 +340,8 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
-            # Create helper subquery 1 to 1 user <-> projects
+            # Helper subquery that prepares access rights data in
+            # backwards compatible json type.
             access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -366,7 +369,6 @@ class ProjectDBAPI(BaseProjectDB):
                     projects.join(projects_to_products, isouter=True).join(
                         access_rights_subquery, isouter=True
                     )
-                    # .join(user_to_groups, isouter=True)
                 )
                 .where(
                     (
@@ -508,33 +510,44 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
-    # MD: depreciate
     async def get_project_access_rights_for_user(
         self, user_id: UserID, project_uuid: ProjectID
     ) -> UserProjectAccessRights:
         """
         User project access rights. Aggregated across all his groups.
         """
-        # NOTE: MD: I didn't manage to write this query in sqlalchemy, but
-        # when we migrate project access rights to its own table, this will
-        # be not needed and we can use something similar to "list_wallets_for_user"
-        raw_sql = sa.text(
-            f"""
-                select uid, max(read) as read, max(write) as write, max(delete) as delete
-                from user_to_groups utg
-                join
-                    (
-                        SELECT cast(key as int) AS id, value ->>'read' as read, value ->>'write' as write, value ->>'delete' as delete
-                        FROM projects, jsonb_each(access_rights)
-                        where "uuid" = '{project_uuid}'
-                    ) prj_access_rights on utg.gid = prj_access_rights.id
-                where utg.uid = {user_id}
-                group by uid
-            """  # noqa: S608
+        _SELECTION_ARGS = (
+            user_to_groups.c.uid,
+            func.max(project_to_groups.c.read.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("read"),
+            func.max(project_to_groups.c.write.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("write"),
+            func.max(project_to_groups.c.delete.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("delete"),
+        )
+
+        _JOIN_TABLES = user_to_groups.join(
+            project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid
+        )
+
+        stmt = (
+            sa.select(*_SELECTION_ARGS)
+            .select_from(_JOIN_TABLES)
+            .where(
+                (user_to_groups.c.uid == user_id)
+                & (project_to_groups.c.project_uuid == f"{project_uuid}")
+                & (
+                    project_to_groups.c.access_rights["read"].astext == "true"
+                )  # <-- Question: What do you think it is valid that user needs to have at least read access in the project_to_group table to see the project? (I think till now this was ignored, but it seems reasonable to introduce this requieremnt, correct?)
+            )
+            .group_by(user_to_groups.c.uid)
         )
 
         async with self.engine.acquire() as conn:
-            result = await conn.execute(raw_sql)
+            result = await conn.execute(stmt)
             row = await result.fetchone()
             if row is None:
                 raise ProjectInvalidRightsError(
