@@ -27,7 +27,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this._serializedDataCopy = serializedDataCopy;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       padding: 5
@@ -163,18 +163,6 @@ qx.Class.define("osparc.share.Collaborators", {
           control = this.__createAddCollaboratorSection();
           this._add(control);
           break;
-        case "open-organizations-btn":
-          control = new qx.ui.form.Button(this.tr("Organizations...")).set({
-            appearance: "form-button-outlined",
-            allowGrowY: false,
-            allowGrowX: false,
-            icon: osparc.dashboard.CardBase.SHARED_ORGS
-          });
-          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this._add(control, {
-            flex: 1
-          });
-          break;
         case "collaborators-list":
           control = this.__createCollaboratorsListSection();
           this._add(control, {
@@ -231,6 +219,15 @@ qx.Class.define("osparc.share.Collaborators", {
         }, this);
       }, this);
       vBox.add(addCollaboratorBtn);
+
+      const organizations = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+        appearance: "form-button-outlined",
+        allowGrowY: false,
+        allowGrowX: false,
+        icon: osparc.dashboard.CardBase.SHARED_ORGS
+      });
+      organizations.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
+      vBox.add(organizations);
 
       return vBox;
     },
