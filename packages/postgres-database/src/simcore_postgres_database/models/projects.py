@@ -164,9 +164,9 @@ DECLARE
     group_id BIGINT;
 BEGIN
     -- Fetch the group_id based on the owner from the other table
-    SELECT g.primary_gid INTO group_id
+    SELECT u.primary_gid INTO group_id
     FROM users u
-    WHERE u.id = NEW.owner
+    WHERE u.id = NEW.prj_owner
     LIMIT 1;
 
     IF TG_OP = 'INSERT' THEN

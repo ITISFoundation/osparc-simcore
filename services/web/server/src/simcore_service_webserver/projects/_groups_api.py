@@ -35,7 +35,7 @@ async def create_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,
+    product_name: ProductName,  # pylint: disable=unused-argument
 ) -> ProjectGroupGet:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -69,7 +69,7 @@ async def list_project_groups_by_user_and_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: ProductName,
+    product_name: ProductName,  # pylint: disable=unused-argument
 ) -> list[ProjectGroupGet]:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -105,7 +105,7 @@ async def update_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,
+    product_name: ProductName,  # pylint: disable=unused-argument
 ) -> ProjectGroupGet:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -152,7 +152,7 @@ async def delete_project_group(
     user_id: UserID,
     project_id: ProjectID,
     group_id: GroupID,
-    product_name: ProductName,
+    product_name: ProductName,  # pylint: disable=unused-argument
 ) -> None:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
