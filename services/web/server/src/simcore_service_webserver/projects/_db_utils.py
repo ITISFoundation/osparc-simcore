@@ -15,6 +15,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -335,28 +336,48 @@ class BaseProjectDB:
         # this retrieves the projects where user is owner
         user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
-        # NOTE: ChatGPT helped in producing this entry
-        conditions = sa.and_(
-            projects.c.uuid == f"{project_uuid}",
-            projects.c.type == f"{ProjectType.TEMPLATE.value}"
-            if only_templates
-            else True,
-            sa.or_(
-                projects.c.prj_owner == user_id,
-                sa.text(
-                    f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
-                ),
-            ),
+        access_rights_subquery = (
+            select(
+                project_to_groups.c.project_uuid,
+                sa.func.jsonb_object_agg(
+                    project_to_groups.c.gid,
+                    sa.func.jsonb_build_object(
+                        "read",
+                        project_to_groups.c.read,
+                        "write",
+                        project_to_groups.c.write,
+                        "delete",
+                        project_to_groups.c.delete,
+                    ),
+                ).label("access_rights"),
+            )
+            .where(project_to_groups.c.project_uuid == f"{project_uuid}")
+            .group_by(project_to_groups.c.project_uuid)
+        ).subquery("access_rights_subquery")
+
+        query = (
+            sa.select(
+                *[col for col in projects.columns if col.name != "access_rights"],
+                access_rights_subquery.c.access_rights,
+            )
+            .select_from(projects.join(access_rights_subquery, isouter=True))
+            .where(
+                (projects.c.uuid == f"{project_uuid}")
+                & (
+                    projects.c.type == f"{ProjectType.TEMPLATE.value}"
+                    if only_templates
+                    else True
+                )
+            )
         )
 
         if only_published:
-            conditions &= projects.c.published == "true"
+            query = query.where(projects.c.published == "true")
 
-        query = select(projects).where(conditions)
         if for_update:
             query = query.with_for_update()
 
-        result = await connection.execute(query)
+        result = await connection.execute(query)  # <-- Here the query is executed
         project_row = await result.first()
 
         if not project_row:

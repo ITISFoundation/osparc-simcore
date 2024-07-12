@@ -12,6 +12,7 @@ from .._constants import APP_SETTINGS_KEY
 from . import (
     _comments_handlers,
     _crud_handlers,
+    _groups_handlers,
     _metadata_handlers,
     _nodes_handlers,
     _ports_handlers,
@@ -49,6 +50,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_states_handlers.routes)
     app.router.add_routes(_crud_handlers.routes)
     app.router.add_routes(_comments_handlers.routes)
+    app.router.add_routes(_groups_handlers.routes)
     app.router.add_routes(_metadata_handlers.routes)
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)

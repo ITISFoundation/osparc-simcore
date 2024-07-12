@@ -114,6 +114,7 @@ def share_with_collaborator(
 
     async def _() -> None:
         async with aiopg_engine.acquire() as conn:
+            # MD: check
             result = await conn.execute(
                 sa.select(projects.c.access_rights).where(
                     projects.c.uuid == f"{project_id}"

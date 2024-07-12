@@ -33,6 +33,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
@@ -148,6 +149,7 @@ class ProjectDBAPI(BaseProjectDB):
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
                         try:
+                            # MD: Check here!
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
                                 .values(**insert_values)
@@ -214,6 +216,7 @@ class ProjectDBAPI(BaseProjectDB):
                                 for node_id in selected_values["workbench"]
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
+                        # Add project access rights
         return selected_values
 
     async def insert_project(
@@ -335,9 +338,36 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
+            # Create helper subquery 1 to 1 user <-> projects
+            access_rights_subquery = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    ).label("access_rights"),
+                ).group_by(project_to_groups.c.project_uuid)
+            ).subquery("access_rights_subquery")
+
             query = (
-                sa.select(projects, projects_to_products.c.product_name)
-                .select_from(projects.join(projects_to_products, isouter=True))
+                sa.select(
+                    *[col for col in projects.columns if col.name != "access_rights"],
+                    access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                )
+                .select_from(
+                    projects.join(projects_to_products, isouter=True).join(
+                        access_rights_subquery, isouter=True
+                    )
+                    # .join(user_to_groups, isouter=True)
+                )
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -357,7 +387,7 @@ class ProjectDBAPI(BaseProjectDB):
                     & (
                         (projects.c.prj_owner == user_id)
                         | sa.text(
-                            f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
+                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                         )
                     )
                     & (
@@ -478,6 +508,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
+    # MD: depreciate
     async def get_project_access_rights_for_user(
         self, user_id: UserID, project_uuid: ProjectID
     ) -> UserProjectAccessRights:
@@ -599,6 +630,7 @@ class ProjectDBAPI(BaseProjectDB):
         self, project_uuid: ProjectID, new_partial_project_data: dict
     ) -> ProjectDB:
         async with self.engine.acquire() as conn:
+            # MD: TODO: remove project_access_rights
             result = await conn.execute(
                 projects.update()
                 .values(last_change_date=sa.func.now(), **new_partial_project_data)
@@ -620,6 +652,7 @@ class ProjectDBAPI(BaseProjectDB):
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
         async with self.engine.acquire() as conn:
+            # MD: check
             # now update it
             result: ResultProxy = await conn.execute(
                 projects.update()
@@ -771,6 +804,7 @@ class ProjectDBAPI(BaseProjectDB):
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
 
+            # MD: Check
             result = await db_connection.execute(
                 projects.update()
                 .values(**convert_to_db_names(new_project_data))

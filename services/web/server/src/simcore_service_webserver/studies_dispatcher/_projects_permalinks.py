@@ -81,6 +81,7 @@ async def permalink_factory(
         stmt = sa.select(
             projects.c.uuid,
             projects.c.type,
+            # MD: check
             projects.c.access_rights,
             projects.c.published,
         ).where(projects.c.uuid == f"{project_uuid}")
