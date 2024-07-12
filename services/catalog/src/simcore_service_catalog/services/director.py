@@ -1,13 +1,17 @@
 import asyncio
 import functools
 import logging
+import urllib.parse
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from models_library.services_metadata_published import ServiceMetaDataPublished
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.json_serialization import json_dumps
+from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -32,7 +36,7 @@ _director_startup_retry_policy = {
 }
 
 
-def _safe_request(
+def _return_data_or_raise_error(
     request_func: Callable[..., Awaitable[httpx.Response]]
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
@@ -113,18 +117,18 @@ class DirectorApi:
     async def close(self):
         await self.client.aclose()
 
-    # OPERATIONS
-    # TODO: policy to retry if NetworkError/timeout?
-    # TODO: add ping to healthcheck
+    #
+    # Low level API
+    #
 
-    @_safe_request
+    @_return_data_or_raise_error
     async def get(self, path: str) -> httpx.Response:
         # temp solution: default timeout increased to 20"
         return await self.client.get(path, timeout=20.0)
 
-    @_safe_request
-    async def put(self, path: str, body: dict) -> httpx.Response:
-        return await self.client.put(path, json=body)
+    #
+    # High level API
+    #
 
     async def is_responsive(self) -> bool:
         try:
@@ -135,6 +139,23 @@ class DirectorApi:
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
+
+    async def list_all_services(self) -> list[ServiceMetaDataPublished]:
+        # WARNING: this function probably raise ValidationError since director does NOT offer guarantees.
+        # SEE list_registered_services
+        data = await self.get("/services")
+        return parse_obj_as(list[ServiceMetaDataPublished], data)
+
+    async def get_service(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceMetaDataPublished:
+        data = await self.get(
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        )
+        # NOTE: the fact that it returns a list of one element is a defect of the director API
+        assert isinstance(data, list)  # nosec
+        assert len(data) == 1  # nosec
+        return ServiceMetaDataPublished.parse_obj(data[0])
 
 
 async def setup_director(app: FastAPI) -> None:
