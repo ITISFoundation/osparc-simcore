@@ -11,7 +11,6 @@ from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.ec2 import (
     _APPLICATION_TAG_KEY,
     all_created_ec2_instances_filter,
-    compose_user_data,
     creation_ec2_tags,
     get_cluster_name,
 )
@@ -93,15 +92,3 @@ def test_all_created_ec2_instances_filter(
     assert all(
         tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
     ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
-
-
-@pytest.fixture
-def bash_command(faker: Faker) -> str:
-    return faker.pystr()
-
-
-def test_compose_user_data(bash_command: str):
-    received_user_data = compose_user_data(bash_command)
-    assert received_user_data
-    assert received_user_data.startswith("#!/bin/bash\n")
-    assert bash_command in received_user_data

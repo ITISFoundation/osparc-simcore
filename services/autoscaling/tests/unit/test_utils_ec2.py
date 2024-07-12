@@ -5,7 +5,6 @@
 
 import pytest
 from aws_library.ec2.models import EC2InstanceType, Resources
-from faker import Faker
 from pydantic import ByteSize
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
@@ -13,7 +12,6 @@ from simcore_service_autoscaling.core.errors import (
 )
 from simcore_service_autoscaling.utils.utils_ec2 import (
     closest_instance_policy,
-    compose_user_data,
     find_best_fitting_ec2_instance,
 )
 
@@ -63,10 +61,3 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy(
     )
 
     assert found_instance.resources == expected_ec2_instance.resources
-
-
-def test_compose_user_data(faker: Faker):
-    command = faker.text()
-    user_data = compose_user_data(command)
-    assert user_data.startswith("#!/bin/bash")
-    assert command in user_data
