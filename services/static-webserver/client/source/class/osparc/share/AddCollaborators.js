@@ -45,15 +45,37 @@ qx.Class.define("osparc.share.AddCollaborators", {
   members: {
     __serializedDataCopy: null,
 
-    __buildLayout: function() {
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      this._add(label);
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "intro-text":
+          control = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
+          this._add(control);
+          break;
+        case "share-with":
+          control = new qx.ui.form.Button(this.tr("Share with...")).set({
+            appearance: "form-button",
+            alignX: "left",
+            allowGrowX: false
+          });
+          this._add(control);
+          break;
+        case "check-organizations":
+          control = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+            appearance: "form-button-outlined",
+            allowGrowY: false,
+            allowGrowX: false,
+            icon: osparc.dashboard.CardBase.SHARED_ORGS
+          });
+          this._add(control);
+      }
+      return control || this.base(arguments, id);
+    },
 
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Share with...")).set({
-        appearance: "form-button",
-        alignX: "left",
-        allowGrowX: false
-      });
+    __buildLayout: function() {
+      this.getChildControl("intro-text");
+
+      const addCollaboratorBtn = this.getChildControl("share-with");
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this.__serializedDataCopy);
         collaboratorsManager.addListener("addCollaborators", e => {
@@ -61,16 +83,9 @@ qx.Class.define("osparc.share.AddCollaborators", {
           this.fireDataEvent("addCollaborators", e.getData());
         }, this);
       }, this);
-      this._add(addCollaboratorBtn);
 
-      const organizations = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
-        appearance: "form-button-outlined",
-        allowGrowY: false,
-        allowGrowX: false,
-        icon: osparc.dashboard.CardBase.SHARED_ORGS
-      });
+      const organizations = this.getChildControl("check-organizations");
       organizations.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-      this._add(organizations);
     }
   }
 });
