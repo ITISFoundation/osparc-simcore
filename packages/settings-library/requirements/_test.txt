@@ -1,10 +1,10 @@
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 exceptiongroup==1.2.1
     # via pytest
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 iniconfig==2.0.0
     # via pytest

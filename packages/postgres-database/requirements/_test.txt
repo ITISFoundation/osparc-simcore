@@ -6,13 +6,13 @@ async-timeout==4.0.3
     #   aiopg
 attrs==23.2.0
     # via pytest-docker
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 exceptiongroup==1.2.1
     # via pytest
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 greenlet==3.0.3
     # via
@@ -21,7 +21,7 @@ greenlet==3.0.3
     #   sqlalchemy
 iniconfig==2.0.0
     # via pytest
-mypy==1.10.0
+mypy==1.10.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy

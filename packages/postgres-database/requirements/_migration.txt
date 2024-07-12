@@ -1,8 +1,8 @@
-alembic==1.13.1
+alembic==1.13.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -36,7 +36,7 @@ sqlalchemy==1.4.52
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.4.1
+tenacity==8.5.0
     # via -r requirements/_migration.in
 typing-extensions==4.12.2
     # via

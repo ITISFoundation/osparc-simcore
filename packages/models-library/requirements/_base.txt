@@ -10,11 +10,11 @@ email-validator==2.2.0
     # via pydantic
 idna==3.7
     # via email-validator
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via -r requirements/_base.in
 jsonschema-specifications==2023.12.1
     # via jsonschema
-orjson==3.10.5
+orjson==3.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -28,7 +28,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing

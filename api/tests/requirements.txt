@@ -11,13 +11,13 @@ attrs==23.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -c ../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -35,12 +35,12 @@ iniconfig==2.0.0
     # via pytest
 isodate==0.6.1
     # via openapi-core
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.2
+jsonschema-path==0.3.3
     # via
     #   openapi-core
     #   openapi-spec-validator
@@ -97,7 +97,7 @@ pyyaml==6.0.1
     # via
     #   -c ../../requirements/constraints.txt
     #   jsonschema-path
-referencing==0.31.1
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-path
@@ -106,7 +106,7 @@ requests==2.32.3
     # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing

@@ -1,10 +1,10 @@
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -12,7 +12,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.1
     # via pytest
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -71,7 +71,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-tenacity==8.4.1
+tenacity==8.5.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar

@@ -29,7 +29,7 @@ attrs==23.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -41,7 +41,7 @@ charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
     #   requests
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -55,7 +55,7 @@ exceptiongroup==1.2.1
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -89,13 +89,13 @@ idna==3.7
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.2
+jsonschema-path==0.3.3
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
@@ -202,7 +202,7 @@ rfc3339-validator==0.1.4
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-schema-validator
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt

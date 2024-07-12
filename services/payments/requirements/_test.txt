@@ -34,7 +34,7 @@ certifi==2024.2.2
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.4
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -45,7 +45,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via

@@ -3,13 +3,13 @@ attrs==23.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
@@ -21,11 +21,11 @@ idna==3.7
     # via requests
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via -r requirements/_test.in
 jsonschema-specifications==2023.12.1
     # via jsonschema
-mypy==1.10.0
+mypy==1.10.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -64,7 +64,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via docker
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing
@@ -74,7 +74,7 @@ sqlalchemy==1.4.52
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-tenacity==8.4.1
+tenacity==8.5.0
     # via -r requirements/_test.in
 tomli==2.0.1
     # via

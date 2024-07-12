@@ -41,7 +41,7 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
@@ -50,7 +50,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==25.9.1
+faker==26.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -105,7 +105,7 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.10.0
+mypy==1.10.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
