@@ -194,11 +194,11 @@ class RedisClientSDK:
                 yield ttl_lock
         finally:
             # NOTE Why is this error suppressed? Given the following situation:
-            # - 250 locks are acquire in parallel with the option `blocking=True`,
+            # - 250 locks are acquired in parallel with the option `blocking=True`,
             #     meaning: it will wait for the lock to be free before acquiring it
             # - when the lock is acquired the `_extend_lock` task is started
             #     in the background, extending the lock at a fixed interval of time,
-            #     which is half of the duration of the lock's TTL
+            #     which is half of the duration of the lock's TTL.
             # - before the task is released the lock extension task is cancelled
             # Here is where the issue occurs:
             # - some time passes between the task's cancellation and

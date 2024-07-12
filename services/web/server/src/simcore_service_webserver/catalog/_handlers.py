@@ -9,16 +9,18 @@ import logging
 import urllib.parse
 from typing import Any, Final
 
+from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
-    DEVServiceGet,
+    CatalogServiceGet,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
     ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.rest_pagination import PageQueryParameters
+from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination_utils import paginate_data
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -32,16 +34,14 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.application_settings_utils import (
-    requires_dev_feature_enabled,
-)
 
 from .._meta import API_VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, client
+from . import _api, _handlers_errors, client
 from ._api import CatalogRequestContext
 from .exceptions import DefaultPricingUnitForServiceNotFoundError
 
@@ -81,21 +81,34 @@ class ListServiceParams(PageQueryParameters):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_list_services_latest(request: Request):
-    ctx = CatalogRequestContext.create(request)
+    request_ctx = CatalogRequestContext.create(request)
     query_params = parse_request_query_parameters_as(ListServiceParams, request)
 
-    assert ctx  # nosec
-    assert query_params  # nosec
-
-    _logger.debug("Moking response for %s...", request)
-    got = [
-        parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"]),
-    ]
-
-    return envelope_json_response(
-        got[query_params.offset : query_params.offset + query_params.limit]
+    page_items, page_meta = await _api.dev_list_latest_services(
+        request.app,
+        user_id=request_ctx.user_id,
+        product_name=request_ctx.product_name,
+        unit_registry=request_ctx.unit_registry,
+        page_params=PageQueryParameters.construct(
+            offset=query_params.offset, limit=query_params.limit
+        ),
     )
+
+    assert page_meta.limit == query_params.limit  # nosec
+    assert page_meta.offset == query_params.offset  # nosec
+
+    page = Page[CatalogServiceGet].parse_obj(
+        paginate_data(
+            chunk=page_items,
+            request_url=request.url,
+            total=page_meta.total,
+            limit=page_meta.limit,
+            offset=page_meta.offset,
+        )
+    )
+    return envelope_json_response(page, web.HTTPOk)
 
 
 @routes.get(
@@ -105,19 +118,24 @@ async def dev_list_services_latest(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_get_service(request: Request):
-    ctx = CatalogRequestContext.create(request)
+    request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
-    assert ctx  # nosec
+    assert request_ctx  # nosec
     assert path_params  # nosec
 
-    _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
-    got.version = path_params.service_version
-    got.key = path_params.service_key
+    service = await _api.dev_get_service(
+        request.app,
+        user_id=request_ctx.user_id,
+        product_name=request_ctx.product_name,
+        unit_registry=request_ctx.unit_registry,
+        service_key=path_params.service_key,
+        service_version=path_params.service_version,
+    )
 
-    return envelope_json_response(got)
+    return envelope_json_response(CatalogServiceGet.parse_obj(service))
 
 
 @routes.patch(
@@ -127,22 +145,27 @@ async def dev_get_service(request: Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_update_service(request: Request):
-    ctx = CatalogRequestContext.create(request)
+    request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
 
-    assert ctx  # nosec
+    assert request_ctx  # nosec
     assert path_params  # nosec
     assert update  # nosec
 
-    _logger.debug("Moking response for %s...", request)
-    got = parse_obj_as(DEVServiceGet, DEVServiceGet.Config.schema_extra["example"])
-    got.version = path_params.service_version
-    got.key = path_params.service_key
-    updated = got.copy(update=update.dict(exclude_unset=True))
+    updated = await _api.dev_update_service(
+        request.app,
+        user_id=request_ctx.user_id,
+        product_name=request_ctx.product_name,
+        service_key=path_params.service_key,
+        service_version=path_params.service_version,
+        update_data=update.dict(exclude_unset=True),
+        unit_registry=request_ctx.unit_registry,
+    )
 
-    return envelope_json_response(updated)
+    return envelope_json_response(CatalogServiceGet.parse_obj(updated))
 
 
 @routes.get(f"{VTAG}/catalog/services", name="list_services")

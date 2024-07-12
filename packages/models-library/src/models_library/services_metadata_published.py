@@ -3,7 +3,7 @@ from typing import Any, ClassVar, Final, TypeAlias
 
 from pydantic import Extra, Field, NonNegativeInt
 
-from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
+from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_authoring import Author, Badge
@@ -112,11 +112,10 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         " A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]",
     )
 
-    integration_version: str | None = Field(
+    integration_version: SemanticVersionStr | None = Field(
         None,
         alias="integration-version",
         description="This version is used to maintain backward compatibility when there are changes in the way a service is integrated into the framework",
-        regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     )
 
     service_type: ServiceType = Field(
@@ -160,6 +159,12 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         None,
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
+    )
+
+    # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+    image_digest: str | None = Field(
+        None,
+        description="Image manifest digest. Note that this is NOT injected as an image label",
     )
 
     class Config:

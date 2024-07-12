@@ -66,6 +66,7 @@ def app_environment(
             "SC_BOOT_MODE": "production",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
+            "API_SERVER_LOG_CHECK_TIMEOUT_SECONDS": "1",
             **backend_env_vars_overrides,
         },
     )

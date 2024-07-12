@@ -96,7 +96,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     initWorkbench: function() {
       const allModels = this.getNodes();
       const nodes = Object.values(allModels);
-      nodes.forEach(node => node.startDynamicService());
+      nodes.forEach(node => node.startPollingState());
     },
 
     getUpstreamCompNodes: function(node, recursive = true, upstreamNodes = new Set()) {
@@ -308,7 +308,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       node.populateNodeData();
       this.giveUniqueNameToNode(node, node.getLabel());
-      node.startDynamicService();
+      node.startPollingState();
 
       return node;
     },

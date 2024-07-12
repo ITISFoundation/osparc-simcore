@@ -57,6 +57,7 @@ qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
       osparc.desktop.credits.BillingCenterWindow.openWindow();
       this.exclude();
     });
+    osparc.utils.Utils.setIdToWidget(billingCenterButton, "billingCenterButton");
     layout.add(billingCenterButton);
 
     this._add(layout);

@@ -1,8 +1,8 @@
 aio-pika==9.4.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==12.4.0
+aioboto3==13.1.0
     # via -r requirements/_base.in
-aiobotocore==2.12.3
+aiobotocore==2.13.1
     # via aioboto3
 aiocache==0.12.2
     # via -r requirements/_base.in
@@ -11,7 +11,9 @@ aiodebug==2.3.0
 aiodocker==0.21.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==23.2.1
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   aioboto3
 aiohttp==3.9.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -46,9 +48,9 @@ attrs==23.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.34.69
+boto3==1.34.131
     # via aiobotocore
-botocore==1.34.69
+botocore==1.34.131
     # via
     #   aiobotocore
     #   boto3
@@ -182,11 +184,13 @@ typer==0.12.3
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   faststream
-types-aiobotocore==2.12.3
+types-aiobotocore==2.13.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==2.12.3
+types-aiobotocore-ec2==2.13.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.12.3
+types-aiobotocore-s3==2.13.0
+    # via types-aiobotocore
+types-aiobotocore-ssm==2.13.0
     # via types-aiobotocore
 types-awscrt==0.20.9
     # via botocore-stubs
@@ -203,6 +207,7 @@ typing-extensions==4.11.0
     #   types-aiobotocore
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
 urllib3==2.2.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

@@ -122,13 +122,14 @@ from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InvalidEC2TypeInResourcesSpecsError,
+    InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
-    ProjectNodeResourcesInvalidError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
@@ -386,6 +387,7 @@ async def update_project_node_resources_from_hardware_info(
         new_ram_value = int(
             selected_ec2_instance_type.ram
             - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+            - _SIDECARS_OPS_SAFE_RAM_MARGIN
         )
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down
@@ -435,14 +437,12 @@ async def update_project_node_resources_from_hardware_info(
             check_update_allowed=False,
         )
     except StopIteration as exc:
-        msg = (
-            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
-            " TIP: adjust product configuration"
-        )
-        raise ProjectNodeResourcesInvalidError(msg) from exc
+        raise InvalidEC2TypeInResourcesSpecsError(
+            ec2_types=set(hardware_info.aws_ec2_instances)
+        ) from exc
+
     except KeyError as exc:
-        msg = "Sub service is missing RAM/CPU resource keys!"
-        raise ProjectNodeResourcesInvalidError(msg) from exc
+        raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,

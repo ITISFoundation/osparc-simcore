@@ -5,8 +5,8 @@
 # pylint:disable=no-name-in-module
 
 
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -18,9 +18,11 @@ from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import (
+    byte_size_ids,
+    parametrized_file_size,
+)
 from servicelib.aiohttp import status
-from tests.helpers.file_utils import parametrized_file_size
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]

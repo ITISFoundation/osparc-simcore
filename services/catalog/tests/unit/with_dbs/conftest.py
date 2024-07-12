@@ -1,26 +1,23 @@
 # pylint: disable=not-context-manager
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import itertools
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
 import pytest
-import respx
 import sqlalchemy as sa
 from faker import Faker
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -70,37 +67,13 @@ async def app_settings(  # starts postgres service before app starts
     # Ensures both postgres service and app environs are the same!
     assert app_settings
     assert app_settings.CATALOG_POSTGRES
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_USER == postgres_host_config["user"]
-    assert app_settings.CATALOG_POSTGRES.POSTGRES_DB == postgres_host_config["database"]
+    assert postgres_host_config["user"] == app_settings.CATALOG_POSTGRES.POSTGRES_USER
+    assert postgres_host_config["database"] == app_settings.CATALOG_POSTGRES.POSTGRES_DB
     assert (
         app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
         == postgres_host_config["password"]
     )
     return app_settings
-
-
-@pytest.fixture
-def client(app: FastAPI) -> Iterator[TestClient]:
-    # NOTE: sync client since we use benchmarch fixture!
-    with TestClient(app) as cli:
-        # Note: this way we ensure the events are run in the application
-        yield cli
-
-
-@pytest.fixture()
-def mocked_director_service_api(
-    app_settings: ApplicationSettings,
-) -> Iterator[respx.MockRouter]:
-    with respx.mock(
-        base_url=app_settings.CATALOG_DIRECTOR.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": []}
-        )
-        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------
@@ -223,19 +196,19 @@ async def services_db_tables_injector(
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
-    Can use service_catalog_faker to generate inputs
+    Can use `create_fake_service_data` to generate inputs
 
     Example:
         await services_db_tables_injector(
             [
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.1",
                     team_access=None,
                     everyone_access=None,
                     product=target_product,
                 ),
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.7",
                     team_access=None,
@@ -378,7 +351,7 @@ async def service_metadata_faker(faker: Faker) -> Callable:
 
 
 @pytest.fixture()
-async def service_catalog_faker(
+async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
@@ -388,7 +361,7 @@ async def service_catalog_faker(
 
 
     Example:
-        fake_service, *fake_access_rights = service_catalog_faker(
+        fake_service, *fake_access_rights = create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
                 team_access=None,
@@ -474,18 +447,3 @@ async def service_catalog_faker(
         return tuple(fakes)
 
     return _fake_factory
-
-
-@pytest.fixture
-def mocked_catalog_background_task(mocker: MockerFixture) -> None:
-    """patch the setup of the background task so we can call it manually"""
-    mocker.patch(
-        "simcore_service_catalog.core.events.start_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_catalog.core.events.stop_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
