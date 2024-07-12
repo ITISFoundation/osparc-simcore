@@ -16,6 +16,7 @@ from models_library.projects import ProjectID
 from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
+from simcore_service_webserver.projects._groups_api import ProjectGroupGet
 from simcore_service_webserver.projects._groups_handlers import (
     _ProjectsGroupsBodyParams,
     _ProjectsGroupsPathParams,
@@ -34,7 +35,7 @@ router = APIRouter(
 
 @router.post(
     "/projects/{project_id}/groups/{group_id}",
-    response_model=Envelope[WalletGroupGet],
+    response_model=Envelope[ProjectGroupGet],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project_group(
@@ -48,7 +49,7 @@ assert_handler_signature_against_model(create_project_group, _ProjectsGroupsPath
 
 @router.get(
     "/projects/{project_id}/groups",
-    response_model=Envelope[list[WalletGroupGet]],
+    response_model=Envelope[list[ProjectGroupGet]],
 )
 async def list_project_groups(project_id: ProjectID):
     ...
@@ -59,7 +60,7 @@ assert_handler_signature_against_model(list_project_groups, ProjectPathParams)
 
 @router.put(
     "/projects/{project_id}/groups/{group_id}",
-    response_model=Envelope[WalletGroupGet],
+    response_model=Envelope[ProjectGroupGet],
 )
 async def update_project_group(
     project_id: ProjectID, group_id: GroupID, body: _ProjectsGroupsBodyParams
