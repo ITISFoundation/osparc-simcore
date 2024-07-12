@@ -194,44 +194,9 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __createAddCollaboratorSection: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      let canIShare = false;
-      if (this._resourceType === "service") {
-        // service
-        canIShare = osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
-      } else {
-        // study or template
-        canIShare = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
-      }
-      vBox.setVisibility(canIShare ? "visible" : "excluded");
-
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      vBox.add(label);
-
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Share with...")).set({
-        appearance: "form-button",
-        alignX: "left",
-        allowGrowX: false
-      });
-      addCollaboratorBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedDataCopy);
-        collaboratorsManager.addListener("addCollaborators", e => {
-          const cb = () => collaboratorsManager.close();
-          this._addEditors(e.getData(), cb);
-        }, this);
-      }, this);
-      vBox.add(addCollaboratorBtn);
-
-      const organizations = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
-        appearance: "form-button-outlined",
-        allowGrowY: false,
-        allowGrowX: false,
-        icon: osparc.dashboard.CardBase.SHARED_ORGS
-      });
-      organizations.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-      vBox.add(organizations);
-
-      return vBox;
+      const addCollaborators = new osparc.share.AddCollaborators(this._resourceType, this._serializedDataCopy);
+      addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
+      return addCollaborators;
     },
 
     __createCollaboratorsListSection: function() {

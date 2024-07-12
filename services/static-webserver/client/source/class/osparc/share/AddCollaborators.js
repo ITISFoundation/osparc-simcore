@@ -49,13 +49,15 @@ qx.Class.define("osparc.share.AddCollaborators", {
     __serializedDataCopy: null,
 
     __buildLayout: function() {
-      if (this.__resourceType === "service") {
+      let canIShare = false;
+      if (this._resourceType === "service") {
         // service
-        this.setVisibility(this._canIWrite() ? "visible" : "excluded");
+        canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
       } else {
         // study or template
-        this.setVisibility(this._canIDelete() ? "visible" : "excluded");
+        canIShare = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
       }
+      this.setVisibility(canIShare ? "visible" : "excluded");
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       this._add(label);
@@ -67,7 +69,10 @@ qx.Class.define("osparc.share.AddCollaborators", {
       });
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this.__serializedDataCopy);
-        collaboratorsManager.addListener("addCollaborators", e => this.fireDataEvent("addCollaborators", e.getData()), this);
+        collaboratorsManager.addListener("addCollaborators", e => {
+          collaboratorsManager.close();
+          this.fireDataEvent("addCollaborators", e.getData());
+        }, this);
       }, this);
       this._add(addCollaboratorBtn);
 
