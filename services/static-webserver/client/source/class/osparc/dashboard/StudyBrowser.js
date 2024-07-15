@@ -310,7 +310,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__itemClicked(card, e.getNativeEvent().shiftKey);
           }
         }, this);
-        card.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
         this._populateCardMenu(card);
       });
     },
