@@ -71,7 +71,11 @@ async def test_services_manifest_api(
 
     # BATCH
     for expected_services in toolz.partition(2, all_services_map.values()):
-        got_services = await manifest.get_batch_services(
-            [(s.key, s.value) for s in expected_services], director_api
-        )
-        assert got_services == expected_services
+        selection = [(s.key, s.version) for s in expected_services]
+        got_services = await manifest.get_batch_services(selection, director_api)
+
+        assert [(s.key, s.version) for s in got_services] == selection
+
+        # NOTE: simplier to visualize
+        for got, expected in zip(got_services, expected_services, strict=True):
+            assert got == expected
