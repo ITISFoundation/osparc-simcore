@@ -145,3 +145,6 @@ async def test_list_services_paginated(
         )
 
         assert got == item
+
+    # since it is cached, it should only call it `limit` times
+    assert mocked_director_service_api["get_service"].call_count == limit

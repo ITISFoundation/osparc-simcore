@@ -432,12 +432,9 @@ class ServicesRepository(BaseRepository):
         )
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
-                service_to_access_rights[
-                    (
-                        row[services_access_rights.c.key],
-                        row[services_access_rights.c.version],
-                    )
-                ].append(ServiceAccessRightsAtDB.from_orm(row))
+                service_to_access_rights[(row.key, row.version)].append(
+                    ServiceAccessRightsAtDB.from_orm(row)
+                )
         return service_to_access_rights
 
     async def upsert_service_access_rights(
