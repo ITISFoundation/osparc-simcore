@@ -168,8 +168,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__reloadSnapshotsAndIterations();
 
       study.openStudy()
-        .then(() => {
-          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(study.serialize());
+        .then(studyData => {
+          this.__studyDataInBackend = studyData;
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
