@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import operator
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
@@ -17,7 +18,7 @@ from faststream.rabbit import (
     RabbitRouter,
     TestRabbitBroker,
 )
-from pydantic import NonNegativeFloat
+from pydantic import NonNegativeInt
 from servicelib.deferred_tasks._utils import stop_retry_for_unintended_errors
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
@@ -59,12 +60,22 @@ def rabbit_exchange() -> RabbitExchange:
     return RabbitExchange("test_exchange")
 
 
-async def _get_call_count(
-    handler: HandlerCallWrapper, *, wait_for: NonNegativeFloat = 0.1
-) -> int:
-    await asyncio.sleep(wait_for)
-    assert handler.mock
-    return len(handler.mock.call_args_list)
+async def _assert_call_count(
+    handler: HandlerCallWrapper,
+    *,
+    expected_count: NonNegativeInt,
+    operation: Callable = operator.eq
+) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.01),
+        stop=stop_after_delay(5),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert handler.mock
+            count = len(handler.mock.call_args_list)
+            assert operation(count, expected_count)
 
 
 async def test_handler_called_as_expected(
@@ -85,12 +96,12 @@ async def test_handler_called_as_expected(
         await test_broker.publish(
             24, queue="print_message_no_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(print_message_no_deco) == 1
+        await _assert_call_count(print_message_no_deco, expected_count=1)
 
         await test_broker.publish(
             42, queue="print_message_with_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(print_message_with_deco) == 1
+        await _assert_call_count(print_message_with_deco, expected_count=1)
 
 
 async def test_handler_nacks_message(
@@ -115,12 +126,16 @@ async def test_handler_nacks_message(
         await test_broker.publish(
             "", queue="nacked_message_no_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(nacked_message_no_deco) > 10
+        await _assert_call_count(
+            nacked_message_no_deco, expected_count=10, operation=operator.gt
+        )
 
         await test_broker.publish(
             "", queue="nacked_message_with_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(nacked_message_with_deco) > 10
+        await _assert_call_count(
+            nacked_message_with_deco, expected_count=10, operation=operator.gt
+        )
 
 
 async def test_handler_rejects_message(
@@ -146,12 +161,12 @@ async def test_handler_rejects_message(
         await test_broker.publish(
             "", queue="rejected_message_no_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(rejected_message_no_deco) == 1
+        await _assert_call_count(rejected_message_no_deco, expected_count=1)
 
         await test_broker.publish(
             "", queue="rejected_message_with_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(rejected_message_with_deco) == 1
+        await _assert_call_count(rejected_message_with_deco, expected_count=1)
 
 
 async def test_handler_unintended_error(
@@ -178,12 +193,14 @@ async def test_handler_unintended_error(
         await test_broker.publish(
             "", queue="unintended_error_no_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(unintended_error_no_deco) > 10
+        await _assert_call_count(
+            unintended_error_no_deco, expected_count=10, operation=operator.gt
+        )
 
         await test_broker.publish(
             "", queue="unintended_error_with_deco", exchange=rabbit_exchange
         )
-        assert await _get_call_count(unintended_error_with_deco) == 1
+        await _assert_call_count(unintended_error_with_deco, expected_count=1)
 
 
 async def test_handler_parallelism(
