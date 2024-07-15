@@ -109,7 +109,8 @@ async def get_service(
 
 
 async def get_batch_services(
-    selection: list[tuple[ServiceKey, ServiceVersion]], director_client: DirectorApi
+    selection: list[tuple[ServiceKey, ServiceVersion]],
+    director_client: DirectorApi,
 ) -> list[ServiceMetaDataPublished | BaseException]:
 
     return await limited_gather(
