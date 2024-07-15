@@ -7,7 +7,7 @@ from typing import Any, NamedTuple, TypeAlias, TypeVar
 
 import httpx
 from fastapi import HTTPException, status
-from parse import compile
+from parse import compile as parse_compile
 from pydantic import ValidationError
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
@@ -147,7 +147,7 @@ def _assert_correct_kwargs(func, status_map: HttpStatusMap):
         if param.kind == param.KEYWORD_ONLY
     }
     for _, exc_type in status_map.items():
-        _exception_inputs = set(compile(exc_type.msg_template).named_fields)
+        _exception_inputs = set(parse_compile(exc_type.msg_template).named_fields)
         assert _exception_inputs.issubset(
             _required_kwargs
         ), f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"  # nosec
