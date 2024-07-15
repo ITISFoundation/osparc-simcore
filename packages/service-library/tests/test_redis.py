@@ -22,6 +22,12 @@ from servicelib.redis import (
     RedisManagerDBConfig,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -119,7 +125,7 @@ async def test_redis_lock_context_manager(
         same_lock = redis_client_sdk.redis.lock(lock_name, blocking_timeout=1)
         assert await same_lock.locked()
         assert not await same_lock.owned()
-        assert await same_lock.acquire() == False
+        assert await same_lock.acquire() is False
         with pytest.raises(LockError):
             async with same_lock:
                 ...
@@ -134,7 +140,7 @@ async def test_redis_lock_with_ttl(
     )
     assert not await ttl_lock.locked()
 
-    with pytest.raises(LockNotOwnedError):
+    with pytest.raises(LockNotOwnedError):  # noqa: PT012
         # this raises as the lock is lost
         async with ttl_lock:
             assert await ttl_lock.locked()
@@ -204,16 +210,21 @@ async def test_lock_context_released_after_error(
 
     assert await redis_client_sdk.lock_value(lock_name) is None
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError):  # noqa: PT012
         async with redis_client_sdk.lock_context(lock_name):
             assert await redis_client_sdk.redis.get(lock_name) is not None
-            raise RuntimeError("Expected error")
+            msg = "Expected error"
+            raise RuntimeError(msg)
 
     assert await redis_client_sdk.lock_value(lock_name) is None
 
 
 async def test_lock_acquired_in_parallel_to_update_same_resource(
-    mock_default_lock_ttl: None, redis_client_sdk: RedisClientSDK, faker: Faker
+    mock_default_lock_ttl: None,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    faker: Faker,
 ):
     INCREASE_OPERATIONS: Final[int] = 250
     INCREASE_BY: Final[int] = 10
@@ -226,29 +237,39 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             current_value = self.value
             current_value += by
             # most likely situation which creates issues
-            await asyncio.sleep(servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2)
+            await asyncio.sleep(
+                servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() / 2  # noqa: SLF001
+            )
             self.value = current_value
 
     counter = RaceConditionCounter()
     lock_name: str = faker.pystr()
     # ensures it does nto time out before acquiring the lock
     time_for_all_inc_counter_calls_to_finish_s: float = (
-        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
+        servicelib_redis._DEFAULT_LOCK_TTL.total_seconds()  # noqa: SLF001
+        * INCREASE_OPERATIONS
+        * 10
     )
 
     async def _inc_counter() -> None:
-        async with redis_client_sdk.lock_context(
-            lock_key=lock_name,
-            blocking=True,
-            blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
-        ):
-            await counter.race_condition_increase(INCREASE_BY)
+        async with get_redis_client_sdk(  # noqa: SIM117
+            RedisDatabase.RESOURCES
+        ) as redis_client_sdk:
+            async with redis_client_sdk.lock_context(
+                lock_key=lock_name,
+                blocking=True,
+                blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
+            ):
+                await counter.race_condition_increase(INCREASE_BY)
 
     await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
-async def test_redis_client_sdks_manager(redis_service: RedisSettings):
+async def test_redis_client_sdks_manager(
+    mock_redis_socket_timeout: None, redis_service: RedisSettings
+):
+
     all_redis_configs: set[RedisManagerDBConfig] = {
         RedisManagerDBConfig(db) for db in RedisDatabase
     }
@@ -256,15 +277,14 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
         databases_configs=all_redis_configs, settings=redis_service
     )
 
-    await manager.setup()
-
-    for config in all_redis_configs:
-        assert manager.client(config.database)
-
-    await manager.shutdown()
+    async with manager:
+        for config in all_redis_configs:
+            assert manager.client(config.database)
 
 
-async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
+async def test_redis_client_sdk_setup_shutdown(
+    mock_redis_socket_timeout: None, redis_service: RedisSettings
+):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
     client = RedisClientSDK(redis_resources_dns)
@@ -276,8 +296,16 @@ async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
 
     await client.setup()
 
-    await client._check_health()  # noqa: SLF001
-    assert client.is_healthy is True
+    # ensure health check task sets the health to True
+    client._is_healthy = False  # noqa: SLF001
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert client.is_healthy is True
 
     # cleanup
     await client.redis.flushall()
@@ -291,7 +319,7 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
     )
 
 
-async def test_regression_fails_if_on_redis_service_outage(
+async def test_regression_fails_on_redis_service_outage(
     mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
