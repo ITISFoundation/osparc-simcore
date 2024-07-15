@@ -376,8 +376,9 @@ class BaseProjectDB:
         if only_published:
             query = query.where(projects.c.published == "true")
 
-        if for_update:
-            query = query.with_for_update()
+        # if for_update:
+        #     # NOTE: MD: Can not be used with group by clause -> but is it here really necessary?
+        #     query = query.with_for_update()
 
         result = await connection.execute(query)  # <-- Here the query is executed
         project_row = await result.first()
