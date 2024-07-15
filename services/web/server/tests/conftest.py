@@ -24,7 +24,7 @@ from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
@@ -120,6 +120,17 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
+
+
+@pytest.fixture
+async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
+    async with NewUser(
+        user_data={
+            "name": "test-user",
+        },
+        app=client.app,
+    ) as user:
+        yield user
 
 
 @pytest.fixture

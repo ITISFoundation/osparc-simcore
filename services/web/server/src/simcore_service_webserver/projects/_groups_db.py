@@ -12,6 +12,7 @@ from models_library.users import GroupID
 from pydantic import BaseModel, parse_obj_as
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from sqlalchemy import func, literal_column
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
@@ -144,6 +145,37 @@ async def update_project_group(
                 reason=f"Project {project_id} group {group_id} not found"
             )
         return parse_obj_as(ProjectGroupGetDB, row)
+
+
+async def update_or_insert_project_group(
+    app: web.Application,
+    project_id: ProjectID,
+    group_id: GroupID,
+    *,
+    read: bool,
+    write: bool,
+    delete: bool,
+) -> None:
+    async with get_database_engine(app).acquire() as conn:
+        insert_stmt = pg_insert(project_to_groups).values(
+            project_uuid=f"{project_id}",
+            gid=group_id,
+            read=read,
+            write=write,
+            delete=delete,
+            created=func.now(),
+            modified=func.now(),
+        )
+        on_update_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[project_to_groups.c.project_uuid, project_to_groups.c.gid],
+            set_={
+                "read": insert_stmt.excluded.read,
+                "write": insert_stmt.excluded.write,
+                "delete": insert_stmt.excluded.delete,
+                "modified": func.now(),
+            },
+        )
+        await conn.execute(on_update_stmt)
 
 
 async def delete_project_group(

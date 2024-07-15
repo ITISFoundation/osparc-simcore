@@ -16,6 +16,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import now_str
@@ -84,6 +85,19 @@ async def create_project(
             for node_id in project_data.get("workbench", {})
         },
     )
+
+    if params_override and params_override.get("access_rights"):
+        _access_rights = params_override.get("access_rights")
+        for group_id, permissions in _access_rights.items():
+            await update_or_insert_project_group(
+                app,
+                new_project["uuid"],
+                group_id=int(group_id),
+                read=permissions["read"],
+                write=permissions["write"],
+                delete=permissions["delete"],
+            )
+
     try:
         uuidlib.UUID(str(project_data["uuid"]))
         assert new_project["uuid"] == project_data["uuid"]
@@ -112,8 +126,8 @@ class NewProject:
         self,
         params_override: dict | None = None,
         app: web.Application | None = None,
-        user_id: int | None = None,
         *,
+        user_id: int,
         product_name: str,
         tests_data_dir: Path,
         force_uuid: bool = False,
