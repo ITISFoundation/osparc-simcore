@@ -86,8 +86,12 @@ async def create_project(
         },
     )
 
-    if params_override and params_override.get("access_rights"):
-        _access_rights = params_override.get("access_rights")
+    if params_override and (
+        params_override.get("access_rights") or params_override.get("accessRights")
+    ):
+        _access_rights = params_override.get("access_rights", {}) | params_override.get(
+            "accessRights", {}
+        )
         for group_id, permissions in _access_rights.items():
             await update_or_insert_project_group(
                 app,

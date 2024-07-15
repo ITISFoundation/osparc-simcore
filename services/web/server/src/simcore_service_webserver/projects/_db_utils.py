@@ -376,9 +376,13 @@ class BaseProjectDB:
         if only_published:
             query = query.where(projects.c.published == "true")
 
-        # if for_update:
-        #     # NOTE: MD: Can not be used with group by clause -> but is it here really necessary?
-        #     query = query.with_for_update()
+        if for_update:
+            # NOTE: It seems that blocking this row in the database is necessary; otherwise, there are some concurrency issues.
+            # As the WITH FOR UPDATE clause cannot be used with the GROUP BY clause, I have added a separate query for that.
+            blocking_query = (
+                sa.select(projects).where(projects.c.uuid == f"{project_uuid}")
+            ).with_for_update()
+            await connection.execute(blocking_query)
 
         result = await connection.execute(query)  # <-- Here the query is executed
         project_row = await result.first()
