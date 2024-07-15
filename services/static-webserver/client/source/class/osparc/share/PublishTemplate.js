@@ -66,10 +66,8 @@ qx.Class.define("osparc.share.PublishTemplate", {
     },
 
     getSelectedGroups: function() {
-      const groupIDs = [
-        osparc.auth.Data.getInstance().getGroupId()
-      ];
-      this.__selectedCollabs.getChildren(selectedCollab => groupIDs.push(selectedCollab.gid));
+      const groupIDs = [];
+      this.__selectedCollabs.getChildren().forEach(selectedCollab => groupIDs.push(selectedCollab.gid));
       return groupIDs;
     }
   }
