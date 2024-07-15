@@ -185,7 +185,7 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
-    __fullOptions: function() {
+    __amIOwner: function() {
       let fullOptions = false;
       if (this._resourceType === "service") {
         // service
@@ -198,7 +198,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
-      if (this.__fullOptions()) {
+      if (this.__amIOwner()) {
         this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("open-organizations-btn");
@@ -346,7 +346,7 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      const showOptions = this.__fullOptions();
+      const showOptions = this.__amIOwner();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
