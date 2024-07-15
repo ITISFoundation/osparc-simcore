@@ -25,27 +25,35 @@
 qx.Class.define("osparc.share.PublishTemplate", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  /**
+   * @param studyData {Object} Object containing part or the entire serialized Study Data
+   */
+  construct: function(studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
+
+    this.__potentialTemplateData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+
+    this.__selectedCollabs = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+    this.__addAccessRights();
 
     this.__buildLayout();
   },
 
   members: {
+    __potentialTemplateData: null,
     __selectedCollabs: null,
 
     __buildLayout: function() {
-      const addCollaborators = new osparc.share.AddCollaborators(this.__serializedDataCopy);
+      const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData);
       addCollaborators.getChildControl("intro-text").set({
         value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
         font: "text-14"
       });
       this._add(addCollaborators);
 
-      const selectedCollabs = this.__selectedCollabs = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      this._add(selectedCollabs);
+      this._add(this.__selectedCollabs);
 
       addCollaborators.addListener("addCollaborators", e => {
         const gids = e.getData();
@@ -57,13 +65,23 @@ qx.Class.define("osparc.share.PublishTemplate", {
                 if (gid in potentialCollaborators && !currentGids.includes(gid)) {
                   const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid]["label"], "@MaterialIcons/close/12");
                   collabButton.gid = gid;
-                  selectedCollabs.add(collabButton);
-                  collabButton.addListener("execute", () => selectedCollabs.remove(collabButton));
+                  this.__selectedCollabs.add(collabButton);
+                  collabButton.addListener("execute", () => this.__selectedCollabs.remove(collabButton));
                 }
               });
             });
         }
+        this.__addAccessRights();
+        addCollaborators.setSerializedDataCopy(this.__potentialTemplateData);
       }, this);
+    },
+
+    __addAccessRights: function() {
+      // this is only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      this.__potentialTemplateData["accessRights"] = {};
+      this.__potentialTemplateData["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
+      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight());
     },
 
     getSelectedGroups: function() {

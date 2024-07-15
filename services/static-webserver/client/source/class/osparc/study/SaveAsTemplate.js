@@ -53,7 +53,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
       this._add(publishWithData);
 
-      const shareWith = this.__shareWith = new osparc.share.PublishTemplate();
+      const shareWith = this.__shareWith = new osparc.share.PublishTemplate(this.__studyDataClone);
       this._add(shareWith);
 
       const publishTemplateBtn = this.__publishTemplateBtn = new qx.ui.form.Button().set({
