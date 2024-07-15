@@ -8,7 +8,7 @@ import pytest
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_service_catalog.db.repositories.services import ServicesRepository
-from simcore_service_catalog.services import catalog
+from simcore_service_catalog.services import services
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -52,7 +52,7 @@ async def test_list_services_paginated(
     assert limit < num_services
     offset = 1
 
-    total_count, page_items = await catalog.list_services_paginated(
+    total_count, page_items = await services.list_services_paginated(
         services_repo,
         product_name=target_product,
         user_id=user_id,
@@ -68,7 +68,7 @@ async def test_list_services_paginated(
         assert item.owner is not None
         assert item.history[0].version == item.version
 
-        got = await catalog.get_service(
+        got = await services.get_service(
             services_repo,
             product_name=target_product,
             user_id=user_id,
