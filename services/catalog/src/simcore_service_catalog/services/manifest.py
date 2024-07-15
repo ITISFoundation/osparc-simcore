@@ -86,21 +86,24 @@ async def get_services_map(
 @cached(
     ttl=DIRECTOR_CACHING_TTL,
     namespace=__name__,
-    key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['service_key']}/{kw['service_version']}",
+    key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
 )
 async def get_service(
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
     director_client: DirectorApi,
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
 ) -> ServiceMetaDataPublished:
     """
     Retrieves service metadata from the docker registry via the director and accounting
+
+    raises if does not exist or if validation fails
     """
-    if is_function_service(service_key):
-        service = get_function_service(key=service_key, version=service_version)
+    if is_function_service(key):
+        service = get_function_service(key=key, version=version)
     else:
         service = await director_client.get_service(
-            service_key=service_key, service_version=service_version
+            service_key=key, service_version=version
         )
     return service
 
@@ -111,9 +114,7 @@ async def get_batch_services(
 
     return await limited_gather(
         *(
-            get_service(
-                service_key=k, service_version=v, director_client=director_client
-            )
+            get_service(key=k, version=v, director_client=director_client)
             for k, v in selection
         ),
         reraise=False,

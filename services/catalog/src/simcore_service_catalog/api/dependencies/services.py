@@ -93,8 +93,8 @@ async def get_service_from_manifest(
     """
     try:
         return await manifest.get_service(
-            service_key=service_key,
-            service_version=service_version,
+            key=service_key,
+            version=service_version,
             director_client=director_client,
         )
 

@@ -162,7 +162,7 @@ async def get_service(
         )
 
     service_manifest = await manifest.get_service(
-        service_key, service_version, director_api
+        key=service_key, service_version=service_version, director_client=director_api
     )
 
     return _db_to_api_model(service, access_rights, service_manifest)

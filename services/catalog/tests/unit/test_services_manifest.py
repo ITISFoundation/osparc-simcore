@@ -60,7 +60,9 @@ async def test_services_manifest_api(
     # GET
     for expected_service in all_services_map.values():
         service = await manifest.get_service(
-            expected_service.key, expected_service.version, director_api
+            key=expected_service.key,
+            version=expected_service.version,
+            director_client=director_api,
         )
 
         assert service == expected_service

@@ -2,13 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import itertools
 from collections.abc import Callable
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.users import UserID
+from pydantic import Extra
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -28,18 +32,26 @@ def services_repo(sqlalchemy_async_engine: AsyncEngine):
     return ServicesRepository(sqlalchemy_async_engine)
 
 
-num_services = 5
-num_versions_per_service = 20
+@pytest.fixture
+def num_services() -> int:
+    return 5
 
 
 @pytest.fixture
-def fake_services_data(
+def num_versions_per_service() -> int:
+    return 20
+
+
+@pytest.fixture
+def fake_data_for_services(
     target_product: ProductName,
     create_fake_service_data: Callable,
-):
+    num_services: int,
+    num_versions_per_service: int,
+) -> list:
     return [
         create_fake_service_data(
-            f"simcore/services/dynamic/some-service-{n}",
+            f"simcore/services/comp/some-service-{n}",
             f"{v}.0.0",
             team_access=None,
             everyone_access=None,
@@ -52,11 +64,37 @@ def fake_services_data(
 
 @pytest.fixture
 def expected_director_list_services(
-    expected_director_list_services: list[dict[str, Any]], fake_services_data: list
+    expected_director_list_services: list[dict[str, Any]], fake_data_for_services: list
 ) -> list[dict[str, Any]]:
-    expected = []
+    # OVERRIDES: Changes the values returned by the director API by
 
-    return expected
+    class _Loader(ServiceMetaDataPublished):
+        class Config:
+            extra = Extra.ignore
+            allow_population_by_field_name = True
+
+    return [
+        jsonable_encoder(
+            _Loader.parse_obj(
+                {
+                    **next(itertools.cycle(expected_director_list_services)),
+                    **service_and_access_rights_data[0],  # service, **access_rights
+                }
+            ),
+            exclude_unset=True,
+        )
+        for service_and_access_rights_data in fake_data_for_services
+    ]
+
+
+@pytest.fixture
+async def background_tasks_setup_disabled(
+    background_tasks_setup_disabled: None,
+    services_db_tables_injector: Callable,
+    fake_data_for_services: list,
+) -> None:
+    # inject db services (typically done by the sync background task)
+    await services_db_tables_injector(fake_data_for_services)
 
 
 async def test_list_services_paginated(
@@ -64,23 +102,16 @@ async def test_list_services_paginated(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     target_product: ProductName,
-    fake_services_data: list,
-    services_db_tables_injector: Callable,
     services_repo: ServicesRepository,
     user_id: UserID,
     app: FastAPI,
+    num_services: int,
 ):
-    # inject services
-    await services_db_tables_injector(fake_services_data)
-
-    limit = 2
-    assert limit < num_services
-    offset = 1
-
-    # ----
     director_api = get_director_api(app)
 
-    # ---
+    offset = 1
+    limit = 2
+    assert limit < num_services
 
     assert not mocked_director_service_api["get_service"].called
 
@@ -94,8 +125,10 @@ async def test_list_services_paginated(
     )
 
     assert total_count == num_services
+    assert page_items
     assert len(page_items) <= limit
     assert mocked_director_service_api["get_service"].called
+    assert mocked_director_service_api["get_service"].call_count == limit
 
     for item in page_items:
         assert item.access_rights
