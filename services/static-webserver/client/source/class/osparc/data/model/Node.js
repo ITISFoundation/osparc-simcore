@@ -1006,7 +1006,9 @@ qx.Class.define("osparc.data.model.Node", {
         node: this,
         portKey
       };
-      this.fireDataEvent("retrieveInputs", data);
+      if (this.isDynamic()) {
+        this.fireDataEvent("retrieveInputs", data);
+      }
     },
 
     retrieveInputs: function(portKey) {
