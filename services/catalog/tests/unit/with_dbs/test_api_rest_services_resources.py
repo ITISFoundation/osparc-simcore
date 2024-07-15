@@ -13,7 +13,6 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.services_resources import (
     BootMode,
@@ -38,10 +37,13 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mocked_director_service_labels(
-    mocked_director_service_api: respx.MockRouter, app: FastAPI
+    mocked_director_service_api_base: respx.MockRouter,
 ) -> Route:
+    """
+    Customizes mock for labels entrypoints at the director service's API
+    """
     slash = urllib.parse.quote_plus("/")
-    return mocked_director_service_api.get(
+    return mocked_director_service_api_base.get(
         url__regex=rf"v0/services/simcore{slash}services{slash}(comp|dynamic|frontend)({slash}[\w{slash}-]+)+/[0-9]+.[0-9]+.[0-9]+/labels",
         name="get_service_labels",
     ).respond(200, json={"data": {}})
@@ -56,7 +58,7 @@ def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
 
 
 @pytest.fixture
-def service_key(faker: Faker) -> str:
+def service_key() -> str:
     return f"simcore/services/{choice(['comp', 'dynamic','frontend'])}/jupyter-math"
 
 
@@ -66,7 +68,7 @@ def service_version() -> str:
 
 
 @pytest.fixture
-def mock_service_labels(faker: Faker) -> dict[str, Any]:
+def mock_service_labels() -> dict[str, Any]:
     return {
         "simcore.service.settings": '[ {"name": "ports", "type": "int", "value": 8888}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": { "Limits": { "NanoCPUs": 4000000000, "MemoryBytes": 17179869184 } } } ]',
     }
@@ -182,8 +184,8 @@ class _ServiceResourceParams:
     ],
 )
 async def test_get_service_resources(
-    mocked_catalog_background_task,
-    setup_rabbitmq_and_rpc_disabled: None,
+    background_tasks_setup_disabled,
+    rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
@@ -209,7 +211,7 @@ async def test_get_service_resources(
 
 @pytest.fixture
 def create_mock_director_service_labels(
-    mocked_director_service_api: respx.MockRouter, app: FastAPI
+    mocked_director_service_api_base: respx.MockRouter,
 ) -> Callable:
     def factory(services_labels: dict[str, dict[str, Any]]) -> None:
         for service_name, data in services_labels.items():
@@ -217,7 +219,7 @@ def create_mock_director_service_labels(
                 f"simcore/services/dynamic/{service_name}"
             )
             for k, mock_key in enumerate((encoded_key, service_name)):
-                mocked_director_service_api.get(
+                mocked_director_service_api_base.get(
                     url__regex=rf"v0/services/{mock_key}/[\w/.]+/labels",
                     name=f"get_service_labels_for_{service_name}_{k}",
                 ).respond(200, json={"data": data})
@@ -287,8 +289,8 @@ def create_mock_director_service_labels(
     ],
 )
 async def test_get_service_resources_sim4life_case(
-    mocked_catalog_background_task,
-    setup_rabbitmq_and_rpc_disabled: None,
+    background_tasks_setup_disabled,
+    rabbitmq_and_rpc_setup_disabled: None,
     create_mock_director_service_labels: Callable,
     client: TestClient,
     mapped_services_labels: dict[str, dict[str, Any]],
@@ -308,8 +310,8 @@ async def test_get_service_resources_sim4life_case(
 
 
 async def test_get_service_resources_raises_errors(
-    mocked_catalog_background_task,
-    setup_rabbitmq_and_rpc_disabled: None,
+    background_tasks_setup_disabled,
+    rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
 ) -> None:

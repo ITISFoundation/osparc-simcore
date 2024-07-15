@@ -22,6 +22,7 @@ from models_library.services_resources import (
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import parse_obj_as, parse_raw_as
 
+from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 from ...db.repositories.services import ServicesRepository
 from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
@@ -33,7 +34,6 @@ from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_default_service_resources
 from ..dependencies.user_groups import list_user_groups
-from ._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)

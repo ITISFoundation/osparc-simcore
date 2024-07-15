@@ -581,8 +581,7 @@
           "name": {
             "type": "string",
             "title": "Name",
-            "description": "Name of the author",
-            "example": "Jim Knopf"
+            "description": "Name of the author"
           },
           "email": {
             "type": "string",
@@ -592,8 +591,7 @@
           },
           "affiliation": {
             "type": "string",
-            "title": "Affiliation",
-            "description": "Affiliation of the author"
+            "title": "Affiliation"
           }
         },
         "type": "object",
@@ -633,7 +631,12 @@
           "image",
           "url"
         ],
-        "title": "Badge"
+        "title": "Badge",
+        "example": {
+          "name": "osparc.io",
+          "image": "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation",
+          "url": "https://itisfoundation.github.io/"
+        }
       },
       "BaseMeta": {
         "properties": {
@@ -2186,6 +2189,11 @@
             "title": "Progress Regexp",
             "description": "regexp pattern for detecting computational service's progress"
           },
+          "image_digest": {
+            "type": "string",
+            "title": "Image Digest",
+            "description": "Image manifest digest. Note that this is NOT injected as an image label"
+          },
           "owner": {
             "type": "string",
             "format": "email",
@@ -2205,43 +2213,7 @@
           "outputs"
         ],
         "title": "ServiceGet",
-        "description": "Service metadata at publication time\n\n- read-only (can only be changed overwriting the image labels in the registry)\n- base metaddata\n- injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image",
-        "example": {
-          "name": "File Picker",
-          "description": "description",
-          "classifiers": [],
-          "quality": {},
-          "accessRights": {
-            "1": {
-              "execute_access": true,
-              "write_access": false
-            },
-            "4": {
-              "execute_access": true,
-              "write_access": true
-            }
-          },
-          "key": "simcore/services/frontend/file-picker",
-          "version": "1.0.0",
-          "type": "dynamic",
-          "authors": [
-            {
-              "name": "Red Pandas",
-              "email": "redpandas@wonderland.com"
-            }
-          ],
-          "contact": "redpandas@wonderland.com",
-          "inputs": {},
-          "outputs": {
-            "outFile": {
-              "displayOrder": 0,
-              "label": "File",
-              "description": "Chosen File",
-              "type": "data:*/*"
-            }
-          },
-          "owner": "redpandas@wonderland.com"
-        }
+        "description": "Service metadata at publication time\n\n- read-only (can only be changed overwriting the image labels in the registry)\n- base metaddata\n- injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image"
       },
       "ServiceGroupAccessRights": {
         "properties": {
