@@ -76,7 +76,7 @@ tomli==2.0.1
     #   pylint
 tomlkit==0.13.0
     # via pylint
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
