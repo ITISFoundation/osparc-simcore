@@ -37,6 +37,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
@@ -294,7 +295,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-
+        # Create project here:
         resp = await client.post(f"{url}", json=project_data, headers=headers)
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_accepted_response)
@@ -340,6 +341,29 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             return {}
         assert data
         assert not error
+        print(f"<-- result: {data}")
+
+        # Setup access rights to the project
+        if project_data and (
+            project_data.get("access_rights") or project_data.get("accessRights")
+        ):
+            _access_rights = project_data.get("access_rights", {}) | project_data.get(
+                "accessRights", {}
+            )
+            for group_id, permissions in _access_rights.items():
+                await update_or_insert_project_group(
+                    client.app,
+                    data["uuid"],
+                    group_id=int(group_id),
+                    read=permissions["read"],
+                    write=permissions["write"],
+                    delete=permissions["delete"],
+                )
+        # Get project with already added access rights
+        print("--> getting project resource after access rights change...")
+        url = client.app.router["get_project"].url_for(project_id=data["uuid"])
+        resp = await client.get(url.path)
+        data, error = await assert_status(resp, status.HTTP_200_OK)
         print(f"<-- result: {data}")
         new_project = data
 
