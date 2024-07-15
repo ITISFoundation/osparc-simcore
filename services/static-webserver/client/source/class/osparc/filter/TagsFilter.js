@@ -30,10 +30,12 @@ qx.Class.define("osparc.filter.TagsFilter", {
     this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__dropdown = new qx.ui.toolbar.MenuButton(label).set({
-      marginLeft: 0
-    });
-    this._add(this.__dropdown);
+    if (label) {
+      this.__dropdown = new qx.ui.toolbar.MenuButton(label).set({
+        marginLeft: 0
+      });
+      this._add(this.__dropdown);
+    }
 
     this.__activeTags = [];
     this.__tagButtons = {};
