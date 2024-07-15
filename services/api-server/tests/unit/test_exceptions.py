@@ -92,10 +92,10 @@ async def test_custom_error_handlers(client: httpx.AsyncClient):
 
 
 async def test_service_exception_mapper():
-    class ProjectMissingError(BaseBackEndError):
+    class _ProjectMissingError(BaseBackEndError):
         msg_template = "The project {project_id} is missing"
 
-    status_map = {404: ProjectMissingError}
+    status_map = {404: _ProjectMissingError}
 
     async def coro1(project_id):
         pass
