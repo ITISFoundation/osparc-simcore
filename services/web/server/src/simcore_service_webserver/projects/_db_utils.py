@@ -322,7 +322,7 @@ class BaseProjectDB:
         user_id: UserID,
         project_uuid: str,
         exclude_foreign: list[str] | None = None,
-        for_update: bool = False,
+        for_update: bool = False,  # pylint: disable=unused-argument
         only_templates: bool = False,
         only_published: bool = False,
         check_permissions: PermissionStr = "read",
@@ -376,7 +376,6 @@ class BaseProjectDB:
         if only_published:
             query = query.where(projects.c.published == "true")
 
-        assert for_update  # nosec
         # if for_update:
         #     # NOTE: MD: Can not be used with group by clause -> but is it here really necessary?
         #     query = query.with_for_update()

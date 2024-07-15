@@ -539,7 +539,7 @@ class ProjectDBAPI(BaseProjectDB):
                 (user_to_groups.c.uid == user_id)
                 & (project_to_groups.c.project_uuid == f"{project_uuid}")
                 & (
-                    project_to_groups.c.access_rights["read"].astext == "true"
+                    project_to_groups.c.read == "true"
                 )  # <-- Question: What do you think it is valid that user needs to have at least read access in the project_to_group table to see the project? (I think till now this was ignored, but it seems reasonable to introduce this requieremnt, correct?)
             )
             .group_by(user_to_groups.c.uid)
