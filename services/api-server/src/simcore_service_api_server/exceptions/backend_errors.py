@@ -46,7 +46,7 @@ class LogFileNotFoundError(BaseBackEndError):
 
 
 class SolverOutputNotFoundError(BaseBackEndError):
-    msg_template = "Solver output of project {project_uuid} not found"
+    msg_template = "Solver output of project {project_id} not found"
     status_code = status.HTTP_404_NOT_FOUND
 
 
