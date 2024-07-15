@@ -33,7 +33,7 @@ qx.Class.define("osparc.filter.UserTagsFilter", {
       qx.event.message.Bus.subscribe(osparc.utils.Utils.capitalize(filterGroupId, filterId, "trigger"), msg => {
         const menuButtons = this._getMenuButtons();
         const tagButton = menuButtons.find(btn => btn.getLabel() === msg.getData());
-        this._addTag(tagButton.getLabel(), tagButton);
+        this.addTag(tagButton.getLabel(), tagButton);
       }, this);
     }
   }

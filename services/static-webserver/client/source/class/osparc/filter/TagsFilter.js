@@ -84,7 +84,7 @@ qx.Class.define("osparc.filter.TagsFilter", {
       return this.__activeTags;
     },
 
-    _addTag: function(tagName, menuButton) {
+    addTag: function(tagName, menuButton) {
       // Check if added
       if (this.__activeTags.includes(tagName)) {
         this.removeTag(tagName, menuButton);
@@ -145,7 +145,7 @@ qx.Class.define("osparc.filter.TagsFilter", {
         return existing;
       }
       const button = new qx.ui.menu.Button(tagName);
-      button.addListener("execute", e => this._addTag(tagName, e.getTarget()));
+      button.addListener("execute", e => this.addTag(tagName, e.getTarget()));
       this.__menu.add(button);
       return button;
     },
