@@ -30,12 +30,10 @@ qx.Class.define("osparc.filter.TagsFilter", {
     this.base(arguments, filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
 
-    if (label) {
-      this.__dropdown = new qx.ui.toolbar.MenuButton(label).set({
-        marginLeft: 0
-      });
-      this._add(this.__dropdown);
-    }
+    this.__dropdown = new qx.ui.toolbar.MenuButton(label).set({
+      marginLeft: 0
+    });
+    this._add(this.__dropdown);
 
     this.__activeTags = [];
     this.__tagButtons = {};
@@ -86,7 +84,7 @@ qx.Class.define("osparc.filter.TagsFilter", {
       return this.__activeTags;
     },
 
-    addTag: function(tagName, menuButton) {
+    _addTag: function(tagName, menuButton) {
       // Check if added
       if (this.__activeTags.includes(tagName)) {
         this.removeTag(tagName, menuButton);
@@ -147,7 +145,7 @@ qx.Class.define("osparc.filter.TagsFilter", {
         return existing;
       }
       const button = new qx.ui.menu.Button(tagName);
-      button.addListener("execute", e => this.addTag(tagName, e.getTarget()));
+      button.addListener("execute", e => this._addTag(tagName, e.getTarget()));
       this.__menu.add(button);
       return button;
     },
