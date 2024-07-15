@@ -36,7 +36,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
     this.__potentialTemplateData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     this.__selectedCollabs = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-    this.__addAccessRights();
+    this.__updateAccessRights();
 
     this.__buildLayout();
   },
@@ -52,6 +52,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
         font: "text-14"
       });
       this._add(addCollaborators);
+      addCollaborators.setSerializedDataCopy(this.__potentialTemplateData);
 
       this._add(this.__selectedCollabs);
 
@@ -66,18 +67,20 @@ qx.Class.define("osparc.share.PublishTemplate", {
                   const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid]["label"], "@MaterialIcons/close/12");
                   collabButton.gid = gid;
                   this.__selectedCollabs.add(collabButton);
-                  collabButton.addListener("execute", () => this.__selectedCollabs.remove(collabButton));
+                  collabButton.addListener("execute", () => {
+                    this.__selectedCollabs.remove(collabButton);
+                    this.__updateAccessRights();
+                  });
                 }
               });
+              this.__updateAccessRights();
             });
         }
-        this.__addAccessRights();
-        addCollaborators.setSerializedDataCopy(this.__potentialTemplateData);
       }, this);
     },
 
-    __addAccessRights: function() {
-      // this is only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
+    __updateAccessRights: function() {
+      // these "accessRights" are only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       this.__potentialTemplateData["accessRights"] = {};
       this.__potentialTemplateData["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
