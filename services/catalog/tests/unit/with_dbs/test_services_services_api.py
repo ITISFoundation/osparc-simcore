@@ -12,7 +12,7 @@ from models_library.users import UserID
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.db.repositories.services import ServicesRepository
-from simcore_service_catalog.services import services
+from simcore_service_catalog.services import services_api
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -84,7 +84,7 @@ async def test_list_services_paginated(
 
     assert not mocked_director_service_api["get_service"].called
 
-    total_count, page_items = await services.list_services_paginated(
+    total_count, page_items = await services_api.list_services_paginated(
         services_repo,
         director_api,
         product_name=target_product,
@@ -102,7 +102,7 @@ async def test_list_services_paginated(
         assert item.owner is not None
         assert item.history[0].version == item.version
 
-        got = await services.get_service(
+        got = await services_api.get_service(
             services_repo,
             director_api,
             product_name=target_product,
