@@ -756,6 +756,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__updatingStudy++;
       let updatePromise = null;
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        // For now, master deployment only
         const studyDiffs = this.__getStudyDiffs();
         updatePromise = this.getStudy().patchStudyDelayed(studyDiffs)
       } else {
@@ -764,7 +765,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
       return updatePromise
         .then(studyData => {
-          this.__studyDataInBackend = osparc.utils.Utils.deepCloneObject(studyData);
+          this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
