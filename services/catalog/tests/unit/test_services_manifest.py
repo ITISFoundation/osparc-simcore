@@ -7,6 +7,7 @@
 
 
 import pytest
+import toolz
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import is_function_service
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -65,3 +66,10 @@ async def test_services_manifest_api(
         assert service == expected_service
         if not is_function_service(service.key):
             assert mocked_director_service_api["get_service"].called
+
+    # BATCH
+    for expected_services in toolz.partition(2, all_services_map.values()):
+        got_services = await manifest.get_batch_services(
+            [(s.key, s.value) for s in expected_services], director_api
+        )
+        assert got_services == expected_services

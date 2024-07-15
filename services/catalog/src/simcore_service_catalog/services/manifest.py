@@ -27,11 +27,14 @@ This ensures data integrity and consistency across the system.
 import logging
 from typing import Any, TypeAlias, cast
 
+from aiocache import cached
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
+from servicelib.utils import limited_gather
 
+from .._constants import DIRECTOR_CACHING_TTL
 from .director import DirectorApi
 from .function_services import get_function_service, is_function_service
 
@@ -80,6 +83,11 @@ async def get_services_map(
     return services
 
 
+@cached(
+    ttl=DIRECTOR_CACHING_TTL,
+    namespace=__name__,
+    key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['service_key']}/{kw['service_version']}",
+)
 async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
@@ -95,3 +103,20 @@ async def get_service(
             service_key=service_key, service_version=service_version
         )
     return service
+
+
+async def get_batch_services(
+    selection: list[tuple[ServiceKey, ServiceVersion]], director_client: DirectorApi
+) -> list[ServiceMetaDataPublished | BaseException]:
+
+    return await limited_gather(
+        *(
+            get_service(
+                service_key=k, service_version=v, director_client=director_client
+            )
+            for k, v in selection
+        ),
+        reraise=False,
+        log=_logger,
+        tasks_group_prefix="manifest.get_batch_services",
+    )
