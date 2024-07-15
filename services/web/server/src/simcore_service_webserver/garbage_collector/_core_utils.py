@@ -173,7 +173,6 @@ async def replace_current_owner(
         # Add new owner access rights
         await create_project_group_without_checking_permissions(
             app,
-            user_id=new_project_owner_id,
             project_id=ProjectID(project_uuid),
             group_id=new_project_owner_gid,
             read=True,

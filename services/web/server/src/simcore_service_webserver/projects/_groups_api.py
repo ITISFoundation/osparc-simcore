@@ -193,17 +193,27 @@ async def delete_project_group_without_checking_permissions(
     project_id: ProjectID,
     group_id: GroupID,
 ) -> None:
-    ...
+    await projects_groups_db.delete_project_group(
+        app=app, project_id=project_id, group_id=group_id
+    )
 
 
 async def create_project_group_without_checking_permissions(
     app: web.Application,
     *,
-    user_id: UserID,
     project_id: ProjectID,
     group_id: GroupID,
     read: bool,
     write: bool,
     delete: bool,
 ) -> ProjectGroupGet:
-    ...
+    project_group_db: ProjectGroupGetDB = await projects_groups_db.update_project_group(
+        app=app,
+        project_id=project_id,
+        group_id=group_id,
+        read=read,
+        write=write,
+        delete=delete,
+    )
+    project_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.dict())
+    return project_api
