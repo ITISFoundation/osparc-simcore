@@ -65,6 +65,7 @@ async def expected_service(
 
 
 def test_get_service_with_details(
+    service_caching_disabled: None,
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: respx.MockRouter,
