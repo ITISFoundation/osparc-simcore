@@ -159,7 +159,9 @@ qx.Class.define("osparc.data.Roles", {
           text += "<br>";
         }
       });
-      const infoHint = new osparc.ui.hint.InfoHint(text);
+      const infoHint = new osparc.ui.hint.InfoHint(text).set({
+        alignY: "middle"
+      });
       rolesLayout.add(infoHint);
       return rolesLayout;
     },
