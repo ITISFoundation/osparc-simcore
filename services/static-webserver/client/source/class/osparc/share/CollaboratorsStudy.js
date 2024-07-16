@@ -128,15 +128,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
   },
 
   members: {
-    _canIDelete: function() {
-      return osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
-    },
-
-    _canIWrite: function() {
-      return osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
-    },
-
-    _addEditors: function(gids, cb) {
+    _addEditors: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -157,8 +149,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
-        })
-        .finally(() => cb());
+        });
 
       // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
       osparc.store.Store.getInstance().getPotentialCollaborators()
