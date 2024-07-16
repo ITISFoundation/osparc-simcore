@@ -20,139 +20,76 @@
  * - Private
  * - My organizations
  * - Product everyone
- * - Everyone
  */
 
 qx.Class.define("osparc.share.PublishTemplate", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  /**
+   * @param studyData {Object} Object containing part or the entire serialized Study Data
+   */
+  construct: function(studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.__potentialTemplateData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+
+    this.__selectedCollabs = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+    this.__updateAccessRights();
+
     this.__buildLayout();
-
-    const store = osparc.store.Store.getInstance();
-    Promise.all([
-      store.getGroupsMe(),
-      store.getProductEveryone()
-    ])
-      .then(values => {
-        const groupMe = values[0];
-        const groupProductEveryone = values[1];
-        this.__rbManager.getChildren().forEach(rb => {
-          if (rb.contextId === this.self().SharingOpts["me"].contextId) {
-            rb.gid = groupMe["gid"];
-          }
-          if (rb.contextId === this.self().SharingOpts["productAll"].contextId) {
-            // Only users  the product group can share for everyone
-            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll")) {
-              rb.gid = groupProductEveryone["gid"];
-              rb.show();
-            }
-          }
-        });
-      });
-  },
-
-  properties: {
-    ready: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeReady"
-    }
-  },
-
-  statics: {
-    SharingOpts: {
-      "me": {
-        contextId: 0,
-        label: "Private"
-      },
-      "orgs": {
-        contextId: 1,
-        label: "Organizations"
-      },
-      "productAll": {
-        contextId: 2,
-        label: "Available to all users"
-      }
-    }
   },
 
   members: {
-    __rbManager: null,
-    __myOrgs: null,
+    __potentialTemplateData: null,
+    __selectedCollabs: null,
 
     __buildLayout: function() {
-      this._add(new qx.ui.basic.Label().set({
-        value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" accessible to:"),
+      const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData);
+      addCollaborators.getChildControl("intro-text").set({
+        value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
         font: "text-14"
-      }));
-
-      this.__rbManager = new qx.ui.form.RadioGroup().set({
-        allowEmptySelection: true
       });
+      this._add(addCollaborators);
+      addCollaborators.setSerializedDataCopy(this.__potentialTemplateData);
 
-      for (let [sharingOptionKey, sharingOption] of Object.entries(this.self().SharingOpts)) {
-        const rb = new qx.ui.form.RadioButton(sharingOption.label);
-        rb.contextId = sharingOption.contextId;
-        switch (sharingOptionKey) {
-          case "me":
-            this._add(rb);
-            break;
-          case "orgs": {
-            const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-            const myOrgs = this.__myOrgs = new osparc.filter.Organizations();
-            vBox.add(rb);
-            vBox.add(myOrgs);
-            this._add(vBox);
-            break;
-          }
-          case "productAll":
-            rb.exclude();
-            this._add(rb);
-            break;
+      this._add(this.__selectedCollabs);
+
+      addCollaborators.addListener("addCollaborators", e => {
+        const gids = e.getData();
+        if (gids.length) {
+          osparc.store.Store.getInstance().getPotentialCollaborators(false, true)
+            .then(potentialCollaborators => {
+              const currentGids = this.getSelectedGroups();
+              gids.forEach(gid => {
+                if (gid in potentialCollaborators && !currentGids.includes(gid)) {
+                  const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid]["label"], "@MaterialIcons/close/12");
+                  collabButton.gid = gid;
+                  this.__selectedCollabs.add(collabButton);
+                  collabButton.addListener("execute", () => {
+                    this.__selectedCollabs.remove(collabButton);
+                    this.__updateAccessRights();
+                  });
+                }
+              });
+              this.__updateAccessRights();
+            });
         }
-        this.__rbManager.add(rb);
-      }
-
-      this.__rbManager.addListener("changeSelection", this.__onChangeSelection, this);
-      this.__rbManager.setSelection([]);
+      }, this);
     },
 
-    __onChangeSelection: function() {
-      const selection = this.__rbManager.getSelection();
-      this.setReady(Boolean(selection.length));
-
-      this.__myOrgs.setVisibility(this.__isGroupSelected("orgs") ? "visible" : "excluded");
-    },
-
-    __isGroupSelected: function(groupKey) {
-      const selection = this.__rbManager.getSelection();
-      if (selection.length === 1 && selection[0].contextId === this.self().SharingOpts[groupKey].contextId) {
-        return true;
-      }
-      return false;
+    __updateAccessRights: function() {
+      // these "accessRights" are only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      this.__potentialTemplateData["accessRights"] = {};
+      this.__potentialTemplateData["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
+      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight());
     },
 
     getSelectedGroups: function() {
-      let groupIDs = [];
-      const selections = this.__rbManager.getSelection();
-      if (selections.length) {
-        const selection = selections[0];
-        switch (selection.contextId) {
-          case this.self().SharingOpts["me"].contextId:
-          case this.self().SharingOpts["productAll"].contextId:
-            groupIDs = [selection.gid];
-            break;
-          case this.self().SharingOpts["orgs"].contextId:
-            groupIDs = this.__myOrgs.getSelectedOrgIDs();
-            break;
-        }
-      }
+      const groupIDs = [];
+      this.__selectedCollabs.getChildren().forEach(selectedCollab => groupIDs.push(selectedCollab.gid));
       return groupIDs;
     }
   }

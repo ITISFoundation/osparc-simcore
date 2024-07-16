@@ -171,7 +171,6 @@ def mocked_primary_ec2_instances_envs(
                 [aws_security_group_id]
             ),
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "PRIMARY_EC2_INSTANCES_AMI_ID": aws_ami_id,
         },
     )
     return app_environment | envs

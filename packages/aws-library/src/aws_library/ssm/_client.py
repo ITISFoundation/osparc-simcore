@@ -42,7 +42,7 @@ class SimcoreSSMAPI:
         session = aioboto3.Session()
         session_client = session.client(
             "ssm",
-            endpoint_url=f"{settings.SSM_ENDPOINT}",
+            endpoint_url=settings.SSM_ENDPOINT,
             aws_access_key_id=settings.SSM_ACCESS_KEY_ID.get_secret_value(),
             aws_secret_access_key=settings.SSM_SECRET_ACCESS_KEY.get_secret_value(),
             region_name=settings.SSM_REGION_NAME,
@@ -77,6 +77,10 @@ class SimcoreSSMAPI:
             DocumentName="AWS-RunShellScript",
             Comment=command_name,
             Parameters={"commands": [command]},
+            CloudWatchOutputConfig={
+                "CloudWatchOutputEnabled": True,
+                "CloudWatchLogGroupName": "simcore-ssm-logs",
+            },
         )
         assert response["Command"]  # nosec
         assert "Comment" in response["Command"]  # nosec
@@ -120,9 +124,13 @@ class SimcoreSSMAPI:
             ],
         )
         assert response["InstanceInformationList"]  # nosec
-        assert len(response["InstanceInformationList"]) == 1  # nosec
-        assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
-        return bool(response["InstanceInformationList"][0]["PingStatus"] == "Online")
+        if response["InstanceInformationList"]:
+            assert len(response["InstanceInformationList"]) == 1  # nosec
+            assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
+            return bool(
+                response["InstanceInformationList"][0]["PingStatus"] == "Online"
+            )
+        return False
 
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)

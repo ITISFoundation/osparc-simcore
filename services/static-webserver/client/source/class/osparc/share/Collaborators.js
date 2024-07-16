@@ -27,7 +27,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this._serializedDataCopy = serializedDataCopy;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       padding: 5
@@ -163,18 +163,6 @@ qx.Class.define("osparc.share.Collaborators", {
           control = this.__createAddCollaboratorSection();
           this._add(control);
           break;
-        case "open-organizations-btn":
-          control = new qx.ui.form.Button(this.tr("Organizations...")).set({
-            appearance: "form-button-outlined",
-            allowGrowY: false,
-            allowGrowX: false,
-            icon: osparc.dashboard.CardBase.SHARED_ORGS
-          });
-          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this._add(control, {
-            flex: 1
-          });
-          break;
         case "collaborators-list":
           control = this.__createCollaboratorsListSection();
           this._add(control, {
@@ -197,8 +185,22 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
+    __amIOwner: function() {
+      let fullOptions = false;
+      if (this._resourceType === "service") {
+        // service
+        fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+      } else {
+        // study or template
+        fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+      }
+      return fullOptions;
+    },
+
     __buildLayout: function() {
-      this._createChildControlImpl("add-collaborator");
+      if (this.__amIOwner()) {
+        this._createChildControlImpl("add-collaborator");
+      }
       this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
@@ -206,47 +208,29 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __createAddCollaboratorSection: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      if (this._resourceType === "service") {
-        // service
-        vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
-      } else {
-        // study or template
-        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
-      }
-
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      vBox.add(label);
-
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Share with...")).set({
-        appearance: "form-button",
-        alignX: "left",
-        allowGrowX: false
-      });
-      addCollaboratorBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedDataCopy);
-        collaboratorsManager.addListener("addCollaborators", e => {
-          const cb = () => collaboratorsManager.close();
-          this._addEditors(e.getData(), cb);
-        }, this);
-      }, this);
-      vBox.add(addCollaboratorBtn);
-
-      return vBox;
+      const addCollaborators = new osparc.share.AddCollaborators(this._serializedDataCopy);
+      addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
+      return addCollaborators;
     },
 
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+
       const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      vBox.add(label);
+      label.set({allowGrowX: true});
+      header.add(label, {
+        flex: 1
+      });
 
       const rolesLayout = osparc.data.Roles.createRolesStudyResourceInfo();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
       }
-      vBox.add(rolesLayout);
+      header.add(rolesLayout);
+      vBox.add(header);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
@@ -362,6 +346,7 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
+      const showOptions = this.__amIOwner();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
@@ -383,21 +368,13 @@ qx.Class.define("osparc.share.Collaborators", {
             }
           }
           collaborator["accessRights"] = accessRights[gid];
-          collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
+          collaborator["showOptions"] = showOptions;
           collaborator["resourceType"] = this._resourceType;
           collaboratorsList.push(collaborator);
         }
       });
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
-    },
-
-    _canIDelete: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _canIWrite: function() {
-      throw new Error("Abstract method called!");
     },
 
     _addEditors: function(gids) {

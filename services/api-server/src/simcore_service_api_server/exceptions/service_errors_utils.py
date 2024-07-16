@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from functools import wraps
+from inspect import signature
 from typing import Any, NamedTuple, TypeAlias, TypeVar
 
 import httpx
@@ -126,6 +127,8 @@ def service_exception_mapper(
     http_status_map: HttpStatusMap,
 ):
     def _decorator(func):
+        _assert_correct_kwargs(func=func, status_map=http_status_map)
+
         @wraps(func)
         async def _wrapper(*args, **kwargs):
             with service_exception_handler(service_name, http_status_map, **kwargs):
@@ -134,3 +137,16 @@ def service_exception_mapper(
         return _wrapper
 
     return _decorator
+
+
+def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
+    _required_kwargs = {
+        name
+        for name, param in signature(func).parameters.items()
+        if param.kind == param.KEYWORD_ONLY
+    }
+    for _, exc_type in status_map.items():
+        _exception_inputs = exc_type.named_fields()
+        assert _exception_inputs.issubset(
+            _required_kwargs
+        ), f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"  # nosec

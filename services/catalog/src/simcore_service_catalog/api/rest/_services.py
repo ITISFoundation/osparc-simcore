@@ -9,11 +9,17 @@ from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette.requests import Request
 
+from ..._constants import (
+    DIRECTOR_CACHING_TTL,
+    LIST_SERVICES_CACHING_TTL,
+    RESPONSE_MODEL_POLICY,
+)
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -21,12 +27,7 @@ from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
-from ..dependencies.services import get_service_from_registry
-from ._constants import (
-    DIRECTOR_CACHING_TTL,
-    LIST_SERVICES_CACHING_TTL,
-    RESPONSE_MODEL_POLICY,
-)
+from ..dependencies.services import get_service_from_manifest
 
 _logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ router = APIRouter()
 )
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
+    *,
     user_id: PositiveInt,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
     groups_repository: Annotated[
@@ -91,7 +93,7 @@ async def list_services(
         ServicesRepository, Depends(get_repository(ServicesRepository))
     ],
     x_simcore_products_name: Annotated[str, Header(...)],
-    details: bool | None = True,  # noqa: FBT002
+    details: bool = True,
 ):
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -116,7 +118,6 @@ async def list_services(
     # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
-        # FIXME: add name, ddescription, type, etc...
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         return [
@@ -189,7 +190,9 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service: Annotated[ServiceGet, Depends(get_service_from_registry)],
+    service_in_manifest: Annotated[
+        ServiceMetaDataPublished, Depends(get_service_from_manifest)
+    ],
     groups_repository: Annotated[
         GroupsRepository, Depends(get_repository(GroupsRepository))
     ],
@@ -198,6 +201,8 @@ async def get_service(
     ],
     x_simcore_products_name: str = Header(None),
 ):
+    service_data: dict[str, Any] = {}
+
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -208,8 +213,8 @@ async def get_service(
         )
     # check the user has access to this service and to which extent
     service_in_db = await services_repo.get_service(
-        service.key,
-        service.version,
+        service_in_manifest.key,
+        service_in_manifest.version,
         gids=[group.gid for group in user_groups],
         write_access=True,
         product_name=x_simcore_products_name,
@@ -219,14 +224,18 @@ async def get_service(
         service_access_rights: list[
             ServiceAccessRightsAtDB
         ] = await services_repo.get_service_access_rights(
-            service.key, service.version, product_name=x_simcore_products_name
+            service_in_manifest.key,
+            service_in_manifest.version,
+            product_name=x_simcore_products_name,
         )
-        service.access_rights = {rights.gid: rights for rights in service_access_rights}
+        service_data["access_rights"] = {
+            rights.gid: rights for rights in service_access_rights
+        }
     else:
         # check if we have executable rights
         service_in_db = await services_repo.get_service(
-            service.key,
-            service.version,
+            service_in_manifest.key,
+            service_in_manifest.version,
             gids=[group.gid for group in user_groups],
             execute_access=True,
             product_name=x_simcore_products_name,
@@ -237,17 +246,19 @@ async def get_service(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You have insufficient rights to access the service",
             )
-    # access is allowed, override some of the values with what is in the db
-    service = service.copy(
-        update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
-    )
+
     # the owner shall be converted to an email address
     if service_in_db.owner:
-        service.owner = await groups_repository.get_user_email_from_gid(
+        service_data["owner"] = await groups_repository.get_user_email_from_gid(
             service_in_db.owner
         )
 
-    return service
+    # access is allowed, override some of the values with what is in the db
+    service_in_manifest = service_in_manifest.copy(
+        update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
+    )
+    service_data.update(service_in_manifest.dict(exclude_unset=True, by_alias=True))
+    return service_data
 
 
 @router.patch(
@@ -357,7 +368,7 @@ async def update_service(
     # now return the service
     return await get_service(
         user_id=user_id,
-        service=await get_service_from_registry(
+        service_in_manifest=await get_service_from_manifest(
             service_key, service_version, director_client
         ),
         groups_repository=groups_repository,

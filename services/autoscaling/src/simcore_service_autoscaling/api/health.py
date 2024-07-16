@@ -12,8 +12,10 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from ..modules.docker import get_docker_client
+from ..modules.ec2 import get_ec2_client
 from ..modules.rabbitmq import get_rabbitmq_client
 from ..modules.redis import get_redis_client
+from ..modules.ssm import get_ssm_client
 from .dependencies.application import get_app
 
 router = APIRouter()
@@ -33,6 +35,7 @@ class _ComponentStatus(BaseModel):
 class _StatusGet(BaseModel):
     rabbitmq: _ComponentStatus
     ec2: _ComponentStatus
+    ssm: _ComponentStatus
     docker: _ComponentStatus
     redis_client_sdk: _ComponentStatus
 
@@ -42,15 +45,23 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=bool(app.state.rabbitmq_client),
-            is_responsive=await get_rabbitmq_client(app).ping()
-            if app.state.rabbitmq_client
-            else False,
+            is_responsive=(
+                await get_rabbitmq_client(app).ping()
+                if app.state.rabbitmq_client
+                else False
+            ),
         ),
         ec2=_ComponentStatus(
             is_enabled=bool(app.state.ec2_client),
-            is_responsive=await app.state.ec2_client.ping()
-            if app.state.ec2_client
-            else False,
+            is_responsive=(
+                await get_ec2_client(app).ping() if app.state.ec2_client else False
+            ),
+        ),
+        ssm=_ComponentStatus(
+            is_enabled=bool(app.state.ssm_client),
+            is_responsive=(
+                await get_ssm_client(app).ping() if app.state.ssm_client else False
+            ),
         ),
         docker=_ComponentStatus(
             is_enabled=bool(app.state.docker_client),
