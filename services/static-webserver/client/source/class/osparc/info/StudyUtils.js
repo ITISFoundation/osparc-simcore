@@ -447,6 +447,27 @@ qx.Class.define("osparc.info.StudyUtils", {
         });
     },
 
+    addCollaborators: function(studyData, newCollaborators) {
+      const promises = [];
+      Object.keys(newCollaborators).forEach(gid => {
+        const params = {
+          url: {
+            "studyId": studyData["uuid"],
+            "gId": gid
+          },
+          data: newCollaborators[gid]
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "postAccessRights", params));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          Object.keys(newCollaborators).forEach(gid => {
+            studyData["accessRights"][gid] = newCollaborators[gid];
+          });
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
     removeCollaborator: function(studyData, gid) {
       const params = {
         url: {

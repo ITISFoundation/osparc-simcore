@@ -133,15 +133,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return;
       }
 
-      const newAccessRights = this._serializedDataCopy["accessRights"];
-      const promises = [];
+      const newCollaborators = {};
       gids.forEach(gid => {
-        newAccessRights[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
-        promises.push(osparc.info.StudyUtils.addCollaborator(this._serializedDataCopy, "accessRights", newAccessRights[gid]));
+        newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
-      Promise.all(promises)
+      osparc.info.StudyUtils.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
-          this._serializedDataCopy["accessRights"] = newAccessRights;
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
