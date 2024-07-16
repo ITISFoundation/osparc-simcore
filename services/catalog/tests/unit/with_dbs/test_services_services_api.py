@@ -2,17 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import itertools
 from collections.abc import Callable
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
-from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import Extra
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.db.repositories.services import ServicesRepository
@@ -43,7 +39,7 @@ def num_versions_per_service() -> int:
 
 
 @pytest.fixture
-def fake_data_for_services(
+def fake_services_data(
     target_product: ProductName,
     create_fake_service_data: Callable,
     num_services: int,
@@ -64,41 +60,29 @@ def fake_data_for_services(
 
 @pytest.fixture
 def expected_director_list_services(
-    expected_director_list_services: list[dict[str, Any]], fake_data_for_services: list
+    expected_director_list_services: list[dict[str, Any]],
+    fake_services_data: list,
+    create_director_list_services_from: Callable,
 ) -> list[dict[str, Any]]:
-    # OVERRIDES: Changes the values returned by the director API by
+    # OVERRIDES: Changes the values returned by the mocked_director_service_api
 
-    class _Loader(ServiceMetaDataPublished):
-        class Config:
-            extra = Extra.ignore
-            allow_population_by_field_name = True
-
-    return [
-        jsonable_encoder(
-            _Loader.parse_obj(
-                {
-                    **next(itertools.cycle(expected_director_list_services)),
-                    **service_and_access_rights_data[0],  # service, **access_rights
-                }
-            ),
-            exclude_unset=True,
-        )
-        for service_and_access_rights_data in fake_data_for_services
-    ]
+    return create_director_list_services_from(
+        expected_director_list_services, fake_services_data
+    )
 
 
 @pytest.fixture
-async def background_tasks_setup_disabled(
+async def background_sync_task_mocked(
     background_tasks_setup_disabled: None,
     services_db_tables_injector: Callable,
-    fake_data_for_services: list,
+    fake_services_data: list,
 ) -> None:
     # inject db services (typically done by the sync background task)
-    await services_db_tables_injector(fake_data_for_services)
+    await services_db_tables_injector(fake_services_data)
 
 
 async def test_list_services_paginated(
-    background_tasks_setup_disabled: None,
+    background_sync_task_mocked: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     target_product: ProductName,
