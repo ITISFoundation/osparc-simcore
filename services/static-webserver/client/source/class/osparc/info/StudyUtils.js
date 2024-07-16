@@ -393,6 +393,11 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     patchStudyData: function(studyData, fieldKey, value) {
+      if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
+        console.error(fieldKey, "has it's own PATCH path");
+        return null;
+      }
+
       const patchData = {};
       patchData[fieldKey] = value;
       const params = {
