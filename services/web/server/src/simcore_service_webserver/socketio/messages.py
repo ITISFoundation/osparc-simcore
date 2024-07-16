@@ -51,7 +51,7 @@ async def _safe_emit(
             room=room,
             ignore_queue=ignore_queue,
         )
-        _logger.info("emit socketio event '%s' to room '%s'", event, room)
+        _logger.info("emitted socketio event '%s' to room '%s'", event, room)
 
 
 async def send_message_to_user(
