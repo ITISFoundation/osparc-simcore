@@ -41,6 +41,7 @@ from simcore_service_webserver.groups.api import (
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -218,13 +219,25 @@ async def new_project(
         project_data["accessRights"] = access_rights
 
     assert client.app
-    return await create_project(
+    project = await create_project(
         client.app,
         project_data,
         user["id"],
         product_name=product_name,
         default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
     )
+
+    if access_rights:
+        for group_id, permissions in access_rights.items():
+            await update_or_insert_project_group(
+                client.app,
+                project["uuid"],
+                group_id=int(group_id),
+                read=permissions["read"],
+                write=permissions["write"],
+                delete=permissions["delete"],
+            )
+    return project
 
 
 async def get_template_project(
@@ -584,7 +597,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     await assert_projects_count(aiopg_engine, 1)
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(10)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     await assert_user_not_in_db(aiopg_engine, u1)
