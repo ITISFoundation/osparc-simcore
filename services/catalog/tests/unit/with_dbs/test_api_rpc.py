@@ -5,6 +5,7 @@
 
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -14,6 +15,7 @@ from models_library.users import UserID
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogItemNotFoundError
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
@@ -43,35 +45,65 @@ def app_environment(
 
 
 @pytest.fixture
-async def fake_services_inserted_in_db(
+def num_services() -> int:
+    return 5
+
+
+@pytest.fixture
+def num_versions_per_service() -> int:
+    return 20
+
+
+@pytest.fixture
+def fake_data_for_services(
     target_product: ProductName,
     create_fake_service_data: Callable,
-    services_db_tables_injector: Callable,
-) -> None:
-    num_services = 5
-    num_versions_per_service = 20
-    await services_db_tables_injector(
-        [
-            create_fake_service_data(
-                f"simcore/services/dynamic/some-service-{n}",
-                f"{v}.0.0",
-                team_access=None,
-                everyone_access=None,
-                product=target_product,
-            )
-            for n in range(num_services)
-            for v in range(num_versions_per_service)
-        ]
+    num_services: int,
+    num_versions_per_service: int,
+) -> list:
+    return [
+        create_fake_service_data(
+            f"simcore/services/comp/test-api-rpc-service-{n}",
+            f"{v}.0.0",
+            team_access=None,
+            everyone_access=None,
+            product=target_product,
+        )
+        for n in range(num_services)
+        for v in range(num_versions_per_service)
+    ]
+
+
+@pytest.fixture
+def expected_director_list_services(
+    expected_director_list_services: list[dict[str, Any]],
+    fake_data_for_services: list,
+    create_director_list_services_from: Callable,
+) -> list[dict[str, Any]]:
+    # OVERRIDES: Changes the values returned by the mocked_director_service_api
+
+    return create_director_list_services_from(
+        expected_director_list_services, fake_data_for_services
     )
 
 
+@pytest.fixture
+async def background_sync_task_mocked(
+    background_tasks_setup_disabled: None,
+    services_db_tables_injector: Callable,
+    fake_data_for_services: list,
+) -> None:
+    # inject db services (typically done by the sync background task)
+    await services_db_tables_injector(fake_data_for_services)
+
+
 async def test_rpc_catalog_client(
-    director_setup_disabled: None,
-    fake_services_inserted_in_db: None,
-    app: FastAPI,
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     user_id: UserID,
+    app: FastAPI,
 ):
     assert app
 
@@ -136,8 +168,8 @@ async def test_rpc_catalog_client(
 
 
 async def test_rpc_service_not_found_error(
-    director_setup_disabled: None,
-    fake_services_inserted_in_db: None,
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
