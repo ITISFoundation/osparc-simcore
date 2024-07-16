@@ -241,6 +241,12 @@ qx.Class.define("osparc.desktop.MainPage", {
           if (templateBrowser) {
             templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
           }
+          task.addListener("resultReceived", e => {
+            const templateData = e.getData();
+            Object.keys(data["accessRights"]).forEach(gid => {
+              osparc.info.StudyUtils.addCollaborator(templateData, gid, data["accessRights"][gid])
+            })
+          });
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
