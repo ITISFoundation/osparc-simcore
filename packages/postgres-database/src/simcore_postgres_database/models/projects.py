@@ -169,8 +169,10 @@ BEGIN
     WHERE u.id = NEW.prj_owner
     LIMIT 1;
 
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+    IF group_id IS NOT NULL THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+        END IF;
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';
