@@ -55,17 +55,18 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     },
 
     __startInterval: function() {
+      this.__checkTimes();
       // check every 1' if the countdown routine needs to be started
-      this.__updateInterval = setInterval(this.__updateMessages, 60*1000);
+      this.__updateInterval = setInterval(this.__checkTimes, 5*1000);
     },
 
-    __updateMessages: function() {
+    __checkTimes: function() {
       const nowDate = new Date();
       const expirationDate = this.getExpirationDate();
-      if (nowDate.getTime() > expirationDate.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE) {
-        this.__displayFlashMessage(expirationDate.getTime() - nowDate.getTime());
+      if (nowDate.getTime() + this.self().PERMANENT_WARN_IN_ADVANCE > expirationDate.getTime()) {
+        this.__displayFlashMessage(parseInt((nowDate.getTime() - expirationDate.getTime())/1000));
       }
-      if (nowDate.getTime() > expirationDate.getTime() - this.self().LOG_OUT_BEFORE_EXPIRING) {
+      if (nowDate.getTime() + this.self().LOG_OUT_BEFORE_EXPIRING > expirationDate.getTime()) {
         this.__logoutUser();
       }
     },
@@ -95,7 +96,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       }
     },
 
-    __updateFlashMessage: function(timeoutSec = 1000) {
+    __updateFlashMessage: function(timeoutSec) {
       const timeout = osparc.utils.Utils.formatSeconds(timeoutSec);
       const text = qx.locale.Manager.tr(`Your session will expire in ${timeout}.<br>Please log out and log in again.`);
       if (this.__message === null) {
