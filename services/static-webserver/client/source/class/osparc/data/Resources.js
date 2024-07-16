@@ -247,6 +247,21 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
           },
+          postAccessRights: {
+            useCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          deleteAccessRights: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          putAccessRights: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
           addTag: {
             useCache: false,
             method: "PUT",

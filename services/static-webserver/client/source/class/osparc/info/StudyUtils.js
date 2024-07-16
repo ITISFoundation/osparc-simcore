@@ -392,6 +392,23 @@ qx.Class.define("osparc.info.StudyUtils", {
       return box;
     },
 
+    patchStudyData: function(studyData, fieldKey, value) {
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params)
+        .then(() => {
+          studyData[fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
     patchNodeData: function(studyData, nodeId, fieldKey, value) {
       const patchData = {};
       patchData[fieldKey] = value;
@@ -410,19 +427,46 @@ qx.Class.define("osparc.info.StudyUtils", {
         });
     },
 
-    patchStudyData: function(studyData, fieldKey, value) {
-      const patchData = {};
-      patchData[fieldKey] = value;
+    addCollaborator: function(studyData, gid, permissions) {
       const params = {
         url: {
-          "studyId": studyData["uuid"]
+          "studyId": studyData["uuid"],
+          "gid": gid
         },
-        data: patchData
+        data: permissions
       };
-      return osparc.data.Resources.fetch("studies", "patch", params)
+      return osparc.data.Resources.fetch("studies", "postAccessRights", params)
         .then(() => {
-          studyData[fieldKey] = value;
-          // A bit hacky, but it's not sent back to the backend
+          studyData["accessRights"][gid] = permissions;
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
+    removeCollaborator: function(studyData, gid) {
+      const params = {
+        url: {
+          "studyId": studyData["uuid"],
+          "gid": gid
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
+        .then(() => {
+          delete studyData["accessRights"];
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
+    updateCollaborator: function(studyData, gid, newPermissions) {
+      const params = {
+        url: {
+          "studyId": studyData["uuid"],
+          "gid": gid
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("studies", "putAccessRights", params)
+        .then(() => {
+          studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
         });
     }
