@@ -176,6 +176,7 @@ async def update_or_insert_project_group(
             },
         )
         await conn.execute(on_update_stmt)
+        # NOTE: MD: check whether it was updated
 
 
 async def delete_project_group(

@@ -369,7 +369,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         data, error = await assert_status(resp, status.HTTP_200_OK)
         print(f"<-- result: {data}")
         new_project_access_rights = {}
-        [
+        for item in data:
             new_project_access_rights.update(
                 {
                     f"{item['gid']}": {
@@ -379,8 +379,6 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                     }
                 }
             )
-            for item in data
-        ]
 
         # now check returned is as expected
         if new_project:

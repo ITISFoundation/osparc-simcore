@@ -597,7 +597,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     await assert_projects_count(aiopg_engine, 1)
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     await assert_user_not_in_db(aiopg_engine, u1)
