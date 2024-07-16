@@ -24,6 +24,15 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     LOG_OUT_BEFORE_EXPIRING: 60 // Log user out 1' in before expiring
   },
 
+  properties: {
+    expirationDate: {
+      check: "Date",
+      nullable: false,
+      init: null,
+      apply: "__startInterval"
+    }
+  },
+
   members: {
     __message: null,
     __messageTimer: null,
@@ -31,9 +40,11 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     __logoutTimer: null,
 
     startTracker: function() {
-      const cookieMaxAge = osparc.store.StaticInfo.getInstance().getCookieMaxAge();
+      const cookieMaxAge = osparc.store.StaticInfo.getInstance().getCookieMaxAge(); // seconds
       if (cookieMaxAge) {
         const nowDate = new Date();
+        const expirationDateMilliseconds = nowDate.getTime() + cookieMaxAge*1000;
+        this.setExpirationDate(new Date(expirationDateMilliseconds));
         const expirationTime = nowDate.getTime() + cookieMaxAge*1000 - this.self().LOG_OUT_BEFORE_EXPIRING*1000;
         const expirationDate = new Date(expirationTime);
         const showMessageIn = Math.max(cookieMaxAge - this.self().PERMANENT_WARN_IN_ADVANCE, 0);
@@ -56,6 +67,10 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       }
 
       this.__removeFlashMessage();
+    },
+
+    __startInterval: function(date) {
+      console.log("Expiration date = " + date.toString());
     },
 
     __displayFlashMessage: function(willExpireIn) {
