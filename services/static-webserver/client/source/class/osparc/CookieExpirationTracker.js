@@ -65,6 +65,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       const nowDate = new Date();
       const expirationDate = this.getExpirationDate();
       if (nowDate.getTime() + this.self().PERMANENT_WARN_IN_ADVANCE > expirationDate.getTime()) {
+        this.__removeFlashMessage();
         this.__displayFlashMessage(parseInt((expirationDate.getTime() - nowDate.getTime())/1000));
       }
       if (nowDate.getTime() + this.self().LOG_OUT_BEFORE_EXPIRING > expirationDate.getTime()) {
@@ -83,6 +84,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
         this.__updateFlashMessage(willExpireIn);
         willExpireIn--;
       };
+      updateFlashMessage();
       this.__messageInterval = setInterval(updateFlashMessage, 1000); // update every second
     },
 
@@ -102,6 +104,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       const text = qx.locale.Manager.tr(`Your session will expire in ${timeout}.<br>Please log out and log in again.`);
       if (this.__message === null) {
         this.__message = osparc.FlashMessenger.getInstance().logAs(text, "WARNING", timeoutSec*1000);
+        this.__message.getChildControl("closebutton").exclude();
       } else {
         this.__message.setMessage(text);
       }
