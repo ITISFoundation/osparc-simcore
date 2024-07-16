@@ -113,7 +113,7 @@ async def get_batch_services(
     director_client: DirectorApi,
 ) -> list[ServiceMetaDataPublished | BaseException]:
 
-    return await limited_gather(
+    batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
         *(
             get_service(key=k, version=v, director_client=director_client)
             for k, v in selection
@@ -122,3 +122,4 @@ async def get_batch_services(
         log=_logger,
         tasks_group_prefix="manifest.get_batch_services",
     )
+    return batch
