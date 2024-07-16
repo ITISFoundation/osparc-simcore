@@ -232,7 +232,7 @@ def core_docker_compose_file(
     )
 
     print(
-        HEADER_STR.format(docker_compose_path),
+        HEADER_STR.format(f"{docker_compose_path}"),
         json.dumps(docker_compose_path.read_text()),
         HEADER_STR.format("-"),
     )
@@ -273,7 +273,7 @@ def ops_docker_compose_file(
     )
 
     print(
-        HEADER_STR.format(docker_compose_path),
+        HEADER_STR.format(f"{docker_compose_path}"),
         json.dumps(docker_compose_path.read_text()),
         HEADER_STR.format("-"),
     )
