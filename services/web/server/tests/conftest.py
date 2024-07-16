@@ -379,6 +379,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                     }
                 }
             )
+        new_project["accessRights"] = new_project_access_rights
 
         # now check returned is as expected
         if new_project:
