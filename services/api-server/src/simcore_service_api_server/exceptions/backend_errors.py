@@ -1,4 +1,5 @@
 from fastapi import status
+from parse import compile as parse_compile
 
 from ._base import ApiServerBaseError
 
@@ -8,6 +9,10 @@ class BaseBackEndError(ApiServerBaseError):
     api-server (in case this exception is raised)"""
 
     status_code = status.HTTP_502_BAD_GATEWAY
+
+    @classmethod
+    def named_fields(cls) -> set[str]:
+        return set(parse_compile(cls.msg_template).named_fields)
 
 
 class ListSolversOrStudiesError(BaseBackEndError):
@@ -46,7 +51,7 @@ class LogFileNotFoundError(BaseBackEndError):
 
 
 class SolverOutputNotFoundError(BaseBackEndError):
-    msg_template = "Solver output of project {project_uuid} not found"
+    msg_template = "Solver output of project {project_id} not found"
     status_code = status.HTTP_404_NOT_FOUND
 
 
