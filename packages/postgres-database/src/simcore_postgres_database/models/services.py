@@ -4,6 +4,7 @@
     - Services have a key, version, and access rights defined by group ids
 """
 
+
 import sqlalchemy as sa
 from sqlalchemy import null
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -11,13 +12,13 @@ from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
-#
-#   Combines properties as
-#     - service identifier: key, version
-#     - overridable properties of the service metadata defined upon publication (injected in the image labels)
-#     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
-
 services_meta_data = sa.Table(
+    #
+    #   Combines properties as
+    #     - service identifier: key, version
+    #     - overridable properties of the service metadata defined upon publication (injected in the image labels)
+    #     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
+    #
     "services_meta_data",
     metadata,
     sa.Column(
@@ -103,12 +104,11 @@ services_meta_data = sa.Table(
 )
 
 
-#
-#   Defines access rights (execute_access, write_access) on a service (key)
-#   for a given group (gid) on a product (project_name)
-#
-
 services_access_rights = sa.Table(
+    #
+    #   Defines access rights (execute_access, write_access) on a service (key)
+    #   for a given group (gid) on a product (project_name)
+    #
     "services_access_rights",
     metadata,
     sa.Column(
