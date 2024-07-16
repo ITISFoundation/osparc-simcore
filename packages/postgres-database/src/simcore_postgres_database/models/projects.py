@@ -67,7 +67,7 @@ projects = sa.Table(
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
-        nullable=False,
+        nullable=True,
         doc="Project's owner",
         index=True,
     ),
