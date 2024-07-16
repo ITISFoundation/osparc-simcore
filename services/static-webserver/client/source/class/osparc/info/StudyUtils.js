@@ -431,7 +431,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       const params = {
         url: {
           "studyId": studyData["uuid"],
-          "gid": gid
+          "gId": gid
         },
         data: permissions
       };
@@ -446,7 +446,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       const params = {
         url: {
           "studyId": studyData["uuid"],
-          "gid": gid
+          "gId": gid
         }
       };
       return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
@@ -460,7 +460,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       const params = {
         url: {
           "studyId": studyData["uuid"],
-          "gid": gid
+          "gId": gid
         },
         data: newPermissions
       };

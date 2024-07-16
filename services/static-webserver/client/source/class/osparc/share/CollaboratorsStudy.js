@@ -196,8 +196,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+
+      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights[collaboratorGId])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
@@ -207,7 +207,11 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
-        .finally(() => item.setEnabled(true));
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
+        });
     },
 
     _promoteToEditor: function(collaborator, item) {
