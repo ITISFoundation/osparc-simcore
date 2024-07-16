@@ -361,7 +361,7 @@ async def test_get_job_logs(
     _ = JobLogsMap.parse_obj(response.json())
 
 
-async def test_get_solver_outputs(
+async def test_get_study_outputs(
     client: httpx.AsyncClient,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocked_directorv2_service_api_base,
@@ -370,23 +370,38 @@ async def test_get_solver_outputs(
 ):
 
     _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
-    _job_id = "72da0d86-436d-11ef-b846-0242ac140016"
 
     create_respx_mock_from_capture(
         respx_mocks=[
             mocked_directorv2_service_api_base,
         ],
-        capture_path=project_tests_dir / "mocks" / "get_study_job_logs.json",
+        capture_path=project_tests_dir / "mocks" / "get_job_outputs.json",
         side_effects_callbacks=[],
     )
 
-    response = await client.get(
-        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs",
+        auth=auth,
+        json={
+            "values": {
+                "inputfile": {
+                    "filename": "inputfile",
+                    "id": "c1dcde67-6434-31c3-95ee-bf5fe1e9422d",
+                }
+            }
+        },
     )
     assert response.status_code == status.HTTP_200_OK
+    _job = Job.parse_obj(response.json())
+    _job_id = _job.id
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
     _ = JobStatus.parse_obj(response.json())
 
-    response = await client.get(
+    response = await client.post(
         f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
