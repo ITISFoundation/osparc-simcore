@@ -7,8 +7,8 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
-from models_library.services_authoring import Author
 from models_library.services_enums import ServiceType
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt
@@ -21,6 +21,8 @@ from simcore_service_catalog.models.services_db import (
     ServiceMetaDataAtDB,
     ServiceWithHistoryFromDB,
 )
+from simcore_service_catalog.services import manifest
+from simcore_service_catalog.services.director import DirectorApi
 
 from ..db.repositories.services import ServicesRepository
 from .function_services import is_function_service
@@ -39,29 +41,33 @@ def _deduce_service_type_from(key: str) -> ServiceType:
 def _db_to_api_model(
     service_db: ServiceWithHistoryFromDB,
     access_rights_db: list[ServiceAccessRightsAtDB],
+    service_manifest: ServiceMetaDataPublished,
 ) -> ServiceGetV2:
+    assert (
+        _deduce_service_type_from(service_db.key) == service_manifest.service_type
+    )  # nosec
     return ServiceGetV2(
         key=service_db.key,
         version=service_db.version,
         name=service_db.name,
         thumbnail=service_db.thumbnail or None,
         description=service_db.description,
-        version_display=f"V{service_db.version}",  # rg.version_display,
-        type=_deduce_service_type_from(service_db.key),  # rg.service_type,
-        contact=Author.Config.schema_extra["examples"][0]["email"],  # rg.contact,
-        authors=Author.Config.schema_extra["examples"],
+        version_display=service_manifest.version_display,
+        type=service_manifest.service_type,
+        contact=service_manifest.contact,
+        authors=service_manifest.authors,
         owner=service_db.owner_email or None,
-        inputs={},  # rg.inputs,
-        outputs={},  # rg.outputs,
-        boot_options=None,  # rg.boot_options,
-        min_visible_inputs=None,  # rg.min_visible_inputs,
+        inputs=service_manifest.inputs or {},
+        outputs=service_manifest.outputs or {},
+        boot_options=service_manifest.boot_options,
+        min_visible_inputs=service_manifest.min_visible_inputs,
         access_rights={
             a.gid: ServiceGroupAccessRightsV2.construct(
                 execute=a.execute_access,
                 write=a.write_access,
             )
             for a in access_rights_db
-        },  # db.access_rights,
+        },
         classifiers=service_db.classifiers,
         quality=service_db.quality,
         history=[h.to_api_model() for h in service_db.history],
@@ -70,6 +76,7 @@ def _db_to_api_model(
 
 async def list_services_paginated(
     repo: ServicesRepository,
+    director_api: DirectorApi,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
@@ -94,11 +101,23 @@ async def list_services_paginated(
             product_name=product_name,
         )
 
+    # get manifest of those with access rights
+    got = await manifest.get_batch_services(
+        [(s.key, s.version) for s in services if access_rights.get((s.key, s.version))],
+        director_api,
+    )
+    service_manifest = {
+        (s.key, s.version): s for s in got if isinstance(s, ServiceMetaDataPublished)
+    }
+
     # NOTE: aggregates published (i.e. not editable) is still missing in this version
     items = [
-        _db_to_api_model(s, ar)
+        _db_to_api_model(s, ar, sm)
         for s in services
-        if (ar := access_rights.get((s.key, s.version)))
+        if (
+            (ar := access_rights.get((s.key, s.version)))
+            and (sm := service_manifest.get((s.key, s.version)))
+        )
     ]
 
     return total_count, items
@@ -106,7 +125,7 @@ async def list_services_paginated(
 
 async def get_service(
     repo: ServicesRepository,
-    # image_registry,
+    director_api: DirectorApi,
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
@@ -142,11 +161,18 @@ async def get_service(
             product_name=product_name,
         )
 
-    return _db_to_api_model(service, access_rights)
+    service_manifest = await manifest.get_service(
+        key=service_key,
+        version=service_version,
+        director_client=director_api,
+    )
+
+    return _db_to_api_model(service, access_rights, service_manifest)
 
 
 async def update_service(
     repo: ServicesRepository,
+    director_api: DirectorApi,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -229,6 +255,7 @@ async def update_service(
 
     return await get_service(
         repo=repo,
+        director_api=director_api,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,

@@ -7,4 +7,4 @@ MINUTE: int = 60  # secs
 
 
 # string templates
-HEADER_STR: str = "{:-^50}\n"
+HEADER_STR: str = "{:-^100}\n"
