@@ -77,7 +77,7 @@ def test_compatible_with_patch_release():
 
 
 @pytest.fixture
-def history() -> list[Version]:
+def versions_history() -> list[Version]:
     return sorted(
         Version(f"{M}.{m}.{p}")
         for M in range(10)
@@ -86,14 +86,14 @@ def history() -> list[Version]:
     )
 
 
-def test_version_specifiers(history: list[Version]):
+def test_version_specifiers(versions_history: list[Version]):
     # given a list of versions, test the first compatibilty starting from the latest
     # If i have ">1.2.23,~=1.2.23"
 
     version = Version("1.2.3")
 
     # >1.2.3
-    newer_version = SpecifierSet(f">{version}")
+    newer_version_spec = SpecifierSet(f">{version}")
 
     # >= 1.2, == 1.*
     minor_compatible_spec = SpecifierSet(f"~={version.major}.{version.minor}")
@@ -103,7 +103,9 @@ def test_version_specifiers(history: list[Version]):
         f"~={version.major}.{version.minor}.{version.micro}"
     )
 
-    compatible = list((minor_compatible_spec & newer_version).filter(history))
+    compatible = list(
+        (minor_compatible_spec & newer_version_spec).filter(versions_history)
+    )
     assert version not in compatible
     assert all(v > version for v in compatible)
     assert all(v.major == version.major for v in compatible)
@@ -111,7 +113,9 @@ def test_version_specifiers(history: list[Version]):
     latest_compatible = compatible[-1]
     assert version < latest_compatible
 
-    compatible = list((patch_compatible_spec & newer_version).filter(history))
+    compatible = list(
+        (patch_compatible_spec & newer_version_spec).filter(versions_history)
+    )
     assert version not in compatible
     assert all(v > version for v in compatible)
     assert all(
