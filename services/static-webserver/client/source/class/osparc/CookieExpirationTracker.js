@@ -34,6 +34,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
   },
 
   members: {
+    __updateInterval: null,
     __message: null,
     __messageInterval: null,
 
@@ -57,14 +58,14 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     __startInterval: function() {
       this.__checkTimes();
       // check every 1' if the countdown routine needs to be started
-      this.__updateInterval = setInterval(this.__checkTimes, 5*1000);
+      this.__updateInterval = setInterval(() => this.__checkTimes(), 5*1000);
     },
 
     __checkTimes: function() {
       const nowDate = new Date();
       const expirationDate = this.getExpirationDate();
       if (nowDate.getTime() + this.self().PERMANENT_WARN_IN_ADVANCE > expirationDate.getTime()) {
-        this.__displayFlashMessage(parseInt((nowDate.getTime() - expirationDate.getTime())/1000));
+        this.__displayFlashMessage(parseInt((expirationDate.getTime() - nowDate.getTime())/1000));
       }
       if (nowDate.getTime() + this.self().LOG_OUT_BEFORE_EXPIRING > expirationDate.getTime()) {
         this.__logoutUser();
