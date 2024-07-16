@@ -6,6 +6,9 @@
 import pytest
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from simcore_service_catalog.services.compatibility import (
+    _get_latest_compatible_version,
+)
 
 # References
 #
@@ -123,3 +126,25 @@ def test_version_specifiers(versions_history: list[Version]):
     )
     latest_compatible = compatible[-1]
     assert version < latest_compatible
+
+
+def test_get_latest_compatible_version(versions_history: list[Version]):
+    latest_first_releases = sorted(versions_history, reverse=True)
+
+    # cannot upgrde to anything
+    latest = latest_first_releases[0]
+    assert _get_latest_compatible_version(latest, latest_first_releases) is None
+
+    # bump MAJOR
+    not_released = Version(f"{latest.major+1}")
+    assert _get_latest_compatible_version(not_released, latest_first_releases) is None
+
+    # decrease patch
+    target = Version(f"{latest.major}.{latest.minor}.{latest.micro-1}")
+    assert _get_latest_compatible_version(target, latest_first_releases) == latest
+
+    # decrease minor (with default compatibility specs)
+    target = Version(f"{latest.major}.{latest.minor-2}.0")
+    latest_compatible = _get_latest_compatible_version(target, latest_first_releases)
+    assert latest_compatible
+    assert latest_compatible < latest
