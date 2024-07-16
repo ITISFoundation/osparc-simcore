@@ -54,7 +54,7 @@ def upgrade():
     op.create_table(
         "project_to_groups",
         sa.Column("project_uuid", sa.String(), nullable=False),
-        sa.Column("gid", sa.BigInteger(), nullable=True),
+        sa.Column("gid", sa.BigInteger(), nullable=False),
         sa.Column(
             "read", sa.Boolean(), server_default=sa.text("false"), nullable=False
         ),

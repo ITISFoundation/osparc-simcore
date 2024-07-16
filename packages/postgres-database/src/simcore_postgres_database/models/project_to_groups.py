@@ -31,6 +31,7 @@ project_to_groups = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        nullable=False,
         doc="Group unique IDentifier",
     ),
     # Access Rights flags ---
