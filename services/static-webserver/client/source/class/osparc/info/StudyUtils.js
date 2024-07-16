@@ -451,7 +451,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       };
       return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
         .then(() => {
-          delete studyData["accessRights"];
+          delete studyData["accessRights"]["gid"];
           studyData["lastChangeDate"] = new Date().toISOString();
         });
     },

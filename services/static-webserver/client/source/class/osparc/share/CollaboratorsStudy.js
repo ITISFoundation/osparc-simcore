@@ -134,11 +134,14 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       }
 
       const newAccessRights = this._serializedDataCopy["accessRights"];
+      const promises = [];
       gids.forEach(gid => {
         newAccessRights[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        promises.push(osparc.info.StudyUtils.addCollaborator(this._serializedDataCopy, "accessRights", newAccessRights[gid]));
       });
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", newAccessRights)
+      Promise.all(promises)
         .then(() => {
+          this._serializedDataCopy["accessRights"] = newAccessRights;
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
@@ -169,52 +172,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         });
     },
 
-    __checkShareePermissions: function(gids) {
-      if (gids.length === 0) {
-        return;
-      }
-
-      const promises = [];
-      gids.forEach(gid => {
-        const params = {
-          url: {
-            "studyId": this._serializedDataCopy["uuid"],
-            "gid": gid
-          }
-        };
-        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
-      });
-      Promise.all(promises)
-        .then(values => {
-          const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length) {
-            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
-            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
-              clickAwayClose: false,
-              resizable: true,
-              showClose: true
-            });
-            win.getChildControl("icon").set({
-              textColor: "warning-yellow"
-            });
-          }
-        });
-    },
-
     _deleteMember: function(collaborator, item) {
       if (item) {
         item.setEnabled(false);
       }
-      const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
-      if (!success) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
-        if (item) {
-          item.setEnabled(true);
-        }
-        return;
-      }
 
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -307,6 +270,38 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
+    },
+
+    __checkShareePermissions: function(gids) {
+      if (gids.length === 0) {
+        return;
+      }
+
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            "studyId": this._serializedDataCopy["uuid"],
+            "gid": gid
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(values => {
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
+        });
     }
   }
 });
