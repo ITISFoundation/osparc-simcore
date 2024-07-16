@@ -342,6 +342,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         assert data
         assert not error
         print(f"<-- result: {data}")
+        new_project = data
 
         # Setup access rights to the project
         if project_data and (
@@ -360,12 +361,26 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                     delete=permissions["delete"],
                 )
         # Get project with already added access rights
-        print("--> getting project resource after access rights change...")
-        url = client.app.router["get_project"].url_for(project_id=data["uuid"])
+        print("--> getting project groups after access rights change...")
+        url = client.app.router["list_project_groups"].url_for(
+            project_id=data["uuid"]
+        )  # <- this is not good we need additional dependencies
         resp = await client.get(url.path)
         data, error = await assert_status(resp, status.HTTP_200_OK)
         print(f"<-- result: {data}")
-        new_project = data
+        new_project_access_rights = {}
+        [
+            new_project_access_rights.update(
+                {
+                    f"{item['gid']}": {
+                        "read": item["read"],
+                        "write": item["write"],
+                        "delete": item["delete"],
+                    }
+                }
+            )
+            for item in data
+        ]
 
         # now check returned is as expected
         if new_project:
@@ -395,7 +410,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                     }
                 }
             )
-            assert new_project["accessRights"] == expected_data["accessRights"]
+            assert new_project_access_rights == expected_data["accessRights"]
 
             modified_fields = [
                 # invariant fields

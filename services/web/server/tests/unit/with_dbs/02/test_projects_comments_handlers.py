@@ -14,9 +14,9 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
-from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
@@ -145,43 +145,30 @@ async def test_project_comments_full_workflow(
 
     # Now we will log as a different user
     async with LoggedUser(client) as new_logged_user:
-        # As this user does not have access to the project, they should get 404
+        # As this user does not have access to the project, they should get 401
         resp = await client.get(base_url)
         _, errors = await assert_status(
             resp,
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_401_UNAUTHORIZED,
         )
         assert errors
 
         resp = await client.get(base_url / f"{first_comment_id}")
         _, errors = await assert_status(
             resp,
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_401_UNAUTHORIZED,
         )
         assert errors
 
         # Now we will share the project with the new user
-        with postgres_db.connect() as con:
-            result = con.execute(
-                projects.update()
-                .values(
-                    **{
-                        "access_rights": {
-                            str(logged_user["primary_gid"]): {
-                                "read": True,
-                                "write": True,
-                                "delete": True,
-                            },
-                            str(new_logged_user["primary_gid"]): {
-                                "read": True,
-                                "write": True,
-                                "delete": True,
-                            },
-                        }
-                    }
-                )
-                .where(projects.c.uuid == user_project["uuid"])
-            )
+        await update_or_insert_project_group(
+            client.app,
+            project_id=user_project["uuid"],
+            group_id=new_logged_user["primary_gid"],
+            read=True,
+            write=True,
+            delete=True,
+        )
 
         # Now the user should have access to the project now
         # New user will add comment
