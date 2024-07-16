@@ -58,7 +58,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     __startInterval: function() {
       this.__checkTimes();
       // check every 1' if the countdown routine needs to be started
-      this.__updateInterval = setInterval(() => this.__checkTimes(), 5*1000);
+      this.__updateInterval = setInterval(() => this.__checkTimes(), 60*1000);
     },
 
     __checkTimes: function() {
