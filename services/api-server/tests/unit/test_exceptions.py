@@ -95,12 +95,14 @@ async def test_service_exception_mapper():
     class _ProjectMissingError(BaseBackEndError):
         msg_template = "The project {project_id} is missing"
 
+    assert _ProjectMissingError.named_fields() == {"project_id"}
+
     status_map = {404: _ProjectMissingError}
 
     async def coro1(project_id):
         pass
 
-    with pytest.raises(AssertionError) as exc:
+    with pytest.raises(AssertionError):
         _assert_correct_kwargs(func=coro1, status_map=status_map)
 
     async def coro2(project_id=UUID("9c201eb7-ba04-4d9b-abe6-f16b406ca86d")):
@@ -122,5 +124,5 @@ async def test_service_exception_mapper():
     async def coro5(*, project_uuid):
         pass
 
-    with pytest.raises(AssertionError) as exc:
+    with pytest.raises(AssertionError):
         _assert_correct_kwargs(func=coro5, status_map=status_map)
