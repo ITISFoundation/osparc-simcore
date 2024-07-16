@@ -12,7 +12,8 @@ from models_library.users import UserID
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.db.repositories.services import ServicesRepository
-from simcore_service_catalog.services import services_api
+from simcore_service_catalog.services import manifest, services_api
+from simcore_service_catalog.services.director import DirectorApi
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -81,6 +82,17 @@ async def background_sync_task_mocked(
     await services_db_tables_injector(fake_services_data)
 
 
+@pytest.fixture
+async def director_client(app: FastAPI) -> DirectorApi:
+    director_api = get_director_api(app)
+
+    # ensures manifest API cache is reset
+    assert hasattr(manifest.get_service, "cache")
+    assert manifest.get_service.cache.clear()
+
+    return director_api
+
+
 async def test_list_services_paginated(
     background_sync_task_mocked: None,
     rabbitmq_and_rpc_setup_disabled: None,
@@ -88,10 +100,9 @@ async def test_list_services_paginated(
     target_product: ProductName,
     services_repo: ServicesRepository,
     user_id: UserID,
-    app: FastAPI,
+    director_client: DirectorApi,
     num_services: int,
 ):
-    director_api = get_director_api(app)
 
     offset = 1
     limit = 2
@@ -101,7 +112,7 @@ async def test_list_services_paginated(
 
     total_count, page_items = await services_api.list_services_paginated(
         services_repo,
-        director_api,
+        director_client,
         product_name=target_product,
         user_id=user_id,
         limit=limit,
@@ -121,7 +132,7 @@ async def test_list_services_paginated(
 
         got = await services_api.get_service(
             services_repo,
-            director_api,
+            director_client,
             product_name=target_product,
             user_id=user_id,
             service_key=item.key,

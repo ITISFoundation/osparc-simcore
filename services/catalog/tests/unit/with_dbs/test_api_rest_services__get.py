@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
 from models_library.users import UserID
+from simcore_service_catalog.services import manifest
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -73,6 +74,9 @@ def test_get_service_with_details(
     target_product: ProductName,
     client: TestClient,
 ):
+    assert hasattr(manifest.get_service, "cache")
+    assert manifest.get_service.cache.clear()
+
     service_key = expected_service["key"]
     service_version = expected_service["version"]
 
