@@ -167,20 +167,13 @@ def simcore_docker_compose(
         docker_compose_path.exists() for docker_compose_path in docker_compose_paths
     )
 
-    compose_specs = run_docker_compose_config(
+    return run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_paths,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    # NOTE: do not add indent. Copy&Paste log into editor instead
-    print(
-        HEADER_STR.format("simcore docker-compose"),
-        json.dumps(compose_specs),
-        HEADER_STR.format("-"),
-    )
-    return compose_specs
 
 
 @pytest.fixture(scope="module")
@@ -203,20 +196,13 @@ def ops_docker_compose(
     )
     assert docker_compose_path.exists()
 
-    compose_specs = run_docker_compose_config(
+    return run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    # NOTE: do not add indent. Copy&Paste log into editor instead
-    print(
-        HEADER_STR.format("ops docker-compose"),
-        json.dumps(compose_specs),
-        HEADER_STR.format("-"),
-    )
-    return compose_specs
 
 
 @pytest.fixture(scope="module")
@@ -245,6 +231,11 @@ def core_docker_compose_file(
         core_services_selection, simcore_docker_compose, docker_compose_path
     )
 
+    print(
+        HEADER_STR.format("simcore docker-compose"),
+        json.dumps(docker_compose_path.read_text()),
+        HEADER_STR.format("-"),
+    )
     return docker_compose_path
 
 
@@ -281,6 +272,11 @@ def ops_docker_compose_file(
         ops_services_selection, ops_docker_compose, docker_compose_path
     )
 
+    print(
+        HEADER_STR.format("ops docker-compose"),
+        json.dumps(docker_compose_path.read_text()),
+        HEADER_STR.format("-"),
+    )
     return docker_compose_path
 
 
