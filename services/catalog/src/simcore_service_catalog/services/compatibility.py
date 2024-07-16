@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_types import ServiceVersion
-from packages.version import Version
+from packaging.version import Version
 from simcore_service_catalog.utils.versioning import as_version
 
 
