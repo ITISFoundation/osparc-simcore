@@ -144,28 +144,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
 
+          this.__pushNotifications(gids);
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
-        });
-
-      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else {
-                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-              }
-            }
-          });
         });
     },
 
@@ -271,6 +255,25 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
+    },
+
+    __pushNotifications: function(gids) {
+      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          gids.forEach(gid => {
+            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
+              // it's a user, not an organization
+              const collab = potentialCollaborators[gid];
+              const uid = collab["id"];
+              if (this._resourceType === "study") {
+                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+              } else {
+                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+              }
+            }
+          });
+        });
     },
 
     __checkShareePermissions: function(gids) {
