@@ -4,15 +4,20 @@
 
 
 from http import HTTPStatus
+from uuid import UUID
 
 import httpx
 import pytest
 from fastapi import FastAPI, HTTPException, status
 from httpx import HTTPStatusError, Request, Response
 from simcore_service_api_server.exceptions import setup_exception_handlers
-from simcore_service_api_server.exceptions.backend_errors import ProfileNotFoundError
+from simcore_service_api_server.exceptions.backend_errors import (
+    BaseBackEndError,
+    ProfileNotFoundError,
+)
 from simcore_service_api_server.exceptions.custom_errors import MissingWalletError
 from simcore_service_api_server.exceptions.service_errors_utils import (
+    _assert_correct_kwargs,
     service_exception_mapper,
 )
 from simcore_service_api_server.models.schemas.errors import ErrorGet
@@ -84,3 +89,40 @@ async def test_custom_error_handlers(client: httpx.AsyncClient):
 
     got = ErrorGet.parse_raw(response.text)
     assert got.errors == [f"{MissingWalletError(job_id=123)}"]
+
+
+async def test_service_exception_mapper():
+    class _ProjectMissingError(BaseBackEndError):
+        msg_template = "The project {project_id} is missing"
+
+    assert _ProjectMissingError.named_fields() == {"project_id"}
+
+    status_map = {404: _ProjectMissingError}
+
+    async def coro1(project_id):
+        pass
+
+    with pytest.raises(AssertionError):
+        _assert_correct_kwargs(func=coro1, status_map=status_map)
+
+    async def coro2(project_id=UUID("9c201eb7-ba04-4d9b-abe6-f16b406ca86d")):
+        pass
+
+    with pytest.raises(AssertionError) as exc:
+        _assert_correct_kwargs(func=coro2, status_map=status_map)
+
+    async def coro3(*, project_id):
+        pass
+
+    _assert_correct_kwargs(func=coro3, status_map=status_map)
+
+    async def coro4(*, project_id=UUID("ce56af2e-e9e5-46a4-8067-662077de5528")):
+        pass
+
+    _assert_correct_kwargs(func=coro4, status_map=status_map)
+
+    async def coro5(*, project_uuid):
+        pass
+
+    with pytest.raises(AssertionError):
+        _assert_correct_kwargs(func=coro5, status_map=status_map)
