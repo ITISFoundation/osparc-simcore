@@ -365,6 +365,7 @@ async def test_get_study_outputs(
     client: httpx.AsyncClient,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocked_directorv2_service_api_base,
+    mocked_webserver_service_api_base,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -374,6 +375,7 @@ async def test_get_study_outputs(
     create_respx_mock_from_capture(
         respx_mocks=[
             mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_job_outputs.json",
         side_effects_callbacks=[],
