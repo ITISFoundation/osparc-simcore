@@ -79,8 +79,6 @@ async def permalink_factory(
     # NOTE: next iterations will mobe this as part of the project repository pattern
     engine = get_database_engine(request.app)
     async with engine.acquire() as conn:
-        # Helper subquery that prepares access rights data in
-        # backwards compatible json type.
         access_rights_subquery = (
             sa.select(
                 project_to_groups.c.project_uuid,

@@ -41,7 +41,7 @@ async def create_project_group(
 
     project_access_rights: UserProjectAccessRights = (
         await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id  # add product_name
+            user_id=user_id, project_uuid=project_id
         )
     )
     if project_access_rights.write is False:
@@ -75,7 +75,7 @@ async def list_project_groups_by_user_and_project(
 
     project_access_rights: UserProjectAccessRights = (
         await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id  # add product_name
+            user_id=user_id, project_uuid=project_id
         )
     )
     if project_access_rights.read is False:
@@ -111,7 +111,7 @@ async def update_project_group(
 
     project_access_rights: UserProjectAccessRights = (
         await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id  # add product_name
+            user_id=user_id, project_uuid=project_id
         )
     )
     if project_access_rights.write is False:

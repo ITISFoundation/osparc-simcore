@@ -217,7 +217,6 @@ class ProjectDBAPI(BaseProjectDB):
                                 for node_id in selected_values["workbench"]
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
-                        # Add project access rights
         return selected_values
 
     async def insert_project(
@@ -339,8 +338,6 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
-            # Helper subquery that prepares access rights data in
-            # backwards compatible json type.
             access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -355,9 +352,7 @@ class ProjectDBAPI(BaseProjectDB):
                             project_to_groups.c.delete,
                         ),
                     ).label("access_rights"),
-                )
-                .where(project_to_groups.c.gid.is_not(None))
-                .group_by(project_to_groups.c.project_uuid)
+                ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
             query = (
@@ -644,7 +639,6 @@ class ProjectDBAPI(BaseProjectDB):
         self, project_uuid: ProjectID, new_partial_project_data: dict
     ) -> ProjectDB:
         async with self.engine.acquire() as conn:
-            # MD: TODO: remove project_access_rights
             result = await conn.execute(
                 projects.update()
                 .values(last_change_date=sa.func.now(), **new_partial_project_data)
@@ -678,7 +672,6 @@ class ProjectDBAPI(BaseProjectDB):
             )
             result_row_count: int = result.rowcount
             assert result_row_count == 1  # nosec
-            # TODO: MD: Update project_to_groups table!!!
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:

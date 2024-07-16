@@ -322,7 +322,7 @@ class BaseProjectDB:
         user_id: UserID,
         project_uuid: str,
         exclude_foreign: list[str] | None = None,
-        for_update: bool = False,  # pylint: disable=unused-argument
+        for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
         check_permissions: PermissionStr = "read",

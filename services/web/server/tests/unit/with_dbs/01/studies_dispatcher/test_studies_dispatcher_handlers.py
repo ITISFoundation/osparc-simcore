@@ -442,7 +442,6 @@ async def test_dispatch_study_anonymously(
         assert mock_client_director_v2_project_networks.called
 
 
-# NOTE: MD: fix failing tests
 @pytest.mark.parametrize(
     "user_role",
     [

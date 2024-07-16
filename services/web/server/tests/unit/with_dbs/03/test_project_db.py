@@ -302,9 +302,6 @@ async def test_insert_project_to_db(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        # access_rights={
-        #     str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        # },
         type=ProjectType.TEMPLATE,
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
