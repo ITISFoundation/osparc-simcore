@@ -412,7 +412,7 @@ class ProjectDBAPI(BaseProjectDB):
             else:
                 query = query.order_by(sa.desc(getattr(projects.c, order_by.field)))
 
-            total_number_of_projects = await conn.scalar(
+            total_number_of_projects = await conn.scalar(  # <-- he
                 query.with_only_columns(func.count()).order_by(None)
             )
             assert total_number_of_projects is not None  # nosec
