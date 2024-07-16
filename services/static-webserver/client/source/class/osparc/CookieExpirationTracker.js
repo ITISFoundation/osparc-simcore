@@ -20,44 +20,60 @@ qx.Class.define("osparc.CookieExpirationTracker", {
   type: "singleton",
 
   statics: {
-    PERMANENT_WARN_IN_ADVANCE: 60*60, // Show Permanent Flash Message 1h in advance
-    LOG_OUT_BEFORE_EXPIRING: 60 // Log user out 1' in before expiring
+    PERMANENT_WARN_IN_ADVANCE: 2*60*60*1000, // Show Permanent Flash Message 2h in advance
+    LOG_OUT_BEFORE_EXPIRING: 60*1000 // Log user out 1' in before expiring
+  },
+
+  properties: {
+    expirationDate: {
+      check: "Date",
+      nullable: false,
+      init: null,
+      apply: "__startInterval"
+    }
   },
 
   members: {
+    __updateInterval: null,
     __message: null,
-    __messageTimer: null,
     __messageInterval: null,
-    __logoutTimer: null,
 
     startTracker: function() {
-      const cookieMaxAge = osparc.store.StaticInfo.getInstance().getCookieMaxAge();
+      const cookieMaxAge = osparc.store.StaticInfo.getInstance().getCookieMaxAge(); // seconds
       if (cookieMaxAge) {
         const nowDate = new Date();
-        const expirationTime = nowDate.getTime() + cookieMaxAge*1000 - this.self().LOG_OUT_BEFORE_EXPIRING*1000;
-        const expirationDate = new Date(expirationTime);
-        const showMessageIn = Math.max(cookieMaxAge - this.self().PERMANENT_WARN_IN_ADVANCE, 0);
-        this.__messageTimer = setTimeout(() => {
-          const willExpireIn = parseInt((expirationDate - nowDate)/1000);
-          this.__displayFlashMessage(willExpireIn);
-        }, showMessageIn*1000);
-
-        const logOutIn = Math.max(cookieMaxAge - this.self().LOG_OUT_BEFORE_EXPIRING, 0);
-        this.__logoutTimer = setTimeout(() => this.__logoutUser(), logOutIn*1000);
+        const expirationDateMilliseconds = nowDate.getTime() + cookieMaxAge*1000;
+        this.setExpirationDate(new Date(expirationDateMilliseconds));
       }
     },
 
     stopTracker: function() {
-      if (this.__messageTimer) {
-        clearTimeout(this.__messageTimer);
-      }
-      if (this.__logoutTimer) {
-        clearTimeout(this.__logoutTimer);
+      if (this.__updateInterval) {
+        clearInterval(this.__updateInterval);
       }
 
       this.__removeFlashMessage();
     },
 
+    __startInterval: function() {
+      this.__checkTimes();
+      // check every 1' if the countdown routine needs to be started
+      this.__updateInterval = setInterval(() => this.__checkTimes(), 60*1000);
+    },
+
+    __checkTimes: function() {
+      const nowDate = new Date();
+      const expirationDate = this.getExpirationDate();
+      if (nowDate.getTime() + this.self().PERMANENT_WARN_IN_ADVANCE > expirationDate.getTime()) {
+        this.__removeFlashMessage();
+        this.__displayFlashMessage(parseInt((expirationDate.getTime() - nowDate.getTime())/1000));
+      }
+      if (nowDate.getTime() + this.self().LOG_OUT_BEFORE_EXPIRING > expirationDate.getTime()) {
+        this.__logoutUser();
+      }
+    },
+
+    // FLASH MESSAGE //
     __displayFlashMessage: function(willExpireIn) {
       const updateFlashMessage = () => {
         if (willExpireIn <= 0) {
@@ -68,7 +84,8 @@ qx.Class.define("osparc.CookieExpirationTracker", {
         this.__updateFlashMessage(willExpireIn);
         willExpireIn--;
       };
-      this.__messageInterval = setInterval(updateFlashMessage, 1000);
+      updateFlashMessage();
+      this.__messageInterval = setInterval(updateFlashMessage, 1000); // update every second
     },
 
     __removeFlashMessage: function() {
@@ -82,15 +99,17 @@ qx.Class.define("osparc.CookieExpirationTracker", {
       }
     },
 
-    __updateFlashMessage: function(timeoutSec = 1000) {
+    __updateFlashMessage: function(timeoutSec) {
       const timeout = osparc.utils.Utils.formatSeconds(timeoutSec);
       const text = qx.locale.Manager.tr(`Your session will expire in ${timeout}.<br>Please log out and log in again.`);
       if (this.__message === null) {
         this.__message = osparc.FlashMessenger.getInstance().logAs(text, "WARNING", timeoutSec*1000);
+        this.__message.getChildControl("closebutton").exclude();
       } else {
         this.__message.setMessage(text);
       }
     },
+    // /FLASH MESSAGE //
 
     __logoutUser: function() {
       const reason = qx.locale.Manager.tr("Session expired");
