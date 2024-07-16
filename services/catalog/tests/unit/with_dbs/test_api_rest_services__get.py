@@ -15,7 +15,6 @@ from fastapi.testclient import TestClient
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
 from models_library.users import UserID
-from simcore_service_catalog.services import manifest
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -66,6 +65,7 @@ async def expected_service(
 
 
 def test_get_service_with_details(
+    service_caching_disabled: None,
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: respx.MockRouter,
@@ -74,9 +74,6 @@ def test_get_service_with_details(
     target_product: ProductName,
     client: TestClient,
 ):
-    assert hasattr(manifest.get_service, "cache")
-    assert manifest.get_service.cache.clear()
-
     service_key = expected_service["key"]
     service_version = expected_service["version"]
 
@@ -97,4 +94,4 @@ def test_get_service_with_details(
     assert got.key == service_key
     assert got.version == service_version
 
-    # assert mocked_director_service_api["get_service"].called
+    assert mocked_director_service_api["get_service"].called
