@@ -161,7 +161,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             anonymous: true,
             alignY: "middle",
             alignX: "center",
-            paddingRight: 5
+            padding: 5
           });
           this._add(control, this.self().POS.ICON);
           break;
