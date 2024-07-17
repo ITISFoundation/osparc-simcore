@@ -219,9 +219,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __itemSelected: function(newVal) {
       if (newVal) {
-        this.setValue(false);
         console.log("folder tapped", this.getFolderId());
       }
+      this.setValue(false);
     },
 
     __openShareWith: function() {

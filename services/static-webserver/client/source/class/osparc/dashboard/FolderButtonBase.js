@@ -38,12 +38,12 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
 
     [
       "pointerover",
-      "focus"
+      // "focus"
     ].forEach(e => this.addListener(e, this.__onPointerOver, this));
 
     [
       "pointerout",
-      "focusout"
+      // "focusout"
     ].forEach(e => this.addListener(e, this.__onPointerOut, this));
   },
 

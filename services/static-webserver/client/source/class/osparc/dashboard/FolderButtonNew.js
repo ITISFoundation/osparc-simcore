@@ -76,9 +76,9 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
 
     __itemSelected: function(newVal) {
       if (newVal) {
-        this.setValue(false);
         console.log("create new folder");
       }
+      this.setValue(false);
     }
   }
 });
