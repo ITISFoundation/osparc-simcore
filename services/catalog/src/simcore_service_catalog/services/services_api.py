@@ -26,7 +26,7 @@ from simcore_service_catalog.services import manifest
 from simcore_service_catalog.services.director import DirectorApi
 
 from ..db.repositories.services import ServicesRepository
-from .compatibility import eval_service_compatibility_map
+from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
@@ -174,7 +174,7 @@ async def get_service(
             product_name=product_name,
         )
 
-    compatibility_map = await eval_service_compatibility_map(
+    compatibility_map = await evaluate_service_compatibility_map(
         repo,
         product_name=product_name,
         user_id=user_id,
