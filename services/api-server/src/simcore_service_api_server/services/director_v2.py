@@ -70,6 +70,7 @@ class DirectorV2Api(BaseServiceClientApi):
     @_exception_mapper({})
     async def create_computation(
         self,
+        *,
         project_id: UUID,
         user_id: PositiveInt,
         product_name: str,
@@ -90,6 +91,7 @@ class DirectorV2Api(BaseServiceClientApi):
     @_exception_mapper({})
     async def start_computation(
         self,
+        *,
         project_id: UUID,
         user_id: PositiveInt,
         product_name: str,
@@ -124,7 +126,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def get_computation(
-        self, project_id: UUID, user_id: PositiveInt
+        self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
         response = await self.client.get(
             f"/v2/computations/{project_id}",
@@ -138,7 +140,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def stop_computation(
-        self, project_id: UUID, user_id: PositiveInt
+        self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
         response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
@@ -151,7 +153,7 @@ class DirectorV2Api(BaseServiceClientApi):
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
-    async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
+    async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt):
         response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
@@ -164,7 +166,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
     async def get_computation_logs(
-        self, user_id: PositiveInt, project_id: UUID
+        self, *, user_id: PositiveInt, project_id: UUID
     ) -> JobLogsMap:
         response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",

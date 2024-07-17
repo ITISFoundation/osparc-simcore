@@ -39,6 +39,7 @@ on:
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
+  COLUMNS: 120
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -1284,7 +1285,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-      - uses: actions/setup-node@v4.0.2
+      - uses: actions/setup-node@v4.0.3
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2355,7 +2356,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v4.0.2
+      - uses: actions/setup-node@v4.0.3
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"

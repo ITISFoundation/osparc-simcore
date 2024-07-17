@@ -154,9 +154,10 @@ async def test_get_image_labels(
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
+    images_digests = set()
     for image in images:
         service_description = image["service_description"]
-        labels = await registry_proxy.get_image_labels(
+        labels, image_manifest_digest = await registry_proxy.get_image_labels(
             aiohttp_mock_app, service_description["key"], service_description["version"]
         )
         assert "io.simcore.key" in labels
@@ -172,6 +173,12 @@ async def test_get_image_labels(
             # dynamic services have this additional flag
             assert "simcore.service.settings" in labels
 
+        assert image_manifest_digest == await registry_proxy.get_image_digest(
+            aiohttp_mock_app, service_description["key"], service_description["version"]
+        )
+        assert image_manifest_digest is not None
+        assert image_manifest_digest not in images_digests
+        images_digests.add(image_manifest_digest)
 
 def test_get_service_first_name():
     repo = "simcore/services/dynamic/myservice/modeler/my-sub-modeler"
@@ -225,6 +232,8 @@ async def test_get_image_details(
         details = await registry_proxy.get_image_details(
             aiohttp_mock_app, service_description["key"], service_description["version"]
         )
+
+        assert details.pop("image_digest").startswith("sha")
 
         assert details == service_description
 

@@ -107,14 +107,20 @@ def _apply_templating_directives(
 
 
 def _merge_env_vars(
-    compose_spec_env_vars: list[str], settings_env_vars: list[str]
+    compose_spec_env_vars: list[str] | dict[str, str],
+    settings_env_vars: list[str] | dict[str, str],
 ) -> list[str]:
     def _gen_parts_env_vars(
-        env_vars: list[str],
+        env_vars: list[str] | dict[str, str],
     ) -> Generator[tuple[str, str], None, None]:
-        for env_var in env_vars:
-            key, value = env_var.split("=")
-            yield key, value
+        assert isinstance(env_vars, list | dict)  # nosec
+
+        if isinstance(env_vars, list):
+            for env_var in env_vars:
+                key, value = env_var.split("=")
+                yield key, value
+        else:
+            yield from env_vars.items()
 
     # pylint: disable=unnecessary-comprehension
     dict_spec_env_vars = {k: v for k, v in _gen_parts_env_vars(compose_spec_env_vars)}

@@ -65,9 +65,9 @@ async def stop_project(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
-    await director2_api.stop_computation(job_id, user_id)
+    await director2_api.stop_computation(project_id=job_id, user_id=user_id)
 
-    task = await director2_api.get_computation(job_id, user_id)
+    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
 

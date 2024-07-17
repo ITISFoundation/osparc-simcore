@@ -1,46 +1,27 @@
-import json
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Final
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 
 from ..core.settings import ApplicationSettings
+from ..utils.redis import create_lock_key_and_value
 from .auto_scaling_core import auto_scale_cluster
 from .auto_scaling_mode_computational import ComputationalAutoscaling
 from .auto_scaling_mode_dynamic import DynamicAutoscaling
 from .redis import get_redis_client
 
-_TASK_NAME = "Autoscaling EC2 instances"
+_TASK_NAME: Final[str] = "Autoscaling EC2 instances"
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
-        lock_key_parts = [app.title, app.version]
-        lock_value = ""
-        if app_settings.AUTOSCALING_NODES_MONITORING:
-            lock_key_parts += [
-                "dynamic",
-                app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
-            ]
-            lock_value = json.dumps(
-                {
-                    "node_labels": app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-                }
-            )
-        elif app_settings.AUTOSCALING_DASK:
-            lock_key_parts += [
-                "computational",
-                app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL,
-            ]
-            lock_value = json.dumps(
-                {"scheduler_url": app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}
-            )
-        lock_key = ":".join(f"{k}" for k in lock_key_parts)
+        lock_key, lock_value = create_lock_key_and_value(app)
         assert lock_key  # nosec
         assert lock_value  # nosec
         app.state.autoscaler_task = start_periodic_task(
@@ -50,9 +31,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
-            auto_scaling_mode=DynamicAutoscaling()
-            if app_settings.AUTOSCALING_NODES_MONITORING is not None
-            else ComputationalAutoscaling(),
+            auto_scaling_mode=(
+                DynamicAutoscaling()
+                if app_settings.AUTOSCALING_NODES_MONITORING is not None
+                else ComputationalAutoscaling()
+            ),
         )
 
     return _startup
@@ -65,7 +48,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _stop
 
 
-def setup(app: FastAPI):
+def setup(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
     if any(
         s is None
@@ -80,7 +63,7 @@ def setup(app: FastAPI):
             app_settings.AUTOSCALING_DASK,
         ]
     ):
-        logger.warning(
+        _logger.warning(
             "the autoscaling background task is disabled by settings, nothing will happen!"
         )
         return

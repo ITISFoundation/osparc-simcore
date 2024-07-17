@@ -3,11 +3,16 @@
 #
 include ../../scripts/common.Makefile
 
-LOCUST_VERSION=2.5.1
+LOCUST_VERSION=2.29.1
 export LOCUST_VERSION
 
+ENV_FILE=$(shell pwd)/.env
+export ENV_FILE
+
+NETWORK_NAME=dashboards_timenet
+
 # UTILS
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -31,20 +36,42 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
-.PHONY: up down run
-up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
-	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); \
-	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	docker compose --file docker-compose.yml up --scale worker=4
-
+.PHONY: down
 down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
 
 .PHONY: test
-test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
-	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); \
-	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.01 --check-avg-response-time=$(if $(resp_time),$(resp_time),200)"; \
+test: ## runs osparc locust. Locust and test configuration are specified in ENV_FILE
+	@if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi;
+	@if ! docker network ls | grep -q $(NETWORK_NAME); then \
+		docker network create $(NETWORK_NAME); \
+		echo "Created docker network $(NETWORK_NAME)"; \
+	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
+
+.PHONY: dashboards-up dashboards-down
+
+dashboards-up: ## Create Grafana dashboard for inspecting locust results. See dashboard on localhost:3000
+	@echo "View your dashboard on localhost:3000"
+	@if docker network ls | grep -q $(NETWORK_NAME); then \
+		docker network rm $(NETWORK_NAME); \
+		echo "Removed docker network $(NETWORK_NAME)"; \
+	fi
+	@locust-compose up
+
+dashboards-down:
+	@locust-compose down
+
+.PHONY: install-ci install-dev
+
+install-dev:
+	@uv pip install -r requirements/requirements-dev.txt
+
+install-ci:
+	@uv pip install -r requirements/requirements-ci.txt
+
+
+.PHONY: config
+config:
+	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
+	@python locust_settings.py $(input) | tee .env

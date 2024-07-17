@@ -5,16 +5,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterator
+
+import urllib.parse
+from typing import Any
 
 import pytest
-import respx
 from fastapi import FastAPI
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
-from simcore_service_catalog.core.settings import ApplicationSettings
 from simcore_service_catalog.services.director import DirectorApi
 
 
@@ -32,25 +33,10 @@ def app_environment(
     )
 
 
-@pytest.fixture
-def mocked_director_service_api(
-    app_settings: ApplicationSettings,
-) -> Iterator[MockRouter]:
-    assert app_settings.CATALOG_DIRECTOR
-    with respx.mock(
-        base_url=app_settings.CATALOG_DIRECTOR.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": ["one", "two"]}
-        )
-
-        yield respx_mock
-
-
-async def test_director_client_setup(
+async def test_director_client_high_level_api(
+    background_tasks_setup_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    expected_director_list_services: list[dict[str, Any]],
     mocked_director_service_api: MockRouter,
     app: FastAPI,
 ):
@@ -60,11 +46,44 @@ async def test_director_client_setup(
     assert app.state.director_api == director_api
     assert isinstance(director_api, DirectorApi)
 
-    # use it
-    data = await director_api.get("/services")
+    # PING
+    assert await director_api.is_responsive()
 
-    # director entry-point has hit
-    assert mocked_director_service_api["list_services"].called
+    # GET
+    expected_service = ServiceMetaDataPublished(**expected_director_list_services[0])
+    assert (
+        await director_api.get_service(expected_service.key, expected_service.version)
+        == expected_service
+    )
+    # TODO: error handling!
 
-    # returns un-enveloped response
-    assert data == ["one", "two"]
+
+async def test_director_client_low_level_api(
+    background_tasks_setup_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_service_api: MockRouter,
+    expected_director_list_services: list[dict[str, Any]],
+    app: FastAPI,
+):
+    director_api = get_director_api(app)
+
+    expected_service = expected_director_list_services[0]
+    key = expected_service["key"]
+    version = expected_service["version"]
+
+    service_labels = await director_api.get(
+        f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
+    )
+
+    assert service_labels
+
+    service_extras = await director_api.get(
+        f"/service_extras/{urllib.parse.quote_plus(key)}/{version}"
+    )
+
+    assert service_extras
+
+    service = await director_api.get(
+        f"/services/{urllib.parse.quote_plus(key)}/{version}"
+    )
+    assert service
