@@ -310,8 +310,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __setFoldersToList: function(folders) {
-      console.log("folders", folders);
-
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
 
@@ -332,7 +330,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
       }
       this.self().sortFoldersList(this.__foldersList, sortByValue);
-      this._reloadNewCards();
+      this.__reloadFolderCards();
     },
 
     _reloadCards: function() {
@@ -362,6 +360,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__configureCards(cards);
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    __reloadFolderCards: function() {
+      this._resourcesContainer.setFoldersToList(this.__foldersList);
+      this._resourcesContainer.reloadFolders();
     },
 
     __configureCards: function(cards) {
