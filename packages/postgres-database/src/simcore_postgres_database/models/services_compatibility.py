@@ -19,7 +19,7 @@ from .users import users
 
 
 class PolicySpecifierDict(TypedDict, total=False):
-    version: str  # e.g. ~=0.9, SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
+    version: str  # SpecifierSet e.g. ~=0.9, SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
     key: str | None  # Only necessary if key!=PolicySpecifierDict.key
 
 

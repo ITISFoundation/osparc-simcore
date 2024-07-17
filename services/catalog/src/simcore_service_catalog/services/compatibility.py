@@ -11,8 +11,9 @@ from simcore_service_catalog.utils.versioning import as_version
 
 
 def _get_default_compatibility_specs(target: ServiceVersion | Version) -> SpecifierSet:
-    """
-        The current policy is `patch-compatible` and strictly enforces `newer versions`.
+    """Default policy:
+
+    A version is compatible with target X.Y.Z iff `>X.Y.Z, ~=X.Y.Z`
 
     SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
     """
@@ -30,7 +31,10 @@ def _get_latest_compatible_version(
     latest_first_releases: list[Version],
     compatibility_specs: SpecifierSet | None = None,
 ) -> Version | None:
-    """Returns the latest released version compatible with `target`, or None if an update is not possible."""
+    """
+    Returns latest version in history that satisfies `>X.Y.Z, ~=X.Y.Z` (default policy if compatibility_specs=None) or compatibility_specs
+    Returns None if no version in history satisfies specs.
+    """
 
     compatibility_specs = compatibility_specs or _get_default_compatibility_specs(
         target
