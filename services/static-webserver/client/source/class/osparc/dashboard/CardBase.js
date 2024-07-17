@@ -144,6 +144,74 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return !includesAll;
       }
       return false;
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    setIconAndTooltip: function(shareIcon, accessRights, groups) {
+      shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
+        shareIcon.set({
+          toolTipText: qx.locale.Manager.tr("Share")
+        });
+      }
+      let sharedGrps = [];
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      for (let i=0; i<groups.length; i++) {
+        if (groups[i].length === 0) {
+          // user has no read access to the productEveryone
+          continue;
+        }
+        const sharedGrp = [];
+        const gids = Object.keys(accessRights);
+        for (let j=0; j<gids.length; j++) {
+          const gid = parseInt(gids[j]);
+          if (gid === myGroupId) {
+            continue;
+          }
+          const grp = groups[i].find(group => group["gid"] === gid);
+          if (grp) {
+            sharedGrp.push(grp);
+          }
+        }
+        if (sharedGrp.length === 0) {
+          continue;
+        } else {
+          sharedGrps = sharedGrps.concat(sharedGrp);
+        }
+        switch (i) {
+          case 0:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
+            break;
+          case 1:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+            break;
+          case 2:
+          case 3:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+            break;
+        }
+      }
+
+      // tooltip
+      if (sharedGrps.length === 0) {
+        return;
+      }
+      const sharedGrpLabels = [];
+      const maxItems = 6;
+      for (let i=0; i<sharedGrps.length; i++) {
+        if (i > maxItems) {
+          sharedGrpLabels.push("...");
+          break;
+        }
+        const sharedGrpLabel = sharedGrps[i]["label"];
+        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+          sharedGrpLabels.push(sharedGrpLabel);
+        }
+      }
+      const hintText = sharedGrpLabels.join("<br>");
+      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
+      shareIcon.addListener("mouseover", () => hint.show(), this);
+      shareIcon.addListener("mouseout", () => hint.exclude(), this);
     }
   },
 
@@ -781,7 +849,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           }
           const orgs = values.length === 4 ? values[3] : [];
           const groups = [orgMembs, orgs, productEveryone, everyone];
-          this.__setIconAndTooltip(shareIcon, accessRights, groups);
+          this.self().setIconAndTooltip(shareIcon, accessRights, groups);
         });
 
       if (this.isResourceType("study")) {
@@ -789,73 +857,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    __setIconAndTooltip: function(shareIcon, accessRights, groups) {
-      shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
-      if (osparc.data.model.Study.canIWrite(accessRights)) {
-        shareIcon.set({
-          toolTipText: this.tr("Share")
-        });
-      }
-      let sharedGrps = [];
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      for (let i=0; i<groups.length; i++) {
-        if (groups[i].length === 0) {
-          // user has no read access to the productEveryone
-          continue;
-        }
-        const sharedGrp = [];
-        const gids = Object.keys(accessRights);
-        for (let j=0; j<gids.length; j++) {
-          const gid = parseInt(gids[j]);
-          if (gid === myGroupId) {
-            continue;
-          }
-          const grp = groups[i].find(group => group["gid"] === gid);
-          if (grp) {
-            sharedGrp.push(grp);
-          }
-        }
-        if (sharedGrp.length === 0) {
-          continue;
-        } else {
-          sharedGrps = sharedGrps.concat(sharedGrp);
-        }
-        switch (i) {
-          case 0:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
-            break;
-          case 1:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-            break;
-          case 2:
-          case 3:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
-            break;
-        }
-      }
-
-      // tooltip
-      if (sharedGrps.length === 0) {
-        return;
-      }
-      const sharedGrpLabels = [];
-      const maxItems = 6;
-      for (let i=0; i<sharedGrps.length; i++) {
-        if (i > maxItems) {
-          sharedGrpLabels.push("...");
-          break;
-        }
-        const sharedGrpLabel = sharedGrps[i]["label"];
-        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
-          sharedGrpLabels.push(sharedGrpLabel);
-        }
-      }
-      const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
-      shareIcon.addListener("mouseover", () => hint.show(), this);
-      shareIcon.addListener("mouseout", () => hint.exclude(), this);
-    },
 
     _getEmptyWorkbenchIcon: function() {
       let toolTipText = this.tr("Empty") + " ";
