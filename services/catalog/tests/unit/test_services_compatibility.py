@@ -3,11 +3,17 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from unittest.mock import AsyncMock
+
 import pytest
+from models_library.services_types import ServiceVersion
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from simcore_service_catalog.db.repositories.services import ServicesRepository
+from simcore_service_catalog.models.services_db import ReleaseFromDB
 from simcore_service_catalog.services.compatibility import (
     _get_latest_compatible_version,
+    evaluate_service_compatibility_map,
 )
 
 # References
@@ -148,3 +154,103 @@ def test_get_latest_compatible_version(versions_history: list[Version]):
     latest_compatible = _get_latest_compatible_version(target, latest_first_releases)
     assert latest_compatible
     assert latest_compatible < latest
+
+
+@pytest.fixture
+def mock_repo():
+    repo = AsyncMock(spec=ServicesRepository)
+    repo.get_service_history.return_value = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(version="1.1.0"),
+        ReleaseFromDB(version="1.2.0"),
+        ReleaseFromDB(version="2.0.0"),
+    ]
+    return repo
+
+
+async def test_evaluate_service_compatibility_map_basic(mock_repo):
+    service_release_history = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(version="1.1.0"),
+        ReleaseFromDB(version="1.2.0"),
+        ReleaseFromDB(version="2.0.0"),
+    ]
+
+    result = await evaluate_service_compatibility_map(
+        mock_repo, "test_product", "test_user", service_release_history
+    )
+
+    assert len(result) == 4
+    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("1.1.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("1.2.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("2.0.0")] is None
+
+
+async def test_evaluate_service_compatibility_map_with_custom_policy(mock_repo):
+    service_release_history = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(version="1.1.0"),
+        ReleaseFromDB(
+            version="1.2.0",
+            compatibility_policy={"versions_specifier": ">=1.1.0,<2.0.0"},
+        ),
+        ReleaseFromDB(version="2.0.0"),
+    ]
+
+    result = await evaluate_service_compatibility_map(
+        mock_repo, "test_product", "test_user", service_release_history
+    )
+
+    assert len(result) == 4
+    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("1.1.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("1.2.0")].can_update_to.version == "1.2.0"
+    assert result[ServiceVersion("2.0.0")] is None
+
+
+async def test_evaluate_service_compatibility_map_with_other_service(mock_repo):
+    service_release_history = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(
+            "1.1.0",
+            compatibility_policy={
+                "other_service_key": "other_service",
+                "versions_specifier": ">=1.0.0",
+            },
+        ),
+    ]
+
+    mock_repo.get_service_history.return_value = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(version="1.1.0"),
+        ReleaseFromDB(version="1.2.0"),
+    ]
+
+    result = await evaluate_service_compatibility_map(
+        mock_repo, "test_product", "test_user", service_release_history
+    )
+
+    assert len(result) == 2
+    assert result[ServiceVersion("1.0.0")].can_update_to.version == "1.1.0"
+    assert result[ServiceVersion("1.1.0")].can_update_to.key == "other_service"
+    assert result[ServiceVersion("1.1.0")].can_update_to.version == "1.2.0"
+
+
+async def test_evaluate_service_compatibility_map_with_deprecated_versions(mock_repo):
+    service_release_history = [
+        ReleaseFromDB(version="1.0.0"),
+        ReleaseFromDB(version="1.1.0", deprecated=True),
+        ReleaseFromDB(version="1.2.0"),
+        ReleaseFromDB(version="2.0.0"),
+    ]
+
+    result = await evaluate_service_compatibility_map(
+        mock_repo, "test_product", "test_user", service_release_history
+    )
+
+    assert len(result) == 4
+    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("1.1.0")] is None  # Deprecated version
+    assert result[ServiceVersion("1.2.0")].can_update_to.version == "2.0.0"
+    assert result[ServiceVersion("2.0.0")] is None
