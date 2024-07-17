@@ -362,9 +362,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 )
         # Get project with already added access rights
         print("--> getting project groups after access rights change...")
-        url = client.app.router["list_project_groups"].url_for(
-            project_id=data["uuid"]
-        )  # <- this is not good we need additional dependencies
+        url = client.app.router["list_project_groups"].url_for(project_id=data["uuid"])
         resp = await client.get(url.path)
         data, error = await assert_status(resp, status.HTTP_200_OK)
         print(f"<-- result: {data}")
