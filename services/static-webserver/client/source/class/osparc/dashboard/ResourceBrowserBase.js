@@ -155,28 +155,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    sortStudyList: function(studyList, sortValue) {
-      const sortByProperty = function(prop) {
-        return function(a, b) {
-          const x = a.toString().toLowerCase();
-          const y = b.toString().toLowerCase();
-          if (prop === "lastChangeDate") {
-            return new Date(y[prop]) - new Date(x[prop]);
-          }
-          if (typeof x[prop] == "number") {
-            return x[prop] - y[prop];
-          }
-          if (x[prop] < y[prop]) {
-            return -1;
-          } else if (x[prop] > y[prop]) {
-            return 1;
-          }
-          return 0;
-        };
-      };
-      studyList.sort(sortByProperty(sortValue || "name"));
-    },
-
     isCardNewItem: function(card) {
       return (card instanceof osparc.dashboard.GridButtonNew || card instanceof osparc.dashboard.ListButtonNew);
     },

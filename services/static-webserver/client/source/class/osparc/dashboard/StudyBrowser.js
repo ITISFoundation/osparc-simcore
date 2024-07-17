@@ -69,7 +69,34 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     }
   },
 
+  statics: {
+    sortStudyList: function(studyList, sortValue) {
+      const sortByProperty = function(prop) {
+        return function(a, b) {
+          const x = a.toString().toLowerCase();
+          const y = b.toString().toLowerCase();
+          if (prop === "lastChangeDate") {
+            return new Date(y[prop]) - new Date(x[prop]);
+          }
+          if (typeof x[prop] == "number") {
+            return x[prop] - y[prop];
+          }
+          if (x[prop] < y[prop]) {
+            return -1;
+          } else if (x[prop] > y[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      studyList.sort(sortByProperty(sortValue || "name"));
+    }
+  },
+
   members: {
+    __currentFolderId: null,
+    __foldersList: null,
+
     // overridden
     initResources: function() {
       this._resourcesList = [];
@@ -127,7 +154,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolders: function() {
       osparc.store.FakeStore.getInstance().getFolders()
         .then(folders => {
-          this.__addFoldersToList(folders);
+          this.__setFoldersToList(folders);
         });
     },
 
@@ -250,7 +277,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __resetStudiesList: function() {
       this._resourcesList = [];
       const sortByValue = this.getOrderBy().field;
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList, sortByValue);
+      this.self().sortStudyList(this._resourcesList, sortByValue);
       this._reloadCards();
     },
 
@@ -263,7 +290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       });
       const sortByValue = this.getOrderBy().field;
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList, sortByValue);
+      this.self().sortStudyList(this._resourcesList, sortByValue);
       this._reloadNewCards();
 
       studiesList.forEach(study => {
@@ -288,8 +315,36 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __addFoldersToList: function(folders) {
+    __setFoldersToList: function(folders) {
       console.log("folders", folders);
+
+      this.__foldersList = folders;
+      folders.forEach(folder => folder["resourceType"] = "folder");
+
+      const sortByValue = this.getOrderBy().field;
+      this.self().sortStudyList(this.__foldersList, sortByValue);
+      this._reloadNewCards();
+
+      folders.forEach(study => {
+        const state = study["state"];
+        if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
+          // websocket might have already notified that the state was closed.
+          // But the /projects calls response got after the ws message. Ask again to make sure
+          const delay = 2000;
+          const studyId = study["uuid"];
+          setTimeout(() => {
+            const params = {
+              url: {
+                studyId
+              }
+            };
+            osparc.data.Resources.getOne("studies", params)
+              .then(studyData => {
+                this.__studyStateReceived(study["uuid"], studyData["state"]);
+              });
+          }, delay);
+        }
+      });
     },
 
     _reloadCards: function() {

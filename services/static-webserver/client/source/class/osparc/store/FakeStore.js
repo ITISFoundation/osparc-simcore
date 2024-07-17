@@ -78,14 +78,9 @@ qx.Class.define("osparc.store.FakeStore", {
   members: {
     __folders: null,
 
-    getFolders: function(parentFolder) {
+    getFolders: function(parentFolder = null) {
       return new Promise(resolve => {
-        if (parentFolder) {
-          resolve(this.__folders.filter(folder => folder.parentFolder === parentFolder));
-          return;
-        }
-        resolve(this.__folders);
-        return;
+        resolve(this.__folders.filter(folder => folder.parentFolder === parentFolder));
       });
     },
 
