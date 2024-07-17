@@ -296,6 +296,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return folderCards;
     },
 
+    addNewFolderCard: function(newFolderCard) {
+      this.__foldersContainer.add(newFolderCard);
+    },
+
     __moveNoGroupToLast: function() {
       const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
       if (idx > -1) {

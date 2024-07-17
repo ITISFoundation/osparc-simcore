@@ -26,8 +26,9 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
 
     this.set({
       width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
-      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
-      padding: 5
+      minHeight: this.self().HEIGHT,
+      padding: 5,
+      alignY: "middle"
     });
 
     const layout = new qx.ui.layout.Grid();
@@ -66,6 +67,7 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
   },
 
   statics: {
+    HEIGHT: 50,
     SPACING: 5,
     POS: {
       ICON: {

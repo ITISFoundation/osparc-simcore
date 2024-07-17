@@ -363,6 +363,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolderCards: function() {
+      const newFolderCard = new osparc.dashboard.FolderButtonNew();
+      newFolderCard.setCardKey("new-folder");
+      newFolderCard.subscribeToFilterGroup("searchBarFilter");
+      this._resourcesContainer.addNewFolderCard(newFolderCard);
+
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
     },
