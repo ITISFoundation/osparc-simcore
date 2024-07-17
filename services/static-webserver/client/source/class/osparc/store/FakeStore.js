@@ -28,6 +28,8 @@ qx.Class.define("osparc.store.FakeStore", {
       name: "Folder 1",
       description: "Description Folder One",
       owner: 1,
+      createdAt: "2024-07-11T06:28:28.527Z",
+      lastModified: "2024-07-13T06:28:28.527Z",
       accessRights: {
         1: {
           read: true,
@@ -41,6 +43,8 @@ qx.Class.define("osparc.store.FakeStore", {
       name: "Folder 2",
       description: "Description Folder Two",
       owner: 2,
+      createdAt: "2024-07-13T06:28:28.527Z",
+      lastModified: "2024-07-15T06:28:28.527Z",
       accessRights: {
         1: {
           read: true,
@@ -59,6 +63,8 @@ qx.Class.define("osparc.store.FakeStore", {
       name: "Folder 3",
       description: "Description Folder Three",
       owner: 1,
+      createdAt: "2024-07-16T06:28:28.527Z",
+      lastModified: "2024-07-17T06:28:28.527Z",
       accessRights: {
         1: {
           read: true,
