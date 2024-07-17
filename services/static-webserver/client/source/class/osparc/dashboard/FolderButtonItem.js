@@ -21,14 +21,40 @@
  */
 
 qx.Class.define("osparc.dashboard.FolderButtonItem", {
-  extend: osparc.dashboard.CardBase,
+  extend: qx.ui.form.ToggleButton,
+  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
 
-  construct: function() {
+  construct: function(folderData) {
     this.base(arguments);
+
+    this.set({
+      width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
+      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT
+    });
+
+    const layout = new qx.ui.layout.Grid();
+    layout.setSpacing(5);
+    layout.setColumnFlex(this.self().POS.TITLE.column, 1);
+    this._setLayout(layout);
+
+    [
+      "pointerover",
+      "focus"
+    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+
+    [
+      "pointerout",
+      "focusout"
+    ].forEach(e => this.addListener(e, this._onPointerOut, this));
+
+    this.addListener("changeValue", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
-    this.addListener("changeValue", this.__itemSelected, this);
+    this.set({
+      folderData
+    });
   },
 
   properties: {
@@ -38,192 +64,213 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       init: null,
       apply: "__applyFolderData"
     },
+
+    resourceType: {
+      check: ["folder"],
+      init: "folder",
+      nullable: false
+    },
+
+    folderId: {
+      check: "String",
+      nullable: false
+    },
+
+    title: {
+      check: "String",
+      nullable: true,
+      apply: "__applyTitle"
+    },
+
+    description: {
+      check: "String",
+      nullable: true,
+      apply: "__applyDescription"
+    },
+
+    accessRights: {
+      check: "Object",
+      nullable: true,
+      apply: "__applyAccessRights"
+    },
+
+    sharedAccessRights: {
+      check: "Object",
+      nullable: true,
+      apply: "__applySharedAccessRights"
+    },
+
+    lastModified: {
+      check: "Date",
+      nullable: true,
+      apply: "__applyLastModified"
+    },
+
+    priority: {
+      check: "Number",
+      init: null,
+      nullable: false
+    }
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 24
+    POS: {
+      ICON: {
+        column: 0,
+        row: 0,
+        rowSpan: 2
+      },
+      TITLE: {
+        column: 1,
+        row: 0
+      },
+      DESCRIPTION: {
+        column: 1,
+        row: 0
+      },
+      SHARED: {
+        column: 2,
+        row: 0,
+        rowSpan: 2
+      },
+      LAST_CHANGE: {
+        column: 3,
+        row: 0,
+        rowSpan: 2
+      },
+      MENU: {
+        column: 4,
+        row: 0,
+        rowSpan: 2
+      }
+    }
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "icon": {
+          control = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/folder/24", 32, 32).set({
+            minHeight: 32,
+            minWidth: 32
+          });
+          control.getChildControl("image").set({
+            anonymous: true
+          });
+          this._add(control, this.self().POS.ICON);
+          break;
+        }
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-light",
+            font: "text-14",
+            alignY: "middle",
+            allowGrowX: true,
+            rich: true,
+          });
+          this._add(control, this.self().POS.TITLE);
+          break;
+        case "description":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            font: "text-12",
+            alignY: "middle",
+            allowGrowX: true,
+            rich: true
+          });
+          this._add(control, this.self().POS.DESCRIPTION);
+          break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            minWidth: 50,
+            minWidth: 30,
             alignY: "middle"
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.SHARED
-          });
+          this._add(control, this.self().POS.SHARED);
           break;
-        case "last-change":
+        case "last-modified":
           control = new qx.ui.basic.Label().set({
             anonymous: true,
-            font: "text-13",
+            font: "text-12",
             allowGrowY: false,
-            minWidth: 120,
+            minWidth: 100,
             alignY: "middle"
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
-          });
+          this._add(control, this.self().POS.SHARED);
           break;
-        case "menu-selection-stack":
-          control = new qx.ui.container.Stack();
-          control.set({
-            alignX: "center",
-            alignY: "middle"
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.OPTIONS
-          });
-          break;
-        case "tick-unselected": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Atom().set({
-            appearance: "form-button-outlined",
-            width: this.self().MENU_BTN_DIMENSIONS,
-            height: this.self().MENU_BTN_DIMENSIONS,
-            focusable: false
-          });
-          control.getContentElement().setStyles({
-            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
-          });
-          menuSelectionStack.addAt(control, 1);
-          break;
-        }
-        case "tick-selected": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
-            appearance: "form-button-outlined",
-            width: this.self().MENU_BTN_DIMENSIONS,
-            height: this.self().MENU_BTN_DIMENSIONS,
-            padding: [6, 5],
-            focusable: false
-          });
-          control.getContentElement().setStyles({
-            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
-          });
-          menuSelectionStack.addAt(control, 2);
-          break;
-        }
         case "menu-button": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
             padding: [0, 8],
-            maxWidth: this.self().MENU_BTN_DIMENSIONS,
-            maxHeight: this.self().MENU_BTN_DIMENSIONS,
+            maxWidth: osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS,
+            maxHeight: osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+            "border-radius": `${osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS / 2}px`
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          menuSelectionStack.addAt(control, 0);
+          this._add(control, this.self().POS.MENU);
           break;
         }
       }
       return control || this.base(arguments, id);
     },
 
-    _applyLastChangeDate: function(value, old) {
+    __applyFolderData: function(folderData) {
+      console.log("folderData", folderData);
+      this.getChildControl("icon");
+      this.set({
+        folderId: folderData.id,
+        name: folderData.name,
+        description: folderData.description,
+        accessRights: folderData.accessRights,
+        lastModified: new Date(folderData.lastModified),
+        sharedAccessRights: folderData.sharedAccessRights,
+      });
+    },
+
+    __applyTitle: function(value) {
+      const label = this.getChildControl("title");
+      label.setValue(value);
+    },
+
+    __applyDescription: function(value) {
+      const label = this.getChildControl("description");
+      label.setValue(value);
+    },
+
+    __applyLastModified: function(value) {
       if (value) {
-        const label = this.getChildControl("last-change");
+        const label = this.getChildControl("last-modified");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
-    createOwner: function(label) {
-      if (label === osparc.auth.Data.getInstance().getEmail()) {
-        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
-        return qx.locale.Manager.tr(`My ${resourceAlias}`);
+    __applyAccessRights: function(value) {
+      if (value && value["delete"]) {
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("visible");
+
+        const menu = new qx.ui.menu.Menu().set({
+          position: "bottom-right"
+        });
+        menuButton.setMenu(menu);
       }
-      return osparc.utils.Utils.getNameFromEmail(label);
     },
 
-    _applyOwner: function(value, old) {
-      const label = this.getChildControl("owner");
-      const user = this.createOwner(value);
-      label.setValue(user);
-      label.setVisibility(value ? "visible" : "excluded");
-      return;
-    },
-
-    _applyAccessRights: function(value) {
+    __applySharedAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("shared-icon");
         this._evaluateShareIcon(shareIcon, value);
       }
     },
 
-    _applyTags: function(tags) {
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        const tagsContainer = this.getChildControl("tags");
-        tagsContainer.removeAll();
-        tags.forEach(tag => {
-          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
-          tagUI.set({
-            alignY: "middle",
-            font: "text-12",
-            toolTipText: this.tr("Click to filter by this Tag")
-          });
-          tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
-          tagsContainer.add(tagUI);
-        });
-      }
-    },
-
-    // overridden
-    _applyMultiSelectionMode: function(value) {
-      if (value) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
     __itemSelected: function() {
-      if (this.isResourceType("study") && this.isMultiSelectionMode()) {
-        const selected = this.getValue();
+      this.setValue(false);
 
-        if (this.isLocked() && selected) {
-          this.setValue(false);
-        }
-
-        const tick = this.getChildControl("tick-selected");
-        const untick = this.getChildControl("tick-unselected");
-        this.getChildControl("menu-selection-stack").setSelection([selected ? tick : untick]);
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __showMenuOnly: function() {
-      const menu = this.getChildControl("menu-button");
-      this.getChildControl("menu-selection-stack").setSelection([menu]);
-    },
-
-    _applyMenu: function(value, old) {
-      const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-        osparc.utils.Utils.setIdToWidget(value, "studyItemMenuMenu");
-      }
-      menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    __applyFolderData: function(folderData) {
-
+      console.log("folder tapped", this.getFolderId());
     }
   }
 });
