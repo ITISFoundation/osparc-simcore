@@ -21,6 +21,13 @@ folders = sa.Table(
         doc="name of the folder",
     ),
     sa.Column(
+        "description",
+        sa.String,
+        nullable=False,
+        server_default="",
+        doc="user provided description for the folder",
+    ),
+    sa.Column(
         "owner",
         sa.BigInteger,
         sa.ForeignKey(

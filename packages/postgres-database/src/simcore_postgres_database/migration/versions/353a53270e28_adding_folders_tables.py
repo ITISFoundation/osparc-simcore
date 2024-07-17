@@ -1,8 +1,8 @@
 """adding folders tables
 
-Revision ID: 435285d588f1
+Revision ID: 353a53270e28
 Revises: d1fafda96f4c
-Create Date: 2024-07-17 11:58:40.267467+00:00
+Create Date: 2024-07-17 12:07:41.262343+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "435285d588f1"
+revision = "353a53270e28"
 down_revision = "d1fafda96f4c"
 branch_labels = None
 depends_on = None
@@ -22,6 +22,7 @@ def upgrade():
         "folders",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), server_default="", nullable=False),
         sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
