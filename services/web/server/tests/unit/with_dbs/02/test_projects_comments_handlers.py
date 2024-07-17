@@ -145,18 +145,18 @@ async def test_project_comments_full_workflow(
 
     # Now we will log as a different user
     async with LoggedUser(client) as new_logged_user:
-        # As this user does not have access to the project, they should get 401
+        # As this user does not have access to the project, they should get 403
         resp = await client.get(base_url)
         _, errors = await assert_status(
             resp,
-            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
         )
         assert errors
 
         resp = await client.get(base_url / f"{first_comment_id}")
         _, errors = await assert_status(
             resp,
-            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
         )
         assert errors
 

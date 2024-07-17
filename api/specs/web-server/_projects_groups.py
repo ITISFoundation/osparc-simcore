@@ -1,8 +1,3 @@
-""" Helper script to automatically generate OAS
-
-This OAS are the source of truth
-"""
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable

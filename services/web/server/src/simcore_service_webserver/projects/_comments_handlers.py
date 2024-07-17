@@ -45,7 +45,7 @@ def _handle_project_comments_exceptions(handler: Handler):
         except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 

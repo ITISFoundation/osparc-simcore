@@ -384,7 +384,7 @@ class BaseProjectDB:
             ).with_for_update()
             await connection.execute(blocking_query)
 
-        result = await connection.execute(query)  # <-- Here the query is executed
+        result = await connection.execute(query)
         project_row = await result.first()
 
         if not project_row:
