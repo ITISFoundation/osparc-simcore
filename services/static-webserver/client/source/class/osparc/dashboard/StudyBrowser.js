@@ -70,12 +70,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   statics: {
-    sortStudyList: function(studyList, sortValue) {
+    sortFoldersList: function(studyList, sortValue) {
       const sortByProperty = function(prop) {
         return function(a, b) {
           const x = a.toString().toLowerCase();
           const y = b.toString().toLowerCase();
-          if (prop === "lastChangeDate") {
+          if (prop === "lastModified") {
             return new Date(y[prop]) - new Date(x[prop]);
           }
           if (typeof x[prop] == "number") {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return 0;
         };
       };
-      studyList.sort(sortByProperty(sortValue || "name"));
+      studyList.sort(sortByProperty(sortValue || "lastModified"));
     }
   },
 
@@ -276,8 +276,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __resetStudiesList: function() {
       this._resourcesList = [];
-      const sortByValue = this.getOrderBy().field;
-      this.self().sortStudyList(this._resourcesList, sortByValue);
       this._reloadCards();
     },
 
@@ -289,8 +287,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesList.push(study);
         }
       });
-      const sortByValue = this.getOrderBy().field;
-      this.self().sortStudyList(this._resourcesList, sortByValue);
       this._reloadNewCards();
 
       studiesList.forEach(study => {
@@ -322,29 +318,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       folders.forEach(folder => folder["resourceType"] = "folder");
 
       const sortByValue = this.getOrderBy().field;
-      this.self().sortStudyList(this.__foldersList, sortByValue);
+      this.self().sortFoldersList(this.__foldersList, sortByValue);
       this._reloadNewCards();
-
-      folders.forEach(study => {
-        const state = study["state"];
-        if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
-          // websocket might have already notified that the state was closed.
-          // But the /projects calls response got after the ws message. Ask again to make sure
-          const delay = 2000;
-          const studyId = study["uuid"];
-          setTimeout(() => {
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.getOne("studies", params)
-              .then(studyData => {
-                this.__studyStateReceived(study["uuid"], studyData["state"]);
-              });
-          }, delay);
-        }
-      });
     },
 
     _reloadCards: function() {
