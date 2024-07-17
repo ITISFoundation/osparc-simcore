@@ -124,6 +124,8 @@ class Product(BaseModel):
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
+    # TODO: add property that sets the thing
+
     class Config:
         alias_generator = snake_to_camel  # to export
         allow_population_by_field_name = True

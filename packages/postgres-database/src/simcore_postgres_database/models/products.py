@@ -38,6 +38,7 @@ class Vendor(TypedDict, total=False):
     invitation_url: str  # How to request a trial invitation? (if applies)
     has_landing_page: bool  # Landing page enabled
     address: str  # e.g. Zeughausstrasse 43, 8004 Zurich, Switzerland
+    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "http://example.com/{vtag}.md"
 
 
 class IssueTracker(TypedDict, total=True):
