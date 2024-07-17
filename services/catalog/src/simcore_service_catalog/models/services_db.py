@@ -8,6 +8,7 @@ from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 # -------------------------------------------------------------------
 # Databases models
@@ -58,6 +59,7 @@ class HistoryItem(BaseModel):
     version: ServiceVersion
     deprecated: datetime | None
     created: datetime
+    compatibility_policy: CompatiblePolicyDict | None
 
     def to_api_model(self) -> ServiceRelease:
         return ServiceRelease.construct(
@@ -87,8 +89,10 @@ class ServiceWithHistoryFromDB(BaseModel):
     history: list[HistoryItem]
 
 
-assert set(HistoryItem.__fields__).issubset(  # nosec
-    set(ServiceWithHistoryFromDB.__fields__)
+assert (  # nosec
+    set(HistoryItem.__fields__)
+    .difference({"compatibility_policy"})
+    .issubset(set(ServiceWithHistoryFromDB.__fields__))
 )
 
 

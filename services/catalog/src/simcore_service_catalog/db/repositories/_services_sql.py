@@ -7,7 +7,13 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data, user_to_groups, users
+from ..tables import (
+    services_access_rights,
+    services_compatibility,
+    services_meta_data,
+    user_to_groups,
+    users,
+)
 
 
 def list_services_stmt(
@@ -316,14 +322,22 @@ def get_service_history_stmt(
             services_meta_data.c.version,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict |
         )
         .select_from(
             # joins because access-rights might change per version
             services_meta_data.join(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
+                isouter=True,
+            )
+            .join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
+            )
+            .join(
                 user_to_groups,
                 (user_to_groups.c.gid == services_access_rights.c.gid),
             )
@@ -350,6 +364,8 @@ def get_service_history_stmt(
                 history_subquery.c.deprecated,
                 "created",
                 history_subquery.c.created,
+                "compatibility_policy",  # NOTE: this is the `policy`
+                services_compatibility.c.custom_policy,
             )
         ).label("history"),
     ).group_by(history_subquery.c.key)
