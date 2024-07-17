@@ -7,6 +7,9 @@ assert services_compatibility
 
 
 def test_insert_services_compatibility():
+
+    # services_meta_data
+    # services_compatibility
     # TODO: use this test to produce complete fakes for other tests
     pytest.fail(reason="Not implemented")
 
