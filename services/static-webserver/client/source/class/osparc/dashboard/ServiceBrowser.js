@@ -86,11 +86,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
               servicesList.push(latestService);
             }
           }
-          this.__setResourcesToList(servicesList);
+          this.__setServicesToList(servicesList);
         })
         .catch(err => {
           console.error(err);
-          this.__setResourcesToList([]);
+          this.__setServicesToList([]);
         });
     },
 
@@ -104,7 +104,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
     },
 
-    __setResourcesToList: function(servicesList) {
+    __setServicesToList: function(servicesList) {
       servicesList.forEach(service => service["resourceType"] = "service");
       osparc.service.Utils.sortObjectsBasedOn(servicesList, this.__sortBy);
       this._resourcesList = servicesList;
@@ -207,7 +207,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
       containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
-        this.__setResourcesToList(this._resourcesList);
+        this.__setServicesToList(this._resourcesList);
       }, this);
       this._toolbar.add(containerSortButtons);
     },
