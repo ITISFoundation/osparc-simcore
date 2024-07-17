@@ -27,6 +27,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       paddingBottom: 60
     });
 
+    this.__foldersList = [];
     this.__resourcesList = [];
 
     const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
@@ -89,6 +90,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   members: {
+    __foldersList: null,
     __resourcesList: null,
     __flatList: null,
     __groupedContainers: null,
@@ -270,6 +272,16 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return newCards;
     },
 
+    setFoldersToList: function(foldersList) {
+      this.__foldersList = foldersList;
+    },
+
+    reloadFolders: function() {
+      let folderCards = [];
+      this.__foldersList.forEach(folderData => folderCards.push(this.__folderToCard(folderData)));
+      return folderCards;
+    },
+
     __moveNoGroupToLast: function() {
       const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
       if (idx > -1) {
@@ -361,6 +373,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this.self().sortListByPriority(this.__flatList);
       }
       return cardsCreated;
+    },
+
+    __folderToCard: function(folderData) {
+      const card = this.__createCard(folderData);
+      this.__flatList.add(card);
+      this.self().sortListByPriority(this.__flatList);
+      return card;
     }
   }
 });
