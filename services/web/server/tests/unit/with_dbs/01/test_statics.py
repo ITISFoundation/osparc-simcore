@@ -83,17 +83,20 @@ def client(
 @pytest.mark.parametrize(
     "vcs_release_tag, expected_vcs_url",
     [
-        (
+        pytest.param(
             "latest",
             "https://github.com/ITISFoundation/osparc-simcore/commits/master/",
+            id="master",
         ),
-        (
+        pytest.param(
             "staging_TomBombadil1",
             "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_TomBombadil1",
+            id="staging",
         ),
-        (
+        pytest.param(
             "v1.75.0",
             "https://github.com/ITISFoundation/osparc-simcore/releases/tag/v1.75.0",
+            id="production",
         ),
     ],
 )
@@ -121,25 +124,35 @@ def mock_product_vendor(postgres_db: sa.engine.Engine, template_url: str) -> Non
 @pytest.mark.parametrize(
     "vcs_release_tag, template_url, expected_vcs_url",
     [
-        (
+        pytest.param(
             "v1.75.0",
             "https://example.com/releases/some_target_{vtag}.md",
             "https://example.com/releases/some_target_v1.75.0.md",
+            id="production_replacement_first_exmample",
         ),
-        (
+        pytest.param(
             "v2.1.0",
             "https://github.com/owner/repo/releases/{vtag}.md",
             "https://github.com/owner/repo/releases/v2.1.0.md",
+            id="production_replacement_second_exmample",
         ),
-        (
+        pytest.param(
             "latest",
             "https://github.com/owner/repo/releases/{vtag}.md",
             "https://github.com/ITISFoundation/osparc-simcore/commits/master/",
+            id="master_with_template_in_place",
         ),
-        (
+        pytest.param(
             "staging_TomBombadil1",
             "https://github.com/owner/repo/releases/{vtag}.md",
             "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_TomBombadil1",
+            id="staging_with_template_in_place",
+        ),
+        pytest.param(
+            "v1.75.0",
+            "https://example.com/no_vtag.md",
+            "https://example.com/no_vtag.md",
+            id="vtag_not_repalced_if_missing",
         ),
     ],
 )
