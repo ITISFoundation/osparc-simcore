@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     ].forEach(signalName => {
       nonGroupedContainer.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
     });
-    this._add(this.__nonGroupedContainer);
+    this._add(nonGroupedContainer);
 
     this.__groupedContainers = [];
   },
@@ -232,6 +232,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __cleanAll: function() {
+      if (this.__foldersContainer) {
+        this.__foldersContainer.removeAll();
+        this.__foldersContainer = null;
+      }
       if (this.__nonGroupedContainer) {
         this.__nonGroupedContainer.removeAll();
         this.__nonGroupedContainer = null;
