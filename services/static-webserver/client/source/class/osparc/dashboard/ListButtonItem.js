@@ -236,7 +236,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this.openAccessRights();
         }, this);
         shareIcon.addListener("pointerdown", e => e.stopPropagation());
-        osparc.dashboard.CardBase.evaluateShareIcon(shareIcon, value);
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
 
         if (this.isResourceType("study")) {
           this._setStudyPermissions(value);

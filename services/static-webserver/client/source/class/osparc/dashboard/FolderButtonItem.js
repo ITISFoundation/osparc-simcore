@@ -275,35 +275,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __evaluateShareIcon: function(shareIcon, accessRights) {
-      shareIcon.addListener("tap", e => e.stopPropagation(), this);
-      shareIcon.addListener("pointerdown", e => e.stopPropagation());
-
-      const store = osparc.store.Store.getInstance();
-      Promise.all([
-        store.getGroupEveryone(),
-        store.getProductEveryone(),
-        store.getReachableMembers(),
-        store.getGroupsOrganizations()
-      ])
-        .then(values => {
-          const everyone = values[0] ? [values[0]] : [];
-          const productEveryone = values[1] ? [values[1]] : [];
-          const orgMembs = [];
-          const orgMembers = values[2];
-          for (const gid of Object.keys(orgMembers)) {
-            orgMembs.push(orgMembers[gid]);
-          }
-          const orgs = values.length === 4 ? values[3] : [];
-          const groups = [orgMembs, orgs, productEveryone, everyone];
-          osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
-        });
-    },
-
     __applySharedAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("shared-icon");
-        this.__evaluateShareIcon(shareIcon, value);
+        shareIcon.addListener("tap", e => e.stopPropagation());
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
       }
     },
 
