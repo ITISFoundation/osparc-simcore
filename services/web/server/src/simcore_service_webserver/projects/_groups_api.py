@@ -14,7 +14,7 @@ from ._groups_db import ProjectGroupGetDB
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ProjectGroupGet(BaseModel):

@@ -29,8 +29,6 @@ describe('Calls after logging in', () => {
 
   test('Templates', async () => {
     const responseEnv = await utils.fetchReq('projects?type=template');
-    console.log(responseEnv); // Log the entire response
-    console.log(responseEnv.data); // Log the data specifically
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
