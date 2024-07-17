@@ -212,7 +212,30 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
       shareIcon.addListener("mouseover", () => hint.show(), this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
-    }
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    evaluateShareIcon: function(shareIcon, accessRights) {
+      const store = osparc.store.Store.getInstance();
+      Promise.all([
+        store.getGroupEveryone(),
+        store.getProductEveryone(),
+        store.getReachableMembers(),
+        store.getGroupsOrganizations()
+      ])
+        .then(values => {
+          const everyone = values[0] ? [values[0]] : [];
+          const productEveryone = values[1] ? [values[1]] : [];
+          const orgMembs = [];
+          const orgMembers = values[2];
+          for (const gid of Object.keys(orgMembers)) {
+            orgMembs.push(orgMembers[gid]);
+          }
+          const orgs = values.length === 4 ? values[3] : [];
+          const groups = [orgMembs, orgs, productEveryone, everyone];
+          osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
+        });
+    },
   },
 
   properties: {
@@ -823,40 +846,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openUpdateServices();
     },
-
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    _evaluateShareIcon: function(shareIcon, accessRights) {
-      shareIcon.addListener("tap", e => {
-        e.stopPropagation();
-        this.openAccessRights();
-      }, this);
-      shareIcon.addListener("pointerdown", e => e.stopPropagation());
-
-      const store = osparc.store.Store.getInstance();
-      Promise.all([
-        store.getGroupEveryone(),
-        store.getProductEveryone(),
-        store.getReachableMembers(),
-        store.getGroupsOrganizations()
-      ])
-        .then(values => {
-          const everyone = values[0] ? [values[0]] : [];
-          const productEveryone = values[1] ? [values[1]] : [];
-          const orgMembs = [];
-          const orgMembers = values[2];
-          for (const gid of Object.keys(orgMembers)) {
-            orgMembs.push(orgMembers[gid]);
-          }
-          const orgs = values.length === 4 ? values[3] : [];
-          const groups = [orgMembs, orgs, productEveryone, everyone];
-          this.self().setIconAndTooltip(shareIcon, accessRights, groups);
-        });
-
-      if (this.isResourceType("study")) {
-        this._setStudyPermissions(accessRights);
-      }
-    },
-
 
     _getEmptyWorkbenchIcon: function() {
       let toolTipText = this.tr("Empty") + " ";
