@@ -142,3 +142,48 @@ projects = sa.Table(
         doc="If true, the project is by default not listed in the API",
     ),
 )
+
+
+# ------------------------ TRIGGERS
+new_project_trigger = sa.DDL(
+    """
+DROP TRIGGER IF EXISTS project_creation on projects;
+CREATE TRIGGER project_creation
+AFTER INSERT ON projects
+    FOR EACH ROW
+    EXECUTE PROCEDURE set_project_to_owner_group();
+"""
+)
+
+
+# --------------------------- PROCEDURES
+assign_project_access_rights_to_owner_group_procedure = sa.DDL(
+    """
+CREATE OR REPLACE FUNCTION set_project_to_owner_group() RETURNS TRIGGER AS $$
+DECLARE
+    group_id BIGINT;
+BEGIN
+    -- Fetch the group_id based on the owner from the other table
+    SELECT u.primary_gid INTO group_id
+    FROM users u
+    WHERE u.id = NEW.prj_owner
+    LIMIT 1;
+
+    IF group_id IS NOT NULL THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+        END IF;
+    END IF;
+    RETURN NULL;
+END; $$ LANGUAGE 'plpgsql';
+    """
+)
+
+sa.event.listen(
+    projects, "after_create", assign_project_access_rights_to_owner_group_procedure
+)
+sa.event.listen(
+    projects,
+    "after_create",
+    new_project_trigger,
+)

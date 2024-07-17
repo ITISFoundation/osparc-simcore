@@ -2521,6 +2521,120 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+  /v0/projects/{project_id}/groups/{group_id}:
+    put:
+      tags:
+      - projects
+      summary: Update Project Group
+      operationId: replace_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    post:
+      tags:
+      - projects
+      summary: Create Project Group
+      operationId: create_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    delete:
+      tags:
+      - projects
+      summary: Delete Project Group
+      operationId: delete_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/groups:
+    get:
+      tags:
+      - projects
+      summary: List Project Groups
+      operationId: list_project_groups
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -6484,6 +6598,14 @@ components:
           $ref: '#/components/schemas/ProjectGet'
         error:
           title: Error
+    Envelope_ProjectGroupGet_:
+      title: Envelope[ProjectGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectGroupGet'
+        error:
+          title: Error
     Envelope_ProjectMetadataGet_:
       title: Envelope[ProjectMetadataGet]
       type: object
@@ -6945,6 +7067,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
+      title: Envelope[list[simcore_service_webserver.projects._groups_api.ProjectGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
@@ -9173,6 +9306,39 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+    ProjectGroupGet:
+      title: ProjectGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     ProjectInputGet:
       title: ProjectInputGet
       required:
@@ -11718,6 +11884,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeScreenshot'
+    _ProjectsGroupsBodyParams:
+      title: _ProjectsGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _WalletsGroupsBodyParams:
       title: _WalletsGroupsBodyParams
       required:
@@ -11863,6 +12047,11 @@ components:
           title: Progress Regexp
           type: string
           description: regexp pattern for detecting computational service's progress
+        imageDigest:
+          title: Imagedigest
+          type: string
+          description: Image manifest digest. Note that this is NOT injected as an
+            image label
         owner:
           title: Owner
           type: string

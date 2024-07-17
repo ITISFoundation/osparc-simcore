@@ -24,7 +24,7 @@ from . import projects_api
 from ._common_models import RequestContext
 from ._nodes_handlers import NodePathParams
 from .db import ProjectDBAPI
-from .exceptions import ProjectNotFoundError
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def _handle_projects_nodes_pricing_unit_exceptions(handler: Handler):
         except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except PricingUnitNotFoundError as exc:
+        except (PricingUnitNotFoundError, ProjectInvalidRightsError) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper

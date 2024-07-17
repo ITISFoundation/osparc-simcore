@@ -3,10 +3,15 @@ import logging
 import asyncpg.exceptions
 from aiohttp import web
 from models_library.groups import Group, GroupTypeInModel
+from models_library.projects import ProjectID
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
+from ..projects.api import (
+    create_project_group_without_checking_permissions,
+    delete_project_group_without_checking_permissions,
+)
 from ..projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
 from ..projects.exceptions import ProjectNotFoundError
 from ..users.api import get_user, get_user_id_from_gid, get_users_in_group
@@ -155,11 +160,26 @@ async def replace_current_owner(
 
     # syncing back project data
     try:
+        # Remove previous owner access rights
+        await delete_project_group_without_checking_permissions(
+            app, project_id=ProjectID(project_uuid), group_id=user_primary_gid
+        )
+        # Update project owner in projects table
         await app[APP_PROJECT_DBAPI].update_project_owner_without_checking_permissions(
             new_project_owner=new_project_owner_id,
             new_project_access_rights=project["accessRights"],
             project_uuid=project_uuid,
         )
+        # Add new owner access rights
+        await create_project_group_without_checking_permissions(
+            app,
+            project_id=ProjectID(project_uuid),
+            group_id=new_project_owner_gid,
+            read=True,
+            write=True,
+            delete=True,
+        )
+
     except (
         DatabaseError,
         asyncpg.exceptions.PostgresError,
