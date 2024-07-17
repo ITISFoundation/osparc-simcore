@@ -128,7 +128,6 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             and re.match(_RE_PRODUCTION_RELEASE_VERSION, vtag)
             and product.vendor
             and (template_url := product.vendor.get("release_notes_url_template", None))
-            and template_url
         ):
             # template URL should be somethign like:
             # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
