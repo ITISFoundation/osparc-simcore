@@ -128,24 +128,19 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       },
       TITLE: {
         column: 1,
-        row: 0
+        row: 0,
+        colSpan: 2
       },
-      DESCRIPTION: {
+      SHARED: {
         column: 1,
         row: 1
       },
-      SHARED: {
-        column: 2,
-        row: 0,
-        rowSpan: 2
-      },
       LAST_CHANGE: {
-        column: 3,
-        row: 0,
-        rowSpan: 2
+        column: 2,
+        row: 1
       },
       MENU: {
-        column: 4,
+        column: 3,
         row: 0,
         rowSpan: 2
       }
@@ -165,19 +160,17 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail("@FontAwesome5Solid/folder/24", 32, 32).set({
-            minHeight: 32,
-            minWidth: 32
-          });
-          control.getChildControl("image").set({
-            anonymous: true
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/folder/20").set({
+            anonymous: true,
+            alignY: "middle",
+            alignX: "center"
           });
           this._add(control, this.self().POS.ICON);
           break;
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-light",
+            anonymous: true,
             font: "text-14",
             alignY: "middle",
             allowGrowX: true,
@@ -185,19 +178,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, this.self().POS.TITLE);
           break;
-        case "description":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            font: "text-12",
-            alignY: "middle",
-            allowGrowX: true,
-            rich: true
-          });
-          this._add(control, this.self().POS.DESCRIPTION);
-          break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            minWidth: 30,
+            minWidth: 20,
             alignY: "middle"
           });
           this._add(control, this.self().POS.SHARED);
@@ -210,7 +193,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             minWidth: 100,
             alignY: "middle"
           });
-          this._add(control, this.self().POS.SHARED);
+          this._add(control, this.self().POS.LAST_CHANGE);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -233,7 +216,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __applyFolderData: function(folderData) {
-      console.log("folderData", folderData);
       this.getChildControl("icon");
       this.set({
         cardKey: "folder-" + folderData.id,
@@ -249,11 +231,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
+      this.__updateTooltip();
     },
 
-    __applyDescription: function(value) {
-      const label = this.getChildControl("description");
-      label.setValue(value);
+    __applyDescription: function() {
+      this.__updateTooltip();
     },
 
     __applyLastModified: function(value) {
@@ -282,6 +264,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         shareIcon.addListener("pointerdown", e => e.stopPropagation());
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
       }
+    },
+
+    __updateTooltip: function() {
+      const toolTipText = this.getTitle() + this.getDescription() ? "<br>" + this.getDescription() : null;
+      this.set({
+        toolTipText
+      })
     },
 
     __itemSelected: function() {
