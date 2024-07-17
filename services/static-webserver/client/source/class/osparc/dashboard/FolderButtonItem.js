@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       },
       DESCRIPTION: {
         column: 1,
-        row: 0
+        row: 1
       },
       SHARED: {
         column: 2,
