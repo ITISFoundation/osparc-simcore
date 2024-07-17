@@ -182,7 +182,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           renamer.addListener("labelChanged", e => {
             renamer.close();
             const newLabel = e.getData()["newLabel"];
-            this.setName(newLabel);
+            this.setTitle(newLabel);
           }, this);
           renamer.center();
           renamer.open();
