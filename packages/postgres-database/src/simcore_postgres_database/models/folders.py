@@ -92,25 +92,34 @@ folders_access_rights = sa.Table(
         "read",
         sa.Boolean(),
         nullable=False,
-        doc="read access on folder content",
+        doc=(
+            "if True can: "
+            "view folders inside current folder "
+            "view projects inside current folder"
+        ),
     ),
     sa.Column(
         "write",
         sa.Boolean(),
         nullable=False,
-        doc="write access on folder content",
+        doc=(
+            "if True can: "
+            "create folder inside current folder, "
+            "add project to folder"
+        ),
     ),
     sa.Column(
         "delete",
         sa.Boolean(),
         nullable=False,
-        doc="can remove the the entry pointed by folder_id",
-    ),
-    sa.Column(
-        "admin",
-        sa.Boolean(),
-        nullable=False,
-        doc="can alter folder_access_rights entries except the owner's one",
+        doc=(
+            "if True can: "
+            "share folder, "
+            "rename folder, "
+            "edit folder description, "
+            "delete folder, "
+            "delete project form folder"
+        ),
     ),
     sa.PrimaryKeyConstraint("folder_id", "gid", name="folders_access_rights_pk"),
 )
@@ -138,18 +147,6 @@ folders_to_projects = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-    ),
-    sa.Column(
-        "owner",
-        sa.BigInteger,
-        sa.ForeignKey(
-            "groups.gid",
-            name="fk_folders_to_groups_gid",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-        nullable=True,
-        doc="Traces back the person who added the project to the folder",
     ),
     sa.Column(
         "created_at",

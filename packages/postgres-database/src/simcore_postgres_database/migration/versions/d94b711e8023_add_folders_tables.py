@@ -1,16 +1,15 @@
-"""adding folders tables
+"""add folders tables
 
-Revision ID: 353a53270e28
+Revision ID: d94b711e8023
 Revises: d1fafda96f4c
-Create Date: 2024-07-17 12:07:41.262343+00:00
+Create Date: 2024-07-17 12:26:35.768742+00:00
 
 """
-
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "353a53270e28"
+revision = "d94b711e8023"
 down_revision = "d1fafda96f4c"
 branch_labels = None
 depends_on = None
@@ -50,7 +49,6 @@ def upgrade():
         sa.Column("read", sa.Boolean(), nullable=False),
         sa.Column("write", sa.Boolean(), nullable=False),
         sa.Column("delete", sa.Boolean(), nullable=False),
-        sa.Column("admin", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(
             ["folder_id"],
             ["folders.id"],
@@ -77,7 +75,6 @@ def upgrade():
         "folders_to_projects",
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.Column("project_id", sa.BigInteger(), nullable=False),
-        sa.Column("owner", sa.BigInteger(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
@@ -91,13 +88,6 @@ def upgrade():
             ["folder_id"],
             ["folders.id"],
             name="fk_folders_to_projects_to_folders_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["owner"],
-            ["groups.gid"],
-            name="fk_folders_to_groups_gid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
