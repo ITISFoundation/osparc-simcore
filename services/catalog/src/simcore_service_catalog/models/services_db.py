@@ -55,7 +55,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
         }
 
 
-class HistoryItem(BaseModel):
+class ReleaseFromDB(BaseModel):
     version: ServiceVersion
     deprecated: datetime | None
     created: datetime
@@ -86,11 +86,11 @@ class ServiceWithHistoryFromDB(BaseModel):
     modified: datetime
     deprecated: datetime | None
     # releases
-    history: list[HistoryItem]
+    history: list[ReleaseFromDB]
 
 
 assert (  # nosec
-    set(HistoryItem.__fields__)
+    set(ReleaseFromDB.__fields__)
     .difference({"compatibility_policy"})
     .issubset(set(ServiceWithHistoryFromDB.__fields__))
 )

@@ -8,6 +8,7 @@ from typing import TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
+from typing_extensions import NotRequired, Required
 
 from ._common import (
     column_created_datetime,
@@ -19,8 +20,11 @@ from .users import users
 
 
 class CompatiblePolicyDict(TypedDict, total=False):
-    versions_specifier: str  # SpecifierSet e.g. ~=0.9, SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
-    other_service_key: str | None  # Only necessary if key!=PolicySpecifierDict.key
+    # SpecifierSet e.g. ~=0.9
+    # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
+    versions_specifier: Required[str]
+    # Only necessary if key!=PolicySpecifierDict.key
+    other_service_key: NotRequired[str | None]
 
 
 services_compatibility = sa.Table(

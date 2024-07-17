@@ -161,6 +161,8 @@ async def get_service(
             product_name=product_name,
         )
 
+    service.history
+
     service_manifest = await manifest.get_service(
         key=service_key,
         version=service_version,
