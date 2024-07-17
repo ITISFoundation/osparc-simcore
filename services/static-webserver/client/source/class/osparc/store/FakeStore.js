@@ -22,7 +22,51 @@ qx.Class.define("osparc.store.FakeStore", {
   construct: function() {
     this.base(arguments);
 
-    this.__folders = [];
+    this.__folders = [{
+      id: 1,
+      parentFolder: null,
+      name: "Folder 1",
+      description: "Description Folder One",
+      owner: 1,
+      accessRights: {
+        1: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      },
+    }, {
+      id: 2,
+      parentFolder: null,
+      name: "Folder 2",
+      description: "Description Folder Two",
+      owner: 2,
+      accessRights: {
+        1: {
+          read: true,
+          write: false,
+          delete: false
+        },
+        2: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      },
+    }, {
+      id: 3,
+      parentFolder: 1,
+      name: "Folder 3",
+      description: "Description Folder Three",
+      owner: 1,
+      accessRights: {
+        1: {
+          read: true,
+          write: true,
+          delete: false
+        }
+      },
+    }];
   },
 
   members: {
