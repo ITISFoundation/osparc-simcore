@@ -192,12 +192,9 @@ async def insert_project_in_db(
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
-        if default_config["project"].get("access_rights") or default_config[
-            "project"
-        ].get("accessRights"):
-            _access_rights = default_config["project"].get(
-                "access_rights", {}
-            ) | default_config["project"].get("accessRights", {})
+        if _access_rights := default_config["project"].get(
+            "access_rights", {}
+        ) | default_config["project"].get("accessRights", {}):
             for group_id, permissions in _access_rights.items():
                 await update_or_insert_project_group(
                     client.app,
