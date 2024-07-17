@@ -37,6 +37,13 @@ qx.Class.define("osparc.store.FakeStore", {
           delete: true
         }
       },
+      sharedAccessRights: {
+        1: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      },
     }, {
       id: 2,
       parentFolder: null,
@@ -48,7 +55,14 @@ qx.Class.define("osparc.store.FakeStore", {
       accessRights: {
         1: {
           read: true,
-          write: false,
+          write: true,
+          delete: false
+        }
+      },
+      sharedAccessRights: {
+        1: {
+          read: true,
+          write: true,
           delete: false
         },
         2: {
@@ -69,9 +83,16 @@ qx.Class.define("osparc.store.FakeStore", {
         1: {
           read: true,
           write: true,
-          delete: false
+          delete: true
         }
       },
+      sharedAccessRights: {
+        1: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      }
     }];
   },
 
