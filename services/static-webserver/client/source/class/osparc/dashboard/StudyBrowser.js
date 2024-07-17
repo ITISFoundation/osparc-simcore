@@ -366,6 +366,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const newFolderCard = new osparc.dashboard.FolderButtonNew();
       newFolderCard.setCardKey("new-folder");
       newFolderCard.subscribeToFilterGroup("searchBarFilter");
+      newFolderCard.addListener("createFolder", e => {
+        const folderName = e.getData();
+        osparc.store.FakeStore.getInstance().postFolder(folderName)
+          .then(() => this.__reloadFolders())
+          .catch(err => console.error(err));
+      })
       this._resourcesContainer.addNewFolderCard(newFolderCard);
 
       this._resourcesContainer.setFoldersToList(this.__foldersList);

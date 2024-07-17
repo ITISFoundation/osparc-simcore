@@ -27,7 +27,7 @@ qx.Class.define("osparc.store.FakeStore", {
       parentFolder: null,
       name: "Folder 1",
       description: "Description Folder One",
-      owner: 1,
+      owner: 3,
       createdAt: "2024-07-11T06:28:28.527Z",
       lastModified: "2024-07-13T06:28:28.527Z",
       accessRights: {
@@ -47,7 +47,7 @@ qx.Class.define("osparc.store.FakeStore", {
       parentFolder: null,
       name: "Folder 2",
       description: "Description Folder Two",
-      owner: 2,
+      owner: 3,
       createdAt: "2024-07-13T06:28:28.527Z",
       lastModified: "2024-07-15T06:28:28.527Z",
       accessRights: {
@@ -72,7 +72,7 @@ qx.Class.define("osparc.store.FakeStore", {
       parentFolder: 1,
       name: "Folder 3",
       description: "Description Folder Three",
-      owner: 1,
+      owner: 3,
       createdAt: "2024-07-16T06:28:28.527Z",
       lastModified: "2024-07-17T06:28:28.527Z",
       accessRights: {
@@ -99,8 +99,30 @@ qx.Class.define("osparc.store.FakeStore", {
       });
     },
 
-    postFolder: function(folder) {
-      this.__folders.push(folder);
+    postFolder: function(folderName) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const newFolder = {
+        id: Math.floor(Math.random() * 1000),
+        parentFolder: null,
+        name: folderName,
+        description: "Description",
+        owner: myGroupId,
+        createdAt: new Date().toString(),
+        lastModified: new Date().toString(),
+        accessRights: {
+          read: true,
+          write: true,
+          delete: true
+        },
+        sharedAccessRights: {},
+      };
+      newFolder["sharedAccessRights"][myGroupId] = {
+        read: true,
+        write: true,
+        delete: true
+      };
+      this.__folders.push(newFolder);
+      return new Promise(resolve => resolve(newFolder));
     }
   }
 });

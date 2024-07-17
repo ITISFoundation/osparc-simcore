@@ -37,6 +37,10 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
     this.__buildLayout();
   },
 
+  events: {
+    "createFolder": "qx.event.type.Data"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -76,7 +80,14 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
 
     __itemSelected: function(newVal) {
       if (newVal) {
-        console.log("create new folder");
+        const renamer = new osparc.widget.Renamer("New Folder", "", this.tr("Create Folder"));
+        renamer.addListener("labelChanged", e => {
+          renamer.close();
+          const folderName = e.getData()["newLabel"];
+          this.fireDataEvent("createFolder", folderName);
+        }, this);
+        renamer.center();
+        renamer.open();
       }
       this.setValue(false);
     }
