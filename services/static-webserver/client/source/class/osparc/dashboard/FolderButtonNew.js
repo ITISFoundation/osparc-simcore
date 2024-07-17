@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
       appearance: "pb-new"
     });
 
-    this.addListener("changeValue", this.__itemSelected, this);
+    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
@@ -74,10 +74,11 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
       this.getChildControl("title");
     },
 
-    __itemSelected: function() {
-      this.setValue(false);
-
-      console.log("create new folder");
+    __itemSelected: function(newVal) {
+      if (newVal) {
+        this.setValue(false);
+        console.log("create new folder");
+      }
     }
   }
 });
