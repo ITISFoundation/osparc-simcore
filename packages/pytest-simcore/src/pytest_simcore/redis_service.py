@@ -58,6 +58,9 @@ def redis_service(
     """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
+    monkeypatch.setenv(
+        "REDIS_PASSWORD", str(redis_settings.REDIS_PASSWORD.get_secret_value())
+    )
     return redis_settings
 
 
