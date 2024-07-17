@@ -25,7 +25,7 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
+from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs, JobStatus
 from simcore_service_api_server.models.schemas.studies import JobLogsMap, Study, StudyID
 
 _faker = Faker()
@@ -359,3 +359,52 @@ async def test_get_job_logs(
     )
     assert response.status_code == status.HTTP_200_OK
     _ = JobLogsMap.parse_obj(response.json())
+
+
+async def test_get_study_outputs(
+    client: httpx.AsyncClient,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    mocked_directorv2_service_api_base,
+    mocked_webserver_service_api_base,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_job_outputs.json",
+        side_effects_callbacks=[],
+    )
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs",
+        auth=auth,
+        json={
+            "values": {
+                "inputfile": {
+                    "filename": "inputfile",
+                    "id": "c1dcde67-6434-31c3-95ee-bf5fe1e9422d",
+                }
+            }
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK
+    _job = Job.parse_obj(response.json())
+    _job_id = _job.id
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    _ = JobStatus.parse_obj(response.json())
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    _ = JobOutputs.parse_obj(response.json())

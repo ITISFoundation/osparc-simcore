@@ -11,7 +11,6 @@ from fastapi import FastAPI, HTTPException
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -139,12 +138,6 @@ class DirectorApi:
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
-
-    async def list_all_services(self) -> list[ServiceMetaDataPublished]:
-        # WARNING: this function probably raise ValidationError since director does NOT offer guarantees.
-        # SEE list_registered_services
-        data = await self.get("/services")
-        return parse_obj_as(list[ServiceMetaDataPublished], data)
 
     async def get_service(
         self, service_key: ServiceKey, service_version: ServiceVersion

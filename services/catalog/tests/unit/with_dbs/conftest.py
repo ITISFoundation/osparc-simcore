@@ -14,10 +14,11 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import Extra, parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -447,3 +448,39 @@ async def create_fake_service_data(
         return tuple(fakes)
 
     return _fake_factory
+
+
+@pytest.fixture
+def create_director_list_services_from() -> Callable[
+    [list[dict[str, Any]], list], list[dict[str, Any]]
+]:
+    """Convenience function to merge outputs of
+    - `create_fake_service_data` callable with those of
+    - `expected_director_list_services` fixture
+
+    to produce a new expected_director_list_services
+    """
+
+    class _Loader(ServiceMetaDataPublished):
+        class Config:
+            extra = Extra.ignore
+            allow_population_by_field_name = True
+
+    def _(
+        expected_director_list_services: list[dict[str, Any]],
+        fake_services_data: list,
+    ):
+        return [
+            jsonable_encoder(
+                _Loader.parse_obj(
+                    {
+                        **next(itertools.cycle(expected_director_list_services)),
+                        **data[0],  # service, **access_rights = data
+                    }
+                ),
+                exclude_unset=True,
+            )
+            for data in fake_services_data
+        ]
+
+    return _
