@@ -133,71 +133,23 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return;
       }
 
-      const newAccessRights = this._serializedDataCopy["accessRights"];
+      const newCollaborators = {};
       gids.forEach(gid => {
-        newAccessRights[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", newAccessRights)
+      osparc.info.StudyUtils.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
 
+          this.__pushNotifications(gids);
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
-        });
-
-      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else {
-                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-              }
-            }
-          });
-        });
-    },
-
-    __checkShareePermissions: function(gids) {
-      if (gids.length === 0) {
-        return;
-      }
-
-      const promises = [];
-      gids.forEach(gid => {
-        const params = {
-          url: {
-            "studyId": this._serializedDataCopy["uuid"],
-            "gid": gid
-          }
-        };
-        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
-      });
-      Promise.all(promises)
-        .then(values => {
-          const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length) {
-            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
-            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
-              clickAwayClose: false,
-              resizable: true,
-              showClose: true
-            });
-            win.getChildControl("icon").set({
-              textColor: "warning-yellow"
-            });
-          }
         });
     },
 
@@ -205,16 +157,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       if (item) {
         item.setEnabled(false);
       }
-      const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
-      if (!success) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
-        if (item) {
-          item.setEnabled(true);
-        }
-        return;
-      }
 
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -233,8 +177,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.info.StudyUtils.patchStudyData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+
+      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights[collaboratorGId])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
@@ -244,7 +188,11 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
-        .finally(() => item.setEnabled(true));
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
+        });
     },
 
     _promoteToEditor: function(collaborator, item) {
@@ -307,6 +255,57 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
+    },
+
+    __pushNotifications: function(gids) {
+      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          gids.forEach(gid => {
+            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
+              // it's a user, not an organization
+              const collab = potentialCollaborators[gid];
+              const uid = collab["id"];
+              if (this._resourceType === "study") {
+                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+              } else {
+                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+              }
+            }
+          });
+        });
+    },
+
+    __checkShareePermissions: function(gids) {
+      if (gids.length === 0) {
+        return;
+      }
+
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            "studyId": this._serializedDataCopy["uuid"],
+            "gid": gid
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(values => {
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
+        });
     }
   }
 });
