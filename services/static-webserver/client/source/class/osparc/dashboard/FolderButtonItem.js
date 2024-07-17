@@ -16,39 +16,19 @@
 ************************************************************************ */
 
 /**
- * Widget used for displaying Folder in the Study Browser
+ * Widget used for displaying a Folder in the Study Browser
  *
  */
 
 qx.Class.define("osparc.dashboard.FolderButtonItem", {
-  extend: qx.ui.form.ToggleButton,
-  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
+  extend: osparc.dashboard.FolderButtonBase,
 
   construct: function(folderData) {
     this.base(arguments);
 
     this.set({
-      appearance: "pb-study",
-      width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
-      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
-      padding: 5
+      appearance: "pb-study"
     });
-
-    const layout = new qx.ui.layout.Grid();
-    layout.setSpacing(this.self().SPACING);
-    layout.setColumnFlex(this.self().POS.TITLE.column, 1);
-    this._setLayout(layout);
-
-    [
-      "pointerover",
-      "focus"
-    ].forEach(e => this.addListener(e, this.__onPointerOver, this));
-
-    [
-      "pointerout",
-      "focusout"
-    ].forEach(e => this.addListener(e, this.__onPointerOut, this));
 
     this.addListener("changeValue", this.__itemSelected, this);
 
@@ -60,22 +40,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
   },
 
   properties: {
-    cardKey: {
-      check: "String",
-      nullable: true
-    },
-
     folderData: {
       check: "Object",
       nullable: false,
       init: null,
       apply: "__applyFolderData"
-    },
-
-    resourceType: {
-      check: ["folder"],
-      init: "folder",
-      nullable: false
     },
 
     folderId: {
@@ -111,48 +80,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       check: "Date",
       nullable: true,
       apply: "__applyLastModified"
-    },
-
-    priority: {
-      check: "Number",
-      init: null,
-      nullable: false
     }
   },
 
-  statics: {
-    SPACING: 5,
-    POS: {
-      ICON: {
-        column: 0,
-        row: 0,
-        rowSpan: 2
-      },
-      TITLE: {
-        column: 1,
-        row: 0
-      },
-      SUBTITLE: {
-        column: 1,
-        row: 1
-      },
-      MENU: {
-        column: 2,
-        row: 0,
-        rowSpan: 2
-      }
-    }
-  },
-
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    // overridden
-    _forwardStates: {
-      focused : true,
-      hovered : true,
-      selected : true,
-      dragover : true
-    },
-
+  members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -163,7 +94,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             alignX: "center",
             padding: 5
           });
-          this._add(control, this.self().POS.ICON);
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.ICON);
           break;
         }
         case "title":
@@ -174,7 +105,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             allowGrowX: true,
             rich: true,
           });
-          this._add(control, this.self().POS.TITLE);
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
         case "last-modified":
           control = new qx.ui.basic.Label().set({
@@ -184,7 +115,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             minWidth: 100,
             alignY: "middle"
           });
-          this._add(control, this.self().POS.SUBTITLE);
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -199,7 +130,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS / 2}px`
           });
-          this._add(control, this.self().POS.MENU);
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.MENU);
           break;
         }
       }
@@ -244,6 +175,30 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
+
+        const renameButton = new qx.ui.menu.Button(this.tr("Rename..."));
+        renameButton.addListener("execute", () => {
+          const renamer = new osparc.widget.Renamer(this.getTitle());
+          renamer.addListener("labelChanged", e => {
+            renamer.close();
+            const newLabel = e.getData()["newLabel"];
+            this.setName(newLabel);
+          }, this);
+          renamer.center();
+          renamer.open();
+        });
+        menu.add(renameButton);
+
+        const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+        shareButton.addListener("execute", () => this.__openShareWith(), this);
+        menu.add(shareButton);
+
+        menu.addSeparator();
+
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+        deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
+        menu.add(deleteButton);
+
         menuButton.setMenu(menu);
       }
     },
@@ -268,35 +223,23 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       console.log("folder tapped", this.getFolderId());
     },
 
-    __onPointerOver: function() {
-      this.addState("hovered");
+    __openShareWith: function() {
+      console.log("Open share with", this.getTitle());
     },
 
-    __onPointerOut : function() {
-      this.removeState("hovered");
-    },
-
-    _filter: function() {
-      this.exclude();
-    },
-
-    _unfilter: function() {
-      this.show();
-    },
-
-    _shouldApplyFilter: function(data) {
-      console.log("_shouldApplyFilter", data);
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      console.log("_shouldReactToFilter", data);
-      return false;
+    __deleteStudyRequested: function() {
+      const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
+      });
+      confirmationWin.center();
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          console.log("Delete", this.getTitle());
+        }
+      }, this);
     }
-  },
-
-  destruct: function() {
-    this.removeListener("pointerover", this.__onPointerOver, this);
-    this.removeListener("pointerout", this.__onPointerOut, this);
   }
 });
