@@ -31,7 +31,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     this.set({
       appearance: "pb-study",
       width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
-      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT
+      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
+      padding: 5
     });
 
     const layout = new qx.ui.layout.Grid();
@@ -160,7 +161,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             anonymous: true,
             alignY: "middle",
             alignX: "center",
-            padding: 5
+            paddingRight: 5
           });
           this._add(control, this.self().POS.ICON);
           break;
@@ -202,14 +203,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
             padding: [0, 8],
-            maxWidth: osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS,
-            maxHeight: osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS,
+            maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": `${osparc.dashboard.ListButtonBase.MENU_BTN_DIMENSIONS / 2}px`
+            "border-radius": `${osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS / 2}px`
           });
           this._add(control, this.self().POS.MENU);
           break;
@@ -270,7 +271,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __updateTooltip: function() {
-      const toolTipText = this.getTitle() + this.getDescription() ? "<br>" + this.getDescription() : null;
+      const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : null);
       this.set({
         toolTipText
       })
