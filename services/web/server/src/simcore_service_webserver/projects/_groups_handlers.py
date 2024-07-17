@@ -114,17 +114,17 @@ async def list_project_groups(request: web.Request):
 
 @routes.put(
     f"/{VTAG}/projects/{{project_id}}/groups/{{group_id}}",
-    name="update_project_group",
+    name="replace_project_group",
 )
 @login_required
 @permission_required("project.access_rights.update")
 @_handle_projects_groups_exceptions
-async def update_project_group(request: web.Request):
+async def replace_project_group(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    return await _groups_api.update_project_group(
+    return await _groups_api.replace_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

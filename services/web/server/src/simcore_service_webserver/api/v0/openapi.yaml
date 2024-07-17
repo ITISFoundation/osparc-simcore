@@ -2526,7 +2526,7 @@ paths:
       tags:
       - projects
       summary: Update Project Group
-      operationId: update_project_group
+      operationId: replace_project_group
       parameters:
       - required: true
         schema:

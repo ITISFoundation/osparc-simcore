@@ -96,7 +96,7 @@ async def list_project_groups_by_user_and_project(
     return project_groups_api
 
 
-async def update_project_group(
+async def replace_project_group(
     app: web.Application,
     *,
     user_id: UserID,
@@ -133,13 +133,15 @@ async def update_project_group(
                 reason=f"User does not have access to modify owner project group in project {project_id}",
             )
 
-    project_group_db: ProjectGroupGetDB = await projects_groups_db.update_project_group(
-        app=app,
-        project_id=project_id,
-        group_id=group_id,
-        read=read,
-        write=write,
-        delete=delete,
+    project_group_db: ProjectGroupGetDB = (
+        await projects_groups_db.replace_project_group(
+            app=app,
+            project_id=project_id,
+            group_id=group_id,
+            read=read,
+            write=write,
+            delete=delete,
+        )
     )
 
     project_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.dict())

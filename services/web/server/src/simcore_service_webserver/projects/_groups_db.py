@@ -116,7 +116,7 @@ async def get_project_group(
         return parse_obj_as(ProjectGroupGetDB, row)
 
 
-async def update_project_group(
+async def replace_project_group(
     app: web.Application,
     project_id: ProjectID,
     group_id: GroupID,

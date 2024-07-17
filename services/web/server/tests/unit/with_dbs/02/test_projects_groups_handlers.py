@@ -153,7 +153,7 @@ async def test_projects_groups_full_workflow(
         }
 
         # Update the project permissions of the added user
-        url = client.app.router["update_project_group"].url_for(
+        url = client.app.router["replace_project_group"].url_for(
             project_id=f"{user_project['uuid']}",
             group_id=f"{new_user['primary_gid']}",
         )
