@@ -31,14 +31,12 @@ qx.Class.define("osparc.store.FakeStore", {
       createdAt: "2024-07-11T06:28:28.527Z",
       lastModified: "2024-07-13T06:28:28.527Z",
       accessRights: {
-        1: {
-          read: true,
-          write: true,
-          delete: true
-        }
+        read: true,
+        write: true,
+        delete: true
       },
       sharedAccessRights: {
-        1: {
+        3: {
           read: true,
           write: true,
           delete: true
@@ -53,19 +51,17 @@ qx.Class.define("osparc.store.FakeStore", {
       createdAt: "2024-07-13T06:28:28.527Z",
       lastModified: "2024-07-15T06:28:28.527Z",
       accessRights: {
-        1: {
-          read: true,
-          write: true,
-          delete: false
-        }
+        read: true,
+        write: true,
+        delete: false
       },
       sharedAccessRights: {
-        1: {
+        3: {
           read: true,
           write: true,
           delete: false
         },
-        2: {
+        9: {
           read: true,
           write: true,
           delete: true
@@ -80,14 +76,12 @@ qx.Class.define("osparc.store.FakeStore", {
       createdAt: "2024-07-16T06:28:28.527Z",
       lastModified: "2024-07-17T06:28:28.527Z",
       accessRights: {
-        1: {
-          read: true,
-          write: true,
-          delete: true
-        }
+        read: true,
+        write: true,
+        delete: true
       },
       sharedAccessRights: {
-        1: {
+        3: {
           read: true,
           write: true,
           delete: true

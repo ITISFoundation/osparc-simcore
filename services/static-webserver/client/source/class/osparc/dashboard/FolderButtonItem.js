@@ -35,7 +35,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     });
 
     const layout = new qx.ui.layout.Grid();
-    layout.setSpacing(5);
+    layout.setSpacing(this.self().SPACING);
     layout.setColumnFlex(this.self().POS.TITLE.column, 1);
     this._setLayout(layout);
 
@@ -120,6 +120,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
   },
 
   statics: {
+    SPACING: 5,
     POS: {
       ICON: {
         column: 0,
@@ -158,7 +159,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/folder/20").set({
             anonymous: true,
             alignY: "middle",
-            alignX: "center"
+            alignX: "center",
+            padding: 5
           });
           this._add(control, this.self().POS.ICON);
           break;
@@ -174,12 +176,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           this._add(control, this.self().POS.TITLE);
           break;
         case "subtitle-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(this.self().SPACING));
           this._add(control, this.self().POS.SUBTITLE);
           break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            minWidth: 20,
+            minWidth: 15,
             alignY: "middle"
           });
           this.getChildControl("subtitle-layout").addAt(control, 0);
