@@ -63,29 +63,29 @@ async def _eval_custom_compatibility(
     repo: ServicesRepository,
     product_name: ProductName,
     user_id: UserID,
-    compatibility_policy: CompatiblePolicyDict,
     target_version: ServiceVersion,
-    service_versions: list[Version],
+    released_versions: list[Version],
+    compatibility_policy: CompatiblePolicyDict,
 ) -> Compatibility | None:
     # TODO: guarantees on these data structures!
-    versions_specifier = SpecifierSet(compatibility_policy["versions_specifier"])
 
     other_service_key = compatibility_policy.get("other_service_key")
     other_service_versions = None
 
     if other_service_key and (
-        other_service := await repo.get_service_with_history(
+        other_service_history := await repo.get_service_history(
             product_name=product_name,
             user_id=user_id,
             key=ServiceKey(other_service_key),
-            version=None,  # TODO: get_service_history(service_key)
         )
     ):
-        other_service_versions = _to_versions(other_service.history)
+        other_service_versions = _to_versions(other_service_history)
+
+    versions_specifier = SpecifierSet(compatibility_policy["versions_specifier"])
 
     if version := _get_latest_compatible_version(
         target_version,
-        other_service_versions or service_versions,
+        other_service_versions or released_versions,
         versions_specifier,  # custom policy
     ):
         if other_service_key:
@@ -98,17 +98,17 @@ async def _eval_custom_compatibility(
     return None
 
 
-async def eval_service_compatibility(
+async def eval_service_compatibility_map(
     repo: ServicesRepository,
     product_name: ProductName,
     user_id: UserID,
-    service_history: list[ReleaseFromDB],
+    service_release_history: list[ReleaseFromDB],
 ) -> dict[ServiceVersion, Compatibility]:
 
-    latest_first_versions = _to_versions(service_history)
+    released_versions = _to_versions(service_release_history)
 
     result = {}
-    for release in service_history:
+    for release in service_release_history:
         compatibility = None
 
         # custom compatibility policy
@@ -118,13 +118,13 @@ async def eval_service_compatibility(
                 user_id=user_id,
                 repo=repo,
                 target_version=release.version,
+                released_versions=released_versions,
                 compatibility_policy=release.compatibility_policy,
-                service_versions=latest_first_versions,
             )
 
         elif version := _get_latest_compatible_version(
             release.version,
-            latest_first_versions,
+            released_versions,
             None,  # default policy
         ):
             compatibility = Compatibility(can_update_to=ServiceKey(f"{version}"))

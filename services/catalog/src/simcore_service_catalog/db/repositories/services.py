@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import PositiveInt, ValidationError
+from pydantic import PositiveInt, ValidationError, parse_obj_as
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -23,6 +23,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 
 from ...models.services_db import (
+    ReleaseFromDB,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceWithHistoryFromDB,
@@ -385,6 +386,27 @@ class ServicesRepository(BaseRepository):
         ]
 
         return (total_count, items_page)
+
+    async def get_service_history(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+    ) -> list[ReleaseFromDB] | None:
+
+        stmt_history = get_service_history_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            service_key=key,
+        )
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_history)
+            row = result.one_or_none()
+
+        return parse_obj_as(list[ReleaseFromDB], row.history) if row else None
 
     # Service Access Rights ----
 

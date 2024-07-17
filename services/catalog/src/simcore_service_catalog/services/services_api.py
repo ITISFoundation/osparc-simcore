@@ -8,6 +8,7 @@ from models_library.api_schemas_catalog.services import (
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
+from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -25,6 +26,7 @@ from simcore_service_catalog.services import manifest
 from simcore_service_catalog.services.director import DirectorApi
 
 from ..db.repositories.services import ServicesRepository
+from .compatibility import eval_service_compatibility_map
 from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
@@ -42,10 +44,13 @@ def _db_to_api_model(
     service_db: ServiceWithHistoryFromDB,
     access_rights_db: list[ServiceAccessRightsAtDB],
     service_manifest: ServiceMetaDataPublished,
+    compatibility_map: dict[ServiceKey, Compatibility] | None = None,
 ) -> ServiceGetV2:
-    assert (
+    compatibility_map = compatibility_map or {}
+    assert (  # nosec
         _deduce_service_type_from(service_db.key) == service_manifest.service_type
-    )  # nosec
+    )
+
     return ServiceGetV2(
         key=service_db.key,
         version=service_db.version,
@@ -70,7 +75,15 @@ def _db_to_api_model(
         },
         classifiers=service_db.classifiers,
         quality=service_db.quality,
-        history=[h.to_api_model() for h in service_db.history],
+        history=[
+            ServiceRelease.construct(
+                version=h.version,
+                released=h.created,
+                retired=h.deprecated,
+                compatibility=compatibility_map.get(h.version),
+            )
+            for h in service_db.history
+        ],
     )
 
 
@@ -161,7 +174,12 @@ async def get_service(
             product_name=product_name,
         )
 
-    service.history
+    compatibility_map = await eval_service_compatibility_map(
+        repo,
+        product_name=product_name,
+        user_id=user_id,
+        service_release_history=service.history,
+    )
 
     service_manifest = await manifest.get_service(
         key=service_key,
@@ -169,7 +187,7 @@ async def get_service(
         director_client=director_api,
     )
 
-    return _db_to_api_model(service, access_rights, service_manifest)
+    return _db_to_api_model(service, access_rights, service_manifest, compatibility_map)
 
 
 async def update_service(

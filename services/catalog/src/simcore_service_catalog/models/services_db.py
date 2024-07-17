@@ -3,7 +3,6 @@ from typing import Any, ClassVar
 
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
-from models_library.services_history import ServiceRelease
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
@@ -60,13 +59,6 @@ class ReleaseFromDB(BaseModel):
     deprecated: datetime | None
     created: datetime
     compatibility_policy: CompatiblePolicyDict | None
-
-    def to_api_model(self) -> ServiceRelease:
-        return ServiceRelease.construct(
-            version=self.version,
-            released=self.created,
-            retired=self.deprecated,
-        )
 
 
 class ServiceWithHistoryFromDB(BaseModel):
