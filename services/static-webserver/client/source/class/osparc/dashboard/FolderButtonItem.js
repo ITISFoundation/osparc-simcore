@@ -157,7 +157,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/folder/20").set({
+          control = new osparc.dashboard.FolderWithSharedIcon().set({
             anonymous: true,
             alignY: "middle",
             alignX: "center",
@@ -176,17 +176,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, this.self().POS.TITLE);
           break;
-        case "subtitle-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(this.self().SPACING));
-          this._add(control, this.self().POS.SUBTITLE);
-          break;
-        case "shared-icon":
-          control = new qx.ui.basic.Image().set({
-            minWidth: 15,
-            alignY: "middle"
-          });
-          this.getChildControl("subtitle-layout").addAt(control, 0);
-          break;
         case "last-modified":
           control = new qx.ui.basic.Label().set({
             anonymous: true,
@@ -195,9 +184,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             minWidth: 100,
             alignY: "middle"
           });
-          this.getChildControl("subtitle-layout").addAt(control, 1, {
-            flex: 1
-          });
+          this._add(control, this.self().POS.SUBTITLE);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -263,9 +250,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applySharedAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        const shareIcon = this.getChildControl("shared-icon");
-        shareIcon.addListener("tap", e => e.stopPropagation());
-        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
       }
     },

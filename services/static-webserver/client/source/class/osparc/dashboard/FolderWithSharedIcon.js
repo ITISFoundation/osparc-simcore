@@ -24,8 +24,10 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
-      width: 20,
-      alignX: "center"
+      width: 30,
+      height: 40,
+      alignX: "center",
+      alignY: "middle"
     });
 
     this._createChildControlImpl("folder-icon");
@@ -38,8 +40,7 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
       switch (id) {
         case "folder-icon": {
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/folder/20",
-            textColor: "green"
+            source: "@FontAwesome5Solid/folder/26"
           });
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
@@ -52,12 +53,12 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
         }
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            textColor: "blue",
-            padding: [0, 4]
+            textColor: "strong-main",
+            padding: 0
           });
           this._add(control, {
-            bottom: 8,
-            right: 4
+            bottom: 6,
+            left: 3
           });
           break;
       }
