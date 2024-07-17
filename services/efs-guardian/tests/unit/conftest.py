@@ -14,7 +14,7 @@ import yaml
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_efs_guardian.core.application import create_app
@@ -30,7 +30,6 @@ pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
 ]

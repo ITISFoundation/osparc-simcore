@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.users import UserID
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from tests.helpers.utils import has_datcore_tokens
 

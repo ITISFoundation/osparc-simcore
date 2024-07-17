@@ -20,16 +20,16 @@ from types_aiobotocore_ec2.client import EC2Client
 
 @pytest.fixture
 async def ec2_client(
-    mocked_ec2_server_settings: EC2Settings,
+    ec2_settings: EC2Settings,
 ) -> AsyncIterator[EC2Client]:
     session = aioboto3.Session()
     exit_stack = contextlib.AsyncExitStack()
     session_client = session.client(
         "ec2",
-        endpoint_url=mocked_ec2_server_settings.EC2_ENDPOINT,
-        aws_access_key_id=mocked_ec2_server_settings.EC2_ACCESS_KEY_ID,
-        aws_secret_access_key=mocked_ec2_server_settings.EC2_SECRET_ACCESS_KEY,
-        region_name=mocked_ec2_server_settings.EC2_REGION_NAME,
+        endpoint_url=ec2_settings.EC2_ENDPOINT,
+        aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID,
+        aws_secret_access_key=ec2_settings.EC2_SECRET_ACCESS_KEY,
+        region_name=ec2_settings.EC2_REGION_NAME,
     )
     assert isinstance(session_client, ClientCreatorContext)
     ec2_client = cast(EC2Client, await exit_stack.enter_async_context(session_client))

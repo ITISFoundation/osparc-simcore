@@ -7,8 +7,8 @@ from collections.abc import Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus

@@ -9,7 +9,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.faker_factories import (
     random_api_key,
     random_product,
     random_user,

@@ -42,6 +42,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   properties: {
+    // stores position and/or marker
     workbench: {
       check: "Object",
       init: {},
@@ -101,6 +102,11 @@ qx.Class.define("osparc.data.model.StudyUI", {
       if (annotationId in this.getAnnotations()) {
         delete this.getAnnotations()[annotationId];
       }
+    },
+
+    removeNode: function(nodeId) {
+      // remove it from slideshow
+      this.getSlideshow().removeNode(nodeId);
     },
 
     serialize: function() {

@@ -82,7 +82,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let includeProductEveryone = false;
       if (this.__showOrganizations === false) {
         includeProductEveryone = false;
-      } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
+      } else if (this.__resourceData && this.__resourceData["resourceType"] === "study") {
         // studies can't be shared with ProductEveryone
         includeProductEveryone = false;
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {

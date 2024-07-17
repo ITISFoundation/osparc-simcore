@@ -1,6 +1,5 @@
 # Collection of tests fixtures for integration testing
 from importlib.metadata import version
-from pathlib import Path
 
 import pytest
 
@@ -16,8 +15,11 @@ def pytest_addoption(parser: pytest.Parser):
         help="Keep stack/registry up after fixtures closes",
     )
 
-    # DUMMY
-    parser.addini("HELLO", "Dummy pytest.ini setting")
+
+@pytest.fixture(scope="session")
+def keep_docker_up(request: pytest.FixtureRequest) -> bool:
+    flag: bool = bool(request.config.getoption(name="--keep-docker-up", default=False))
+    return flag
 
 
 @pytest.fixture

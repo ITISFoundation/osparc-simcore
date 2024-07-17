@@ -19,9 +19,9 @@ from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from utils import (
@@ -227,6 +227,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
+    mock_osparc_variables_api_auth_rpc: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

@@ -2,12 +2,10 @@
 
 """
 
-from typing import TypeAlias
 
 from pydantic import BaseModel, Field
-from pydantic.types import PositiveInt
 
-GroupId: TypeAlias = PositiveInt
+from .users import GroupID
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -21,7 +19,7 @@ class ServiceGroupAccessRights(BaseModel):
 
 
 class ServiceAccessRights(BaseModel):
-    access_rights: dict[GroupId, ServiceGroupAccessRights] | None = Field(
+    access_rights: dict[GroupID, ServiceGroupAccessRights] | None = Field(
         None,
         alias="accessRights",
         description="service access rights per group id",

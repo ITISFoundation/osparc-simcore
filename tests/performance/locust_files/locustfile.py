@@ -3,18 +3,22 @@
 #
 
 import logging
-import os
+from uuid import UUID
 
 import faker
-from dotenv import load_dotenv
 from locust import HttpUser, between, task
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 logging.basicConfig(level=logging.INFO)
 
 fake = faker.Faker()
 
-load_dotenv()  # take environment variables from .env
-logging.info("TEMPLATE_PROJECT_ID = %s", os.environ["TEMPLATE_PROJECT_ID"])
+
+class TemplateSettings(BaseSettings):
+    TEMPLATE_PROJECT_ID: UUID = Field(
+        default=..., examples=["8de6acbe-ee58-46cd-8858-b925b96bc698"]
+    )
 
 
 class WebApiUser(HttpUser):
@@ -25,6 +29,7 @@ class WebApiUser(HttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.template_id = TemplateSettings().TEMPLATE_PROJECT_ID
         self.email = fake.email()
         self.count = 0
 
@@ -38,7 +43,7 @@ class WebApiUser(HttpUser):
 
         # WARNING: this template needs to be created and shared with everybody
         self.client.post(
-            f"/v0/projects?from_study={os.environ['TEMPLATE_PROJECT_ID']}",
+            f"/v0/projects?from_study={self.template_id}",
             json={
                 "uuid": "",
                 "name": f"TEST #{self.count}",

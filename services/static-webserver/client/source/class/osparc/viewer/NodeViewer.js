@@ -25,55 +25,54 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.__initIFrame();
-    this.__iFrameChanged();
-
-    this.set({
-      studyId,
-      nodeId
-    });
-
     this.self().openStudy(studyId)
-      .then(() => {
-        this.__nodeState();
+      .then(studyData => {
+        if (studyData["workbench"] && nodeId in studyData["workbench"]) {
+          const nodeData = studyData["workbench"][nodeId];
+          const key = nodeData["key"];
+          const version = nodeData["version"];
+
+          // create study
+          const study = new osparc.data.model.Study(studyData);
+          this.setStudy(study);
+
+          // create node
+          const node = new osparc.data.model.Node(study, key, version, nodeId);
+          this.setNode(node);
+
+          node.addListener("retrieveInputs", e => {
+            const data = e.getData();
+            const portKey = data["portKey"];
+            node.retrieveInputs(portKey);
+          }, this);
+
+          node.initIframeHandler();
+
+          const iframeHandler = node.getIframeHandler();
+          if (iframeHandler) {
+            iframeHandler.startPolling();
+            iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
+            iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
+            this.__iFrameChanged();
+
+            this.__attachSocketEventHandlers();
+          }
+        }
       })
-      .catch(err => {
-        console.error(err);
-      });
+      .catch(err => console.error(err));
   },
 
   properties: {
-    loadingPage: {
-      check: "osparc.ui.message.Loading",
+    study: {
+      check: "osparc.data.model.Study",
       init: null,
-      nullable: true
-    },
-
-    iFrame: {
-      check: "osparc.widget.PersistentIframe",
-      init: null,
-      nullable: true
-    },
-
-    studyId: {
-      check: "String",
       nullable: false
     },
 
-    nodeId: {
-      check: "String",
+    node: {
+      check: "osparc.data.model.Node",
+      init: null,
       nullable: false
-    },
-
-    serviceUrl: {
-      check: "String",
-      nullable: true
-    },
-
-    dynamicV2: {
-      check: "Boolean",
-      init: false,
-      nullable: true
     }
   },
 
@@ -90,144 +89,43 @@ qx.Class.define("osparc.viewer.NodeViewer", {
   },
 
   members: {
-    __initLoadingPage: function() {
-      const loadingPage = new osparc.ui.message.Loading().set({
-        header: this.tr("Starting viewer")
-      });
-      this.setLoadingPage(loadingPage);
-    },
-
-    __initIFrame: function() {
-      this.__initLoadingPage();
-
-      const iframe = new osparc.widget.PersistentIframe();
-      this.setIFrame(iframe);
-    },
-
-    __nodeState: function() {
-      const params = {
-        url: {
-          "studyId": this.getStudyId(),
-          nodeId: this.getNodeId()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getNode", params)
-        .then(data => this.__onNodeState(data))
-        .catch(() => osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
-    },
-
-    __onNodeState: function(data) {
-      const serviceState = data["service_state"];
-      if (serviceState) {
-        this.getLoadingPage().setHeader(serviceState + " viewer");
-      }
-      switch (serviceState) {
-        case "idle": {
-          const interval = 1000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
-          break;
-        }
-        case "unknown":
-        case "starting":
-        case "connecting":
-        case "pulling": {
-          const interval = 5000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
-          break;
-        }
-        case "pending": {
-          const interval = 10000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
-          break;
-        }
-        case "running": {
-          const nodeId = data["service_uuid"];
-          if (nodeId !== this.getNodeId()) {
-            return;
-          }
-
-          const {
-            srvUrl,
-            isDynamicV2
-          } = osparc.utils.Utils.computeServiceUrl(data);
-          this.setDynamicV2(isDynamicV2);
-          if (srvUrl) {
-            this.__waitForServiceReady(srvUrl);
-          }
-          break;
-        }
-        case "complete":
-          break;
-        case "deprecated":
-        case "retired":
-        case "failed": {
-          const msg = this.tr("Service failed: ") + data["service_message"];
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          return;
-        }
-        default:
-          console.error(serviceState, "service state not supported");
-          break;
-      }
-    },
-
-    __waitForServiceReady: function(srvUrl) {
-      // ping for some time until it is really ready
-      const pingRequest = new qx.io.request.Xhr(srvUrl);
-      pingRequest.addListenerOnce("success", () => {
-        this.__serviceReadyIn(srvUrl);
-      }, this);
-      pingRequest.addListenerOnce("fail", () => {
-        const interval = 2000;
-        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
-      });
-      pingRequest.send();
-    },
-
-    __serviceReadyIn: function(srvUrl) {
-      this.setServiceUrl(srvUrl);
-      this.__retrieveInputs();
-    },
-
-    __retrieveInputs: function() {
-      const srvUrl = this.getServiceUrl();
-      if (srvUrl) {
-        const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudyId(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
-        const updReq = new qx.io.request.Xhr();
-        const reqData = {
-          "port_keys": []
-        };
-        updReq.set({
-          url: urlRetrieve,
-          method: "POST",
-          requestData: qx.util.Serializer.toJson(reqData)
-        });
-        updReq.addListener("success", e => {
-          this.getIFrame().setSource(srvUrl);
-          this.__iFrameChanged();
-        }, this);
-        updReq.send();
-      }
-    },
-
     __iFrameChanged: function() {
       this._removeAll();
 
-      const loadingPage = this.getLoadingPage();
-      const iFrame = this.getIFrame();
+      const iframeHandler = this.getNode().getIframeHandler();
+
+      const loadingPage = iframeHandler.getLoadingPage();
+      const iFrame = iframeHandler.getIFrame();
       const src = iFrame.getSource();
-      let iFrameView;
-      if (src === null || src === "about:blank") {
-        iFrameView = loadingPage;
-      } else {
-        this.getLayoutParent().set({
-          zIndex: iFrame.getZIndex()-1
-        });
-        iFrameView = iFrame;
-      }
+      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
       this._add(iFrameView, {
         flex: 1
       });
+    },
+
+    __attachSocketEventHandlers: function() {
+      this.__listenToNodeUpdated();
+      this.__listenToNodeProgress();
+    },
+
+    __listenToNodeUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeUpdated")) {
+        socket.on("nodeUpdated", data => {
+          this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    __listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeProgress")) {
+        socket.on("nodeProgress", data => {
+          this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
     }
   }
 });

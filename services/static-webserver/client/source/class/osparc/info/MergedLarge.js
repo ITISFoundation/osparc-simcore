@@ -400,14 +400,15 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __patchStudy: function(fieldKey, value) {
-      this.getStudy().patchStudy(fieldKey, value)
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

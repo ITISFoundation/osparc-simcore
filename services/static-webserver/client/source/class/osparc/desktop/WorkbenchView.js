@@ -58,6 +58,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         backgroundColor: "#007fd4", // Visual Studio blue
         opacity: 1
       });
+    },
+
+    openNodeDataManager: function(node) {
+      const nodeDataManager = new osparc.widget.NodeDataManager(null, node.getNodeId());
+      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
+        appearance: "service-window"
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
   },
 
@@ -725,9 +734,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        this.__iFrameChanged(node);
-
+        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(node), this);
         iFrame.addListener("load", () => this.__iFrameChanged(node), this);
+        this.__iFrameChanged(node);
       } else {
         // This will keep what comes after at the bottom
         this.__iframePage.add(new qx.ui.core.Spacer(), {
@@ -985,13 +994,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
       const spacing = 8;
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing*2));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        separator: "separator-vertical",
+        spacing: spacing*2
+      }));
+
+      this.__serviceOptionsPage.bind("width", vBox, "width");
 
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const inputsForm = node.getPropsForm().set({
-          allowGrowX: false
-        });
+        const inputsForm = node.getPropsForm();
         const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
         inputs._innerContainer.set({
           margin: spacing
@@ -1013,7 +1025,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         allowGrowY: false
       });
       osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
-      nodeFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
+      nodeFilesBtn.addListener("execute", () => this.self().openNodeDataManager(node));
       outputsBox.add(nodeFilesBtn);
 
       const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);

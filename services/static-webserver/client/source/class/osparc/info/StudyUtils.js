@@ -190,14 +190,15 @@ qx.Class.define("osparc.info.StudyUtils", {
       const cb = new qx.ui.form.CheckBox().set({
         value: "disableServiceAutoStart" in devObj ? !devObj["disableServiceAutoStart"] : true,
         label: qx.locale.Manager.tr("Autostart services"),
-        toolTipText: qx.locale.Manager.tr("This will help opening and closing studies faster"),
+        font: "text-14",
+        toolTipText: qx.locale.Manager.tr("Disabling this will help opening and closing studies/projects faster"),
         iconPosition: "right"
       });
       cb.addListener("changeValue", e => {
         const newVal = e.getData();
         const devObjCopy = osparc.utils.Utils.deepCloneObject(devObj);
         devObjCopy["disableServiceAutoStart"] = !newVal;
-        study.patchStudy("dev", devObjCopy);
+        study.patchStudy({"dev": devObjCopy});
       });
       return cb;
     },

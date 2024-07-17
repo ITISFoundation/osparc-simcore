@@ -21,7 +21,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import PositiveInt, parse_obj_as
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,

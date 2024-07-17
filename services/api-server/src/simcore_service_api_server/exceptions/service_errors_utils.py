@@ -2,11 +2,13 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, NamedTuple, TypeAlias
+from inspect import signature
+from typing import Any, NamedTuple, TypeAlias, TypeVar
 
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
 from ..models.schemas.errors import ErrorGet
 
@@ -48,7 +50,8 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, ToApiTuple]
+E = TypeVar("E", bound=BaseBackEndError)
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, E]
 
 
 def _get_http_exception_kwargs(
@@ -60,18 +63,9 @@ def _get_http_exception_kwargs(
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if mapped := http_status_map.get(service_error.response.status_code):
-        in_api = ToApiTuple(*mapped)
-        status_code = in_api.status_code
-        if in_api.detail:
-            if callable(in_api.detail):
-                detail = f"{in_api.detail(detail_kwargs)}."
-            else:
-                detail = in_api.detail
-        else:
-            detail = f"{service_error}."
-
-    elif service_error.response.status_code in {
+    if exception_type := http_status_map.get(service_error.response.status_code):
+        raise exception_type(**detail_kwargs)
+    if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,
         status.HTTP_504_GATEWAY_TIMEOUT,
@@ -133,6 +127,8 @@ def service_exception_mapper(
     http_status_map: HttpStatusMap,
 ):
     def _decorator(func):
+        _assert_correct_kwargs(func=func, status_map=http_status_map)
+
         @wraps(func)
         async def _wrapper(*args, **kwargs):
             with service_exception_handler(service_name, http_status_map, **kwargs):
@@ -141,3 +137,16 @@ def service_exception_mapper(
         return _wrapper
 
     return _decorator
+
+
+def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
+    _required_kwargs = {
+        name
+        for name, param in signature(func).parameters.items()
+        if param.kind == param.KEYWORD_ONLY
+    }
+    for _, exc_type in status_map.items():
+        _exception_inputs = exc_type.named_fields()
+        assert _exception_inputs.issubset(
+            _required_kwargs
+        ), f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"  # nosec

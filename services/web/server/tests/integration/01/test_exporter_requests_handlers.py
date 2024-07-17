@@ -15,8 +15,8 @@ import aiofiles
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
-from pytest_simcore.helpers.utils_projects import (
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_projects import (
     create_project,
     delete_all_projects,
     empty_project_data,
@@ -156,7 +156,6 @@ def client(
     assert cfg["rest"]["enabled"]
 
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["exporter"]["enabled"] = True
 
     monkeypatch_setenv_from_app_config(cfg)

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
@@ -48,7 +48,6 @@ def client(
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection

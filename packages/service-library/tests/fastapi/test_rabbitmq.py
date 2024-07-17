@@ -12,8 +12,8 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client, setup_rabbit
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings

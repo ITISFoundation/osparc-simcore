@@ -1,7 +1,9 @@
+import re
 from typing import Any, ClassVar
 
 from pydantic import (
     BaseModel,
+    ConstrainedStr,
     Extra,
     Field,
     StrictBool,
@@ -19,6 +21,13 @@ from .utils.json_schema import (
     any_ref_key,
     jsonschema_validate_schema,
 )
+
+
+class PropertyTypeStr(ConstrainedStr):
+    regex = re.compile(PROPERTY_TYPE_RE)
+
+    class Config:
+        frozen = True
 
 
 class BaseServiceIOModel(BaseModel):
@@ -44,7 +53,7 @@ class BaseServiceIOModel(BaseModel):
     )
 
     # mathematical and physics descriptors
-    property_type: str = Field(
+    property_type: PropertyTypeStr = Field(
         ...,
         alias="type",
         description="data type expected on this input glob matching for data type is allowed",
@@ -61,7 +70,6 @@ class BaseServiceIOModel(BaseModel):
             "data:application/hdf5",
             "data:application/edu.ucdavis@ceclancy.xyz",
         ],
-        regex=PROPERTY_TYPE_RE,
     )
 
     content_schema: dict[str, Any] | None = Field(

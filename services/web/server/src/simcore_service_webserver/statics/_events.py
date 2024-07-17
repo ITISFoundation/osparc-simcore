@@ -1,4 +1,5 @@
 import logging
+import re
 from copy import deepcopy
 
 from aiohttp import web
@@ -27,6 +28,8 @@ from .settings import (
     get_plugin_settings,
 )
 
+_RE_PRODUCTION_RELEASE_VERSION = r"^v\d+\.\d+\.\d+$"
+
 _logger = logging.getLogger(__name__)
 
 
@@ -48,7 +51,7 @@ _STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = {
 
 async def create_cached_indexes(app: web.Application) -> None:
     """
-    Currently the static resources are contain 4 folders: osparc, s4l, s4llite, s4lacad, tis
+    Currently the static resources contain N folders: osparc, s4l, s4llite, s4lacad, s4lengine, tis
     each of them contain and index.html to be served to as the root of the site
     for each type of frontend.
 
@@ -117,6 +120,18 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         # Adds specifics to login settings
         if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
             data["webserverLogin"].update({"LOGIN_2FA_REQUIRED": v})
+
+        # replace vcsReleaseUrl with curated release url
+        vtag = app_settings.SIMCORE_VCS_RELEASE_TAG
+        if (
+            vtag
+            and re.match(_RE_PRODUCTION_RELEASE_VERSION, vtag)
+            and product.vendor
+            and (template_url := product.vendor.get("release_notes_url_template", None))
+        ):
+            # template URL should be somethign like:
+            # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
+            data["vcsReleaseUrl"] = template_url.format(vtag=vtag)
 
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)

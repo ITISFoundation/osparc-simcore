@@ -48,13 +48,13 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     __copyWData: null,
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.share.PublishTemplate();
-      this._add(shareWith);
-
       const publishWithData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
         value: true
       });
       this._add(publishWithData);
+
+      const shareWith = this.__shareWith = new osparc.share.PublishTemplate(this.__studyDataClone);
+      this._add(shareWith);
 
       const publishTemplateBtn = this.__publishTemplateBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
@@ -63,7 +63,6 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         alignX: "right"
       });
       publishTemplateBtn.addListener("execute", () => this.__publishTemplate(), this);
-      shareWith.bind("ready", publishTemplateBtn, "enabled");
       this._add(publishTemplateBtn);
     },
 

@@ -127,6 +127,22 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    getGridsFirstColumnWidth: function(grid) {
+      let firstColumnWidth = null;
+      const firstElement = grid.getCellWidget(0, 0);
+      const secondElement = grid.getCellWidget(0, 1);
+      if (firstElement && secondElement) {
+        const firstCellBounds = firstElement.getBounds();
+        const secondCellBounds = secondElement.getBounds();
+        if (firstCellBounds && secondCellBounds) {
+          const left1 = firstCellBounds.left;
+          const left2 = secondCellBounds.left;
+          firstColumnWidth = left2 - left1;
+        }
+      }
+      return firstColumnWidth;
+    },
+
     makeButtonBlink: function(button, nTimes = 1) {
       const onTime = 1000;
       const oldBgColor = button.getBackgroundColor();
@@ -456,12 +472,16 @@ qx.Class.define("osparc.utils.Utils", {
       const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
       let msg = "";
       msg += qx.locale.Manager.tr("To use all ");
-      const color = qx.theme.manager.Color.getInstance().resolve("text");
-      msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+      msg += this.createHTMLLink(productName + " features", manualLink);
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
       msg += mailto;
       return msg;
+    },
+
+    createHTMLLink: function(text, link) {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      return `<a href=${link} style='color: ${color}' target='_blank'>${text}</a>`;
     },
 
     getNameFromEmail: function(email) {
@@ -475,10 +495,6 @@ qx.Class.define("osparc.utils.Utils", {
 
     isInZ43: function() {
       return window.location.hostname.includes("speag");
-    },
-
-    isDevelEnv: function() {
-      return window.location.hostname.includes("master.speag") || window.location.port === "9081";
     },
 
     addBorder: function(widget, width = 1, color = "transparent") {
@@ -590,7 +606,7 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes, decimals = 2, isDecimalColapsed = true) {
+    bytesToSize: function(bytes, decimals = 2, isDecimalCollapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
       }
@@ -599,7 +615,7 @@ qx.Class.define("osparc.utils.Utils", {
       const dm = decimals < 0 ? 0 : decimals;
 
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return `${isDecimalColapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
+      return `${isDecimalCollapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {

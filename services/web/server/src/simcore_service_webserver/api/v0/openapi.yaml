@@ -485,6 +485,99 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/dev/catalog/services/-/latest:
+    get:
+      tags:
+      - catalog
+      summary: Dev List Services Latest
+      operationId: dev_list_services_latest
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_CatalogServiceGet_'
+  /v0/dev/catalog/services/{service_key}/{service_version}:
+    get:
+      tags:
+      - catalog
+      summary: Dev Get Service
+      operationId: dev_get_service
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
+    patch:
+      tags:
+      - catalog
+      summary: Dev Update Service
+      operationId: dev_update_service
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
   /v0/catalog/services:
     get:
       tags:
@@ -1040,6 +1133,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ComputationStarted_'
+        '402':
+          description: Insufficient credits to run computation
+        '404':
+          description: Project/wallet/pricing details were not found
+        '406':
+          description: Cluster not found
+        '409':
+          description: Project already started
+        '422':
+          description: Configuration error
+        '503':
+          description: Service not available
   /v0/computations/{project_id}:stop:
     post:
       tags:
@@ -2991,7 +3096,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5267,7 +5372,6 @@ components:
           title: Name
           type: string
           description: Name of the author
-          example: Jim Knopf
         email:
           title: Email
           type: string
@@ -5276,7 +5380,6 @@ components:
         affiliation:
           title: Affiliation
           type: string
-          description: Affiliation of the author
     Badge:
       title: Badge
       required:
@@ -5303,6 +5406,10 @@ components:
           type: string
           description: Link to the status
           format: uri
+      example:
+        name: osparc.io
+        image: https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
+        url: https://itisfoundation.github.io/
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -5358,6 +5465,157 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
+    CatalogServiceGet:
+      title: CatalogServiceGet
+      required:
+      - key
+      - version
+      - name
+      - description
+      - type
+      - authors
+      - inputs
+      - outputs
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name:
+          title: Name
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        description:
+          title: Description
+          type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        contact:
+          title: Contact
+          type: string
+          format: email
+        authors:
+          title: Authors
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+        owner:
+          title: Owner
+          type: string
+          format: email
+        inputs:
+          title: Inputs
+          type: object
+          description: inputs with extended information
+        outputs:
+          title: Outputs
+          type: object
+          description: outputs with extended information
+        bootOptions:
+          title: Bootoptions
+          type: object
+        minVisibleInputs:
+          title: Minvisibleinputs
+          minimum: 0
+          type: integer
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+        quality:
+          title: Quality
+          type: object
+          default: {}
+        history:
+          title: History
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceRelease'
+          description: history of releases for this service at this point in time,
+            starting from the newest to the oldest. It includes current release.
+          default: []
+      example:
+        name: sleeper
+        description: A service which awaits for time to pass, two times.
+        classifiers: []
+        quality: {}
+        accessRights:
+          '1':
+            execute_access: true
+            write_access: false
+        key: simcore/services/comp/itis/sleeper
+        version: 2.2.1
+        version_display: 2 Xtreme
+        type: computational
+        authors:
+        - name: Author Bar
+          email: author@acme.com
+          affiliation: ACME
+        contact: contact@acme.com
+        inputs:
+          input0:
+            label: Acceleration
+            description: acceleration with units
+            type: ref_contentSchema
+            contentSchema:
+              title: Acceleration
+              type: number
+              x_unit: m/s**2
+            keyId: input_1
+            unitLong: meter/second<sup>3</sup>
+            unitShort: m/s<sup>3</sup>
+        outputs:
+          outFile:
+            displayOrder: 2
+            label: Time Slept
+            description: Time the service waited before completion
+            type: number
+            unit: second
+            unitLong: seconds
+            unitShort: sec
+            keyId: output_2
+        owner: owner@acme.com
+        history:
+        - version: 2.2.1
+          version_display: Summer Release
+          released: '2024-07-20T15:00:00'
+        - version: 2.0.0
+          compatibility:
+            canUpdateTo: 2.2.1
+        - version: 0.9.11
+        - version: 0.9.10
+        - version: 0.9.8
+          compatibility:
+            canUpdateTo: 0.9.11
+        - version: 0.9.1
+          versionDisplay: Matterhorn
+          released: '2024-01-20T18:49:17'
+          compatibility:
+            can_update_to: 0.9.11
+        - version: 0.9.0
+          retired: '2024-07-20T15:00:00'
+        - version: 0.8.0
+        - version: 0.1.0
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -5680,6 +5938,18 @@ components:
         next_url:
           title: Next Url
           type: string
+    Compatibility:
+      title: Compatibility
+      required:
+      - canUpdateTo
+      type: object
+      properties:
+        canUpdateTo:
+          title: Canupdateto
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: Latest compatible version at this moment.Current service can
+            update to this version and still work
     ComputationStart:
       title: ComputationStart
       type: object
@@ -5956,6 +6226,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/AppStatusCheck'
+        error:
+          title: Error
+    Envelope_CatalogServiceGet_:
+      title: Envelope[CatalogServiceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CatalogServiceGet'
         error:
           title: Error
     Envelope_CheckpointApiModel_:
@@ -8071,42 +8349,18 @@ components:
       additionalProperties: false
     PageLinks:
       title: PageLinks
-      required:
-      - self
-      - first
-      - last
       type: object
       properties:
         self:
           title: Self
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         first:
           title: First
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         prev:
           title: Prev
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         next:
           title: Next
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         last:
           title: Last
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
       additionalProperties: false
     PageMetaInfoLimitOffset:
       title: PageMetaInfoLimitOffset
@@ -8135,6 +8389,25 @@ components:
           minimum: 0
           type: integer
       additionalProperties: false
+    Page_CatalogServiceGet_:
+      title: Page[CatalogServiceGet]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogServiceGet'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     Page_CheckpointApiModel_:
       title: Page[CheckpointApiModel]
       required:
@@ -9200,13 +9473,9 @@ components:
       properties:
         name:
           title: Name
-          maxLength: 100
-          minLength: 1
           type: string
         description:
           title: Description
-          maxLength: 100
-          minLength: 1
           type: string
         thumbnail:
           title: Thumbnail
@@ -9789,6 +10058,18 @@ components:
           type: boolean
           description: defines whether the group can modify the service
           default: false
+    ServiceGroupAccessRightsV2:
+      title: ServiceGroupAccessRightsV2
+      type: object
+      properties:
+        execute:
+          title: Execute
+          type: boolean
+          default: false
+        write:
+          title: Write
+          type: boolean
+          default: false
     ServiceInputGet:
       title: ServiceInputGet
       required:
@@ -10007,6 +10288,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PricingUnitGet'
+    ServiceRelease:
+      title: ServiceRelease
+      required:
+      - version
+      type: object
+      properties:
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: If None, then display `version`
+        released:
+          title: Released
+          type: string
+          description: When provided, it indicates the release timestamp
+          format: date-time
+        retired:
+          title: Retired
+          type: string
+          description: 'whether this service is planned to be retired. If None, the
+            service is still active. If now<retired then the service is deprecated.
+            If retired<now then the service is retired and should not be used. '
+          format: date-time
+        compatibility:
+          $ref: '#/components/schemas/Compatibility'
     ServiceRunGet:
       title: ServiceRunGet
       required:
@@ -11570,48 +11879,6 @@ components:
 
         NOTE: This model is serialized in .osparc/metadata.yml and in the labels of
         the docker image'
-      example:
-        name: File Picker
-        description: description
-        classifiers: []
-        quality: {}
-        accessRights:
-          '1':
-            execute_access: true
-            write_access: false
-          '4':
-            execute_access: true
-            write_access: true
-        key: simcore/services/frontend/file-picker
-        version: 1.0.0
-        type: dynamic
-        authors:
-        - name: Red Pandas
-          email: redpandas@wonderland.com
-        contact: redpandas@wonderland.com
-        inputs:
-          input0:
-            label: Acceleration
-            description: acceleration with units
-            type: ref_contentSchema
-            contentSchema:
-              title: Acceleration
-              type: number
-              x_unit: m/s**2
-            keyId: input_1
-            unitLong: meter/second<sup>3</sup>
-            unitShort: m/s<sup>3</sup>
-        outputs:
-          outFile:
-            displayOrder: 2
-            label: Time Slept
-            description: Time the service waited before completion
-            type: number
-            unit: second
-            unitLong: seconds
-            unitShort: sec
-            keyId: output_2
-        owner: redpandas@wonderland.com
     simcore_service_webserver__studies_dispatcher___rest_handlers__ServiceGet:
       title: ServiceGet
       required:

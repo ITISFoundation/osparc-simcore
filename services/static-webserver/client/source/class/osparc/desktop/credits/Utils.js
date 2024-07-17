@@ -20,6 +20,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
   statics: {
     DANGER_ZONE: 25, // one hour consumption
+    CREDITS_ICON: "@FontAwesome5Solid/database/",
 
     areWalletsEnabled: function() {
       const statics = osparc.store.Store.getInstance().get("statics");

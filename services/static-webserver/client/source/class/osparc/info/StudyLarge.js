@@ -320,7 +320,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __patchStudy: function(fieldKey, value) {
-      this.getStudy().patchStudy(fieldKey, value)
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
@@ -328,7 +328,8 @@ qx.Class.define("osparc.info.StudyLarge", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

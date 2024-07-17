@@ -4,7 +4,7 @@
 import functools
 import logging
 from copy import deepcopy
-from typing import Any
+from typing import Any, Final
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -15,6 +15,7 @@ from models_library.osparc_variable_identifier import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
@@ -135,6 +136,37 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
         )
         table.set_to_app_state(app)
         return table
+
+
+_NEW_ENVIRONMENTS: Final = {
+    "OSPARC_API_BASE_URL": "$OSPARC_VARIABLE_API_HOST",
+    "OSPARC_API_KEY": "$OSPARC_VARIABLE_API_KEY",
+    "OSPARC_API_SECRET": "$OSPARC_VARIABLE_API_SECRET",
+    "OSPARC_STUDY_ID": "$OSPARC_VARIABLE_STUDY_UUID",
+    "OSPARC_NODE_ID": "$OSPARC_VARIABLE_NODE_ID",
+}
+
+
+def auto_inject_environments(
+    compose_spec: ComposeSpecLabelDict,
+) -> ComposeSpecLabelDict:
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5925
+    for service in compose_spec.get("services", {}).values():
+        current_environment = deepcopy(service.get("environment", {}))
+
+        # if _NEW_ENVIRONMENTS are already defined, then do not change them
+        if isinstance(current_environment, dict):
+            service["environment"] = {
+                **_NEW_ENVIRONMENTS,
+                **current_environment,
+            }
+        elif isinstance(current_environment, list):
+            service["environment"] += [
+                f"{name}={value}"
+                for name, value in _NEW_ENVIRONMENTS.items()
+                if not any(e.startswith(name) for e in current_environment)
+            ]
+    return compose_spec
 
 
 async def resolve_and_substitute_session_variables_in_model(

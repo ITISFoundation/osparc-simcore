@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(null, null));
+    this._setLayout(new qx.ui.layout.VBox());
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
@@ -153,7 +153,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboardBtn.setFetching(true);
       if (this.__studyEditor.didStudyChange()) {
         // make sure very latest changes are saved
-        await this.__studyEditor.updateStudyDocument(false);
+        await this.__studyEditor.updateStudyDocument();
       }
       this.closeEditor();
       this.__showDashboard();

@@ -64,9 +64,10 @@ qx.Class.define("osparc.data.model.Study", {
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
-    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+    const workbenchUi = new osparc.data.model.StudyUI(studyData.ui);
+    this.setUi(workbenchUi);
 
-    this.__buildWorkbench();
+    this.getWorkbench().buildWorkbench();
   },
 
   properties: {
@@ -229,11 +230,14 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     // deep clones object with study-only properties
-    deepCloneStudyObject: function(src) {
-      const studyObject = osparc.utils.Utils.deepCloneObject(src);
+    deepCloneStudyObject: function(obj, ignoreExtra = false) {
+      const studyObject = osparc.utils.Utils.deepCloneObject(obj);
       const studyPropKeys = osparc.data.model.Study.getProperties();
       Object.keys(studyObject).forEach(key => {
         if (!studyPropKeys.includes(key)) {
+          delete studyObject[key];
+        }
+        if (ignoreExtra && osparc.data.model.Study.IgnoreSerializationProps.includes(key)) {
           delete studyObject[key];
         }
       });
@@ -316,8 +320,28 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    __buildWorkbench: function() {
-      this.getWorkbench().buildWorkbench();
+    serialize: function(clean = true) {
+      let jsonObject = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
+          return;
+        }
+        if (key === "workbench") {
+          jsonObject[key] = this.getWorkbench().serialize(clean);
+          return;
+        }
+        if (key === "ui") {
+          jsonObject[key] = this.getUi().serialize();
+          return;
+        }
+        const value = this.get(key);
+        if (value !== null) {
+          // only put the value in the payload if there is a value
+          jsonObject[key] = value;
+        }
+      });
+      return jsonObject;
     },
 
     initStudy: function() {
@@ -553,80 +577,80 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    serializeStudyData: function() {
-      let studyData = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (key === "workbench") {
-          studyData[key] = this.getWorkbench().serialize();
-          return;
-        }
-        if (key === "ui") {
-          studyData[key] = this.getUi().serialize();
-          return;
-        }
-        const value = this.get(key);
-        studyData[key] = value;
-      });
-      return studyData;
-    },
-
-    serialize: function(clean = true) {
-      let jsonObject = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().IgnoreSerializationProps.includes(key)) {
-          return;
-        }
-        if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize(clean);
-          return;
-        }
-        if (key === "ui") {
-          jsonObject[key] = this.getUi().serialize();
-          return;
-        }
-        const value = this.get(key);
-        if (value !== null) {
-          // only put the value in the payload if there is a value
-          jsonObject[key] = value;
-        }
-      });
-      return jsonObject;
-    },
-
-    patchStudy: function(fieldKey, value) {
+    patchStudy: function(studyChanges) {
       return new Promise((resolve, reject) => {
-        const patchData = {};
-        patchData[fieldKey] = value;
         const params = {
           url: {
             "studyId": this.getUuid()
           },
-          data: patchData
+          data: studyChanges
         };
         osparc.data.Resources.fetch("studies", "patch", params)
           .then(() => {
-            const upKey = qx.lang.String.firstUp(fieldKey);
-            const setter = "set" + upKey;
-            this[setter](value);
+            Object.keys(studyChanges).forEach(fieldKey => {
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const setter = "set" + upKey;
+              this[setter](studyChanges[fieldKey]);
+            })
             // A bit hacky, but it's not sent back to the backend
             this.set({
               lastChangeDate: new Date()
             });
-            const studyData = this.serializeStudyData();
+            const studyData = this.serialize();
             resolve(studyData);
           })
           .catch(err => reject(err));
       });
     },
 
-    updateStudy: function(params, run = false) {
+    /**
+     * Call patch Study, but the changes were already applied on the frontend
+     * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
+     */
+    patchStudyDelayed: function(studyDiffs) {
+      const promises = [];
+      let workbenchDiffs = {};
+      if ("workbench" in studyDiffs) {
+        workbenchDiffs = studyDiffs["workbench"];
+        promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchDiffs));
+        delete studyDiffs["workbench"];
+      }
+      const fieldKeys = Object.keys(studyDiffs);
+      if (fieldKeys.length) {
+        const patchData = {};
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: patchData
+        };
+        fieldKeys.forEach(fieldKey => {
+          if (fieldKey === "ui") {
+            patchData[fieldKey] = this.getUi().serialize();
+          } else {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const getter = "get" + upKey;
+            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+          }
+          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+        });
+      }
+      return Promise.all(promises)
+        .then(() => {
+          // A bit hacky, but it's not sent back to the backend
+          this.set({
+            lastChangeDate: new Date()
+          });
+          const studyData = this.serialize();
+          return studyData;
+        });
+    },
+
+    updateStudy: function(params) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
-            "studyId": this.getUuid(),
-            run
+            "studyId": this.getUuid()
           },
           data: {
             ...this.serialize(),

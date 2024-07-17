@@ -81,6 +81,7 @@ def main(
         if "license" in file_path.name:
             continue
         # very bad HACK
+        rich.print(f"checking {file_path.name}")
         if (
             any(_ in f"{file_path}" for _ in ("sim4life.io", "osparc-master"))
             and "openssh" not in f"{file_path}"

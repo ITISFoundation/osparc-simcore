@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_product
+from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.errors import CheckViolation, ForeignKeyViolation
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices

@@ -3,18 +3,24 @@
 # pylint: disable=unused-import
 
 from collections.abc import Iterator
+from unittest import mock
 
 import pytest
 import requests
 from aiohttp.test_utils import unused_port
 from faker import Faker
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
+from pytest_mock.plugin import MockerFixture
+from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
+from settings_library.ssm import SSMSettings
 
-from .helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from .helpers.utils_host import get_localhost_ip
+from .helpers.host import get_localhost_ip
+from .helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from .helpers.moto import patched_aiobotocore_make_api_call
 
 
 @pytest.fixture(scope="module")
@@ -70,7 +76,46 @@ def mocked_ec2_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
-    return setenvs_from_dict(monkeypatch, changed_envs)
+    return setenvs_from_dict(monkeypatch, {**changed_envs})
+
+
+@pytest.fixture
+def with_patched_ssm_server(
+    mocker: MockerFixture, external_envfile_dict: EnvVarsDict
+) -> mock.Mock:
+    if external_envfile_dict:
+        # NOTE: we run against AWS. so no need to mock
+        return mock.Mock()
+    return mocker.patch(
+        "aiobotocore.client.AioBaseClient._make_api_call",
+        side_effect=patched_aiobotocore_make_api_call,
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mocked_ssm_server_settings(
+    mocked_aws_server: ThreadedMotoServer,
+    with_patched_ssm_server: mock.Mock,
+    reset_aws_server_state: None,
+) -> SSMSettings:
+    return SSMSettings(
+        SSM_ACCESS_KEY_ID=SecretStr("xxx"),
+        SSM_ENDPOINT=parse_obj_as(
+            AnyHttpUrl,
+            f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
+        ),
+        SSM_SECRET_ACCESS_KEY=SecretStr("xxx"),
+    )
+
+
+@pytest.fixture
+def mocked_ssm_server_envs(
+    mocked_ssm_server_settings: SSMSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    changed_envs: EnvVarsDict = jsonable_encoder(mocked_ssm_server_settings)
+    return setenvs_from_dict(monkeypatch, {**changed_envs})
 
 
 @pytest.fixture
@@ -78,14 +123,14 @@ def mocked_s3_server_settings(
     mocked_aws_server: ThreadedMotoServer, reset_aws_server_state: None, faker: Faker
 ) -> S3Settings:
     return S3Settings(
-        S3_ACCESS_KEY="xxx",
+        S3_ACCESS_KEY=IDStr("xxx"),
         S3_ENDPOINT=parse_obj_as(
             AnyHttpUrl,
             f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
         ),
-        S3_SECRET_KEY="xxx",  # noqa: S106
-        S3_BUCKET_NAME=f"pytest{faker.pystr().lower()}",
-        S3_REGION="us-east-1",
+        S3_SECRET_KEY=IDStr("xxx"),
+        S3_BUCKET_NAME=IDStr(f"pytest{faker.pystr().lower()}"),
+        S3_REGION=IDStr("us-east-1"),
     )
 
 
@@ -95,4 +140,4 @@ def mocked_s3_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = mocked_s3_server_settings.dict(exclude_unset=True)
-    return setenvs_from_dict(monkeypatch, changed_envs)
+    return setenvs_from_dict(monkeypatch, {**changed_envs})

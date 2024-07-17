@@ -132,6 +132,28 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         `;
         const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
         this.add(disclaimer);
+
+        this.add(new qx.ui.core.Spacer(), {
+          flex: 1
+        });
+
+        const poweredByLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+          alignX: "center",
+          allowGrowX: false,
+          cursor: "pointer"
+        });
+        poweredByLayout.addListener("tap", () => window.open("https://sim4life.swiss/"));
+        const label = new qx.ui.basic.Label(this.tr("powered by"));
+        poweredByLayout.add(label);
+        const s4lLogo = new qx.ui.basic.Image("osparc/Sim4Life_full_logo_white.svg");
+        s4lLogo.set({
+          width: osparc.auth.LoginPage.LOGO_WIDTH/2,
+          height: osparc.auth.LoginPage.LOGO_HEIGHT/2,
+          scale: true,
+          alignX: "center"
+        });
+        poweredByLayout.add(s4lLogo);
+        this.add(poweredByLayout);
       }
     },
 

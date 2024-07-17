@@ -56,7 +56,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
   },
 
   statics: {
-    getDashedBorderSytle(isRight) {
+    getDashedBorderStyle(isRight) {
       const side = isRight ? "right" : "left";
       const borderStyle = {};
       borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
@@ -273,7 +273,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         allowGrowX: false,
         padding: [0, 6]
       });
-      inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderSytle(isInput));
+      inputOutputNodesLayout.getContentElement().setStyles(this.self().getDashedBorderStyle(isInput));
       const title = new qx.ui.basic.Label(label).set({
         alignX: "center",
         margin: [15, 0],
@@ -523,7 +523,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }, this);
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
-          const reprPos = annotation.getRepresenationPosition();
+          const reprPos = annotation.getRepresentationPosition();
           const xDiff = reprPos.x - annotation.initPos.x;
           const yDiff = reprPos.y - annotation.initPos.y;
           this.__itemMoving(annotation.getId(), xDiff, yDiff);

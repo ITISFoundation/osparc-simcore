@@ -4,13 +4,13 @@
 import logging
 import operator
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, cast
 from urllib.parse import quote_plus
 
+import arrow
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_db import ServiceAccessRightsAtDB
 from packaging.version import Version
 from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -18,11 +18,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.services_db import ServiceAccessRightsAtDB
 from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)
 
-OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
+_LEGACY_SERVICES_DATE: datetime = datetime(
+    year=2020, month=8, day=19, tzinfo=timezone.utc
+)
 
 
 def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
@@ -30,6 +33,7 @@ def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
 
 
 async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
+    # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/6003#discussion_r1658200909
     # get service build date
     client = get_director_api(app)
     data = cast(
@@ -43,8 +47,8 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
 
     _logger.debug("retrieved service extras are %s", data)
 
-    service_build_data = datetime.strptime(data["build_date"], "%Y-%m-%dT%H:%M:%SZ")
-    return service_build_data < OLD_SERVICES_DATE
+    service_build_data = arrow.get(data["build_date"]).datetime
+    return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
 async def evaluate_default_policy(
@@ -157,26 +161,26 @@ def reduce_access_rights(
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
 
-    def get_target(access: ServiceAccessRightsAtDB) -> tuple[str | int, ...]:
+    def _get_target(access: ServiceAccessRightsAtDB) -> tuple[str | int, ...]:
         """Hashable identifier of the resource the access rights apply to"""
         return (access.key, access.version, access.gid, access.product_name)
 
-    def get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
+    def _get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
         """Extracts only"""
         flags = access.dict(include={"execute_access", "write_access"})
         return cast(dict[str, bool], flags)
 
     access_flags_map: dict[tuple[str | int, ...], dict[str, bool]] = {}
     for access in access_rights:
-        target = get_target(access)
+        target = _get_target(access)
         access_flags = access_flags_map.get(target)
 
         if access_flags:
             # applies reduction on flags
-            for key, value in get_flags(access).items():
+            for key, value in _get_flags(access).items():
                 access_flags[key] = reduce_operation(access_flags[key], value)  # a |= b
         else:
-            access_flags_map[target] = get_flags(access)
+            access_flags_map[target] = _get_flags(access)
 
     reduced_access_rights: list[ServiceAccessRightsAtDB] = [
         ServiceAccessRightsAtDB(

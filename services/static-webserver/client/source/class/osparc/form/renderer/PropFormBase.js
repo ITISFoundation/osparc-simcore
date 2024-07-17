@@ -120,13 +120,23 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
 
       // add the items
+      let firstLabel = null;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        if (firstLabel === null) {
+          firstLabel = label;
+        }
         label.set({
-          rich: false, // override, required for showing the cut off ellipses
+          // override ``rich``: to false, it is required for showing the cut off ellipsis.
+          // rich: false,
           toolTipText: names[i]
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        label.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap"
         });
         label.setBuddy(item);
         this._add(label, {
@@ -154,6 +164,34 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         this._row++;
 
         this._connectVisibility(item, label);
+      }
+
+      this.addListener("appear", () => this.__makeLabelsResponsive(), this);
+      this.addListener("resize", () => this.__makeLabelsResponsive(), this);
+    },
+
+    __makeLabelsResponsive: function() {
+      const grid = this.getLayout()
+      const firstColumnWidth = osparc.utils.Utils.getGridsFirstColumnWidth(grid);
+      if (firstColumnWidth === null) {
+        // not rendered yet
+        setTimeout(() => this.__makeLabelsResponsive(), 100);
+        return;
+      }
+      const extendedVersion = firstColumnWidth > 300;
+
+      const inputs = this.getNode().getInputs();
+      for (const portId in inputs) {
+        if (inputs[portId].description) {
+          this._getLabelFieldChild(portId).child.set({
+            value: extendedVersion ? inputs[portId].label + ". " + inputs[portId].description + ":" : inputs[portId].label,
+            toolTipText: extendedVersion ? inputs[portId].label + "<br>" + inputs[portId].description : inputs[portId].label
+          });
+
+          this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
+
+          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, extendedVersion ? 150 : 50);
+        }
       }
     },
 

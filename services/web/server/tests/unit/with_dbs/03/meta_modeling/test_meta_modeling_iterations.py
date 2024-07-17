@@ -13,9 +13,9 @@ from models_library.projects_nodes import Node
 from models_library.services_resources import ServiceResourcesDict
 from models_library.utils.json_serialization import json_dumps
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     NEW_PROJECT,
     REPLACE_PROJECT_ON_MODIFIED,

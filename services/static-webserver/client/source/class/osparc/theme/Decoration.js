@@ -35,7 +35,9 @@ qx.Theme.define("osparc.theme.Decoration", {
     "indicator-border": {
       include: "material-button",
       style: {
-        radius: 2
+        radius: 2,
+        width: 1,
+        color: "text"
       }
     },
 
@@ -233,6 +235,13 @@ qx.Theme.define("osparc.theme.Decoration", {
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
+      }
+    },
+
+    "border-simple": {
+      include: "border",
+      style: {
+        radius: 4
       }
     },
 

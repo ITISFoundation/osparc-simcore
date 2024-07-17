@@ -21,7 +21,7 @@ from models_library.projects_nodes_io import (
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from pytest_simcore.helpers.parametrizations import byte_size_ids
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager

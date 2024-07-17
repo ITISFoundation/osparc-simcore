@@ -22,28 +22,16 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
     this.base(arguments, "ti-slides", this.tr("Quick Start"));
   },
 
-  members: {
-    // overriden
-    _getSlides: function() {
-      return [
-        new osparc.product.quickStart.ti.Welcome(),
-        new osparc.product.quickStart.ti.Dashboard(),
-        new osparc.product.quickStart.ti.ElectrodeSelector(),
-        new osparc.product.quickStart.ti.PostPro(),
-        new osparc.product.quickStart.ti.S4LPostPro()
-      ];
-    },
+  statics: {
+    footerLinks: function() {
+      const footerLinks = [];
 
-    // overriden
-    _getFooterItems: function() {
-      const footerItems = [];
-
-      const videoText = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
+      const videoText = osparc.utils.Utils.createHTMLLink("TIP video", "https://youtu.be/-ZE6yOJ3ipw");
       const videoLabel = new qx.ui.basic.Label(videoText).set({
         textAlign: "center",
         rich : true
       });
-      footerItems.push(videoLabel);
+      footerLinks.push(videoLabel);
 
       const manualsLabel = new qx.ui.basic.Label().set({
         visibility: "excluded",
@@ -52,18 +40,39 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
       });
       const manuals = osparc.store.Support.getManuals();
       if (manuals.length > 0) {
-        manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
+        const manualText = osparc.utils.Utils.createHTMLLink("Documentation", manuals[0].url);
+        manualsLabel.setValue(manualText);
         manualsLabel.show();
       }
-      footerItems.push(manualsLabel);
+      footerLinks.push(manualsLabel);
 
-      const licenseText = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
+      const licenseText = osparc.utils.Utils.createHTMLLink("Privacy Policy", "https://itis.swiss/meta-navigation/privacy-policy/");
       const licenseLabel = new qx.ui.basic.Label(licenseText).set({
-        allowGrowX: true,
         textAlign: "center",
         rich : true
       });
-      footerItems.push(licenseLabel);
+      footerLinks.push(licenseLabel);
+
+      return footerLinks;
+    }
+  },
+
+  members: {
+    // overriden
+    _getSlides: function() {
+      return [
+        new osparc.product.quickStart.ti.Welcome(),
+        new osparc.product.quickStart.ti.Dashboard(),
+        new osparc.product.quickStart.ti.ElectrodeSelector(),
+        new osparc.product.quickStart.ti.PostPro(),
+        new osparc.product.quickStart.ti.S4LPostPro(),
+        new osparc.product.quickStart.ti.MoreInformation()
+      ];
+    },
+
+    // overriden
+    _getFooterItems: function() {
+      const footerItems = this.self().footerLinks();
 
       const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("tiDontShowQuickStart");
       footerItems.push(dontShowCB);

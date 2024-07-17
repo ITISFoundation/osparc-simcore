@@ -9,8 +9,11 @@ import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -120,7 +123,6 @@ def mock_webserver_service_environment(
     #         - CATALOG_PORT=${CATALOG_PORT:-8000}
     #         - DIAGNOSTICS_MAX_AVG_LATENCY=10
     #         - DIAGNOSTICS_MAX_TASK_DELAY=30
-    #         - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
     #         - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
     #         - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
     #         - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
@@ -137,7 +139,6 @@ def mock_webserver_service_environment(
             "CATALOG_HOST": os.environ.get("CATALOG_HOST", "catalog"),
             "CATALOG_PORT": os.environ.get("CATALOG_PORT", "8000"),
             "DIAGNOSTICS_MAX_AVG_LATENCY": "30",
-            "DIRECTOR_HOST": os.environ.get("DIRECTOR_HOST", "director"),
             "DIRECTOR_PORT": os.environ.get("DIRECTOR_PORT", "8080"),
             "DIRECTOR_V2_HOST": os.environ.get("DIRECTOR_V2_HOST", "director-v2"),
             "DIRECTOR_V2_PORT": os.environ.get("DIRECTOR_V2_PORT", "8000"),

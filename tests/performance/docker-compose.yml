@@ -4,17 +4,27 @@ services:
     ports:
       - "8089:8089"
     volumes:
-      - ./locust_files:/mnt/locust
-      - ./locust_report:/reporting
+      - ./locust_files:/home/locust/locust_files
+      - ./locust_report:/home/locust/locust_report
     command: >
-      -f /mnt/locust/${LOCUST_FILE} --host ${TARGET_URL} --html
-      /reporting/locust_html.html ${LOCUST_OPTIONS} --master
+      --master --html=locust_report/locust_html.html
+    env_file:
+      - ${ENV_FILE}
+    networks:
+      - dashboards_timenet
 
   worker:
     image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
-      - ./locust_files:/mnt/locust
-    command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master
-    environment:
-      - SC_USER_NAME=${SC_USER_NAME}
-      - SC_PASSWORD=${SC_PASSWORD}
+      - ./locust_files/:/home/locust/locust_files
+    command: >
+      --worker --master-host master
+    env_file:
+      - ${ENV_FILE}
+    networks:
+      - dashboards_timenet
+
+networks:
+  dashboards_timenet :
+    external: true
+    name: dashboards_timenet

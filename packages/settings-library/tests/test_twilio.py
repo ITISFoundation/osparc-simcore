@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import pytest
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.twilio import TwilioSettings
 
 

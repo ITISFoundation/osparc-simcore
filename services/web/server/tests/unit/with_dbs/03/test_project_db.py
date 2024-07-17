@@ -20,10 +20,10 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
+from pytest_simcore.helpers.dict_tools import copy_from_dict_ex
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products

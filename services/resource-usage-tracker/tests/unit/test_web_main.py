@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 
 
 def test_main_app(app_environment: EnvVarsDict):
