@@ -128,19 +128,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       },
       TITLE: {
         column: 1,
-        row: 0,
-        colSpan: 2
+        row: 0
       },
-      SHARED: {
+      SUBTITLE: {
         column: 1,
         row: 1
       },
-      LAST_CHANGE: {
-        column: 2,
-        row: 1
-      },
       MENU: {
-        column: 3,
+        column: 2,
         row: 0,
         rowSpan: 2
       }
@@ -178,12 +173,16 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, this.self().POS.TITLE);
           break;
+        case "subtitle-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._add(control, this.self().POS.SUBTITLE);
+          break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
             alignY: "middle"
           });
-          this._add(control, this.self().POS.SHARED);
+          this.getChildControl("subtitle-layout").addAt(control, 0);
           break;
         case "last-modified":
           control = new qx.ui.basic.Label().set({
@@ -193,7 +192,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             minWidth: 100,
             alignY: "middle"
           });
-          this._add(control, this.self().POS.LAST_CHANGE);
+          this.getChildControl("subtitle-layout").addAt(control, 1, {
+            flex: 1
+          });
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -222,9 +223,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         folderId: folderData.id,
         title: folderData.name,
         description: folderData.description,
-        accessRights: folderData.accessRights,
-        lastModified: new Date(folderData.lastModified),
         sharedAccessRights: folderData.sharedAccessRights,
+        lastModified: new Date(folderData.lastModified),
+        accessRights: folderData.accessRights,
       });
     },
 
