@@ -55,7 +55,7 @@ def upgrade():
         sa.Column("key", sa.String(), nullable=False),
         sa.Column("version", sa.String(), nullable=False),
         sa.Column(
-            "policy_specifier", postgresql.JSONB(astext_type=sa.Text()), nullable=False
+            "custom_policy", postgresql.JSONB(astext_type=sa.Text()), nullable=False
         ),
         sa.Column(
             "created",

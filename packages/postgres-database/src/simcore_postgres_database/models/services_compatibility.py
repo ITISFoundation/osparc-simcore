@@ -18,9 +18,9 @@ from .base import metadata
 from .users import users
 
 
-class PolicySpecifierDict(TypedDict, total=False):
-    version: str  # SpecifierSet e.g. ~=0.9, SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
-    key: str | None  # Only necessary if key!=PolicySpecifierDict.key
+class CompatiblePolicyDict(TypedDict, total=False):
+    versions_specifier: str  # SpecifierSet e.g. ~=0.9, SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
+    other_service_key: str | None  # Only necessary if key!=PolicySpecifierDict.key
 
 
 services_compatibility = sa.Table(
@@ -43,7 +43,7 @@ services_compatibility = sa.Table(
         doc="Service version",
     ),
     sa.Column(
-        "policy_specifier",
+        "custom_policy",
         JSONB,
         nullable=False,
         doc="PolicySpecifierDict with custom policy",
