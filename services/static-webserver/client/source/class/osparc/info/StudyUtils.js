@@ -444,7 +444,8 @@ qx.Class.define("osparc.info.StudyUtils", {
         .then(() => {
           studyData["accessRights"][gid] = permissions;
           studyData["lastChangeDate"] = new Date().toISOString();
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
     },
 
     addCollaborators: function(studyData, newCollaborators) {
@@ -465,7 +466,8 @@ qx.Class.define("osparc.info.StudyUtils", {
             studyData["accessRights"][gid] = newCollaborators[gid];
           });
           studyData["lastChangeDate"] = new Date().toISOString();
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
     },
 
     removeCollaborator: function(studyData, gid) {
@@ -479,7 +481,8 @@ qx.Class.define("osparc.info.StudyUtils", {
         .then(() => {
           delete studyData["accessRights"]["gid"];
           studyData["lastChangeDate"] = new Date().toISOString();
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
     },
 
     updateCollaborator: function(studyData, gid, newPermissions) {
@@ -494,7 +497,8 @@ qx.Class.define("osparc.info.StudyUtils", {
         .then(() => {
           studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
     }
   }
 });
