@@ -9,12 +9,9 @@ from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import BaseModel, NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
-from simcore_postgres_database.models.folders import (
-    folders,
-    folders_access_rights,
-    folders_to_projects,
-)
 from sqlalchemy.dialects import postgresql
+
+from .models.folders import folders, folders_access_rights, folders_to_projects
 
 _ProjectID: TypeAlias = uuid.UUID
 _GroupID: TypeAlias = PositiveInt
@@ -473,15 +470,19 @@ async def folder_delete(
 
 async def folder_move(
     connection: SAConnection,
-    folder_id: _FolderID,
-    gids: set[_GroupID],
+    source_folder_id: _FolderID,
+    source_gid: _GroupID,
     *,
-    new_parent_id: _FolderID,
+    destination_parent_id: _FolderID,
+    destination_gids: set[_GroupID],  # at this point you don't need a set maybe?
 ) -> None:
     # TODO: make sure parent is not self
     # TODO: enforce access rights
     # TODO: Enforce both `delete` and `write` permissions exist
     pass
+    # check existance of folder_id and gid entry if not error
+    # check new_parent_id entry existance (does it have to match with my gid?)-> if not this meas that as a user I create a folder and move it to a shared folder otherwise how would it work?
+    # always inherit from the parent the access rights on the fodler and subfolder
 
 
 async def folder_list(
