@@ -29,6 +29,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     this.base(arguments);
 
     this.set({
+      appearance: "pb-study",
       width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
       minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT
     });
@@ -41,12 +42,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     [
       "pointerover",
       "focus"
-    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+    ].forEach(e => this.addListener(e, this.__onPointerOver, this));
 
     [
       "pointerout",
       "focusout"
-    ].forEach(e => this.addListener(e, this._onPointerOut, this));
+    ].forEach(e => this.addListener(e, this.__onPointerOut, this));
 
     this.addListener("changeValue", this.__itemSelected, this);
 
@@ -146,7 +147,15 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     }
   },
 
-  members: {
+  members: { // eslint-disable-line qx-rules/no-refs-in-members
+    // overridden
+    _forwardStates: {
+      focused : true,
+      hovered : true,
+      selected : true,
+      dragover : true
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -271,6 +280,37 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.setValue(false);
 
       console.log("folder tapped", this.getFolderId());
+    },
+
+    __onPointerOver: function() {
+      this.addState("hovered");
+    },
+
+    __onPointerOut : function() {
+      this.removeState("hovered");
+    },
+
+    _filter: function() {
+      this.exclude();
+    },
+
+    _unfilter: function() {
+      this.show();
+    },
+
+    _shouldApplyFilter: function(data) {
+      console.log("_shouldApplyFilter", data);
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
+      console.log("_shouldReactToFilter", data);
+      return false;
     }
+  },
+
+  destruct: function() {
+    this.removeListener("pointerover", this.__onPointerOver, this);
+    this.removeListener("pointerout", this.__onPointerOut, this);
   }
 });

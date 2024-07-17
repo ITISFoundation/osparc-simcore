@@ -222,16 +222,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createFolderCard: function(folderData) {
-      const card = new osparc.dashboard.FolderButtonItem();
-      card.set({
-        appearance: "pb-study",
-        folderData: folderData
-      });
-      card.setWidth(180);
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-      card.setMenu(menu);
+      const card = new osparc.dashboard.FolderButtonItem(folderData);
       card.subscribeToFilterGroup("searchBarFilter");
       return card;
     },
