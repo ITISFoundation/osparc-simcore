@@ -56,6 +56,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeMultiSelection",
       apply: "__applyMultiSelection"
     },
+
     // Ordering by Possibilities:
     // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
     // direction: asc | desc
@@ -609,6 +610,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeSelection", e => {
         const selection = e.getData();
+        if (selection.length > 0) {
+          this.setMultiSelection(true);
+        }
         studiesDeleteButton.set({
           visibility: selection.length ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
@@ -729,6 +733,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         marginRight: 8
       });
       selectButton.bind("value", this, "multiSelection");
+      this.bind("multiSelection", selectButton, "value");
       selectButton.bind("value", selectButton, "label", {
         converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.product.Utils.getStudyAlias({
           plural: true,
