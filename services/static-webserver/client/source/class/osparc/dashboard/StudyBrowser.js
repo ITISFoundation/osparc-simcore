@@ -109,10 +109,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__reloadStudies();
+        this.__reloadResources();
       } else {
         this.__resetStudiesList();
       }
+    },
+
+    __reloadResources: function() {
+      this.__reloadFolders();
+      this.__reloadStudies();
+    },
+
+    __reloadFilteredResources: function() {
+      this.__reloadFilteredStudies();
+    },
+
+    __reloadFolders: function() {
+      osparc.store.FakeStore.getInstance().getFolders()
+        .then(folders => {
+          this.__addFoldersToList(folders);
+        });
     },
 
     __reloadStudies: function() {
@@ -130,13 +146,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const request = this.__getNextRequest();
       request
         .then(resp => {
-          const resources = resp["data"];
+          const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addResourcesToList(resources);
+          this.__addStudiesToList(studies);
 
-          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
           // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
+          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
           if (nStudies === 0) {
             const store = osparc.store.Store.getInstance();
             Promise.all([
@@ -199,7 +215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.log("filteredStudies", resp);
           const filteredStudies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addResourcesToList(filteredStudies);
+          this.__addStudiesToList(filteredStudies);
         })
         .catch(err => console.error(err))
         .finally(() => {
@@ -221,7 +237,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(resp => {
           const sortedStudies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addResourcesToList(sortedStudies);
+          this.__addStudiesToList(sortedStudies);
         })
         .catch(err => console.error(err))
         .finally(() => {
@@ -238,7 +254,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
-    __addResourcesToList: function(studiesList) {
+    __addStudiesToList: function(studiesList) {
       studiesList.forEach(study => study["resourceType"] = "study");
       studiesList.forEach(study => {
         const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
@@ -270,6 +286,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }, delay);
         }
       });
+    },
+
+    __addFoldersToList: function(folders) {
+      console.log("folders", folders);
     },
 
     _reloadCards: function() {
@@ -651,9 +671,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
         if (filterData.text) {
-          this.__reloadFilteredStudies(filterData.text);
+          this.__reloadFilteredResources(filterData.text);
         } else {
-          this.__reloadStudies();
+          this.__reloadResources();
         }
         sharedWithButton.filterChanged(filterData);
       }, this);
