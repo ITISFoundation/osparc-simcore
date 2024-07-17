@@ -57,13 +57,13 @@ assert_handler_signature_against_model(list_project_groups, ProjectPathParams)
     "/projects/{project_id}/groups/{group_id}",
     response_model=Envelope[ProjectGroupGet],
 )
-async def replace_project_group(
+async def update_project_group(
     project_id: ProjectID, group_id: GroupID, body: _ProjectsGroupsBodyParams
 ):
     ...
 
 
-assert_handler_signature_against_model(replace_project_group, _ProjectsGroupsPathParams)
+assert_handler_signature_against_model(update_project_group, _ProjectsGroupsPathParams)
 
 
 @router.delete(
