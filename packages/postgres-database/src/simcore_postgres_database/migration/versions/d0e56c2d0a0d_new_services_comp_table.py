@@ -1,8 +1,8 @@
 """new services_comp table
 
-Revision ID: fcade36da606
-Revises: d1fafda96f4c
-Create Date: 2024-07-16 17:47:53.257339+00:00
+Revision ID: d0e56c2d0a0d
+Revises: 19f3d9085636
+Create Date: 2024-07-17 16:15:49.970615+00:00
 
 """
 from typing import Final
@@ -12,11 +12,10 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "fcade36da606"
-down_revision = "d1fafda96f4c"
+revision = "d0e56c2d0a0d"
+down_revision = "19f3d9085636"
 branch_labels = None
 depends_on = None
-
 
 # auto-update modified
 # TRIGGERS ------------------------
