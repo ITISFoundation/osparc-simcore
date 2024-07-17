@@ -70,11 +70,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   statics: {
-    sortFoldersList: function(studyList, sortValue) {
+    sortFoldersList: function(foldersList, propKey) {
       const sortByProperty = function(prop) {
-        return function(a, b) {
-          const x = a.toString().toLowerCase();
-          const y = b.toString().toLowerCase();
+        return function(x, y) {
           if (prop === "lastModified") {
             return new Date(y[prop]) - new Date(x[prop]);
           }
@@ -89,7 +87,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return 0;
         };
       };
-      studyList.sort(sortByProperty(sortValue || "lastModified"));
+      foldersList.sort(sortByProperty(propKey || "lastModified"));
     }
   },
 
@@ -317,7 +315,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
 
-      const sortByValue = this.getOrderBy().field;
+      const sortByValueBE = this.getOrderBy().field;
+      let sortByValue = null;
+      switch (sortByValueBE) {
+        case "name":
+          sortByValue = "name";
+          break;
+        case "owner":
+          sortByValue = "prjOwner";
+          break;
+        case "creation_date":
+          sortByValue = "createdAt";
+          break;
+        case "last_change_date":
+          sortByValue = "lastModified";
+          break;
+      }
       this.self().sortFoldersList(this.__foldersList, sortByValue);
       this._reloadNewCards();
     },
