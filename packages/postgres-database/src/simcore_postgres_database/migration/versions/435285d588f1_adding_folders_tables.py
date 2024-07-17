@@ -1,16 +1,17 @@
-"""add folders tables
+"""adding folders tables
 
-Revision ID: e40d2605c2c7
-Revises: 481d5b472721
-Create Date: 2024-06-27 16:05:38.508306+00:00
+Revision ID: 435285d588f1
+Revises: d1fafda96f4c
+Create Date: 2024-07-17 11:58:40.267467+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "e40d2605c2c7"
-down_revision = "481d5b472721"
+revision = "435285d588f1"
+down_revision = "d1fafda96f4c"
 branch_labels = None
 depends_on = None
 
