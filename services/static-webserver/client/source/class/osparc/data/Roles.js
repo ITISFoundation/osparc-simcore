@@ -204,11 +204,15 @@ qx.Class.define("osparc.data.Roles", {
       return this.__createIntoFromRoles(osparc.data.Roles.WALLET);
     },
 
-    createRolesStudyResourceInfo: function() {
+    createRolesStudyInfo: function() {
       return this.__createIntoFromRoles(osparc.data.Roles.STUDY);
     },
 
-    createServicesRolesResourceInfo: function() {
+    createRolesServicesInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
+    },
+
+    createRolesFolderResourceInfo: function() {
       return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
     }
   }

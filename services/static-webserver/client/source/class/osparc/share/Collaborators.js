@@ -224,7 +224,7 @@ qx.Class.define("osparc.share.Collaborators", {
         flex: 1
       });
 
-      const rolesLayout = osparc.data.Roles.createRolesStudyResourceInfo();
+      const rolesLayout = osparc.data.Roles.createRolesStudyInfo();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);

@@ -35,7 +35,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     this._resourceType = studyData["resourceType"]; // study or template
     const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    osparc.data.Roles.createRolesStudyResourceInfo();
+    osparc.data.Roles.createRolesStudyInfo();
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
