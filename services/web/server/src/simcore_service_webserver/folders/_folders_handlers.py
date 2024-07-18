@@ -95,7 +95,7 @@ class FolderListWithJsonStrParams(FolderListParams):
 @routes.post(f"/{VTAG}/folders", name="create_folder")
 @requires_dev_feature_enabled
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.create")
 @handle_folders_exceptions
 async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
@@ -114,7 +114,7 @@ async def create_folder(request: web.Request):
 
 @routes.get(f"/{VTAG}/folders", name="list_folders")
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.read")
 @handle_folders_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
@@ -136,7 +136,7 @@ async def list_folders(request: web.Request):
 
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.read")
 @handle_folders_exceptions
 async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
@@ -157,7 +157,7 @@ async def get_folder(request: web.Request):
     name="replace_folder",
 )
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.update")
 @handle_folders_exceptions
 async def replace_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
@@ -180,7 +180,7 @@ async def replace_folder(request: web.Request):
     name="delete_folder",
 )
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.delete")
 @handle_folders_exceptions
 async def delete_folder_group(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
