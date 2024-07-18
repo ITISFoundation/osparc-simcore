@@ -75,6 +75,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
+                "password": getattr(
+                    app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None
+                ),
             },
         },
         # added to support legacy ----
