@@ -4,9 +4,9 @@
     - Services have a key, version, and access rights defined by group ids
 """
 
-from typing import TypedDict
 
 import sqlalchemy as sa
+import typing_extensions
 from sqlalchemy.dialects.postgresql import JSONB
 from typing_extensions import NotRequired, Required
 
@@ -19,7 +19,7 @@ from .base import metadata
 from .users import users
 
 
-class CompatiblePolicyDict(TypedDict, total=False):
+class CompatiblePolicyDict(typing_extensions.TypedDict, total=False):
     # SpecifierSet e.g. ~=0.9
     # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
     versions_specifier: Required[str]
