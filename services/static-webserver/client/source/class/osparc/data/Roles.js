@@ -165,7 +165,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    __createIntoFromRoles: function(roles) {
+    __createIntoFromRoles: function(roles, showWording = true) {
       const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         alignY: "middle",
         paddingRight: 10
@@ -174,10 +174,13 @@ qx.Class.define("osparc.data.Roles", {
         flex: 1
       });
 
-      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
-        font: "text-13"
-      });
-      rolesLayout.add(rolesText);
+      if (showWording) {
+        const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
+          font: "text-13"
+        });
+        rolesLayout.add(rolesText);
+      }
+
       let text = "";
       const values = Object.values(roles);
       values.forEach((role, idx) => {
@@ -193,6 +196,7 @@ qx.Class.define("osparc.data.Roles", {
         alignY: "middle"
       });
       rolesLayout.add(infoHint);
+
       return rolesLayout;
     },
 
@@ -212,8 +216,8 @@ qx.Class.define("osparc.data.Roles", {
       return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
     },
 
-    createRolesFolderResourceInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
+    createRolesFolderInfo: function(showWording = true) {
+      return this.__createIntoFromRoles(osparc.data.Roles.FOLDERS, showWording);
     }
   }
 });

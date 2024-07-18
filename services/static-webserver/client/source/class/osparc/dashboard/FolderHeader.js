@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(20).set({
+    this._setLayout(new qx.ui.layout.HBox(15).set({
       alignY: "middle"
     }));
 
@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
           this._addAt(control, 0);
           break;
         case "permissions-info": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
           }));
           this._addAt(control, 1);
@@ -127,9 +127,8 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getId() : null), this);
       folderButton.set({
         backgroundColor: "transparent",
-        font: "text-14",
         textColor: "text",
-        gap: 5,
+        gap: 5
       });
       return folderButton;
     },
@@ -143,9 +142,14 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       permissionsLayout.removeAll();
 
       if (this.getCurrentFolderId()) {
-        const tooltip = new osparc.ui.hint.InfoHint();
-        tooltip.setHintText("You can do this");
-        permissionsLayout.add(tooltip);
+        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
+        const ar = currentFolder.getAccessRights();
+        const permissions = ar["read"] + ar["write"] + ar["delete"];
+        const roleTitle = new qx.ui.basic.Label().set({
+          value: osparc.data.Roles.FOLDERS[permissions].label
+        });
+        permissionsLayout.add(roleTitle);
+        permissionsLayout.add(osparc.data.Roles.createRolesFolderInfo(false));
       }
     }
   }
