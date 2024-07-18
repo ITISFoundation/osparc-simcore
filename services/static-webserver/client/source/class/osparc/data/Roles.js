@@ -138,8 +138,8 @@ qx.Class.define("osparc.data.Roles", {
     FOLDERS: {
       1: {
         id: "read",
-        label: qx.locale.Manager.tr("User"),
-        longLabel: qx.locale.Manager.tr("User: Read access"),
+        label: qx.locale.Manager.tr("Viewer"),
+        longLabel: qx.locale.Manager.tr("Viewer: Read access"),
         canDo: [
           qx.locale.Manager.tr("- can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true})
         ]

@@ -551,6 +551,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
+      if (this.getCurrentFolderId()) {
+        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
+        if (currentFolder) {
+          const ar = currentFolder.getAccessRights();
+          if (!ar["write"]) {
+            // If user can't write in folder, do not show plus buttons
+            return;
+          }
+        }
+      }
+
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
           this.__addEmptyStudyPlusButton();
