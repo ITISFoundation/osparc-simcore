@@ -209,6 +209,11 @@ qx.Class.define("osparc.data.model.Study", {
       "dev"
     ],
 
+    OwnPatch: [
+      "accessRights",
+      "workbench"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -578,6 +583,12 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     patchStudy: function(studyChanges) {
+      const matches = this.self().OwnPatch.filter(el => Object.keys(studyChanges).indexOf(el) !== -1);
+      if (matches.length) {
+        console.error(matches, "has it's own PATCH path");
+        return null;
+      }
+
       return new Promise((resolve, reject) => {
         const params = {
           url: {

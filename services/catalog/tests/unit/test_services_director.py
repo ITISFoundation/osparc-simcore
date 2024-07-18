@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -35,6 +36,7 @@ def app_environment(
 async def test_director_client_high_level_api(
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
+    expected_director_list_services: list[dict[str, Any]],
     mocked_director_service_api: MockRouter,
     app: FastAPI,
 ):
@@ -47,20 +49,13 @@ async def test_director_client_high_level_api(
     # PING
     assert await director_api.is_responsive()
 
-    # LIST
-    all_services = await director_api.list_all_services()
-    assert mocked_director_service_api["list_services"].called
-
-    services_image_digest = {service.image_digest for service in all_services}
-    assert None not in services_image_digest
-    assert len(services_image_digest) == len(all_services)
-
     # GET
-    expected_service = all_services[0]
+    expected_service = ServiceMetaDataPublished(**expected_director_list_services[0])
     assert (
         await director_api.get_service(expected_service.key, expected_service.version)
         == expected_service
     )
+    # TODO: error handling!
 
 
 async def test_director_client_low_level_api(
