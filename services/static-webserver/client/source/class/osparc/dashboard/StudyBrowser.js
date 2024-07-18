@@ -357,6 +357,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolderCards: function() {
+      this._resourcesContainer.setFoldersToList(this.__foldersList);
+      this._resourcesContainer.reloadFolders();
+
       const newFolderCard = new osparc.dashboard.FolderButtonNew();
       newFolderCard.setCardKey("new-folder");
       newFolderCard.subscribeToFilterGroup("searchBarFilter");
@@ -367,9 +370,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           .catch(err => console.error(err));
       })
       this._resourcesContainer.addNewFolderCard(newFolderCard);
-
-      this._resourcesContainer.setFoldersToList(this.__foldersList);
-      this._resourcesContainer.reloadFolders();
     },
 
     _folderSelected: function(folderId) {
@@ -377,7 +377,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteFolderRequested: function(folderId) {
-      console.log("delete folder requested", folderId);
+      osparc.store.FakeStore.getInstance().deleteFolder(folderId)
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
     },
 
     __configureCards: function(cards) {

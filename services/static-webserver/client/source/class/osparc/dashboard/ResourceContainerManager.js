@@ -238,10 +238,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __cleanAll: function() {
-      if (this.__foldersContainer) {
-        this.__foldersContainer.removeAll();
-        this.__foldersContainer = null;
-      }
       if (this.__nonGroupedContainer) {
         this.__nonGroupedContainer.removeAll();
         this.__nonGroupedContainer = null;
@@ -297,13 +293,16 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     reloadFolders: function() {
+      if (this.__foldersContainer) {
+        this.__foldersContainer.removeAll();
+      }
       let folderCards = [];
       this.__foldersList.forEach(folderData => folderCards.push(this.__folderToCard(folderData)));
       return folderCards;
     },
 
     addNewFolderCard: function(newFolderCard) {
-      this.__foldersContainer.add(newFolderCard);
+      this.__foldersContainer.addAt(newFolderCard, 0);
     },
 
     __moveNoGroupToLast: function() {
