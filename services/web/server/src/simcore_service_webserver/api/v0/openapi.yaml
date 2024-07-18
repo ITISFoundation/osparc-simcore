@@ -1289,6 +1289,255 @@ paths:
       responses:
         '200':
           description: Successful Response
+  /v0/folders:
+    get:
+      tags:
+      - folders
+      summary: List Folders
+      operationId: list_folders
+      parameters:
+      - description: Order by field (name|description) and direction (asc|desc). The
+          default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (name|description) and direction (asc|desc).
+            The default sorting order is ascending.
+          default: '{"field": "name", "direction": "desc"}'
+        example: '{"field": "name", "direction": "desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__'
+    post:
+      tags:
+      - folders
+      summary: Create Folder
+      operationId: create_folder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFolderBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/folders/{folder_id}:
+    get:
+      tags:
+      - folders
+      summary: Get Folder
+      operationId: get_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+    put:
+      tags:
+      - folders
+      summary: Replace Folder
+      operationId: replace_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutFolderBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder
+      operationId: delete_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/folders/{folder_id}/groups/{group_id}:
+    put:
+      tags:
+      - folders
+      summary: Replace Folder Group
+      operationId: replace_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    post:
+      tags:
+      - folders
+      summary: Create Folder Group
+      operationId: create_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder Group
+      operationId: delete_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/folders/{folder_id}/groups:
+    get:
+      tags:
+      - folders
+      summary: List Folder Groups
+      operationId: list_folder_groups
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__'
   /v0/groups:
     get:
       tags:
@@ -2526,7 +2775,7 @@ paths:
       tags:
       - projects
       summary: Update Project Group
-      operationId: replace_project_group
+      operationId: update_project_group
       parameters:
       - required: true
         schema:
@@ -3210,7 +3459,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6120,6 +6369,19 @@ components:
         alpha2:
           title: Alpha2
           type: string
+    CreateFolderBodyParams:
+      title: CreateFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
     CreatePricingPlanBodyParams:
       title: CreatePricingPlanBodyParams
       required:
@@ -6428,6 +6690,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadSchema'
+        error:
+          title: Error
+    Envelope_FolderGroupGet_:
+      title: Envelope[FolderGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_GetCreditPrice_:
@@ -7035,6 +7305,17 @@ components:
             $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletGet'
+        error:
+          title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
       title: Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]
       type: object
@@ -7067,6 +7348,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__:
+      title: Envelope[list[simcore_service_webserver.folders._groups_api.FolderGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
@@ -7522,6 +7814,39 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderGroupGet:
+      title: FolderGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -9834,6 +10159,19 @@ components:
           description: Timestamp with last update
           format: date-time
       additionalProperties: false
+    PutFolderBodyParams:
+      title: PutFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
     PutWalletBodyParams:
       title: PutWalletBodyParams
       required:
@@ -11825,6 +12163,24 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
+    _FoldersGroupsBodyParams:
+      title: _FoldersGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
