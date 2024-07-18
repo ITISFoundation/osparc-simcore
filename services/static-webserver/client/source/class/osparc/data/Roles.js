@@ -135,6 +135,36 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
+    FOLDERS: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- can inspect the content and open studies") // TODO
+        ]
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Editor"),
+        longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- can add studies"),
+          qx.locale.Manager.tr("- can add folders"),
+        ]
+      },
+      3: {
+        id: "delete",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
+        canDo: [
+          qx.locale.Manager.tr("- can rename folder"),
+          qx.locale.Manager.tr("- can share it"),
+          qx.locale.Manager.tr("- can delete it")
+        ]
+      }
+    },
+
     __createIntoFromRoles: function(roles) {
       const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         alignY: "middle",
