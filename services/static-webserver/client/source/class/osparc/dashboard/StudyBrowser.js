@@ -53,6 +53,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       check: "Number",
       nullable: true,
       init: null,
+      event: "changeCurrentFolderId",
       apply: "__applyCurrentFolderId"
     },
 
@@ -666,6 +667,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createResourcesLayout();
+
+      const folderHeader = this._resourcesContainer.getFolderHeader()
+      if (folderHeader) {
+        this.bind("currentFolderId", folderHeader, "currentFolderId");
+        folderHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
+      }
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");

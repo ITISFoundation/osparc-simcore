@@ -33,6 +33,10 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     });
   },
 
+  events: {
+    "changeCurrentFolderId": "qx.event.type.Data"
+  },
+
   properties: {
     currentFolderId: {
       check: "Number",
@@ -67,9 +71,13 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       if (currentFolder) {
         const parentFolder = osparc.store.Folders.getInstance().getFolder(currentFolder.getParentId());
         if (parentFolder) {
-          const upstreamButton = new qx.ui.form.Button(parentFolder.getName());
+          const upstreamButton = new qx.ui.form.Button(parentFolder.getName(), "@FontAwesome5Solid/folder/16");
+          upstreamButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", parentFolder.getId()), this);
           return upstreamButton;
         }
+        const homeButton = new qx.ui.form.Button(this.tr("Home", "@FontAwesome5Solid/home/16"));
+        homeButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
+        return homeButton;
       }
       return null;
     },
@@ -77,7 +85,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     __createCurrentFolderButton: function() {
       const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
       if (currentFolder) {
-        const currentFolderButton = new qx.ui.form.Button(currentFolder.getName());
+        const currentFolderButton = new qx.ui.form.Button(currentFolder.getName(), "@FontAwesome5Solid/folder/16");
         return currentFolderButton;
       }
       return null;

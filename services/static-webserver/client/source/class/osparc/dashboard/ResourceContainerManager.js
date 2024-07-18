@@ -30,6 +30,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
 
+    const folderHeader = this.__folderHeader = new osparc.dashboard.FolderHeader();
+    this._add(folderHeader);
+
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
     this._add(foldersContainer);
 
@@ -97,6 +100,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   members: {
     __foldersList: null,
     __resourcesList: null,
+    __folderHeader: null,
     __foldersContainer: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
@@ -138,6 +142,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       } else {
         this.__nonGroupedContainer.removeCard(uuid);
       }
+    },
+
+    getFolderHeader: function() {
+      return this.__folderHeader;
     },
 
     getFlatList: function() {
