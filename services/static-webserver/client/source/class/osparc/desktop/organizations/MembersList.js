@@ -142,14 +142,14 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMembersList: function() {
-      const memebersUIList = new qx.ui.form.List().set({
+      const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         width: 150
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
+      const membersCtrl = new qx.data.controller.List(membersModel, membersUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
@@ -199,7 +199,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         }
       });
 
-      return memebersUIList;
+      return membersUIList;
     },
 
     __reloadOrgMembers: function() {
