@@ -178,6 +178,7 @@ def list_latest_services_with_history_stmt(
             services_meta_data.c.version,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
         )
         .select_from(
             services_meta_data.join(
@@ -190,10 +191,16 @@ def list_latest_services_with_history_stmt(
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version)
                 & (services_access_rights.c.product_name == product_name),
-            ).join(
+            )
+            .join(
                 user_to_groups,
                 (user_to_groups.c.gid == services_access_rights.c.gid)
                 & (user_to_groups.c.uid == user_id),
+            )
+            .outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
             )
         )
         .where(access_rights)
@@ -230,6 +237,8 @@ def list_latest_services_with_history_stmt(
                     history_subquery.c.deprecated,
                     "created",
                     history_subquery.c.created,
+                    "compatibility_policy",  # NOTE: this is the `policy`
+                    history_subquery.c.custom_policy,
                 )
             ).label("history"),
         )
@@ -322,7 +331,7 @@ def get_service_history_stmt(
             services_meta_data.c.version,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
-            services_compatibility.c.custom_policy,  # CompatiblePolicyDict |
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
         )
         .select_from(
             # joins because access-rights might change per version

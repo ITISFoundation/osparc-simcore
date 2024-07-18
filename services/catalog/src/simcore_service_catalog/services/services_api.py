@@ -123,13 +123,24 @@ async def list_services_paginated(
         (s.key, s.version): s for s in got if isinstance(s, ServiceMetaDataPublished)
     }
 
-    # NOTE: aggregates published (i.e. not editable) is still missing in this version
     items = [
-        _db_to_api_model(s, ar, sm)
+        _db_to_api_model(
+            service_db=s, access_rights_db=ar, service_manifest=sm, compatibility_map=cm
+        )
         for s in services
         if (
             (ar := access_rights.get((s.key, s.version)))
             and (sm := service_manifest.get((s.key, s.version)))
+            and (
+                # NOTE: This operation might be resource-intensive.
+                # It is temporarily implemented on a trial basis.
+                cm := await evaluate_service_compatibility_map(
+                    repo,
+                    product_name=product_name,
+                    user_id=user_id,
+                    service_release_history=s.history,
+                )
+            )
         )
     ]
 
@@ -174,17 +185,17 @@ async def get_service(
             product_name=product_name,
         )
 
+    service_manifest = await manifest.get_service(
+        key=service_key,
+        version=service_version,
+        director_client=director_api,
+    )
+
     compatibility_map = await evaluate_service_compatibility_map(
         repo,
         product_name=product_name,
         user_id=user_id,
         service_release_history=service.history,
-    )
-
-    service_manifest = await manifest.get_service(
-        key=service_key,
-        version=service_version,
-        director_client=director_api,
     )
 
     return _db_to_api_model(service, access_rights, service_manifest, compatibility_map)
