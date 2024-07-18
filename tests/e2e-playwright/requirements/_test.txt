@@ -1,8 +1,8 @@
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
 arrow==1.3.0
     # via -r requirements/_test.in
-certifi==2024.2.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -10,11 +10,11 @@ dnspython==2.6.1
     # via email-validator
 docker==7.1.0
     # via -r requirements/_test.in
-email-validator==2.1.1
+email-validator==2.2.0
     # via pydantic
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 greenlet==3.0.3
     # via playwright
@@ -28,21 +28,21 @@ jinja2==3.1.4
     # via pytest-html
 markupsafe==2.1.5
     # via jinja2
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
-playwright==1.43.0
+playwright==1.45.0
     # via pytest-playwright
 pluggy==1.5.0
     # via pytest
-pydantic==2.7.1
+pydantic==2.8.2
     # via -r requirements/_test.in
-pydantic-core==2.18.2
+pydantic-core==2.20.1
     # via pydantic
 pyee==11.1.0
     # via playwright
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   pytest-base-url
     #   pytest-html
@@ -58,7 +58,7 @@ pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-metadata==3.1.1
     # via pytest-html
-pytest-playwright==0.4.4
+pytest-playwright==0.5.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -72,13 +72,13 @@ python-slugify==8.0.4
     # via pytest-playwright
 pyyaml==6.0.1
     # via -r requirements/_test.in
-requests==2.32.2
+requests==2.32.3
     # via
     #   docker
     #   pytest-base-url
 six==1.16.0
     # via python-dateutil
-tenacity==8.2.3
+tenacity==8.5.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
@@ -88,12 +88,12 @@ tomli==2.0.1
     # via pytest
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
     #   pyee
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   docker
     #   requests

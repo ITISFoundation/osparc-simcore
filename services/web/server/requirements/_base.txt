@@ -1,6 +1,5 @@
 aio-pika==9.1.2
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -10,18 +9,15 @@ aiocache==0.11.1
     #   -r requirements/_base.in
 aiodebug==2.3.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiodocker==0.21.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==0.8.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
@@ -82,8 +78,6 @@ anyio==4.3.0
     #   faststream
 arrow==1.2.3
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -168,7 +162,6 @@ fast-depends==2.4.2
     # via faststream
 faststream==0.5.10
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.3.0
@@ -213,7 +206,6 @@ jsondiff==2.0.0
     # via -r requirements/_base.in
 jsonschema==3.2.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
@@ -267,7 +259,6 @@ orjson==3.10.0
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -313,11 +304,9 @@ pydantic==1.9.0
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -346,7 +335,6 @@ pygments==2.15.1
     # via rich
 pyinstrument==4.6.1
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pyjwt==2.4.0
@@ -372,7 +360,6 @@ pyyaml==6.0.1
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -393,7 +380,6 @@ redis==5.0.4
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -410,7 +396,6 @@ requests==2.32.2
     # via twilio
 rich==13.4.2
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -455,21 +440,18 @@ sqlalchemy==1.4.47
     #   alembic
 strict-rfc3339==0.7
     # via openapi-core
-tenacity==8.0.1
+tenacity==8.5.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 toolz==0.12.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.64.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
@@ -477,7 +459,6 @@ twilio==7.12.0
     # via -r requirements/_base.in
 typer==0.12.3
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in

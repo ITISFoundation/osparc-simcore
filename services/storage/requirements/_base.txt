@@ -1,6 +1,5 @@
 aio-pika==9.4.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==13.1.0
@@ -13,17 +12,14 @@ aiocache==0.12.2
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 aiodebug==2.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==23.2.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -71,8 +67,6 @@ anyio==4.3.0
     #   faststream
 arrow==1.3.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -132,7 +126,6 @@ fast-depends==2.4.2
     # via faststream
 faststream==0.5.10
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
@@ -171,7 +164,6 @@ jmespath==1.0.1
     #   botocore
 jsonschema==4.21.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -240,7 +232,6 @@ orjson==3.10.0
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -274,11 +265,9 @@ pydantic==1.10.14
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -298,7 +287,6 @@ pygments==2.17.2
     # via rich
 pyinstrument==4.6.2
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
@@ -318,7 +306,6 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -338,7 +325,6 @@ redis==5.0.4
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -356,7 +342,6 @@ rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rich==13.7.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -397,25 +382,21 @@ sqlalchemy==1.4.52
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-tenacity==8.2.3
+tenacity==8.5.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 toolz==0.12.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.66.2
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.12.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -429,6 +410,8 @@ types-aiobotocore==2.12.1
 types-aiobotocore-ec2==2.12.3
     # via types-aiobotocore
 types-aiobotocore-s3==2.12.1
+    # via types-aiobotocore
+types-aiobotocore-ssm==2.12.3
     # via types-aiobotocore
 types-awscrt==0.20.5
     # via botocore-stubs
@@ -446,6 +429,7 @@ typing-extensions==4.10.0
     #   types-aiobotocore
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
+    #   types-aiobotocore-ssm
 ujson==5.9.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
