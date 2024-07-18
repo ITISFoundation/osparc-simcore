@@ -208,6 +208,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applySharedAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
+        // if it's not shared don't show the share icon
+        shareIcon.addListener("changeSource", e => {
+          const newSource = e.getData();
+          shareIcon.set({
+            visibility: newSource.includes(osparc.dashboard.CardBase.SHARE_ICON) ? "hidden" : "visible"
+          });
+        });
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
       }
     },
