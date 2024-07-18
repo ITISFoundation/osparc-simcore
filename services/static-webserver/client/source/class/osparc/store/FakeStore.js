@@ -123,6 +123,18 @@ qx.Class.define("osparc.store.FakeStore", {
       };
       this.__folders.push(newFolder);
       return new Promise(resolve => resolve(newFolder));
+    },
+
+    patchFolder: function(folderId, propKey, value) {
+      return new Promise((resolve, reject) => {
+        const folderData = this.__folders.filter(folder => folder.id === folderId);
+        if (folderData && propKey in folderData) {
+          folderData[propKey] = value;
+          resolve();
+        } else {
+          reject();
+        }
+      });
     }
   }
 });

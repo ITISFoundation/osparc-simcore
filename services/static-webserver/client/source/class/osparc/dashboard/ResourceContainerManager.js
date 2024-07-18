@@ -222,7 +222,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createFolderCard: function(folderData) {
-      const card = new osparc.dashboard.FolderButtonItem(folderData);
+      const folder = new osparc.data.model.Folder(folderData);
+      const card = new osparc.dashboard.FolderButtonItem(folder);
       card.subscribeToFilterGroup("searchBarFilter");
       return card;
     },

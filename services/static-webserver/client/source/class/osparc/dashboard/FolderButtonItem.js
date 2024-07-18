@@ -23,7 +23,7 @@
 qx.Class.define("osparc.dashboard.FolderButtonItem", {
   extend: osparc.dashboard.FolderButtonBase,
 
-  construct: function(folderData) {
+  construct: function(folder) {
     this.base(arguments);
 
     this.set({
@@ -35,16 +35,16 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
     this.set({
-      folderData
+      folder: folder
     });
   },
 
   properties: {
-    folderData: {
-      check: "Object",
+    folder: {
+      check: "osparc.data.model.Folder",
       nullable: false,
       init: null,
-      apply: "__applyFolderData"
+      apply: "__applyFolder"
     },
 
     folderId: {
@@ -137,17 +137,17 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyFolderData: function(folderData) {
+    __applyFolderData: function(folder) {
       this.getChildControl("icon");
       this.set({
-        cardKey: "folder-" + folderData.id,
-        folderId: folderData.id,
-        title: folderData.name,
-        description: folderData.description,
-        sharedAccessRights: folderData.sharedAccessRights,
-        lastModified: new Date(folderData.lastModified),
-        accessRights: folderData.accessRights,
+        cardKey: "folder-" + folder.getId()
       });
+      folder.bind("id", this, "folderId");
+      folder.bind("name", this, "title");
+      folder.bind("description", this, "description");
+      folder.bind("sharedAccessRights", this, "sharedAccessRights");
+      folder.bind("lastModified", this, "lastModified");
+      folder.bind("accessRights", this, "accessRights");
     },
 
     __applyTitle: function(value) {
@@ -182,7 +182,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           renamer.addListener("labelChanged", e => {
             renamer.close();
             const newLabel = e.getData()["newLabel"];
-            this.setTitle(newLabel);
+            osparc.data.model.Folder.patchFolder(this.getFolderId(), "name", newLabel)
+              .then(() => this.getFolder().setName(newLabel))
+              .catch(err => console.error(err));
           }, this);
           renamer.center();
           renamer.open();
