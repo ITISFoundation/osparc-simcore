@@ -26,7 +26,9 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
+    }));
 
     this.bind("currentFolderId", this, "visibility", {
       converter: currentFolderId => currentFolderId ? "visible" : "excluded"
@@ -88,18 +90,25 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     },
 
     __createFolderButton: function(folder) {
+      let folderButton = null;
       if (folder) {
-        const folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/16");
+        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
         folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder.getId()), this);
-        return folderButton;
+      } else {
+        folderButton = new qx.ui.form.Button(this.tr("Home"), "@FontAwesome5Solid/home/14");
+        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
       }
-      const homeButton = new qx.ui.form.Button(this.tr("Home", "@FontAwesome5Solid/home/16"));
-      homeButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
-      return homeButton;
+      folderButton.set({
+        backgroundColor: "transparent",
+        font: "text-14",
+        textColor: "text",
+        gap: 5,
+      });
+      return folderButton;
     },
 
     __createArrow: function() {
-      return new qx.ui.basic.Label(">");
+      return new qx.ui.basic.Label("->");
     }
   }
 });
