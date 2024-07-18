@@ -30,6 +30,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
@@ -92,7 +93,11 @@ def _assert_added_project(
     original_prj = deepcopy(exp_project)
     added_prj = deepcopy(added_project)
     # no user so the project owner has a pre-defined value
-    _DIFFERENT_KEYS = ["creationDate", "lastChangeDate"]
+    _DIFFERENT_KEYS = [
+        "creationDate",
+        "lastChangeDate",
+        "accessRights",  # NOTE: access rights were moved away from the projects table
+    ]
     assert {k: v for k, v in original_prj.items() if k in _DIFFERENT_KEYS} != {
         k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS
     }
@@ -154,7 +159,6 @@ def _assert_project_db_row(
         "prj_owner": None,
         "workbench": project["workbench"],
         "published": False,
-        "access_rights": {},
         "dev": project["dev"],
         "classifiers": project["classifiers"],
         "ui": project["ui"],
@@ -174,6 +178,7 @@ async def insert_project_in_db(
     aiopg_engine: aiopg.sa.engine.Engine,
     db_api: ProjectDBAPI,
     osparc_product_name: str,
+    client: TestClient,
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     inserted_projects = []
 
@@ -187,6 +192,18 @@ async def insert_project_in_db(
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
+        if _access_rights := default_config["project"].get(
+            "access_rights", {}
+        ) | default_config["project"].get("accessRights", {}):
+            for group_id, permissions in _access_rights.items():
+                await update_or_insert_project_group(
+                    client.app,
+                    new_project["uuid"],
+                    group_id=int(group_id),
+                    read=permissions["read"],
+                    write=permissions["write"],
+                    delete=permissions["delete"],
+                )
 
         inserted_projects.append(new_project["uuid"])
         return new_project
@@ -253,18 +270,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -282,18 +293,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         type=ProjectType.TEMPLATE,
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
@@ -327,18 +332,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -490,18 +489,12 @@ async def test_patch_user_project_workbench_concurrently(
         new_project,
         exp_overrides={
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
@@ -549,9 +542,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
@@ -582,9 +572,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
@@ -615,9 +602,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )

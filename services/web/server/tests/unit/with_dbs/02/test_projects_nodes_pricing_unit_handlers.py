@@ -82,7 +82,7 @@ async def test_project_node_pricing_unit_user_project_access(
             project_id=user_project["uuid"], node_id=node_id
         )
         resp = await client.get(base_url)
-        _, errors = await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
 

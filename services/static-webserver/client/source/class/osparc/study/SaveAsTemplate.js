@@ -67,18 +67,21 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     },
 
     __publishTemplate: function() {
+      // AccessRights will be POSTed after the template is created
+      const accessRights = {}
       this.__studyDataClone["accessRights"] = {};
       const selectedGroupIDs = this.__shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(gid => {
-        this.__studyDataClone["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight();
+        accessRights[gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight();
       });
       // Make publisher owner
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      this.__studyDataClone["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
+      accessRights[myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
 
       this.fireDataEvent("publishTemplate", {
         "studyData": this.__studyDataClone,
-        "copyData": this.__copyWData.getValue()
+        "copyData": this.__copyWData.getValue(),
+        "accessRights": accessRights
       });
     },
 

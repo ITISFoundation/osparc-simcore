@@ -292,7 +292,7 @@ def catalog_subsystem_mock(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker):
+def mocks_on_projects_api(mocker) -> None:
     """
     All projects in this module are UNLOCKED
     """
@@ -457,7 +457,7 @@ async def test_dispatch_logged_in_user(
     mock_dynamic_scheduler: None,
     storage_subsystem_mock,
     catalog_subsystem_mock: None,
-    mocks_on_projects_api,
+    mocks_on_projects_api: None,
 ):
     assert client.app
     mock_client_director_v2_pipline_update = mocker.patch(
