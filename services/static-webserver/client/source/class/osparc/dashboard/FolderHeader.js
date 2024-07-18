@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(15).set({
+    this._setLayout(new qx.ui.layout.HBox(20).set({
       alignY: "middle"
     }));
 
