@@ -6,6 +6,7 @@ from collections.abc import Iterable
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.registry import (
     DOCKER_CONFIG_JSON_PATH,
@@ -46,7 +47,9 @@ def cleanup_config_file() -> Iterable[None]:
 
 
 @pytest.fixture
-def unset_registry_envs(monkeypatch: pytest.MonkeyPatch) -> None:
+def unset_registry_envs(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
     for env in (
         "REGISTRY_AUTH",
         "REGISTRY_PATH",
