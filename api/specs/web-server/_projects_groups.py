@@ -51,7 +51,7 @@ async def list_project_groups(
     "/projects/{project_id}/groups/{group_id}",
     response_model=Envelope[ProjectGroupGet],
 )
-async def update_project_group(
+async def replace_project_group(
     _path: Annotated[_ProjectsGroupsPathParams, Depends()],
     _body: _ProjectsGroupsBodyParams,
 ):

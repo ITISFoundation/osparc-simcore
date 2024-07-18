@@ -2774,8 +2774,8 @@ paths:
     put:
       tags:
       - projects
-      summary: Update Project Group
-      operationId: update_project_group
+      summary: Replace Project Group
+      operationId: replace_project_group
       parameters:
       - required: true
         schema:
@@ -3459,7 +3459,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
