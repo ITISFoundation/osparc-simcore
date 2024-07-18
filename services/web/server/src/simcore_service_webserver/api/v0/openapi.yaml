@@ -2526,7 +2526,7 @@ paths:
       tags:
       - projects
       summary: Update Project Group
-      operationId: replace_project_group
+      operationId: update_project_group
       parameters:
       - required: true
         schema:
@@ -3210,7 +3210,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5656,6 +5656,7 @@ components:
           type: array
           items:
             type: string
+          default: []
         quality:
           title: Quality
           type: object
@@ -10610,6 +10611,9 @@ components:
         description:
           title: Description
           type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
         deprecated:
           title: Deprecated
           type: string
@@ -11952,6 +11956,14 @@ components:
           title: Description
           type: string
           description: human readable description of the purpose of the node
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: A user-friendly or marketing name for the release. This can
+            be used to reference the release in a more readable and recognizable format,
+            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
+            name is not used for version comparison but is useful for communication
+            and documentation purposes.
         deprecated:
           title: Deprecated
           type: string
@@ -11984,14 +11996,6 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
-        versionDisplay:
-          title: Versiondisplay
-          type: string
-          description: A user-friendly or marketing name for the release. This can
-            be used to reference the release in a more readable and recognizable format,
-            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
-            name is not used for version comparison but is useful for communication
-            and documentation purposes.
         releaseDate:
           title: Releasedate
           type: string
