@@ -69,7 +69,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "tagClicked": "qx.event.type.Data",
     "emptyStudyClicked": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
-    "changeVisibility": "qx.event.type.Data"
+    "changeVisibility": "qx.event.type.Data",
+    "folderSelected": "qx.event.type.Data",
+    "deleteFolderRequested": "qx.event.type.Data",
   },
 
   statics: {
@@ -224,6 +226,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __createFolderCard: function(folder) {
       const card = new osparc.dashboard.FolderButtonItem(folder);
       card.subscribeToFilterGroup("searchBarFilter");
+      [
+        "folderSelected",
+        "deleteFolderRequested",
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;
     },
 

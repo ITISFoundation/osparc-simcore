@@ -39,6 +39,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     });
   },
 
+  events: {
+    "folderSelected": "qx.event.type.Data",
+    "deleteFolderRequested": "qx.event.type.Data"
+  },
+
   properties: {
     folder: {
       check: "osparc.data.model.Folder",
@@ -246,7 +251,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __itemSelected: function(newVal) {
       if (newVal) {
-        console.log("folder tapped", this.getFolderId());
+        this.fireDataEvent("folderSelected", this.getFolderId());
       }
       this.setValue(false);
     },
@@ -265,7 +270,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
-          console.log("Delete", this.getTitle());
+          this.fireDataEvent("deleteFolderRequested", this.getFolderId());
         }
       }, this);
     }

@@ -372,6 +372,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.reloadFolders();
     },
 
+    _folderSelected: function(folderId) {
+      console.log("open folder", folderId);
+    },
+
+    _deleteFolderRequested: function(folderId) {
+      console.log("delete folder requested", folderId);
+    },
+
     __configureCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
