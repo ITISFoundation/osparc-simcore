@@ -52,7 +52,7 @@ qx.Class.define("osparc.data.model.Folder", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeId"
+      event: "changeParentId"
     },
 
     name: {

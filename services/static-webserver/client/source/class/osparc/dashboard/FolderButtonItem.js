@@ -52,6 +52,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: false
     },
 
+    parentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: true
+    },
+
     title: {
       check: "String",
       nullable: true,
@@ -137,6 +143,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         cardKey: "folder-" + folder.getId()
       });
       folder.bind("id", this, "folderId");
+      folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("description", this, "description");
       folder.bind("sharedAccessRights", this, "sharedAccessRights");
@@ -170,20 +177,33 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           position: "bottom-right"
         });
 
-        const renameButton = new qx.ui.menu.Button(this.tr("Rename..."));
-        renameButton.addListener("execute", () => {
-          const renamer = new osparc.widget.Renamer(this.getTitle());
-          renamer.addListener("labelChanged", e => {
-            renamer.close();
-            const newLabel = e.getData()["newLabel"];
-            osparc.data.model.Folder.patchFolder(this.getFolderId(), "name", newLabel)
-              .then(() => this.getFolder().setName(newLabel))
+        const editButton = new qx.ui.menu.Button(this.tr("Rename..."));
+        editButton.addListener("execute", () => {
+          const newFolder = false;
+          const folderEditor = new osparc.editor.FolderEditor(newFolder);
+          const title = this.tr("Edit Folder");
+          const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 200);
+          folderEditor.addListener("createFolder", () => {
+            const newName = folderEditor.getLabel();
+            const newDescription = folderEditor.getDescription();
+            const promises = [];
+            if (newName !== this.getFolder().getName()) {
+              promises.push(osparc.data.model.Folder.patchFolder(this.getFolderId(), "name", newName));
+            }
+            if (newDescription !== this.getFolder().getDescription()) {
+              promises.push(osparc.data.model.Folder.patchFolder(this.getFolderId(), "description", newDescription));
+            }
+            Promise.all(promises)
+              .then(() => this.getFolder().set({
+                name: newName,
+                description: newDescription
+              }))
               .catch(err => console.error(err));
-          }, this);
-          renamer.center();
-          renamer.open();
+            win.close();
+          });
+          folderEditor.addListener("cancel", () => win.close());
         });
-        menu.add(renameButton);
+        menu.add(editButton);
 
         const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
         shareButton.addListener("execute", () => this.__openShareWith(), this);

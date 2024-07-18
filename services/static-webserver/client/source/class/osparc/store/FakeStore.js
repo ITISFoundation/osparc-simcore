@@ -24,12 +24,7 @@ qx.Class.define("osparc.store.FakeStore", {
 
     this.__foldersCache = [];
 
-    const folders = [];
-    this.self().FOLDER_DATA_INIT.forEach(folderData => {
-      const folder = new osparc.data.model.Folder(folderData);
-      folders.push(folder);
-      this.__addToCache(folder);
-    });
+    this.fetchFolders();
   },
 
   statics: {
@@ -104,25 +99,25 @@ qx.Class.define("osparc.store.FakeStore", {
   members: {
     __foldersCache: null,
 
-    getFolders: function(parentFolder = null) {
-      return new Promise(resolve => {
-        const folders = [];
-        const foldersData = this.__foldersCache.filter(f => f.getParentFolder() === parentFolder);
-        foldersData.forEach(folderData => {
-          const folder = new osparc.data.model.Folder(folderData);
-          folders.push(folder);
-          this.__addToCache(folder);
-        });
-        resolve(folders);
+    fetchFolders: function() {
+      this.self().FOLDER_DATA_INIT.forEach(folderData => {
+        const folder = new osparc.data.model.Folder(folderData);
+        this.__addToCache(folder);
       });
     },
 
-    postFolder: function(name, description, parentFolder = null) {
+    getFolders: function(parentId = null) {
+      return new Promise(resolve => {
+        resolve(this.__foldersCache.filter(f => f.getParentId() === parentId));
+      });
+    },
+
+    postFolder: function(name, description, parentId = null) {
       return new Promise(resolve => {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         const newFolderData = {
           id: Math.floor(Math.random() * 1000),
-          parentFolder: parentFolder,
+          parentFolder: parentId,
           name: name,
           description: description || "",
           owner: myGroupId,
