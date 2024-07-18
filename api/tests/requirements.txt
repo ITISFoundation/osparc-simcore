@@ -21,7 +21,7 @@ coverage==7.6.0
     # via
     #   -r requirements.in
     #   pytest-cov
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 frozenlist==1.4.1
     # via

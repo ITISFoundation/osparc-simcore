@@ -9,7 +9,7 @@ aiodebug==2.3.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.22.1
+aiodocker==0.22.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -108,7 +108,7 @@ docker==7.1.0
     #   -r requirements/_test.in
 email-validator==2.2.0
     # via pydantic
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via
     #   anyio
     #   pytest
@@ -203,7 +203,7 @@ packaging==24.1
     #   pytest-sugar
 pamqp==3.3.0
     # via aiormq
-pint==0.24.1
+pint==0.24.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pluggy==1.5.0
     # via pytest

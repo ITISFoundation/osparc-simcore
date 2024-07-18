@@ -8,7 +8,7 @@ certifi==2024.7.4
     #   osparc-client
 click==8.1.7
     # via typer
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via anyio
 h11==0.14.0
     # via httpcore

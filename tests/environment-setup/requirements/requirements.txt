@@ -1,4 +1,4 @@
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 iniconfig==2.0.0
     # via pytest
