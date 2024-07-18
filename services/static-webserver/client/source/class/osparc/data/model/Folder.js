@@ -30,6 +30,7 @@ qx.Class.define("osparc.data.model.Folder", {
 
     this.set({
       id: folderData.id,
+      parentId: folderData.parentFolder,
       name: folderData.name,
       description: folderData.description,
       accessRights: folderData.accessRights,
@@ -43,6 +44,13 @@ qx.Class.define("osparc.data.model.Folder", {
     id: {
       check: "Number",
       nullable: false,
+      init: null,
+      event: "changeId"
+    },
+
+    parentId: {
+      check: "Number",
+      nullable: true,
       init: null,
       event: "changeId"
     },
