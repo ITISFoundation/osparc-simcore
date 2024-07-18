@@ -1331,7 +1331,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
     post:
       tags:
       - folders
@@ -1371,7 +1371,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
     put:
       tags:
       - folders
@@ -1398,7 +1398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
     delete:
       tags:
       - folders
@@ -1419,7 +1419,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
   /v0/folders/{folder_id}/groups/{group_id}:
     put:
       tags:
@@ -6692,6 +6692,14 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
+    Envelope_FolderGet_:
+      title: Envelope[FolderGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
     Envelope_FolderGroupGet_:
       title: Envelope[FolderGroupGet]
       type: object
@@ -7239,6 +7247,17 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
     Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
       title: Envelope[list[models_library.api_schemas_webserver.groups.GroupUserGet]]
       type: object
@@ -7303,17 +7322,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WalletGetWithAvailableCredits'
-        error:
-          title: Error
-    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__:
-      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGet]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/WalletGet'
         error:
           title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
@@ -7814,6 +7822,17 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderGet:
+      title: FolderGet
+      required:
+      - folderId
+      type: object
+      properties:
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     FolderGroupGet:
       title: FolderGroupGet
       required:
