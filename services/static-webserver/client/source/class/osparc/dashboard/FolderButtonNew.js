@@ -49,8 +49,7 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
           control = new qx.ui.basic.Image().set({
             source: osparc.dashboard.CardBase.NEW_ICON + "26",
             anonymous: true,
-            alignY: "middle",
-            alignX: "center",
+            height: 40,
             padding: 5
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.ICON);
@@ -60,8 +59,6 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
           control = new qx.ui.basic.Label(this.tr("Create New folder")).set({
             anonymous: true,
             font: "text-14",
-            alignY: "middle",
-            allowGrowX: true,
             rich: true,
           });
           this._add(control, {

@@ -90,8 +90,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         case "icon": {
           control = new osparc.dashboard.FolderWithSharedIcon().set({
             anonymous: true,
-            alignY: "middle",
-            alignX: "center",
+            height: 40,
             padding: 5
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.ICON);
@@ -101,8 +100,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-14",
-            alignY: "middle",
-            allowGrowX: true,
             rich: true,
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
@@ -111,9 +108,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-12",
-            allowGrowY: false,
-            minWidth: 100,
-            alignY: "middle"
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
           break;

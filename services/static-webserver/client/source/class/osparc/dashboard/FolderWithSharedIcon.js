@@ -23,13 +23,6 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.set({
-      width: 30,
-      height: 40,
-      alignX: "center",
-      alignY: "middle"
-    });
-
     this._createChildControlImpl("folder-icon");
     this._createChildControlImpl("shared-icon");
   },

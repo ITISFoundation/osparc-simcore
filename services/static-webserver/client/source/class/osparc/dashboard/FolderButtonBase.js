@@ -31,10 +31,12 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
       alignY: "middle"
     });
 
-    const layout = new qx.ui.layout.Grid();
-    layout.setSpacing(this.self().SPACING);
-    layout.setColumnFlex(this.self().POS.TITLE.column, 1);
-    this._setLayout(layout);
+    const gridLayout = new qx.ui.layout.Grid();
+    gridLayout.setSpacing(this.self().SPACING);
+    gridLayout.setColumnFlex(this.self().POS.TITLE.column, 1);
+    gridLayout.setColumnAlign(this.self().POS.ICON.column, "center", "middle");
+    gridLayout.setColumnAlign(this.self().POS.TITLE.column, "left", "middle");
+    this._setLayout(gridLayout);
 
     [
       "pointerover",
