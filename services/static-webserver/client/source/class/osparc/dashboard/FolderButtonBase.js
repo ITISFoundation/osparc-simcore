@@ -38,15 +38,8 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
     gridLayout.setColumnAlign(this.self().POS.TITLE.column, "left", "middle");
     this._setLayout(gridLayout);
 
-    [
-      "pointerover",
-      // "focus"
-    ].forEach(e => this.addListener(e, this.__onPointerOver, this));
-
-    [
-      "pointerout",
-      // "focusout"
-    ].forEach(e => this.addListener(e, this.__onPointerOut, this));
+    this.addListener("pointerover", this.__onPointerOver, this);
+    this.addListener("pointerout", this.__onPointerOut, this);
   },
 
   properties: {
