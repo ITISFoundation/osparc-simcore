@@ -3,12 +3,14 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from unittest.mock import AsyncMock
 
+import arrow
 import pytest
 from models_library.services_types import ServiceVersion
+from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from pytest_mock import MockerFixture, MockType
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import ReleaseFromDB
 from simcore_service_catalog.services.compatibility import (
@@ -156,101 +158,126 @@ def test_get_latest_compatible_version(versions_history: list[Version]):
     assert latest_compatible < latest
 
 
+def _create_as(cls, **overrides):
+    kwargs = {
+        "deprecated": None,
+        "created": arrow.now().datetime,
+        "compatibility_policy": None,
+    }
+    kwargs.update(overrides)
+    return cls(**kwargs)
+
+
 @pytest.fixture
-def mock_repo():
-    repo = AsyncMock(spec=ServicesRepository)
-    repo.get_service_history.return_value = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(version="1.1.0"),
-        ReleaseFromDB(version="1.2.0"),
-        ReleaseFromDB(version="2.0.0"),
-    ]
-    return repo
+def mock_repo(mocker: MockerFixture) -> MockType:
+    return mocker.AsyncMock(ServicesRepository)
 
 
-async def test_evaluate_service_compatibility_map_basic(mock_repo):
+async def test_evaluate_service_compatibility_map_with_default_policy(
+    mock_repo: MockType, user_id: UserID
+):
     service_release_history = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(version="1.1.0"),
-        ReleaseFromDB(version="1.2.0"),
-        ReleaseFromDB(version="2.0.0"),
+        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(ReleaseFromDB, version="1.0.1"),
+        _create_as(ReleaseFromDB, version="1.1.0"),
+        _create_as(ReleaseFromDB, version="2.0.0"),
     ]
 
-    result = await evaluate_service_compatibility_map(
-        mock_repo, "test_product", "test_user", service_release_history
+    compatibility_map = await evaluate_service_compatibility_map(
+        mock_repo, "product_name", user_id, service_release_history
     )
 
-    assert len(result) == 4
-    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("1.1.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("1.2.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("2.0.0")] is None
+    assert len(compatibility_map) == 4
+    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+    assert compatibility_map[ServiceVersion("1.0.1")] is None
+    assert compatibility_map[ServiceVersion("1.1.0")] is None
+    assert compatibility_map[ServiceVersion("2.0.0")] is None
 
 
-async def test_evaluate_service_compatibility_map_with_custom_policy(mock_repo):
+async def test_evaluate_service_compatibility_map_with_custom_policy(
+    mock_repo: MockType, user_id: UserID
+):
     service_release_history = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(version="1.1.0"),
-        ReleaseFromDB(
-            version="1.2.0",
-            compatibility_policy={"versions_specifier": ">=1.1.0,<2.0.0"},
+        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(
+            ReleaseFromDB,
+            version="1.0.1",
+            compatibility_policy={"versions_specifier": ">1.1.0,<=2.0.0"},
         ),
-        ReleaseFromDB(version="2.0.0"),
+        _create_as(ReleaseFromDB, version="1.2.0"),
+        _create_as(ReleaseFromDB, version="2.0.0"),
     ]
 
-    result = await evaluate_service_compatibility_map(
-        mock_repo, "test_product", "test_user", service_release_history
+    compatibility_map = await evaluate_service_compatibility_map(
+        mock_repo, "product_name", user_id, service_release_history
     )
 
-    assert len(result) == 4
-    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("1.1.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("1.2.0")].can_update_to.version == "1.2.0"
-    assert result[ServiceVersion("2.0.0")] is None
+    assert len(compatibility_map) == 4
+    assert (
+        compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+    )  # default
+    assert (
+        compatibility_map[ServiceVersion("1.0.1")].can_update_to == "2.0.0"
+    )  # version customized
+    assert compatibility_map[ServiceVersion("1.2.0")] is None
+    assert compatibility_map[ServiceVersion("2.0.0")] is None
 
 
-async def test_evaluate_service_compatibility_map_with_other_service(mock_repo):
+async def test_evaluate_service_compatibility_map_with_other_service(
+    mock_repo: MockType, user_id: UserID
+):
     service_release_history = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(
-            "1.1.0",
+        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(
+            ReleaseFromDB,
+            version="1.0.1",
             compatibility_policy={
-                "other_service_key": "other_service",
-                "versions_specifier": ">=1.0.0",
+                "other_service_key": "simcore/services/comp/other_service",
+                "versions_specifier": "<=5.1.0",
             },
         ),
     ]
 
     mock_repo.get_service_history.return_value = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(version="1.1.0"),
-        ReleaseFromDB(version="1.2.0"),
+        _create_as(ReleaseFromDB, version="5.0.0"),
+        _create_as(ReleaseFromDB, version="5.1.0"),
+        _create_as(ReleaseFromDB, version="5.2.0"),
     ]
 
-    result = await evaluate_service_compatibility_map(
-        mock_repo, "test_product", "test_user", service_release_history
+    compatibility_map = await evaluate_service_compatibility_map(
+        mock_repo, "product_name", user_id, service_release_history
     )
 
-    assert len(result) == 2
-    assert result[ServiceVersion("1.0.0")].can_update_to.version == "1.1.0"
-    assert result[ServiceVersion("1.1.0")].can_update_to.key == "other_service"
-    assert result[ServiceVersion("1.1.0")].can_update_to.version == "1.2.0"
+    assert len(compatibility_map) == 2
+    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+    # NOTE: 1.0.1 is also upgradable but it is not evaluated as so because our algorithm only
+    # checks comptatibility once instead of recursively
+
+    assert (
+        compatibility_map[ServiceVersion("1.0.1")].can_update_to.key
+        == "simcore/services/comp/other_service"
+    )
+    assert compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "5.1.0"
 
 
-async def test_evaluate_service_compatibility_map_with_deprecated_versions(mock_repo):
+async def test_evaluate_service_compatibility_map_with_deprecated_versions(
+    mock_repo: MockType, user_id: UserID
+):
     service_release_history = [
-        ReleaseFromDB(version="1.0.0"),
-        ReleaseFromDB(version="1.1.0", deprecated=True),
-        ReleaseFromDB(version="1.2.0"),
-        ReleaseFromDB(version="2.0.0"),
+        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(ReleaseFromDB, version="1.0.1", deprecated=True),
+        _create_as(ReleaseFromDB, version="1.2.0"),
+        _create_as(ReleaseFromDB, version="1.2.5"),
     ]
 
-    result = await evaluate_service_compatibility_map(
-        mock_repo, "test_product", "test_user", service_release_history
+    compatibility_map = await evaluate_service_compatibility_map(
+        mock_repo, "product_name", user_id, service_release_history
     )
 
-    assert len(result) == 4
-    assert result[ServiceVersion("1.0.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("1.1.0")] is None  # Deprecated version
-    assert result[ServiceVersion("1.2.0")].can_update_to.version == "2.0.0"
-    assert result[ServiceVersion("2.0.0")] is None
+    assert len(compatibility_map) == 4
+    assert (
+        compatibility_map[ServiceVersion("1.0.0")] is None
+    )  # cannot upgrade to deprecated 1.0.1
+    assert compatibility_map[ServiceVersion("1.0.1")] is None  # Deprecated version
+    assert compatibility_map[ServiceVersion("1.2.0")].can_update_to == "1.2.5"
+    assert compatibility_map[ServiceVersion("1.2.5")] is None
