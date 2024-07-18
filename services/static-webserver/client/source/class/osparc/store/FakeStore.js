@@ -22,7 +22,11 @@ qx.Class.define("osparc.store.FakeStore", {
   construct: function() {
     this.base(arguments);
 
-    this.__folders = [{
+    this.__foldersCache = [];
+  },
+
+  statics: {
+    FOLDER_DATA_INIT: [{
       id: 1,
       parentFolder: null,
       name: "Folder 1",
@@ -87,54 +91,86 @@ qx.Class.define("osparc.store.FakeStore", {
           delete: true
         }
       }
-    }];
+    }]
   },
 
   members: {
-    __folders: null,
+    __foldersCache: null,
 
     getFolders: function(parentFolder = null) {
       return new Promise(resolve => {
-        resolve(this.__folders.filter(folder => folder.parentFolder === parentFolder));
+        const folders = [];
+        const foldersData = this.self().FOLDER_DATA_INIT.filter(folder => folder.parentFolder === parentFolder);
+        foldersData.forEach(folderData => {
+          const folder = new osparc.data.model.Folder(folderData);
+          folders.push(folder);
+          this.__addToCache(folder);
+        });
+        resolve(folders);
       });
     },
 
     postFolder: function(folderName) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const newFolder = {
-        id: Math.floor(Math.random() * 1000),
-        parentFolder: null,
-        name: folderName,
-        description: "Description",
-        owner: myGroupId,
-        createdAt: new Date().toString(),
-        lastModified: new Date().toString(),
-        accessRights: {
+      return new Promise(resolve => {
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        const newFolderData = {
+          id: Math.floor(Math.random() * 1000),
+          parentFolder: null,
+          name: folderName,
+          description: "Description",
+          owner: myGroupId,
+          createdAt: new Date().toString(),
+          lastModified: new Date().toString(),
+          accessRights: {
+            read: true,
+            write: true,
+            delete: true
+          },
+          sharedAccessRights: {},
+        };
+        newFolderData["sharedAccessRights"][myGroupId] = {
           read: true,
           write: true,
           delete: true
-        },
-        sharedAccessRights: {},
-      };
-      newFolder["sharedAccessRights"][myGroupId] = {
-        read: true,
-        write: true,
-        delete: true
-      };
-      this.__folders.push(newFolder);
-      return new Promise(resolve => resolve(newFolder));
+        };
+        const newFolder = new osparc.data.model.Folder(newFolderData);
+        this.__addToCache(newFolder);
+        resolve(newFolder)
+      });
     },
 
-    patchFolder: function(folderId, propKey, value) {
+    deleteFolder: function(folderId) {
       return new Promise((resolve, reject) => {
-        const folderData = this.__folders.find(folder => folder.id === folderId);
-        if (folderData && propKey in folderData) {
-          folderData[propKey] = value;
+        const idx = this.__foldersCache.findIndex(f => f.getId() === folderId);
+        if (idx > -1) {
+          this.__foldersCache.splice(idx, 1);
           resolve();
         } else {
           reject();
         }
       });
+    },
+
+    patchFolder: function(folderId, propKey, value) {
+      return new Promise((resolve, reject) => {
+        const folder = this.__foldersCache.find(f => f.getId() === folderId);
+        const upKey = qx.lang.String.firstUp(propKey);
+        const setter = "set" + upKey;
+        if (folder && setter in folder) {
+          folder[setter](value);
+          folder.setLastModified(new Date());
+          resolve();
+        } else {
+          reject();
+        }
+      });
+    },
+
+    __addToCache: function(folder) {
+      const found = this.__foldersCache.find(f => f.getId() === folder.getId());
+      if (!found) {
+        this.__foldersCache.push(folder);
+      }
     }
   }
 });

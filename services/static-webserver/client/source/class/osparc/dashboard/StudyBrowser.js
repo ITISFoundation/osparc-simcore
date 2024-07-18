@@ -71,18 +71,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   statics: {
     sortFoldersList: function(foldersList, propKey) {
-      const sortByProperty = function(prop) {
-        return function(x, y) {
-          if (prop === "lastModified") {
-            return new Date(y[prop]) - new Date(x[prop]);
-          }
-          if (typeof x[prop] == "number") {
-            return x[prop] - y[prop];
-          }
-          if (x[prop] < y[prop]) {
-            return -1;
-          } else if (x[prop] > y[prop]) {
-            return 1;
+      const sortByProperty = prop => {
+        return function(a, b) {
+          const upKey = qx.lang.String.firstUp(prop);
+          const getter = "get" + upKey;
+          if (getter in a && getter in b) {
+            return b[getter]() - a[getter]();
           }
           return 0;
         };
