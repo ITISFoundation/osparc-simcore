@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this._setLayout(new qx.ui.layout.HBox(5));
 
     this.bind("currentFolderId", this, "visibility", {
       converter: currentFolderId => currentFolderId ? "visible" : "excluded"
@@ -52,12 +52,8 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       this._removeAll();
 
       if (currentFolderId) {
-        const upstreamButton = this.__createUpstreamButton();
-        if (upstreamButton) {
-          this._add(upstreamButton);
-
-          this._add(new qx.ui.basic.Label(">"));
-        }
+        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
+        this.__createUpstreamButtons(currentFolder);
 
         const currentFolderButton = this.__createCurrentFolderButton();
         if (currentFolderButton) {
@@ -66,29 +62,44 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       }
     },
 
-    __createUpstreamButton: function() {
-      const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-      if (currentFolder) {
-        const parentFolder = osparc.store.Folders.getInstance().getFolder(currentFolder.getParentId());
+    __createUpstreamButtons: function(childFolder) {
+      if (childFolder) {
+        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentId());
         if (parentFolder) {
-          const upstreamButton = new qx.ui.form.Button(parentFolder.getName(), "@FontAwesome5Solid/folder/16");
-          upstreamButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", parentFolder.getId()), this);
-          return upstreamButton;
+          this._addAt(this.__createArrow(), 0);
+          const upstreamButton = this.__createFolderButton(parentFolder);
+          this._addAt(upstreamButton, 0);
+          this.__createUpstreamButtons(parentFolder);
+        } else {
+          this._addAt(this.__createArrow(), 0);
+          const homeButton = this.__createFolderButton();
+          this._addAt(homeButton, 0);
         }
-        const homeButton = new qx.ui.form.Button(this.tr("Home", "@FontAwesome5Solid/home/16"));
-        homeButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
-        return homeButton;
       }
-      return null;
     },
 
     __createCurrentFolderButton: function() {
       const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
       if (currentFolder) {
-        const currentFolderButton = new qx.ui.form.Button(currentFolder.getName(), "@FontAwesome5Solid/folder/16");
+        const currentFolderButton = this.__createFolderButton(currentFolder);
         return currentFolderButton;
       }
       return null;
+    },
+
+    __createFolderButton: function(folder) {
+      if (folder) {
+        const folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/16");
+        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder.getId()), this);
+        return folderButton;
+      }
+      const homeButton = new qx.ui.form.Button(this.tr("Home", "@FontAwesome5Solid/home/16"));
+      homeButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
+      return homeButton;
+    },
+
+    __createArrow: function() {
+      return new qx.ui.basic.Label(">");
     }
   }
 });
