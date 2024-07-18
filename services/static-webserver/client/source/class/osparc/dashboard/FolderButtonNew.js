@@ -77,14 +77,19 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
 
     __itemSelected: function(newVal) {
       if (newVal) {
-        const renamer = new osparc.widget.Renamer("New Folder", "", this.tr("Create Folder"));
-        renamer.addListener("labelChanged", e => {
-          renamer.close();
-          const folderName = e.getData()["newLabel"];
-          this.fireDataEvent("createFolder", folderName);
-        }, this);
-        renamer.center();
-        renamer.open();
+        const newFolder = true;
+        const folderEditor = new osparc.editor.FolderEditor(newFolder);
+        const title = this.tr("New Folder");
+        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 250);
+        folderEditor.addListener("createOrg", () => {
+          const name = folderEditor.getLabel();
+          const description = folderEditor.getDescription();
+          this.fireDataEvent("createFolder", {
+            name,
+            description
+          });
+        });
+        folderEditor.addListener("cancel", () => win.close());
       }
       this.setValue(false);
     }

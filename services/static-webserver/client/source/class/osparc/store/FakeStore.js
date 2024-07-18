@@ -110,14 +110,14 @@ qx.Class.define("osparc.store.FakeStore", {
       });
     },
 
-    postFolder: function(folderName) {
+    postFolder: function(name, description) {
       return new Promise(resolve => {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         const newFolderData = {
           id: Math.floor(Math.random() * 1000),
           parentFolder: null,
-          name: folderName,
-          description: "Description",
+          name: name,
+          description: description || "",
           owner: myGroupId,
           createdAt: new Date().toString(),
           lastModified: new Date().toString(),
