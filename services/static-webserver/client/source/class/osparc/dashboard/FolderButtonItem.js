@@ -137,7 +137,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyFolderData: function(folder) {
+    __applyFolder: function(folder) {
       this.getChildControl("icon");
       this.set({
         cardKey: "folder-" + folder.getId()

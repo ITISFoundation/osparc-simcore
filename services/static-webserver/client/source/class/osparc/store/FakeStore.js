@@ -127,7 +127,7 @@ qx.Class.define("osparc.store.FakeStore", {
 
     patchFolder: function(folderId, propKey, value) {
       return new Promise((resolve, reject) => {
-        const folderData = this.__folders.filter(folder => folder.id === folderId);
+        const folderData = this.__folders.find(folder => folder.id === folderId);
         if (folderData && propKey in folderData) {
           folderData[propKey] = value;
           resolve();
