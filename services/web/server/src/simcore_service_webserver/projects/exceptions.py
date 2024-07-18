@@ -217,3 +217,7 @@ class ClustersKeeperNotAvailableError(BaseProjectError):
 
 class InvalidInputValue(WebServerBaseError):
     msg_template = "Invalid value for input '{node_id}': {message} for value={value}"
+
+
+class ProjectGroupNotFoundError(BaseProjectError):
+    msg_template = "Project group not found. {reason}"
