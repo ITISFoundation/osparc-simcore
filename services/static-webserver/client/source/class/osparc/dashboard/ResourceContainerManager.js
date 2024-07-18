@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       paddingBottom: 60
@@ -30,11 +30,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
 
+    const folders = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     const folderHeader = this.__folderHeader = new osparc.dashboard.FolderHeader();
-    this._add(folderHeader);
-
+    folders.add(folderHeader);
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
-    this._add(foldersContainer);
+    folders.add(foldersContainer);
+    this._add(folders);
 
     const nonGroupedContainer = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
     [
