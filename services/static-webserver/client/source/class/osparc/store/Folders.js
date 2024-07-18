@@ -99,16 +99,15 @@ qx.Class.define("osparc.store.Folders", {
   members: {
     foldersCached: null,
 
-    fetchFolders: function() {
-      this.self().FOLDER_DATA_INIT.forEach(folderData => {
-        const folder = new osparc.data.model.Folder(folderData);
-        this.__addToCache(folder);
-      });
-    },
-
-    getFolders: function(parentId = null) {
+    fetchFolders: function(parentId = null) {
       return new Promise(resolve => {
-        resolve(this.foldersCached.filter(f => f.getParentId() === parentId));
+        this.self().FOLDER_DATA_INIT.forEach(folderData => {
+          if (folderData.parentFolder === parentId) {
+            const folder = new osparc.data.model.Folder(folderData);
+            this.__addToCache(folder);
+          }
+        });
+        resolve();
       });
     },
 
@@ -155,7 +154,7 @@ qx.Class.define("osparc.store.Folders", {
 
     patchFolder: function(folderId, propKey, value) {
       return new Promise((resolve, reject) => {
-        const folder = this.foldersCached.find(f => f.getId() === folderId);
+        const folder = this.getFolder(folderId);
         const upKey = qx.lang.String.firstUp(propKey);
         const setter = "set" + upKey;
         if (folder && setter in folder) {
@@ -166,6 +165,14 @@ qx.Class.define("osparc.store.Folders", {
           reject();
         }
       });
+    },
+
+    getFolders: function(parentId = null) {
+      return this.foldersCached.filter(f => f.getParentId() === parentId);
+    },
+
+    getFolder: function(folderId = null) {
+      return this.foldersCached.find(f => f.getId() === folderId);
     },
 
     __addToCache: function(folder) {

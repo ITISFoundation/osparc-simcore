@@ -98,7 +98,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      this.__getActiveStudy()
+      const promises = [
+        this.__getActiveStudy()
+      ];
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        promises.push(osparc.store.Folders.getInstance().fetchFolders(null));
+      }
+      Promise.all(promises)
         .then(() => {
           this.getChildControl("resources-layout");
           this.__attachEventHandlers();
@@ -150,10 +156,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
-      osparc.store.Folders.getInstance().getFolders()
-        .then(folders => {
-          this.__setFoldersToList(folders);
-        });
+      const folders = osparc.store.Folders.getInstance().getFolders(this.getCurrentFolderId())
+      this.__setFoldersToList(folders);
     },
 
     __reloadStudies: function() {
@@ -366,25 +370,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
 
-      const newFolderCard = new osparc.dashboard.FolderButtonNew();
-      newFolderCard.setCardKey("new-folder");
-      newFolderCard.subscribeToFilterGroup("searchBarFilter");
-      newFolderCard.addListener("createFolder", e => {
-        const data = e.getData();
-        osparc.store.Folders.getInstance().postFolder(data.name, data.description)
-          .then(() => this.__reloadFolders())
-          .catch(err => console.error(err));
-      })
-      this._resourcesContainer.addNewFolderCard(newFolderCard);
+      const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId())
+      if (currentFolder == null || currentFolder.getAccessRights()["write"]) {
+        const newFolderCard = new osparc.dashboard.FolderButtonNew();
+        newFolderCard.setCardKey("new-folder");
+        newFolderCard.subscribeToFilterGroup("searchBarFilter");
+        newFolderCard.addListener("createFolder", e => {
+          const data = e.getData();
+          osparc.store.Folders.getInstance().postFolder(data.name, data.description)
+            .then(() => this.__reloadFolders())
+            .catch(err => console.error(err));
+        })
+        this._resourcesContainer.addNewFolderCard(newFolderCard);
+      }
     },
 
     _folderSelected: function(folderId) {
-      console.log("open folder", folderId);
       this.setCurrentFolderId(folderId);
     },
 
-    __applyCurrentFolderId: function() {
-
+    __applyCurrentFolderId: function(currentFolderId) {
+      osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
+        .then(() => this.__reloadFolderCards());
     },
 
     _deleteFolderRequested: function(folderId) {
