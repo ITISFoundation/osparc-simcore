@@ -311,6 +311,7 @@ class ServicesRepository(BaseRepository):
                 name=row.name,
                 description=row.description,
                 thumbnail=row.thumbnail,
+                version_display=row.version_display,
                 # ownership
                 owner_email=row.owner_email,
                 # tagging
@@ -367,6 +368,7 @@ class ServicesRepository(BaseRepository):
                 name=r.name,
                 description=r.description,
                 thumbnail=r.thumbnail,
+                version_display=r.version_display,
                 # ownership
                 owner_email=r.owner_email,
                 # tagging

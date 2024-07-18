@@ -21,6 +21,9 @@ class ServiceMetaDataEditable(ServiceBase):
     name: str | None
     thumbnail: HttpUrl | None
     description: str | None
+
+    version_display: str | None = Field(None)
+
     deprecated: datetime | None = Field(
         default=None,
         description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",

@@ -57,7 +57,7 @@ def _db_to_api_model(
         name=service_db.name,
         thumbnail=service_db.thumbnail or None,
         description=service_db.description,
-        version_display=service_manifest.version_display,
+        version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,

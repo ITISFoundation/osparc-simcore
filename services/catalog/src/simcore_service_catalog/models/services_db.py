@@ -30,6 +30,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                 "name": "sim4life",
                 "description": "s4l web",
                 "thumbnail": "http://thumbnailit.org/image",
+                "version_display": "S4L X",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
                 "deprecated": "2099-01-19 12:45:00",
@@ -68,6 +69,7 @@ class ServiceWithHistoryFromDB(BaseModel):
     name: str
     description: str
     thumbnail: str | None
+    version_display: str | None
     # ownership
     owner_email: str | None
     # tags
