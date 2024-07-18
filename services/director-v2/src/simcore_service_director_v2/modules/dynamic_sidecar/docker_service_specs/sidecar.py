@@ -150,11 +150,13 @@ def _get_environment_variables(
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
-            encoder=create_json_encoder_wo_secrets(RegistrySettings)
+            encoder=create_json_encoder_wo_secrets(RegistrySettings),
+            exclude={"resolved_registry_url", "api_url"},
         ),
         "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
             app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
-                encoder=create_json_encoder_wo_secrets(RegistrySettings)
+                encoder=create_json_encoder_wo_secrets(RegistrySettings),
+                exclude={"resolved_registry_url", "api_url"},
             )
             if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
             else "null"
