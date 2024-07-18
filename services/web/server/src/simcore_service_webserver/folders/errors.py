@@ -13,8 +13,5 @@ class FolderAccessForbiddenError(FoldersValueError):
     msg_template = "Folder access forbidden. {reason}"
 
 
-# Folder groups
-
-
 class FolderGroupNotFoundError(FoldersValueError):
     msg_template = "Folder group not found. {reason}"
