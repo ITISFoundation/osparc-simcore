@@ -391,7 +391,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __applyCurrentFolderId: function(currentFolderId) {
       osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-        .then(() => this.__reloadFolderCards());
+        .then(() => this.__reloadFolders());
     },
 
     _deleteFolderRequested: function(folderId) {
