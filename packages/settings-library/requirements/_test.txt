@@ -2,7 +2,7 @@ coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 faker==26.0.0
     # via -r requirements/_test.in

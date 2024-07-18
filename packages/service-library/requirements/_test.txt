@@ -47,7 +47,7 @@ coverage==7.6.0
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt

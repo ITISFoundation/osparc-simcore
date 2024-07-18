@@ -68,9 +68,9 @@ pyyaml==6.0.1
     #   pre-commit
 rich==13.7.1
     # via typer
-ruff==0.5.1
+ruff==0.5.2
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==70.3.0
+setuptools==71.0.2
     # via pip-tools
 shellingham==1.5.4
     # via typer

@@ -11,7 +11,7 @@ certifi==2024.7.4
     #   httpx
 click==8.1.7
     # via uvicorn
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via anyio
 fastapi==0.99.1
     # via

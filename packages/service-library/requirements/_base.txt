@@ -2,7 +2,7 @@ aio-pika==9.4.2
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
-aiodocker==0.22.1
+aiodocker==0.22.2
     # via -r requirements/_base.in
 aiofiles==24.1.0
     # via -r requirements/_base.in
@@ -39,7 +39,7 @@ dnspython==2.6.1
     # via email-validator
 email-validator==2.2.0
     # via pydantic
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via anyio
 fast-depends==2.4.6
     # via faststream

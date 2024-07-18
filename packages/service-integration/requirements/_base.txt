@@ -31,7 +31,7 @@ docker==7.1.0
     # via -r requirements/_base.in
 email-validator==2.2.0
     # via pydantic
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 idna==3.7
     # via
