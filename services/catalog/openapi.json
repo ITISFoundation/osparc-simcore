@@ -2070,6 +2070,11 @@
             "title": "Description",
             "description": "human readable description of the purpose of the node"
           },
+          "version_display": {
+            "type": "string",
+            "title": "Version Display",
+            "description": "A user-friendly or marketing name for the release. This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This name is not used for version comparison but is useful for communication and documentation purposes."
+          },
           "deprecated": {
             "type": "string",
             "format": "date-time",
@@ -2107,11 +2112,6 @@
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version",
             "description": "service version number"
-          },
-          "version_display": {
-            "type": "string",
-            "title": "Version Display",
-            "description": "A user-friendly or marketing name for the release. This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This name is not used for version comparison but is useful for communication and documentation purposes."
           },
           "release_date": {
             "type": "string",
@@ -2548,6 +2548,10 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "version_display": {
+            "type": "string",
+            "title": "Version Display"
           },
           "deprecated": {
             "type": "string",
