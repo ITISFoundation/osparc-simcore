@@ -178,7 +178,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights[collaboratorGId])
+      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
