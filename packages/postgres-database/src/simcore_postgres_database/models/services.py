@@ -21,6 +21,7 @@ services_meta_data = sa.Table(
     #
     "services_meta_data",
     metadata,
+    # PRIMARY KEY ----------------------------
     sa.Column(
         "key",
         sa.String,
@@ -33,6 +34,7 @@ services_meta_data = sa.Table(
         nullable=False,
         doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
     ),
+    # OWNERSHIP ----------------------------
     sa.Column(
         "owner",
         sa.BigInteger,
@@ -45,6 +47,7 @@ services_meta_data = sa.Table(
         nullable=True,
         doc="Identifier of the group that owns this service",
     ),
+    # DISPLAY ----------------------------
     sa.Column(
         "name",
         sa.String,
@@ -64,12 +67,27 @@ services_meta_data = sa.Table(
         doc="Link to image to us as service thumbnail",
     ),
     sa.Column(
+        "version_display",
+        sa.String,
+        nullable=True,
+        doc="A user-friendly or version of the inner software e.g. Matterhorn 2.3",
+    ),
+    # TAGGING -----------------------------
+    sa.Column(
         "classifiers",
         ARRAY(sa.String, dimensions=1),
         nullable=False,
         server_default="{}",
         doc="List of standard labels that describe this service (see classifiers table)",
     ),
+    sa.Column(
+        "quality",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Free JSON with quality assesment based on TSR",
+    ),
+    # LIFECYCLE ----------------------------
     sa.Column(
         "created",
         sa.DateTime(),
@@ -92,13 +110,6 @@ services_meta_data = sa.Table(
         server_default=null(),
         doc="Timestamp when the service is retired."
         "A fixed time before this date, service is marked as deprecated",
-    ),
-    sa.Column(
-        "quality",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR",
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
@@ -132,9 +143,9 @@ services_access_rights = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        doc="Group Identifier",
+        doc="Group Identifier of user that get these access-rights",
     ),
-    # Access Rights flags ---
+    # ACCESS RIGHTS FLAGS ---------------------------------------
     sa.Column(
         "execute_access",
         sa.Boolean,
@@ -161,6 +172,7 @@ services_access_rights = sa.Table(
         ),
         doc="Product Identifier",
     ),
+    # LIFECYCLE ----------------------------
     sa.Column(
         "created",
         sa.DateTime(),
