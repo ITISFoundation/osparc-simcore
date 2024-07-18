@@ -78,7 +78,7 @@ class _FoldersGroupsBodyParams(BaseModel):
     f"/{VTAG}/folders/{{folder_id}}/groups/{{group_id}}", name="create_folder_group"
 )
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.access_rights.update")
 @_handle_folders_groups_exceptions
 async def create_folder_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -101,7 +101,7 @@ async def create_folder_group(request: web.Request):
 
 @routes.get(f"/{VTAG}/folders/{{folder_id}}/groups", name="list_folder_groups")
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.read")
 @_handle_folders_groups_exceptions
 async def list_folder_groups(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -122,7 +122,7 @@ async def list_folder_groups(request: web.Request):
     name="replace_folder_group",
 )
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.access_rights.update")
 @_handle_folders_groups_exceptions
 async def replace_folder_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -146,7 +146,7 @@ async def replace_folder_group(request: web.Request):
     name="delete_folder_group",
 )
 @login_required
-@permission_required("folders.*")
+@permission_required("folder.access_rights.update")
 @_handle_folders_groups_exceptions
 async def delete_folder_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
