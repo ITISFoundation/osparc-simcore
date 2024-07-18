@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     },
 
     __createArrow: function() {
-      return new qx.ui.basic.Label("->");
+      return new qx.ui.basic.Label("/");
     },
 
     __populatePermissions: function() {
