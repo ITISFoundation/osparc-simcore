@@ -25,8 +25,8 @@ from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather, partition_gen
-from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception, retry_if_exception_type
 from tenacity.stop import stop_after_attempt

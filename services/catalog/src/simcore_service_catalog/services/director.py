@@ -13,7 +13,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from starlette import status
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
