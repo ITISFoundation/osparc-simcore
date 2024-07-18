@@ -141,7 +141,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("User"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can inspect the content and open studies") // TODO
+          qx.locale.Manager.tr("- can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true})
         ]
       },
       2: {
@@ -149,7 +149,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Editor"),
         longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
         canDo: [
-          qx.locale.Manager.tr("- can add studies"),
+          qx.locale.Manager.tr("- can add ") + osparc.product.Utils.getStudyAlias({plural: true}),
           qx.locale.Manager.tr("- can add folders"),
         ]
       },
