@@ -327,12 +327,6 @@ def get_service_history_stmt(
         .select_from(
             # joins because access-rights might change per version
             services_meta_data.join(
-                services_compatibility,
-                (services_meta_data.c.key == services_compatibility.c.key)
-                & (services_meta_data.c.version == services_compatibility.c.version),
-                isouter=True,
-            )
-            .join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version),
@@ -340,6 +334,11 @@ def get_service_history_stmt(
             .join(
                 user_to_groups,
                 (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+            .outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
             )
         )
         .where(
@@ -352,20 +351,24 @@ def get_service_history_stmt(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
-        .subquery()
+        .alias("history_subquery")
     )
 
-    return sa.select(
-        array_agg(
-            func.json_build_object(
-                "version",
-                history_subquery.c.version,
-                "deprecated",
-                history_subquery.c.deprecated,
-                "created",
-                history_subquery.c.created,
-                "compatibility_policy",  # NOTE: this is the `policy`
-                services_compatibility.c.custom_policy,
-            )
-        ).label("history"),
-    ).group_by(history_subquery.c.key)
+    return (
+        sa.select(
+            array_agg(
+                func.json_build_object(
+                    "version",
+                    history_subquery.c.version,
+                    "deprecated",
+                    history_subquery.c.deprecated,
+                    "created",
+                    history_subquery.c.created,
+                    "compatibility_policy",  # NOTE: this is the `policy`
+                    history_subquery.c.custom_policy,
+                )
+            ).label("history"),
+        )
+        .select_from(history_subquery)
+        .group_by(history_subquery.c.key)
+    )
