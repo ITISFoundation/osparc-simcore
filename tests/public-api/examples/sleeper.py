@@ -13,9 +13,8 @@ from zipfile import ZipFile
 
 import osparc
 from dotenv import load_dotenv
-from osparc import UsersApi
+from osparc import File, Job, JobInputs, JobOutputs, JobStatus, Solver, UsersApi
 from osparc.api import FilesApi, SolversApi
-from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
 CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert CLIENT_VERSION >= (0, 4, 3)
