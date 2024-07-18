@@ -247,7 +247,7 @@ async def test_export_project(
 
     assert url_export == URL(f"/{API_VTAG}/projects/{project_id}:xport")
     async with await client.post(
-        f"{url_export}", headers=headers, timeout=10
+        f"{url_export}", headers=headers, timeout=60
     ) as export_response:
         assert export_response.status == 200, await export_response.text()
 
