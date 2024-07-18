@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      apply: "__applyCurrentFolderId"
+    },
+
     multiSelection: {
       check: "Boolean",
       init: false,
@@ -86,7 +93,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __currentFolderId: null,
     __foldersList: null,
 
     // overridden
@@ -374,6 +380,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _folderSelected: function(folderId) {
       console.log("open folder", folderId);
+      this.setCurrentFolderId(folderId);
+    },
+
+    __applyCurrentFolderId: function() {
+
     },
 
     _deleteFolderRequested: function(folderId) {
