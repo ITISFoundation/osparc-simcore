@@ -148,7 +148,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadResources: function() {
-      this.__reloadFolders();
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        this.__reloadFolders();
+      }
       this.__reloadStudies();
     },
 
