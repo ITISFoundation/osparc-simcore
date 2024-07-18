@@ -59,18 +59,18 @@ qx.Class.define("osparc.store.Folders", {
       accessRights: {
         read: true,
         write: true,
-        delete: false
+        delete: true
       },
       sharedAccessRights: {
         3: {
           read: true,
           write: true,
-          delete: false
+          delete: true
         },
         9: {
           read: true,
           write: true,
-          delete: true
+          delete: false
         }
       },
     }, {
@@ -93,6 +93,56 @@ qx.Class.define("osparc.store.Folders", {
           delete: true
         }
       }
+    }, {
+      id: 4,
+      parentFolder: null,
+      name: "Folder 4",
+      description: "Description Folder Four",
+      owner: 3,
+      createdAt: "2024-07-17T06:28:28.527Z",
+      lastModified: "2024-07-18T06:28:28.527Z",
+      accessRights: {
+        read: true,
+        write: true,
+        delete: false
+      },
+      sharedAccessRights: {
+        3: {
+          read: true,
+          write: true,
+          delete: false
+        },
+        9: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      }
+    }, {
+      id: 5,
+      parentFolder: null,
+      name: "Folder 5",
+      description: "Description Folder Five",
+      owner: 3,
+      createdAt: "2024-07-18T06:28:28.527Z",
+      lastModified: "2024-07-18T07:28:28.527Z",
+      accessRights: {
+        read: true,
+        write: false,
+        delete: false
+      },
+      sharedAccessRights: {
+        3: {
+          read: true,
+          write: false,
+          delete: false
+        },
+        9: {
+          read: true,
+          write: true,
+          delete: true
+        }
+      },
     }]
   },
 

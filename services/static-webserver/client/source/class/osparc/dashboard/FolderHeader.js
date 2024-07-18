@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5).set({
+    this._setLayout(new qx.ui.layout.HBox(20).set({
       alignY: "middle"
     }));
 
@@ -51,32 +51,59 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   },
 
   members: {
-    __applyCurrentFolderId: function(currentFolderId) {
-      this._removeAll();
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "breadcrumbs-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._addAt(control, 0);
+          break;
+        case "permissions-info": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._addAt(control, 1);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
 
-      if (currentFolderId) {
+    __applyCurrentFolderId: function() {
+      this.__buildBreadcrumbs();
+      this.__populatePermissions();
+    },
+
+    __buildBreadcrumbs: function() {
+      const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
+      breadcrumbsLayout.removeAll();
+
+      if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
         this.__createUpstreamButtons(currentFolder);
 
         const currentFolderButton = this.__createCurrentFolderButton();
         if (currentFolderButton) {
-          this._add(currentFolderButton);
+          breadcrumbsLayout.add(currentFolderButton);
         }
       }
     },
 
     __createUpstreamButtons: function(childFolder) {
       if (childFolder) {
+        const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
         const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentId());
         if (parentFolder) {
-          this._addAt(this.__createArrow(), 0);
+          breadcrumbsLayout.addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
-          this._addAt(upstreamButton, 0);
+          breadcrumbsLayout.addAt(upstreamButton, 0);
           this.__createUpstreamButtons(parentFolder);
         } else {
-          this._addAt(this.__createArrow(), 0);
+          breadcrumbsLayout.addAt(this.__createArrow(), 0);
           const homeButton = this.__createFolderButton();
-          this._addAt(homeButton, 0);
+          breadcrumbsLayout.addAt(homeButton, 0);
         }
       }
     },
@@ -94,11 +121,10 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       let folderButton = null;
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
-        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder.getId()), this);
       } else {
         folderButton = new qx.ui.form.Button(this.tr("Home"), "@FontAwesome5Solid/home/14");
-        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", null), this);
       }
+      folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getId() : null), this);
       folderButton.set({
         backgroundColor: "transparent",
         font: "text-14",
@@ -110,6 +136,17 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
 
     __createArrow: function() {
       return new qx.ui.basic.Label("->");
+    },
+
+    __populatePermissions: function() {
+      const permissionsLayout = this.getChildControl("permissions-info");
+      permissionsLayout.removeAll();
+
+      if (this.getCurrentFolderId()) {
+        const tooltip = new osparc.ui.hint.InfoHint();
+        tooltip.setHintText("You can do this");
+        permissionsLayout.add(tooltip);
+      }
     }
   }
 });
