@@ -50,8 +50,8 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
             padding: 0
           });
           this._add(control, {
-            bottom: 6,
-            left: 3
+            bottom: 7,
+            left: 2
           });
           break;
       }
