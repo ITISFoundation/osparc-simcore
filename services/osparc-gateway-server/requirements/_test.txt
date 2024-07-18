@@ -51,7 +51,7 @@ distributed==2024.5.1
     #   dask-gateway
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 faker==26.0.0
     # via -r requirements/_test.in
