@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
-      osparc.store.FakeStore.getInstance().getFolders()
+      osparc.store.Folders.getInstance().getFolders()
         .then(folders => {
           this.__setFoldersToList(folders);
         });
@@ -365,7 +365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newFolderCard.subscribeToFilterGroup("searchBarFilter");
       newFolderCard.addListener("createFolder", e => {
         const data = e.getData();
-        osparc.store.FakeStore.getInstance().postFolder(data.name, data.description)
+        osparc.store.Folders.getInstance().postFolder(data.name, data.description)
           .then(() => this.__reloadFolders())
           .catch(err => console.error(err));
       })
@@ -377,7 +377,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteFolderRequested: function(folderId) {
-      osparc.store.FakeStore.getInstance().deleteFolder(folderId)
+      osparc.store.Folders.getInstance().deleteFolder(folderId)
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },

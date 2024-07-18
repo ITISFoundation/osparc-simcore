@@ -15,14 +15,14 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.store.FakeStore", {
+qx.Class.define("osparc.store.Folders", {
   extend: qx.core.Object,
   type: "singleton",
 
   construct: function() {
     this.base(arguments);
 
-    this.__foldersCache = [];
+    this.foldersCached = [];
 
     this.fetchFolders();
   },
@@ -97,7 +97,7 @@ qx.Class.define("osparc.store.FakeStore", {
   },
 
   members: {
-    __foldersCache: null,
+    foldersCached: null,
 
     fetchFolders: function() {
       this.self().FOLDER_DATA_INIT.forEach(folderData => {
@@ -108,7 +108,7 @@ qx.Class.define("osparc.store.FakeStore", {
 
     getFolders: function(parentId = null) {
       return new Promise(resolve => {
-        resolve(this.__foldersCache.filter(f => f.getParentId() === parentId));
+        resolve(this.foldersCached.filter(f => f.getParentId() === parentId));
       });
     },
 
@@ -143,9 +143,9 @@ qx.Class.define("osparc.store.FakeStore", {
 
     deleteFolder: function(folderId) {
       return new Promise((resolve, reject) => {
-        const idx = this.__foldersCache.findIndex(f => f.getId() === folderId);
+        const idx = this.foldersCached.findIndex(f => f.getId() === folderId);
         if (idx > -1) {
-          this.__foldersCache.splice(idx, 1);
+          this.foldersCached.splice(idx, 1);
           resolve();
         } else {
           reject();
@@ -155,7 +155,7 @@ qx.Class.define("osparc.store.FakeStore", {
 
     patchFolder: function(folderId, propKey, value) {
       return new Promise((resolve, reject) => {
-        const folder = this.__foldersCache.find(f => f.getId() === folderId);
+        const folder = this.foldersCached.find(f => f.getId() === folderId);
         const upKey = qx.lang.String.firstUp(propKey);
         const setter = "set" + upKey;
         if (folder && setter in folder) {
@@ -169,9 +169,9 @@ qx.Class.define("osparc.store.FakeStore", {
     },
 
     __addToCache: function(folder) {
-      const found = this.__foldersCache.find(f => f.getId() === folder.getId());
+      const found = this.foldersCached.find(f => f.getId() === folder.getId());
       if (!found) {
-        this.__foldersCache.push(folder);
+        this.foldersCached.push(folder);
       }
     }
   }
