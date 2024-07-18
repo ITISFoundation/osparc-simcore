@@ -150,7 +150,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
     RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
 
-    REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
+    DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
+    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field()
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 

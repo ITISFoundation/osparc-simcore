@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 from pathlib import Path
+from typing import Final
 
 import httpx
 from fastapi import FastAPI
@@ -10,8 +11,11 @@ from settings_library.docker_registry import RegistrySettings
 from starlette import status
 
 from ..modules.service_liveness import wait_for_service_liveness
+from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
+
+DOCKER_CONFIG_JSON_PATH: Final[Path] = Path.home() / ".docker" / "config.json"
 
 
 class _RegistryNotReachableError(Exception):
@@ -46,47 +50,62 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
             raise _RegistryNotReachableError(error_message)
 
 
-async def wait_for_registry_liveness(app: FastAPI) -> None:
-    registry_settings: RegistrySettings = app.state.settings.REGISTRY_SETTINGS
+async def wait_for_registries_liveness(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
 
     await wait_for_service_liveness(
         _is_registry_reachable,
-        service_name="Registry",
-        endpoint=_get_registry_url(registry_settings),
-        registry_settings=registry_settings,
+        service_name="Internal Registry",
+        endpoint=_get_registry_url(settings.DY_DEPLOYMENT_REGISTRY_SETTINGS),
+        registry_settings=settings.DY_DEPLOYMENT_REGISTRY_SETTINGS,
     )
 
+    if settings.DY_DOCKER_HUB_REGISTRY_SETTINGS:
+        await wait_for_service_liveness(
+            _is_registry_reachable,
+            service_name="DockerHub Registry",
+            endpoint=_get_registry_url(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS),
+            registry_settings=settings.DY_DOCKER_HUB_REGISTRY_SETTINGS,
+        )
 
-async def _login_registry(registry_settings: RegistrySettings) -> None:
+
+async def _login_registries(settings: ApplicationSettings) -> None:
     """
     Creates ~/.docker/config.json and adds docker registry credentials
     """
 
-    def create_docker_config_file(registry_settings: RegistrySettings) -> None:
+    def _get_credentials(registry_settings: RegistrySettings) -> str:
         user = registry_settings.REGISTRY_USER
         password = registry_settings.REGISTRY_PW.get_secret_value()
+        return base64.b64encode(f"{user}:{password}".encode()).decode()
+
+    def create_docker_config_file(registries_settings: list[RegistrySettings]) -> None:
         docker_config = {
             "auths": {
-                f"{registry_settings.resolved_registry_url}": {
-                    "auth": base64.b64encode(f"{user}:{password}".encode()).decode(
-                        "utf-8"
-                    )
+                f"{settings.resolved_registry_url}": {
+                    "auth": _get_credentials(settings)
                 }
+                for settings in registries_settings
             }
         }
-        conf_file = Path.home() / ".docker" / "config.json"
-        conf_file.parent.mkdir(exist_ok=True, parents=True)
-        conf_file.write_text(json.dumps(docker_config))
 
-    if registry_settings.REGISTRY_AUTH:
-        await asyncio.get_event_loop().run_in_executor(
-            None, create_docker_config_file, registry_settings
-        )
+        DOCKER_CONFIG_JSON_PATH.parent.mkdir(exist_ok=True, parents=True)
+        DOCKER_CONFIG_JSON_PATH.write_text(json.dumps(docker_config))
+
+    registries_settings: list[RegistrySettings] = []
+    if settings.DY_DEPLOYMENT_REGISTRY_SETTINGS.REGISTRY_AUTH:
+        registries_settings.append(settings.DY_DEPLOYMENT_REGISTRY_SETTINGS)
+    if settings.DY_DOCKER_HUB_REGISTRY_SETTINGS:
+        registries_settings.append(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS)
+
+    await asyncio.get_event_loop().run_in_executor(
+        None, create_docker_config_file, registries_settings
+    )
 
 
 def setup_registry(app: FastAPI) -> None:
     async def on_startup() -> None:
-        registry_settings: RegistrySettings = app.state.settings.REGISTRY_SETTINGS
-        await _login_registry(registry_settings)
+        settings: ApplicationSettings = app.state.settings
+        await _login_registries(settings)
 
     app.add_event_handler("startup", on_startup)

@@ -29,7 +29,7 @@ from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
-from settings_library.utils_cli import create_json_encoder_wo_secrets
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ..products.api import get_product
 from ._api_utils import get_wallet_info
