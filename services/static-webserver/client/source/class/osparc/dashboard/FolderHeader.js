@@ -30,6 +30,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       alignY: "middle"
     }));
 
+    // Don't show if user is in Home
     this.bind("currentFolderId", this, "visibility", {
       converter: currentFolderId => currentFolderId ? "visible" : "excluded"
     });
