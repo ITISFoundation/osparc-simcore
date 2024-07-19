@@ -186,9 +186,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         i++;
         const node = workbench[nodeId];
         const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
-        if (latestCompatibleMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
-        }
         const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (isUpdatable) {
           updatableServices.push(nodeId);
@@ -197,32 +194,26 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         const nodeMetadata = osparc.service.Store.getMetaData(node["key"], node["version"]);
-        if (nodeMetadata) {
-          this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
-        }
+        this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
         this._servicesGrid.add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
+        const compatibleVersionLabel = new qx.ui.basic.Label().set({
+          font: "text-14"
+        });
         if (latestCompatibleMetadata) {
-          const compatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
-            font: "text-14"
-          });
-          this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
-          this._servicesGrid.add(compatibleVersionLabel, {
-            row: i,
-            column: this.self().GRID_POS.COMPATIBLE_VERSION
-          });
-        } else if (nodeMetadata === null) {
-          const compatibleVersionLabel = new qx.ui.basic.Label(this.tr("Unknown")).set({
-            font: "text-14"
-          });
-          this._servicesGrid.add(compatibleVersionLabel, {
-            row: i,
-            column: this.self().GRID_POS.COMPATIBLE_VERSION
-          });
+          compatibleVersionLabel.setValue(latestCompatibleMetadata["version"]);
+        } else if (nodeMetadata) {
+          compatibleVersionLabel.setValue(nodeMetadata["version"]);
+        } else {
+          compatibleVersionLabel.setValue(this.tr("Unknown"));
         }
+        this._servicesGrid.add(compatibleVersionLabel, {
+          row: i,
+          column: this.self().GRID_POS.COMPATIBLE_VERSION
+        });
 
         const latestMetadata = osparc.service.Utils.getLatest(node["key"]);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
