@@ -98,13 +98,6 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceDisplay):
     NOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image
     """
 
-    version_display: str | None = Field(
-        None,
-        description="A user-friendly or marketing name for the release."
-        " This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.'"
-        " This name is not used for version comparison but is useful for communication and documentation purposes.",
-    )
-
     release_date: datetime | None = Field(
         None,
         description="A timestamp when the specific version of the service was released."

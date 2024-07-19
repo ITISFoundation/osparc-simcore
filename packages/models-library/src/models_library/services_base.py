@@ -41,6 +41,12 @@ class ServiceDisplay(BaseModel):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+    version_display: str | None = Field(
+        None,
+        description="A user-friendly or marketing name for the release."
+        " This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.'"
+        " This name is not used for version comparison but is useful for communication and documentation purposes.",
+    )
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True, always=False)(
         empty_str_to_none_pre_validator
