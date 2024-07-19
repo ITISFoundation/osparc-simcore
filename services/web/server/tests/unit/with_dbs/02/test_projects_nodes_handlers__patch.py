@@ -40,6 +40,15 @@ def mock_project_uses_available_services(mocker: MockerFixture):
     )
 
 
+@pytest.fixture
+def mock_catalog_rpc_get_service(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.catalog_rpc.get_service",
+        spec=True,
+        return_value=True,
+    )
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -77,8 +86,9 @@ async def test_patch_project_node(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
+    mock_catalog_api_get_services_for_user_in_product: None,
+    mock_project_uses_available_services: None,
+    mock_catalog_rpc_get_service: None,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app

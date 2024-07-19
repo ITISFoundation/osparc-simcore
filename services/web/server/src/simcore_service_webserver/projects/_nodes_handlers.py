@@ -168,6 +168,7 @@ async def create_node(request: web.Request) -> web.Response:
     return envelope_json_response(data, status_cls=web.HTTPCreated)
 
 
+# NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="get_node")
 @login_required
 @permission_required("project.node.read")

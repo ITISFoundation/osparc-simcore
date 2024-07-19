@@ -876,6 +876,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
 
+    # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
     async def get_project_node(
         self, project_id: ProjectID, node_id: NodeID
     ) -> ProjectNode:
