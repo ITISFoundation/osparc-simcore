@@ -27,7 +27,7 @@ from osparc_gateway_server.backend.utils import (
     is_service_task_running,
 )
 from pytest_mock.plugin import MockerFixture
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

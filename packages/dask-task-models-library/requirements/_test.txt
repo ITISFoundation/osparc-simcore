@@ -1,27 +1,33 @@
-coverage==7.5.1
+appdirs==1.4.4
+    # via pint
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
-faker==25.2.0
+faker==26.0.0
     # via -r requirements/_test.in
+flexcache==0.3
+    # via pint
+flexparser==0.3.1
+    # via pint
 icdiff==2.0.7
     # via pytest-icdiff
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-pint==0.23
+pint==0.24.3
     # via -r requirements/_test.in
 pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -65,7 +71,9 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
+    #   flexcache
+    #   flexparser
     #   pint

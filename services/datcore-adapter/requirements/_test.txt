@@ -13,7 +13,7 @@ certifi==2024.2.2
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -24,7 +24,7 @@ exceptiongroup==1.2.0
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -49,7 +49,7 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
@@ -57,7 +57,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -89,7 +89,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   faker
-requests==2.32.2
+requests==2.32.3
     # via -r requirements/_test.in
 respx==0.21.1
     # via -r requirements/_test.in

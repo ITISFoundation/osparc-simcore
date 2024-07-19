@@ -7,7 +7,7 @@ from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.client_session import get_client_session
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt

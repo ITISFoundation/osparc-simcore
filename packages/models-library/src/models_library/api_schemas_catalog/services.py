@@ -237,7 +237,7 @@ class ServiceGetV2(BaseModel):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: list[str] | None = None
+    classifiers: list[str] | None = []
     quality: dict[str, Any] = {}
 
     history: list[ServiceRelease] = Field(
