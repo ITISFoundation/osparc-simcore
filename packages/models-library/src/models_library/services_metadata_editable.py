@@ -22,13 +22,14 @@ class ServiceMetaDataEditable(ServiceDisplay):
     description: str | None
     version_display: str | None = None
 
-    # Fields ONLY in the database ---
+    # Below fields only in the database ----
     deprecated: datetime | None = Field(
         default=None,
-        description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
+        description="Owner can set the date to retire the service. Three possibilities:"
+        "If None, the service is marked as `published`;"
+        "If now<deprecated the service is marked as dprecated;"
+        "If now>=deprecated, the service is retired",
     )
-
-    # user-defined metatada
     classifiers: list[str] | None
     quality: dict[str, Any] = {}
 
