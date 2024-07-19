@@ -132,10 +132,8 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    getFromObject: function(services, key, version) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
+    getFromObject: function(key, version) {
+      const services = osparc.service.Utils.servicesCached;
       if (key in services) {
         const serviceVersions = services[key];
         if (version in serviceVersions) {
@@ -182,44 +180,27 @@ qx.Class.define("osparc.service.Utils", {
       return null;
     },
 
+    getLatestCompatible: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (key in services && version in services[key]) {
+        const serviceMD = services[key][version];
+        if (serviceMD["compatibility"]) {
+          return serviceMD["compatibility"]["canUpdateTo"];
+        }
+      }
+      return null;
+    },
+
     canIWrite: function(serviceAccessRights) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
       return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
-    getLatestCompatible: function(srcKey, srcVersion, services) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
-      let versions = this.getVersions(srcKey, false);
-      // only allow patch versions
-      versions = versions.filter(version => {
-        const v1 = version.split(".");
-        const v2 = srcVersion.split(".");
-        return (v1[0] === v2[0] && v1[1] === v2[1]);
-      });
-
-      const srcNode = this.getFromObject(services, srcKey, srcVersion);
-      const idx = versions.indexOf(srcVersion);
-      if (idx > -1) {
-        versions.length = idx+1;
-        for (let i=0; i<versions.length; i++) {
-          const destVersion = versions[i];
-          const destNode = this.getFromObject(services, srcKey, destVersion);
-          if (this.__areNodesCompatible(srcNode, destNode)) {
-            return destNode;
-          }
-        }
-      }
-      return srcNode;
-    },
-
     getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        const services = osparc.service.Utils.servicesCached;
-        metaData = this.getFromObject(services, key, version);
+        metaData = this.getFromObject(key, version);
         if (metaData) {
           metaData = osparc.utils.Utils.deepCloneObject(metaData);
           return metaData;

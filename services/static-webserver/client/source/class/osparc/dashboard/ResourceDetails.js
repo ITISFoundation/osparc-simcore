@@ -90,7 +90,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __qualityPage: null,
     __servicesUpdatePage: null,
     __openButton: null,
-    _services: null,
 
     __createToolbar: function() {
       const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
@@ -151,7 +150,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           let anyUpdatable = false;
           for (const nodeId in workbench) {
             const node = workbench[nodeId];
-            const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"], this._services);
+            const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
             if (latestCompatibleMetadata === null) {
               osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
             }

@@ -64,16 +64,9 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isWorkbenchUpdatable: function(workbench) {
-      const allServices = osparc.service.Store.servicesCached;
       const services = new Set(this.extractServices(workbench));
       const isUpdatable = Array.from(services).some(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          const serviceMD = allServices[srv.key][srv.version];
-          if (serviceMD["compatibility"]) {
-            return serviceMD["compatibility"]["canUpdateTo"];
-          }
-        }
-        return false;
+        return osparc.service.Utils.getLatestCompatible(srv.key, srv.version) !== null;
       });
       return isUpdatable;
     },

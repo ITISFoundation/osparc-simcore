@@ -154,7 +154,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       if (version === this.self().LATEST) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.service.Utils.getFromObject(null, key, version);
+      return osparc.service.Utils.getFromObject(key, version);
     },
 
     __showServiceDetails: function() {
