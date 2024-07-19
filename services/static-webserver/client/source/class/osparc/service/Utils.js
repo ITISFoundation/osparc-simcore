@@ -185,6 +185,12 @@ qx.Class.define("osparc.service.Utils", {
       if (key in services && version in services[key]) {
         const serviceMD = services[key][version];
         if (serviceMD["compatibility"]) {
+          if (typeof serviceMD["compatibility"]["canUpdateTo"] == "string") {
+            return {
+              key,
+              version: serviceMD["compatibility"]["canUpdateTo"]
+            }
+          }
           return serviceMD["compatibility"]["canUpdateTo"];
         }
       }
