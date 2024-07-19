@@ -69,7 +69,9 @@ qx.Class.define("osparc.study.Utils", {
       const isUpdatable = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
-          return "compatibility" in serviceMD && "canUpdateTo" in serviceMD["compatibility"];
+          if (serviceMD["compatibility"]) {
+            return serviceMD["compatibility"]["canUpdateTo"];
+          }
         }
         return false;
       });
