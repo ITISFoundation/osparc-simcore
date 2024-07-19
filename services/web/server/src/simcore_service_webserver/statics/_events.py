@@ -1,4 +1,5 @@
 import logging
+import re
 from copy import deepcopy
 
 from aiohttp import web
@@ -6,7 +7,7 @@ from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.client_session import get_client_session
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -26,6 +27,8 @@ from .settings import (
     StaticWebserverModuleSettings,
     get_plugin_settings,
 )
+
+_RE_PRODUCTION_RELEASE_VERSION = r"^v\d+\.\d+\.\d+$"
 
 _logger = logging.getLogger(__name__)
 
@@ -117,6 +120,18 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         # Adds specifics to login settings
         if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
             data["webserverLogin"].update({"LOGIN_2FA_REQUIRED": v})
+
+        # replace vcsReleaseUrl with curated release url
+        vtag = app_settings.SIMCORE_VCS_RELEASE_TAG
+        if (
+            vtag
+            and re.match(_RE_PRODUCTION_RELEASE_VERSION, vtag)
+            and product.vendor
+            and (template_url := product.vendor.get("release_notes_url_template", None))
+        ):
+            # template URL should be somethign like:
+            # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
+            data["vcsReleaseUrl"] = template_url.format(vtag=vtag)
 
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)

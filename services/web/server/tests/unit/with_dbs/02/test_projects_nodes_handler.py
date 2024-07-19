@@ -164,7 +164,7 @@ async def test_replace_node_resources_is_forbidden_by_default(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.GUEST, status.HTTP_200_OK),
         (UserRole.USER, status.HTTP_200_OK),
         (UserRole.TESTER, status.HTTP_200_OK),
     ],

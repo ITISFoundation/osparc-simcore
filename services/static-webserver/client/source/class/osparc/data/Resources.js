@@ -247,6 +247,21 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
           },
+          postAccessRights: {
+            useCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          deleteAccessRights: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          putAccessRights: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
           addTag: {
             useCache: false,
             method: "PUT",
@@ -562,23 +577,21 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * GROUPS/DAGS
+       * PORT COMPATIBILITY
        */
-      "dags": {
-        useCache: true,
-        idField: "key",
+      "portsCompatibility": {
+        useCache: false, // It has its own cache handler
         endpoints: {
-          post: {
-            method: "POST",
-            url: statics.API + "/catalog/dags"
-          },
-          get: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
             method: "GET",
-            url: statics.API + "/catalog/dags"
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
           },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/catalog/dags/{dagId}"
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
           }
         }
       },

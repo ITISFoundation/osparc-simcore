@@ -78,6 +78,7 @@ async def published_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[ProjectDict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
@@ -87,11 +88,10 @@ async def published_project(
         # everyone HAS read access
         "1": {"read": True, "write": False, "delete": False}
     }
-
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         as_template=True,  # <--IS a template
         product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
@@ -105,6 +105,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[ProjectDict]:
     """An unpublished template"""
 
@@ -116,7 +117,7 @@ async def unpublished_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         as_template=True,
         product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,

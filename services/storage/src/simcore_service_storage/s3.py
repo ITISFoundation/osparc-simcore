@@ -10,7 +10,7 @@ from aiohttp import web
 from aws_library.s3 import SimcoreS3API
 from models_library.utils.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_fixed
 

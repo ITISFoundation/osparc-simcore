@@ -163,12 +163,3 @@ class MetaModelingUser(HttpUser):
             file_uuid = response.json().get("id")
         assert file_uuid is not None
         return UUID(file_uuid)
-
-
-if __name__ == "__main__":
-    from locust_settings import LocustSettings, dump_dotenv
-
-    class MetaModelingSettings(UserSettings, LocustSettings):
-        pass
-
-    dump_dotenv(MetaModelingSettings())

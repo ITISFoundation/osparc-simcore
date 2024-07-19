@@ -787,9 +787,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
     __setIconAndTooltip: function(shareIcon, accessRights, groups) {
+      shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
       if (osparc.data.model.Study.canIWrite(accessRights)) {
         shareIcon.set({
-          source: osparc.dashboard.CardBase.SHARE_ICON,
           toolTipText: this.tr("Share")
         });
       }
@@ -804,7 +804,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const gids = Object.keys(accessRights);
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
-          if (this.isResourceType("study") && (gid === myGroupId)) {
+          if (gid === myGroupId) {
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);

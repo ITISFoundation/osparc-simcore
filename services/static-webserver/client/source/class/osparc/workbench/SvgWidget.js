@@ -115,6 +115,16 @@ qx.Class.define("osparc.workbench.SvgWidget", {
 
     drawNodeUI: function(width = osparc.workbench.NodeUI.NODE_WIDTH, height = osparc.workbench.NodeUI.NODE_HEIGHT, radius = 4, x = 0, y = 0) {
       return osparc.wrapper.Svg.drawNodeUI(this.__canvas, width, height, radius, x, y);
+    },
+
+    drawBoundingBox: function(annotation) {
+      const offset = 10;
+      const bBox = annotation.getRepresentation().bbox();
+      const width = bBox.width + 2*offset;
+      const height = bBox.height + 2*offset;
+      const x = bBox.x - offset;
+      const y = bBox.y - offset;
+      return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
     }
   }
 });

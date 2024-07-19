@@ -153,7 +153,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboardBtn.setFetching(true);
       if (this.__studyEditor.didStudyChange()) {
         // make sure very latest changes are saved
-        await this.__studyEditor.updateStudyDocument(false);
+        await this.__studyEditor.updateStudyDocument();
       }
       this.closeEditor();
       this.__showDashboard();
@@ -241,6 +241,10 @@ qx.Class.define("osparc.desktop.MainPage", {
           if (templateBrowser) {
             templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
           }
+          task.addListener("resultReceived", e => {
+            const templateData = e.getData();
+            osparc.info.StudyUtils.addCollaborators(templateData, data["accessRights"]);
+          });
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;

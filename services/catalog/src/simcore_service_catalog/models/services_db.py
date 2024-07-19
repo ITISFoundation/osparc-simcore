@@ -3,11 +3,11 @@ from typing import Any, ClassVar
 
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
-from models_library.services_history import ServiceRelease
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 # -------------------------------------------------------------------
 # Databases models
@@ -54,17 +54,11 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
         }
 
 
-class HistoryItem(BaseModel):
+class ReleaseFromDB(BaseModel):
     version: ServiceVersion
     deprecated: datetime | None
     created: datetime
-
-    def to_api_model(self) -> ServiceRelease:
-        return ServiceRelease.construct(
-            version=self.version,
-            released=self.created,
-            retired=self.deprecated,
-        )
+    compatibility_policy: CompatiblePolicyDict | None
 
 
 class ServiceWithHistoryFromDB(BaseModel):
@@ -84,11 +78,13 @@ class ServiceWithHistoryFromDB(BaseModel):
     modified: datetime
     deprecated: datetime | None
     # releases
-    history: list[HistoryItem]
+    history: list[ReleaseFromDB]
 
 
-assert set(HistoryItem.__fields__).issubset(  # nosec
-    set(ServiceWithHistoryFromDB.__fields__)
+assert (  # nosec
+    set(ReleaseFromDB.__fields__)
+    .difference({"compatibility_policy"})
+    .issubset(set(ServiceWithHistoryFromDB.__fields__))
 )
 
 

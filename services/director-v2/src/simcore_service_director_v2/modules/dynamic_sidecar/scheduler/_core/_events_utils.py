@@ -1,5 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
+import asyncio
 import json
 import logging
 from typing import Any, cast
@@ -29,7 +30,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -275,6 +276,11 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
+
+    # used for debuug, normally sleeps 0
+    await asyncio.sleep(
+        settings.DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL.total_seconds()
+    )
 
     # only try to save the status if :
     # - it is requested to save the state

@@ -72,7 +72,7 @@ from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random

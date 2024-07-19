@@ -1,11 +1,12 @@
 # pylint: disable=not-context-manager
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import itertools
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
@@ -13,13 +14,11 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import parse_obj_as
-from pytest_mock.plugin import MockerFixture
+from pydantic import Extra, parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -76,14 +75,6 @@ async def app_settings(  # starts postgres service before app starts
         == postgres_host_config["password"]
     )
     return app_settings
-
-
-@pytest.fixture
-def client(app: FastAPI) -> Iterator[TestClient]:
-    # NOTE: sync client since we use benchmarch fixture!
-    with TestClient(app) as cli:
-        # Note: this way we ensure the events are run in the application
-        yield cli
 
 
 # DATABASE tables fixtures -----------------------------------
@@ -206,19 +197,19 @@ async def services_db_tables_injector(
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
-    Can use service_catalog_faker to generate inputs
+    Can use `create_fake_service_data` to generate inputs
 
     Example:
         await services_db_tables_injector(
             [
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.1",
                     team_access=None,
                     everyone_access=None,
                     product=target_product,
                 ),
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.7",
                     team_access=None,
@@ -371,7 +362,7 @@ async def create_fake_service_data(
 
 
     Example:
-        fake_service, *fake_access_rights = service_catalog_faker(
+        fake_service, *fake_access_rights = create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
                 team_access=None,
@@ -460,15 +451,36 @@ async def create_fake_service_data(
 
 
 @pytest.fixture
-def mocked_catalog_background_task(mocker: MockerFixture) -> None:
-    """patch the setup of the background task so we can call it manually"""
-    mocker.patch(
-        "simcore_service_catalog.core.events.start_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_catalog.core.events.stop_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
+def create_director_list_services_from() -> Callable[
+    [list[dict[str, Any]], list], list[dict[str, Any]]
+]:
+    """Convenience function to merge outputs of
+    - `create_fake_service_data` callable with those of
+    - `expected_director_list_services` fixture
+
+    to produce a new expected_director_list_services
+    """
+
+    class _Loader(ServiceMetaDataPublished):
+        class Config:
+            extra = Extra.ignore
+            allow_population_by_field_name = True
+
+    def _(
+        expected_director_list_services: list[dict[str, Any]],
+        fake_services_data: list,
+    ):
+        return [
+            jsonable_encoder(
+                _Loader.parse_obj(
+                    {
+                        **next(itertools.cycle(expected_director_list_services)),
+                        **data[0],  # service, **access_rights = data
+                    }
+                ),
+                exclude_unset=True,
+            )
+            for data in fake_services_data
+        ]
+
+    return _

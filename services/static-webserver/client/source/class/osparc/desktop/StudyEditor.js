@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __slideshowView: null,
     __autoSaveTimer: null,
     __studyEditorIdlingTracker: null,
-    __lastSavedStudy: null,
+    __studyDataInBackend: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -163,8 +163,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__reloadSnapshotsAndIterations();
 
       study.openStudy()
-        .then(() => {
-          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(study.serialize());
+        .then(studyData => {
+          this.__studyDataInBackend = studyData;
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -448,7 +448,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.getStudy().setPipelineRunning(true);
-      this.updateStudyDocument(true)
+      this.updateStudyDocument()
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
@@ -560,7 +560,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     // ------------------ START/STOP PIPELINE ------------------
 
     __updatePipelineAndRetrieve: function(node, portKey = null) {
-      this.updateStudyDocument(false)
+      this.updateStudyDocument()
         .then(() => {
           if (node) {
             this.getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
@@ -712,26 +712,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    didStudyChange: function() {
+    __getStudyDiffs: function() {
       const newObj = this.getStudy().serialize();
       const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
-      const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
+      const delta = diffPatcher.diff(this.__studyDataInBackend, newObj);
       if (delta) {
-        let deltaKeys = Object.keys(delta);
         // lastChangeDate and creationDate should not be taken into account as data change
-        [
-          "creationDate",
-          "lastChangeDate"
-        ].forEach(prop => {
-          const index = deltaKeys.indexOf(prop);
-          if (index > -1) {
-            deltaKeys.splice(index, 1);
-          }
-        });
-
-        return deltaKeys.length;
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        return delta;
       }
-      return false;
+      return {};
+    },
+
+    didStudyChange: function() {
+      const studyDiffs = this.__getStudyDiffs();
+      return Boolean(Object.keys(studyDiffs).length);
     },
 
     __checkStudyChanges: function() {
@@ -740,12 +736,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // throttle update
           this.__updateThrottled = true;
         } else {
-          this.updateStudyDocument(false);
+          this.updateStudyDocument();
         }
       }
     },
 
-    updateStudyDocument: function(run = false) {
+    updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
@@ -753,10 +749,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
-      const newObj = this.getStudy().serialize();
-      return this.getStudy().updateStudy(newObj, run)
-        .then(() => {
-          this.__lastSavedStudy = osparc.utils.Utils.deepCloneObject(newObj);
+      let updatePromise = null;
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        // For now, master deployment only
+        const studyDiffs = this.__getStudyDiffs();
+        updatePromise = this.getStudy().patchStudyDelayed(studyDiffs)
+      } else {
+        const newObj = this.getStudy().serialize();
+        updatePromise = this.getStudy().updateStudy(newObj);
+      }
+      return updatePromise
+        .then(studyData => {
+          this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
@@ -773,7 +777,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
-            this.updateStudyDocument(false);
+            this.updateStudyDocument();
           }
         });
     },

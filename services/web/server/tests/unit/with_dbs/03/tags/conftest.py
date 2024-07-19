@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
@@ -48,7 +49,6 @@ def client(
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
@@ -120,6 +120,7 @@ async def template_project(
     all_group: dict[str, str],
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -131,7 +132,7 @@ async def template_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         tests_data_dir=tests_data_dir,
         product_name=osparc_product_name,
     ) as template_project:

@@ -244,7 +244,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
+      const studyData = this.getStudy().serialize();
+      studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+      const permissionsView = osparc.info.StudyUtils.openAccessRights(studyData);
       permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
@@ -320,7 +322,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __patchStudy: function(fieldKey, value) {
-      this.getStudy().patchStudy(fieldKey, value)
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);

@@ -19,7 +19,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 
 from ...db.repositories.services import ServicesRepository
-from ...services import catalog
+from ...services import services_api
+from ..dependencies.director import get_director_api
 
 _logger = logging.getLogger(__name__)
 
@@ -38,8 +39,9 @@ async def list_services_paginated(
 ) -> PageRpcServicesGetV2:
     assert app.state.engine  # nosec
 
-    total_count, items = await catalog.list_services_paginated(
+    total_count, items = await services_api.list_services_paginated(
         repo=ServicesRepository(app.state.engine),
+        director_api=get_director_api(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
@@ -69,8 +71,9 @@ async def get_service(
 ) -> ServiceGetV2:
     assert app.state.engine  # nosec
 
-    service = await catalog.get_service(
+    service = await services_api.get_service(
         repo=ServicesRepository(app.state.engine),
+        director_api=get_director_api(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -98,8 +101,9 @@ async def update_service(
 
     assert app.state.engine  # nosec
 
-    service = await catalog.update_service(
+    service = await services_api.update_service(
         repo=ServicesRepository(app.state.engine),
+        director_api=get_director_api(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
