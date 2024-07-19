@@ -10647,7 +10647,6 @@ components:
           title: Quality
           type: object
           default: {}
-      description: Service display properties
       example:
         accessRights:
           1:

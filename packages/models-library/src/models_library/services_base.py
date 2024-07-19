@@ -21,8 +21,6 @@ class ServiceKeyVersion(BaseModel):
 
 
 class ServiceDisplay(BaseModel):
-    """Service display properties"""
-
     name: str = Field(
         ...,
         description="Display name: short, human readable name for the node",
