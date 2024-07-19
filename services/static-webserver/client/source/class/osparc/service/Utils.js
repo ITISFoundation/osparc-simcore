@@ -190,42 +190,6 @@ qx.Class.define("osparc.service.Utils", {
       return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
-    /**
-     * Compatibility check:
-     * - compIOFields of src inputs need to be in dest inputs
-     * - compIOFields of src outputs need to be in dest outputs
-     */
-    __areNodesCompatible: function(srcNode, destNode) {
-      const compIOFields = ["keyId"];
-      let compatible = true;
-
-      const arePortsCompatible = (portKey, inOrOut = "inputs") => {
-        if (!(portKey in destNode[inOrOut])) {
-          return false;
-        }
-        const fields = srcNode[inOrOut][portKey];
-        for (let i = 0; i<fields.length; i++) {
-          const field = fields[i];
-          if (compIOFields.includes(field)) {
-            if (!(field in destNode[inOrOut][portKey]) || srcNode[inOrOut][portKey][field] !== destNode[inOrOut][portKey][field]) {
-              return false;
-            }
-          }
-        }
-        return true;
-      }
-
-      // inputs
-      const areInputsCompatible = inputKey => arePortsCompatible(inputKey, "inputs");
-      compatible = compatible && Object.keys(srcNode["inputs"]).every(areInputsCompatible);
-
-      // outputs
-      const areOutputsCompatible = inputKey => arePortsCompatible(inputKey, "outputs");
-      compatible = compatible && Object.keys(srcNode["outputs"]).every(areOutputsCompatible);
-
-      return compatible;
-    },
-
     getLatestCompatible: function(services, srcKey, srcVersion) {
       if (services === null) {
         services = osparc.service.Utils.servicesCached;
