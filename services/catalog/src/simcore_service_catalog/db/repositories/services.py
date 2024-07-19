@@ -33,6 +33,7 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
     list_latest_services_with_history_stmt,
@@ -270,6 +271,28 @@ class ServicesRepository(BaseRepository):
         return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
 
     # NEW CRUD on services ------
+
+    async def can_get_service(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+        version: ServiceVersion,
+    ) -> bool:
+        """Returns False if it cannot get the service i.e. not found or does not have access"""
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                can_get_service_stmt(
+                    product_name=product_name,
+                    user_id=user_id,
+                    access_rights=AccessRightsClauses.can_read,
+                    service_key=key,
+                    service_version=version,
+                )
+            )
+            return bool(result.scalar())
 
     async def get_service_with_history(
         self,

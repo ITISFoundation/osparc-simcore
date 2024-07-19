@@ -267,6 +267,37 @@ def list_latest_services_with_history_stmt(
     )
 
 
+def can_get_service_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+):
+    subquery = (
+        sa.select(1)
+        .select_from(
+            services_meta_data.join(
+                services_access_rights,
+                (services_meta_data.c.key == services_access_rights.c.key)
+                & (services_meta_data.c.version == services_access_rights.c.version),
+            ).join(
+                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
+            )
+        )
+        .where(
+            (services_meta_data.c.key == service_key)
+            & (services_meta_data.c.version == service_version)
+            & (user_to_groups.c.uid == user_id)
+            & (services_access_rights.c.product_name == product_name)
+            & access_rights
+        )
+        .limit(1)
+    )
+    return sa.select(sa.exists(subquery))
+
+
 def get_service_stmt(
     *,
     product_name: ProductName,
