@@ -55,9 +55,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       if (nodeId in studyData["workbench"]) {
         const node = studyData["workbench"][nodeId];
         if (osparc.service.Utils.isUpdatable(node)) {
-          const newVersion = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
-          if (newVersion["version"] !== node["version"]) {
-            return newVersion["version"];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          if (latestCompatible["version"] !== node["version"]) {
+            return latestCompatible["version"];
           }
         }
       }
