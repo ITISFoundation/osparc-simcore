@@ -7,7 +7,7 @@ from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_authoring import Author, Badge
-from .services_base import ServiceBase, ServiceKeyVersion
+from .services_base import ServiceDisplay, ServiceKeyVersion
 from .services_constants import ANY_FILETYPE
 from .services_enums import ServiceType
 from .services_io import ServiceInput, ServiceOutput
@@ -87,7 +87,7 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
 }
 
 
-class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
+class ServiceMetaDataPublished(ServiceKeyVersion, ServiceDisplay):
     """
     Service metadata at publication time
 
@@ -125,7 +125,7 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         examples=["computational"],
     )
 
-    badges: list[Badge] | None = Field(None)
+    badges: list[Badge] | None = Field(None, deprecated=True)
 
     authors: list[Author] = Field(..., min_items=1)
     contact: LowerCaseEmailStr = Field(

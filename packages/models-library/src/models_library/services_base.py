@@ -5,7 +5,7 @@ from .utils.common_validators import empty_str_to_none_pre_validator
 
 
 class ServiceKeyVersion(BaseModel):
-    """This pair uniquely identifies a services"""
+    """Service `key-version` pair uniquely identifies a service"""
 
     key: ServiceKey = Field(
         ...,
@@ -20,7 +20,9 @@ class ServiceKeyVersion(BaseModel):
         frozen = True
 
 
-class ServiceBase(BaseModel):
+class ServiceDisplay(BaseModel):
+    """Service display properties"""
+
     name: str = Field(
         ...,
         description="Display name: short, human readable name for the node",
