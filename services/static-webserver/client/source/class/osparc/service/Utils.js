@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = osparc.service.Utils.getLatest(key, services);
+ *   let latestSrv = osparc.service.Utils.getLatest(key);
  * </pre>
  */
 
@@ -173,10 +173,8 @@ qx.Class.define("osparc.service.Utils", {
       return versions.reverse();
     },
 
-    getLatest: function(key, services) {
-      if (!services) {
-        services = osparc.service.Store.servicesCached;
-      }
+    getLatest: function(key) {
+      const services = osparc.service.Store.servicesCached;
       if (key in services) {
         const versions = this.getVersions(key, true);
         return services[key][versions[0]];

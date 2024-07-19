@@ -185,7 +185,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
         }
@@ -224,7 +224,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           });
         }
 
-        const latestMetadata = osparc.service.Utils.getLatest(node["key"], this._services);
+        const latestMetadata = osparc.service.Utils.getLatest(node["key"]);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });
