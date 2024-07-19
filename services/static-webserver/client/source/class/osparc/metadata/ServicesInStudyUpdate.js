@@ -55,7 +55,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       if (nodeId in studyData["workbench"]) {
         const node = studyData["workbench"][nodeId];
         if (osparc.service.Utils.isUpdatable(node)) {
-          const newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
+          const newVersion = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
           if (newVersion["version"] !== node["version"]) {
             return newVersion["version"];
           }
@@ -185,7 +185,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
         }

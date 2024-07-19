@@ -188,7 +188,7 @@ qx.Class.define("osparc.service.Utils", {
       return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
-    getLatestCompatible: function(services, srcKey, srcVersion) {
+    getLatestCompatible: function(srcKey, srcVersion, services) {
       if (services === null) {
         services = osparc.service.Utils.servicesCached;
       }
@@ -238,7 +238,7 @@ qx.Class.define("osparc.service.Utils", {
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
     isUpdatable: function(metadata) {
-      const latestCompatibleMetadata = this.getLatestCompatible(null, metadata["key"], metadata["version"]);
+      const latestCompatibleMetadata = this.getLatestCompatible(metadata["key"], metadata["version"]);
       return latestCompatibleMetadata && metadata["version"] !== latestCompatibleMetadata["version"];
     },
 
