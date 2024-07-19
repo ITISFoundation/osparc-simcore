@@ -5726,7 +5726,8 @@ components:
           versionDisplay: Matterhorn
           released: '2024-01-20T18:49:17'
           compatibility:
-            can_update_to: 0.9.11
+            can_update_to:
+              version: 0.9.11
         - version: 0.9.0
           retired: '2024-07-20T15:00:00'
         - version: 0.8.0
@@ -6061,12 +6062,25 @@ components:
       properties:
         canUpdateTo:
           title: Canupdateto
-          anyOf:
-          - pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-            type: string
-          - $ref: '#/components/schemas/ServiceKeyVersion'
-          description: Latest compatible version at this moment.Current service can
-            update to this version and still work
+          allOf:
+          - $ref: '#/components/schemas/CompatibleService'
+          description: Latest compatible service at this moment
+    CompatibleService:
+      title: CompatibleService
+      required:
+      - version
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: If None, it refer to current service. Used only for inter-service
+            compatibility
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
     ComputationStart:
       title: ComputationStart
       type: object
@@ -10344,7 +10358,7 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
-      description: This pair uniquely identifies a services
+      description: Service `key-version` pair uniquely identifies a service
     ServiceOutputGet:
       title: ServiceOutputGet
       required:
@@ -10484,7 +10498,10 @@ components:
             If retired<now then the service is retired and should not be used. '
           format: date-time
         compatibility:
-          $ref: '#/components/schemas/Compatibility'
+          title: Compatibility
+          allOf:
+          - $ref: '#/components/schemas/Compatibility'
+          description: Compatibility with other releases at this moment
     ServiceRunGet:
       title: ServiceRunGet
       required:
@@ -10617,8 +10634,9 @@ components:
         deprecated:
           title: Deprecated
           type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
+          description: Owner can set the date to retire the service. Three possibilities:If
+            None, the service is marked as `published`;If now<deprecated the service
+            is marked as dprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -10629,6 +10647,7 @@ components:
           title: Quality
           type: object
           default: {}
+      description: Service display properties
       example:
         accessRights:
           1:
@@ -11967,8 +11986,9 @@ components:
         deprecated:
           title: Deprecated
           type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
+          description: Owner can set the date to retire the service. Three possibilities:If
+            None, the service is marked as `published`;If now<deprecated the service
+            is marked as dprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -12019,6 +12039,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Badge'
+          deprecated: true
         authors:
           title: Authors
           minItems: 1
