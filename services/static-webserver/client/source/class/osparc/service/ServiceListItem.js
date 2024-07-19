@@ -148,22 +148,20 @@ qx.Class.define("osparc.service.ServiceListItem", {
       selectBox.setSelection([latest]);
     },
 
-    __getSelectedServiceMetadata: function() {
+    __showServiceDetails: function() {
       const key = this.getServiceModel().getKey();
       let version = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (version === this.self().LATEST) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.service.Utils.getFromObject(key, version);
-    },
-
-    __showServiceDetails: function() {
-      const serviceMetadata = this.__getSelectedServiceMetadata();
-      const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
-      const title = this.tr("Service information");
-      const width = osparc.info.CardLarge.WIDTH;
-      const height = osparc.info.CardLarge.HEIGHT;
-      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      osparc.service.Store.getService(key, version)
+        .then(serviceMetadata => {
+          const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
+          const title = this.tr("Service information");
+          const width = osparc.info.CardLarge.WIDTH;
+          const height = osparc.info.CardLarge.HEIGHT;
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        });
     },
 
     _filterText: function(text) {
