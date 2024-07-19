@@ -3210,7 +3210,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5716,12 +5716,14 @@ components:
           released: '2024-07-20T15:00:00'
         - version: 2.0.0
           compatibility:
-            canUpdateTo: 2.2.1
+            canUpdateTo:
+              version: 2.2.1
         - version: 0.9.11
         - version: 0.9.10
         - version: 0.9.8
           compatibility:
-            canUpdateTo: 0.9.11
+            canUpdateTo:
+              version: 0.9.11
         - version: 0.9.1
           versionDisplay: Matterhorn
           released: '2024-01-20T18:49:17'

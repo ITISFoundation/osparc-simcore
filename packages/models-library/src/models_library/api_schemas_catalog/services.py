@@ -263,7 +263,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": "2.0.0",
                             "compatibility": {
-                                "canUpdateTo": _EXAMPLE_SLEEPER["version"],
+                                "canUpdateTo": {"version": _EXAMPLE_SLEEPER["version"]},
                             },
                         },
                         {"version": "0.9.11"},
@@ -271,7 +271,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": "0.9.8",
                             "compatibility": {
-                                "canUpdateTo": "0.9.11",
+                                "canUpdateTo": {"version": "0.9.11"},
                             },
                         },
                         {
