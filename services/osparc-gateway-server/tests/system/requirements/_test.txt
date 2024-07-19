@@ -1,4 +1,4 @@
-aiodocker==0.21.0
+aiodocker==0.22.2
     # via -r requirements/_test.in
 aiohttp==3.9.5
     # via
@@ -11,7 +11,7 @@ async-timeout==4.0.3
     # via aiohttp
 attrs==23.2.0
     # via aiohttp
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   requests
@@ -28,7 +28,7 @@ cloudpickle==3.0.0
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.5.1
+coverage==7.6.0
     # via pytest-cov
 dask==2024.5.1
     # via
@@ -43,9 +43,9 @@ distributed==2024.5.1
     #   dask-gateway
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
-faker==25.2.0
+faker==26.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -116,7 +116,7 @@ psutil==5.9.8
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -150,7 +150,7 @@ pyyaml==6.0.1
     #   dask
     #   dask-gateway
     #   distributed
-requests==2.32.2
+requests==2.32.3
     # via docker
 six==1.16.0
     # via python-dateutil
@@ -162,7 +162,7 @@ tblib==3.0.0
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==8.3.0
+tenacity==8.5.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
@@ -181,8 +181,6 @@ tornado==6.4
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-typing-extensions==4.11.0
-    # via aiodocker
 urllib3==2.2.1
     # via
     #   -c requirements/../../../../../requirements/constraints.txt

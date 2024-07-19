@@ -34,7 +34,7 @@ certifi==2024.2.2
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -45,7 +45,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -93,7 +93,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -131,7 +131,7 @@ python-socketio==5.11.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.32.2
+requests==2.32.3
     # via docker
 respx==0.21.1
     # via -r requirements/_test.in
@@ -159,7 +159,7 @@ typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   anyio
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

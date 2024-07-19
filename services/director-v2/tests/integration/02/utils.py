@@ -41,7 +41,7 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import Schedu
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
