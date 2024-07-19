@@ -304,8 +304,7 @@ class ServicesRepository(BaseRepository):
                 result = await conn.execute(stmt_history)
                 row_h = result.one_or_none()
 
-        return (
-            ServiceWithHistoryFromDB(
+            return ServiceWithHistoryFromDB(
                 key=row.key,
                 version=row.version,
                 # display
@@ -324,9 +323,7 @@ class ServicesRepository(BaseRepository):
                 # releases
                 history=row_h.history if row_h else [],
             )
-            if row
-            else None
-        )
+        return None
 
     async def list_latest_services(
         self,

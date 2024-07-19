@@ -40,7 +40,7 @@ from simcore_service_webserver.projects._crud_api_create import (
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

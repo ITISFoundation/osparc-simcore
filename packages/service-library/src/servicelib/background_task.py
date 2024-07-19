@@ -7,14 +7,14 @@ from typing import Final
 
 from pydantic.errors import PydanticErrorMixin
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from .decorators import async_delayed
 from .logging_utils import log_catch, log_context
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
@@ -36,10 +36,10 @@ async def _periodic_scheduled_task(
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
             with log_context(
-                logger,
+                _logger,
                 logging.DEBUG,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
-            ), log_catch(logger):
+            ), log_catch(_logger):
                 await task(**task_kwargs)
 
             raise TryAgain
@@ -54,7 +54,7 @@ def start_periodic_task(
     **kwargs,
 ) -> asyncio.Task:
     with log_context(
-        logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
+        _logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
         delayed_periodic_scheduled_task = async_delayed(wait_before_running)(
             _periodic_scheduled_task
@@ -93,7 +93,7 @@ async def cancel_task(
             _, pending = await asyncio.wait((task,), timeout=timeout)
             if pending:
                 task_name = task.get_name()
-                logger.info(
+                _logger.info(
                     "tried to cancel '%s' but timed-out! %s", task_name, pending
                 )
                 raise PeriodicTaskCancellationError(task_name=task_name)
@@ -103,7 +103,7 @@ async def stop_periodic_task(
     asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
     with log_context(
-        logger,
+        _logger,
         logging.DEBUG,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):

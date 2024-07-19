@@ -1,26 +1,24 @@
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pydantic==1.10.15
+pydantic==1.10.17
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/requirements.in
     #   pytest-asyncio
@@ -45,7 +43,6 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
@@ -53,5 +50,5 @@ termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via pydantic

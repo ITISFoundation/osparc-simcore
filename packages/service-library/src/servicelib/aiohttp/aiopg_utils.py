@@ -13,7 +13,6 @@
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
 # TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
-import functools
 import logging
 
 import sqlalchemy as sa
@@ -21,7 +20,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import RetryCallState, retry
+from tenacity import RetryCallState
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -109,36 +108,6 @@ class PostgresRetryPolicyUponOperation:
             after=after_log(logger, logging.WARNING),
             retry_error_callback=raise_http_unavailable_error,
         )
-
-
-# alias
-postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation().kwargs
-
-
-def retry_pg_api(func):
-    """Decorator to implement postgres service retry policy and
-    keep global  statistics on service attempt fails
-    """
-    # TODO: temporary. For the time being, use instead postgres_service_retry_policy_kwargs
-    _deco_func = retry(**postgres_service_retry_policy_kwargs)(func)
-    _total_retry_count = 0
-
-    @functools.wraps(func)
-    async def wrapper(*args, **kargs):
-        nonlocal _total_retry_count
-        try:
-            result = await _deco_func(*args, **kargs)
-        finally:
-            stats = _deco_func.retry.statistics
-            _total_retry_count += int(stats.get("attempt_number", 0))
-        return result
-
-    def total_retry_count():
-        return _total_retry_count
-
-    wrapper.retry = _deco_func.retry  # type: ignore[attr-defined]
-    wrapper.total_retry_count = total_retry_count  # type: ignore[attr-defined]
-    return wrapper
 
 
 __all__ = (

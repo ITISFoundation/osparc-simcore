@@ -1,4 +1,4 @@
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -12,11 +12,11 @@ pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-requests==2.32.2
+requests==2.32.3
     # via docker
-tenacity==8.2.3
+tenacity==8.5.0
     # via -r requirements/requirements.in
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

@@ -1,4 +1,4 @@
-aiodocker==0.21.0
+aiodocker==0.22.1
     # via -r requirements/_base.in
 aiohttp==3.9.5
     # via
@@ -53,9 +53,7 @@ sqlalchemy==1.4.52
     #   dask-gateway-server
 traitlets==5.14.3
     # via dask-gateway-server
-typing-extensions==4.11.0
-    # via
-    #   aiodocker
-    #   pydantic
+typing-extensions==4.12.2
+    # via pydantic
 yarl==1.9.4
     # via aiohttp

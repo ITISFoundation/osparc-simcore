@@ -6,13 +6,13 @@ async-timeout==4.0.3
     #   aiopg
 attrs==23.2.0
     # via pytest-docker
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 greenlet==3.0.3
     # via
@@ -21,11 +21,11 @@ greenlet==3.0.3
     #   sqlalchemy
 iniconfig==2.0.0
     # via pytest
-mypy==1.10.0
+mypy==1.10.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==24.0
+packaging==24.1
     # via pytest
 pluggy==1.5.0
     # via pytest
@@ -34,7 +34,7 @@ psycopg2-binary==2.9.9
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -75,7 +75,7 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
