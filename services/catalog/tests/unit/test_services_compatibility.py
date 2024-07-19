@@ -188,7 +188,7 @@ async def test_evaluate_service_compatibility_map_with_default_policy(
     )
 
     assert len(compatibility_map) == 4
-    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to.version == "1.0.1"
     assert compatibility_map[ServiceVersion("1.0.1")] is None
     assert compatibility_map[ServiceVersion("1.1.0")] is None
     assert compatibility_map[ServiceVersion("2.0.0")] is None
@@ -214,10 +214,10 @@ async def test_evaluate_service_compatibility_map_with_custom_policy(
 
     assert len(compatibility_map) == 4
     assert (
-        compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+        compatibility_map[ServiceVersion("1.0.0")].can_update_to.version == "1.0.1"
     )  # default
     assert (
-        compatibility_map[ServiceVersion("1.0.1")].can_update_to == "2.0.0"
+        compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "2.0.0"
     )  # version customized
     assert compatibility_map[ServiceVersion("1.2.0")] is None
     assert compatibility_map[ServiceVersion("2.0.0")] is None
@@ -249,7 +249,7 @@ async def test_evaluate_service_compatibility_map_with_other_service(
     )
 
     assert len(compatibility_map) == 2
-    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to == "1.0.1"
+    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to.version == "1.0.1"
     # NOTE: 1.0.1 is also upgradable but it is not evaluated as so because our algorithm only
     # checks comptatibility once instead of recursively
 
@@ -279,5 +279,5 @@ async def test_evaluate_service_compatibility_map_with_deprecated_versions(
         compatibility_map[ServiceVersion("1.0.0")] is None
     )  # cannot upgrade to deprecated 1.0.1
     assert compatibility_map[ServiceVersion("1.0.1")] is None  # Deprecated version
-    assert compatibility_map[ServiceVersion("1.2.0")].can_update_to == "1.2.5"
+    assert compatibility_map[ServiceVersion("1.2.0")].can_update_to.version == "1.2.5"
     assert compatibility_map[ServiceVersion("1.2.5")] is None

@@ -279,7 +279,7 @@ class ServiceGetV2(BaseModel):
                             "versionDisplay": "Matterhorn",
                             "released": "2024-01-20T18:49:17",
                             "compatibility": {
-                                "can_update_to": "0.9.11",
+                                "can_update_to": {"version": "0.9.11"},
                             },
                         },
                         {
