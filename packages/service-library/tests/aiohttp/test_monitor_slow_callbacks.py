@@ -9,7 +9,8 @@ from collections.abc import Iterable
 
 import pytest
 from servicelib.aiohttp import monitor_slow_callbacks
-from servicelib.aiohttp.aiopg_utils import DatabaseError, retry
+from servicelib.aiohttp.aiopg_utils import DatabaseError
+from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
