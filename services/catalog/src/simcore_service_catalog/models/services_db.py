@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
+from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
@@ -8,11 +9,6 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
-
-# -------------------------------------------------------------------
-# Databases models
-#  - table services_meta_data
-#  - table services_access_rights
 
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
@@ -91,10 +87,8 @@ assert (  # nosec
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt = Field(..., description="defines the group id", example=1)
-    product_name: str = Field(
-        ..., description="defines the product name", example="osparc"
-    )
+    gid: PositiveInt
+    product_name: ProductName
 
     class Config:
         orm_mode = True

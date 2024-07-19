@@ -150,6 +150,7 @@ def list_latest_services_with_history_stmt(
             services_meta_data.c.name,
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.version_display,
             services_meta_data.c.classifiers,
             services_meta_data.c.created,
             services_meta_data.c.modified,
@@ -219,6 +220,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.name,
             latest_query.c.description,
             latest_query.c.thumbnail,
+            latest_query.c.version_display,
             # ownership
             latest_query.c.owner_email,
             # tags
@@ -254,6 +256,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.name,
             latest_query.c.description,
             latest_query.c.thumbnail,
+            latest_query.c.version_display,
             latest_query.c.classifiers,
             latest_query.c.created,
             latest_query.c.modified,
@@ -288,6 +291,7 @@ def get_service_stmt(
             services_meta_data.c.name,
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.version_display,
             # ownership
             owner_subquery.label("owner_email"),
             # tags
