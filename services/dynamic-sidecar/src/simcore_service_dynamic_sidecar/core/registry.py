@@ -65,7 +65,7 @@ async def _is_dockerhub_reachable(registry_settings: RegistrySettings) -> None:
                 }
             )
 
-        # NOTE: uses different URL than the one configured
+        # NOTE: uses different URL than the one specified in the configuration
         url = "https://hub.docker.com/v2/users/login"
 
         _logger.info("Registry test url ='%s'", url)
