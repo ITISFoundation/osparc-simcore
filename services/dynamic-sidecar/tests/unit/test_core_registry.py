@@ -123,12 +123,12 @@ def registries_env_mocker(
         ),
         pytest.param(
             {
-                "DY_DEPLOYMENT_REGISTRY_SETTINGS": _get_registry_config(
-                    url="dockerhuburl"
+                "DY_DEPLOYMENT_REGISTRY_SETTINGS": _get_registry_config(),
+                "DY_DOCKER_HUB_REGISTRY_SETTINGS": _get_registry_config(
+                    url="https://index.docker.io/v1/"
                 ),
-                "DY_DOCKER_HUB_REGISTRY_SETTINGS": _get_registry_config(),
             },
-            '{"auths": {"dockerhuburl": {"auth": "dXNlcjpwYXNzd29yZA=="}, "localhost:1111": {"auth": "dXNlcjpwYXNzd29yZA=="}}}',
+            '{"auths": {"localhost:1111": {"auth": "dXNlcjpwYXNzd29yZA=="}, "https://index.docker.io/v1/": {"auth": "dXNlcjpwYXNzd29yZA=="}}}',
             id="internal_and_dockerhub_registry",
         ),
     ],

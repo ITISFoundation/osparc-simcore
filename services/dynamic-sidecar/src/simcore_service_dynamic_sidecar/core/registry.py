@@ -3,7 +3,7 @@ import base64
 import json
 import logging
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 import httpx
 from fastapi import FastAPI
@@ -50,6 +50,38 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
             raise _RegistryNotReachableError(error_message)
 
 
+async def _is_dockerhub_reachable(registry_settings: RegistrySettings) -> None:
+    async with httpx.AsyncClient(timeout=5) as client:
+        params: dict[str, Any] = {"headers": {"Content-Type": "application/json"}}
+        if registry_settings.REGISTRY_AUTH:
+            params["auth"] = (
+                registry_settings.REGISTRY_USER,
+                registry_settings.REGISTRY_PW.get_secret_value(),
+            )
+            params["data"] = json.dumps(
+                {
+                    "username": registry_settings.REGISTRY_USER,
+                    "password": registry_settings.REGISTRY_PW.get_secret_value(),
+                }
+            )
+
+        # NOTE: uses different URL than the one configured
+        url = "https://hub.docker.com/v2/users/login"
+
+        _logger.info("Registry test url ='%s'", url)
+        response = await client.post(url, **params)
+        reachable = (
+            response.status_code == status.HTTP_200_OK and "token" in response.json()
+        )
+        if not reachable:
+            _logger.error("Response: %s %s", response, response.text)
+            error_message = (
+                f"Could not reach registry {response.request.url}"
+                f"auth={registry_settings.REGISTRY_AUTH}, because: {response.text}"
+            )
+            raise _RegistryNotReachableError(error_message)
+
+
 async def wait_for_registries_liveness(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
@@ -62,9 +94,9 @@ async def wait_for_registries_liveness(app: FastAPI) -> None:
 
     if settings.DY_DOCKER_HUB_REGISTRY_SETTINGS:
         await wait_for_service_liveness(
-            _is_registry_reachable,
+            _is_dockerhub_reachable,
             service_name="DockerHub Registry",
-            endpoint=_get_registry_url(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS),
+            endpoint="https://hub.docker.com/v2/users/login",
             registry_settings=settings.DY_DOCKER_HUB_REGISTRY_SETTINGS,
         )
 
