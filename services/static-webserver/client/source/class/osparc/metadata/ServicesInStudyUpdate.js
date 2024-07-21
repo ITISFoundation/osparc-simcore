@@ -194,7 +194,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         if (latestCompatibleMetadata) {
-          osparc.service.Store.getService(latestCompatibleMetadata["version"], latestCompatibleMetadata["version"])
+          osparc.service.Store.getService(latestCompatibleMetadata["key"], latestCompatibleMetadata["version"])
             .then(metadata => compatibleVersionLabel.setValue(metadata["name"] + ":" + metadata["version"]))
             .catch(err => console.error(err));
         } else if (nodeMetadata) {
