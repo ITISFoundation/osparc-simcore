@@ -112,7 +112,7 @@ qx.Class.define("osparc.study.Utils", {
         const promises = version ? [osparc.service.Store.getService(key, version)] : [];
         Promise.all(promises)
           .then(() => {
-            const service = version ? osparc.service.Store.getMetaData(key, version) : osparc.service.Utils.getLatest(key);
+            const service = version ? osparc.service.Store.getMetadata(key, version) : osparc.service.Utils.getLatest(key);
             const newUuid = osparc.utils.Utils.uuidV4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             if (newStudyLabel === undefined) {

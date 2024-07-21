@@ -183,7 +183,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14"
         });
-        const nodeMetadata = osparc.service.Store.getMetaData(node["key"], node["version"]);
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
         this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
         this._servicesGrid.add(currentVersionLabel, {
           row: i,
