@@ -17,7 +17,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     const grid = this._servicesGrid.getLayout();
     grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.COMPATIBLE_VERSION, "center", "middle");
-    grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
   },
 
   statics: {
@@ -25,8 +24,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       ...osparc.metadata.ServicesInStudy.GRID_POS,
       CURRENT_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length,
       COMPATIBLE_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+1,
-      LATEST_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2,
-      UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+3
+      UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
     anyServiceDeprecated: function(studyData) {
@@ -153,14 +151,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         column: this.self().GRID_POS.COMPATIBLE_VERSION
       });
 
-      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Latest")).set({
-        font: "title-14",
-        toolTipText: this.tr("Latest available version")
-      }), {
-        row: 0,
-        column: this.self().GRID_POS.LATEST_VERSION
-      });
-
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
         appearance: "form-button",
         padding: [2, 5],
@@ -215,15 +205,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
-        const latestMetadata = osparc.service.Utils.getLatest(node["key"]);
-        const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
-          font: "text-14"
-        });
-        this._servicesGrid.add(latestVersionLabel, {
-          row: i,
-          column: this.self().GRID_POS.LATEST_VERSION
-        });
-
         if (latestCompatibleMetadata && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
@@ -231,9 +212,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           });
           if (latestCompatibleMetadata["version"] === node["version"]) {
             updateButton.setLabel(this.tr("Up-to-date"));
-          }
-          if (latestCompatibleMetadata["version"] !== latestMetadata["version"]) {
-            updateButton.setLabel(this.tr("Update manually"));
           }
           if (isUpdatable) {
             updateButton.set({
