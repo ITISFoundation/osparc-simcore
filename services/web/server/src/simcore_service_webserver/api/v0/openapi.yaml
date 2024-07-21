@@ -2525,8 +2525,8 @@ paths:
     put:
       tags:
       - projects
-      summary: Update Project Group
-      operationId: update_project_group
+      summary: Replace Project Group
+      operationId: replace_project_group
       parameters:
       - required: true
         schema:
