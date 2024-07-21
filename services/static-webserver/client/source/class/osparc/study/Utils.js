@@ -109,14 +109,15 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
-        const promises = version ? [osparc.service.Store.getService(key, version)] : [];
-        Promise.all(promises)
-          .then(() => {
-            const service = version ? osparc.service.Store.getMetadata(key, version) : osparc.service.Utils.getLatest(key);
+        if (!version) {
+          version = osparc.service.Utils.getLatest(key);
+        }
+        osparc.service.Store.getService(key, version)
+          .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             if (newStudyLabel === undefined) {
-              newStudyLabel = service["name"];
+              newStudyLabel = metadata["name"];
             }
             if (existingStudies) {
               const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
@@ -124,13 +125,13 @@ qx.Class.define("osparc.study.Utils", {
             } else {
               minStudyData["name"] = newStudyLabel;
             }
-            if (service["thumbnail"]) {
-              minStudyData["thumbnail"] = service["thumbnail"];
+            if (metadata["thumbnail"]) {
+              minStudyData["thumbnail"] = metadata["thumbnail"];
             }
             minStudyData["workbench"][newUuid] = {
-              "key": service["key"],
-              "version": service["version"],
-              "label": service["name"]
+              "key": metadata["key"],
+              "version": metadata["version"],
+              "label": metadata["name"]
             };
             if (!("ui" in minStudyData)) {
               minStudyData["ui"] = {};
