@@ -242,9 +242,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
         const templatePromises = [];
         for (const nodeId in studyData["workbench"]) {
-          const newVersion = osparc.metadata.ServicesInStudyUpdate.getLatestVersion(studyData, nodeId)
-          if (newVersion) {
-            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, "version", newVersion));
+          const node = studyData["workbench"][nodeId];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          if (latestCompatible && (node["key"] !== latestCompatible["key"] || node["version"] !== latestCompatible["version"])) {
+            const patchData = {};
+            if (node["key"] !== latestCompatible["key"]) {
+              patchData["key"] = latestCompatible["key"];
+            }
+            if (node["version"] !== latestCompatible["version"]) {
+              patchData["version"] = latestCompatible["version"];
+            }
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)

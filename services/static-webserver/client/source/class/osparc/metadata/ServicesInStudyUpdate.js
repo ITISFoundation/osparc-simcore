@@ -123,11 +123,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     __updateService: async function(nodeId, key, version, button) {
       const latestCompatible = osparc.service.Utils.getLatestCompatible(key, version);
       const patchData = {};
-      if (key !== latestCompatible.key) {
-        patchData["key"] = latestCompatible.key;
+      if (key !== latestCompatible["key"]) {
+        patchData["key"] = latestCompatible["key"];
       }
-      if (version !== latestCompatible.version) {
-        patchData["version"] = latestCompatible.version;
+      if (version !== latestCompatible["version"]) {
+        patchData["version"] = latestCompatible["version"];
       }
       await this._patchNode(nodeId, patchData, button);
     },
@@ -181,7 +181,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
         const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (isUpdatable) {
           updatableServices.push(nodeId);
@@ -199,6 +198,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const compatibleVersionLabel = new qx.ui.basic.Label().set({
           font: "text-14"
         });
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
         if (latestCompatibleMetadata) {
           osparc.service.Store.getService(latestCompatibleMetadata["key"], latestCompatibleMetadata["version"])
             .then(metadata => compatibleVersionLabel.setValue(metadata["name"] + ":" + metadata["version"]))
