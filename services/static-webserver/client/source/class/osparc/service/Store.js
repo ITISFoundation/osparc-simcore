@@ -32,10 +32,10 @@ qx.Class.define("osparc.service.Store", {
 
         osparc.data.Resources.getInstance().getAllPages("servicesDev")
           .then(servicesArray => {
-            osparc.service.Utils.addHits(servicesArray);
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
-            osparc.service.Utils.addTSRInfos(servicesObj);
-            osparc.service.Utils.addExtraTypeInfos(servicesObj);
+            this.__addHits(servicesObj);
+            this.__addTSRInfos(servicesObj);
+            this.__addExtraTypeInfos(servicesObj);
 
             // use response to populate servicesCached
             Object.values(servicesObj).forEach(serviceKey => {
@@ -60,9 +60,9 @@ qx.Class.define("osparc.service.Store", {
         };
         osparc.data.Resources.getOne("servicesDev", params)
           .then(service => {
-            osparc.service.Utils.addHit(service);
-            osparc.service.Utils.addTSRInfo(service);
-            osparc.service.Utils.addExtraTypeInfo(service);
+            this.__addHit(service);
+            this.__addTSRInfo(service);
+            this.__addExtraTypeInfo(service);
             this.__addToCache(service)
             resolve(service);
           });
@@ -118,6 +118,58 @@ qx.Class.define("osparc.service.Store", {
         latestServices[key] = osparc.utils.Utils.deepCloneObject(latest);
       }
       return latestServices;
-    }
+    },
+
+    __addTSRInfo: function(service) {
+      if (osparc.data.model.Node.isComputational(service)) {
+        osparc.metadata.Quality.attachQualityToObject(service);
+      }
+    },
+
+    __addTSRInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          this.__addTSRInfo(service);
+        });
+      });
+    },
+
+    __addExtraTypeInfo: function(service) {
+      service["xType"] = service["type"];
+      if (["backend", "frontend"].includes(service["xType"])) {
+        if (osparc.data.model.Node.isFilePicker(service)) {
+          service["xType"] = "file";
+        } else if (osparc.data.model.Node.isParameter(service)) {
+          service["xType"] = "parameter";
+        } else if (osparc.data.model.Node.isIterator(service)) {
+          service["xType"] = "iterator";
+        } else if (osparc.data.model.Node.isProbe(service)) {
+          service["xType"] = "probe";
+        }
+      }
+    },
+
+    __addExtraTypeInfos: function(servicesObj) {
+      Object.values(servicesObj).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          this.__addExtraTypeInfo(service);
+        });
+      });
+    },
+
+    __addHit: function(service, favServices) {
+      const cachedHit = favServices ? favServices : osparc.utils.Utils.localCache.getFavServices();
+      const found = Object.keys(cachedHit).find(favSrv => favSrv === service["key"]);
+      service.hits = found ? cachedHit[found]["hits"] : 0;
+    },
+
+    __addHits: function(servicesObj) {
+      const favServices = osparc.utils.Utils.localCache.getFavServices();
+      Object.values(servicesObj).forEach(serviceWVersion => {
+        Object.values(serviceWVersion).forEach(service => {
+          this.__addHit(service, favServices);
+        });
+      });
+    },
   }
 });

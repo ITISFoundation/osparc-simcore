@@ -132,15 +132,6 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    getFromArray: function(services, key, version) {
-      for (let i=0; i<services.length; i++) {
-        if (services[i].key === key && services[i].version === version) {
-          return services[i];
-        }
-      }
-      return null;
-    },
-
     getVersions: function(key, filterDeprecated = true) {
       const services = osparc.service.Store.servicesCached;
       let versions = [];
@@ -253,60 +244,6 @@ qx.Class.define("osparc.service.Utils", {
 
     getProbeMetadata: function(type) {
       return this.self().getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
-    },
-
-    getNodesGroup: function() {
-      return this.self().getLatest("simcore/services/frontend/nodes-group");
-    },
-
-    addTSRInfo: function(service) {
-      if (osparc.data.model.Node.isComputational(service)) {
-        osparc.metadata.Quality.attachQualityToObject(service);
-      }
-    },
-
-    addTSRInfos: function(servicesObj) {
-      Object.values(servicesObj).forEach(serviceWVersion => {
-        Object.values(serviceWVersion).forEach(service => {
-          this.self().addTSRInfo(service);
-        });
-      });
-    },
-
-    addExtraTypeInfo: function(service) {
-      service["xType"] = service["type"];
-      if (["backend", "frontend"].includes(service["xType"])) {
-        if (osparc.data.model.Node.isFilePicker(service)) {
-          service["xType"] = "file";
-        } else if (osparc.data.model.Node.isParameter(service)) {
-          service["xType"] = "parameter";
-        } else if (osparc.data.model.Node.isIterator(service)) {
-          service["xType"] = "iterator";
-        } else if (osparc.data.model.Node.isProbe(service)) {
-          service["xType"] = "probe";
-        }
-      }
-    },
-
-    addExtraTypeInfos: function(servicesObj) {
-      Object.values(servicesObj).forEach(serviceWVersion => {
-        Object.values(serviceWVersion).forEach(service => {
-          this.self().addExtraTypeInfo(service);
-        });
-      });
-    },
-
-    addHit: function(service, favServices) {
-      const cachedHit = favServices ? favServices : osparc.utils.Utils.localCache.getFavServices();
-      const found = Object.keys(cachedHit).find(favSrv => favSrv === service["key"]);
-      service.hits = found ? cachedHit[found]["hits"] : 0;
-    },
-
-    addHits: function(servicesArray) {
-      const favServices = osparc.utils.Utils.localCache.getFavServices();
-      servicesArray.forEach(service => {
-        this.self().addHit(service, favServices);
-      });
     },
 
     removeFileToKeyMap: function(service) {
