@@ -127,10 +127,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterServiceType: function(resourceType, metaData, serviceType) {
+    filterServiceType: function(resourceType, metadata, serviceType) {
       if (serviceType && resourceType === "service") {
-        if (metaData && metaData.type) {
-          const matches = metaData.type === serviceType;
+        if (metadata && metadata.type) {
+          const matches = metadata.type === serviceType;
           return !matches;
         }
         return false;

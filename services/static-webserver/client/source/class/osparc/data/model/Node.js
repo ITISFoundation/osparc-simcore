@@ -218,49 +218,49 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
-    isFrontend: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/frontend/"));
+    isFrontend: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/frontend/"));
     },
 
-    isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+    isFilePicker: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("file-picker"));
     },
 
-    isParameter: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
+    isParameter: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/parameter/"));
     },
 
-    isIterator: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
+    isIterator: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/data-iterator/"));
     },
 
-    isProbe: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/iterator-consumer/"));
+    isProbe: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/iterator-consumer/"));
     },
 
-    isDynamic: function(metaData) {
-      return (metaData && metaData.type && metaData.type === "dynamic");
+    isDynamic: function(metadata) {
+      return (metadata && metadata.type && metadata.type === "dynamic");
     },
 
-    isComputational: function(metaData) {
-      return (metaData && metaData.type && metaData.type === "computational");
+    isComputational: function(metadata) {
+      return (metadata && metadata.type && metadata.type === "computational");
     },
 
-    isUpdatable: function(metaData) {
-      return osparc.service.Utils.isUpdatable(metaData);
+    isUpdatable: function(metadata) {
+      return osparc.service.Utils.isUpdatable(metadata);
     },
 
-    isDeprecated: function(metaData) {
-      return osparc.service.Utils.isDeprecated(metaData);
+    isDeprecated: function(metadata) {
+      return osparc.service.Utils.isDeprecated(metadata);
     },
 
-    isRetired: function(metaData) {
-      return osparc.service.Utils.isRetired(metaData);
+    isRetired: function(metadata) {
+      return osparc.service.Utils.isRetired(metadata);
     },
 
-    hasBootModes: function(metaData) {
-      if (metaData["bootOptions"] && "boot_mode" in metaData["bootOptions"] && "items" in metaData["bootOptions"]["boot_mode"]) {
-        return Object.keys(metaData["bootOptions"]["boot_mode"]["items"]).length;
+    hasBootModes: function(metadata) {
+      if (metadata["bootOptions"] && "boot_mode" in metadata["bootOptions"] && "items" in metadata["bootOptions"]["boot_mode"]) {
+        return Object.keys(metadata["bootOptions"]["boot_mode"]["items"]).length;
       }
       return false;
     },
@@ -302,8 +302,8 @@ qx.Class.define("osparc.data.model.Node", {
       return bootModeSB;
     },
 
-    getMinVisibleInputs: function(metaData) {
-      return ("min-visible-inputs" in metaData) ? metaData["min-visible-inputs"] : null;
+    getMinVisibleInputs: function(metadata) {
+      return ("min-visible-inputs" in metadata) ? metadata["min-visible-inputs"] : null;
     },
 
     getOutput: function(outputs, outputKey) {
@@ -438,23 +438,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateWithMetadata: function() {
-      const metaData = this.__metaData;
-      if (metaData) {
-        if (metaData.name) {
-          this.setLabel(metaData.name);
+      const metadata = this.__metaData;
+      if (metadata) {
+        if (metadata.name) {
+          this.setLabel(metadata.name);
         }
-        if (metaData.inputs) {
-          this.setInputs(metaData.inputs);
-          if (Object.keys(metaData.inputs).length) {
-            this.__addSettings(metaData.inputs);
-            this.__addSettingsAccessLevelEditor(metaData.inputs);
+        if (metadata.inputs) {
+          this.setInputs(metadata.inputs);
+          if (Object.keys(metadata.inputs).length) {
+            this.__addSettings(metadata.inputs);
+            this.__addSettingsAccessLevelEditor(metadata.inputs);
           }
           if (this.getPropsForm()) {
             this.getPropsForm().makeInputsDynamic();
           }
         }
-        if (metaData.outputs) {
-          this.setOutputs(metaData.outputs);
+        if (metadata.outputs) {
+          this.setOutputs(metadata.outputs);
         }
       }
     },
@@ -1076,8 +1076,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     startPollingState: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const metadata = this.getMetaData();
+        const msg = "Starting " + metadata.key + ":" + metadata.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
@@ -1091,8 +1091,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
-        const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
+        const metadata = this.getMetaData();
+        const msg = "Stopping " + metadata.key + ":" + metadata.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
