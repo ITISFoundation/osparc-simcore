@@ -173,15 +173,17 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
 
     __applyStudyData: function(study) {
-      const suggestions = this.self().extractThumbnailSuggestions(study)
-      suggestions.forEach(suggestion => {
-        this.__addThumbnail({
-          type: "serviceImage",
-          thumbnailUrl: suggestion,
-          fileUrl: suggestion
+      this.self().extractThumbnailSuggestions(study)
+        .then(suggestions => {
+          suggestions.forEach(suggestion => {
+            this.__addThumbnail({
+              type: "serviceImage",
+              thumbnailUrl: suggestion,
+              fileUrl: suggestion
+            });
+          })
+          this.__reloadSuggestions();
         });
-      })
-      this.__reloadSuggestions();
     },
 
     addPreviewsToSuggestions: function(previewsPerNodes) {
