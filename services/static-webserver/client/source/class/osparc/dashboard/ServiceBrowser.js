@@ -114,7 +114,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.resetSelection();
     },
 
-    _createStudyFromService: async function(key, version) {
+    _createStudyFromService: function(key, version) {
       if (!this._checkLoggedIn()) {
         return;
       }
