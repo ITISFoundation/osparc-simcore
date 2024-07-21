@@ -775,8 +775,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           // if workbenchDiffs is an array means that the node was either added or removed
           // the node was added
           patchData = nodeData;
-          // key can't be patched
-          delete patchData["key"];
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
