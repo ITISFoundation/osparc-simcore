@@ -1209,11 +1209,11 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newKey = "simcore/services/frontend/data-iterator/int-range";
-      if (newKey in osparc.service.Utils.servicesCached) {
+      const metadata = osparc.service.Utils.getLatest("simcore/services/frontend/data-iterator/int-range")
+      if (metadata) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
-        this.setKey(newKey);
+        this.setKey(metadata["key"]);
         this.populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
