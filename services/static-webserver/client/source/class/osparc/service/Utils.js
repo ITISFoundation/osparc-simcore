@@ -178,6 +178,30 @@ qx.Class.define("osparc.service.Utils", {
       return null;
     },
 
+    getVersionDisplay: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (
+        key in services &&
+        version in services[key] &&
+        "versionDisplay" in services[key][version]
+      ) {
+        return services[key][version]["versionDisplay"];
+      }
+      return null;
+    },
+
+    getReleasedDate: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (
+        key in services &&
+        version in services[key] &&
+        "released" in services[key][version]
+      ) {
+        return services[key][version]["released"];
+      }
+      return null;
+    },
+
     canIWrite: function(serviceAccessRights) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());

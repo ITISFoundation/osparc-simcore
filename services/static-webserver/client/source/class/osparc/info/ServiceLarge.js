@@ -206,6 +206,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
         view: this.__createVersion(),
         action: null
       }, {
+        label: this.tr("RELEASE DATE"),
+        view: this.__createReleasedDate(),
+        action: null
+      }, {
         label: this.tr("CONTACT"),
         view: this.__createContact(),
         action: null
@@ -277,6 +281,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
       const versionDisplay = this.getService()["versionDisplay"];
       const versionTxt = versionDisplay ? `${versionDisplay} (${version})` : version;
       return osparc.info.ServiceUtils.createVersion(versionTxt);
+    },
+
+    __createReleasedDate: function() {
+      return osparc.info.ServiceUtils.createReleasedDate(this.getService());
     },
 
     __createContact: function() {

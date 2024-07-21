@@ -33,7 +33,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createUuid: function(study) {
-      const uuid = osparc.info.Utils.createId();
+      const uuid = osparc.info.Utils.createLabel();
       study.bind("uuid", uuid, "value");
       study.bind("uuid", uuid, "toolTipText");
       return uuid;

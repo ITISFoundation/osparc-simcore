@@ -33,7 +33,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createNodeId: function(instanceUuid) {
-      const label = osparc.info.Utils.createId();
+      const label = osparc.info.Utils.createLabel();
       label.set({
         value: instanceUuid
       });
@@ -44,7 +44,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceKey {String} Service key
       */
     createKey: function(serviceKey) {
-      const key = osparc.info.Utils.createId();
+      const key = osparc.info.Utils.createLabel();
       key.set({
         value: serviceKey,
         toolTipText: serviceKey
@@ -56,12 +56,27 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceVersion {String} Service version
       */
     createVersion: function(serviceVersion) {
-      const version = osparc.info.Utils.createId();
+      const version = osparc.info.Utils.createLabel();
       version.set({
         value: serviceVersion
       });
       osparc.utils.Utils.setIdToWidget(version, "serviceVersion");
       return version;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createReleasedDate: function(serviceData) {
+      const releasedDate = osparc.service.Utils.getReleasedDate(serviceData["key"], serviceData["version"]);
+      if (releasedDate) {
+        const label = new qx.ui.basic.Label();
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(new Date(releasedDate)),
+        });
+        return label;
+      }
+      return null;
     },
 
     /**
