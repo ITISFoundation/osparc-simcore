@@ -194,9 +194,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           font: "text-14"
         });
         if (latestCompatibleMetadata) {
-          compatibleVersionLabel.setValue(latestCompatibleMetadata["version"]);
+          osparc.service.Store.getService(latestCompatibleMetadata["version"], latestCompatibleMetadata["version"])
+            .then(metadata => compatibleVersionLabel.setValue(metadata["name"] + ":" + metadata["version"]))
+            .catch(err => console.error(err));
         } else if (nodeMetadata) {
-          compatibleVersionLabel.setValue(nodeMetadata["version"]);
+          compatibleVersionLabel.setValue(nodeMetadata["name"] + ":" + nodeMetadata["version"]);
         } else {
           compatibleVersionLabel.setValue(this.tr("Unknown"));
         }
