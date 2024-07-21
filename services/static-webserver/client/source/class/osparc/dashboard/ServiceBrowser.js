@@ -63,14 +63,15 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           const servicesList = [];
           Object.keys(servicesLatest).forEach(key => {
             const serviceLatest = servicesLatest[key];
-            // filter out frontend services
-            if (!key.includes("simcore/services/frontend/")) {
-              servicesList.push(serviceLatest);
+            // do not show frontend services
+            if (key.includes("simcore/services/frontend/")) {
+              return;
             }
-            // filter out retired services
-            if (!servicesLatest[key]["retired"]) {
-              servicesList.push(serviceLatest);
+            // do not show retired services
+            if (servicesLatest[key]["retired"]) {
+              return;
             }
+            servicesList.push(serviceLatest);
           });
           this.__setResourcesToList(servicesList);
         })
