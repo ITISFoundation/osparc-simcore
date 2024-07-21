@@ -89,6 +89,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__nodes = {};
       this.__edges = {};
       this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
+      this.__workbenchInitData = null;
+      this.__workbenchUIInitData = null;
     },
 
     // starts the dynamic services
