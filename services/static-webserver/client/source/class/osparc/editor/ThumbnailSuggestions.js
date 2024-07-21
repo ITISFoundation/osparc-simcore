@@ -162,18 +162,14 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
 
     __applyStudyData: function(study) {
-      const wb = study.getWorkbench();
-      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-      Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
-        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          this.__addThumbnail({
-            type: "serviceImage",
-            thumbnailUrl: srvMetadata["thumbnail"],
-            fileUrl: srvMetadata["thumbnail"]
-          });
-        }
-      });
+      const suggestions = this.self().extractThumbnailSuggestions(study)
+      suggestions.forEach(suggestion => {
+        this.__addThumbnail({
+          type: "serviceImage",
+          thumbnailUrl: suggestion,
+          fileUrl: suggestion
+        });
+      })
       this.__reloadSuggestions();
     },
 
