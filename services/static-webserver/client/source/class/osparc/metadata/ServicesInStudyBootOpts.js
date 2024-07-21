@@ -74,15 +74,15 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetaData = osparc.service.Store.getMetadata(node["key"], node["version"]);
-        if (nodeMetaData === null) {
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
-        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetaData);
+        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetadata);
         if (canIWrite && hasBootModes) {
-          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
+          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetadata, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
             const selection = e.getData();
             if (selection.length) {

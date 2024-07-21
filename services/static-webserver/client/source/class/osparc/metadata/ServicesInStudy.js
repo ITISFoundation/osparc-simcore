@@ -167,8 +167,8 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         });
         this.__grid.setRowHeight(i, 24);
 
-        const nodeMetaData = osparc.service.Store.getMetadata(node["key"], node["version"]);
-        if (nodeMetaData === null) {
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }

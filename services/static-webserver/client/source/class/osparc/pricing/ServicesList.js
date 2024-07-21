@@ -91,9 +91,9 @@ qx.Class.define("osparc.pricing.ServicesList", {
           services.forEach(service => {
             const key = service["serviceKey"];
             const version = service["serviceVersion"];
-            const serviceMetaData = osparc.service.Store.getMetadata(key, version);
-            if (serviceMetaData) {
-              sList.push(qx.data.marshal.Json.createModel(serviceMetaData));
+            const serviceMetadata = osparc.service.Store.getMetadata(key, version);
+            if (serviceMetadata) {
+              sList.push(qx.data.marshal.Json.createModel(serviceMetadata));
             }
           });
 
