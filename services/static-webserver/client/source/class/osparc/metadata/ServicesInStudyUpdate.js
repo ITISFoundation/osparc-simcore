@@ -198,13 +198,18 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const compatibleVersionLabel = new qx.ui.basic.Label().set({
           font: "text-14"
         });
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
-        if (latestCompatibleMetadata) {
-          osparc.service.Store.getService(latestCompatibleMetadata["key"], latestCompatibleMetadata["version"])
-            .then(metadata => compatibleVersionLabel.setValue(metadata["name"] + ":" + metadata["version"]))
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+        if (latestCompatible) {
+          // updatable
+          osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+            .then(metadata => {
+              const label = node["key"] === metadata["key"] ? metadata["version"] : metadata["name"] + ":" + metadata["version"];
+              compatibleVersionLabel.setValue(label);
+            })
             .catch(err => console.error(err));
         } else if (nodeMetadata) {
-          compatibleVersionLabel.setValue(nodeMetadata["name"] + ":" + nodeMetadata["version"]);
+          // up to date
+          compatibleVersionLabel.setValue(nodeMetadata["version"]);
         } else {
           compatibleVersionLabel.setValue(this.tr("Unknown"));
         }
@@ -213,12 +218,12 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
-        if (latestCompatibleMetadata && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        if (latestCompatible && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
           });
-          if ((latestCompatibleMetadata["key"] === node["key"]) && (latestCompatibleMetadata["version"] === node["version"])) {
+          if ((latestCompatible["key"] === node["key"]) && (latestCompatible["version"] === node["version"])) {
             updateButton.setLabel(this.tr("Up-to-date"));
           }
           if (isUpdatable) {
