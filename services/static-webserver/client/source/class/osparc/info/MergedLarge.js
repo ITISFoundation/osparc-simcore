@@ -372,17 +372,20 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openThumbnailEditor: function() {
-      const title = this.tr("Edit Thumbnail");
-      const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
-      thumbnailEditor.addListener("updateThumbnail", e => {
-        win.close();
-        const validUrl = e.getData();
-        this.__patchStudy("thumbnail", validUrl);
-      }, this);
-      thumbnailEditor.addListener("cancel", () => win.close());
+      osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy())
+        .then(suggestions => {
+          const title = this.tr("Edit Thumbnail");
+          const oldThumbnail = this.getStudy().getThumbnail();
+          const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+          const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
+          thumbnailEditor.addListener("updateThumbnail", e => {
+            win.close();
+            const validUrl = e.getData();
+            this.__patchStudy("thumbnail", validUrl);
+          }, this);
+          thumbnailEditor.addListener("cancel", () => win.close());
+        })
+        .catch(err => console.error(err));
     },
 
     __openDescriptionEditor: function() {

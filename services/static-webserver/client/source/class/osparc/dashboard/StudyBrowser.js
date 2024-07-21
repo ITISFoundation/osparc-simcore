@@ -951,17 +951,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getThumbnailStudyMenuButton: function(studyData) {
       const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."));
       thumbButton.addListener("execute", () => {
-        const title = this.tr("Edit Thumbnail");
-        const oldThumbnail = studyData.thumbnail;
-        const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData);
-        const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-        const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
-        thumbnailEditor.addListener("updateThumbnail", e => {
-          win.close();
-          const newUrl = e.getData();
-          this.__updateThumbnail(studyData, newUrl);
-        }, this);
-        thumbnailEditor.addListener("cancel", () => win.close());
+        osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData)
+          .then(suggestions => {
+            const title = this.tr("Edit Thumbnail");
+            const oldThumbnail = studyData.thumbnail;
+            const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+            const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
+            thumbnailEditor.addListener("updateThumbnail", e => {
+              win.close();
+              const newUrl = e.getData();
+              this.__updateThumbnail(studyData, newUrl);
+            }, this);
+            thumbnailEditor.addListener("cancel", () => win.close());
+          })
+          .catch(err => console.error(err));
       }, this);
       return thumbButton;
     },

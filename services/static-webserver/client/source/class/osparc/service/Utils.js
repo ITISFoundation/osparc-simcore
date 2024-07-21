@@ -132,17 +132,6 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    getFromObject: function(key, version) {
-      const services = osparc.service.Utils.servicesCached;
-      if (key in services) {
-        const serviceVersions = services[key];
-        if (version in serviceVersions) {
-          return serviceVersions[version];
-        }
-      }
-      return null;
-    },
-
     getFromArray: function(services, key, version) {
       for (let i=0; i<services.length; i++) {
         if (services[i].key === key && services[i].version === version) {
@@ -202,18 +191,6 @@ qx.Class.define("osparc.service.Utils", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
       return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
-    },
-
-    getMetaData: function(key, version) {
-      let metaData = null;
-      if (key && version) {
-        metaData = this.getFromObject(key, version);
-        if (metaData) {
-          metaData = osparc.utils.Utils.deepCloneObject(metaData);
-          return metaData;
-        }
-      }
-      return null;
     },
 
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
