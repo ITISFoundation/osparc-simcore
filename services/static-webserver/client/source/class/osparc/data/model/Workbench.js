@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const workbench = new osparc.data.model.Workbench(study.workbench)
+ *   const workbench = new osparc.data.model.Workbench(study.workbench, study.workbenchUI)
  *   study.setWorkbench(workbench);
  *   workbench.initWorkbench();
  * </pre>
@@ -40,8 +40,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   /**
     * @param workbenchData {Object} Object containing the workbench raw data
+    * @param workbenchUIData {Object} Object containing the workbenchUI raw data
     */
-  construct: function(workbenchData, workbenchUIData) {
+  construct: function(workbenchData, workbenchUIData = null) {
     this.base(arguments);
 
     this.__workbenchInitData = workbenchData;
