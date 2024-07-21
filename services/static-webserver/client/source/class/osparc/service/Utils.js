@@ -185,6 +185,7 @@ qx.Class.define("osparc.service.Utils", {
       if (key in services && version in services[key]) {
         const serviceMD = services[key][version];
         if (serviceMD["compatibility"]) {
+          // can be removed after https://github.com/ITISFoundation/osparc-simcore/pull/6084
           if (typeof serviceMD["compatibility"]["canUpdateTo"] == "string") {
             return {
               key,
@@ -345,8 +346,6 @@ qx.Class.define("osparc.service.Utils", {
         }
       });
     },
-
-    // TODO OM: function that filters out retired services
 
     getUniqueServicesFromWorkbench: function(workbench) {
       const services = [];
