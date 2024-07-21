@@ -639,13 +639,16 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __populateNodesData: function(workbenchData) {
+    __populateNodesData: function(workbenchData, workbenchUIData) {
       Object.entries(workbenchData).forEach(([nodeId, nodeData]) => {
         this.getNode(nodeId).populateNodeData(nodeData);
 
         if ("position" in nodeData) {
           // old way for storing the position
           this.getNode(nodeId).populateNodeUIData(nodeData);
+        }
+        if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
+          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
         }
       });
     },
