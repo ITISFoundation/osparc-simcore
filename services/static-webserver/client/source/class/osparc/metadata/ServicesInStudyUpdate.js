@@ -120,16 +120,22 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }
     },
 
-    __updateService: async function(nodeId, newVersion, button) {
-      await this._patchNode(nodeId, "version", newVersion, button);
+    __updateService: async function(nodeId, key, version, button) {
+      const latestCompatible = osparc.service.Utils.getLatestCompatible(key, version);
+      const patchData = {};
+      if (key !== latestCompatible.key) {
+        patchData["key"] = latestCompatible.key;
+      }
+      if (version !== latestCompatible.version) {
+        patchData["version"] = latestCompatible.version;
+      }
+      await this._patchNode(nodeId, patchData, button);
     },
 
     __updateAllServices: async function(updatableNodeIds, button) {
-      for (const updatableNodeId of updatableNodeIds) {
-        const newVersion = this.self().getLatestVersion(this._studyData, updatableNodeId);
-        if (newVersion) {
-          await this.__updateService(updatableNodeId, newVersion, button);
-        }
+      for (const nodeId of updatableNodeIds) {
+        const workbench = this._studyData["workbench"];
+        await this.__updateService(nodeId, workbench[nodeId].key, workbench[nodeId].version, button);
       }
     },
 
@@ -212,7 +218,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           updateButton.set({
             enabled: isUpdatable
           });
-          if (latestCompatibleMetadata["version"] === node["version"]) {
+          if ((latestCompatibleMetadata["key"] === node["key"]) && (latestCompatibleMetadata["version"] === node["version"])) {
             updateButton.setLabel(this.tr("Up-to-date"));
           }
           if (isUpdatable) {
@@ -223,7 +229,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
               center: true
             });
           }
-          updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
+          updateButton.addListener("execute", () => this.__updateService(nodeId, node["key"], node["version"], updateButton), this);
           this._servicesGrid.add(updateButton, {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON

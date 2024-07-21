@@ -49,7 +49,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       let newBootOptions = "bootOptions" in workbench[nodeId] ? osparc.utils.Utils.deepCloneObject(workbench[nodeId]["bootOptions"]) : {};
       newBootOptions["boot_mode"] = newBootModeId;
 
-      this._patchNode(nodeId, "bootOptions", newBootOptions);
+      this._patchNode(nodeId, {
+        "bootOptions": newBootOptions
+      });
     },
 
     _populateHeader: function() {

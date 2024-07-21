@@ -70,13 +70,13 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     __grid: null,
     _servicesGrid: null,
 
-    _patchNode: function(nodeId, key, newValue, fetchButton) {
+    _patchNode: function(nodeId, patchData, fetchButton) {
       if (fetchButton) {
         fetchButton.setFetching(true);
       }
       this.setEnabled(false);
 
-      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, key, newValue)
+      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, patchData)
         .then(() => {
           this.fireDataEvent("updateService", this._studyData);
           this._populateLayout();

@@ -195,7 +195,7 @@ qx.Class.define("osparc.service.Utils", {
 
     isUpdatable: function(metadata) {
       const latestCompatibleMetadata = this.getLatestCompatible(metadata["key"], metadata["version"]);
-      return latestCompatibleMetadata && metadata["version"] !== latestCompatibleMetadata["version"];
+      return latestCompatibleMetadata && (metadata["key"] !== latestCompatibleMetadata["key"] || metadata["version"] !== latestCompatibleMetadata["version"]);
     },
 
     isDeprecated: function(metadata) {
