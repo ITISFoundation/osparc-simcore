@@ -191,12 +191,12 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __amIOwner: function() {
       let fullOptions = false;
-      if (this._resourceType === "service") {
-        // service
-        fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
-      } else {
-        // study or template
+      if (this._resourceType === "study" || this._resourceType === "service") {
         fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+      } else if (this._resourceType === "service") {
+        fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+      } else if (this._resourceType === "folder") {
+        fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["accessRights"]);
       }
       return fullOptions;
     },
