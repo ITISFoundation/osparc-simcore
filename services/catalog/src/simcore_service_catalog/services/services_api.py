@@ -57,7 +57,7 @@ def _db_to_api_model(
         name=service_db.name,
         thumbnail=service_db.thumbnail or None,
         description=service_db.description,
-        version_display=service_manifest.version_display,
+        version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
@@ -292,3 +292,46 @@ async def update_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+async def check_for_service(
+    repo: ServicesRepository,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """Raises if the service canot be read
+
+    Raises:
+        CatalogItemNotFoundError: service (key,version) not found
+        CatalogForbiddenError: insufficient access rights to get read accss
+    """
+
+    access_rights = await repo.get_service_access_rights(
+        key=service_key,
+        version=service_version,
+        product_name=product_name,
+    )
+    if not access_rights:
+        raise CatalogItemNotFoundError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    if not await repo.can_get_service(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
+    ):
+        raise CatalogForbiddenError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
