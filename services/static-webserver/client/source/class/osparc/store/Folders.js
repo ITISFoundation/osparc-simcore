@@ -217,6 +217,59 @@ qx.Class.define("osparc.store.Folders", {
       });
     },
 
+    addCollaborators: function(folderId, newCollaborators) {
+      return new Promise((resolve, reject) => {
+        const folder = this.getFolder(folderId);
+        if (folder) {
+          const accessRights = folder.getAccessRights();
+          const newAccessRights = Object.assign(accessRights, newCollaborators);
+          folder.set({
+            accessRights: newAccessRights,
+            lastModified: new Date()
+          })
+          resolve();
+        } else {
+          reject();
+        }
+      });
+    },
+
+    removeCollaborator: function(folderId, gid) {
+      return new Promise((resolve, reject) => {
+        const folder = this.getFolder(folderId);
+        if (folder) {
+          const accessRights = folder.getAccessRights();
+          delete accessRights[gid];
+          folder.set({
+            accessRights: accessRights,
+            lastModified: new Date()
+          })
+          resolve();
+        } else {
+          reject();
+        }
+      });
+    },
+
+    updateCollaborator: function(folderId, gid, newPermissions) {
+      return new Promise((resolve, reject) => {
+        const folder = this.getFolder(folderId);
+        if (folder) {
+          const accessRights = folder.getAccessRights();
+          if (gid in accessRights) {
+            accessRights[gid] = newPermissions;
+            folder.set({
+              accessRights: accessRights,
+              lastModified: new Date()
+            })
+            resolve();
+            return;
+          }
+        }
+        reject();
+      });
+    },
+
     getFolders: function(parentId = null) {
       return this.foldersCached.filter(f => f.getParentId() === parentId);
     },

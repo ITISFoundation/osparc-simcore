@@ -56,25 +56,6 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
         "write": true,
         "delete": true
       };
-    },
-
-    __getDeleters: function(studyData) {
-      const deleters = [];
-      Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
-        if (value["delete"]) {
-          deleters.push(key);
-        }
-      });
-      return deleters;
-    },
-
-    // checks that if the user to remove is an owner, there will still be another owner
-    checkRemoveCollaborator: function(studyData, gid) {
-      const ownerGids = this.__getDeleters(studyData);
-      if (ownerGids.includes(gid.toString())) {
-        return ownerGids.length > 1;
-      }
-      return true;
     }
   },
 
@@ -85,18 +66,13 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
       }
 
       const newCollaborators = {};
-      gids.forEach(gid => {
-        newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
-      });
-      osparc.info.StudyUtils.addCollaborators(this._serializedDataCopy, newCollaborators)
+      gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
+      osparc.store.Folders.getInstance().addCollaborators(this.getFolder().getId(), newCollaborators)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
-
-          this.__pushNotifications(gids);
-          this.__checkShareePermissions(gids);
         })
         .catch(err => {
           console.error(err);
@@ -109,7 +85,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
         item.setEnabled(false);
       }
 
-      osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+      osparc.store.Folders.getInstance().removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -129,7 +105,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
+      osparc.store.Folders.getInstance().updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
@@ -150,8 +126,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[1].label} successfully changed ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[1].label} to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`${osparc.data.Roles.FOLDERS[1].label} successfully changed ${osparc.data.Roles.FOLDERS[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.FOLDERS[1].label} to ${osparc.data.Roles.FOLDERS[2].label}`),
         item
       );
     },
@@ -160,8 +136,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`${osparc.data.Roles.FOLDERS[2].label} successfully changed to ${osparc.data.Roles.FOLDERS[3].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.FOLDERS[2].label} to ${osparc.data.Roles.FOLDERS[3].label}`),
         item
       );
     },
@@ -172,8 +148,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[1].label}`),
-          this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[1].label}`),
+          this.tr(`${osparc.data.Roles.FOLDERS[2].label} successfully changed to ${osparc.data.Roles.FOLDERS[1].label}`),
+          this.tr(`Something went wrong changing ${osparc.data.Roles.FOLDERS[2].label} to ${osparc.data.Roles.FOLDERS[1].label}`),
           itm
         );
       };
@@ -181,7 +157,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
       const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
       const isOrganization = (groupData && !("id" in groupData));
       if (isOrganization) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.STUDY[1].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${osparc.data.Roles.FOLDERS[1].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmAction: "delete",
           confirmText: this.tr("Yes")
@@ -202,29 +178,10 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[3].label} successfully changed to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`${osparc.data.Roles.FOLDERS[3].label} successfully changed to ${osparc.data.Roles.FOLDERS[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.FOLDERS[3].label} to ${osparc.data.Roles.FOLDERS[2].label}`),
         item
       );
-    },
-
-    __pushNotifications: function(gids) {
-      // push 'FOLDER_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else {
-                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-              }
-            }
-          });
-        });
     }
   }
 });
