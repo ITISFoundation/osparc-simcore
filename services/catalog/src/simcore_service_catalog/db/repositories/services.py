@@ -270,8 +270,6 @@ class ServicesRepository(BaseRepository):
             assert row  # nosec
         return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
 
-    # NEW CRUD on services ------
-
     async def can_get_service(
         self,
         # access-rights
