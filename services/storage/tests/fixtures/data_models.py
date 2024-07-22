@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -28,7 +27,7 @@ from ..helpers.utils import get_updated_project
 
 
 @asynccontextmanager
-async def user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[UserID]:
+async def _user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[UserID]:
     # inject a random user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
@@ -42,15 +41,17 @@ async def user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[User
         row = await result.fetchone()
     assert row
     assert isinstance(row.id, int)
-    yield row.id
 
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(users.delete().where(users.c.id == row.id))
+    try:
+        yield UserID(row.id)
+    finally:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(users.delete().where(users.c.id == row.id))
 
 
 @pytest.fixture
 async def user_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
-    async with user_context(aiopg_engine, name="test") as new_user_id:
+    async with _user_context(aiopg_engine, name="test") as new_user_id:
         yield new_user_id
 
 
@@ -92,8 +93,9 @@ async def project_id(
 
 @pytest.fixture
 async def collaborator_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
-    async with user_context(aiopg_engine, name="collaborator") as new_user_id:
-        yield new_user_id
+
+    async with _user_context(aiopg_engine, name="collaborator") as new_user_id:
+        yield UserID(new_user_id)
 
 
 @pytest.fixture

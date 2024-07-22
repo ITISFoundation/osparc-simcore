@@ -20,7 +20,7 @@ from models_library.users import UserID
 from pydantic import SecretStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from starlette import status
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

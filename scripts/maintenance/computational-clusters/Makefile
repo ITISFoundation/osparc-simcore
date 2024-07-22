@@ -2,24 +2,14 @@
 
 SHELL := /bin/bash
 
-.venv:
+install:
 	# creating python virtual environment
 	@uv venv .venv
+	# activating python virtual environment
+	@source .venv/bin/activate
 	# installing python dependencies
 	@uv pip install --upgrade pip setuptools wheel
-
-
-install: .venv
-	# activating python virtual environment
-	@source .venv/bin/activate
-	# installing package
-	@uv pip install .
+	@uv pip install -r requirements.txt
 	# now you can call the maintenance scripts
 	# source .venv/bin/activate
-	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary
-
-install-dev: .venv
-	# activating python virtual environment
-	@source .venv/bin/activate
-	# installing package
-	@uv pip install -e .
+	# e.g. ./osparc_clusters.py PATH/TO/REPO.CONFIG --ssh-key-path=PATH/TO/SSHKEY

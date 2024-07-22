@@ -25,7 +25,7 @@ from simcore_service_dask_sidecar.dask_utils import (
     monitor_task_abortion,
     publish_event,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

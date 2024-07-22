@@ -26,6 +26,38 @@ def column_modified_datetime(*, timezone: bool = True) -> sa.Column:
     )
 
 
+def column_created_by_user(
+    *, users_table: sa.Table, required: bool = False
+) -> sa.Column:
+    return sa.Column(
+        "created_by",
+        sa.Integer,
+        sa.ForeignKey(
+            users_table.c.id,
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+        ),
+        nullable=not required,
+        doc="Who created this row at `created`",
+    )
+
+
+def column_modified_by_user(
+    *, users_table: sa.Table, required: bool = False
+) -> sa.Column:
+    return sa.Column(
+        "modified_by",
+        sa.Integer,
+        sa.ForeignKey(
+            users_table.c.id,
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+        ),
+        nullable=not required,
+        doc="Who modified this row at `modified`",
+    )
+
+
 _TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"
 
 

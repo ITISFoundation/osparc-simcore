@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar, TypeAlias
 
+from models_library.services_base import ServiceKeyVersion
 from pydantic import BaseModel, Field
 
 from .services_types import ServiceVersion
@@ -9,7 +10,7 @@ from .utils.change_case import snake_to_camel
 
 class Compatibility(BaseModel):
     # NOTE: as an object it is more maintainable than a list
-    can_update_to: ServiceVersion = Field(
+    can_update_to: ServiceVersion | ServiceKeyVersion = Field(
         ...,
         description="Latest compatible version at this moment."
         "Current service can update to this version and still work",
