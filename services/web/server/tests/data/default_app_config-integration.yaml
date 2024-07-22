@@ -59,6 +59,7 @@ resource_manager:
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
   resource_deletion_timeout_seconds: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 rest:
   enabled: true

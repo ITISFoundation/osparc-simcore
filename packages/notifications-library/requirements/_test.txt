@@ -1,18 +1,18 @@
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -22,7 +22,7 @@ idna==3.7
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
@@ -30,7 +30,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -65,13 +65,13 @@ pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-requests==2.32.2
+requests==2.32.3
     # via docker
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-tenacity==8.2.3
+tenacity==8.5.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
@@ -79,7 +79,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

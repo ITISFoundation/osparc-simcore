@@ -276,7 +276,7 @@ sortedcontainers==2.4.0
     # via distributed
 tblib==3.0.0
     # via distributed
-tenacity==8.3.0
+tenacity==8.5.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.12.1
     # via

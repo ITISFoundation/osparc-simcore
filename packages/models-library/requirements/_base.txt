@@ -6,19 +6,19 @@ attrs==23.2.0
     #   referencing
 dnspython==2.6.1
     # via email-validator
-email-validator==2.1.1
+email-validator==2.2.0
     # via pydantic
 idna==3.7
     # via email-validator
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via -r requirements/_base.in
 jsonschema-specifications==2023.12.1
     # via jsonschema
-orjson==3.10.3
+orjson==3.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pydantic==1.10.15
+pydantic==1.10.17
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -28,7 +28,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.18.0
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing
@@ -36,5 +36,5 @@ six==1.16.0
     # via python-dateutil
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via pydantic
