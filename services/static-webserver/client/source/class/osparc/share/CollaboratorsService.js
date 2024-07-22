@@ -43,10 +43,6 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this.base(arguments, serviceDataCopy, initCollabs);
   },
 
-  events: {
-    "updateAccessRights": "qx.event.type.Data"
-  },
-
   statics: {
     canGroupsWrite: function(accessRights, gIds) {
       let canWrite = false;

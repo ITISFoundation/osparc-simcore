@@ -42,6 +42,10 @@ qx.Class.define("osparc.share.Collaborators", {
     this.__getCollaborators();
   },
 
+  events: {
+    "updateAccessRights": "qx.event.type.Data"
+  },
+
   statics: {
     sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
