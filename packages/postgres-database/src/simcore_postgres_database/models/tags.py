@@ -34,25 +34,3 @@ tags = sa.Table(
         doc="Hex color (see https://www.color-hex.com/)",
     ),
 )
-
-
-#
-# study_tags: projects marked with tags
-#
-study_tags = sa.Table(
-    "study_tags",
-    metadata,
-    sa.Column(
-        "study_id",
-        sa.BigInteger,
-        sa.ForeignKey("projects.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-    ),
-    sa.Column(
-        "tag_id",
-        sa.BigInteger,
-        sa.ForeignKey("tags.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-    ),
-    sa.UniqueConstraint("study_id", "tag_id"),
-)
