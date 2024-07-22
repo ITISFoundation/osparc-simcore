@@ -322,16 +322,22 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      const noThumbnail = "osparc/no_photography_black_24dp.svg";
       const serviceData = this.getService();
       const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
-      thumbnail.set({
-        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : noThumbnail
-      });
-      thumbnail.getChildControl("image").set({
-        minWidth: 120,
-        minHeight: 139
-      });
+      if (serviceData["thumbnail"]) {
+        thumbnail.set({
+          source: serviceData["thumbnail"]
+        });
+      } else {
+        const noThumbnail = "osparc/no_photography_black_24dp.svg";
+        thumbnail.set({
+          source: noThumbnail
+        });
+        thumbnail.getChildControl("image").set({
+          minWidth: 120,
+          minHeight: 139
+        });
+      }
       return thumbnail;
     },
 
