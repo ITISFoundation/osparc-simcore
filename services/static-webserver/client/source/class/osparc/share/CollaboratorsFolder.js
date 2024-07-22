@@ -23,9 +23,10 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
     * @param folder {osparc.data.model.Folder}
     */
   construct: function(folder) {
+    this.__folder = folder;
     this._resourceType = "folder";
-    const folderDataCopy = folder.serialize();
 
+    const folderDataCopy = folder.serialize();
     this.base(arguments, folderDataCopy, []);
   },
 
@@ -60,6 +61,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
   },
 
   members: {
+    __folder: null,
+
     _addEditors: function(gids) {
       if (gids.length === 0) {
         return;
@@ -67,9 +70,9 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
 
       const newCollaborators = {};
       gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
-      osparc.store.Folders.getInstance().addCollaborators(this.getFolder().getId(), newCollaborators)
+      osparc.store.Folders.getInstance().addCollaborators(this.__folder.getId(), newCollaborators)
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
@@ -85,9 +88,9 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
         item.setEnabled(false);
       }
 
-      osparc.store.Folders.getInstance().removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+      osparc.store.Folders.getInstance().removeCollaborator(this.__folder.getId(), collaborator["gid"])
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
@@ -105,9 +108,9 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.Folders.getInstance().updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
+      osparc.store.Folders.getInstance().updateCollaborator(this.__folder.getId(), collaboratorGId, newAccessRights)
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
+          this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
