@@ -66,7 +66,7 @@ qx.Class.define("osparc.info.Utils", {
           column: 1
         });
 
-        if (extraInfo.action) {
+        if (extraInfo.action && extraInfo.action.button) {
           extraInfo.action.button.addListener("execute", () => {
             const cb = extraInfo.action.callback;
             if (typeof cb === "string") {
