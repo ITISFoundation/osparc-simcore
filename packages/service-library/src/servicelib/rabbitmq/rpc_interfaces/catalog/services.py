@@ -148,3 +148,43 @@ async def update_service(
     )
     assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
     return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def check_for_service(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogItemNotFoundError: service not found in catalog
+        CatalogForbiddenError: not access rights to read this service
+    """
+
+    @validate_arguments()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            parse_obj_as(RPCMethodName, "check_for_service"),
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+        )
+
+    await _call(
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
