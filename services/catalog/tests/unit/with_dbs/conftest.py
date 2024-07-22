@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import itertools
-import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
@@ -19,6 +18,10 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import Extra, parse_obj_as
+from pytest_simcore.helpers.faker_factories import (
+    random_service_access_rights,
+    random_service_meta_data,
+)
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -376,31 +379,19 @@ async def create_fake_service_data(
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
-        data = {
-            "key": f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            "version": ".".join([str(faker.pyint()) for _ in range(3)]),
-            "owner": user_gid,
-            "name": faker.name(),
-            "description": faker.sentence(),
-            "thumbnail": random.choice([faker.image_url(), None]),
-            "classifiers": [],
-            "quality": {},
-            "deprecated": None,
-        }
-        data.update(overrides)
-        return data
+        return random_service_meta_data(
+            owner_primary_gid=user_gid,
+            fake=faker,
+            **overrides,
+        )
 
     def _random_access(service, **overrides) -> dict[str, Any]:
-        data = {
-            "key": service["key"],
-            "version": service["version"],
-            "gid": random.choice(user_groups_ids),
-            "execute_access": faker.pybool(),
-            "write_access": faker.pybool(),
-            "product_name": random.choice(products_names),
-        }
-        data.update(overrides)
-        return data
+        return random_service_access_rights(
+            key=service["key"],
+            version=service["version"],
+            fake=faker,
+            **overrides,
+        )
 
     def _fake_factory(
         key,
