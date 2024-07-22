@@ -167,19 +167,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
     /**
       * @param serviceData {Object} Serialized Service Object
-      * @param maxWidth {Number} thumbnail's maxWidth
-      * @param maxHeight {Number} thumbnail's maxHeight
-      */
-    createThumbnail: function(serviceData, maxWidth, maxHeight) {
-      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
-      thumbnail.set({
-        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_ICON
-      });
-      return thumbnail;
-    },
-
-    /**
-      * @param serviceData {Object} Serialized Service Object
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(serviceData, maxHeight) {
