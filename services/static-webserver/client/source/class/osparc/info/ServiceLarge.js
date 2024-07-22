@@ -208,7 +208,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }, {
         label: this.tr("VERSION DISPLAY"),
         view: this.__createVersionDisplay(),
-        action: null
+        action: {
+          button: osparc.utils.Utils.getEditButton(),
+          callback: this.__openVersionDisplayEditor,
+          ctx: this
+        }
       }, {
         label: this.tr("RELEASE DATE"),
         view: this.__createReleasedDate(),
@@ -285,7 +289,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createVersionDisplay: function() {
-      return osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
+      const versionDisplayLabel = osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
+      if (versionDisplayLabel.getValue() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        // show it if it has a value or if the user can write (useful when it is still empty)
+        return versionDisplayLabel;
+      }
+      return null;
     },
 
     __createReleasedDate: function() {
@@ -375,6 +384,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __copyKeyToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.getService()["key"]);
+    },
+
+    __openVersionDisplayEditor: function() {
+      const title = this.tr("Edit Version Display");
+      const oldVersionDisplay = this.getService()["versionDisplay"] ? this.getService()["versionDisplay"] : "";
+      const versionDisplayEditor = new osparc.widget.Renamer(oldVersionDisplay, null, title);
+      versionDisplayEditor.addListener("labelChanged", e => {
+        versionDisplayEditor.close();
+        const newVersionDisplay = e.getData()["newLabel"];
+        this.__patchService("versionDisplay", newVersionDisplay);
+      }, this);
+      versionDisplayEditor.center();
+      versionDisplayEditor.open();
     },
 
     __openAccessRights: function() {
