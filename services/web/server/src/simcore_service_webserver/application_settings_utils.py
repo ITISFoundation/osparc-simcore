@@ -75,6 +75,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
+                "password": getattr(
+                    app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None
+                ),
             },
         },
         # added to support legacy ----
@@ -242,6 +245,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
             _set_if_disabled("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")
+            envs["REDIS_PASSWORD"] = section2.get("password")
 
     if section := cfg.get("garbage_collector"):
         _set_if_disabled("WEBSERVER_GARBAGE_COLLECTOR", section)
