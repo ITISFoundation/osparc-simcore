@@ -204,7 +204,7 @@ qx.Class.define("osparc.service.Utils", {
 
     versionToListItem: function(key, version) {
       let label = version;
-      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      const versionDisplay = this.getVersionDisplay(key, version);
       if (versionDisplay) {
         label += ` (${versionDisplay})`
       }

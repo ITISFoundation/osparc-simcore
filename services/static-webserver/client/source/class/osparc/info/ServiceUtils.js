@@ -64,11 +64,16 @@ qx.Class.define("osparc.info.ServiceUtils", {
       return version;
     },
 
-    /**
-      * @param serviceData {Object} Serialized Service Object
-      */
-    createReleasedDate: function(serviceData) {
-      const releasedDate = osparc.service.Utils.getReleasedDate(serviceData["key"], serviceData["version"]);
+    createVersionDisplay: function(key, version) {
+      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      if (versionDisplay) {
+        return new qx.ui.basic.Label(versionDisplay);
+      }
+      return null;
+    },
+
+    createReleasedDate: function(key, version) {
+      const releasedDate = osparc.service.Utils.getReleasedDate(key, version);
       if (releasedDate) {
         const label = new qx.ui.basic.Label();
         label.set({
