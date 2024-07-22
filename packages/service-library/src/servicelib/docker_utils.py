@@ -76,7 +76,7 @@ class DockerImageMultiArchManifestsV2(BaseModel):
 
 class _DockerPullImage(BaseModel):
     status: str
-    id: str | None  # noqa: A003
+    id: str | None
     progress_detail: ProgressDetail | None
     progress: str | None
 
