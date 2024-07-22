@@ -79,6 +79,34 @@ class AccessRightsClauses:
     )
 
 
+def _join_services_with_access_rights():
+    # services_meta_data | services_access_rights | user_to_groups
+    return services_meta_data.join(
+        services_access_rights,
+        (services_meta_data.c.key == services_access_rights.c.key)
+        & (services_meta_data.c.version == services_access_rights.c.version),
+    ).join(
+        user_to_groups,
+        (user_to_groups.c.gid == services_access_rights.c.gid),
+    )
+
+
+def _has_access_rights(
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+):
+    return (
+        (services_meta_data.c.key == service_key)
+        & (services_meta_data.c.version == service_version)
+        & (user_to_groups.c.uid == user_id)
+        & (services_access_rights.c.product_name == product_name)
+        & access_rights
+    )
+
+
 def total_count_stmt(
     *,
     product_name: ProductName,
@@ -277,24 +305,19 @@ def can_get_service_stmt(
 ):
     subquery = (
         sa.select(1)
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
-                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
-            )
-        )
+        .select_from(_join_services_with_access_rights())
         .where(
-            (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-            & (user_to_groups.c.uid == user_id)
-            & (services_access_rights.c.product_name == product_name)
-            & access_rights
+            _has_access_rights(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=access_rights,
+                service_key=service_key,
+                service_version=service_version,
+            )
         )
         .limit(1)
     )
+
     return sa.select(sa.exists(subquery))
 
 
@@ -334,21 +357,15 @@ def get_service_stmt(
             services_meta_data.c.deprecated,
             # w/o releases history!
         )
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
-                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
-            )
-        )
+        .select_from(_join_services_with_access_rights())
         .where(
-            (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-            & (user_to_groups.c.uid == user_id)
-            & (services_access_rights.c.product_name == product_name)
-            & access_rights
+            _has_access_rights(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=access_rights,
+                service_key=service_key,
+                service_version=service_version,
+            )
         )
     )
 
