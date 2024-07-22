@@ -20,7 +20,7 @@ class ServiceKeyVersion(BaseModel):
         frozen = True
 
 
-class ServiceDisplay(BaseModel):
+class ServiceBaseDisplay(BaseModel):
     name: str = Field(
         ...,
         description="Display name: short, human readable name for the node",

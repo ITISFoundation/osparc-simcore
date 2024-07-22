@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from pydantic import Field, HttpUrl
 
-from .services_base import ServiceDisplay
+from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_enums import ServiceType
 from .services_types import DynamicServiceKey, ServiceKey, ServiceVersion
@@ -15,8 +15,8 @@ assert ServiceType  # nosec
 assert ServiceVersion  # nosec
 
 
-class ServiceMetaDataEditable(ServiceDisplay):
-    # Overrides ServiceDisplay fields to Optional for a partial update
+class ServiceMetaDataEditable(ServiceBaseDisplay):
+    # Overrides ServiceBaseDisplay fields to Optional for a partial update
     name: str | None
     thumbnail: HttpUrl | None
     description: str | None
@@ -27,7 +27,7 @@ class ServiceMetaDataEditable(ServiceDisplay):
         default=None,
         description="Owner can set the date to retire the service. Three possibilities:"
         "If None, the service is marked as `published`;"
-        "If now<deprecated the service is marked as dprecated;"
+        "If now<deprecated the service is marked as deprecated;"
         "If now>=deprecated, the service is retired",
     )
     classifiers: list[str] | None
