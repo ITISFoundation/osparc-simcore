@@ -23,6 +23,9 @@
 qx.Class.define("osparc.dashboard.FolderButtonItem", {
   extend: osparc.dashboard.FolderButtonBase,
 
+  /**
+    * @param folder {osparc.data.model.Folder}
+    */
   construct: function(folder) {
     this.base(arguments);
 
@@ -257,7 +260,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __openShareWith: function() {
-      console.log("Open share with", this.getTitle());
+      const title = this.tr("Share Folder");
+      const permissionsView = new osparc.share.CollaboratorsFolder(this.getFolder());
+      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title);
+      permissionsView.addListener("updateAccessRights", e => {
+        win.close();
+      });
     },
 
     __deleteStudyRequested: function() {
