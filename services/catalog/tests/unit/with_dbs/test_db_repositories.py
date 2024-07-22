@@ -423,18 +423,18 @@ async def test_can_get_service(
         version=service_version,
     )
 
-    # has not access
-    assert not await services_repo.can_get_service(
-        product_name=target_product,
-        user_id=5,
-        key=service_key,
-        version=service_version,
-    )
-
     # not found
-    assert await services_repo.can_get_service(
+    assert not await services_repo.can_get_service(
         product_name=target_product,
         user_id=user_id,
         key=service_key,
         version="0.1.0",
+    )
+
+    # has no access
+    assert not await services_repo.can_get_service(
+        product_name=target_product,
+        user_id=5,  # OTHER user
+        key=service_key,
+        version=service_version,
     )
