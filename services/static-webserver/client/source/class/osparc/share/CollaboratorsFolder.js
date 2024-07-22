@@ -32,22 +32,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
   },
 
   statics: {
-    canGroupsWrite: function(accessRights, gIds) {
-      let canWrite = false;
-      for (let i=0; i<gIds.length && !canWrite; i++) {
-        const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
-      }
-      return canWrite;
-    },
-
-    canGroupsDelete: function(accessRights, gIds) {
-      let canWrite = false;
-      for (let i=0; i<gIds.length && !canWrite; i++) {
-        const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["delete"] : false;
-      }
-      return canWrite;
+    canIDelete: function(accessRights) {
+      return accessRights["delete"];
     },
 
     getViewerAccessRight: function() {
