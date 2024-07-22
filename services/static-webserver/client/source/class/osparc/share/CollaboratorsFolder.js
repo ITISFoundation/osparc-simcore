@@ -30,8 +30,8 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
   },
 
   statics: {
-    canIDelete: function(accessRights) {
-      return accessRights["delete"];
+    canIDelete: function(myAccessRights) {
+      return myAccessRights["delete"];
     },
 
     getViewerAccessRight: function() {

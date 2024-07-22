@@ -33,8 +33,8 @@ qx.Class.define("osparc.data.model.Folder", {
       parentId: folderData.parentFolder,
       name: folderData.name,
       description: folderData.description,
+      myAccessRights: folderData.myAccessRights,
       accessRights: folderData.accessRights,
-      sharedAccessRights: folderData.sharedAccessRights,
       createdAt: new Date(folderData.createdAt),
       lastModified: new Date(folderData.lastModified),
     });
@@ -69,18 +69,18 @@ qx.Class.define("osparc.data.model.Folder", {
       event: "changeDescription"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      init: null,
+      event: "changeMyAccessRights"
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
       init: null,
       event: "changeAccessRights"
-    },
-
-    sharedAccessRights: {
-      check: "Object",
-      nullable: false,
-      init: null,
-      event: "changeSharedAccessRights"
     },
 
     createdAt: {

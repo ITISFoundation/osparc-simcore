@@ -200,7 +200,7 @@ qx.Class.define("osparc.share.Collaborators", {
           fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "folder":
-          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["accessRights"]);
+          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
       }
       return fullOptions;

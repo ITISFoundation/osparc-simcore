@@ -36,12 +36,12 @@ qx.Class.define("osparc.store.Folders", {
       owner: 3,
       createdAt: "2024-07-11T06:28:28.527Z",
       lastModified: "2024-07-13T06:28:28.527Z",
-      accessRights: {
+      myAccessRights: {
         read: true,
         write: true,
         delete: true
       },
-      sharedAccessRights: {
+      accessRights: {
         3: {
           read: true,
           write: true,
@@ -56,12 +56,12 @@ qx.Class.define("osparc.store.Folders", {
       owner: 3,
       createdAt: "2024-07-13T06:28:28.527Z",
       lastModified: "2024-07-15T06:28:28.527Z",
-      accessRights: {
+      myAccessRights: {
         read: true,
         write: true,
         delete: true
       },
-      sharedAccessRights: {
+      accessRights: {
         3: {
           read: true,
           write: true,
@@ -81,12 +81,12 @@ qx.Class.define("osparc.store.Folders", {
       owner: 3,
       createdAt: "2024-07-16T06:28:28.527Z",
       lastModified: "2024-07-17T06:28:28.527Z",
-      accessRights: {
+      myAccessRights: {
         read: true,
         write: true,
         delete: true
       },
-      sharedAccessRights: {
+      accessRights: {
         3: {
           read: true,
           write: true,
@@ -101,12 +101,12 @@ qx.Class.define("osparc.store.Folders", {
       owner: 3,
       createdAt: "2024-07-17T06:28:28.527Z",
       lastModified: "2024-07-18T06:28:28.527Z",
-      accessRights: {
+      myAccessRights: {
         read: true,
         write: true,
         delete: false
       },
-      sharedAccessRights: {
+      accessRights: {
         3: {
           read: true,
           write: true,
@@ -126,12 +126,12 @@ qx.Class.define("osparc.store.Folders", {
       owner: 3,
       createdAt: "2024-07-18T06:28:28.527Z",
       lastModified: "2024-07-18T07:28:28.527Z",
-      accessRights: {
+      myAccessRights: {
         read: true,
         write: false,
         delete: false
       },
-      sharedAccessRights: {
+      accessRights: {
         3: {
           read: true,
           write: false,
@@ -172,14 +172,14 @@ qx.Class.define("osparc.store.Folders", {
           owner: myGroupId,
           createdAt: new Date().toString(),
           lastModified: new Date().toString(),
-          accessRights: {
+          myAccessRights: {
             read: true,
             write: true,
             delete: true
           },
-          sharedAccessRights: {},
+          accessRights: {},
         };
-        newFolderData["sharedAccessRights"][myGroupId] = {
+        newFolderData["accessRights"][myGroupId] = {
           read: true,
           write: true,
           delete: true

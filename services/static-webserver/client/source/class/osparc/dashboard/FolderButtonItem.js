@@ -78,16 +78,16 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       apply: "__applyDescription"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: true,
+      apply: "__applyMyAccessRights"
+    },
+
     accessRights: {
       check: "Object",
       nullable: true,
       apply: "__applyAccessRights"
-    },
-
-    sharedAccessRights: {
-      check: "Object",
-      nullable: true,
-      apply: "__applySharedAccessRights"
     },
 
     lastModified: {
@@ -154,9 +154,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("description", this, "description");
-      folder.bind("sharedAccessRights", this, "sharedAccessRights");
-      folder.bind("lastModified", this, "lastModified");
       folder.bind("accessRights", this, "accessRights");
+      folder.bind("lastModified", this, "lastModified");
+      folder.bind("myAccessRights", this, "myAccessRights");
     },
 
     __applyTitle: function(value) {
@@ -176,7 +176,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __applyAccessRights: function(value) {
+    __applyMyAccessRights: function(value) {
       if (value && value["delete"]) {
         const menuButton = this.getChildControl("menu-button");
         menuButton.setVisibility("visible");
@@ -231,7 +231,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __applySharedAccessRights: function(value) {
+    __applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
         // if it's not shared don't show the share icon
