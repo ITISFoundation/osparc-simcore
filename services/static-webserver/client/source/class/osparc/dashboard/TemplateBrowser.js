@@ -187,7 +187,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __createUpdateAllButton: function() {
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"));
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all")).set({
+        appearance: "strong-button"
+      });
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
         const templatesText = osparc.product.Utils.getTemplateAlias({plural: true});
