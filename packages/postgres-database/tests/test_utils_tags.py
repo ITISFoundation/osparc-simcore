@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
-from simcore_postgres_database.models.tags import tags_to_groups
+from simcore_postgres_database.models.tags_to_groups import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
