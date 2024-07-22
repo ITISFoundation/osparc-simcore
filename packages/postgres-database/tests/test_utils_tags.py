@@ -13,6 +13,17 @@ from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
 from simcore_postgres_database.models.tags_to_groups import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
+from simcore_postgres_database.tags_sql import (
+    create_tag_stmt,
+    delete_tag_stmt,
+    get_tag_stmt,
+    get_tags_for_project_stmt,
+    get_tags_for_services_stmt,
+    set_tag_access_rights_stmt,
+    set_tag_to_project_stmt,
+    update_tag_stmt,
+)
+from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowedError,
@@ -515,4 +526,73 @@ async def test_tags_repo_create(
             )
         )
         == user.primary_gid
+    )
+
+
+def test_building_tags_sql_statements():
+    def _check(func_smt, **kwargs):
+        print(f"{func_smt.__name__:*^100}")
+        stmt = func_smt(**kwargs)
+        print()
+        print(as_postgres_sql_query_str(stmt))
+        print()
+
+    # some data
+    product_name = "osparc"
+    user_id = 425  # 4
+    tag_id = 4
+    project_index = 1
+    service_key = "simcore/services/comp/isolve"
+    service_version = "2.0.85"
+
+    _check(
+        get_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+    )
+
+    _check(
+        create_tag_stmt,
+        name="foo",
+        description="description",
+    )
+
+    _check(
+        set_tag_access_rights_stmt,
+        tag_id=tag_id,
+        user_id=user_id,
+        read=True,
+        write=True,
+        delete=True,
+    )
+
+    _check(
+        update_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+        update={"name": "foo"},
+    )
+
+    _check(
+        delete_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+    )
+
+    _check(
+        get_tags_for_project_stmt,
+        project_index=project_index,
+    )
+
+    _check(
+        get_tags_for_services_stmt,
+        service_key=service_key,
+        service_version=service_version,
+        tag_id=tag_id,
+    )
+
+    _check(
+        set_tag_to_project_stmt,
+        project_index=project_index,
+        tag_id=tag_id,
     )
