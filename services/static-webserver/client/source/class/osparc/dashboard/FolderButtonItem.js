@@ -185,7 +185,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           position: "bottom-right"
         });
 
-        const editButton = new qx.ui.menu.Button(this.tr("Rename..."));
+        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => {
           const folder = this.getFolder();
           const newFolder = false;
@@ -217,13 +217,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         });
         menu.add(editButton);
 
-        const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+        const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
         shareButton.addListener("execute", () => this.__openShareWith(), this);
         menu.add(shareButton);
 
         menu.addSeparator();
 
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
         deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
         menu.add(deleteButton);
 

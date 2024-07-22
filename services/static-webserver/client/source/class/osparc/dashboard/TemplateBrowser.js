@@ -345,7 +345,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });

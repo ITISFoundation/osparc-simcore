@@ -1062,7 +1062,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getRenameStudyMenuButton: function(studyData) {
-      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."));
+      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
       renameButton.addListener("execute", () => {
         const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
@@ -1129,7 +1129,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDuplicateMenuButton: function(studyData) {
-      const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"));
+      const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"), "@FontAwesome5Solid/copy/12");
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
     },
@@ -1163,7 +1163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });

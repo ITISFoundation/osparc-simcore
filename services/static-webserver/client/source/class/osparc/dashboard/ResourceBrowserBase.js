@@ -512,7 +512,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
     },
@@ -524,7 +524,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."));
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesome5Solid/tags/12");
       tagsButton.addListener("tap", () => card.openTags(), this);
       return tagsButton;
     }
