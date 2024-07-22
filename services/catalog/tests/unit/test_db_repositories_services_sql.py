@@ -6,6 +6,7 @@
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
+    can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
     list_latest_services_with_history_stmt,
@@ -31,6 +32,15 @@ def test_building_services_sql_statements():
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
         service_key="simcore/services/comp/isolve",
+    )
+
+    _check(
+        can_get_service_stmt,
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+        service_key="simcore/services/comp/isolve",
+        service_version="2.0.85",
     )
 
     _check(

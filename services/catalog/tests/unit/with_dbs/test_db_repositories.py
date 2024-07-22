@@ -390,3 +390,51 @@ async def test_get_and_update_service_meta_data(
     assert got.copy(update={"name": "foo"}) == updated
 
     assert await services_repo.get_service(service_key, service_version) == updated
+
+
+async def test_can_get_service(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+
+    # inject service
+    service_key = "simcore/services/dynamic/some-service"
+    service_version = "1.2.3"
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                service_key,
+                service_version,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+        ]
+    )
+
+    # have access
+    assert await services_repo.can_get_service(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
+    )
+
+    # not found
+    assert not await services_repo.can_get_service(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        version="0.1.0",
+    )
+
+    # has no access
+    assert not await services_repo.can_get_service(
+        product_name=target_product,
+        user_id=5,  # OTHER user
+        key=service_key,
+        version=service_version,
+    )

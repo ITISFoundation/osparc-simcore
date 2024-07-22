@@ -47,10 +47,10 @@ def webserver_environ(
     request, docker_stack: dict, simcore_docker_compose: dict
 ) -> dict[str, str]:
     """
-    Started already swarm with integration stack (via dependency with 'docker_stack')
+    This assumes that a swarm was already started with the services' stack that the integration tests need (via dependency with 'docker_stack')
 
-    Environment variable expected for the web-server application in
-    an test-integration context, i.e. web-server runs in host and the
+    Environment variable are expected for the web-server in
+    an test-integration context: i.e. the web-server runs directly on the host and the
     remaining services (defined in variable 'core_services') are deployed
     in containers
     """

@@ -36,7 +36,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required
@@ -78,7 +77,6 @@ class ListServiceParams(PageQueryParameters):
     f"{VTAG_DEV}/catalog/services/-/latest",
     name="dev_list_services_latest",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
@@ -115,7 +113,6 @@ async def dev_list_services_latest(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_get_service",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
@@ -142,7 +139,6 @@ async def dev_get_service(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_update_service",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors

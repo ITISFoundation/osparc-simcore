@@ -26,7 +26,21 @@ services:
     init: true
     ports:
       - "6379:6379"
-
+    environment:
+      # defaults are the same as in default_app_config-unit.yaml
+      TEST_REDIS_PASSWORD: ${TEST_REDIS_PASSWORD:-adminadminadmin}
+    command:
+      [
+        "redis-server",
+        "--loglevel",
+        "verbose",
+        "--databases",
+        "8",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${TEST_REDIS_PASSWORD}"
+      ]
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
     init: true
