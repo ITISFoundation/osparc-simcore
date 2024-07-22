@@ -9,7 +9,8 @@ from typing import TypedDict
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.groups import user_to_groups
-from simcore_postgres_database.models.tags import tags, tags_to_groups
+from simcore_postgres_database.models.tags import tags
+from simcore_postgres_database.models.tags_to_groups import tags_to_groups
 from simcore_postgres_database.models.users import users
 
 
