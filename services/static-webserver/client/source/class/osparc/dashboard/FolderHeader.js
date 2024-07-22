@@ -29,11 +29,6 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     this._setLayout(new qx.ui.layout.HBox(20).set({
       alignY: "middle"
     }));
-
-    // Don't show if user is in Home
-    this.bind("currentFolderId", this, "visibility", {
-      converter: currentFolderId => currentFolderId ? "visible" : "excluded"
-    });
   },
 
   events: {
@@ -83,11 +78,11 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
         this.__createUpstreamButtons(currentFolder);
+      }
 
-        const currentFolderButton = this.__createCurrentFolderButton();
-        if (currentFolderButton) {
-          breadcrumbsLayout.add(currentFolderButton);
-        }
+      const currentFolderButton = this.__createCurrentFolderButton();
+      if (currentFolderButton) {
+        breadcrumbsLayout.add(currentFolderButton);
       }
     },
 
@@ -110,11 +105,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
 
     __createCurrentFolderButton: function() {
       const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-      if (currentFolder) {
-        const currentFolderButton = this.__createFolderButton(currentFolder);
-        return currentFolderButton;
-      }
-      return null;
+      return this.__createFolderButton(currentFolder);
     },
 
     __createFolderButton: function(folder) {
