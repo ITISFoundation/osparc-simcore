@@ -15,6 +15,10 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -41,9 +45,9 @@ def mock_project_uses_available_services(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_catalog_rpc_get_service(mocker: MockerFixture):
+def mock_catalog_rpc_check_for_service(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.catalog_rpc.get_service",
+        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
         spec=True,
         return_value=True,
     )
@@ -88,7 +92,7 @@ async def test_patch_project_node(
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: None,
     mock_project_uses_available_services: None,
-    mock_catalog_rpc_get_service: None,
+    mock_catalog_rpc_check_for_service: None,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
@@ -100,6 +104,13 @@ async def test_patch_project_node(
         data=json.dumps(
             {"label": "testing-string", "progress": None, "something": "non-existing"}
         ),
+    )
+    await assert_status(resp, expected)
+    # service key
+    _patch_key = {"key": "simcore/services/dynamic/patch-service-key"}
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_key),
     )
     await assert_status(resp, expected)
     # service version
@@ -168,6 +179,7 @@ async def test_patch_project_node(
 
     assert _tested_node["label"] == "testing-string"
     assert _tested_node["progress"] == None
+    assert _tested_node["key"] == _patch_key["key"]
     assert _tested_node["version"] == _patch_version["version"]
     assert _tested_node["inputs"] == _patch_inputs["inputs"]
     assert _tested_node["inputsRequired"] == _patch_inputs_required["inputsRequired"]
@@ -226,3 +238,37 @@ async def test_patch_project_node_inputs_with_data_type_change(
     )
     await assert_status(resp, expected)
     assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
+
+
+@pytest.mark.parametrize(
+    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
+)
+async def test_patch_project_node_service_key_with_error(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product,
+    mock_project_uses_available_services,
+    mocker: MockerFixture,
+):
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(
+        project_id=user_project["uuid"], node_id=node_id
+    )
+    _patch_version = {"version": "2.0.9"}
+
+    with mocker.patch(
+        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
+        side_effect=CatalogForbiddenError(name="test"),
+    ):
+        resp = await client.patch(f"{base_url}", json=_patch_version)
+        assert resp.status == status.HTTP_403_FORBIDDEN
+
+    with mocker.patch(
+        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
+        side_effect=CatalogItemNotFoundError(name="test"),
+    ):
+        resp = await client.patch(f"{base_url}", json=_patch_version)
+        assert resp.status == status.HTTP_404_NOT_FOUND

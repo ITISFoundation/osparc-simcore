@@ -929,7 +929,7 @@ async def patch_project_node(
             "version", _project_node_data["version"]
         )
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        await catalog_rpc.get_service(
+        await catalog_rpc.check_for_service(
             rabbitmq_rpc_client,
             product_name=product_name,
             user_id=user_id,
