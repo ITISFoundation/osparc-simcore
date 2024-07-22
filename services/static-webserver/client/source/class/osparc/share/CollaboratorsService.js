@@ -34,8 +34,6 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this._resourceType = "service";
     const serviceDataCopy = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    osparc.data.Roles.createRolesServicesInfo();
-
     const initCollabs = [];
     initCollabs.push(this.self().getEveryoneProductObj());
     initCollabs.push(this.self().getEveryoneObj());

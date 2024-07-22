@@ -26,8 +26,6 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
     this._resourceType = "folder";
     const folderDataCopy = folder.serialize();
 
-    osparc.data.Roles.createRolesFolderInfo();
-
     this.base(arguments, folderDataCopy, []);
   },
 

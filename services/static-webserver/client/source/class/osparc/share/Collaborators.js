@@ -191,14 +191,35 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __amIOwner: function() {
       let fullOptions = false;
-      if (this._resourceType === "study" || this._resourceType === "service") {
-        fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
-      } else if (this._resourceType === "service") {
-        fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
-      } else if (this._resourceType === "folder") {
-        fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["accessRights"]);
+      switch (this._resourceType) {
+        case "study":
+        case "template":
+          fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+          break;
+        case "service":
+          fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
+        case "folder":
+          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["accessRights"]);
+          break;
       }
       return fullOptions;
+    },
+
+    __createRolesLayout: function() {
+      let rolesLayout = null;
+      switch (this._resourceType) {
+        case "service":
+          rolesLayout = osparc.data.Roles.createRolesServicesInfo();
+          break;
+        case "folder":
+          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+          break;
+        default:
+          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+          break;
+      }
+      return rolesLayout;
     },
 
     __buildLayout: function() {
@@ -228,7 +249,7 @@ qx.Class.define("osparc.share.Collaborators", {
         flex: 1
       });
 
-      const rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+      const rolesLayout = this.__createRolesLayout();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
