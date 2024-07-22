@@ -244,7 +244,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const request = this.__getTextFilteredNextRequest(text);
       request
         .then(resp => {
-          console.log("filteredStudies", resp);
           const filteredStudies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addStudiesToList(filteredStudies);
