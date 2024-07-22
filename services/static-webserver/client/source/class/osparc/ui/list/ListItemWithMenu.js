@@ -92,14 +92,11 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
         "getDelete" in accessRights && accessRights.getDelete()
       ) {
         subtitle.setValue(osparc.data.Roles.ORG[3].label);
-      } else if (
-        ("getWrite" in accessRights && accessRights.getWrite()) ||
-        ("getWriteAccess" in accessRights && accessRights.getWriteAccess())
-      ) {
+      } else if ("getWrite" in accessRights && accessRights.getWrite()) {
         subtitle.setValue(osparc.data.Roles.ORG[2].label);
       } else if (
         ("getRead" in accessRights && accessRights.getRead()) ||
-        ("getExecuteAccess" in accessRights && accessRights.getExecuteAccess())
+        ("getExecute" in accessRights && accessRights.getExecute())
       ) {
         subtitle.setValue(osparc.data.Roles.ORG[1].label);
       } else {

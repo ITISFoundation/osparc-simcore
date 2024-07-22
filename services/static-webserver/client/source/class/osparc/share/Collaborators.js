@@ -63,12 +63,12 @@ qx.Class.define("osparc.share.Collaborators", {
       if ("delete" in aAccessRights) {
         // studies
         sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
-      } else if ("writeAccess" in aAccessRights) {
+      } else if ("execute" in aAccessRights) {
         // services
-        if (aAccessRights["writeAccess"] !== bAccessRights["writeAccess"]) {
-          sorted = bAccessRights["writeAccess"] - aAccessRights["writeAccess"];
-        } else if (aAccessRights["readAccess"] !== bAccessRights["readAccess"]) {
-          sorted = bAccessRights["readAccess"] - aAccessRights["readAccess"];
+        if (aAccessRights["write"] !== bAccessRights["write"]) {
+          sorted = bAccessRights["write"] - aAccessRights["write"];
+        } else if (aAccessRights["execute"] !== bAccessRights["execute"]) {
+          sorted = bAccessRights["execute"] - aAccessRights["execute"];
         }
       }
       return sorted;
