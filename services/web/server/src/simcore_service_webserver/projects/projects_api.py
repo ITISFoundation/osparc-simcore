@@ -213,6 +213,7 @@ async def patch_project(
     user_id: UserID,
     project_uuid: ProjectID,
     project_patch: ProjectPatch,
+    product_name: ProductName,
 ):
     _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
         project_patch, exclude_unset=True, by_alias=False
@@ -251,6 +252,11 @@ async def patch_project(
     await db.patch_project(
         project_uuid=project_uuid,
         new_partial_project_data=_project_patch_exclude_unset,
+    )
+
+    # 5. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    await director_v2_api.create_or_update_pipeline(
+        app, user_id, project_uuid, product_name=product_name
     )
 
 
@@ -747,6 +753,9 @@ async def add_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
+    await director_v2_api.update_dynamic_service_networks_in_project(
+        request.app, project["uuid"]
+    )
 
     if _is_node_dynamic(service_key):
         with suppress(ProjectStartsTooManyDynamicNodesError):
@@ -853,6 +862,9 @@ async def delete_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
+    await director_v2_api.update_dynamic_service_networks_in_project(
+        request.app, project_uuid
+    )
 
 
 async def update_project_linked_product(
@@ -925,7 +937,16 @@ async def patch_project_node(
         new_node_data=_node_patch_exclude_unset,
     )
 
-    # 3. Notify project node update
+    # 3. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    await director_v2_api.create_or_update_pipeline(
+        app, user_id, project_id, product_name=product_name
+    )
+    if _node_patch_exclude_unset.get("label"):
+        await director_v2_api.update_dynamic_service_networks_in_project(
+            app, project_id
+        )
+
+    # 4. Notify project node update
     await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 
