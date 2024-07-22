@@ -242,12 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       // first setSelection
       versions.forEach(version => {
-        let label = version;
-        const versionDisplay = osparc.service.Utils.getVersionDisplay(this.__resourceData["key"], version);
-        if (versionDisplay) {
-          label += ` (${versionDisplay})`
-        }
-        selectedItem = new qx.ui.form.ListItem(label);
+        selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
         versionsBox.add(selectedItem);
         if (this.__resourceData["version"] === version) {
           versionsBox.setSelection([selectedItem]);

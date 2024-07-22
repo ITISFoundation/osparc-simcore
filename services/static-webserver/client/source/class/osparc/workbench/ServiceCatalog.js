@@ -247,12 +247,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
           selectBox.add(latest);
           const versions = osparc.service.Utils.getVersions(key);
           versions.forEach(version => {
-            let label = version;
-            const versionDisplay = osparc.service.Utils.getVersionDisplay(this.__resourceData["key"], version);
-            if (versionDisplay) {
-              label += ` (${versionDisplay})`
-            }
-            selectBox.add(new qx.ui.form.ListItem(label));
+            const listItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+            selectBox.add(listItem);
           });
           selectBox.setSelection([latest]);
         }
