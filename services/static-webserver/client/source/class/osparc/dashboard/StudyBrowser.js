@@ -1077,7 +1077,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getThumbnailStudyMenuButton: function(studyData) {
-      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."));
+      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
       thumbButton.addListener("execute", () => {
         const title = this.tr("Edit Thumbnail");
         const oldThumbnail = studyData.thumbnail;
@@ -1116,7 +1116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
-      const studyDataButton = new qx.ui.menu.Button(text);
+      const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/file/12");
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
@@ -1135,7 +1135,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getExportMenuButton: function(studyData) {
-      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"));
+      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
       exportButton.setVisibility(isDisabled ? "excluded" : "visible");
       exportButton.addListener("execute", () => this.__exportStudy(studyData), this);
