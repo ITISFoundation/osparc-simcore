@@ -15,9 +15,6 @@ class CompatibleService(BaseModel):
     version: ServiceVersion
 
 
-assert set(CompatibleService.__fields__) == set(CompatibleService.__fields__)  # nosec
-
-
 class Compatibility(BaseModel):
     # NOTE: as an object it is more maintainable than a list
     can_update_to: CompatibleService = Field(
