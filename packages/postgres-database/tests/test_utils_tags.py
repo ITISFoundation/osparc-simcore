@@ -14,13 +14,13 @@ from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
 from simcore_postgres_database.models.tags_to_groups import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.tags_sql import (
+    add_tag_to_project_stmt,
     create_tag_stmt,
     delete_tag_stmt,
     get_tag_stmt,
     get_tags_for_project_stmt,
     get_tags_for_services_stmt,
     set_tag_access_rights_stmt,
-    set_tag_to_project_stmt,
     update_tag_stmt,
 )
 from simcore_postgres_database.utils import as_postgres_sql_query_str
@@ -592,7 +592,7 @@ def test_building_tags_sql_statements():
     )
 
     _check(
-        set_tag_to_project_stmt,
+        add_tag_to_project_stmt,
         project_index=project_index,
         tag_id=tag_id,
     )
