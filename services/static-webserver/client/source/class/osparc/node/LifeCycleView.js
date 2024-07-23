@@ -114,7 +114,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node.getKey(), node.getVersion());
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node.getKey(), node.getVersion());
         node.setVersion(latestCompatibleMetadata["version"]);
         node.fireEvent("updateStudyDocument");
         setTimeout(() => {
