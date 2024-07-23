@@ -91,6 +91,7 @@ async def mocked_log_cb(mocker: MockerFixture) -> mock.AsyncMock:
 async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
     async def _progress_cb(*args, **kwargs) -> None:
         print(f"received progress: {args}, {kwargs}")
+        assert isinstance(args[0], ProgressReport)
 
     return mocker.AsyncMock(side_effect=_progress_cb)
 
@@ -172,10 +173,10 @@ async def test_pull_image(
             layer_information,
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
-        )
+    assert (
+        main_progress_bar._current_steps  # noqa: SLF001
+        == layer_information.layers_total_size
+    )
     _assert_progress_report_values(
         mocked_progress_cb, total=layer_information.layers_total_size
     )

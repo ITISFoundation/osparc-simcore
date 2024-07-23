@@ -136,6 +136,9 @@ class RabbitMQClient(RabbitMQClientBase):
     async def _get_consumer_tag(self, exchange_name) -> str:
         return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
 
+    async def _get_consumer_tag(self, exchange_name) -> str:
+        return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
+
     async def subscribe(
         self,
         exchange_name: str,
@@ -220,16 +223,6 @@ class RabbitMQClient(RabbitMQClientBase):
             delayed_exchange = await channel.declare_exchange(
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
-
-            delayed_queue = await declare_queue(
-                channel,
-                self.client_name,
-                delayed_exchange_name,
-                exclusive_queue=exclusive_queue,
-                message_ttl=int(unexpected_error_retry_delay_s * 1000),
-                arguments={"x-dead-letter-exchange": exchange.name},
-            )
-            await delayed_queue.bind(delayed_exchange)
 
             _consumer_tag = await self._get_consumer_tag(exchange_name)
             await queue.consume(

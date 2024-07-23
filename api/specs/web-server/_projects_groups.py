@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
@@ -22,9 +23,6 @@ router = APIRouter(
 )
 
 
-### Projects groups
-
-
 @router.post(
     "/projects/{project_id}/groups/{group_id}",
     response_model=Envelope[ProjectGroupGet],
@@ -41,9 +39,7 @@ async def create_project_group(
     "/projects/{project_id}/groups",
     response_model=Envelope[list[ProjectGroupGet]],
 )
-async def list_project_groups(
-    _path: Annotated[ProjectPathParams, Depends()],
-):
+async def list_project_groups(_path: Annotated[ProjectPathParams, Depends()]):
     ...
 
 
