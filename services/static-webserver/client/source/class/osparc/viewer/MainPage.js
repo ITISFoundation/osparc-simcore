@@ -29,27 +29,12 @@ qx.Class.define("osparc.viewer.MainPage", {
     navBar.populateLayout();
     this._add(navBar);
 
-    // Some resources request before building the main stack
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
-    const store = osparc.store.Store.getInstance();
-    const preloadPromises = [];
-    preloadPromises.push(store.getAllServices(true));
-    Promise.all(preloadPromises)
-      .then(() => {
-        const nodeViewer = this.__createNodeViewer(studyId, viewerNodeId);
-        this._add(nodeViewer, {
-          flex: 1
-        });
-      })
-      .catch(err => console.error(err));
-  },
-
-  members: {
-    __createNodeViewer: function(studyId, viewerNodeId) {
-      const nodeViewer = new osparc.viewer.NodeViewer(studyId, viewerNodeId);
-      return nodeViewer;
-    }
+    const nodeViewer = new osparc.viewer.NodeViewer(studyId, viewerNodeId);
+    this._add(nodeViewer, {
+      flex: 1
+    });
   }
 });

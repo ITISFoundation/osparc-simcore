@@ -17,7 +17,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     const grid = this._servicesGrid.getLayout();
     grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.COMPATIBLE_VERSION, "center", "middle");
-    grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
   },
 
   statics: {
@@ -25,8 +24,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       ...osparc.metadata.ServicesInStudy.GRID_POS,
       CURRENT_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length,
       COMPATIBLE_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+1,
-      LATEST_VERSION: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2,
-      UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+3
+      UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
     anyServiceDeprecated: function(studyData) {
@@ -43,10 +41,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       return false;
     },
 
-    anyServiceInaccessible: async function(studyData) {
+    anyServiceInaccessible: function(studyData) {
       if ("workbench" in studyData) {
-        const store = osparc.store.Store.getInstance();
-        const inaccessibles = await store.getInaccessibleServices(studyData);
+        const inaccessibles = osparc.study.Utils.getInaccessibleServices(studyData["workbench"]);
         return inaccessibles.length;
       }
       return false;
@@ -56,9 +53,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       if (nodeId in studyData["workbench"]) {
         const node = studyData["workbench"][nodeId];
         if (osparc.service.Utils.isUpdatable(node)) {
-          const newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
-          if (newVersion["version"] !== node["version"]) {
-            return newVersion["version"];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          if (latestCompatible["version"] !== node["version"]) {
+            return latestCompatible["version"];
           }
         }
       }
@@ -107,7 +104,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         });
         this._introText.add(retiredLabel);
       }
-      if (await this.self().anyServiceInaccessible(this._studyData)) {
+      if (this.self().anyServiceInaccessible(this._studyData)) {
         let inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
         const retiredLabel = new qx.ui.basic.Label(inaccessibleText).set({
           font: "text-14",
@@ -123,16 +120,22 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }
     },
 
-    __updateService: async function(nodeId, newVersion, button) {
-      await this._patchNode(nodeId, "version", newVersion, button);
+    __updateService: async function(nodeId, key, version, button) {
+      const latestCompatible = osparc.service.Utils.getLatestCompatible(key, version);
+      const patchData = {};
+      if (key !== latestCompatible["key"]) {
+        patchData["key"] = latestCompatible["key"];
+      }
+      if (version !== latestCompatible["version"]) {
+        patchData["version"] = latestCompatible["version"];
+      }
+      await this._patchNode(nodeId, patchData, button);
     },
 
     __updateAllServices: async function(updatableNodeIds, button) {
-      for (const updatableNodeId of updatableNodeIds) {
-        const newVersion = this.self().getLatestVersion(this._studyData, updatableNodeId);
-        if (newVersion) {
-          await this.__updateService(updatableNodeId, newVersion, button);
-        }
+      for (const nodeId of updatableNodeIds) {
+        const workbench = this._studyData["workbench"];
+        await this.__updateService(nodeId, workbench[nodeId].key, workbench[nodeId].version, button);
       }
     },
 
@@ -152,14 +155,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }), {
         row: 0,
         column: this.self().GRID_POS.COMPATIBLE_VERSION
-      });
-
-      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Latest")).set({
-        font: "title-14",
-        toolTipText: this.tr("Latest available version")
-      }), {
-        row: 0,
-        column: this.self().GRID_POS.LATEST_VERSION
       });
 
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
@@ -186,11 +181,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
-        if (latestCompatibleMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
-        }
         const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (isUpdatable) {
           updatableServices.push(nodeId);
@@ -198,50 +188,43 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14"
         });
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
         this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
         this._servicesGrid.add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
-        if (latestCompatibleMetadata) {
-          const compatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
-            font: "text-14"
-          });
-          this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
-          this._servicesGrid.add(compatibleVersionLabel, {
-            row: i,
-            column: this.self().GRID_POS.COMPATIBLE_VERSION
-          });
-        } else if (nodeMetadata === null) {
-          const compatibleVersionLabel = new qx.ui.basic.Label(this.tr("Unknown")).set({
-            font: "text-14"
-          });
-          this._servicesGrid.add(compatibleVersionLabel, {
-            row: i,
-            column: this.self().GRID_POS.COMPATIBLE_VERSION
-          });
-        }
-
-        const latestMetadata = osparc.service.Utils.getLatest(this._services, node["key"]);
-        const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
+        const compatibleVersionLabel = new qx.ui.basic.Label().set({
           font: "text-14"
         });
-        this._servicesGrid.add(latestVersionLabel, {
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+        if (latestCompatible) {
+          // updatable
+          osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+            .then(metadata => {
+              const label = node["key"] === metadata["key"] ? metadata["version"] : metadata["name"] + ":" + metadata["version"];
+              compatibleVersionLabel.setValue(label);
+            })
+            .catch(err => console.error(err));
+        } else if (nodeMetadata) {
+          // up to date
+          compatibleVersionLabel.setValue(nodeMetadata["version"]);
+        } else {
+          compatibleVersionLabel.setValue(this.tr("Unknown"));
+        }
+        this._servicesGrid.add(compatibleVersionLabel, {
           row: i,
-          column: this.self().GRID_POS.LATEST_VERSION
+          column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
-        if (latestCompatibleMetadata && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        if (latestCompatible && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
           });
-          if (latestCompatibleMetadata["version"] === node["version"]) {
+          if ((latestCompatible["key"] === node["key"]) && (latestCompatible["version"] === node["version"])) {
             updateButton.setLabel(this.tr("Up-to-date"));
-          }
-          if (latestCompatibleMetadata["version"] !== latestMetadata["version"]) {
-            updateButton.setLabel(this.tr("Update manually"));
           }
           if (isUpdatable) {
             updateButton.set({
@@ -251,7 +234,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
               center: true
             });
           }
-          updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
+          updateButton.addListener("execute", () => this.__updateService(nodeId, node["key"], node["version"], updateButton), this);
           this._servicesGrid.add(updateButton, {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON

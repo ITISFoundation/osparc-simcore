@@ -118,28 +118,39 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
      */
     extractThumbnailSuggestions: function(study) {
-      const defaultThumbnails = this.self().setThumbnailTemplates();
-      const suggestions = new Set([]);
+      const queryParams = [];
+      const addToQueryParams = (key, version) => {
+        const found = queryParams.find(p => p.key === key && p.version === version);
+        if (!found) {
+          queryParams.push({
+            key,
+            version
+          });
+        }
+      };
       if (study instanceof osparc.data.model.Study) {
         const wb = study.getWorkbench();
         const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-        Object.values(nodes).forEach(node => {
-          const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
-          if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-            suggestions.add(srvMetadata["thumbnail"]);
-          }
-        });
+        Object.values(nodes).forEach(node => addToQueryParams(node.getKey(), node.getVersion()));
       } else {
         const nodes = study["workbench"];
-        Object.values(nodes).forEach(node => {
-          const srvMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
-          if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-            suggestions.add(srvMetadata["thumbnail"]);
-          }
-        });
+        Object.values(nodes).forEach(node => addToQueryParams(node["key"], node["version"]));
       }
-      const amendedArray = [...suggestions, ...defaultThumbnails]
-      return Array.from(amendedArray);
+
+      const promises = [];
+      queryParams.forEach(qP => promises.push(osparc.service.Store.getService(qP.key, qP.version)));
+      return Promise.all(promises)
+        .then(values => {
+          const suggestions = new Set([]);
+          values.forEach(metadata => {
+            if (metadata && metadata["thumbnail"] && !osparc.data.model.Node.isFrontend(metadata)) {
+              suggestions.add(metadata["thumbnail"]);
+            }
+          });
+          const defaultThumbnails = this.self().setThumbnailTemplates();
+          const amendedArray = [...suggestions, ...defaultThumbnails]
+          return Array.from(amendedArray);
+        });
     },
     setThumbnailTemplates: function() {
       switch (osparc.product.Utils.getProductName()) {
@@ -162,19 +173,17 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
 
     __applyStudyData: function(study) {
-      const wb = study.getWorkbench();
-      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-      Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
-        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          this.__addThumbnail({
-            type: "serviceImage",
-            thumbnailUrl: srvMetadata["thumbnail"],
-            fileUrl: srvMetadata["thumbnail"]
-          });
-        }
-      });
-      this.__reloadSuggestions();
+      this.self().extractThumbnailSuggestions(study)
+        .then(suggestions => {
+          suggestions.forEach(suggestion => {
+            this.__addThumbnail({
+              type: "serviceImage",
+              thumbnailUrl: suggestion,
+              fileUrl: suggestion
+            });
+          })
+          this.__reloadSuggestions();
+        });
     },
 
     addPreviewsToSuggestions: function(previewsPerNodes) {
