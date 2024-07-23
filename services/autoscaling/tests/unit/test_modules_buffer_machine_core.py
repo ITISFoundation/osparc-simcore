@@ -152,7 +152,9 @@ async def _test_monitor_buffer_machines(
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
-    assert not all_instances["Reservations"]
+    assert not all_instances[
+        "Reservations"
+    ], f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] for i in r['Instances']]}"
 
     # 1. run, this will create as many buffer machines as needed
     with log_context(logging.INFO, "create buffer machines"):
