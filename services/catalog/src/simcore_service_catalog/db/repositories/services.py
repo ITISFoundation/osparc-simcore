@@ -2,7 +2,7 @@ import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
 import packaging.version
 import sqlalchemy as sa
@@ -243,8 +243,8 @@ class ServicesRepository(BaseRepository):
         return created_service
 
     async def update_service(
-        self, patched_service: ServiceMetaDataAtDB
-    ) -> ServiceMetaDataAtDB:
+        self, patched_service: ServiceMetaDataAtDB, *, returning: bool = True
+    ) -> ServiceMetaDataAtDB | None:
 
         stmt_update = (
             services_meta_data.update()
@@ -259,14 +259,20 @@ class ServicesRepository(BaseRepository):
                     exclude={"key", "version"},
                 )
             )
-            .returning(literal_column("*"))
         )
+        if returning:
+            stmt_update = stmt_update.returning(literal_column("*"))
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt_update)
             row = result.first()
             assert row  # nosec
-        return ServiceMetaDataAtDB.from_orm(row)
+
+        return (
+            cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+            if returning
+            else None
+        )
 
     async def can_get_service(
         self,
@@ -284,6 +290,27 @@ class ServicesRepository(BaseRepository):
                     product_name=product_name,
                     user_id=user_id,
                     access_rights=AccessRightsClauses.can_read,
+                    service_key=key,
+                    service_version=version,
+                )
+            )
+            return bool(result.scalar())
+
+    async def can_update_service(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+        version: ServiceVersion,
+    ) -> bool:
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                can_get_service_stmt(
+                    product_name=product_name,
+                    user_id=user_id,
+                    access_rights=AccessRightsClauses.can_edit,
                     service_key=key,
                     service_version=version,
                 )
