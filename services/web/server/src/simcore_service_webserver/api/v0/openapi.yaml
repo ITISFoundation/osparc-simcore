@@ -8703,6 +8703,10 @@ components:
       title: NodePatch
       type: object
       properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
         version:
           title: Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
@@ -10995,7 +10999,7 @@ components:
           type: string
           description: Owner can set the date to retire the service. Three possibilities:If
             None, the service is marked as `published`;If now<deprecated the service
-            is marked as dprecated;If now>=deprecated, the service is retired
+            is marked as deprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -12364,7 +12368,7 @@ components:
           type: string
           description: Owner can set the date to retire the service. Three possibilities:If
             None, the service is marked as `published`;If now<deprecated the service
-            is marked as dprecated;If now>=deprecated, the service is retired
+            is marked as deprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
