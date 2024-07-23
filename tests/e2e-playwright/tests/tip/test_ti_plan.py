@@ -19,6 +19,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     app_mode_trigger_next_app,
+    expected_service_running,
     wait_for_service_running,
 )
 
@@ -30,7 +31,7 @@ _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 
 _ELECTRODE_SELECTOR_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
 _ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME: Final[int] = 3 * MINUTE
-_ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+_ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME
     + _ELECTRODE_SELECTOR_DOCKER_PULLING_MAX_TIME
     + _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
@@ -40,7 +41,7 @@ _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
 
 _JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 3 * MINUTE
 _JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
-_JLAB_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+_JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME
     + _JLAB_DOCKER_PULLING_MAX_TIME
     + _JLAB_MAX_STARTUP_MAX_TIME
@@ -52,7 +53,7 @@ _JLAB_REPORTING_MAX_TIME: Final[int] = 20 * SECOND
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
 _POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
-_POST_PRO_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
+_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME
     + _POST_PRO_DOCKER_PULLING_MAX_TIME
     + _POST_PRO_MAX_STARTUP_TIME
@@ -63,9 +64,7 @@ _POST_PRO_BILLABLE_MAX_STARTUP_TIME: Final[int] = (
 class _JLabWaitForWebSocket:
     def __call__(self, new_websocket: WebSocket) -> bool:
         with log_context(logging.DEBUG, msg=f"received {new_websocket=}"):
-            if re.search(r"/api/kernels/[^/]+/channels", new_websocket.url):
-                return True
-            return False
+            return bool(re.search("/api/kernels/[^/]+/channels", new_websocket.url))
 
 
 @dataclass
@@ -102,15 +101,17 @@ def test_tip(  # noqa: PLR0915
     assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
     with log_context(logging.INFO, "Electrode Selector step") as ctx:
+        # NOTE: creating the plan auto-triggers the first service to start, which might already triggers socket events
         electrode_selector_iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[0],
             websocket=log_in_and_out,
             timeout=(
-                _ELECTRODE_SELECTOR_BILLABLE_MAX_STARTUP_TIME
+                _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME
                 if autoscaled
                 else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
-            ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
+            ),
+            press_start_button=False,
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -153,23 +154,26 @@ def test_tip(  # noqa: PLR0915
             _JLabWaitForWebSocket(),
             timeout=_OUTER_EXPECT_TIMEOUT_RATIO
             * (
-                _JLAB_BILLABLE_MAX_STARTUP_TIME
+                _JLAB_AUTOSCALED_MAX_STARTUP_TIME
                 if autoscaled
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
-            # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
-            app_mode_trigger_next_app(page)
-            ti_iframe = wait_for_service_running(
+            with expected_service_running(
                 page=page,
                 node_id=node_ids[1],
                 websocket=log_in_and_out,
                 timeout=(
-                    _JLAB_BILLABLE_MAX_STARTUP_TIME
+                    _JLAB_AUTOSCALED_MAX_STARTUP_TIME
                     if autoscaled
                     else _JLAB_MAX_STARTUP_MAX_TIME
-                ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
-            )
+                ),
+                press_start_button=False,
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            ti_iframe = service_running.iframe_locator
+            assert ti_iframe
+
         jlab_websocket = ws_info.value
 
         with (
@@ -208,18 +212,20 @@ def test_tip(  # noqa: PLR0915
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
-        app_mode_trigger_next_app(page)
-        s4l_postpro_iframe = wait_for_service_running(
+        with expected_service_running(
             page=page,
             node_id=node_ids[2],
             websocket=log_in_and_out,
             timeout=(
-                _POST_PRO_BILLABLE_MAX_STARTUP_TIME
+                _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
                 if autoscaled
                 else _POST_PRO_MAX_STARTUP_TIME
-            ),  # NOTE: this is actually not quite correct as we have billable product that do not autoscale
-        )
+            ),
+            press_start_button=False,
+        ) as service_running:
+            app_mode_trigger_next_app(page)
+        s4l_postpro_iframe = service_running.iframe_locator
+        assert s4l_postpro_iframe
 
         with log_context(logging.INFO, "Post process"):
             # click on the postpro mode button

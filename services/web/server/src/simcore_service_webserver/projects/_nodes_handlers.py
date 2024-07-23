@@ -50,6 +50,10 @@ from servicelib.common_headers import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -99,6 +103,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             UserDefaultWalletNotFoundError,
             DefaultPricingUnitNotFoundError,
             GroupNotFoundError,
+            CatalogItemNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
@@ -111,6 +116,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
         except ProjectNodeRequiredInputsNotSetError as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
+        except CatalogForbiddenError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -172,6 +179,7 @@ async def create_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
+# NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
