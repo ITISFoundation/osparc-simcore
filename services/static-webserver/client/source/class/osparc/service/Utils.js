@@ -164,15 +164,12 @@ qx.Class.define("osparc.service.Utils", {
       const services = osparc.service.Store.servicesCached;
       if (key in services && version in services[key]) {
         const serviceMD = services[key][version];
-        if (serviceMD["compatibility"]) {
-          // can be removed after https://github.com/ITISFoundation/osparc-simcore/pull/6084
-          if (typeof serviceMD["compatibility"]["canUpdateTo"] == "string") {
-            return {
-              key,
-              version: serviceMD["compatibility"]["canUpdateTo"]
-            }
+        if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
+          const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
+          return {
+            key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
+            version: canUpdateTo["version"]
           }
-          return serviceMD["compatibility"]["canUpdateTo"];
         }
       }
       return null;
