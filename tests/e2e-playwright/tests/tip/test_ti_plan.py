@@ -19,6 +19,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     app_mode_trigger_next_app,
+    expected_service_running,
     wait_for_service_running,
 )
 
@@ -158,9 +159,7 @@ def test_tip(  # noqa: PLR0915
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
-            # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
-            app_mode_trigger_next_app(page)
-            ti_iframe = wait_for_service_running(
+            with expected_service_running(
                 page=page,
                 node_id=node_ids[1],
                 websocket=log_in_and_out,
@@ -170,7 +169,11 @@ def test_tip(  # noqa: PLR0915
                     else _JLAB_MAX_STARTUP_MAX_TIME
                 ),
                 press_start_button=False,
-            )
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            ti_iframe = service_running.iframe_locator
+            assert ti_iframe
+
         jlab_websocket = ws_info.value
 
         with (
@@ -209,9 +212,7 @@ def test_tip(  # noqa: PLR0915
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
     with log_context(logging.INFO, "Exposure Analysis step"):
-        # NOTE: separated calls, but dangerous as we could miss some socket event (which is highly unlikely though as the calls are one after the other)
-        app_mode_trigger_next_app(page)
-        s4l_postpro_iframe = wait_for_service_running(
+        with expected_service_running(
             page=page,
             node_id=node_ids[2],
             websocket=log_in_and_out,
@@ -221,7 +222,10 @@ def test_tip(  # noqa: PLR0915
                 else _POST_PRO_MAX_STARTUP_TIME
             ),
             press_start_button=False,
-        )
+        ) as service_running:
+            app_mode_trigger_next_app(page)
+        s4l_postpro_iframe = service_running.iframe_locator
+        assert s4l_postpro_iframe
 
         with log_context(logging.INFO, "Post process"):
             # click on the postpro mode button
