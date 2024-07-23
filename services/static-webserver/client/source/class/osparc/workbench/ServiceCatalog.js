@@ -247,7 +247,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
           selectBox.add(latest);
           const versions = osparc.service.Utils.getVersions(key);
           versions.forEach(version => {
-            const listItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+            const listItem = osparc.service.Utils.versionToListItem(key, version);
             selectBox.add(listItem);
           });
           selectBox.setSelection([latest]);
