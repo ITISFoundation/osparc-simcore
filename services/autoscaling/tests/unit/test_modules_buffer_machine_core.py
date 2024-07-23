@@ -34,6 +34,7 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
+    _PREPULLED_EC2_TAG_KEY,
     _get_buffer_ec2_tags,
     monitor_buffer_machines,
 )
@@ -238,7 +239,10 @@ async def _test_monitor_buffer_machines(
                 expected_num_instances=buffer_count,
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
-                expected_additional_tag_keys=list(ec2_instance_custom_tags),
+                expected_additional_tag_keys=[
+                    _PREPULLED_EC2_TAG_KEY,
+                    *list(ec2_instance_custom_tags),
+                ],
                 instance_filters=instance_type_filters,
             )
 

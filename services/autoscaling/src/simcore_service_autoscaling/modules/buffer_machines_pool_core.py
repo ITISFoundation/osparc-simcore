@@ -52,6 +52,10 @@ _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "ssm-command-id"
 )
 _PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
+_PREPULLED_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "io.simcore.autoscaling.pre_pulled_images"
+)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -218,7 +222,7 @@ _DOCKER_PULL_COMMAND: Final[
 
 
 async def _handle_pool_image_pulling(
-    app: FastAPI, pool: BufferPool
+    app: FastAPI, instance_type: InstanceTypeType, pool: BufferPool
 ) -> tuple[InstancesToStop, InstancesToTerminate]:
     ec2_client = get_ec2_client(app)
     ssm_client = get_ssm_client(app)
@@ -261,6 +265,19 @@ async def _handle_pool_image_pulling(
                         f"{ssm_command.status}: {ssm_command.message}",
                     )
                     broken_instances_to_terminate.add(instance)
+    if instances_to_stop:
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+        await ec2_client.set_instances_tags(
+            tuple(instances_to_stop),
+            tags={
+                _PREPULLED_EC2_TAG_KEY: AWSTagValue(
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                        instance_type
+                    ].pre_pull_images
+                )
+            },
+        )
     return instances_to_stop, broken_instances_to_terminate
 
 
@@ -294,11 +311,11 @@ async def monitor_buffer_machines(
     # 4. pull docker images if needed
     instances_to_stop: set[EC2InstanceData] = set()
     broken_instances_to_terminate: set[EC2InstanceData] = set()
-    for pool in buffers_manager.buffer_pools.values():
+    for instance_type, pool in buffers_manager.buffer_pools.items():
         (
             pool_instances_to_stop,
             pool_instances_to_terminate,
-        ) = await _handle_pool_image_pulling(app, pool)
+        ) = await _handle_pool_image_pulling(app, instance_type, pool)
         instances_to_stop.update(pool_instances_to_stop)
         broken_instances_to_terminate.update(pool_instances_to_terminate)
     # 5. now stop and terminate if necessary
