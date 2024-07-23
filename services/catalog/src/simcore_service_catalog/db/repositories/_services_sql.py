@@ -377,7 +377,8 @@ def get_service_history_stmt(
     access_rights: sa.sql.ClauseElement,
     service_key: ServiceKey,
 ):
-    history_subquery = (
+
+    _sq = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
@@ -408,9 +409,13 @@ def get_service_history_stmt(
             & (user_to_groups.c.uid == user_id)
             & access_rights
         )
+        .distinct()
+    ).subquery()
+
+    history_subquery = (
+        sa.select(_sq)
         .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+            sa.desc(_version(_sq.c.version)),  # latest version first
         )
         .alias("history_subquery")
     )
