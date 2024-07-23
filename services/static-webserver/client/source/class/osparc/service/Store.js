@@ -97,18 +97,18 @@ qx.Class.define("osparc.service.Store", {
       return null;
     },
 
-    patchServiceData: function(serviceData, fieldKey, value) {
+    patchService: function(serviceData, fieldKey, value) {
+      const key = serviceData["key"];
+      const version = serviceData["version"];
       const patchData = {};
       patchData[fieldKey] = value;
       const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          serviceData["key"],
-          serviceData["version"]
-        ),
+        url: osparc.data.Resources.getServiceUrl(key, version),
         data: patchData
       };
       return osparc.data.Resources.fetch("servicesDev", "patch", params)
         .then(() => {
+          this.servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;
         });
     },
