@@ -97,7 +97,7 @@ qx.Class.define("osparc.service.Store", {
       return null;
     },
 
-    patchService: function(serviceData, fieldKey, value) {
+    patchServiceData: function(serviceData, fieldKey, value) {
       const key = serviceData["key"];
       const version = serviceData["version"];
       const patchData = {};
