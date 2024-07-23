@@ -141,31 +141,30 @@ qx.Class.define("osparc.service.ServiceListItem", {
       const serviceKey = this.getServiceModel().getKey();
       const selectBox = this.__versionsBox;
       selectBox.removeAll();
-      const versions = osparc.service.Utils.getVersions(null, serviceKey);
+      const versions = osparc.service.Utils.getVersions(serviceKey);
       const latest = new qx.ui.form.ListItem(this.self().LATEST);
       selectBox.add(latest);
-      for (let i = versions.length; i--;) {
-        selectBox.add(new qx.ui.form.ListItem(versions[i]));
-      }
+      versions.forEach(version => {
+        const listItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+        selectBox.add(listItem);
+      });
       selectBox.setSelection([latest]);
     },
 
-    __getSelectedServiceMetadata: function() {
+    __showServiceDetails: function() {
       const key = this.getServiceModel().getKey();
       let version = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (version === this.self().LATEST) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.service.Utils.getFromObject(null, key, version);
-    },
-
-    __showServiceDetails: function() {
-      const serviceMetadata = this.__getSelectedServiceMetadata();
-      const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
-      const title = this.tr("Service information");
-      const width = osparc.info.CardLarge.WIDTH;
-      const height = osparc.info.CardLarge.HEIGHT;
-      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      osparc.service.Store.getService(key, version)
+        .then(serviceMetadata => {
+          const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
+          const title = this.tr("Service information");
+          const width = osparc.info.CardLarge.WIDTH;
+          const height = osparc.info.CardLarge.HEIGHT;
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        });
     },
 
     _filterText: function(text) {

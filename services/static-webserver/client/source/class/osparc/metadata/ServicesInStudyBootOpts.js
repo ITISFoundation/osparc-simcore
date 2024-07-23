@@ -25,7 +25,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       if ("workbench" in studyData) {
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
-          const metadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+          const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
           if (metadata && osparc.data.model.Node.hasBootModes(metadata)) {
             return true;
           }
@@ -49,7 +49,9 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       let newBootOptions = "bootOptions" in workbench[nodeId] ? osparc.utils.Utils.deepCloneObject(workbench[nodeId]["bootOptions"]) : {};
       newBootOptions["boot_mode"] = newBootModeId;
 
-      this._patchNode(nodeId, "bootOptions", newBootOptions);
+      this._patchNode(nodeId, {
+        "bootOptions": newBootOptions
+      });
     },
 
     _populateHeader: function() {
@@ -72,15 +74,15 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetaData = osparc.service.Utils.getFromObject(this._services, node["key"], node["version"]);
-        if (nodeMetaData === null) {
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
-        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetaData);
+        const hasBootModes = osparc.data.model.Node.hasBootModes(nodeMetadata);
         if (canIWrite && hasBootModes) {
-          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
+          const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetadata, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
             const selection = e.getData();
             if (selection.length) {

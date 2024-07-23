@@ -33,7 +33,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createUuid: function(study) {
-      const uuid = osparc.info.Utils.createId();
+      const uuid = osparc.info.Utils.createLabel();
       study.bind("uuid", uuid, "value");
       study.bind("uuid", uuid, "toolTipText");
       return uuid;
@@ -414,9 +414,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         });
     },
 
-    patchNodeData: function(studyData, nodeId, fieldKey, value) {
-      const patchData = {};
-      patchData[fieldKey] = value;
+    patchNodeData: function(studyData, nodeId, patchData) {
       const params = {
         url: {
           "studyId": studyData["uuid"],
@@ -426,7 +424,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       };
       return osparc.data.Resources.fetch("studies", "patchNode", params)
         .then(() => {
-          studyData["workbench"][nodeId][fieldKey] = value;
+          Object.keys(patchData).forEach(key => {
+            studyData["workbench"][nodeId][key] = patchData[key];
+          });
           // A bit hacky, but it's not sent back to the backend
           studyData["lastChangeDate"] = new Date().toISOString();
         });
