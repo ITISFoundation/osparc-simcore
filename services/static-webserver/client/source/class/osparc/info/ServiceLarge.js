@@ -209,7 +209,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         label: this.tr("VERSION DISPLAY"),
         view: this.__createVersionDisplay(),
         action: {
-          button: osparc.utils.Utils.getEditButton(),
+          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
           callback: this.__openVersionDisplayEditor,
           ctx: this
         }
