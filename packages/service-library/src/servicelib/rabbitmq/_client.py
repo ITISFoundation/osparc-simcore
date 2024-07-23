@@ -136,9 +136,6 @@ class RabbitMQClient(RabbitMQClientBase):
     async def _get_consumer_tag(self, exchange_name) -> str:
         return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
 
-    async def _get_consumer_tag(self, exchange_name) -> str:
-        return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
-
     async def subscribe(
         self,
         exchange_name: str,
