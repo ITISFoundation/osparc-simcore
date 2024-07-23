@@ -23,13 +23,15 @@ qx.Class.define("osparc.data.model.Service", {
   extend: qx.core.Object,
 
   /**
-   * @param serviceData {Object} Object containing the serialized Study Data
+   * @param serviceData {Object} Object containing the serialized Service Data
    */
   construct: function(serviceData) {
     this.base(arguments);
 
     this.set({
       key: serviceData.key,
+      version: serviceData.version,
+      versionDisplay: serviceData.versionDisplay,
       name: serviceData.name,
       description: serviceData.description,
       thumbnail: serviceData.thumbnail,
@@ -46,6 +48,20 @@ qx.Class.define("osparc.data.model.Service", {
       check: "String",
       nullable: false,
       event: "changeKey",
+      init: null
+    },
+
+    version: {
+      check: "String",
+      nullable: false,
+      event: "changeVersion",
+      init: null
+    },
+
+    versionDisplay: {
+      check: "String",
+      nullable: true,
+      event: "changeVersionDisplay",
       init: null
     },
 
