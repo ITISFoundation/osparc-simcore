@@ -25,38 +25,41 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    let studyData = null;
     this.self().openStudy(studyId)
-      .then(studyData => {
+      .then(resp => {
+        studyData = resp;
         if (studyData["workbench"] && nodeId in studyData["workbench"]) {
           const nodeData = studyData["workbench"][nodeId];
-          const key = nodeData["key"];
-          const version = nodeData["version"];
+          return osparc.service.Store.getService(nodeData.key, nodeData.version)
+        }
+        throw new Error("Node data not found in Study");
+      })
+      .then(metadata => {
+        // create study
+        const study = new osparc.data.model.Study(studyData);
+        this.setStudy(study);
 
-          // create study
-          const study = new osparc.data.model.Study(studyData);
-          this.setStudy(study);
+        // create node
+        const node = new osparc.data.model.Node(study, metadata, nodeId);
+        this.setNode(node);
 
-          // create node
-          const node = new osparc.data.model.Node(study, key, version, nodeId);
-          this.setNode(node);
+        node.addListener("retrieveInputs", e => {
+          const data = e.getData();
+          const portKey = data["portKey"];
+          node.retrieveInputs(portKey);
+        }, this);
 
-          node.addListener("retrieveInputs", e => {
-            const data = e.getData();
-            const portKey = data["portKey"];
-            node.retrieveInputs(portKey);
-          }, this);
+        node.initIframeHandler();
 
-          node.initIframeHandler();
+        const iframeHandler = node.getIframeHandler();
+        if (iframeHandler) {
+          iframeHandler.startPolling();
+          iframeHandler.addListener("iframeChanged", () => this.__buildLayout(), this);
+          iframeHandler.getIFrame().addListener("load", () => this.__buildLayout(), this);
+          this.__buildLayout();
 
-          const iframeHandler = node.getIframeHandler();
-          if (iframeHandler) {
-            iframeHandler.startPolling();
-            iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
-            iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
-            this.__iFrameChanged();
-
-            this.__attachSocketEventHandlers();
-          }
+          this.__attachSocketEventHandlers();
         }
       })
       .catch(err => console.error(err));

@@ -179,7 +179,21 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __extraInfo: function() {
-      const extraInfo = [{
+      const extraInfo = [];
+
+      if (this.getNodeId()) {
+        extraInfo.push({
+          label: this.tr("SERVICE ID"),
+          view: this.__createNodeId(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyNodeIdToClipboard,
+            ctx: this
+          }
+        });
+      }
+
+      extraInfo.push({
         label: this.tr("KEY"),
         view: this.__createKey(),
         action: {
@@ -190,6 +204,18 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }, {
         label: this.tr("VERSION"),
         view: this.__createVersion(),
+        action: null
+      }, {
+        label: this.tr("VERSION DISPLAY"),
+        view: this.__createVersionDisplay(),
+        action: {
+          button: osparc.utils.Utils.getEditButton(),
+          callback: this.__openVersionDisplayEditor,
+          ctx: this
+        }
+      }, {
+        label: this.tr("RELEASE DATE"),
+        view: this.__createReleasedDate(),
         action: null
       }, {
         label: this.tr("CONTACT"),
@@ -203,11 +229,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
         label: this.tr("ACCESS RIGHTS"),
         view: this.__createAccessRights(),
         action: {
-          button: osparc.utils.Utils.getEditButton(),
+          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
-      }];
+      });
 
       if (
         osparc.product.Utils.showClassifiers() &&
@@ -217,7 +243,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("CLASSIFIERS"),
           view: this.__createClassifiers(),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           }
@@ -233,20 +259,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("QUALITY"),
           view: this.__createQuality(),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
-            ctx: this
-          }
-        });
-      }
-
-      if (this.getNodeId()) {
-        extraInfo.splice(0, 0, {
-          label: this.tr("SERVICE ID"),
-          view: this.__createNodeId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyNodeIdToClipboard,
             ctx: this
           }
         });
@@ -274,6 +288,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return osparc.info.ServiceUtils.createVersion(this.getService()["version"]);
     },
 
+    __createVersionDisplay: function() {
+      const versionDisplayLabel = osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
+      if (versionDisplayLabel.getValue() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        // show it if it has a value or if the user can write (useful when it is still empty)
+        return versionDisplayLabel;
+      }
+      return null;
+    },
+
+    __createReleasedDate: function() {
+      return osparc.info.ServiceUtils.createReleasedDate(this.getService()["key"], this.getService()["version"]);
+    },
+
     __createContact: function() {
       return osparc.info.ServiceUtils.createContact(this.getService());
     },
@@ -295,7 +322,23 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.info.ServiceUtils.createThumbnail(this.getService(), maxWidth, maxHeight);
+      const serviceData = this.getService();
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
+      if (serviceData["thumbnail"]) {
+        thumbnail.set({
+          source: serviceData["thumbnail"]
+        });
+      } else {
+        const noThumbnail = "osparc/no_photography_black_24dp.svg";
+        thumbnail.set({
+          source: noThumbnail
+        });
+        thumbnail.getChildControl("image").set({
+          minWidth: 120,
+          minHeight: 139
+        });
+      }
+      return thumbnail;
     },
 
     __createDescription: function() {
@@ -357,6 +400,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __copyKeyToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.getService()["key"]);
+    },
+
+    __openVersionDisplayEditor: function() {
+      const title = this.tr("Edit Version Display");
+      const oldVersionDisplay = this.getService()["versionDisplay"] ? this.getService()["versionDisplay"] : "";
+      const versionDisplayEditor = new osparc.widget.Renamer(oldVersionDisplay, null, title);
+      versionDisplayEditor.addListener("labelChanged", e => {
+        versionDisplayEditor.close();
+        const newVersionDisplay = e.getData()["newLabel"];
+        this.__patchService("versionDisplay", newVersionDisplay);
+      }, this);
+      versionDisplayEditor.center();
+      versionDisplayEditor.open();
     },
 
     __openAccessRights: function() {

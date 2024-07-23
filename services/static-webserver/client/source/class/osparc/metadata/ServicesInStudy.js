@@ -36,7 +36,6 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     const grid = this.__grid = new qx.ui.layout.Grid(20, 5);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
     grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 160);
     grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     this._servicesGrid = new qx.ui.container.Composite(grid);
     this._add(this._servicesGrid);
@@ -45,12 +44,10 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
     const servicesInStudy = osparc.study.Utils.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          this._services = services;
-          this._populateLayout();
-        });
+      const promises = [];
+      servicesInStudy.forEach(srv => promises.push(osparc.service.Store.getService(srv.key, srv.version)));
+      Promise.all(servicesInStudy)
+        .then(() => this._populateLayout());
     } else {
       this.__populateEmptyLayout();
     }
@@ -69,18 +66,17 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
   members: {
     _studyData: null,
-    _services: null,
     _introText: null,
     __grid: null,
     _servicesGrid: null,
 
-    _patchNode: function(nodeId, key, newValue, fetchButton) {
+    _patchNode: function(nodeId, patchData, fetchButton) {
       if (fetchButton) {
         fetchButton.setFetching(true);
       }
       this.setEnabled(false);
 
-      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, key, newValue)
+      osparc.info.StudyUtils.patchNodeData(this._studyData, nodeId, patchData)
         .then(() => {
           this.fireDataEvent("updateService", this._studyData);
           this._populateLayout();
@@ -141,7 +137,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
-          const metadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+          const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
           if (metadata === null) {
             osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
             return;
@@ -171,8 +167,8 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         });
         this.__grid.setRowHeight(i, 24);
 
-        const nodeMetaData = osparc.service.Utils.getFromObject(this._services, node["key"], node["version"]);
-        if (nodeMetaData === null) {
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
