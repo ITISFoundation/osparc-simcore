@@ -141,15 +141,14 @@ def mock_wait_for_has_instance_completed_cloud_init(
     )
 
 
-async def test_monitor_buffer_machines(
-    minimal_configuration: None,
+async def _test_monitor_buffer_machines(
+    *,
     ec2_client: EC2Client,
+    instance_type_filters: Sequence[FilterTypeDef],
+    initialized_app: FastAPI,
     buffer_count: int,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
-    instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
-    mock_wait_for_has_instance_completed_cloud_init: mock.Mock | None,
-    initialized_app: FastAPI,
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
@@ -242,6 +241,26 @@ async def test_monitor_buffer_machines(
             )
 
         await _assert_wait_for_ssm_command_to_finish()
+
+
+async def test_monitor_buffer_machines(
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    buffer_count: int,
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    instance_type_filters: Sequence[FilterTypeDef],
+    ec2_instance_custom_tags: dict[str, str],
+    mock_wait_for_has_instance_completed_cloud_init: mock.Mock | None,
+    initialized_app: FastAPI,
+):
+    await _test_monitor_buffer_machines(
+        ec2_client=ec2_client,
+        instance_type_filters=instance_type_filters,
+        initialized_app=initialized_app,
+        buffer_count=buffer_count,
+        ec2_instances_allowed_types=ec2_instances_allowed_types,
+        ec2_instance_custom_tags=ec2_instance_custom_tags,
+    )
 
 
 @pytest.fixture
@@ -503,94 +522,11 @@ async def test_monitor_buffer_machines_against_aws(
             "This test is only for use directly with AWS server, please define --external-envfile"
         )
 
-    # 0. we have no instances now
-    all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
-    assert not all_instances["Reservations"]
-
-    # 1. run, this will create as many buffer machines as needed
-    with log_context(logging.INFO, "create buffer machines"):
-        await monitor_buffer_machines(
-            initialized_app, auto_scaling_mode=DynamicAutoscaling()
-        )
-        with log_context(
-            logging.INFO, f"waiting for {buffer_count} buffer instances to be running"
-        ) as ctx:
-
-            @tenacity.retry(
-                wait=tenacity.wait_fixed(5),
-                stop=tenacity.stop_after_delay(120),
-                retry=tenacity.retry_if_exception_type(AssertionError),
-                reraise=True,
-                before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
-                after=tenacity.after_log(ctx.logger, logging.INFO),
-            )
-            async def _assert_buffer_machines_running():
-                await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-                    ec2_client,
-                    expected_num_reservations=1,
-                    expected_num_instances=buffer_count,
-                    expected_instance_type=next(iter(ec2_instances_allowed_types)),
-                    expected_instance_state="running",
-                    expected_additional_tag_keys=list(ec2_instance_custom_tags),
-                    instance_filters=instance_type_filters,
-                )
-
-            await _assert_buffer_machines_running()
-
-    # 2. this should now run a SSM command for pulling
-    with log_context(logging.INFO, "run SSM commands for pulling") as ctx:
-
-        @tenacity.retry(
-            wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(120),
-            retry=tenacity.retry_if_exception_type(AssertionError),
-            reraise=True,
-            before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
-            after=tenacity.after_log(ctx.logger, logging.INFO),
-        )
-        async def _assert_ssm_command_for_pulling():
-            await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscaling()
-            )
-            await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-                ec2_client,
-                expected_num_reservations=1,
-                expected_num_instances=buffer_count,
-                expected_instance_type=next(iter(ec2_instances_allowed_types)),
-                expected_instance_state="running",
-                expected_additional_tag_keys=[
-                    "pulling",
-                    "ssm-command-id",
-                    *list(ec2_instance_custom_tags),
-                ],
-                instance_filters=instance_type_filters,
-            )
-
-        await _assert_ssm_command_for_pulling()
-
-    # 3. is the command finished?
-    with log_context(logging.INFO, "wait for SSM commands to finish") as ctx:
-
-        @tenacity.retry(
-            wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(datetime.timedelta(minutes=10)),
-            retry=tenacity.retry_if_exception_type(AssertionError),
-            reraise=True,
-            before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
-            after=tenacity.after_log(ctx.logger, logging.INFO),
-        )
-        async def _assert_wait_for_ssm_command_to_finish():
-            await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscaling()
-            )
-            await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-                ec2_client,
-                expected_num_reservations=1,
-                expected_num_instances=buffer_count,
-                expected_instance_type=next(iter(ec2_instances_allowed_types)),
-                expected_instance_state="stopped",
-                expected_additional_tag_keys=list(ec2_instance_custom_tags),
-                instance_filters=instance_type_filters,
-            )
-
-        await _assert_wait_for_ssm_command_to_finish()
+    await _test_monitor_buffer_machines(
+        ec2_client=ec2_client,
+        instance_type_filters=instance_type_filters,
+        initialized_app=initialized_app,
+        buffer_count=buffer_count,
+        ec2_instances_allowed_types=ec2_instances_allowed_types,
+        ec2_instance_custom_tags=ec2_instance_custom_tags,
+    )
