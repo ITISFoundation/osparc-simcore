@@ -472,6 +472,7 @@ def buffer_count(
             allowed_ec2_types.items(),
         )
     )
+    assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
     assert (
         len(allowed_ec2_types_with_buffer_defined) == 1
     ), "more than one type with buffer is disallowed in this test!"
