@@ -288,9 +288,9 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     __getSelectedService: async function() {
       const selected = this.__serviceList.getSelected();
       const key = selected.getKey();
-      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      let version = this.__versionsBox.getSelection()[0].version;
       if (version == this.self(arguments).LATEST.toString()) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
       const serviceMetadata = await osparc.service.Store.getService(key, version);
       return serviceMetadata;
