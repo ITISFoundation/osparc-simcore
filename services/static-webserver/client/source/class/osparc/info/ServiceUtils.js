@@ -307,7 +307,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
         ),
         data: patchData
       };
-      return osparc.data.Resources.fetch("services", "patch", params)
+      return osparc.data.Resources.fetch("servicesDev", "patch", params)
         .then(() => {
           serviceData[fieldKey] = value;
         });
