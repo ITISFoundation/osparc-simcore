@@ -224,6 +224,15 @@ qx.Class.define("osparc.utils.Utils", {
       return checkIsOnScreen;
     },
 
+    growSelectBox: function(selectBox, maxWidth) {
+      let largest = 0;
+      selectBox.getSelectables().forEach(listItem => {
+        largest = Math.max(listItem.getSizeHint().width, largest);
+      });
+      largest += 15;
+      selectBox.setWidth(maxWidth ? Math.min(maxWidth, largest) : largest);
+    },
+
     toTwoDecimals: function(value) {
       return Math.round(100*value)/100;
     },

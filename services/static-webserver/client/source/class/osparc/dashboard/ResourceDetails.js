@@ -248,6 +248,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           versionsBox.setSelection([selectedItem]);
         }
       });
+      osparc.utils.Utils.growSelectBox(versionsBox, 200);
 
       // then listen to changes
       versionsBox.addListener("changeSelection", e => {

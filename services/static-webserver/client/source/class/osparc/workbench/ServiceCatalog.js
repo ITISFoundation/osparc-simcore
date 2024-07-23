@@ -250,6 +250,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
             const listItem = osparc.service.Utils.versionToListItem(key, version);
             selectBox.add(listItem);
           });
+          osparc.utils.Utils.growSelectBox(selectBox, 200);
           selectBox.setSelection([latest]);
         }
       }

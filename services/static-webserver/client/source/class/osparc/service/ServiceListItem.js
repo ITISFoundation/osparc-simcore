@@ -148,6 +148,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
         const listItem = osparc.service.Utils.versionToListItem(serviceKey, version);
         selectBox.add(listItem);
       });
+      osparc.utils.Utils.growSelectBox(selectBox, 200);
       selectBox.setSelection([latest]);
     },
 
