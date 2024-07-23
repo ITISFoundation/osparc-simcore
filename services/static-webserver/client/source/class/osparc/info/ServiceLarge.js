@@ -474,7 +474,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __patchService: function(key, value) {
       const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
-      osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, key, value)
+      osparc.service.Store.patchServiceData(serviceDataCopy, key, value)
         .then(() => {
           this.setService(serviceDataCopy);
           this.fireDataEvent("updateService", this.getService());
