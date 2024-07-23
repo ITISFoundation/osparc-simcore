@@ -42,8 +42,18 @@ qx.Class.define("osparc.node.ServiceOptionsView", {
     * @abstract
     */
   members: {
-    _applyNode: function() {
-      throw new Error("Abstract method called!");
+    _applyNode: function(node) {
+      if (node.isComputational()) {
+        node.getStatus().bind("running", this, "enabled", {
+          converter: () => !osparc.data.model.NodeStatus.isComputationalRunning(node)
+        });
+      }
+
+      if (node.isDynamic()) {
+        node.getStatus().bind("interactive", this, "enabled", {
+          converter: state => state === "idle"
+        });
+      }
     }
   }
 });

@@ -95,6 +95,12 @@ qx.Class.define("osparc.MaintenanceTracker", {
     },
 
     __setMaintenance: function(maintenanceData) {
+      // ignore old maintenance
+      if (maintenanceData && (new Date(maintenanceData.end).getTime() < new Date().getTime())) {
+        console.warn(`Old maintenance "${maintenanceData.reason}" wasn't removed"`);
+        return;
+      }
+
       const oldStart = this.getStart();
       const oldEnd = this.getEnd();
       const oldReason = this.getReason();
@@ -109,27 +115,21 @@ qx.Class.define("osparc.MaintenanceTracker", {
         (oldEnd === null || oldEnd.getTime() !== this.getEnd().getTime()) ||
         oldReason !== this.getReason()
       ) {
-        this.__scheduleMaintenance();
+        this.__scheduleStart();
       }
     },
 
-    __scheduleMaintenance: function() {
-      this.__scheduleStart();
-    },
-
     __scheduleStart: function() {
-      if (this.getStart() === null) {
-        this.__removeRibbonMessage();
-        this.__removeScheduledLogout();
-      } else {
+      this.__removeRibbonMessage();
+      this.__removeScheduledLogout();
+
+      if (this.getStart()) {
         this.__scheduleRibbonMessage();
         this.__scheduleLogout();
       }
     },
 
     __scheduleRibbonMessage: function() {
-      this.__removeRibbonMessage();
-
       const now = new Date();
       const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
       const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
@@ -171,8 +171,6 @@ qx.Class.define("osparc.MaintenanceTracker", {
     },
 
     __scheduleLogout: function() {
-      this.__removeScheduledLogout();
-
       const now = new Date();
       if (this.getStart().getTime() > now.getTime()) {
         const diff = this.getStart().getTime() - now.getTime();

@@ -73,6 +73,7 @@ async def test_push_folder(
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
     # create some files
     assert tmpdir.exists()
@@ -93,8 +94,8 @@ async def test_push_folder(
     assert len(list(test_folder.glob("**/*"))) == files_number
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
-    async with ProgressBarData(num_steps=1) as progress_bar:
-        await data_manager._push_directory(
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        await data_manager._push_directory(  # noqa: SLF001
             user_id,
             project_id,
             node_uuid,
@@ -103,7 +104,7 @@ async def test_push_folder(
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
@@ -127,6 +128,7 @@ async def test_push_file(
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
@@ -140,8 +142,8 @@ async def test_push_file(
     assert file_path.exists()
 
     # test push file by file
-    async with ProgressBarData(num_steps=1) as progress_bar:
-        await data_manager._push_directory(
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        await data_manager._push_directory(  # noqa: SLF001
             user_id,
             project_id,
             node_uuid,
@@ -150,7 +152,7 @@ async def test_push_file(
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
@@ -174,6 +176,7 @@ async def test_pull_legacy_archive(
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
     assert tmpdir.exists()
     # create a folder to compress from
@@ -214,8 +217,8 @@ async def test_pull_legacy_archive(
         test_compression_folder
     )
 
-    async with ProgressBarData(num_steps=1) as progress_bar:
-        await data_manager._pull_legacy_archive(
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        await data_manager._pull_legacy_archive(  # noqa: SLF001
             user_id,
             project_id,
             node_uuid,
@@ -223,7 +226,7 @@ async def test_pull_legacy_archive(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         user_id=user_id,
@@ -233,7 +236,7 @@ async def test_pull_legacy_archive(
         store_name=None,
         io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=None,
-        progress_bar=progress_bar._children[0],
+        progress_bar=progress_bar._children[0],  # noqa: SLF001
     )
 
     matchs, mismatchs, errors = cmpfiles(
@@ -255,6 +258,7 @@ async def test_pull_directory(
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
@@ -268,8 +272,8 @@ async def test_pull_directory(
     )
     mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
-    async with ProgressBarData(num_steps=1) as progress_bar:
-        await data_manager._pull_directory(
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        await data_manager._pull_directory(  # noqa: SLF001
             user_id,
             project_id,
             node_uuid,
@@ -278,7 +282,7 @@ async def test_pull_directory(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_path=fake_download_folder,
         s3_object=f"{project_id}/{node_uuid}/{fake_download_folder.name}",

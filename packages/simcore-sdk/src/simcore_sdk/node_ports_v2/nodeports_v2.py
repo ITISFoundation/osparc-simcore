@@ -149,7 +149,7 @@ class Nodeports(BaseModel):
         """
         tasks = []
         async with progress_bar.sub_progress(
-            steps=len(port_values.items())
+            steps=len(port_values.items()), description="set multiple"
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
                 # pylint: disable=protected-access

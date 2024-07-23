@@ -1,5 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
+import asyncio
 import json
 import logging
 from typing import Any, cast
@@ -29,7 +30,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -44,7 +45,6 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
-from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.user_preferences_frontend import (
@@ -277,6 +277,11 @@ async def attempt_pod_removal_and_data_saving(
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
+    # used for debuug, normally sleeps 0
+    await asyncio.sleep(
+        settings.DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL.total_seconds()
+    )
+
     # only try to save the status if :
     # - it is requested to save the state
     # - the dynamic-sidecar has finished booting correctly
@@ -338,10 +343,6 @@ async def attempt_pod_removal_and_data_saving(
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
         TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
-    )
-
-    await safe_remove(
-        app, node_id=scheduler_data.node_uuid, run_id=scheduler_data.run_id
     )
 
     # remove sidecar's api client

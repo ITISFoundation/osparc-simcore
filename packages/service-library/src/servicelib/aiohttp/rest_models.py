@@ -27,4 +27,4 @@ class ErrorType:
     logs: list[LogMessageType] = field(default_factory=list)
     errors: list[ErrorItemType] = field(default_factory=list)
     status: int = 400
-    message: str = "Unexpected client error"
+    message: str = "Unexpected error"

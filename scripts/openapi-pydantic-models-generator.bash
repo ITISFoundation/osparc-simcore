@@ -6,13 +6,11 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-PYTHON_VERSION=3.10.10
+PYTHON_VERSION=3.10.14
 IMAGE_NAME="local/datamodel-code-generator:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
-
-Build()
-{
+Build() {
   docker buildx build \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg HOME_DIR="/home/$USER" \
@@ -35,9 +33,7 @@ ENTRYPOINT ["datamodel-codegen", \
 EOF
 }
 
-
-Run()
-{
+Run() {
   docker run \
     -it \
     --workdir="/home/$USER/workdir" \
@@ -50,8 +46,7 @@ Run()
 
 }
 
-Help()
-{
+Help() {
   echo "Please check https://koxudaxi.github.io/datamodel-code-generator/ for help on usage"
 }
 

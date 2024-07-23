@@ -12,7 +12,9 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
     """
     We validate actual envfiles (e.g. repo.config files) by passing them via the CLI
 
-    > pytest --external-envfile=.myenv --pdb tests/unit/test_core_settings.py
+    $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
+    $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
+
     """
     settings = ApplicationSettings()  # type: ignore
     assert settings

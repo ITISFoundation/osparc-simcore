@@ -7,8 +7,8 @@
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.db.payments_transactions_repo import (
     PaymentsTransactionsRepo,
 )
@@ -73,6 +73,7 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
         payment_id=fake.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
         invoice_url=fake.invoice_url,
+        invoice_pdf_url=fake.invoice_pdf_url,
         stripe_invoice_id=fake.stripe_invoice_id,
         state_message="DONE",
     )

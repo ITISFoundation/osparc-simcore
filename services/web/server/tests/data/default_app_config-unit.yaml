@@ -77,6 +77,7 @@ resource_manager:
   redis:
     host: 127.0.0.1
     port: 6379
+    password: adminadminadmin
 redis:
   enabled: true
 # NOTE: redis options are in resource_manager.redis (legacy)

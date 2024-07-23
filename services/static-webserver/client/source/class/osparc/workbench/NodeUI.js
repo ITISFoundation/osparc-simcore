@@ -206,9 +206,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
           setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
-      const metaData = node.getMetaData();
-      this.__createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length)));
-      this.__createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length)));
+      const metadata = node.getMetaData();
+      this.__createPorts(true, Boolean((metadata && metadata.inputs && Object.keys(metadata.inputs).length)));
+      this.__createPorts(false, Boolean((metadata && metadata.outputs && Object.keys(metadata.outputs).length)));
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.getChildControl("progress"), "value", {
           converter: val => val === null ? 0 : val
@@ -239,8 +239,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
-        node.attachVisibilityHandlerToStopButton(stopButton);
-        node.attachExecuteHandlerToStopButton(stopButton);
+        node.attachHandlersToStopButton(stopButton);
         this._optionsMenu.addAt(stopButton, 1);
       }
 
@@ -270,7 +269,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
-      this._markerBtn.addListener("execute", () => this.getNode().toggleMarker());
+      this._markerBtn.addListener("execute", () => node.toggleMarker());
 
       const marker = this.getChildControl("marker");
       const updateMarker = () => {
@@ -283,6 +282,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
+        converter: running => !running
+      });
 
       const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");

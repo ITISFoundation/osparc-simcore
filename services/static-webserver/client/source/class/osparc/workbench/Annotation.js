@@ -92,7 +92,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       let representation = null;
       switch (this.getType()) {
         case "note": {
-          const user = await osparc.store.Store.getInstance().getGroup(attrs.destinataryGid);
+          const user = await osparc.store.Store.getInstance().getGroup(attrs.recipientGid);
           representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.label : "", attrs.text);
           break;
         }
@@ -130,7 +130,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       }
     },
 
-    getRepresenationPosition: function() {
+    getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
         const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
@@ -183,15 +183,20 @@ qx.Class.define("osparc.workbench.Annotation", {
     setSelected: function(selected) {
       const representation = this.getRepresentation();
       if (representation) {
-        const selectedColor = qx.theme.manager.Color.getInstance().resolve("busy-orange");
         switch (this.getType()) {
           case "rect":
-            osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
+          case "text": {
+            if (selected) {
+              if (!("bBox" in representation.node)) {
+                const bBox = this.__svgLayer.drawBoundingBox(this);
+                representation.node["bBox"] = bBox;
+              }
+            } else if ("bBox" in representation.node) {
+              osparc.wrapper.Svg.removeItem(representation.node["bBox"]);
+              delete representation.node["bBox"];
+            }
             break;
-          case "note":
-          case "text":
-            osparc.wrapper.Svg.updateTextColor(representation, selected ? selectedColor : this.getColor());
-            break;
+          }
         }
       }
     },

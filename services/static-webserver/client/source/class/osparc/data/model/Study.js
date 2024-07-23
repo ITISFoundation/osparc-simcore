@@ -64,9 +64,10 @@ qx.Class.define("osparc.data.model.Study", {
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
-    this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+    const workbenchUi = new osparc.data.model.StudyUI(studyData.ui);
+    this.setUi(workbenchUi);
 
-    this.__buildWorkbench();
+    this.getWorkbench().buildWorkbench();
   },
 
   properties: {
@@ -130,6 +131,7 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false,
+      event: "changeWorkbench",
       init: {}
     },
 
@@ -207,6 +209,11 @@ qx.Class.define("osparc.data.model.Study", {
       "dev"
     ],
 
+    OwnPatch: [
+      "accessRights",
+      "workbench"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -228,11 +235,14 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     // deep clones object with study-only properties
-    deepCloneStudyObject: function(src) {
-      const studyObject = osparc.utils.Utils.deepCloneObject(src);
+    deepCloneStudyObject: function(obj, ignoreExtra = false) {
+      const studyObject = osparc.utils.Utils.deepCloneObject(obj);
       const studyPropKeys = osparc.data.model.Study.getProperties();
       Object.keys(studyObject).forEach(key => {
         if (!studyPropKeys.includes(key)) {
+          delete studyObject[key];
+        }
+        if (ignoreExtra && osparc.data.model.Study.IgnoreSerializationProps.includes(key)) {
           delete studyObject[key];
         }
       });
@@ -241,7 +251,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIWrite: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
@@ -251,7 +261,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIDelete: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
@@ -289,8 +299,8 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metaData = osparc.service.Utils.getMetaData(node["key"], node["version"]);
-        if (osparc.data.model.Node.isComputational(metaData)) {
+        const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (metadata && osparc.data.model.Node.isComputational(metadata)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;
           nCompNodes++;
@@ -315,8 +325,28 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    __buildWorkbench: function() {
-      this.getWorkbench().buildWorkbench();
+    serialize: function(clean = true) {
+      let jsonObject = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
+          return;
+        }
+        if (key === "workbench") {
+          jsonObject[key] = this.getWorkbench().serialize(clean);
+          return;
+        }
+        if (key === "ui") {
+          jsonObject[key] = this.getUi().serialize();
+          return;
+        }
+        const value = this.get(key);
+        if (value !== null) {
+          // only put the value in the payload if there is a value
+          jsonObject[key] = value;
+        }
+      });
+      return jsonObject;
     },
 
     initStudy: function() {
@@ -432,26 +462,9 @@ qx.Class.define("osparc.data.model.Study", {
       const node = workbench.getNode(nodeId);
       if (node) {
         const progressType = nodeProgressData["progress_type"];
-        const progress = nodeProgressData["progress_report"]["actual_value"] / nodeProgressData["progress_report"]["total"];
-        node.setNodeProgressSequence(progressType, progress);
+        const progressReport = nodeProgressData["progress_report"];
+        node.setNodeProgressSequence(progressType, progressReport);
       }
-    },
-
-    computeStudyProgress: function() {
-      const nodes = this.getWorkbench().getNodes();
-      let nCompNodes = 0;
-      let overallProgress = 0;
-      Object.values(nodes).forEach(node => {
-        if (node.isComputational()) {
-          const progress = node.getStatus().getProgress();
-          overallProgress += progress ? progress : 0;
-          nCompNodes++;
-        }
-      });
-      if (nCompNodes === 0) {
-        return null;
-      }
-      return overallProgress/nCompNodes;
     },
 
     isLocked: function() {
@@ -487,6 +500,13 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
+    getDisableServiceAutoStart: function() {
+      if ("disableServiceAutoStart" in this.getDev()) {
+        return this.getDev()["disableServiceAutoStart"];
+      }
+      return null;
+    },
+
     openStudy: function() {
       const params = {
         url: {
@@ -494,8 +514,8 @@ qx.Class.define("osparc.data.model.Study", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      if ("disableServiceAutoStart" in this.getDev()) {
-        params["url"]["disableServiceAutoStart"] = this.getDev()["disableServiceAutoStart"];
+      if (this.getDisableServiceAutoStart() !== null) {
+        params["url"]["disableServiceAutoStart"] = this.getDisableServiceAutoStart();
         return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
       }
       return osparc.data.Resources.fetch("studies", "open", params);
@@ -545,36 +565,86 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    serialize: function(clean = true) {
-      let jsonObject = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().IgnoreSerializationProps.includes(key)) {
-          return;
-        }
-        if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize(clean);
-          return;
-        }
-        if (key === "ui") {
-          jsonObject[key] = this.getUi().serialize();
-          return;
-        }
-        const value = this.get(key);
-        if (value !== null) {
-          // only put the value in the payload if there is a value
-          jsonObject[key] = value;
-        }
+    patchStudy: function(studyChanges) {
+      const matches = this.self().OwnPatch.filter(el => Object.keys(studyChanges).indexOf(el) !== -1);
+      if (matches.length) {
+        console.error(matches, "has it's own PATCH path");
+        return null;
+      }
+
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: studyChanges
+        };
+        osparc.data.Resources.fetch("studies", "patch", params)
+          .then(() => {
+            Object.keys(studyChanges).forEach(fieldKey => {
+              const upKey = qx.lang.String.firstUp(fieldKey);
+              const setter = "set" + upKey;
+              this[setter](studyChanges[fieldKey]);
+            })
+            // A bit hacky, but it's not sent back to the backend
+            this.set({
+              lastChangeDate: new Date()
+            });
+            const studyData = this.serialize();
+            resolve(studyData);
+          })
+          .catch(err => reject(err));
       });
-      return jsonObject;
     },
 
-    updateStudy: function(params, run = false) {
+    /**
+     * Call patch Study, but the changes were already applied on the frontend
+     * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
+     */
+    patchStudyDelayed: function(studyDiffs) {
+      const promises = [];
+      let workbenchDiffs = {};
+      if ("workbench" in studyDiffs) {
+        workbenchDiffs = studyDiffs["workbench"];
+        promises.push(this.getWorkbench().patchWorkbenchDelayed(workbenchDiffs));
+        delete studyDiffs["workbench"];
+      }
+      const fieldKeys = Object.keys(studyDiffs);
+      if (fieldKeys.length) {
+        const patchData = {};
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          },
+          data: patchData
+        };
+        fieldKeys.forEach(fieldKey => {
+          if (fieldKey === "ui") {
+            patchData[fieldKey] = this.getUi().serialize();
+          } else {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const getter = "get" + upKey;
+            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+          }
+          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+        });
+      }
+      return Promise.all(promises)
+        .then(() => {
+          // A bit hacky, but it's not sent back to the backend
+          this.set({
+            lastChangeDate: new Date()
+          });
+          const studyData = this.serialize();
+          return studyData;
+        });
+    },
+
+    updateStudy: function(params) {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
-            "studyId": this.getUuid(),
-            run
+            "studyId": this.getUuid()
           },
           data: {
             ...this.serialize(),

@@ -11,6 +11,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -18,6 +21,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
     NodeOutputs,
+    NodePatch,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
@@ -28,6 +32,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
@@ -43,9 +48,12 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -72,6 +80,8 @@ from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -93,10 +103,21 @@ def _handle_project_nodes_exceptions(handler: Handler):
             UserDefaultWalletNotFoundError,
             DefaultPricingUnitNotFoundError,
             GroupNotFoundError,
+            CatalogItemNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+        except ProjectStartsTooManyDynamicNodesError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+        except ClustersKeeperNotAvailableError as exc:
+            raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+        except ProjectNodeRequiredInputsNotSetError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+        except CatalogForbiddenError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -158,6 +179,7 @@ async def create_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
+# NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -192,6 +214,29 @@ async def get_node(request: web.Request) -> web.Response:
         if isinstance(service_data, DynamicServiceGet)
         else service_data.dict()
     )
+
+
+@routes.patch(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="patch_project_node"
+)
+@login_required
+@permission_required("project.node.update")
+@_handle_project_nodes_exceptions
+async def patch_project_node(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
+    node_patch = await parse_request_body_as(NodePatch, request)
+
+    await projects_api.patch_project_node(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        node_patch=node_patch,
+    )
+
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
@@ -276,38 +321,28 @@ async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
-    try:
-        await projects_api.start_project_node(
-            request,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            node_id=path_params.node_id,
-        )
 
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    await projects_api.start_project_node(
+        request,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+    )
 
-    except ProjectStartsTooManyDynamicNodesError as exc:
-        raise web.HTTPConflict(reason=f"{exc}") from exc
-    except ClustersKeeperNotAvailableError as exc:
-        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 async def _stop_dynamic_service_task(
     _task_progress: TaskProgress,
     *,
     app: web.Application,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    dynamic_service_stop: DynamicServiceStop,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_api.stop_dynamic_service(
-            app,
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            save_state=save_state,
+            app, dynamic_service_stop=dynamic_service_stop
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -347,11 +382,15 @@ async def stop_node(request: web.Request) -> web.Response:
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
-        node_id=path_params.node_id,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        dynamic_service_stop=DynamicServiceStop(
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
+            save_state=save_state,
         ),
-        save_state=save_state,
         fire_and_forget=True,
     )
 

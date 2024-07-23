@@ -28,9 +28,20 @@ from .helpers import (
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.constants import HEADER_STR
+from .helpers.docker import run_docker_compose_config, save_docker_infos
+from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
-from .helpers.utils_host import get_localhost_ip
+
+
+@pytest.fixture(scope="module")
+def temp_folder(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    """**Module scoped** temporary folder"""
+    prefix = __name__.replace(".", "_")
+    return tmp_path_factory.mktemp(
+        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
+    )
 
 
 @pytest.fixture(scope="session")
@@ -88,8 +99,8 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
-    testing_environ_vars: dict[str, str],
     temp_folder: Path,
+    testing_environ_vars: dict[str, str],
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
@@ -156,20 +167,13 @@ def simcore_docker_compose(
         docker_compose_path.exists() for docker_compose_path in docker_compose_paths
     )
 
-    compose_specs = run_docker_compose_config(
+    return run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_paths,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    # NOTE: do not add indent. Copy&Paste log into editor instead
-    print(
-        HEADER_STR.format("simcore docker-compose"),
-        json.dumps(compose_specs),
-        HEADER_STR.format("-"),
-    )
-    return compose_specs
 
 
 @pytest.fixture(scope="module")
@@ -192,20 +196,13 @@ def ops_docker_compose(
     )
     assert docker_compose_path.exists()
 
-    compose_specs = run_docker_compose_config(
+    return run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    # NOTE: do not add indent. Copy&Paste log into editor instead
-    print(
-        HEADER_STR.format("ops docker-compose"),
-        json.dumps(compose_specs),
-        HEADER_STR.format("-"),
-    )
-    return compose_specs
 
 
 @pytest.fixture(scope="module")
@@ -234,6 +231,11 @@ def core_docker_compose_file(
         core_services_selection, simcore_docker_compose, docker_compose_path
     )
 
+    print(
+        HEADER_STR.format(f"{docker_compose_path}"),
+        json.dumps(docker_compose_path.read_text()),
+        HEADER_STR.format("-"),
+    )
     return docker_compose_path
 
 
@@ -270,6 +272,11 @@ def ops_docker_compose_file(
         ops_services_selection, ops_docker_compose, docker_compose_path
     )
 
+    print(
+        HEADER_STR.format(f"{docker_compose_path}"),
+        json.dumps(docker_compose_path.read_text()),
+        HEADER_STR.format("-"),
+    )
     return docker_compose_path
 
 

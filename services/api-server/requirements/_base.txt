@@ -39,7 +39,7 @@ cffi==1.16.0
     # via cryptography
 click==8.1.7
     # via
-    #   typer-slim
+    #   typer
     #   uvicorn
 cryptography==42.0.5
 dnspython==2.6.1
@@ -57,7 +57,7 @@ fastapi==0.99.1
     #   fastapi-pagination
     #   prometheus-fastapi-instrumentator
 fastapi-pagination==0.12.17
-faststream==0.4.7
+faststream==0.5.10
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -104,6 +104,7 @@ orjson==3.10.0
 packaging==24.0
 pamqp==3.3.0
     # via aiormq
+parse==1.20.2
 pint==0.23
 prometheus-client==0.20.0
     # via prometheus-fastapi-instrumentator
@@ -136,13 +137,13 @@ pyyaml==6.0.1
     # via
     #   fastapi
     #   uvicorn
-redis==5.0.3
+redis==5.0.4
 rich==13.7.1
-    # via typer-slim
+    # via typer
 setuptools==69.2.0
     # via jsonschema
 shellingham==1.5.4
-    # via typer-slim
+    # via typer
 six==1.16.0
     # via
     #   jsonschema
@@ -156,18 +157,32 @@ sqlalchemy==1.4.52
     #   aiopg
     #   alembic
 starlette==0.27.0
-    # via fastapi
-tenacity==8.2.3
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
+tenacity==8.5.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 toolz==0.12.1
 tqdm==4.66.2
-typer==0.12.0
+typer==0.12.3
     # via faststream
-typer-cli==0.12.0
-    # via typer
-typer-slim==0.12.0
-    # via
-    #   typer
-    #   typer-cli
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
@@ -181,7 +196,7 @@ typing-extensions==4.10.0
     #   faststream
     #   pint
     #   pydantic
-    #   typer-slim
+    #   typer
     #   uvicorn
 ujson==5.9.0
     # via fastapi

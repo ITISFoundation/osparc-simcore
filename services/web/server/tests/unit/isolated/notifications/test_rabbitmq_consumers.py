@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
-from faker import Faker
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
@@ -21,8 +20,6 @@ from simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers
     _progress_message_parser,
 )
 from simcore_service_webserver.socketio.models import WebSocketNodeProgress
-
-_faker = Faker()
 
 
 @pytest.mark.parametrize(
@@ -47,6 +44,7 @@ _faker = Faker()
                         "actual_value": 0.4,
                         "total": 1.0,
                         "unit": None,
+                        "message": None,
                     },
                 },
             ),
@@ -69,6 +67,7 @@ _faker = Faker()
                         "actual_value": 0.4,
                         "total": 1.0,
                         "unit": None,
+                        "message": None,
                     },
                 },
             ),

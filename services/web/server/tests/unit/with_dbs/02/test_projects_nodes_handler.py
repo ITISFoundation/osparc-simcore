@@ -20,6 +20,10 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import NodeID
@@ -30,9 +34,9 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
@@ -160,7 +164,7 @@ async def test_replace_node_resources_is_forbidden_by_default(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.GUEST, status.HTTP_200_OK),
         (UserRole.USER, status.HTTP_200_OK),
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
@@ -367,6 +371,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     postgres_db: sa.engine.Engine,
     storage_subsystem_mock: MockedStorageSubsystem,
     mock_get_total_project_dynamic_nodes_creation_interval: None,
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     assert client.app
 
@@ -374,15 +379,20 @@ async def test_create_and_delete_many_nodes_in_parallel(
     class _RunningServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:  # noqa: ARG002
+        def num_services(
+            self, *args, **kwargs
+        ) -> list[DynamicServiceGet]:  # noqa: ARG002
             return [
-                {"service_uuid": service_uuid}
+                DynamicServiceGet.parse_obj(
+                    DynamicServiceGet.Config.schema_extra["examples"][1]
+                    | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
+                )
                 for service_uuid in self.running_services_uuids
             ]
 
         def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             self.running_services_uuids.append(
-                kwargs["rpc_dynamic_service_create"].node_uuid
+                kwargs["dynamic_service_start"].node_uuid
             )
 
     # let's count the started services
@@ -505,7 +515,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(
-                kwargs["rpc_dynamic_service_create"].node_uuid
+                kwargs["dynamic_service_start"].node_uuid
             )
 
     # let's count the started services
@@ -627,6 +637,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_node(
     client: TestClient,
+    logged_user: dict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
@@ -634,6 +645,7 @@ async def test_delete_node(
     storage_subsystem_mock: MockedStorageSubsystem,
     dy_service_running: bool,
     postgres_db: sa.engine.Engine,
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     # first create a node
     assert client.app
@@ -644,9 +656,15 @@ async def test_delete_node(
         for service_uuid, service_data in user_project["workbench"].items()
         if "/dynamic/" in service_data["key"] and dy_service_running
     ]
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-        {"service_uuid": service_uuid} for service_uuid in running_dy_services
+    _ = [
+        await create_dynamic_service_mock(
+            project_id=user_project["uuid"], service_uuid=service_uuid
+        )
+        for service_uuid in running_dy_services
     ]
+    # mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    #     {"service_uuid": service_uuid} for service_uuid in running_dy_services
+    # ]
     for node_id in user_project["workbench"]:
         url = client.app.router["delete_node"].url_for(
             project_id=user_project["uuid"], node_id=node_id
@@ -667,9 +685,13 @@ async def test_delete_node(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
-                node_id=NodeID(node_id),
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=False,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=logged_user["id"],
+                    project_id=user_project["uuid"],
+                    node_id=NodeID(node_id),
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=False,
+                ),
             )
             mocked_director_v2_api[
                 "dynamic_scheduler.api.stop_dynamic_service"
@@ -714,9 +736,11 @@ async def test_start_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        status.HTTP_204_NO_CONTENT
-        if user_role == UserRole.GUEST
-        else expected.no_content,
+        (
+            status.HTTP_204_NO_CONTENT
+            if user_role == UserRole.GUEST
+            else expected.no_content
+        ),
     )
     if error is None:
         mocked_director_v2_api[

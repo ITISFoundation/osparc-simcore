@@ -65,6 +65,39 @@ from simcore_service_webserver.projects.utils import (
             id="patch with 2x nested new data",
         ),
         pytest.param(
+            {"inputs": {"in_1": 1}},
+            {
+                "inputs": {
+                    "in_1": {
+                        "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                        "output": "out_1",
+                    }
+                }
+            },
+            {
+                "inputs": {
+                    "in_1": {
+                        "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                        "output": "out_1",
+                    }
+                }
+            },
+            id="patch with new data type change int -> dict",
+        ),
+        pytest.param(
+            {
+                "inputs": {
+                    "in_1": {
+                        "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                        "output": "out_1",
+                    }
+                }
+            },
+            {"inputs": {"in_1": 1}},
+            {"inputs": {"in_1": 1}},
+            id="patch with new data type change dict -> int",
+        ),
+        pytest.param(
             {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
             {"remove_entries_in_dict": {"outputs": {}}},
             {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},

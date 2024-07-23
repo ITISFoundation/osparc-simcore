@@ -6,8 +6,8 @@ include ../../scripts/common.Makefile
 help:	## overwrites and calls common help function
 	$(MAKE) --no-print-directory --file ../../scripts/common.Makefile $@
 	@echo
-	@echo '🚨 BEWARE there are issues with brakets in names `make test[aiohttp]` will raise errors:'
-	@echo '✅` `make "test[aiohttp]"` works as intended'
+	@echo '🚨 BEWARE there are issues with brakets in names `make test-dev[aiohttp]` will raise errors:'
+	@echo '✅` `make "test-dev[aiohttp]"` works as intended'
 	@echo '👓 Please note: when INSTALLING, DEVELOPING and TESTING '
 	@echo
 	@echo 'servicelib support for aiohttp extras is not included:'

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -41,6 +42,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if app.state.settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
+
+    if app.state.settings.DYNAMIC_SCHEDULER_PROFILING:
+        app.add_middleware(ProfilerMiddleware)
 
     # PLUGINS SETUP
 

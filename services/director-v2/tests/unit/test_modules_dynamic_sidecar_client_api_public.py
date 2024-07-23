@@ -10,11 +10,11 @@ from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
+from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
-from servicelib.json_serialization import json_dumps
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,

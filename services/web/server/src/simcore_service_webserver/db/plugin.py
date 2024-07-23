@@ -8,10 +8,10 @@ from typing import Any
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.json_serialization import json_dumps
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.errors import DBAPIError
 from simcore_postgres_database.utils_aiopg import (

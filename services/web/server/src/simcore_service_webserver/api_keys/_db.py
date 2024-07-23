@@ -12,6 +12,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.api_keys import api_keys
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 _logger = logging.getLogger(__name__)
 
@@ -78,6 +79,43 @@ class ApiKeyRepo:
             result: ResultProxy = await conn.execute(stmt)
             row: RowProxy | None = await result.fetchone()
             return ApiKeyInDB.from_orm(row) if row else None
+
+    async def get_or_create(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        display_name: str,
+        expiration: timedelta | None,
+        api_key: str,
+        api_secret: str,
+    ) -> ApiKeyInDB:
+        async with self.engine.acquire() as conn:
+            # Implemented as "create or get"
+            insert_stmt = (
+                pg_insert(api_keys)
+                .values(
+                    display_name=display_name,
+                    user_id=user_id,
+                    product_name=product_name,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    expires_at=(sa.func.now() + expiration) if expiration else None,
+                )
+                .on_conflict_do_update(
+                    index_elements=["user_id", "display_name"],
+                    set_={
+                        "product_name": product_name
+                    },  # dummy enable returning since on_conflict_do_nothing returns None
+                    # NOTE: use this entry for reference counting in https://github.com/ITISFoundation/osparc-simcore/issues/5875
+                )
+                .returning(api_keys)
+            )
+
+            result = await conn.execute(insert_stmt)
+            row = await result.fetchone()
+            assert row  # nosec
+            return ApiKeyInDB.from_orm(row)
 
     async def delete_by_name(
         self, *, display_name: str, user_id: UserID, product_name: ProductName

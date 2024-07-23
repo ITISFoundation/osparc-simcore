@@ -10,7 +10,7 @@ from pydantic import (
     PositiveInt,
 )
 
-from .basic_regex import UUID_RE, VERSION_RE
+from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS, UUID_RE, VERSION_RE
 
 
 class NonNegativeDecimal(ConstrainedDecimal):
@@ -46,6 +46,10 @@ class VersionStr(ConstrainedStr):
     regex = re.compile(VERSION_RE)
 
 
+class SemanticVersionStr(ConstrainedStr):
+    regex = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
+
+
 # checksums
 # sha1sum path/to/file
 class SHA1Str(ConstrainedStr):
@@ -77,7 +81,24 @@ class UUIDStr(ConstrainedStr):
 class IDStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
-    max_length = 50
+    max_length = 100
+
+
+class ShortTruncatedStr(ConstrainedStr):
+    # NOTE: Use to input e.g. titles or display names
+    # A truncated string:
+    #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
+    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
+    strip_whitespace = True
+    curtail_length = 600
+
+
+class LongTruncatedStr(ConstrainedStr):
+    # NOTE: Use to input e.g. descriptions or summaries
+    # Analogous to ShortTruncatedStr
+    strip_whitespace = True
+    curtail_length = 65536  # same as github descripton
 
 
 # auto-incremented primary-key IDs

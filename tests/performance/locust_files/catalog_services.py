@@ -6,15 +6,12 @@ import logging
 from time import time
 
 import faker
-from dotenv import load_dotenv
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
 
 fake = faker.Faker()
-
-load_dotenv()  # take environment variables from .env
 
 
 class WebApiUser(FastHttpUser):

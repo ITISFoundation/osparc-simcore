@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import shortuuid
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
@@ -118,12 +118,13 @@ async def list_service_runs(
                 user_email=service.user_email,
                 project_id=service.project_id,
                 project_name=service.project_name,
+                root_parent_project_id=service.root_parent_project_id,
+                root_parent_project_name=service.root_parent_project_name,
                 node_id=service.node_id,
                 node_name=service.node_name,
                 service_key=service.service_key,
                 service_version=service.service_version,
                 service_type=service.service_type,
-                service_resources=service.service_resources,
                 started_at=service.started_at,
                 stopped_at=service.stopped_at,
                 service_run_status=service.service_run_status,
@@ -138,6 +139,7 @@ async def list_service_runs(
 async def export_service_runs(
     s3_client: SimcoreS3API,
     bucket_name: str,
+    s3_region: str,
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
@@ -160,6 +162,7 @@ async def export_service_runs(
         product_name=product_name,
         s3_bucket_name=s3_bucket_name,
         s3_key=s3_object_key,
+        s3_region=s3_region,
         user_id=user_id if access_all_wallet_usage is False else None,
         wallet_id=wallet_id,
         started_from=started_from,

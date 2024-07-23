@@ -7,14 +7,12 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PYTHON_VERSION=3.10.10
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+PYTHON_VERSION=3.10.14
 IMAGE_NAME="local/pydeps-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
-
-Build()
-{
+Build() {
   docker buildx build \
     --load \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
@@ -23,9 +21,7 @@ Build()
     "$SCRIPT_DIR/pydeps-docker"
 }
 
-
-Run()
-{
+Run() {
   docker run \
     -it \
     --workdir="/home/$USER/workdir" \

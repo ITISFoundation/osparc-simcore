@@ -4,6 +4,7 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 
 """
+
 import logging
 from contextlib import AsyncExitStack
 from typing import Any
@@ -32,6 +33,8 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
@@ -45,10 +48,11 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import func, literal_column
+from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
 from ..db.models import projects_to_wallet, study_tags
@@ -80,7 +84,7 @@ from .exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict
+from .models import ProjectDB, ProjectDict, UserProjectAccessRights
 
 _logger = logging.getLogger(__name__)
 
@@ -242,9 +246,11 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
-                "type": ProjectType.TEMPLATE.value
-                if (force_as_template or user_id is None)
-                else ProjectType.STANDARD.value,
+                "type": (
+                    ProjectType.TEMPLATE.value
+                    if (force_as_template or user_id is None)
+                    else ProjectType.STANDARD.value
+                ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.
@@ -332,9 +338,34 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
+            access_rights_subquery = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    ).label("access_rights"),
+                ).group_by(project_to_groups.c.project_uuid)
+            ).subquery("access_rights_subquery")
+
             query = (
-                sa.select(projects, projects_to_products.c.product_name)
-                .select_from(projects.join(projects_to_products, isouter=True))
+                sa.select(
+                    *[col for col in projects.columns if col.name != "access_rights"],
+                    access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                )
+                .select_from(
+                    projects.join(projects_to_products, isouter=True).join(
+                        access_rights_subquery, isouter=True
+                    )
+                )
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -354,7 +385,7 @@ class ProjectDBAPI(BaseProjectDB):
                     & (
                         (projects.c.prj_owner == user_id)
                         | sa.text(
-                            f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
+                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                         )
                     )
                     & (
@@ -441,6 +472,83 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
+    # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
+    # for the workbench, and at some point, this column should be removed from the table.
+    # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
+    _SELECTION_PROJECT_DB_ARGS = [  # noqa: RUF012
+        projects.c.id,
+        projects.c.type,
+        projects.c.uuid,
+        projects.c.name,
+        projects.c.description,
+        projects.c.thumbnail,
+        projects.c.prj_owner,
+        projects.c.creation_date,
+        projects.c.last_change_date,
+        projects.c.access_rights,
+        projects.c.ui,
+        projects.c.classifiers,
+        projects.c.dev,
+        projects.c.quality,
+        projects.c.published,
+        projects.c.hidden,
+    ]
+
+    async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(*self._SELECTION_PROJECT_DB_ARGS).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return ProjectDB.from_orm(row)
+
+    async def get_project_access_rights_for_user(
+        self, user_id: UserID, project_uuid: ProjectID
+    ) -> UserProjectAccessRights:
+        """
+        User project access rights. Aggregated across all his groups.
+        """
+        _SELECTION_ARGS = (
+            user_to_groups.c.uid,
+            func.max(project_to_groups.c.read.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("read"),
+            func.max(project_to_groups.c.write.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("write"),
+            func.max(project_to_groups.c.delete.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("delete"),
+        )
+
+        _JOIN_TABLES = user_to_groups.join(
+            project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid
+        )
+
+        stmt = (
+            sa.select(*_SELECTION_ARGS)
+            .select_from(_JOIN_TABLES)
+            .where(
+                (user_to_groups.c.uid == user_id)
+                & (project_to_groups.c.project_uuid == f"{project_uuid}")
+                & (project_to_groups.c.read == "true")
+            )
+            .group_by(user_to_groups.c.uid)
+        )
+
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(stmt)
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectInvalidRightsError(
+                    user_id=user_id, project_uuid=project_uuid
+                )
+            return UserProjectAccessRights.from_orm(row)
+
     async def replace_project(
         self,
         new_project_data: ProjectDict,
@@ -524,6 +632,21 @@ class ProjectDBAPI(BaseProjectDB):
             return convert_to_schema_names(project, user_email, tags=tags)
         msg = "linter unhappy without this"
         raise RuntimeError(msg)
+
+    async def patch_project(
+        self, project_uuid: ProjectID, new_partial_project_data: dict
+    ) -> ProjectDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                projects.update()
+                .values(last_change_date=sa.func.now(), **new_partial_project_data)
+                .where(projects.c.uuid == f"{project_uuid}")
+                .returning(*self._SELECTION_PROJECT_DB_ARGS)
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return ProjectDB.from_orm(row)
 
     async def update_project_owner_without_checking_permissions(
         self,
@@ -753,7 +876,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
 
-    async def get_project_node(
+    async def get_project_node(  # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
         self, project_id: ProjectID, node_id: NodeID
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
@@ -791,7 +914,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return await project_nodes_repo.list(conn)  # type: ignore[no-any-return]
 
-    async def node_id_exists(self, node_id: str) -> bool:
+    async def node_id_exists(self, node_id: NodeID) -> bool:
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
@@ -803,12 +926,12 @@ class ProjectDBAPI(BaseProjectDB):
         assert isinstance(num_entries, int)  # nosec
         return bool(num_entries > 0)
 
-    async def list_node_ids_in_project(self, project_uuid: str) -> set[str]:
+    async def list_node_ids_in_project(self, project_uuid: ProjectID) -> set[NodeID]:
         """Returns a set containing all the node_ids from project with project_uuid"""
-        repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+        repo = ProjectNodesRepo(project_uuid=project_uuid)
         async with self.engine.acquire() as conn:
             list_of_nodes = await repo.list(conn)
-        return {f"{node.node_id}" for node in list_of_nodes}
+        return {node.node_id for node in list_of_nodes}
 
     #
     # Project NODES to Pricing Units

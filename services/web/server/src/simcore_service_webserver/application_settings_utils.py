@@ -29,11 +29,13 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOGLEVEL}",
             "testing": False,  # TODO: deprecate!
-            "studies_access_enabled": int(
-                app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
-            )
-            if app_settings.WEBSERVER_STUDIES_DISPATCHER
-            else 0,
+            "studies_access_enabled": (
+                int(
+                    app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
+                )
+                if app_settings.WEBSERVER_STUDIES_DISPATCHER
+                else 0
+            ),
         },
         "tracing": {
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
@@ -73,6 +75,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
+                "password": getattr(
+                    app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None
+                ),
             },
         },
         # added to support legacy ----
@@ -83,23 +88,31 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         # -----------------------------
         "login": {
             "enabled": app_settings.WEBSERVER_LOGIN is not None,
-            "registration_invitation_required": 1
-            if getattr(
-                app_settings.WEBSERVER_LOGIN,
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED",
-                None,
-            )
-            else 0,
-            "registration_confirmation_required": 1
-            if getattr(
-                app_settings.WEBSERVER_LOGIN,
-                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
-                None,
-            )
-            else 0,
-            "password_min_length": 12
-            if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None)
-            else 0,
+            "registration_invitation_required": (
+                1
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN,
+                    "LOGIN_REGISTRATION_INVITATION_REQUIRED",
+                    None,
+                )
+                else 0
+            ),
+            "registration_confirmation_required": (
+                1
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN,
+                    "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
+                    None,
+                )
+                else 0
+            ),
+            "password_min_length": (
+                12
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None
+                )
+                else 0
+            ),
         },
         "smtp": {
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
@@ -164,7 +177,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             "enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER is not None
         },
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
-        "users": {"enabled": app_settings.WEBSERVER_USERS},
+        "users": {"enabled": app_settings.WEBSERVER_USERS is not None},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
     }
@@ -232,6 +245,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
             _set_if_disabled("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")
+            envs["REDIS_PASSWORD"] = section2.get("password")
 
     if section := cfg.get("garbage_collector"):
         _set_if_disabled("WEBSERVER_GARBAGE_COLLECTOR", section)

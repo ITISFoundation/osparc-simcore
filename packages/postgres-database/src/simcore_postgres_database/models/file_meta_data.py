@@ -9,9 +9,9 @@ file_meta_data = sa.Table(
     sa.Column("location", sa.String()),
     sa.Column("bucket_name", sa.String()),
     sa.Column("object_name", sa.String()),
-    sa.Column("project_id", sa.String()),
+    sa.Column("project_id", sa.String(), index=True),
     sa.Column("node_id", sa.String()),
-    sa.Column("user_id", sa.String()),
+    sa.Column("user_id", sa.String(), index=True),
     sa.Column("file_id", sa.String(), primary_key=True),
     sa.Column("created_at", sa.String()),
     sa.Column("last_modified", sa.String()),
@@ -46,6 +46,7 @@ file_meta_data = sa.Table(
         nullable=False,
         server_default=sa.text("false"),
         doc="Set True when file_id is a directory",
+        index=True,
     ),
     sa.Column(
         "sha256_checksum",
@@ -53,5 +54,6 @@ file_meta_data = sa.Table(
         nullable=True,
         server_default=sa.null(),
         doc="SHA256 checksum of the file content",
+        index=True,
     ),
 )

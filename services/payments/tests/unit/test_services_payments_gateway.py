@@ -9,7 +9,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.payments import UserInvoiceAddress
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
@@ -43,12 +43,12 @@ def app_environment(
     app_environment: EnvVarsDict,
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    external_environment: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ):
     # set environs
     return setenvs_from_dict(
         monkeypatch,
-        {**app_environment, **external_environment},
+        {**app_environment, **external_envfile_dict},
     )
 
 

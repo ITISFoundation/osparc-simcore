@@ -23,11 +23,33 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__addHeader("Personal")
-    this.__personalWalletsModel = this.__addWalletsList()
+    const listsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    osparc.utils.Utils.setIdToWidget(listsLayout, "walletsList");
+    this._add(listsLayout);
 
-    this.__sharedHeader = this.__addHeader("Shared with me")
-    this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 })
+    const headerPersonal = this.__createHeader(this.tr("Personal"), true);
+    listsLayout.add(headerPersonal);
+    this.__noPersonalWalletsLabel = new qx.ui.basic.Label().set({
+      value: this.tr("No personal Credit Account found"),
+      font: "text-13",
+      marginLeft: 10
+    });
+    listsLayout.add(this.__noPersonalWalletsLabel);
+    const listPersonal = this.__createWalletsList("personalWalletsList");
+    listsLayout.add(listPersonal);
+    this.__personalWalletsModel = this.__createModelFromList(listPersonal);
+
+    const headerShared = this.__createHeader(this.tr("Shared with me"), false);
+    listsLayout.add(headerShared);
+    this.__noSharedWalletsLabel = new qx.ui.basic.Label().set({
+      value: this.tr("No shared Credit Accounts found"),
+      font: "text-13",
+      marginLeft: 10
+    });
+    listsLayout.add(this.__noSharedWalletsLabel);
+    const listShared = this.__createWalletsList("sharedWalletsList");
+    listsLayout.add(listShared);
+    this.__sharedWalletsModel = this.__createModelFromList(listShared);
 
     this.loadWallets();
   },
@@ -47,6 +69,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
   },
 
   members: {
+    __noPersonalWalletsLabel: null,
+    __noSharedWalletsLabel: null,
     __personalWalletsModel: null,
     __sharedWalletsModel: null,
 
@@ -64,7 +88,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return filter;
     },
 
-    __addWalletsList: function(layoutOpts={}) {
+    __createWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -72,6 +96,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         height: null,
         focusable: false
       });
+      osparc.utils.Utils.setIdToWidget(walletsUIList, widgetId);
+      return walletsUIList;
+    },
+
+    __createModelFromList: function(walletsUIList) {
       const walletsModel = new qx.data.Array();
       const walletsCtrl = new qx.data.controller.List(walletsModel, walletsUIList, "name");
       walletsCtrl.setDelegate({
@@ -103,7 +132,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
 
-      this._add(walletsUIList, layoutOpts);
       return walletsModel;
     },
 
@@ -125,11 +153,13 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
       this.setWalletsLoaded(true);
-      if (this.__sharedWalletsModel.getLength() === 0) {
-        this.__sharedHeader.exclude()
-      } else {
-        this.__sharedHeader.show()
-      }
+
+      this.__noPersonalWalletsLabel.set({
+        visibility: this.__personalWalletsModel.getLength() ? "excluded" : "visible"
+      });
+      this.__noSharedWalletsLabel.set({
+        visibility: this.__sharedWalletsModel.getLength() ? "excluded" : "visible"
+      });
     },
 
     __openEditWallet: function(walletId) {
@@ -187,24 +217,25 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       win.close();
     },
 
-    __addHeader: function(label) {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+    __createHeader: function(label, showCurrently) {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const userWallets = new qx.ui.basic.Label().set({
-        value: this.tr(label),
+        value: label,
         alignX: "left",
         rich: true,
         font: "text-14"
       });
-      header.add(userWallets)
+      header.add(userWallets);
       header.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-      const selectColumn = new qx.ui.basic.Label("Currently in use").set({
-        marginRight: 18
-      });
-      header.add(selectColumn)
-      this._add(header);
-      return header
+      if (showCurrently) {
+        const selectColumn = new qx.ui.basic.Label(this.tr("Currently in use")).set({
+          marginRight: 18
+        });
+        header.add(selectColumn)
+      }
+      return header;
     }
   }
 });

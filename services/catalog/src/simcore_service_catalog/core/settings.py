@@ -11,9 +11,10 @@ from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class DirectorSettings(BaseCustomSettings):
@@ -29,7 +30,10 @@ class DirectorSettings(BaseCustomSettings):
 _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
     ResourcesDict,
     {
-        "CPU": {"limit": 0.1, "reservation": 0.1},
+        "CPU": {
+            "limit": 0.1,
+            "reservation": 0.1,
+        },
         "RAM": {
             "limit": parse_obj_as(ByteSize, "2Gib"),
             "reservation": parse_obj_as(ByteSize, "2Gib"),
@@ -63,6 +67,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
+    CATALOG_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+
     CATALOG_CLIENT_REQUEST: ClientRequestSettings | None = Field(
         auto_default_from_env=True
     )
@@ -70,6 +76,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CATALOG_DIRECTOR: DirectorSettings | None = Field(auto_default_from_env=True)
 
     CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
+    CATALOG_PROFILING: bool = False
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60

@@ -1,6 +1,7 @@
-from typing import Any
+from dataclasses import dataclass
 
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_projects_metadata import ProjectMetadata
 from simcore_postgres_database.utils_projects_metadata import (
     get as projects_metadata_get,
@@ -9,15 +10,27 @@ from simcore_postgres_database.utils_projects_metadata import (
 from ._base import BaseRepository
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ProjectAncestors:
+    parent_project_uuid: ProjectID | None
+    parent_node_id: NodeID | None
+    root_project_uuid: ProjectID | None
+    root_node_id: NodeID | None
+
+
 class ProjectsMetadataRepository(BaseRepository):
-    async def get_metadata(self, project_id: ProjectID) -> dict[str, Any] | None:
+    async def get_project_ancestors(self, project_id: ProjectID) -> ProjectAncestors:
         """
         Raises:
-            DBProjectNotFoundError
+            DBProjectNotFoundError: project not found
         """
         async with self.db_engine.acquire() as conn:
-            project_custom_metadata: ProjectMetadata = await projects_metadata_get(
+            project_metadata: ProjectMetadata = await projects_metadata_get(
                 conn, project_id
             )
-        custom_metadata: dict[str, Any] | None = project_custom_metadata.custom
-        return custom_metadata
+        return ProjectAncestors(
+            parent_project_uuid=project_metadata.parent_project_uuid,
+            parent_node_id=project_metadata.parent_node_id,
+            root_project_uuid=project_metadata.root_parent_project_uuid,
+            root_node_id=project_metadata.root_parent_node_id,
+        )

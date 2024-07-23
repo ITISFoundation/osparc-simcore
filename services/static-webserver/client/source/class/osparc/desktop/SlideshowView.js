@@ -258,16 +258,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
-        view = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+        view = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
         const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);
       } else {
         if (node.isFilePicker()) {
-          view = new osparc.node.FilePickerSSView();
+          view = new osparc.node.slideshow.FilePickerView();
           view.getOutputsButton().hide();
         } else {
-          view = new osparc.node.NodeView();
+          view = new osparc.node.slideshow.NodeView();
         }
         view.setNode(node);
         if (node.isDynamic()) {
@@ -386,10 +386,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__openFirstNode();
       }
 
-      const node = this.__nodeView.getNode();
-      if (node.isDynamic()) {
-        // Start it. First wait 2 seconds because the function depends on the node's state which might not be available yet
-        setTimeout(() => node.requestStartNode(), 2000);
+      if (this.__nodeView) {
+        const node = this.__nodeView.getNode();
+        if (node.isDynamic()) {
+          // Start it. First wait 2 seconds because the function depends on the node's state which might not be available yet
+          setTimeout(() => node.requestStartNode(), 2000);
+        }
       }
     },
 

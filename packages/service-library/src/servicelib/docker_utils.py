@@ -11,7 +11,7 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, parse_obj_as
+from pydantic import BaseModel, ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -76,7 +76,7 @@ class DockerImageMultiArchManifestsV2(BaseModel):
 
 class _DockerPullImage(BaseModel):
     status: str
-    id: str | None  # noqa: A003
+    id: str | None
     progress_detail: ProgressDetail | None
     progress: str | None
 
@@ -132,6 +132,68 @@ class _PulledStatus:
     extracted: int = 0
 
 
+async def _parse_pull_information(
+    parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]
+):
+    match parsed_progress.status.lower():
+        case progress_status if any(
+            msg in progress_status
+            for msg in [
+                "pulling from",
+                "pulling fs layer",
+                "waiting",
+                "digest: ",
+            ]
+        ):
+            # nothing to do here
+            pass
+        case "downloading":
+            assert parsed_progress.id  # nosec
+            assert parsed_progress.progress_detail  # nosec
+            assert parsed_progress.progress_detail.current  # nosec
+
+            layer_id_to_size.setdefault(
+                parsed_progress.id,
+                _PulledStatus(parsed_progress.progress_detail.total or 0),
+            ).downloaded = parsed_progress.progress_detail.current
+        case "verifying checksum" | "download complete":
+            assert parsed_progress.id  # nosec
+            layer_id_to_size.setdefault(
+                parsed_progress.id, _PulledStatus(0)
+            ).downloaded = layer_id_to_size.setdefault(
+                parsed_progress.id, _PulledStatus(0)
+            ).size
+        case "extracting":
+            assert parsed_progress.id  # nosec
+            assert parsed_progress.progress_detail  # nosec
+            assert parsed_progress.progress_detail.current  # nosec
+            layer_id_to_size.setdefault(
+                parsed_progress.id,
+                _PulledStatus(parsed_progress.progress_detail.total or 0),
+            ).extracted = parsed_progress.progress_detail.current
+        case "pull complete":
+            assert parsed_progress.id  # nosec
+            layer_id_to_size.setdefault(
+                parsed_progress.id, _PulledStatus(0)
+            ).extracted = layer_id_to_size[parsed_progress.id].size
+        case progress_status if any(
+            msg in progress_status
+            for msg in [
+                "status: downloaded newer image for ",
+                "status: image is up to date for ",
+                "already exists",
+            ]
+        ):
+            for layer_pull_status in layer_id_to_size.values():
+                layer_pull_status.downloaded = layer_pull_status.size
+                layer_pull_status.extracted = layer_pull_status.size
+        case _:
+            _logger.warning(
+                "unknown pull state: %s. Please check",
+                f"{parsed_progress=}",
+            )
+
+
 async def pull_image(
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
@@ -156,7 +218,7 @@ async def pull_image(
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
         }
     image_short_name = image.split("/")[-1]
-    layer_id_to_size = {}
+    layer_id_to_size: dict[str, _PulledStatus] = {}
     async with AsyncExitStack() as exit_stack:
         # NOTE: docker pulls an image layer by layer
         # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
@@ -178,62 +240,19 @@ async def pull_image(
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
-            parsed_progress = parse_obj_as(_DockerPullImage, pull_progress)
-            match parsed_progress.status.lower():
-                case progress_status if any(
-                    msg in progress_status
-                    for msg in [
-                        "pulling from",
-                        "pulling fs layer",
-                        "waiting",
-                        "digest: ",
-                    ]
-                ):
-                    # nothing to do here
-                    pass
-                case "downloading":
-                    assert parsed_progress.id  # nosec
-                    assert parsed_progress.progress_detail  # nosec
-                    assert parsed_progress.progress_detail.current  # nosec
-
-                    layer_id_to_size.setdefault(
-                        parsed_progress.id,
-                        _PulledStatus(parsed_progress.progress_detail.total or 0),
-                    ).downloaded = parsed_progress.progress_detail.current
-                case "verifying checksum" | "download complete":
-                    assert parsed_progress.id  # nosec
-                    layer_id_to_size.setdefault(
-                        parsed_progress.id, _PulledStatus(0)
-                    ).downloaded = layer_id_to_size.setdefault(
-                        parsed_progress.id, _PulledStatus(0)
-                    ).size
-                case "extracting":
-                    assert parsed_progress.id  # nosec
-                    assert parsed_progress.progress_detail  # nosec
-                    assert parsed_progress.progress_detail.current  # nosec
-                    layer_id_to_size.setdefault(
-                        parsed_progress.id, _PulledStatus(0)
-                    ).extracted = parsed_progress.progress_detail.current
-                case "pull complete":
-                    assert parsed_progress.id  # nosec
-                    layer_id_to_size.setdefault(
-                        parsed_progress.id, _PulledStatus(0)
-                    ).extracted = layer_id_to_size[parsed_progress.id].size
-                case progress_status if any(
-                    msg in progress_status
-                    for msg in [
-                        "status: downloaded newer image for ",
-                        "status: image is up to date for ",
-                        "already exists",
-                    ]
-                ):
-                    for layer_pull_status in layer_id_to_size.values():
-                        layer_pull_status.downloaded = layer_pull_status.size
-                        layer_pull_status.extracted = layer_pull_status.size
-                case _:
-                    _logger.warning(
-                        "unknown pull state: %s. Please check", f"{parsed_progress=}"
-                    )
+            try:
+                parsed_progress = parse_obj_as(_DockerPullImage, pull_progress)
+            except ValidationError:
+                _logger.exception(
+                    "Unexpected error while validating '%s'. "
+                    "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
+                    "The pulling process will still continue.",
+                    f"{pull_progress=}",
+                )
+            else:
+                await _parse_pull_information(
+                    parsed_progress, layer_id_to_size=layer_id_to_size
+                )
 
             # compute total progress
             total_downloaded_size = sum(

@@ -218,7 +218,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
     __clusterSelected: function(data) {
       this.__selectOrgMemberLayout.exclude();
-      if (data && data.length>0) {
+      if (data && data.length) {
         this.__currentCluster = data[0];
       } else {
         this.__currentCluster = null;

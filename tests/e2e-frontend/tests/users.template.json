@@ -1,0 +1,12 @@
+{
+    "osparc": [{
+        "email": "email.osparc@domain.com",
+        "password": "my-password",
+        "role": "USER"
+    }],
+    "s4l": [{
+        "email": "email.s4l@domain.com",
+        "password": "my-password",
+        "role": "USER"
+    }]
+}

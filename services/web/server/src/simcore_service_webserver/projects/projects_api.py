@@ -16,6 +16,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
+from decimal import Decimal
 from pprint import pformat
 from typing import Any, Final
 from uuid import UUID, uuid4
@@ -26,12 +27,16 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
+from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.errors import ErrorDict
+from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
-from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes import Node, OutputsDict
+from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -54,6 +59,7 @@ from models_library.services_resources import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -62,9 +68,9 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
@@ -76,7 +82,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
-    ProjectNodesNodeNotFound,
+    ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
@@ -101,7 +107,7 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_api
-from ..users.api import FullNameDict, get_user_fullname, get_user_role
+from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
@@ -117,9 +123,15 @@ from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InvalidEC2TypeInResourcesSpecsError,
+    InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
+    ProjectInvalidRightsError,
     ProjectLockError,
-    ProjectNodeResourcesInvalidError,
+    ProjectNodeConnectionsMissingError,
+    ProjectNodeOutputPortMissingValueError,
+    ProjectNodeRequiredInputsNotSetError,
+    ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
@@ -194,6 +206,59 @@ async def update_project_last_change_timestamp(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
     await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
+
+
+async def patch_project(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    project_patch: ProjectPatch,
+    product_name: ProductName,
+):
+    _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
+        project_patch, exclude_unset=True, by_alias=False
+    )
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # 1. Get project
+    project_db = await db.get_project_db(project_uuid=project_uuid)
+
+    # 2. Check user permissions
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
+        user_id, project_uuid
+    )
+    if not _user_project_access_rights.write:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+
+    # 3. If patching access rights
+    if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
+        # 3.1 Check if user is Owner and therefore can modify access rights
+        if not _user_project_access_rights.delete:
+            raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+        # 3.2 Ensure the prj owner is always in the access rights
+        _prj_required_permissions = {
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
+        user: dict = await get_user(app, project_db.prj_owner)
+        _prj_owner_primary_group = f'{user["primary_gid"]}'
+        if _prj_owner_primary_group not in new_prj_access_rights:
+            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
+        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
+            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
+
+    # 4. Patch the project
+    await db.patch_project(
+        project_uuid=project_uuid,
+        new_partial_project_data=_project_patch_exclude_unset,
+    )
+
+    # 5. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    await director_v2_api.create_or_update_pipeline(
+        app, user_id, project_uuid, product_name=product_name
+    )
 
 
 #
@@ -329,6 +394,7 @@ async def update_project_node_resources_from_hardware_info(
         new_ram_value = int(
             selected_ec2_instance_type.ram
             - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+            - _SIDECARS_OPS_SAFE_RAM_MARGIN
         )
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down
@@ -378,20 +444,68 @@ async def update_project_node_resources_from_hardware_info(
             check_update_allowed=False,
         )
     except StopIteration as exc:
-        msg = (
-            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
-            " TIP: adjust product configuration"
-        )
-        raise ProjectNodeResourcesInvalidError(msg) from exc
+        raise InvalidEC2TypeInResourcesSpecsError(
+            ec2_types=set(hardware_info.aws_ec2_instances)
+        ) from exc
+
     except KeyError as exc:
-        msg = "Sub service is missing RAM/CPU resource keys!"
-        raise ProjectNodeResourcesInvalidError(msg) from exc
+        raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,
         asyncio.TimeoutError,
     ) as exc:
         raise ClustersKeeperNotAvailableError from exc
+
+
+async def _check_project_node_has_all_required_inputs(
+    db: ProjectDBAPI, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+) -> None:
+
+    project_dict, _ = await db.get_project(user_id, f"{project_uuid}")
+
+    nodes_map: dict[NodeID, Node] = {
+        NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
+    }
+    node = nodes_map[node_id]
+
+    unset_required_inputs: list[str] = []
+    unset_outputs_in_upstream: list[tuple[str, str]] = []
+
+    def _check_required_input(required_input_key: str) -> None:
+        input_entry: PortLink | None = None
+        if node.inputs:
+            input_entry = node.inputs.get(required_input_key, None)
+        if input_entry is None:
+            # NOT linked to any node connect service or set value manually(whichever applies)
+            unset_required_inputs.append(required_input_key)
+            return
+
+        source_node_id: NodeID = input_entry.node_uuid
+        source_output_key = input_entry.output
+
+        source_node = nodes_map[source_node_id]
+
+        output_entry: OutputsDict | None = None
+        if source_node.outputs:
+            output_entry = source_node.outputs.get(source_output_key, None)
+        if output_entry is None:
+            unset_outputs_in_upstream.append((source_output_key, source_node.label))
+
+    for required_input in node.inputs_required:
+        _check_required_input(required_input)
+
+    node_with_required_inputs = node.label
+    if unset_required_inputs:
+        raise ProjectNodeConnectionsMissingError(
+            unset_required_inputs=unset_required_inputs,
+            node_with_required_inputs=node_with_required_inputs,
+        )
+
+    if unset_outputs_in_upstream:
+        raise ProjectNodeOutputPortMissingValueError(
+            unset_outputs_in_upstream=unset_outputs_in_upstream
+        )
 
 
 async def _start_dynamic_service(
@@ -403,6 +517,7 @@ async def _start_dynamic_service(
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
+    graceful_start: bool = False,
 ) -> None:
     if not _is_node_dynamic(service_key):
         return
@@ -410,6 +525,20 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+
+    try:
+        await _check_project_node_has_all_required_inputs(
+            db, user_id, project_uuid, node_uuid
+        )
+    except ProjectNodeRequiredInputsNotSetError as e:
+        if graceful_start:
+            log.info(
+                "Did not start '%s' because of missing required inputs: %s",
+                node_uuid,
+                e,
+            )
+            return
+        raise
 
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
@@ -483,12 +612,10 @@ async def _start_dynamic_service(
                     product_name=product_name,
                 )
             )
-            if wallet.available_credits <= ZERO_CREDITS:
-                raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
-                )
             wallet_info = WalletInfo(
-                wallet_id=project_wallet_id, wallet_name=wallet.name
+                wallet_id=project_wallet_id,
+                wallet_name=wallet.name,
+                wallet_credit_amount=wallet.available_credits,
             )
 
             # Deal with Pricing plan/unit
@@ -497,17 +624,12 @@ async def _start_dynamic_service(
             )
             if output:
                 pricing_plan_id, pricing_unit_id = output
-                pricing_unit_get = await rut_api.get_pricing_plan_unit(
-                    request.app, product_name, pricing_plan_id, pricing_unit_id
-                )
-                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-                aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
             else:
                 (
                     pricing_plan_id,
                     pricing_unit_id,
-                    pricing_unit_cost_id,
-                    aws_ec2_instances,
+                    _,
+                    _,
                 ) = await _get_default_pricing_and_hardware_info(
                     request.app,
                     product_name,
@@ -521,6 +643,21 @@ async def _start_dynamic_service(
                     node_uuid,
                     pricing_plan_id,
                     pricing_unit_id,
+                )
+
+            # Check for zero credits (if pricing unit is greater than 0).
+            pricing_unit_get = await rut_api.get_pricing_plan_unit(
+                request.app, product_name, pricing_plan_id, pricing_unit_id
+            )
+            pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+            aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
+
+            if (
+                pricing_unit_get.current_cost_per_unit > Decimal(0)
+                and wallet.available_credits <= ZERO_CREDITS
+            ):
+                raise WalletNotEnoughCreditsError(
+                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
                 )
 
             pricing_info = PricingInfo(
@@ -550,7 +687,7 @@ async def _start_dynamic_service(
         )
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            rpc_dynamic_service_create=RPCDynamicServiceCreate(
+            dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
                 can_save=save_state,
                 project_id=project_uuid,
@@ -617,6 +754,9 @@ async def add_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
+    await director_v2_api.update_dynamic_service_networks_in_project(
+        request.app, project["uuid"]
+    )
 
     if _is_node_dynamic(service_key):
         with suppress(ProjectStartsTooManyDynamicNodesError):
@@ -671,9 +811,13 @@ async def _remove_service_and_its_data_folders(
         # no need to save the state of the node when deleting it
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            node_id=NodeID(node_uuid),
-            simcore_user_agent=user_agent,
-            save_state=False,
+            dynamic_service_stop=DynamicServiceStop(
+                user_id=user_id,
+                project_id=project_uuid,
+                node_id=NodeID(node_uuid),
+                simcore_user_agent=user_agent,
+                save_state=False,
+            ),
         )
 
     # remove the node's data if any
@@ -703,7 +847,7 @@ async def delete_project_node(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
             stop_service=any(
-                s["service_uuid"] == node_uuid for s in list_running_dynamic_services
+                f"{s.node_uuid}" == node_uuid for s in list_running_dynamic_services
             ),
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
@@ -718,6 +862,9 @@ async def delete_project_node(
     product_name = get_product_name(request)
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
+    )
+    await director_v2_api.update_dynamic_service_networks_in_project(
+        request.app, project_uuid
     )
 
 
@@ -759,6 +906,69 @@ async def update_project_node_state(
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.is_hidden(project_id)
+
+
+async def patch_project_node(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node_patch: NodePatch,
+) -> None:
+    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
+        node_patch, exclude_unset=True, by_alias=True
+    )
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # 1. Check user permissions
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
+        user_id, project_id
+    )
+    if not _user_project_access_rights.write:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+
+    # 2. If patching service key or version make sure it's valid
+    if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
+        _project, _ = await db.get_project(
+            user_id=user_id, project_uuid=f"{project_id}"
+        )
+        _project_node_data = _project["workbench"][f"{node_id}"]
+
+        _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
+        _service_version = _node_patch_exclude_unset.get(
+            "version", _project_node_data["version"]
+        )
+        rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
+        await catalog_rpc.check_for_service(
+            rabbitmq_rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=_service_key,
+            service_version=_service_version,
+        )
+
+    # 3. Patch the project node
+    updated_project, _ = await db.update_project_node_data(
+        user_id=user_id,
+        project_uuid=project_id,
+        node_id=node_id,
+        product_name=product_name,
+        new_node_data=_node_patch_exclude_unset,
+    )
+
+    # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    await director_v2_api.create_or_update_pipeline(
+        app, user_id, project_id, product_name=product_name
+    )
+    if _node_patch_exclude_unset.get("label"):
+        await director_v2_api.update_dynamic_service_networks_in_project(
+            app, project_id
+        )
+
+    # 5. Notify project node update
+    await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 
 async def update_project_node_outputs(
@@ -807,10 +1017,10 @@ async def update_project_node_outputs(
     return updated_project, changed_keys
 
 
-async def get_workbench_node_ids_from_project_uuid(
+async def list_node_ids_in_project(
     app: web.Application,
-    project_uuid: str,
-) -> set[str]:
+    project_uuid: ProjectID,
+) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.list_node_ids_in_project(project_uuid)
@@ -818,7 +1028,7 @@ async def get_workbench_node_ids_from_project_uuid(
 
 async def is_node_id_present_in_any_project_workbench(
     app: web.Application,
-    node_id: str,
+    node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
@@ -1260,7 +1470,7 @@ async def get_project_node_resources(
             )
         return node_resources
 
-    except ProjectNodesNodeNotFound as exc:
+    except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
         ) from exc
@@ -1302,7 +1512,7 @@ async def update_project_node_resources(
             check_update_allowed=True,
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
-    except ProjectNodesNodeNotFound as exc:
+    except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
         ) from exc
@@ -1322,7 +1532,7 @@ async def run_project_dynamic_services(
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
-        d["service_uuid"]
+        NodeIDStr(f"{d.node_uuid}")
         for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
@@ -1369,6 +1579,7 @@ async def run_project_dynamic_services(
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
+                graceful_start=True,
             )
             for service_uuid, is_deprecated in zip(
                 services_to_start_uuids, deprecated_services, strict=True

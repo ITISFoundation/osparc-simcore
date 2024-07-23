@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.BootOptionsView", {
       if (node.hasBootModes()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
@@ -36,34 +38,32 @@ qx.Class.define("osparc.node.BootOptionsView", {
         font: "text-14"
       }));
 
-      const instructionsMsg = this.tr("Please Stop the Service and then change the Boot Mode");
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
-
       const node = this.getNode();
 
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const nodeMetaData = node.getMetaData();
+      const nodeMetadata = node.getMetaData();
       const workbenchData = node.getWorkbench().serialize();
       const nodeId = node.getNodeId();
-      const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbenchData, nodeId);
+      const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetadata, workbenchData, nodeId);
       node.getStatus().bind("interactive", bootModeSB, "enabled", {
         converter: interactive => interactive === "idle"
       });
       bootModeSB.addListener("changeSelection", e => {
-        buttonsLayout.setEnabled(false);
-        const newBootModeId = e.getData()[0].bootModeId;
-        node.setBootOptions({
-          "boot_mode": newBootModeId
-        });
-        setTimeout(() => {
-          buttonsLayout.setEnabled(true);
-          node.requestStartNode();
-          this.fireEvent("bootModeChanged");
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        const selection = e.getData();
+        if (selection.length) {
+          buttonsLayout.setEnabled(false);
+          const newBootModeId = selection[0].bootModeId;
+          node.setBootOptions({
+            "boot_mode": newBootModeId
+          });
+          node.fireEvent("updateStudyDocument");
+          setTimeout(() => {
+            buttonsLayout.setEnabled(true);
+            node.requestStartNode();
+            this.fireEvent("bootModeChanged");
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        }
       }, this);
       buttonsLayout.add(bootModeSB);
 

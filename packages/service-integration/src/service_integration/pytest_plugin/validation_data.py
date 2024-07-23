@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 import yaml
@@ -63,7 +63,7 @@ def assert_validation_data_follows_definition(
         assert "type" in value
 
         # rationale: files are on their own and other types are in inputs.json
-        if not "data:" in value["type"]:
+        if "data:" not in value["type"]:
             # check that keys are available
             assert key in validation_cfg, f"missing {key} in validation config file"
         else:
@@ -99,7 +99,7 @@ def assert_validation_data_follows_definition(
                 "boolean": bool,
                 "string": str,
             }
-            if not "data:" in label_cfg[key]["type"]:
+            if "data:" not in label_cfg[key]["type"]:
                 # check the type is correct
                 expected_type = label2types[label_cfg[key]["type"]]
                 assert isinstance(

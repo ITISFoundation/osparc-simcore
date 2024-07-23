@@ -3,7 +3,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 import sqlalchemy as sa
-from models_library.resource_tracker import CreditTransactionStatus, ServiceRunStatus
+from models_library.resource_tracker import (
+    CreditTransactionStatus,
+    ResourceTrackerServiceType,
+    ServiceRunStatus,
+)
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
@@ -50,6 +54,7 @@ def resource_tracker_setup_db(
             resource_tracker_service_runs.insert().values(
                 **random_resource_tracker_service_run(
                     service_run_id=_SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
+                    service_type=ResourceTrackerServiceType.COMPUTATIONAL_SERVICE,
                     product_name="osparc",
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
                     modified=_LAST_HEARTBEAT_10_MIN_OLD,
@@ -61,6 +66,7 @@ def resource_tracker_setup_db(
             resource_tracker_service_runs.insert().values(
                 **random_resource_tracker_service_run(
                     service_run_id=_SERVICE_RUN_ID_S4L_10_MIN_OLD,
+                    service_type=ResourceTrackerServiceType.DYNAMIC_SERVICE,
                     product_name="s4l",
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
                     modified=_LAST_HEARTBEAT_10_MIN_OLD,
@@ -186,6 +192,13 @@ async def test_process_event_functions(
             _SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
             _SERVICE_RUN_ID_S4L_10_MIN_OLD,
         ):
-            assert transaction.transaction_status == CreditTransactionStatus.NOT_BILLED
+            if transaction.service_run_id == _SERVICE_RUN_ID_OSPARC_10_MIN_OLD:
+                # Computational service is not billed
+                assert (
+                    transaction.transaction_status == CreditTransactionStatus.NOT_BILLED
+                )
+            else:
+                # Dynamic service is billed
+                assert transaction.transaction_status == CreditTransactionStatus.BILLED
         else:
             assert transaction.transaction_status == CreditTransactionStatus.PENDING

@@ -30,7 +30,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose spec version used in the compose-specs"
+        "3.8",
+        description="docker-compose spec version used in the compose-specs",
+        deprecated=True,
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
@@ -61,7 +63,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description="Prometheus will scrape service placed on these networks",
     )
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: (
+        bool
+    ) = Field(
         default=True,
         description=(
             "when the message indicating there are no more credits left in a wallet "
@@ -148,4 +152,12 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "issues. To avoid the sidecar being marked as failed, "
             "allow for some time to pass before declaring it failed."
         ),
+    )
+
+    #
+    # DEBUG
+    #
+
+    DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: timedelta = Field(
+        timedelta(0), description="time to sleep before removing a container"
     )

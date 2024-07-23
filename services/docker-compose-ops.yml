@@ -17,16 +17,15 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: "3.8"
 
 services:
   adminer:
     image: adminer:4.8.1
     init: true
     environment:
-      - ADMINER_DEFAULT_SERVER=postgres
-      - ADMINER_DESIGN=nette
-      - ADMINER_PLUGINS=json-column
+      ADMINER_DEFAULT_SERVER : postgres
+      ADMINER_DESIGN : nette
+      ADMINER_PLUGINS : json-column
     ports:
       - "18080:8080"
     networks:
@@ -46,9 +45,9 @@ services:
     image: minio/minio:RELEASE.2023-12-02T10-51-33Z
     init: true
     environment:
-      - MINIO_ROOT_USER=${S3_ACCESS_KEY:?access_key_required}
-      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY:?secret_key_required}
-      - MINIO_VOLUMES=/data
+      MINIO_ROOT_USER : ${S3_ACCESS_KEY:?access_key_required}
+      MINIO_ROOT_PASSWORD : ${S3_SECRET_KEY:?secret_key_required}
+      MINIO_VOLUMES : /data
     ports:
       - "9001:9000"
       - "9090:9090"
@@ -83,7 +82,7 @@ services:
         user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,
         announcements:${REDIS_HOST}:${REDIS_PORT}:5,
         distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6,
-        distributed_caches:${REDIS_HOST}:${REDIS_PORT}:7
+        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"

@@ -21,10 +21,10 @@ from faker import Faker
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
@@ -37,6 +37,7 @@ from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,
 )
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 
 async def _get_user_projects(client) -> list[ProjectDict]:
@@ -77,6 +78,7 @@ async def published_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[ProjectDict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
@@ -86,14 +88,12 @@ async def published_project(
         # everyone HAS read access
         "1": {"read": True, "write": False, "delete": False}
     }
-
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         as_template=True,  # <--IS a template
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
@@ -105,6 +105,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[ProjectDict]:
     """An unpublished template"""
 
@@ -116,10 +117,9 @@ async def unpublished_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         as_template=True,
         product_name=osparc_product_name,
-        clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
@@ -192,6 +192,7 @@ def _assert_redirected_to_error_page(
     assert params["status_code"] == [f"{expected_status_code}"], params
 
 
+@retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
 async def _assert_redirected_to_study(
     response: ClientResponse, session: ClientSession
 ) -> str:

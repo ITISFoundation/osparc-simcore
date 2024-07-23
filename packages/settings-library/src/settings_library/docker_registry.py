@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Any, ClassVar
 
 from pydantic import Field, SecretStr, validator
 
@@ -24,7 +25,7 @@ class RegistrySettings(BaseCustomSettings):
 
     @validator("REGISTRY_PATH", pre=True)
     @classmethod
-    def escape_none_string(cls, v):
+    def _escape_none_string(cls, v) -> Any | None:
         return None if v == "None" else v
 
     @cached_property
@@ -34,3 +35,16 @@ class RegistrySettings(BaseCustomSettings):
     @cached_property
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
+
+    class Config(BaseCustomSettings.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+            "examples": [
+                {
+                    "REGISTRY_AUTH": "True",
+                    "REGISTRY_USER": "theregistryuser",
+                    "REGISTRY_PW": "some_secret_value",
+                    "REGISTRY_SSL": "True",
+                    "REGISTRY_URL": "registry.osparc-master.speag.com",
+                }
+            ],
+        }

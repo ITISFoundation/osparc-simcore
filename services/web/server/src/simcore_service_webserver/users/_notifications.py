@@ -3,9 +3,9 @@ from enum import auto
 from typing import Any, ClassVar, Final, Literal
 from uuid import uuid4
 
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
-from models_library.products import ProductName
 from pydantic import BaseModel, NonNegativeInt, validator
 
 MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
@@ -31,7 +31,7 @@ class BaseUserNotification(BaseModel):
     title: str
     text: str
     date: datetime
-    product: Literal["UNDEFINED"] | ProductName
+    product: Literal["UNDEFINED"] | ProductName = "UNDEFINED"
 
     @validator("category", pre=True)
     @classmethod

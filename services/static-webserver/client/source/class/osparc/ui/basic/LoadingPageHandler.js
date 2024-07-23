@@ -22,39 +22,45 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 
+  construct: function() {
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox());
+
+    const stack = this.__stack = new qx.ui.container.Stack();
+    this._add(stack, {
+      flex: 1
+    });
+
+    this._loadingPage = new osparc.ui.message.Loading();
+    stack.add(this._loadingPage);
+
+    this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+    stack.add(this.__mainLayout);
+  },
+
   members: {
+    __stack: null,
     _loadingPage: null,
+    __mainLayout: null,
 
     _showLoadingPage: function(label) {
-      this._hideLoadingPage();
-
-      this._showMainLayout(false);
-
-      if (this._loadingPage === null) {
-        this._loadingPage = new osparc.ui.message.Loading();
+      if (label) {
+        this._loadingPage.setHeader(label);
       }
-      this._loadingPage.setHeader(label);
-      this._add(this._loadingPage, {
-        flex: 1
-      });
+      this.__stack.setSelection([this._loadingPage]);
+    },
+
+    _showMainLayout: function() {
+      this.__stack.setSelection([this.__mainLayout]);
     },
 
     _hideLoadingPage: function() {
-      if (this._loadingPage) {
-        const idx = this._indexOf(this._loadingPage);
-        if (idx !== -1) {
-          this._remove(this._loadingPage);
-        }
-      }
-
-      this._showMainLayout(true);
+      this._showMainLayout();
     },
 
-    /**
-     * @abstract
-     */
-    _showMainLayout: function() {
-      throw new Error("Abstract method called!");
+    _addToMainLayout: function(widget, props = {}) {
+      this.__mainLayout.add(widget, props);
     }
   }
 });

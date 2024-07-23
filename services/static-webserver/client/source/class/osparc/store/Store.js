@@ -176,6 +176,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    everyoneProductGroup: {
+      check: "Object",
+      init: {}
+    },
+    everyoneGroup: {
+      check: "Object",
+      init: {}
+    },
     clusters: {
       check: "Array",
       init: [],
@@ -434,83 +442,6 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    /**
-     * @param {String} key
-     * @param {String} version
-     * @param {Boolean} reload
-     */
-    getService: function(key, version, reload = false) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(key, version)
-        };
-        osparc.data.Resources.getOne("services", params, null, !reload)
-          .then(serviceData => {
-            resolve(serviceData);
-          });
-      });
-    },
-
-    /**
-     * This functions does the needed processing in order to have a working list of services and DAGs.
-     * @param {Boolean} reload
-     */
-    getAllServices: function(reload = false, includeRetired = true) {
-      return new Promise(resolve => {
-        let allServices = [];
-        osparc.data.Resources.get("services", null, !reload)
-          .then(services => {
-            allServices = services;
-          })
-          .catch(err => console.error("getServices failed", err))
-          .finally(() => {
-            let servicesObj = {};
-            if (includeRetired) {
-              servicesObj = osparc.service.Utils.convertArrayToObject(allServices);
-            } else {
-              const nonDepServices = allServices.filter(service => !(osparc.service.Utils.isRetired(service) || osparc.service.Utils.isDeprecated(service)));
-              servicesObj = osparc.service.Utils.convertArrayToObject(nonDepServices);
-            }
-            osparc.service.Utils.addTSRInfo(servicesObj);
-            osparc.service.Utils.addExtraTypeInfo(servicesObj);
-            if (includeRetired) {
-              osparc.service.Utils.servicesCached = servicesObj;
-            }
-            resolve(servicesObj);
-          });
-      });
-    },
-
-    getInaccessibleServices: function(studyData) {
-      return new Promise((resolve, reject) => {
-        const inaccessibleServices = [];
-        const nodes = Object.values(studyData.workbench);
-        nodes.forEach(node => {
-          const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
-          if (idx === -1) {
-            inaccessibleServices.push({
-              key: node["key"],
-              version: node["version"],
-              label: node["label"]
-            });
-          }
-        });
-        this.getAllServices()
-          .then(services => {
-            nodes.forEach(node => {
-              if (osparc.service.Utils.getFromObject(services, node.key, node.version)) {
-                const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
-                if (idx !== -1) {
-                  inaccessibleServices.splice(idx, 1);
-                }
-              }
-            });
-          })
-          .catch(err => console.error("failed getting services", err))
-          .finally(() => resolve(inaccessibleServices));
-      });
-    },
-
     __getGroups: function(group) {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
@@ -541,7 +472,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
-        promises.push(this.getVisibleMembers());
+        promises.push(this.getReachableMembers());
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
@@ -588,15 +519,12 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getVisibleMembers: function(reload = false) {
+    getAllGroupsAndMembers: function() {
       return new Promise(resolve => {
-        const reachableMembers = this.getReachableMembers();
-        if (!reload && Object.keys(reachableMembers).length) {
-          resolve(reachableMembers);
-          return;
-        }
         osparc.data.Resources.get("organizations")
           .then(resp => {
+            this.setEveryoneGroup(resp["all"]);
+            this.setEveryoneProductGroup(resp["product"]);
             const orgMembersPromises = [];
             const orgs = resp["organizations"];
             orgs.forEach(org => {
@@ -609,6 +537,7 @@ qx.Class.define("osparc.store.Store", {
             });
             Promise.all(orgMembersPromises)
               .then(orgMemberss => {
+                const reachableMembers = this.getReachableMembers();
                 orgMemberss.forEach(orgMembers => {
                   orgMembers.forEach(orgMember => {
                     orgMember["label"] = osparc.utils.Utils.firstsUp(
@@ -618,19 +547,18 @@ qx.Class.define("osparc.store.Store", {
                     reachableMembers[orgMember["gid"]] = orgMember;
                   });
                 });
-                resolve(reachableMembers);
+                resolve();
               });
           });
       });
     },
 
-    getPotentialCollaborators: function(includeMe = false, includeGlobalEveryone = false) {
+    getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
-        promises.push(this.getVisibleMembers());
-        promises.push(this.getProductEveryone());
-        promises.push(this.getGroupEveryone());
+        promises.push(this.getReachableMembers());
+        promises.push(this.getEveryoneProductGroup());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -657,14 +585,9 @@ qx.Class.define("osparc.store.Store", {
               };
             }
             const productEveryone = values[2]; // entry
-            if (productEveryone && productEveryone["accessRights"]["read"]) {
+            if (includeProductEveryone && productEveryone) {
               productEveryone["collabType"] = 0;
               potentialCollaborators[productEveryone["gid"]] = productEveryone;
-            }
-            const groupEveryone = values[3];
-            if (includeGlobalEveryone && groupEveryone) {
-              groupEveryone["collabType"] = 0;
-              potentialCollaborators[groupEveryone["gid"]] = groupEveryone;
             }
             resolve(potentialCollaborators);
           })
@@ -696,7 +619,7 @@ qx.Class.define("osparc.store.Store", {
     getUser: function(uid) {
       return new Promise(resolve => {
         if (uid) {
-          this.getVisibleMembers()
+          this.getReachableMembers()
             .then(visibleMembers => {
               resolve(Object.values(visibleMembers).find(member => member.id === uid));
             })

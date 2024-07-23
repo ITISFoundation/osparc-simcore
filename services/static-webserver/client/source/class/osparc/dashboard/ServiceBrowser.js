@@ -43,49 +43,36 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   },
 
   members: {
-    __servicesAll: null,
     __sortBy: null,
 
     // overridden
     initResources: function() {
-      this.__servicesAll = {};
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-
-      Promise.all(preResourcePromises)
-        .then(() => {
-          this.getChildControl("resources-layout");
-          this.reloadResources();
-          this._hideLoadingPage();
-        })
-        .catch(err => console.error(err));
+      this.getChildControl("resources-layout");
+      this.reloadResources();
+      this._hideLoadingPage();
     },
 
     reloadResources: function() {
-      this.__reloadServices();
+      this.__loadServices();
     },
 
-    __reloadServices: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices(false, false)
-        .then(services => {
-          this.__servicesAll = services;
-          const favServices = osparc.utils.Utils.localCache.getFavServices();
+    __loadServices: function() {
+      osparc.service.Store.getServicesLatest()
+        .then(servicesLatest => {
           const servicesList = [];
-          for (const key in services) {
-            const latestService = osparc.service.Utils.getLatest(services, key);
-            const found = Object.keys(favServices).find(favSrv => favSrv === key);
-            latestService.hits = found ? favServices[found]["hits"] : 0;
-            // do not list frontend services
-            if (!latestService["key"].includes("simcore/services/frontend/")) {
-              servicesList.push(latestService);
+          Object.keys(servicesLatest).forEach(key => {
+            const serviceLatest = servicesLatest[key];
+            // do not show frontend services
+            if (key.includes("simcore/services/frontend/")) {
+              return;
             }
-          }
+            // do not show retired services
+            if (servicesLatest[key]["retired"]) {
+              return;
+            }
+            servicesList.push(serviceLatest);
+          });
           this.__setResourcesToList(servicesList);
         })
         .catch(err => {
@@ -124,16 +111,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __itemClicked: function(card) {
       const serviceData = card.getResourceData();
-      this._openDetailsView(serviceData);
+      this._openResourceDetails(serviceData);
       this.resetSelection();
     },
 
-    _createStudyFromService: async function(key, version) {
+    _createStudyFromService: function(key, version) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating Study"));
+      this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.study.Utils.createStudyFromService(key, version)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
@@ -171,6 +158,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__addSortingButtons();
       this._addGroupByButton();
       this._addViewModeButton();
+
+      this._addResourceFilter();
 
       return this._resourcesContainer;
     },

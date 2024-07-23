@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Callable
+import json
 from pathlib import Path
 from typing import Any, Final
 from uuid import UUID
@@ -15,12 +15,20 @@ import respx
 from faker import Faker
 from fastapi import status
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.httpx_calls_capture_models import (
+    CreateRespxMockCallback,
+    HttpApiCallCaptureModel,
+)
 from respx import MockRouter
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
-from simcore_service_api_server.models.schemas.studies import Study, StudyID
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from unit.conftest import SideEffectCallback
+from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs, JobStatus
+from simcore_service_api_server.models.schemas.studies import JobLogsMap, Study, StudyID
+
+_faker = Faker()
 
 
 @pytest.mark.xfail(reason="Still not implemented")
@@ -116,10 +124,7 @@ async def test_start_stop_delete_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
@@ -148,10 +153,13 @@ async def test_start_stop_delete_study_job(
         body["id"] = path_param_job_id
         return body
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        capture_file,
-        [_side_effect_no_project_id]
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=capture_file,
+        side_effects_callbacks=[_side_effect_no_project_id]
         + [_side_effect_with_project_id] * 3
         + [_side_effect_no_project_id],
     )
@@ -169,7 +177,7 @@ async def test_start_stop_delete_study_job(
         f"{API_VTAG}/studies/{fake_study_id}/jobs/{job_id}:start",
         auth=auth,
     )
-    _check_response(response, status.HTTP_200_OK)
+    _check_response(response, status.HTTP_202_ACCEPTED)
 
     # stop study job
     response = await client.post(
@@ -186,17 +194,22 @@ async def test_start_stop_delete_study_job(
     _check_response(response, status.HTTP_204_NO_CONTENT)
 
 
+@pytest.mark.parametrize(
+    "parent_node_id, parent_project_id",
+    [(_faker.uuid4(), _faker.uuid4()), (None, None)],
+)
+@pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
+    hidden: bool,
+    parent_project_id: UUID | None,
+    parent_node_id: UUID | None,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -205,27 +218,62 @@ async def test_create_study_job(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
+        if capture.method == "PATCH":
+            _default_side_effect.patch_called = True
+            request_content = json.loads(request.content.decode())
+            assert isinstance(request_content, dict)
+            name = request_content.get("name")
+            assert name is not None
+            project_id = path_params.get("project_id")
+            assert project_id is not None
+            assert project_id in name
+        if capture.method == "POST":
+            # test hidden boolean
+            _default_side_effect.post_called = True
+            query_dict = dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            )
+            _hidden = query_dict.get("hidden")
+            assert _hidden == ("true" if hidden else "false")
+
+            # test parent project and node ids
+            if parent_project_id is not None:
+                assert f"{parent_project_id}" == dict(request.headers).get(
+                    X_SIMCORE_PARENT_PROJECT_UUID.lower()
+                )
+            if parent_node_id is not None:
+                assert f"{parent_node_id}" == dict(request.headers).get(
+                    X_SIMCORE_PARENT_NODE_ID.lower()
+                )
         return capture.response_body
 
-    respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        _capture_file,
-        [_default_side_effect] * 7,
+    _default_side_effect.patch_called = False
+    _default_side_effect.post_called = False
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=_capture_file,
+        side_effects_callbacks=[_default_side_effect] * 5,
     )
 
+    header_dict = {}
+    if parent_project_id is not None:
+        header_dict[X_SIMCORE_PARENT_PROJECT_UUID] = f"{parent_project_id}"
+    if parent_node_id is not None:
+        header_dict[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
     response = await client.post(
         f"{API_VTAG}/studies/{fake_study_id}/jobs",
         auth=auth,
-        json={
-            "values": {
-                "input_file": {
-                    "filename": "input.txt",
-                    "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                },
-            }
-        },
+        headers=header_dict,
+        params={"hidden": f"{hidden}"},
+        json={"values": {}},
     )
     assert response.status_code == 200
+    assert _default_side_effect.patch_called
+    assert _default_side_effect.post_called
 
 
 async def test_get_study_job_outputs(
@@ -285,3 +333,78 @@ async def test_get_study_job_outputs(
 
     assert str(job_outputs.job_id) == job_id
     assert job_outputs.results == {}
+
+
+async def test_get_job_logs(
+    client: httpx.AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    _study_id = "7171cbf8-2fc9-11ef-95d3-0242ac140018"
+    _job_id = "1a4145e2-2fca-11ef-a199-0242ac14002a"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_study_job_logs.json",
+        side_effects_callbacks=[],
+    )
+
+    response = await client.get(
+        f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    _ = JobLogsMap.parse_obj(response.json())
+
+
+async def test_get_study_outputs(
+    client: httpx.AsyncClient,
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    mocked_directorv2_service_api_base,
+    mocked_webserver_service_api_base,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_job_outputs.json",
+        side_effects_callbacks=[],
+    )
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs",
+        auth=auth,
+        json={
+            "values": {
+                "inputfile": {
+                    "filename": "inputfile",
+                    "id": "c1dcde67-6434-31c3-95ee-bf5fe1e9422d",
+                }
+            }
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK
+    _job = Job.parse_obj(response.json())
+    _job_id = _job.id
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    _ = JobStatus.parse_obj(response.json())
+
+    response = await client.post(
+        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    _ = JobOutputs.parse_obj(response.json())

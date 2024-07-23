@@ -2,15 +2,16 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from _dask_helpers import DaskGatewayServer
 from aiodocker import Docker
 from dask_gateway import Gateway
 from faker import Faker
-from pytest_simcore.helpers.utils_host import get_localhost_ip
-from tenacity._asyncio import AsyncRetrying
+from pytest_simcore.helpers.host import get_localhost_ip
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -43,9 +44,7 @@ async def gateway_worker_network(
     docker_network: Callable[..., Awaitable[dict[str, Any]]],
 ) -> dict[str, Any]:
     network = await docker_network(
-        **{
-            "Name": local_dask_gateway_server.server.backend.settings.GATEWAY_WORKERS_NETWORK
-        }
+        Name=local_dask_gateway_server.server.backend.settings.GATEWAY_WORKERS_NETWORK
     )
     return network
 

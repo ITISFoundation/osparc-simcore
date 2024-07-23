@@ -115,25 +115,19 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       }
 
       const gid = orgModel.getGid();
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices(false, false)
-        .then(services => {
+      osparc.service.Store.getServicesLatest(false, false)
+        .then(latestServices => {
           const orgServices = [];
-          for (const key in services) {
-            const latestService = osparc.service.Utils.getLatest(services, key);
+          latestServices.forEach(latestService => {
             if (gid in latestService["accessRights"]) {
               orgServices.push(latestService);
             }
-          }
+          });
           orgServices.forEach(orgService => {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
             orgServiceCopy["orgId"] = gid;
-            if (osparc.data.model.Node.isDynamic(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
-            } else if (osparc.data.model.Node.isComputational(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
-            } else {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
+            if (orgServiceCopy["thumbnail"] === null) {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_ICON;
             }
             servicesModel.append(qx.data.marshal.Json.createModel(orgServiceCopy));
           });

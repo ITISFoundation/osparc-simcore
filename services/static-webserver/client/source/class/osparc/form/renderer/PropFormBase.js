@@ -38,14 +38,16 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
     this.base(arguments, form);
 
-    const fl = this._getLayout();
-    fl.setSpacingY(0); // so that the "excluded" rows do not take any space
-    fl.setColumnFlex(this.self().GRID_POS.LABEL, 0);
-    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
-    fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
-    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
-    fl.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
-    fl.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
+    // override qx.ui.form.renderer.Single's grid layout
+    const grid = this.getLayout();
+    grid.setSpacingY(0); // so that the "excluded" rows do not take any space
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
+    grid.setColumnFlex(this.self().GRID_POS.INFO, 0);
+    grid.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
+    grid.setColumnFlex(this.self().GRID_POS.UNIT, 0);
+    grid.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
+    grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
+    Object.keys(this.self().GRID_POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
   },
 
   properties: {
@@ -97,7 +99,14 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       readWrite: "ReadAndWrite"
     },
 
-    addItems: function(items, names, title, itemOptions, headerOptions) {
+    /**
+     * override
+     *
+     * @param items {qx.ui.core.Widget[]} An array of form items to render.
+     * @param names {String[]} An array of names for the form items.
+     * @param title {String?} A title of the group you are adding.
+     */
+    addItems: function(items, names, title) {
       // add the header
       if (title !== null) {
         this._add(
@@ -111,13 +120,23 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
 
       // add the items
+      let firstLabel = null;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
-        // compensate the SpacingY: 0
+        if (firstLabel === null) {
+          firstLabel = label;
+        }
         label.set({
-          marginTop: 3
+          // override ``rich``: to false, it is required for showing the cut off ellipsis.
+          // rich: false,
+          toolTipText: names[i]
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        label.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap"
         });
         label.setBuddy(item);
         this._add(label, {
@@ -125,7 +144,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           column: this.self().GRID_POS.LABEL
         });
 
-        const info = this._createInfoWHint(item.description);
+        const info = this.__createInfoWHint(item.description);
         this._add(info, {
           row: this._row,
           column: this.self().GRID_POS.INFO
@@ -142,20 +161,37 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           column: this.self().GRID_POS.UNIT
         });
 
-        this._connectVisibility(item, label);
-        // store the names for translation
-        if (qx.core.Environment.get("qx.dynlocale")) {
-          this._names.push({
-            name: names[i],
-            label: label,
-            item: items[i]
-          });
-        }
-
-        // compensate the SpacingY: 0
-        this._getLayout().setRowHeight(this._row, this.self().ROW_HEIGHT);
-
         this._row++;
+
+        this._connectVisibility(item, label);
+      }
+
+      this.addListener("appear", () => this.__makeLabelsResponsive(), this);
+      this.addListener("resize", () => this.__makeLabelsResponsive(), this);
+    },
+
+    __makeLabelsResponsive: function() {
+      const grid = this.getLayout()
+      const firstColumnWidth = osparc.utils.Utils.getGridsFirstColumnWidth(grid);
+      if (firstColumnWidth === null) {
+        // not rendered yet
+        setTimeout(() => this.__makeLabelsResponsive(), 100);
+        return;
+      }
+      const extendedVersion = firstColumnWidth > 300;
+
+      const inputs = this.getNode().getInputs();
+      for (const portId in inputs) {
+        if (inputs[portId].description) {
+          this._getLabelFieldChild(portId).child.set({
+            value: extendedVersion ? inputs[portId].label + ". " + inputs[portId].description + ":" : inputs[portId].label,
+            toolTipText: extendedVersion ? inputs[portId].label + "<br>" + inputs[portId].description : inputs[portId].label
+          });
+
+          this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
+
+          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, extendedVersion ? 150 : 50);
+        }
       }
     },
 
@@ -191,6 +227,38 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         filteredData[portId] = osparc.utils.Units.convertValue(filteredData[portId], ctrl.unitPrefix, unitPrefix);
       });
       return filteredData;
+    },
+
+    evalFieldRequired: function(portId) {
+      const label = this._getLabelFieldChild(portId).child;
+      const inputsRequired = this.getNode().getInputsRequired();
+
+      // add star (*) to the label
+      const requiredSuffix = " *";
+      let newLabel = label.getValue();
+      newLabel = newLabel.replace(requiredSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newLabel += requiredSuffix;
+      }
+      label.setValue(newLabel);
+
+      // add "required" text to the label's tooltip
+      const toolTipSuffix = "<br>" + this.tr("Required input: without it, the service will not start/run.");
+      let newToolTip = label.getToolTipText();
+      newToolTip = newToolTip.replace(toolTipSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newToolTip += toolTipSuffix;
+      }
+      label.setToolTipText(newToolTip);
+
+      // add "required" text to the description
+      const infoButton = this._getInfoFieldChild(portId).child;
+      let newHintText = infoButton.getHintText();
+      newHintText = newHintText.replace(toolTipSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newHintText += toolTipSuffix;
+      }
+      infoButton.setHintText(newHintText);
     },
 
     getChangedXUnits: function() {
@@ -253,7 +321,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createInfoWHint: function(hint) {
+    __createInfoWHint: function(hint) {
       const infoWHint = new osparc.form.PortInfoHint(hint);
       return infoWHint;
     },
@@ -276,7 +344,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       const unitLabel = new qx.ui.basic.Label().set({
         rich: true,
-        alignY: "bottom",
         paddingBottom: 1,
         value: unitShort || null,
         toolTipText: unitLong || null,

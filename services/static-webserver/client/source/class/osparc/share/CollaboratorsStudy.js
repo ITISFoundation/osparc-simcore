@@ -33,17 +33,17 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
   construct: function(studyData) {
     // this info is lost when we deepCloneStudyObject
     this._resourceType = studyData["resourceType"]; // study or template
-    const serializedData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+
+    osparc.data.Roles.createRolesStudyResourceInfo();
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
+      initCollabs.push(this.self().getEveryoneProductObj(this._resourceType === "study"));
       initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
     }
-    if (studyData.resourceType === "study" || studyData.resourceType === "template") {
-      osparc.data.Roles.createRolesStudyResourceInfo();
-    }
 
-    this.base(arguments, serializedData, initCollabs);
+    this.base(arguments, studyDataCopy, initCollabs);
   },
 
   events: {
@@ -112,107 +112,44 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       return true;
     },
 
-    removeCollaborator: function(studyData, gid) {
-      return delete studyData["accessRights"][gid];
+    getEveryoneProductObj: function(isStudy) {
+      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
+      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+      return everyone;
     },
 
-    getEveryoneObj: function(isResourceStudy) {
-      return {
-        "gid": 1,
-        "label": "Public",
-        "description": "",
-        "thumbnail": null,
-        "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
-        "collabType": 0
-      };
+    getEveryoneObj: function(isStudy) {
+      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
+      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+      return everyone;
     }
   },
 
   members: {
-    _canIDelete: function() {
-      return osparc.data.model.Study.canIDelete(this._serializedData["accessRights"]);
-    },
-
-    _canIWrite: function() {
-      return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
-    },
-
-    _addEditors: function(gids, cb) {
+    _addEditors: function(gids) {
       if (gids.length === 0) {
         return;
       }
 
+      const newCollaborators = {};
       gids.forEach(gid => {
-        this._serializedData["accessRights"][gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
-      const params = {
-        url: {
-          "studyId": this._serializedData["uuid"]
-        },
-        data: this._serializedData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+      osparc.info.StudyUtils.addCollaborators(this._serializedDataCopy, newCollaborators)
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
 
+          this.__pushNotifications(gids);
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
           console.error(err);
-        })
-        .finally(() => cb());
-
-      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
-              } else {
-                osparc.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
-              }
-            }
-          });
-        });
-    },
-
-    __checkShareePermissions: function(gids) {
-      if (gids.length === 0) {
-        return;
-      }
-
-      const promises = [];
-      gids.forEach(gid => {
-        const params = {
-          url: {
-            "studyId": this._serializedData["uuid"],
-            "gid": gid
-          }
-        };
-        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
-      });
-      Promise.all(promises)
-        .then(values => {
-          const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length) {
-            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
-            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
-              clickAwayClose: false,
-              resizable: true,
-              showClose: true
-            });
-            win.getChildControl("icon").set({
-              textColor: "warning-yellow"
-            });
-          }
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
         });
     },
 
@@ -220,29 +157,16 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       if (item) {
         item.setEnabled(false);
       }
-      const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
-      if (!success) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
-        if (item) {
-          item.setEnabled(true);
-        }
-      }
 
-      const params = {
-        url: {
-          "studyId": this._serializedData["uuid"]
-        },
-        data: this._serializedData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+      osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -253,24 +177,22 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedData["accessRights"][collaboratorGId] = newAccessRights;
-      const params = {
-        url: {
-          "studyId": this._serializedData["uuid"]
-        },
-        data: this._serializedData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateAccessRights", updatedData);
+
+      osparc.info.StudyUtils.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
+        .then(() => {
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
         })
-        .finally(() => item.setEnabled(true));
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
+        });
     },
 
     _promoteToEditor: function(collaborator, item) {
@@ -333,6 +255,57 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
+    },
+
+    __pushNotifications: function(gids) {
+      // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
+      osparc.store.Store.getInstance().getPotentialCollaborators()
+        .then(potentialCollaborators => {
+          gids.forEach(gid => {
+            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
+              // it's a user, not an organization
+              const collab = potentialCollaborators[gid];
+              const uid = collab["id"];
+              if (this._resourceType === "study") {
+                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+              } else {
+                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+              }
+            }
+          });
+        });
+    },
+
+    __checkShareePermissions: function(gids) {
+      if (gids.length === 0) {
+        return;
+      }
+
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            "studyId": this._serializedDataCopy["uuid"],
+            "gid": gid
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(values => {
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
+        });
     }
   }
 });

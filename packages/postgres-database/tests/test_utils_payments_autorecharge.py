@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_payment_method, utcnow
+from pytest_simcore.helpers.faker_factories import random_payment_method, utcnow
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,

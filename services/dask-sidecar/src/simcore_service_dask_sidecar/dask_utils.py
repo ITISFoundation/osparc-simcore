@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
+from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
 _logger = logging.getLogger(__name__)
@@ -68,8 +69,8 @@ class TaskPublisher:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
-    def publish_progress(self, progress_value: float) -> None:
-        rounded_value = round(progress_value, ndigits=2)
+    def publish_progress(self, report: ProgressReport) -> None:
+        rounded_value = round(report.percent_value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
             with log_catch(logger=_logger, reraise=False):
                 publish_event(

@@ -30,11 +30,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-#
-
-#
-
-
 @pytest.fixture
 def user_id(user_id: UserID) -> str:
     """overrides tests/fixtures/data_models.py::user_id

@@ -19,12 +19,16 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     def api_base_url(self) -> str:
         # http://director-v2:8000/v2
         return self._compose_url(
-            prefix="DIRECTOR_V2", port=URLPart.REQUIRED, vtag=URLPart.REQUIRED
+            prefix="DIRECTOR_V2",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.REQUIRED,
         )
 
     @cached_property
     def base_url(self) -> str:
         # http://director-v2:8000
         return self._compose_url(
-            prefix="DIRECTOR_V2", port=URLPart.REQUIRED, vtag=URLPart.EXCLUDE
+            prefix="DIRECTOR_V2",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.EXCLUDE,
         )

@@ -2,7 +2,13 @@
 These tests can be run against external configuration
 
 cd packages/notifications-library
-pytest --external-envfile=.my-env --external-support-email=support@email.com  --external-user-email=my@email.com tests/email
+make install-dev
+
+pytest \
+    --external-envfile=.my-env \
+    --faker-support-email=support@email.com  \
+    --faker-user-email=my@email.com \
+    tests/email
 
 """
 
@@ -139,16 +145,17 @@ def event_extra_data(  # noqa: PLR0911
 
 
 @pytest.fixture
-def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Path]:
-    paths = []
+def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
+    attachments = []
     match event_name:
         case "on_payed":
-            paths.append(tmp_path / "test-payed-invoice.pdf")
+            # Create a fake PDF-like byte content and its filename
+            file_name = "test-payed-invoice.pdf"
+            # Simulate generating PDF data.
+            fake_pdf_content = faker.text().encode("utf-8")
+            attachments.append((fake_pdf_content, file_name))
 
-    # fill with fake data
-    for p in paths:
-        p.write_text(faker.text())
-    return paths
+    return attachments
 
 
 @pytest.mark.parametrize(
@@ -173,7 +180,7 @@ async def test_email_event(
     product_name: ProductName,
     event_name: str,
     event_extra_data: dict[str, Any],
-    event_attachments: list[Path],
+    event_attachments: list[tuple[bytes, str]],
     tmp_path: Path,
 ):
     assert user_data.email == user_email

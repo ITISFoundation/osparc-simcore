@@ -104,6 +104,11 @@ class ResourceTrackerRepository(
                     project_name=data.project_name,
                     node_id=f"{data.node_id}",
                     node_name=data.node_name,
+                    parent_project_id=f"{data.parent_project_id}",
+                    root_parent_project_id=f"{data.root_parent_project_id}",
+                    root_parent_project_name=data.root_parent_project_name,
+                    parent_node_id=f"{data.parent_node_id}",
+                    root_parent_node_id=f"{data.root_parent_node_id}",
                     service_key=data.service_key,
                     service_version=data.service_version,
                     service_type=data.service_type,
@@ -231,6 +236,11 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.project_name,
                     resource_tracker_service_runs.c.node_id,
                     resource_tracker_service_runs.c.node_name,
+                    resource_tracker_service_runs.c.parent_project_id,
+                    resource_tracker_service_runs.c.root_parent_project_id,
+                    resource_tracker_service_runs.c.root_parent_project_name,
+                    resource_tracker_service_runs.c.parent_node_id,
+                    resource_tracker_service_runs.c.root_parent_node_id,
                     resource_tracker_service_runs.c.service_key,
                     resource_tracker_service_runs.c.service_version,
                     resource_tracker_service_runs.c.service_type,
@@ -248,8 +258,14 @@ class ResourceTrackerRepository(
                 .select_from(
                     resource_tracker_service_runs.join(
                         resource_tracker_credit_transactions,
-                        resource_tracker_service_runs.c.service_run_id
-                        == resource_tracker_credit_transactions.c.service_run_id,
+                        (
+                            resource_tracker_service_runs.c.product_name
+                            == resource_tracker_credit_transactions.c.product_name
+                        )
+                        & (
+                            resource_tracker_service_runs.c.service_run_id
+                            == resource_tracker_credit_transactions.c.service_run_id
+                        ),
                         isouter=True,
                     )
                 )
@@ -300,6 +316,7 @@ class ResourceTrackerRepository(
         product_name: ProductName,
         s3_bucket_name: S3BucketName,
         s3_key: str,
+        s3_region: str,
         *,
         user_id: UserID | None,
         wallet_id: WalletID | None,
@@ -373,7 +390,7 @@ class ResourceTrackerRepository(
                 sa.DDL(
                     f"""
                 SELECT * from aws_s3.query_export_to_s3('{compiled_query}',
-                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
+                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', '{s3_region}'), 'format csv, HEADER true');
                 """  # noqa: S608
                 )
             )

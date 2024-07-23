@@ -217,6 +217,13 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
     node_id: NodeID
     node_name: str
 
+    parent_project_id: ProjectID
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
+
+    parent_node_id: NodeID
+    root_parent_node_id: NodeID
+
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: ServiceType

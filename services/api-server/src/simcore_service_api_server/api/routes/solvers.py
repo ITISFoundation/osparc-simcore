@@ -8,14 +8,13 @@ from httpx import HTTPStatusError
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
-from servicelib.error_codes import create_error_code
 
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
-from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
@@ -140,7 +139,7 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await catalog_client.get_latest_release(
-            user_id, solver_key, product_name=product_name
+            user_id=user_id, solver_key=solver_key, product_name=product_name
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -253,28 +252,14 @@ async def list_solver_ports(
 
     New in *version 0.5.0*
     """
-    try:
-        ports = await catalog_client.get_service_ports(
-            user_id=user_id,
-            name=solver_key,
-            version=version,
-            product_name=product_name,
-        )
+    ports = await catalog_client.get_service_ports(
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
+    )
 
-        return OnePage[SolverPort](items=ports)
-
-    except ValidationError as err:
-        error_code = create_error_code(err)
-        _logger.exception(
-            "Corrupted port data for service %s [%s]",
-            f"{solver_key}:{version}",
-            f"{error_code}",
-            extra={"error_code": error_code},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Port definition of {solver_key}:{version} seems corrupted [{error_code}]",
-        ) from err
+    return OnePage[SolverPort](items=ports)
 
 
 @router.get(
@@ -292,4 +277,6 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    return await webserver_api.get_service_pricing_plan(solver_key, version)
+    return await webserver_api.get_service_pricing_plan(
+        solver_key=solver_key, version=version
+    )

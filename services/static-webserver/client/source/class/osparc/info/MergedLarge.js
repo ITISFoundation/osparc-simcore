@@ -29,7 +29,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     const nodes = study.getWorkbench().getNodes();
     const nodeIds = Object.keys(nodes);
     if (nodeIds.length) {
-      this.setService(nodes[nodeIds[0]]);
+      this.setNode(nodes[nodeIds[0]]);
     }
 
     this._attachHandlers();
@@ -46,7 +46,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       nullable: false
     },
 
-    service: {
+    node: {
       check: "osparc.data.model.Node",
       init: null,
       nullable: false
@@ -115,7 +115,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         flex: 1
       });
       const copy2Clip = osparc.utils.Utils.getCopyButton();
-      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService().serialize())), this);
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getNode().serialize())), this);
       more.getChildControl("header").add(copy2Clip);
     },
 
@@ -238,17 +238,17 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createNodeId: function() {
-      return osparc.info.ServiceUtils.createNodeId(this.getService().getNodeId()).set({
+      return osparc.info.ServiceUtils.createNodeId(this.getNode().getNodeId()).set({
         maxWidth: 200
       });
     },
 
     __createKey: function() {
-      return osparc.info.ServiceUtils.createKey(this.getService().getKey());
+      return osparc.info.ServiceUtils.createKey(this.getNode().getKey());
     },
 
     __createVersion: function() {
-      return osparc.info.ServiceUtils.createVersion(this.getService().getVersion());
+      return osparc.info.ServiceUtils.createVersion(this.getNode().getVersion() + "TODO: version display");
     },
 
     __createOwner: function() {
@@ -304,19 +304,19 @@ qx.Class.define("osparc.info.MergedLarge", {
       const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
       resourcesLayout.exclude();
       let promise = null;
-      if (this.getService().getNodeId()) {
+      if (this.getNode().getNodeId()) {
         const params = {
           url: {
             studyId: this.getStudy().getUuid(),
-            nodeId: this.getService().getNodeId()
+            nodeId: this.getNode().getNodeId()
           }
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
-            this.getService().getKey(),
-            this.getService().getVersion()
+            this.getNode().getKey(),
+            this.getNode().getVersion()
           )
         };
         promise = osparc.data.Resources.get("serviceResources", params);
@@ -332,7 +332,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
-      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService().serialize(), "serviceDescriptionSettings"));
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getNode().serialize(), "serviceDescriptionSettings"));
       return container;
     },
 
@@ -342,9 +342,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
-          "name": newLabel
-        });
+        this.__patchStudy("name", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -355,11 +353,11 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __copyNodeIdToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getService().getNodeId());
+      osparc.utils.Utils.copyTextToClipboard(this.getNode().getNodeId());
     },
 
     __copyKeyToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getService().getKey());
+      osparc.utils.Utils.copyTextToClipboard(this.getNode().getKey());
     },
 
     __openTagsEditor: function() {
@@ -374,19 +372,20 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openThumbnailEditor: function() {
-      const title = this.tr("Edit Thumbnail");
-      const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
-      thumbnailEditor.addListener("updateThumbnail", e => {
-        win.close();
-        const validUrl = e.getData();
-        this.__updateStudy({
-          "thumbnail": validUrl
-        });
-      }, this);
-      thumbnailEditor.addListener("cancel", () => win.close());
+      osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy())
+        .then(suggestions => {
+          const title = this.tr("Edit Thumbnail");
+          const oldThumbnail = this.getStudy().getThumbnail();
+          const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+          const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
+          thumbnailEditor.addListener("updateThumbnail", e => {
+            win.close();
+            const validUrl = e.getData();
+            this.__patchStudy("thumbnail", validUrl);
+          }, this);
+          thumbnailEditor.addListener("cancel", () => win.close());
+        })
+        .catch(err => console.error(err));
     },
 
     __openDescriptionEditor: function() {
@@ -396,24 +395,23 @@ qx.Class.define("osparc.info.MergedLarge", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
-          "description": newDescription
-        });
+        this.__patchStudy("description", newDescription);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __updateStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __patchStudy: function(fieldKey, value) {
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

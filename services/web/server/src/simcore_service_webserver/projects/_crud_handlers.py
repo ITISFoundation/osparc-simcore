@@ -3,6 +3,8 @@
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
+
+import functools
 import json
 import logging
 
@@ -13,7 +15,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
-    ProjectUpdate,
+    ProjectPatch,
 )
 from models_library.generics import Envelope
 from models_library.projects import Project
@@ -22,18 +24,20 @@ from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -49,6 +53,7 @@ from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
+    ProjectCreateHeaders,
     ProjectCreateParams,
     ProjectListWithJsonStrParams,
 )
@@ -59,6 +64,7 @@ from .exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNotFoundError,
+    ProjectOwnerNotFoundInTheProjectAccessRightsError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
@@ -78,6 +84,23 @@ RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUI
 
 _logger = logging.getLogger(__name__)
 
+
+def _handle_projects_exceptions(handler: Handler):
+    @functools.wraps(handler)
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+
+    return _wrapper
+
+
 routes = web.RouteTableDef()
 
 
@@ -93,6 +116,7 @@ routes = web.RouteTableDef()
 async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
+    header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
         await check_user_permission(request, "project.template.create")
 
@@ -103,7 +127,6 @@ async def create_project(request: web.Request):
 
     if not request.can_read_body:
         # request w/o body
-        assert query_params.from_study  # nosec
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
@@ -132,10 +155,10 @@ async def create_project(request: web.Request):
         copy_data=query_params.copy_data,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=header_params.simcore_user_agent,
         predefined_project=predefined_project,
+        parent_project_uuid=header_params.parent_project_uuid,
+        parent_node_id=header_params.parent_node_id,
     )
 
 
@@ -452,22 +475,25 @@ async def replace_project(request: web.Request):
         raise web.HTTPNotFound from exc
 
 
-@routes.patch(f"/{VTAG}/projects/{{project_id}}", name="update_project")
+@routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")
-async def update_project(request: web.Request):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+@_handle_projects_exceptions
+async def patch_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    project_update = await parse_request_body_as(ProjectUpdate, request)
+    project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    assert db  # nosec
-    assert req_ctx  # nosec
-    assert path_params  # nosec
-    assert project_update  # nosec
+    await projects_api.patch_project(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        project_patch=project_patch,
+        product_name=req_ctx.product_name,
+    )
 
-    raise NotImplementedError
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #
@@ -587,4 +613,6 @@ async def clone_project(request: web.Request):
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
         predefined_project=None,
+        parent_project_uuid=None,
+        parent_node_id=None,
     )

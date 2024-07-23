@@ -55,9 +55,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
           const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
           walletIndicatorVisibilitySB.add(lItem);
         });
-        const value2 = preferencesSettings.getWalletIndicatorVisibility();
+        const value = preferencesSettings.getWalletIndicatorVisibility();
         walletIndicatorVisibilitySB.getSelectables().forEach(selectable => {
-          if (selectable.getModel() === value2) {
+          if (selectable.getModel() === value) {
             walletIndicatorVisibilitySB.setSelection([selectable]);
           }
         });
@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
         const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
-          minimum: 100,
+          minimum: 50,
           maximum: 10000,
           singleStep: 10,
           allowGrowX: false

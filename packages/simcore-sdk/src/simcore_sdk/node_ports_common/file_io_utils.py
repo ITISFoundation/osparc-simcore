@@ -25,8 +25,8 @@ from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather, partition_gen
-from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception, retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -214,7 +214,10 @@ async def download_link_to_file(
                         )
                     )
                     sub_progress = await stack.enter_async_context(
-                        progress_bar.sub_progress(steps=file_size or 1)
+                        progress_bar.sub_progress(
+                            steps=file_size or 1,
+                            description=f"downloading {file_path.name}",
+                        )
                     )
 
                     await _file_chunk_writer(
@@ -396,7 +399,9 @@ async def upload_file_to_presigned_links(
             )
         )
         sub_progress = await stack.enter_async_context(
-            progress_bar.sub_progress(steps=file_size)
+            progress_bar.sub_progress(
+                steps=file_size, description=f"uploading {file_name}"
+            )
         )
 
         indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))

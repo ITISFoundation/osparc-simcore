@@ -31,7 +31,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.monitor_services import (
@@ -63,7 +63,7 @@ from simcore_service_webserver.socketio.messages import (
 from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity import RetryError
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_always, retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -131,6 +131,7 @@ async def _assert_handler_called_with_json(
 
 @pytest.fixture
 def client(
+    mock_redis_socket_timeout: None,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict[str, Any],

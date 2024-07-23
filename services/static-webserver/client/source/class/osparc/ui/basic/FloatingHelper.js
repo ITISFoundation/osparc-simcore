@@ -19,7 +19,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     this.set({
       backgroundColor: "transparent",
       visibility: "excluded",
-      zIndex: 110000
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX
     });
 
     if (caretSize) {
@@ -62,6 +62,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
   properties: {
     element: {
       check: "qx.ui.core.Widget",
+      init: null,
       apply: "__applyElement"
     },
 
@@ -98,8 +99,16 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           control = new qx.ui.container.Composite().set({
             backgroundColor: "transparent"
           });
-          const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+          const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint-small";
           control.getContentElement().addClass(classPrefix);
+          const colorManager = qx.theme.manager.Color.getInstance();
+          // override the css defined caret color depending on theme
+          const overrideCaretColor = () => {
+            const hintBg = colorManager.resolve("hint-background");
+            document.documentElement.style.setProperty("--hint-caret-color", hintBg);
+          };
+          colorManager.addListener("changeTheme", () => overrideCaretColor(), this);
+          overrideCaretColor();
           break;
         }
       }
@@ -109,7 +118,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     __buildWidget: function() {
       this._removeAll();
 
-      const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+      const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint-small";
 
       const hintContainer = this.getChildControl("hint-container");
       const caret = this.getChildControl("caret");
@@ -117,10 +126,11 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       caret.getContentElement().removeClass(classPrefix+"-right");
       caret.getContentElement().removeClass(classPrefix+"-bottom");
       caret.getContentElement().removeClass(classPrefix+"-left");
+      let caretClass = null;
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.TOP:
         case this.self().ORIENTATION.LEFT: {
-          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.LEFT ? classPrefix+"-left" : classPrefix+"-top");
+          caretClass = this.getOrientation() === this.self().ORIENTATION.LEFT ? classPrefix+"-left" : classPrefix+"-top";
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.LEFT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(hintContainer, {
             flex: 1
@@ -130,7 +140,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         }
         case this.self().ORIENTATION.RIGHT:
         case this.self().ORIENTATION.BOTTOM: {
-          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.RIGHT ? classPrefix+"-right" : classPrefix+"-bottom");
+          caretClass = this.getOrientation() === this.self().ORIENTATION.RIGHT ? classPrefix+"-right" : classPrefix+"-bottom";
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.RIGHT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(caret);
           this._add(hintContainer, {
@@ -139,6 +149,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           break;
         }
       }
+      caret.getContentElement().addClass(caretClass);
       const caretSize = this.getCaretSize() === "large" ? 10 : 5;
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.RIGHT:
@@ -154,8 +165,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       }
     },
 
-    __updatePosition: function() {
-      if (this.isPropertyInitialized("element") && this.getElement().getContentElement()) {
+    updatePosition: function() {
+      if (this.getElement() && this.getElement().getContentElement()) {
         const element = this.getElement().getContentElement()
           .getDomElement();
         const {
@@ -193,8 +204,8 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     moveToTheCenter: function() {
       const properties = {};
       const selfBounds = this.getHintBounds();
-      properties.top = Math.floor((window.innerHeight - selfBounds.width) / 2);
-      properties.left = Math.floor((window.innerWidth - selfBounds.height) / 2);
+      properties.top = Math.floor((window.innerHeight - selfBounds.height) / 2);
+      properties.left = Math.floor((window.innerWidth - selfBounds.width) / 2);
       this.setLayoutProperties(properties);
     },
 
@@ -204,7 +215,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
 
     __applyOrientation: function() {
       this.__buildWidget();
-      this.__updatePosition();
+      this.updatePosition();
     },
 
     // overwritten
@@ -267,7 +278,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           if (this.isActive()) {
             this.show();
           }
-          this.__updatePosition();
+          this.updatePosition();
           break;
         case "disappear":
           this.exclude();
@@ -276,7 +287,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         case "resize":
         case "scrollX":
         case "scrollY":
-          setTimeout(() => this.__updatePosition(), 20); // Hacky: Execute async and give some time for the relevant properties to be set
+          setTimeout(() => this.updatePosition(), 20); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
     },
@@ -284,7 +295,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     // overridden
     _applyVisibility: function(ne, old) {
       this.base(arguments, ne, old);
-      this.__updatePosition();
+      this.updatePosition();
     }
   }
 });

@@ -9,11 +9,11 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
-import sqlalchemy as sa
 from fastapi import FastAPI
 from models_library.users import GroupID, UserID
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
@@ -49,21 +49,6 @@ def app_environment(
     )
 
 
-async def _insert_and_get_row(
-    conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
-):
-    result = await conn.execute(table.insert().values(**values).returning(pk_col))
-    row = result.first()
-    assert row[pk_col] == pk_value
-
-    result = await conn.execute(sa.select(table).where(pk_col == pk_value))
-    return result.first()
-
-
-async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
-    await conn.execute(table.delete().where(pk_col == pk_value))
-
-
 @pytest.fixture
 async def user(
     app: FastAPI,
@@ -74,16 +59,14 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    pk_args = users.c.id, user["id"]
-
-    # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
-    async with get_engine(app).begin() as conn:
-        row = await _insert_and_get_row(conn, users, user, *pk_args)
-
-    yield dict(row)
-
-    async with get_engine(app).begin() as conn:
-        await _delete_row(conn, users, *pk_args)
+    async with insert_and_get_row_lifespan(
+        get_engine(app),
+        table=users,
+        values=user,
+        pk_col=users.c.id,
+        pk_value=user["id"],
+    ) as row:
+        yield row
 
 
 @pytest.fixture
@@ -101,15 +84,14 @@ async def product(
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
-    pk_args = products.c.name, product["name"]
-
-    async with get_engine(app).begin() as conn:
-        row = await _insert_and_get_row(conn, products, product, *pk_args)
-
-    yield dict(row)
-
-    async with get_engine(app).begin() as conn:
-        await _delete_row(conn, products, *pk_args)
+    async with insert_and_get_row_lifespan(
+        get_engine(app),
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+        pk_value=product["name"],
+    ) as row:
+        yield row
 
 
 @pytest.fixture
@@ -119,17 +101,14 @@ async def successful_transaction(
     """
     injects transaction in db
     """
-    pk_args = payments_transactions.c.payment_id, successful_transaction["payment_id"]
-
-    async with get_engine(app).begin() as conn:
-        row = await _insert_and_get_row(
-            conn, payments_transactions, successful_transaction, *pk_args
-        )
-
-    yield dict(row)
-
-    async with get_engine(app).begin() as conn:
-        await _delete_row(conn, payments_transactions, *pk_args)
+    async with insert_and_get_row_lifespan(
+        get_engine(app),
+        table=payments_transactions,
+        values=successful_transaction,
+        pk_col=payments_transactions.c.payment_id,
+        pk_value=successful_transaction["payment_id"],
+    ) as row:
+        yield row
 
 
 async def test_payments_user_repo(

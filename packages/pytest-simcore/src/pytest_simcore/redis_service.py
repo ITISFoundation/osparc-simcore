@@ -4,9 +4,11 @@
 
 import logging
 from collections.abc import AsyncIterator
+from datetime import timedelta
 
 import pytest
 import tenacity
+from pytest_mock import MockerFixture
 from redis.asyncio import Redis, from_url
 from settings_library.basic_types import PortInt
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -15,8 +17,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
-from .helpers.utils_host import get_localhost_ip
+from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +37,11 @@ async def redis_settings(
         "simcore_redis", testing_environ_vars["REDIS_PORT"]
     )
     # test runner is running on the host computer
-    settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=PortInt(port))
+    settings = RedisSettings(
+        REDIS_HOST=get_localhost_ip(),
+        REDIS_PORT=PortInt(port),
+        REDIS_PASSWORD=testing_environ_vars["REDIS_PASSWORD"],
+    )
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
     return settings
@@ -52,6 +58,9 @@ def redis_service(
     """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
+    monkeypatch.setenv(
+        "REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value()
+    )
     return redis_settings
 
 
@@ -69,7 +78,7 @@ async def redis_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture()
@@ -86,7 +95,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @tenacity.retry(
@@ -97,10 +106,17 @@ async def redis_locks_client(
 )
 async def wait_till_redis_responsive(redis_url: URL | str) -> None:
     client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
-
     try:
         if not await client.ping():
             msg = f"{redis_url=} not available"
             raise ConnectionError(msg)
     finally:
-        await client.close(close_connection_pool=True)
+        await client.aclose(close_connection_pool=True)
+
+
+@pytest.fixture
+def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
+    # lowered to allow CI to properly shutdown RedisClientSDK instances
+    from servicelib import redis
+
+    mocker.patch.object(redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=1))

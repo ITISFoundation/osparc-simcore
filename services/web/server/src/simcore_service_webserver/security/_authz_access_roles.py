@@ -33,6 +33,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
     UserRole.GUEST: PermissionDict(
         can=[
             "project.update",
+            "project.node.update",
             "storage.locations.*",
             "storage.files.*",
             "user.notifications.read",
@@ -51,6 +52,11 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "clusters.delete",
             "clusters.read",
             "clusters.write",
+            "folder.read",
+            "folder.update",
+            "folder.create",
+            "folder.delete",
+            "folder.access_rights.update",
             "groups.*",
             "product.price.read",
             "project.access_rights.update",
@@ -63,7 +69,6 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "project.import",
             "project.node.create",
             "project.node.delete",
-            "project.node.update",
             "project.tag.*",
             "project.template.create",
             "project.wallet.*",

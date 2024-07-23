@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from fastapi import FastAPI
@@ -24,6 +25,8 @@ DB_TO_RUNNING_STATE = {
 RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
     RunningState.UNKNOWN: StateType.FAILED
 }
+
+_logger = logging.getLogger(__name__)
 
 
 def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:

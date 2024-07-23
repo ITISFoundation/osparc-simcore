@@ -12,6 +12,7 @@ from typing import Final
 # NOTE: mimetypes (https://docs.python.org/3/library/mimetypes.html) is already a module in python
 
 MIMETYPE_APPLICATION_JSON: Final[str] = "application/json"
+MIMETYPE_APPLICATION_ND_JSON: Final[str] = "application/x-ndjson"
 MIMETYPE_APPLICATION_ZIP: Final[str] = "application/zip"
 MIMETYPE_TEXT_HTML: Final[str] = "text/html"
 MIMETYPE_TEXT_PLAIN: Final[str] = "text/plain"

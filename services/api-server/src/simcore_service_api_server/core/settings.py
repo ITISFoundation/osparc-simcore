@@ -1,34 +1,23 @@
-from collections.abc import Mapping
 from functools import cached_property
-from pathlib import Path
-from typing import Any
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, parse_obj_as
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
+from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from settings_library.utils_service import (
-    DEFAULT_AIOHTTP_PORT,
-    DEFAULT_FASTAPI_PORT,
-    MixinServiceSettings,
-    URLPart,
-)
 from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
     MixinSessionSettings,
 )
+from settings_library.webserver import WebServerSettings as WebServerBaseSettings
 
 
-class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSettings):
-    WEBSERVER_HOST: str = "webserver"
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_VTAG: VersionTag = Field(default="v0")
+class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
         ...,
@@ -39,55 +28,10 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
     )
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
 
-    @cached_property
-    def base_url(self) -> str:
-        # http://webserver:8080/
-        url_without_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-        )
-        return url_without_vtag
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://webserver:8080/v0
-        url_with_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
-
     @validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
-
-
-class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
-    DIRECTOR_V2_HOST: str = "director-v2"
-    DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://director-v2:8000/v2
-        url_with_vtag: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
-
-    @cached_property
-    def base_url(self) -> str:
-        # http://director-v2:8000
-        origin: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.EXCLUDE,
-        )
-        return origin
 
 
 # MAIN SETTINGS --------------------------------------------
@@ -141,39 +85,12 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS: PositiveInt = 10
     API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES: PositiveInt = 5
     API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
-    # DEV-TOOLS
-    API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
-        default=None,
-        description="If set, it activates http calls capture mechanism used to generate mock data"
-        "Path to store captured client calls."
-        "TIP: use 'API_SERVER_DEV_HTTP_CALLS_LOGS_PATH=captures.ignore.keep.log'"
-        "NOTE: only available in devel mode",
-    )
+    API_SERVER_PROFILING: bool = False
 
     @cached_property
     def debug(self) -> bool:
         """If True, debug tracebacks should be returned on errors."""
         return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
-
-    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH", pre=True)
-    @classmethod
-    def _enable_only_in_devel_mode(cls, v: Any, values: Mapping[str, Any]):
-        if isinstance(v, str):
-            path_str = v.strip()
-            if not path_str:
-                return None
-
-            if (
-                values
-                and (boot_mode := values.get("SC_BOOT_MODE"))
-                and not boot_mode.is_devel_mode()
-            ):
-                error_message = (
-                    "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
-                )
-                raise ValueError(error_message)
-
-        return v
 
 
 __all__: tuple[str, ...] = (
@@ -182,5 +99,6 @@ __all__: tuple[str, ...] = (
     "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
+    "WebServerSettings",
     "WebServerSettings",
 )

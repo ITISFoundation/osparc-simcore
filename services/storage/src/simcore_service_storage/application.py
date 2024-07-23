@@ -10,13 +10,14 @@ from aiohttp import web
 from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
 from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
+from servicelib.aiohttp.profiler_middleware import profiling_middleware
 from servicelib.aiohttp.tracing import setup_tracing
 
-from ._meta import APP_STARTED_BANNER_MSG, PROJECT_NAME, VERSION
+from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
-from .long_running_tasks import setup_long_running_tasks
+from .long_running_tasks import setup_rest_api_long_running_tasks
 from .redis import setup_redis
 from .rest import setup_rest
 from .s3 import setup_s3
@@ -57,27 +58,27 @@ def create(settings: Settings) -> web.Application:
             skip_routes=None,
         )
 
-    if settings.STORAGE_POSTGRES:
-        setup_db(app)  # -> postgres service
-    if settings.STORAGE_S3:
-        setup_s3(app)  # -> minio service
+    setup_db(app)
+    setup_s3(app)
 
-    setup_long_running_tasks(app)
+    setup_rest_api_long_running_tasks(app)
     setup_rest(app)
-    setup_redis(app)
 
-    if settings.STORAGE_POSTGRES and settings.STORAGE_S3:
-        setup_dsm(app)  # core subsystem. Needs s3 and db setups done
-        if settings.STORAGE_CLEANER_INTERVAL_S:
-            setup_dsm_cleaner(app)
+    setup_dsm(app)
+    if settings.STORAGE_CLEANER_INTERVAL_S:
+        setup_redis(app)
+        setup_dsm_cleaner(app)
 
-        app.middlewares.append(dsm_exception_handler)
+    app.middlewares.append(dsm_exception_handler)
+
+    if settings.STORAGE_PROFILING:
+        app.middlewares.append(profiling_middleware)
 
     if settings.LOG_LEVEL == "DEBUG":
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, PROJECT_NAME, version=f"{VERSION}")
+        setup_monitoring(app, APP_NAME, version=f"{VERSION}")
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(

@@ -3,13 +3,14 @@
     - Checks connectivity with other services in the backend
 
 """
+
 import logging
 
 from aiohttp import web
-from aws_library.s3.errors import S3AccessError, S3BucketInvalidError
+from aws_library.s3 import S3AccessError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib.json_serialization import json_dumps
+from models_library.utils.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
@@ -49,12 +50,13 @@ async def get_status(request: web.Request) -> web.Response:
     s3_state = "disabled"
     if app_settings.STORAGE_S3:
         try:
-            await get_s3_client(request.app).check_bucket_connection(
-                S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+            s3_state = (
+                "connected"
+                if await get_s3_client(request.app).bucket_exists(
+                    bucket=S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+                )
+                else "no access to S3 bucket"
             )
-            s3_state = "connected"
-        except S3BucketInvalidError:
-            s3_state = "no access to S3 bucket"
         except S3AccessError:
             s3_state = "failed"
 

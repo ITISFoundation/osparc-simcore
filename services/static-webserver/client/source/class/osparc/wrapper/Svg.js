@@ -132,6 +132,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    /* ANNOTATIONS */
+
     getRectAttributes: function(rect) {
       const rectAttrs = rect.node.attributes;
       return {
@@ -158,7 +160,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return text;
     },
 
-    drawAnnotationNote: function(draw, x, y, destinataryName, note) {
+    drawAnnotationNote: function(draw, x, y, recipientName, note) {
       const lines = note.split("\n");
       const width = 200;
       const minHeight = 120;
@@ -224,7 +226,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       gNote.add(separator);
 
       const defaultFont = osparc.utils.Utils.getDefaultFont();
-      const title = gNote.text(destinataryName)
+      const title = gNote.text(recipientName)
         .font({
           fill: "#000000",
           size: (defaultFont["size"]+1) + "px",
@@ -271,6 +273,29 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.back();
       return rect;
     },
+
+    updateText: function(representation, label) {
+      if (representation.type === "text") {
+        representation.text(label);
+      } else if (representation.type === "svg") {
+        // nested
+        representation["textChild"].innerText = label;
+      }
+    },
+
+    updateTextColor: function(text, color) {
+      text.font({
+        fill: color
+      });
+    },
+
+    updateTextSize: function(text, size) {
+      text.font({
+        size: size + "px"
+      });
+    },
+
+    /* / ANNOTATIONS */
 
     drawDashedRect: function(draw, width, height, x, y) {
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
@@ -333,27 +358,6 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     removeItem: function(item) {
       item.remove();
-    },
-
-    updateText: function(representation, label) {
-      if (representation.type === "text") {
-        representation.text(label);
-      } else if (representation.type === "svg") {
-        // nested
-        representation["textChild"].innerText = label;
-      }
-    },
-
-    updateTextColor: function(text, color) {
-      text.font({
-        fill: color
-      });
-    },
-
-    updateTextSize: function(text, size) {
-      text.font({
-        size: size + "px"
-      });
     },
 
     updateCurveDashes: function(curve, dashed) {

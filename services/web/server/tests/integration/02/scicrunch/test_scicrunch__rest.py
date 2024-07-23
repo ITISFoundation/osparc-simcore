@@ -19,10 +19,7 @@ from typing import Any
 
 import pytest
 from aiohttp import ClientResponseError, ClientSession
-from pytest_simcore.helpers.utils_scrunch_citations import (
-    NOT_TOOL_CITATIONS,
-    TOOL_CITATIONS,
-)
+from pytest_simcore.helpers.scrunch_citations import NOT_TOOL_CITATIONS, TOOL_CITATIONS
 from servicelib.aiohttp import status
 from simcore_service_webserver.scicrunch._rest import (
     ListOfResourceHits,

@@ -68,6 +68,7 @@ class PaymentsTransactionsRepo(BaseRepository):
         state_message: str | None,
         invoice_url: HttpUrl | None,
         stripe_invoice_id: StripeInvoiceID | None,
+        invoice_pdf_url: HttpUrl | None,
     ) -> PaymentsTransactionsDB:
         """
         - ACKs payment by updating state with SUCCESS, CANCEL, etc
@@ -115,6 +116,7 @@ class PaymentsTransactionsRepo(BaseRepository):
                     state=completion_state,
                     invoice_url=invoice_url,
                     stripe_invoice_id=stripe_invoice_id,
+                    invoice_pdf_url=invoice_pdf_url,
                     **optional,
                 )
                 .where(payments_transactions.c.payment_id == f"{payment_id}")

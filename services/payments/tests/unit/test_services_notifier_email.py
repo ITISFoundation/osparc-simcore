@@ -11,16 +11,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from faker import Faker
 from jinja2 import DictLoader, Environment, select_autoescape
-from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
+from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.notifier_email import (
     _PRODUCT_NOTIFICATIONS_TEMPLATES,
     EmailProvider,
@@ -36,70 +36,66 @@ from simcore_service_payments.services.notifier_email import (
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    external_environment: EnvVarsDict,
-    docker_compose_service_payments_env_vars: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_env_vars,
-            **external_environment,
+            **docker_compose_service_environment_dict,
+            **external_envfile_dict,
         },
     )
 
 
-@pytest.fixture(scope="session")
-def external_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-email", default=None)
-    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
-
-
-@pytest.fixture
-def user_email(user_email: EmailStr, external_email: EmailStr | None) -> EmailStr:
-    if external_email:
-        print("📧 EXTERNAL using in test", f"{external_email=}")
-        return external_email
-    return user_email
-
-
 @pytest.fixture
 def smtp_mock_or_none(
-    mocker: MockerFixture, external_email: EmailStr | None
+    mocker: MockerFixture,
+    is_external_user_email: bool,
+    user_email: EmailStr,
 ) -> MagicMock | None:
-    if not external_email:
+    if not is_external_user_email:
         return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
+    print("🚨 Emails might be sent to", f"{user_email=}")
     return None
+
+
+@pytest.fixture
+def mock_get_invoice(mocker: MockerFixture) -> MagicMock:
+    _mock_get_invoice = mocker.patch(
+        "simcore_service_payments.services.notifier_email._get_invoice_pdf"
+    )
+    _mock_get_invoice.return_value = None
+    return _mock_get_invoice
 
 
 @pytest.fixture
 def transaction(
     faker: Faker, successful_transaction: dict[str, Any]
-) -> PaymentTransaction:
+) -> PaymentsTransactionsDB:
     kwargs = {
         k: successful_transaction[k]
-        for k in PaymentTransaction.__fields__
+        for k in PaymentsTransactionsDB.__fields__
         if k in successful_transaction
     }
-    return PaymentTransaction(
-        created_at=successful_transaction["initiated_at"], **kwargs
-    )
+    return PaymentsTransactionsDB(**kwargs)
 
 
 async def test_send_email_workflow(
     app_environment: EnvVarsDict,
     tmp_path: Path,
     faker: Faker,
-    transaction: PaymentTransaction,
-    external_email: str | None,
+    transaction: PaymentsTransactionsDB,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
     smtp_mock_or_none: MagicMock | None,
+    mock_get_invoice: MagicMock,
 ):
     """
     Example of usage with external email and envfile
 
-        > pytest --external-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
+        > pytest --faker-user-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
     """
 
     settings = SMTPSettings.create_from_envs()
@@ -127,6 +123,7 @@ async def test_send_email_workflow(
         price_dollars=f"{transaction.price_dollars:.2f}",
         osparc_credits=f"{transaction.osparc_credits:.2f}",
         invoice_url=transaction.invoice_url,
+        invoice_pdf_url=transaction.invoice_pdf_url,
     )
 
     msg = await _create_user_email(env, user_data, payment_data, product_data)
@@ -154,8 +151,9 @@ async def test_email_provider(
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
-    transaction: PaymentTransaction,
+    transaction: PaymentsTransactionsDB,
     smtp_mock_or_none: MagicMock | None,
+    mock_get_invoice: MagicMock,
 ):
     settings = SMTPSettings.create_from_envs()
 
@@ -180,6 +178,7 @@ async def test_email_provider(
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
     assert get_notification_data_mock.called
+    assert mock_get_invoice.called
 
     if smtp_mock_or_none:
         assert smtp_mock_or_none.called

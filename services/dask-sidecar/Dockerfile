@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.10.10"
-FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-bookworm as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
@@ -82,7 +82,7 @@ RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"

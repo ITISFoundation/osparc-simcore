@@ -114,6 +114,33 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
+    __linkExists: function(url) {
+      return new Promise((resolve, reject) => {
+        const reqSvg = new XMLHttpRequest();
+        reqSvg.open("GET", url, true);
+        reqSvg.onreadystatechange = () => {
+          if (reqSvg.readyState === 4) {
+            if (reqSvg.status === 404) {
+              reject();
+            } else {
+              resolve();
+            }
+          }
+        };
+        reqSvg.send();
+      });
+    },
+
+    getFaviconUrl: function() {
+      const pngUrl = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
+      const fallbackIcon = "/resource/osparc/favicon-"+this.getProductName()+".png";
+      return new Promise(resolve => {
+        this.__linkExists(pngUrl)
+          .then(() => resolve(pngUrl))
+          .catch(() => resolve(fallbackIcon))
+      });
+    },
+
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -155,6 +182,17 @@ qx.Class.define("osparc.product.Utils", {
           break;
       }
       return logosPath;
+    },
+
+    forceNullCreditsColor: function(wallet) {
+      // TIP is a product that can be used for free, so allow making 0 credits scenario more friendly.
+      if (osparc.product.Utils.isProduct("tis")) {
+        // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
+        // Note: Since we can't fetch payments per wallet, for now rely on the available credits.
+        const credits = wallet.getCreditsAvailable();
+        return credits === 0;
+      }
+      return false;
     },
 
     // All products except oSPARC
@@ -209,10 +247,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.getProductName().includes("s4l")) {
-        return false;
+      if (this.isProduct("osparc")) {
+        return true;
       }
-      return true;
+      return false;
     },
 
     showClassifiers: function() {

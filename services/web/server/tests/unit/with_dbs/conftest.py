@@ -5,21 +5,22 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
+
 # nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import asyncio
+import random
 import sys
 import textwrap
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock, Mock
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock
 
 import aiopg.sa
 import pytest
@@ -33,14 +34,17 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
+from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-from pytest_simcore.helpers.utils_projects import NewProject
-from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
@@ -83,12 +87,14 @@ def disable_swagger_doc_generation(
 @pytest.fixture(scope="session")
 def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
-
+    redis_cfg = default_app_cfg["resource_manager"]["redis"]
     # docker-compose reads these environs
     with pytest.MonkeyPatch().context() as patcher:
         patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
         patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
         patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
+        # Redis
+        patcher.setenv("TEST_REDIS_PASSWORD", redis_cfg["password"])
         yield patcher
 
 
@@ -388,7 +394,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         mock[name] = mocker.patch(
             f"simcore_service_webserver.{name}",
             autospec=True,
-            return_value={},
+            return_value=[],
         )
     # add here redirects from director-v2 via dynamic-scheduler
     # NOTE: once all above are moved to dynamic-scheduler
@@ -416,34 +422,37 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    client: TestClient, mocked_director_v2_api: dict
-) -> Callable:
+    client: TestClient, mocked_director_v2_api: dict, faker: Faker
+) -> Callable[..., Awaitable[DynamicServiceGet]]:
     services = []
 
-    async def _create(user_id, project_id) -> dict:
-        SERVICE_UUID = str(uuid4())
+    async def _create(**service_override_kwargs) -> DynamicServiceGet:
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
 
-        running_service_dict = {
-            "published_port": "23423",
-            "service_uuid": SERVICE_UUID,
+        service_config = {
+            "published_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_uuid": faker.uuid4(cast_to=None),
             "service_key": SERVICE_KEY,
             "service_version": SERVICE_VERSION,
-            "service_host": "some_service_host",
-            "service_port": "some_service_port",
-            "service_state": "some_service_state",
-        }
+            "service_host": faker.url(),
+            "service_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_state": random.choice(list(ServiceState)),  # noqa: S311
+            "user_id": faker.pyint(min_value=1),
+            "project_id": faker.uuid4(cast_to=None),
+        } | service_override_kwargs
 
-        services.append(running_service_dict)
+        running_service = DynamicServiceGet(**service_config)
+
+        services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
             mocked_director_v2_api[
                 f"{module_name}.list_dynamic_services"
             ].return_value = services
 
-        return running_service_dict
+        return running_service
 
     return _create
 
@@ -524,21 +533,25 @@ async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
+def _is_redis_responsive(host: str, port: int, password: str) -> bool:
+    # username via https://stackoverflow.com/a/78236235
+    r = redis.Redis(host=host, username="default", port=port, password=password)
     return r.ping() is True
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip) -> RedisSettings:
+def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
-    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port)
+    password = default_app_cfg["resource_manager"]["redis"]["password"]
+    redis_settings = RedisSettings(
+        REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password
+    )
 
     docker_services.wait_until_responsive(
-        check=lambda: _is_redis_responsive(host, port),
+        check=lambda: _is_redis_responsive(host, port, password),
         timeout=30.0,
         pause=0.1,
     )
@@ -555,7 +568,7 @@ async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.R
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
 
 @pytest.fixture
@@ -572,7 +585,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 # SOCKETS FIXTURES  --------------------------------------------------------
@@ -688,32 +701,12 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
 
 
 @pytest.fixture
-def mock_progress_bar(mocker: MockerFixture) -> Any:
-    sub_progress = Mock()
-
-    class MockedProgress:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            pass
-
-        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
-            return sub_progress
-
-    mock_bar = MockedProgress()
-
-    mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.ProgressBarData",
-        autospec=True,
-        return_value=mock_bar,
-    )
-    return mock_bar
-
-
-@pytest.fixture
 async def user_project(
-    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+    client: TestClient,
+    fake_project: ProjectDict,
+    logged_user: UserInfoDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
     async with NewProject(
         fake_project,

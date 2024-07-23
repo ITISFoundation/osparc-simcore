@@ -43,6 +43,30 @@
       "justMyCode": false
     },
     {
+      "name": "Python: Test-Httpx-Spy",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--ff",
+        "--log-cli-level=INFO",
+        "--pdb",
+        "--setup-show",
+        "-sx",
+        "-vv",
+        "--spy-httpx-calls-enabled=true",
+        "--spy-httpx-calls-capture-path=test-httpx-spy-capture.ignore.keep.json",
+        "--faker-user-id=1",
+        "--faker-user-api-key=test",
+        "--faker-user-api-secret=test",
+        "--faker-project-id=85ebc649-9694-44bb-96d4-9dd8205cf18b",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "Python: Remote Attach api-server",
       "type": "debugpy",
       "request": "attach",
@@ -138,6 +162,21 @@
       "request": "attach",
       "connect": {
         "port": 3001,
+        "host": "127.0.0.1"
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
+      "name": "Python: Remote Attach wb-api-server",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "port": 3019,
         "host": "127.0.0.1"
       },
       "pathMappings": [

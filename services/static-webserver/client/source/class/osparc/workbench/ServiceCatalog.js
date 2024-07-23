@@ -86,7 +86,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
   },
 
   members: {
-    __allServicesList: null,
+    __servicesLatest: null,
     __filteredServicesObj: null,
     __textFilter: null,
     __contextLeftNodeId: null,
@@ -112,12 +112,6 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         flex: 1
       });
 
-      if (osparc.data.Permissions.getInstance().canDo("services.all.reupdate")) {
-        const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
-        reloadBtn.addListener("execute", () => this.__populateList(true), this);
-        layout.add(reloadBtn);
-      }
-
       const containerSortBtns = new osparc.service.SortServicesButtons();
       containerSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
@@ -130,7 +124,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     __createListLayout: function() {
       // Services list
-      this.__allServicesList = [];
+      this.__servicesLatest = [];
       this.__filteredServicesObj = {};
 
       const serviceList = this.__serviceList = new osparc.service.ServiceList("serviceCatalog").set({
@@ -192,9 +186,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     },
 
     __createEvents: function() {
-      this.__serviceList.addListener("serviceAdd", e => {
-        this.__onAddService(e.getData());
-      }, this);
+      this.__serviceList.addListener("serviceAdd", e => this.__onAddService(e.getData()), this);
     },
 
     setContext: function(leftNodeId = null, rightNodeId = null) {
@@ -203,12 +195,13 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__updateList();
     },
 
-    __populateList: function(reload = false) {
-      this.__allServicesList = [];
-      let store = osparc.store.Store.getInstance();
-      store.getAllServices(reload, false)
-        .then(services => {
-          this.__allServicesList = osparc.service.Utils.convertObjectToArray(services);
+    __populateList: function() {
+      this.__servicesLatest = [];
+      osparc.service.Store.getServicesLatest()
+        .then(servicesLatest => {
+          Object.keys(servicesLatest).forEach(key => {
+            this.__servicesLatest.push(servicesLatest[key]);
+          });
           this.__updateList();
         });
     },
@@ -216,7 +209,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     __updateList: function() {
       osparc.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
       const filteredServices = [];
-      this.__allServicesList.forEach(service => {
+      this.__servicesLatest.forEach(service => {
         if (this.__contextLeftNodeId === null && this.__contextRightNodeId === null) {
           filteredServices.push(service);
         } else {
@@ -231,14 +224,12 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         }
       });
 
-      osparc.service.Utils.addHits(filteredServices);
       osparc.service.Utils.sortObjectsBasedOn(filteredServices, this.__sortBy);
       const filteredServicesObj = this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
-        let service = osparc.service.Utils.getLatest(filteredServicesObj, key);
-        osparc.service.Utils.addHits([service]);
+        let service = osparc.service.Utils.getLatest(key);
         service = osparc.utils.Utils.deepCloneObject(service);
         osparc.service.Utils.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
@@ -252,12 +243,13 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
-          let versions = osparc.service.Utils.getVersions(this.__filteredServicesObj, key);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
-          for (let i = versions.length; i--;) {
-            selectBox.add(new qx.ui.form.ListItem(versions[i]));
-          }
+          const versions = osparc.service.Utils.getVersions(key);
+          versions.forEach(version => {
+            const listItem = osparc.service.Utils.versionToListItem(key, version);
+            selectBox.add(listItem);
+          });
           selectBox.setSelection([latest]);
         }
       }
@@ -272,41 +264,41 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       }
     },
 
-    __onAddService: function(model) {
-      if (model == null && this.__serviceList.isSelectionEmpty()) {
+    __onAddService: async function(selectedServiceModel) {
+      if (selectedServiceModel == null && this.__serviceList.isSelectionEmpty()) {
         return;
       }
 
-      let serviceModel = model;
+      let serviceModel = selectedServiceModel;
       if (!serviceModel) {
-        let service = this.__getSelectedService();
-        service = osparc.utils.Utils.deepCloneObject(service);
-        osparc.service.Utils.removeFileToKeyMap(service);
-        serviceModel = qx.data.marshal.Json.createModel(service);
+        let serviceMetadata = await this.__getSelectedService();
+        serviceMetadata = osparc.utils.Utils.deepCloneObject(serviceMetadata);
+        osparc.service.Utils.removeFileToKeyMap(serviceMetadata);
+        serviceModel = qx.data.marshal.Json.createModel(serviceMetadata);
       }
-      if (serviceModel) {
-        const eData = {
-          service: serviceModel,
-          nodeLeftId: this.__contextLeftNodeId,
-          nodeRightId: this.__contextRightNodeId
-        };
-        this.fireDataEvent("addService", eData);
-      }
+      const eData = {
+        service: serviceModel,
+        nodeLeftId: this.__contextLeftNodeId,
+        nodeRightId: this.__contextRightNodeId
+      };
+      this.fireDataEvent("addService", eData);
       this.close();
     },
 
-    __getSelectedService: function() {
+    __getSelectedService: async function() {
       const selected = this.__serviceList.getSelected();
       const key = selected.getKey();
-      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      let version = this.__versionsBox.getSelection()[0].version;
       if (version == this.self(arguments).LATEST.toString()) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
-      return osparc.service.Utils.getFromArray(this.__allServicesList, key, version);
+      const serviceMetadata = await osparc.service.Store.getService(key, version);
+      return serviceMetadata;
     },
 
-    __showServiceDetails: function() {
-      const serviceDetails = new osparc.info.ServiceLarge(this.__getSelectedService());
+    __showServiceDetails: async function() {
+      const serviceMetadata = await this.__getSelectedService();
+      const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
       const title = this.tr("Service information");
       const width = osparc.info.CardLarge.WIDTH;
       const height = osparc.info.CardLarge.HEIGHT;

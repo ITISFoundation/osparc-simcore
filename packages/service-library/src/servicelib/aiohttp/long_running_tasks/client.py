@@ -6,7 +6,7 @@ from typing import Any, Final, TypeAlias
 from aiohttp import ClientConnectionError, ClientSession
 from servicelib.aiohttp import status
 from tenacity import TryAgain, retry
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
@@ -132,7 +132,7 @@ async def long_running_task_request(
         async for task_progress in _wait_for_completion(
             session,
             task.task_id,
-            url.with_path(task.status_href, encoded=True),
+            URL(task.status_href),
             client_timeout,
         ):
             last_progress = task_progress
@@ -140,12 +140,10 @@ async def long_running_task_request(
         assert last_progress  # nosec
         yield LRTask(
             progress=last_progress,
-            _result=_task_result(
-                session, url.with_path(task.result_href, encoded=True)
-            ),
+            _result=_task_result(session, URL(task.result_href)),
         )
 
     except (asyncio.CancelledError, asyncio.TimeoutError):
         if task:
-            await _abort_task(session, url.with_path(task.abort_href, encoded=True))
+            await _abort_task(session, URL(task.abort_href))
         raise

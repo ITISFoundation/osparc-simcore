@@ -21,8 +21,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
     viewsStack.add(workbenchView);
@@ -38,9 +36,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       slideshowView.addListener(signalName, () => this.fireEvent(signalName));
     });
 
-    workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
-    workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
-    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+    workbenchView.addListener("slidesEdit", () => this.__editSlides(), this);
+    workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
+    slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
 
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
@@ -80,7 +78,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     startStopButtons.addListener("stopPipeline", () => this.__stopPipeline(), this);
 
 
-    this._add(viewsStack, {
+    this._addToMainLayout(viewsStack, {
       flex: 1
     });
 
@@ -93,9 +91,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "userIdled": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data",
     "startIteration": "qx.event.type.Data"
   },
@@ -103,15 +98,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      init: null,
       nullable: true,
-      apply: "_applyStudy"
+      apply: "__applyStudy",
+      event: "changeStudy"
     },
 
     pageContext: {
       check: ["workbench", "guided", "app"],
+      init: null,
       nullable: false,
       event: "changePageContext",
-      apply: "_applyPageContext"
+      apply: "__applyPageContext"
     }
   },
 
@@ -128,42 +126,33 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __slideshowView: null,
     __autoSaveTimer: null,
     __studyEditorIdlingTracker: null,
-    __lastSavedStudy: null,
+    __studyDataInBackend: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
 
     setStudyData: function(studyData) {
-      return new Promise((resolve, reject) => {
-        if (this.__settingStudy) {
-          resolve();
-          return;
+      if (this.__settingStudy) {
+        return;
+      }
+      this.__settingStudy = true;
+
+      this._showLoadingPage(this.tr("Starting") + " " + studyData.name);
+
+      // Before starting a study, make sure the latest version is fetched
+      const params = {
+        url: {
+          "studyId": studyData.uuid
         }
-        this.__settingStudy = true;
-
-        this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
-
-        // Before starting a study, make sure the latest version is fetched
-        const params = {
-          url: {
-            "studyId": studyData.uuid
-          }
-        };
-        const promises = [
-          osparc.data.Resources.getOne("studies", params),
-          osparc.store.Store.getInstance().getAllServices()
-        ];
-        Promise.all(promises)
-          .then(values => {
-            studyData = values[0];
-            const study = new osparc.data.model.Study(studyData);
-            this.setStudy(study);
-            resolve();
-          });
-      });
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(latestStudyData => {
+          const study = new osparc.data.model.Study(latestStudyData);
+          this.setStudy(study);
+        });
     },
 
-    _applyStudy: function(study) {
+    __applyStudy: function(study) {
       this.__settingStudy = false;
 
       this._showLoadingPage(this.tr("Opening ") + (study.getName() || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
@@ -174,11 +163,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__reloadSnapshotsAndIterations();
 
       study.openStudy()
-        .then(() => {
-          this.__lastSavedStudy = study.serialize();
+        .then(studyData => {
+          this.__studyDataInBackend = studyData;
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
+
+          this.__attachSocketEventHandlers();
 
           study.initStudy();
 
@@ -189,7 +180,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
-          if (maxNumber) {
+          const dontCheck = study.getDisableServiceAutoStart();
+          if (maxNumber && !dontCheck) {
             const nodes = study.getWorkbench().getNodes();
             const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
             if (nDynamics > maxNumber) {
@@ -210,7 +202,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             });
 
-          const pageContext = this.isPropertyInitialized("pageContext") ? this.getPageContext() : null;
+          const pageContext = study.getUi().getMode();
           switch (pageContext) {
             case "guided":
             case "app":
@@ -220,15 +212,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.__workbenchView.openFirstNode();
               break;
           }
-          // the property might not be yet initialized
-          if (this.isPropertyInitialized("pageContext")) {
-            this.bind("pageContext", study.getUi(), "mode");
-          } else {
-            this.addListener("changePageContext", e => {
-              const pageCxt = e.getData();
-              study.getUi().setMode(pageCxt);
-            });
-          }
+          this.addListener("changePageContext", e => {
+            const pageCxt = e.getData();
+            study.getUi().setMode(pageCxt);
+          });
+          this.setPageContext(pageContext);
 
           const workbench = study.getWorkbench();
           workbench.addListener("retrieveInputs", e => {
@@ -243,16 +231,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.nodeSelected(nodeId);
           }, this);
 
+          workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
           workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
+          console.error(err);
           let msg = "";
           if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
             msg = err["message"];
           } else if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
           } else {
-            console.error(err);
             msg = this.tr("Error opening study");
             if ("message" in err) {
               msg += "<br>" + err["message"];
@@ -264,6 +253,141 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => this._hideLoadingPage());
 
       this.__updatingStudy = 0;
+    },
+
+    __attachSocketEventHandlers: function() {
+      // Listen to socket events
+      this.__listenToLogger();
+      this.__listenToProgress();
+      this.__listenToNodeUpdated();
+      this.__listenToNodeProgress();
+      this.__listenToNoMoreCreditsEvents();
+      this.__listenToEvent();
+    },
+
+    __listenToLogger: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", data => {
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            const nodeId = data["node_id"];
+            const messages = data.messages;
+            const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
+            const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
+
+            if (this.__workbenchView) {
+              this.__workbenchView.logsToLogger(nodeId, messages, logLevel);
+            }
+          }
+        }, this);
+      }
+      socket.emit("logger");
+    },
+
+    __listenToProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName2 = "progress";
+      if (!socket.slotExists(slotName2)) {
+        socket.on(slotName2, jsonString => {
+          const data = JSON.parse(jsonString);
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            const nodeId = data["node_id"];
+            const progress = Number.parseFloat(data["progress"]).toFixed(4);
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            if (node) {
+              node.getStatus().setProgress(progress);
+            } else if (osparc.data.Permissions.getInstance().isTester()) {
+              console.log("Ignored ws 'progress' msg", data);
+            }
+          }
+        }, this);
+      }
+    },
+
+    __listenToNodeUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeUpdated")) {
+        socket.on("nodeUpdated", data => {
+          this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    __listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("nodeProgress")) {
+        socket.on("nodeProgress", data => {
+          this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
+    },
+
+    __listenToNoMoreCreditsEvents: function() {
+      const slotName = "serviceNoMoreCredits";
+      const flashMessageDisplayDuration = 10000;
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const ttlMap = new osparc.data.TTLMap(flashMessageDisplayDuration);
+      const store = osparc.store.Store.getInstance();
+
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, noMoreCredits => {
+          // stop service
+          const nodeId = noMoreCredits["node_id"];
+          const workbench = this.getStudy().getWorkbench();
+          workbench.getNode(nodeId).requestStopNode();
+
+          // display flash message if not showing
+          const walletId = noMoreCredits["wallet_id"];
+          if (ttlMap.hasRecentEntry(walletId)) {
+            return;
+          }
+          ttlMap.addOrUpdateEntry(walletId);
+          const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
+          const walletName = usedWallet.getName();
+          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
+          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
+        }, this);
+      }
+    },
+
+    __listenToEvent: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for events
+      if (!socket.slotExists("event")) {
+        socket.on("event", data => {
+          const { action, "node_id": nodeId } = data
+          if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy()) {
+            if (this.getStudy().getUuid() !== data["project_id"]) {
+              // Filter out logs from other studies
+              return;
+            }
+            if (action == "RELOAD_IFRAME") {
+              // TODO: maybe reload iframe in the future
+              // for now a message is displayed to the user
+              const workbench = this.getStudy().getWorkbench();
+              const node = workbench.getNode(nodeId);
+              const label = node.getLabel();
+              const text = `New inputs for service ${label}. Please reload to refresh service.`;
+              osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+            }
+          }
+        }, this);
+      }
     },
 
     __reloadSnapshotsAndIterations: function() {
@@ -290,8 +414,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    editSlides: function() {
-      if (this.getPageContext() !== "workbench") {
+    __editSlides: function() {
+      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) {
         return;
       }
 
@@ -324,7 +448,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.getStudy().setPipelineRunning(true);
-      this.updateStudyDocument(true)
+      this.updateStudyDocument()
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
@@ -343,7 +467,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getStudy().setPipelineRunning(false);
       }, this);
       req.addListener("fail", async e => {
-        if (e.getTarget().getStatus() == "403") {
+        if (e.getTarget().getStatus() == "409") {
           this.getStudyLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
           this.getStudyLogger().info(null, "The pipeline is up-to-date");
@@ -436,7 +560,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     // ------------------ START/STOP PIPELINE ------------------
 
     __updatePipelineAndRetrieve: function(node, portKey = null) {
-      this.updateStudyDocument(false)
+      this.updateStudyDocument()
         .then(() => {
           if (node) {
             this.getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
@@ -448,11 +572,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.getStudyLogger().debug(null, "Updating pipeline");
     },
 
-    // overridden
-    _showMainLayout: function(show) {
-      this.__viewsStack.setVisibility(show ? "visible" : "excluded");
-    },
-
     nodeSelected: function(nodeId) {
       this.__workbenchView.nodeSelected(nodeId);
       this.__slideshowView.nodeSelected(nodeId);
@@ -462,7 +581,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return this.__workbenchView.getLogger();
     },
 
-    _applyPageContext: function(newCtxt) {
+    __applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
@@ -541,8 +660,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.fireDataEvent("startIteration", studyId);
       });
       win.addListener("close", () => {
-        iterations.unlistenToNodeUpdates();
-        this.__workbenchView.listenToNodeUpdated();
+        iterations.unlistenToNodeUpdated();
+        this.__listenToNodeUpdated();
       }, this);
     },
 
@@ -593,26 +712,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
-    didStudyChange: function() {
+    __getStudyDiffs: function() {
       const newObj = this.getStudy().serialize();
-      const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
-      const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__studyDataInBackend, newObj);
       if (delta) {
-        let deltaKeys = Object.keys(delta);
         // lastChangeDate and creationDate should not be taken into account as data change
-        [
-          "creationDate",
-          "lastChangeDate"
-        ].forEach(prop => {
-          const index = deltaKeys.indexOf(prop);
-          if (index > -1) {
-            deltaKeys.splice(index, 1);
-          }
-        });
-
-        return deltaKeys.length;
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        return delta;
       }
-      return false;
+      return {};
+    },
+
+    didStudyChange: function() {
+      const studyDiffs = this.__getStudyDiffs();
+      return Boolean(Object.keys(studyDiffs).length);
     },
 
     __checkStudyChanges: function() {
@@ -621,12 +735,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           // throttle update
           this.__updateThrottled = true;
         } else {
-          this.updateStudyDocument(false);
+          this.updateStudyDocument();
         }
       }
     },
 
-    updateStudyDocument: function(run = false) {
+    updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
@@ -634,10 +748,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
-      const newObj = this.getStudy().serialize();
-      return this.getStudy().updateStudy(newObj, run)
-        .then(() => {
-          this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
+      let updatePromise = null;
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        // For now, master deployment only
+        const studyDiffs = this.__getStudyDiffs();
+        updatePromise = this.getStudy().patchStudyDelayed(studyDiffs)
+      } else {
+        const newObj = this.getStudy().serialize();
+        updatePromise = this.getStudy().updateStudy(newObj);
+      }
+      return updatePromise
+        .then(studyData => {
+          this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
@@ -654,7 +776,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
-            this.updateStudyDocument(false);
+            this.updateStudyDocument();
           }
         });
     },

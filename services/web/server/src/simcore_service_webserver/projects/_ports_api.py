@@ -1,12 +1,19 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
+from aiohttp import web
+from models_library.api_schemas_directorv2.comp_tasks import (
+    OutputName,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
     is_probe_service,
 )
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.json_schema import (
@@ -16,6 +23,7 @@ from models_library.utils.json_schema import (
 from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
 from pydantic import ValidationError
 
+from ..director_v2.api import get_batch_tasks_outputs
 from .exceptions import InvalidInputValue
 
 
@@ -106,7 +114,7 @@ def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     return input_to_value
 
 
-def set_project_inputs(
+def set_inputs_in_project(
     workbench: dict[NodeID, Node], update: dict[NodeID, Any]
 ) -> set[NodeID]:
     """Updates selected input nodes and
@@ -141,18 +149,37 @@ class _NonStrictPortLink(PortLink):
         allow_population_by_field_name = True
 
 
-def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
-    """Returns values assigned to each output node"""
+class _OutputPortInfo(NamedTuple):
+    port_node_id: NodeID  # a probe node
+    task_node_id: NodeID  # a computational node
+    task_output_name: str  # an output of the computation node
+    task_output_in_workbench: Any  # the valud in the workbench of a computational node
+
+
+def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
+    """Get the outputs values in the workbench associated to every output"""
     output_to_value = {}
     for port in iter_project_ports(workbench, "output"):
         if port.node.inputs:
             try:
-                # Is link?
+                # Every port is associated to the output of a task
                 port_link = _NonStrictPortLink.parse_obj(port.node.inputs["in_1"])
-                # resolve
-                node = workbench[port_link.node_uuid]
-                # If the node has not results (e.g. did not run or failed), then node.outputs is set to None
-                value = node.outputs[port_link.output] if node.outputs else None
+                # Here we resolve which task and which tasks' output is associated to this port?
+                task_node_id = port_link.node_uuid
+                task_output_name = port_link.output
+                task_node = workbench[task_node_id]
+                value = _OutputPortInfo(
+                    port_node_id=port.node_id,
+                    task_node_id=task_node_id,
+                    task_output_name=task_output_name,
+                    task_output_in_workbench=(
+                        # If the node has not results (e.g. did not run or failed),
+                        # then node.outputs is set to None. NOTE that `{}`` might be a result
+                        task_node.outputs.get(task_output_name)
+                        if task_node.outputs is not None
+                        else None
+                    ),
+                )
             except ValidationError:
                 # not a link
                 value = port.node.inputs["in_1"]
@@ -161,3 +188,42 @@ def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
 
         output_to_value[port.node_id] = value
     return output_to_value
+
+
+async def _get_computation_tasks_outputs(
+    app: web.Application, *, project_id: ProjectID, nodes_ids: set[NodeID]
+) -> dict[NodeID, dict[OutputName, Any]]:
+    selection = TasksSelection(nodes_ids=nodes_ids)
+    batch: TasksOutputs = await get_batch_tasks_outputs(
+        app, project_id=project_id, selection=selection
+    )
+    return batch.nodes_outputs  # type: ignore[no-any-return]
+
+
+async def get_project_outputs(
+    app: web.Application, *, project_id: ProjectID, workbench: dict[NodeID, Node]
+) -> dict[NodeID, Any]:
+
+    # WARNING: these NodeIDs are the port nodes!!
+    outputs_map_in_workbench: dict[NodeID, Any] = _get_outputs_in_workbench(workbench)
+
+    # Get NodeIDs of the computational nodes
+    task_node_ids = set()
+    for v in outputs_map_in_workbench.values():
+        if isinstance(v, _OutputPortInfo):
+            task_node_ids.add(v.task_node_id)
+
+    # Updates previous results with task computations to avoid issue https://github.com/ITISFoundation/osparc-simcore/pull/5721
+    tasks_outputs = await _get_computation_tasks_outputs(
+        app, project_id=project_id, nodes_ids=task_node_ids
+    )
+
+    outputs_map: dict[NodeID, Any] = {}
+    for port_node_id, v in outputs_map_in_workbench.items():
+        if isinstance(v, _OutputPortInfo):
+            assert v.port_node_id == port_node_id  # nosec
+            outputs_map[port_node_id] = tasks_outputs[v.task_node_id].get(
+                v.task_output_name, v.task_output_in_workbench
+            )
+
+    return outputs_map

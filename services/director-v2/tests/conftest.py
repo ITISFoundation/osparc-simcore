@@ -9,6 +9,7 @@ import logging
 import os
 from collections.abc import AsyncIterable, AsyncIterator
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
@@ -19,10 +20,16 @@ import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_webserver.auth import ApiKeyGet
+from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
+from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
@@ -35,11 +42,12 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -47,7 +55,6 @@ pytest_plugins = [
     "pytest_simcore.simcore_dask_service",
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 logger = logging.getLogger(__name__)
@@ -276,17 +283,6 @@ def disable_rabbitmq(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disable_api_keys_manager(mocker: MockerFixture) -> None:
-    def mock_setup(app: FastAPI) -> None:
-        app.state.api_keys_manager = AsyncMock()
-
-    mocker.patch(
-        "simcore_service_director_v2.modules.api_keys_manager.setup",
-        side_effect=mock_setup,
-    )
-
-
-@pytest.fixture
 def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
@@ -333,3 +329,32 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
     )
     mocker.patch(f"{module_base}.exclusive", side_effect=_mock_exclusive)
+
+
+@pytest.fixture
+def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
+
+    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+
+    async def _create(
+        app: FastAPI,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        name: str,
+        expiration: timedelta,
+    ):
+        assert app
+        assert product_name
+        assert user_id
+        assert expiration is None
+
+        fake_data.display_name = name
+        return fake_data
+
+    # mocks RPC interface
+    mocker.patch(
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.get_or_create_api_key_and_secret",
+        side_effect=_create,
+        autospec=True,
+    )

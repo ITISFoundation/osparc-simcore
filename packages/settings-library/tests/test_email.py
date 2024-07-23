@@ -7,7 +7,22 @@ from typing import Any
 
 import pytest
 from pydantic import ValidationError
+from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import EmailProtocol, SMTPSettings
+
+
+@pytest.fixture
+def all_env_devel_undefined(
+    monkeypatch: pytest.MonkeyPatch, env_devel_dict: EnvVarsDict
+) -> None:
+    """Ensures that all env vars in .env-devel are undefined in the test environment
+
+    NOTE: this is useful to have a clean starting point and avoid
+    the environment to influence your test. I found this situation
+    when some script was accidentaly injecting the entire .env-devel in the environment
+    """
+    delenvs_from_dict(monkeypatch, env_devel_dict, raising=False)
 
 
 @pytest.mark.parametrize(

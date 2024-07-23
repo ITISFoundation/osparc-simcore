@@ -125,6 +125,7 @@ async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out
     mocker: MockerFixture,
     create_upload_links: Callable[[int, ByteSize], Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize], Path],
+    faker: Faker,
 ):
     file_size = ByteSize(1)
     upload_links = await create_upload_links(1, file_size)
@@ -134,7 +135,7 @@ async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out
         side_effect=AwsS3BadRequestRequestTimeoutError(body="nothing"),
     )
 
-    async with ProgressBarData(num_steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         with pytest.raises(AwsS3BadRequestRequestTimeoutError):
             await upload_file_to_presigned_links(
                 session=AsyncMock(),

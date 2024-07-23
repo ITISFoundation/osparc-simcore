@@ -1,13 +1,6 @@
-#
-# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3486
-#
+from typing import Final
 
-PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
-PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
-    "integer": int,
-    "number": float,
-    "boolean": bool,
-    "string": str,
-}
+LATEST_INTEGRATION_VERSION: Final[str] = "1.0.0"
 
-FILENAME_RE = r".+"
+
+ANY_FILETYPE: Final[str] = "data:*/*"

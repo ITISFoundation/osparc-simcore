@@ -11,28 +11,36 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from models_library.utils.json_serialization import json_dumps
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from servicelib.json_serialization import json_dumps
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -54,6 +62,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -65,8 +74,7 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.websocket_client",
+    "pytest_simcore.socketio_client",
 ]
 
 
@@ -113,6 +121,17 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
+
+
+@pytest.fixture
+async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
+    async with NewUser(
+        user_data={
+            "name": "test-user",
+        },
+        app=client.app,
+    ) as user:
+        yield user
 
 
 @pytest.fixture
@@ -167,15 +186,18 @@ def monkeypatch_setenv_from_app_config(
 
 
 @pytest.fixture
-def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
+async def request_create_project() -> (  # noqa: C901, PLR0915
+    AsyncIterator[Callable[..., Awaitable[ProjectDict]]]
+):
     """this fixture allows to create projects through the webserver interface
-
-        NOTE: a next iteration should take care of cleaning up created projects
 
     Returns:
         Callable[..., Awaitable[ProjectDict]]: _description_
     """
     # pylint: disable=too-many-statements
+
+    created_project_uuids = []
+    used_clients = []
 
     async def _setup(
         client: TestClient,
@@ -184,6 +206,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
     ):
         # Pre-defined fields imposed by required properties in schema
         project_data: ProjectDict = {}
@@ -237,8 +261,16 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             url = url.update_query(as_template=f"{as_template}")
         if copy_data is not None:
             url = url.update_query(copy_data=f"{copy_data}")
-
-        return url, project_data, expected_data
+        headers = {}
+        if parent_project_uuid is not None:
+            headers |= {
+                X_SIMCORE_PARENT_PROJECT_UUID: f"{parent_project_uuid}",
+            }
+        if parent_node_id is not None:
+            headers |= {
+                X_SIMCORE_PARENT_NODE_ID: f"{parent_node_id}",
+            }
+        return url, project_data, expected_data, headers
 
     async def _creator(
         client: TestClient,
@@ -251,16 +283,20 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         from_study: dict | None = None,
         as_template: bool | None = None,
         copy_data: bool | None = None,
+        parent_project_uuid: ProjectID | None = None,
+        parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
-        url, project_data, expected_data = await _setup(
+        url, project_data, expected_data, headers = await _setup(
             client,
             project=project,
             from_study=from_study,
             as_template=as_template,
             copy_data=copy_data,
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
         )
-
-        resp = await client.post(f"{url}", json=project_data)
+        # Create project here:
+        resp = await client.post(f"{url}", json=project_data, headers=headers)
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_accepted_response)
         if error:
@@ -284,7 +320,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 print(
                     f"--> waiting for creation {attempt.retry_state.attempt_number}..."
                 )
-                result = await client.get(f"{status_url}")
+                result = await client.get(urlparse(status_url).path)
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
@@ -298,7 +334,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
         # get result GET /{task_id}/result
         print("--> getting project creation result...")
-        result = await client.get(f"{result_url}")
+        result = await client.get(urlparse(result_url).path)
         data, error = await assert_status(result, expected_creation_response)
         if error:
             assert not data
@@ -307,6 +343,41 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         assert not error
         print(f"<-- result: {data}")
         new_project = data
+
+        # Setup access rights to the project
+        if project_data and (
+            project_data.get("access_rights") or project_data.get("accessRights")
+        ):
+            _access_rights = project_data.get("access_rights", {}) | project_data.get(
+                "accessRights", {}
+            )
+            for group_id, permissions in _access_rights.items():
+                await update_or_insert_project_group(
+                    client.app,
+                    data["uuid"],
+                    group_id=int(group_id),
+                    read=permissions["read"],
+                    write=permissions["write"],
+                    delete=permissions["delete"],
+                )
+        # Get project with already added access rights
+        print("--> getting project groups after access rights change...")
+        url = client.app.router["list_project_groups"].url_for(project_id=data["uuid"])
+        resp = await client.get(url.path)
+        data, error = await assert_status(resp, status.HTTP_200_OK)
+        print(f"<-- result: {data}")
+        new_project_access_rights = {}
+        for item in data:
+            new_project_access_rights.update(
+                {
+                    f"{item['gid']}": {
+                        "read": item["read"],
+                        "write": item["write"],
+                        "delete": item["delete"],
+                    }
+                }
+            )
+        new_project["accessRights"] = new_project_access_rights
 
         # now check returned is as expected
         if new_project:
@@ -336,7 +407,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                     }
                 }
             )
-            assert new_project["accessRights"] == expected_data["accessRights"]
+            assert new_project_access_rights == expected_data["accessRights"]
 
             modified_fields = [
                 # invariant fields
@@ -356,6 +427,14 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 
+        created_project_uuids.append(new_project["uuid"])
+        used_clients.append(client)
+
         return new_project
 
-    return _creator
+    yield _creator
+
+    # cleanup projects
+    for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
+        url = client.app.router["delete_project"].url_for(project_id=project_uuid)
+        await client.delete(url.path)

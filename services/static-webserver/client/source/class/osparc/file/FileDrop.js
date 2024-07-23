@@ -51,28 +51,16 @@ qx.Class.define("osparc.file.FileDrop", {
     }
     msg += "</center>";
 
-    const dropHere = this.__dropHere = new qx.ui.basic.Label(msg).set({
+    const dropHereMessage = this.__dropHereMessage = new qx.ui.basic.Label(msg).set({
       font: "text-14",
       rich: true,
       alignX: "center",
       alignY: "middle"
     });
-    this._add(dropHere, {
-      top: 40,
-      left: 40
-    });
+    this._add(dropHereMessage);
 
-    const centerDropHere = () => {
-      // center it
-      const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
-      const fileDropBounds = this.getBounds() || this.getSizeHint();
-      dropHere.setLayoutProperties({
-        top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
-        left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
-      });
-    };
-    dropHere.addListener("appear", centerDropHere);
-    this.addListener("resize", centerDropHere);
+    dropHereMessage.addListener("appear", () => this.__centerDropHereMessage(), this);
+    this.addListener("resize", () => this.__centerDropHereMessage(), this);
 
     const svgLayer = this.__svgLayer = new osparc.workbench.SvgWidget();
     this._add(svgLayer, {
@@ -99,6 +87,21 @@ qx.Class.define("osparc.file.FileDrop", {
       return {
         "border-width": "0px"
       };
+    },
+
+    getFilesFromEvent: function(e) {
+      const files = [];
+      if (e.dataTransfer.items) {
+        const items = e.dataTransfer.items;
+        for (let i = 0; i < items.length; i++) {
+          // If dropped items aren't files, reject them
+          if (items[i].webkitGetAsEntry()["isFile"]) {
+            const file = items[i].getAsFile();
+            files.push(file);
+          }
+        }
+      }
+      return files;
     }
   },
 
@@ -123,7 +126,7 @@ qx.Class.define("osparc.file.FileDrop", {
 
   members: {
     __svgLayer: null,
-    __dropHere: null,
+    __dropHereMessage: null,
     __dropMe: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
@@ -134,7 +137,25 @@ qx.Class.define("osparc.file.FileDrop", {
     },
 
     __applyShowDropHere: function(value) {
-      this.__dropHere.setVisibility(value ? "visible" : "excluded");
+      this.__dropHereMessage.setVisibility(value ? "visible" : "excluded");
+    },
+
+    __centerDropHereMessage: function() {
+      const dropHere = this.__dropHereMessage;
+      // center it
+      const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
+      const fileDropBounds = this.getBounds() || this.getSizeHint();
+      dropHere.setLayoutProperties({
+        top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
+        left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
+      });
+    },
+
+    setDropHereMessage: function(msg) {
+      this.__dropHereMessage.set({
+        value: msg
+      });
+      this.__centerDropHereMessage();
     },
 
     resetDropAction: function() {
@@ -212,11 +233,11 @@ qx.Class.define("osparc.file.FileDrop", {
 
     __updateWidgets: function(dragging, posX, posY) {
       if (dragging) {
-        this.__dropHere.exclude();
+        this.__dropHereMessage.exclude();
         this.__updateDropMe(posX, posY);
       } else {
         if (this.getShowDropHere()) {
-          this.__dropHere.show();
+          this.__dropHereMessage.show();
         }
         this.__hideDropMe();
       }
@@ -270,17 +291,18 @@ qx.Class.define("osparc.file.FileDrop", {
 
       this.__isDraggingFile = false;
       if ("dataTransfer" in e) {
-        const files = e.dataTransfer.files;
-        if (files.length === 1) {
-          const fileList = e.dataTransfer.files;
-          if (fileList.length) {
+        const files = osparc.file.FileDrop.getFilesFromEvent(e);
+        if (files.length) {
+          if (files.length === 1) {
             this.fireDataEvent("localFileDropped", {
               data: files,
               pos: this.__pointerFileEventToScreenPos(e)
             });
+          } else {
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file at a time is accepted."), "ERROR");
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
         }
       }
     },

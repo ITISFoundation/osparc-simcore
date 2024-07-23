@@ -4,11 +4,11 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import API_VTAG

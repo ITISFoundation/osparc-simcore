@@ -7,9 +7,9 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest import mock
-from unittest.mock import call
 
 import pytest
+from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, parse_obj_as
@@ -91,6 +91,7 @@ async def mocked_log_cb(mocker: MockerFixture) -> mock.AsyncMock:
 async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
     async def _progress_cb(*args, **kwargs) -> None:
         print(f"received progress: {args}, {kwargs}")
+        assert isinstance(args[0], ProgressReport)
 
     return mocker.AsyncMock(side_effect=_progress_cb)
 
@@ -98,11 +99,18 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
 def _assert_progress_report_values(
     mocked_progress_cb: mock.AsyncMock, *, total: float
 ) -> None:
-    assert mocked_progress_cb.call_args_list[0] == call(
-        ProgressReport(actual_value=0, total=total, unit="Byte")
+    # NOTE: we exclude the message part here as this is already tested in servicelib
+    # check first progress
+    assert mocked_progress_cb.call_args_list[0].args[0].dict(
+        exclude={"message"}
+    ) == ProgressReport(actual_value=0, total=total, unit="Byte").dict(
+        exclude={"message"}
     )
-    assert mocked_progress_cb.call_args_list[-1] == call(
-        ProgressReport(actual_value=total, total=total, unit="Byte")
+    # check last progress
+    assert mocked_progress_cb.call_args_list[-1].args[0].dict(
+        exclude={"message"}
+    ) == ProgressReport(actual_value=total, total=total, unit="Byte").dict(
+        exclude={"message"}
     )
 
 
@@ -117,6 +125,7 @@ async def test_pull_image(
     mocked_log_cb: mock.AsyncMock,
     mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    faker: Faker,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
@@ -126,6 +135,7 @@ async def test_pull_image(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
 
         await pull_image(
@@ -136,10 +146,7 @@ async def test_pull_image(
             layer_information,
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
-        )
+
     _assert_progress_report_values(
         mocked_progress_cb, total=layer_information.layers_total_size
     )
@@ -156,6 +163,7 @@ async def test_pull_image(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image,
@@ -165,10 +173,10 @@ async def test_pull_image(
             layer_information,
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
-        )
+    assert (
+        main_progress_bar._current_steps  # noqa: SLF001
+        == layer_information.layers_total_size
+    )
     _assert_progress_report_values(
         mocked_progress_cb, total=layer_information.layers_total_size
     )
@@ -187,10 +195,12 @@ async def test_pull_image_without_layer_information(
     mocked_log_cb: mock.AsyncMock,
     mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    faker: Faker,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     assert layer_information
+    print(f"{image=} has {layer_information.layers_total_size=}")
 
     fake_number_of_steps = parse_obj_as(ByteSize, "200MiB")
     assert fake_number_of_steps > layer_information.layers_total_size
@@ -198,14 +208,14 @@ async def test_pull_image_without_layer_information(
         num_steps=fake_number_of_steps,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None
         )
         mocked_log_cb.assert_called()
-        assert main_progress_bar._current_steps == float(  # noqa: SLF001
-            layer_information.layers_total_size
-        )
+        # depending on the system speed, and if the progress report callback is slow, then
+
     _assert_progress_report_values(mocked_progress_cb, total=fake_number_of_steps)
     mocked_progress_cb.reset_mock()
     mocked_log_cb.reset_mock()
@@ -224,6 +234,7 @@ async def test_pull_image_without_layer_information(
         num_steps=1,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None

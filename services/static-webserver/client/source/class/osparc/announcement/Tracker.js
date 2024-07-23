@@ -27,8 +27,8 @@ qx.Class.define("osparc.announcement.Tracker", {
     __checkInterval: null,
     __announcements: null,
 
-    startTracker: function() {
-      const checkAnnouncements = () => {
+    checkAnnouncements: async function() {
+      return new Promise(resolve => {
         osparc.data.Resources.get("announcements")
           .then(announcements => {
             if (announcements && announcements.length) {
@@ -36,11 +36,15 @@ qx.Class.define("osparc.announcement.Tracker", {
             } else {
               this.__setAnnouncements(null);
             }
+            resolve();
           })
           .catch(err => console.error(err));
-      };
-      checkAnnouncements();
-      this.__checkInterval = setInterval(checkAnnouncements, this.self().CHECK_INTERVAL);
+      });
+    },
+
+    startTracker: function() {
+      this.checkAnnouncements();
+      this.__checkInterval = setInterval(() => this.checkAnnouncements(), this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {

@@ -11,6 +11,7 @@ from models_library.utils.common_validators import (
 )
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -123,6 +124,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
+        auto_default_from_env=True
+    )
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
         auto_default_from_env=True

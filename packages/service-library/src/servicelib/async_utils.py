@@ -4,7 +4,9 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
+
+from .utils_profiling_middleware import dont_profile, is_profiling, profile
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +32,34 @@ class Context:
     task: asyncio.Task | None = None
 
 
+@dataclass
+class QueueElement:
+    do_profile: bool = False
+    input: Awaitable | None = None
+    output: Any | None = None
+
+
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
-async def cancel_sequential_workers() -> None:
-    """Signals all workers to close thus avoiding errors on shutdown"""
-    for context in _sequential_jobs_contexts.values():
+async def _safe_cancel(context: Context) -> None:
+    try:
         await context.in_queue.put(None)
         if context.task is not None:
             context.task.cancel()
             with suppress(asyncio.CancelledError):
                 await context.task
+    except RuntimeError as e:
+        if "Event loop is closed" in f"{e}":
+            logger.warning("event loop is closed and could not cancel %s", context)
+        else:
+            raise
+
+
+async def cancel_sequential_workers() -> None:
+    """Signals all workers to close thus avoiding errors on shutdown"""
+    for context in _sequential_jobs_contexts.values():
+        await _safe_cancel(context)
 
     _sequential_jobs_contexts.clear()
     logger.info("All run_sequentially_in_context pending workers stopped")
@@ -138,15 +157,18 @@ def run_sequentially_in_context(
             if not context.initialized:
                 context.initialized = True
 
-                async def worker(in_q: Queue, out_q: Queue) -> None:
+                async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
                     while True:
-                        awaitable = await in_q.get()
+                        element = await in_q.get()
                         in_q.task_done()
                         # check if requested to shutdown
-                        if awaitable is None:
-                            break
                         try:
-                            result = await awaitable
+                            do_profile = element.do_profile
+                            awaitable = element.input
+                            if awaitable is None:
+                                break
+                            with profile(do_profile):
+                                result = await awaitable
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
                         await out_q.put(result)
@@ -161,9 +183,15 @@ def run_sequentially_in_context(
                     worker(context.in_queue, context.out_queue)
                 )
 
-            await context.in_queue.put(decorated_function(*args, **kwargs))
+            with dont_profile():
+                # ensure profiler is disabled in order to capture profile of endpoint code
+                queue_input = QueueElement(
+                    input=decorated_function(*args, **kwargs),
+                    do_profile=is_profiling(),
+                )
+                await context.in_queue.put(queue_input)
+                wrapped_result = await context.out_queue.get()
 
-            wrapped_result = await context.out_queue.get()
             if isinstance(wrapped_result, Exception):
                 raise wrapped_result
 

@@ -12,11 +12,11 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from servicelib.json_serialization import json_dumps
+from models_library.utils.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
 from tenacity import TryAgain, retry
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_random_exponential
@@ -145,7 +145,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             # service will be running.
             sorted_tasks = sorted(
                 service_associated_tasks,
-                key=lambda task: task["UpdatedAt"],  # type:ignore
+                key=lambda task: task["UpdatedAt"],
             )
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]

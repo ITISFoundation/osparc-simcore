@@ -286,6 +286,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         });
       }
+
+      if (optionsMenu.getChildren().length) {
+        optionsMenu.addSeparator();
+      }
+      const inputRequiredButton = this.__getInputRequiredButton(field.key);
+      optionsMenu.add(inputRequiredButton);
     },
 
     __connectToInputNode: function(targetPortId, inputNodeId, outputKey) {
@@ -342,6 +348,26 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return null;
     },
 
+    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, menu, menuBtn) {
+      menuBtn.exclude();
+      menu.removeAll();
+
+      const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
+      if (inputNode) {
+        for (const outputKey in inputNode.getOutputs()) {
+          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
+            .then(compatible => {
+              if (compatible) {
+                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
+                menu.add(paramButton);
+                menuBtn.show();
+              }
+            });
+        }
+      }
+    },
+
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
       selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
@@ -364,26 +390,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         this.__populateExistingParamsMenu(portId, existingParamMenu, existingParamBtn);
       }
       return existingParamBtn;
-    },
-
-    __populateInputNodePortsMenu: function(inputNodeId, targetPortId, menu, menuBtn) {
-      menuBtn.exclude();
-      menu.removeAll();
-
-      const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-      if (inputNode) {
-        for (const outputKey in inputNode.getOutputs()) {
-          osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
-            .then(compatible => {
-              if (compatible) {
-                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
-                paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
-                menu.add(paramButton);
-                menuBtn.show();
-              }
-            });
-        }
-      }
     },
 
     __populateExistingParamsMenu: function(targetPortId, menu, menuBtn) {
@@ -410,6 +416,26 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       });
     },
 
+    __getInputRequiredButton: function(portId) {
+      const node = this.getNode();
+      const inputRequiredBtn = new qx.ui.menu.Button(this.tr("Required Input"));
+      const evalButton = () => {
+        if (node.getInputsRequired().includes(portId)) {
+          inputRequiredBtn.set({
+            icon: "@FontAwesome5Regular/check-square/12"
+          });
+        } else {
+          inputRequiredBtn.set({
+            icon: "@FontAwesome5Regular/square/12"
+          });
+        }
+      }
+      node.addListener("changeInputsRequired", () => evalButton(), this);
+      inputRequiredBtn.addListener("execute", () => node.toggleInputRequired(portId), this);
+      evalButton();
+      return inputRequiredBtn;
+    },
+
     // overridden
     addItems: function(items, names, title, itemOptions, headerOptions) {
       this.base(arguments, items, names, title, itemOptions, headerOptions);
@@ -419,6 +445,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        const portId = item.key;
 
         const fieldOpts = this.__createLinkUnlinkStack(item);
         if (fieldOpts) {
@@ -428,10 +455,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         }
 
-        this.__createDropMechanism(item, item.key);
+        this.__createDropMechanism(item, portId);
 
         // Notify focus and focus out
-        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+        const msgDataFn = (nodeId, pId) => this.__arePortsCompatible(nodeId, pId, this.getNode().getNodeId(), item.key);
 
         item.addListener("focus", () => {
           if (this.getNode()) {
@@ -447,12 +474,21 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         row++;
       }
 
+      const evalRequired = () => {
+        for (const portId in this.__ctrlLinkMap) {
+          this.evalFieldRequired(portId);
+        }
+      }
+      this.getNode().addListener("changeInputsRequired", () => evalRequired());
+      evalRequired();
+
       // add port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         label: this.tr("Input"),
         icon: "@FontAwesome5Solid/plus/14",
         marginTop: 6,
-        allowGrowX: false
+        allowGrowX: false,
+        minWidth: 70
       });
       addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
       this._add(addPortButton, {

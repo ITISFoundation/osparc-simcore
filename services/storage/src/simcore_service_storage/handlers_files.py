@@ -17,6 +17,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -24,7 +25,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ._meta import API_VTAG
@@ -67,6 +67,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
         user_id=query_params.user_id,
         expand_dirs=query_params.expand_dirs,
         uuid_filter=query_params.uuid_filter,
+        project_id=query_params.project_id,
     )
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
@@ -277,7 +278,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         ),
     )
     request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
-    complete_task_state_url = request.url.join(
+    ip_addr, port = request.transport.get_extra_info(
+        "sockname"
+    )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+    route = (
         request.app.router["is_completed_upload_file"]
         .url_for(
             location_id=f"{path_params.location_id}",
@@ -286,9 +290,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         )
         .with_query(user_id=query_params.user_id)
     )
+    complete_task_state_url = f"{request.url.scheme}://{ip_addr}:{port}{route}"
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
-            state=parse_obj_as(AnyUrl, f"{complete_task_state_url}")
+            state=parse_obj_as(AnyUrl, complete_task_state_url)
         )
     )
     return web.json_response(

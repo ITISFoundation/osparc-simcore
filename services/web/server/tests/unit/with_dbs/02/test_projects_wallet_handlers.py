@@ -13,8 +13,8 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import WalletGet
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
@@ -72,7 +72,7 @@ async def test_project_wallets_user_project_access(
             project_id=user_project["uuid"]
         )
         resp = await client.get(base_url)
-        _, errors = await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
 

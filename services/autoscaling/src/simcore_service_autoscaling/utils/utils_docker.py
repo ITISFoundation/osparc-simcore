@@ -71,6 +71,15 @@ _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
 ]
 
 
+_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "io.simcore.osparc-node-found-empty"
+)
+
+_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "io.simcore.osparc-node-termination-started"
+)
+
+
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
@@ -426,16 +435,12 @@ _DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 _CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
-def get_docker_pull_images_on_start_bash_command(
+def write_compose_file_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
-    if not docker_tags:
-        return ""
-
     compose = {
-        "version": '"3.8"',
         "services": {
-            f"pre-pull-image-{n}": {"image": image_tag}
+            f"{image_tag.split('/')[-1].replace(':','-')}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
         },
     }
@@ -443,6 +448,15 @@ def get_docker_pull_images_on_start_bash_command(
     write_compose_file_cmd = " ".join(
         ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
+    return write_compose_file_cmd
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    if not docker_tags:
+        return ""
+
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
@@ -457,7 +471,7 @@ def get_docker_pull_images_on_start_bash_command(
     docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
-            write_compose_file_cmd,
+            write_compose_file_command(docker_tags),
             write_docker_compose_pull_script_cmd,
             make_docker_compose_script_executable,
             docker_compose_pull_cmd,
@@ -606,6 +620,67 @@ def get_node_last_readyness_update(node: Node) -> datetime.datetime:
     return cast(
         datetime.datetime,
         arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
+
+
+async def set_node_found_empty(
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    empty: bool,
+) -> Node:
+    assert node.Spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    if empty:
+        new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+    else:
+        new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=bool(node.Spec.Availability is Availability.active),
+    )
+
+
+async def get_node_empty_since(node: Node) -> datetime.datetime | None:
+    """returns the last time when the node was found empty or None if it was not empty"""
+    assert node.Spec  # nosec
+    assert node.Spec.Labels  # nosec
+    if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
+        return None
+    return cast(
+        datetime.datetime,
+        arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
+
+
+async def set_node_begin_termination_process(
+    docker_client: AutoscalingDocker, node: Node
+) -> Node:
+    """sets the node to drain and adds a docker label with the time"""
+    assert node.Spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    new_tags[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = arrow.utcnow().isoformat()
+
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=False,
+    )
+
+
+def get_node_termination_started_since(node: Node) -> datetime.datetime | None:
+    assert node.Spec  # nosec
+    assert node.Spec.Labels  # nosec
+    if _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in node.Spec.Labels:
+        return None
+    return cast(
+        datetime.datetime,
+        arrow.get(
+            node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
+        ).datetime,
     )  # mypy
 
 

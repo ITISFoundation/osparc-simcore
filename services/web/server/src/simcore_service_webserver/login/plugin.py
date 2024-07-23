@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 
 import asyncpg
@@ -117,17 +116,6 @@ async def _resolve_login_settings_per_product(app: web.Application):
 
     # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
-
-    log.info(
-        "Captured products login settings:\n%s",
-        json.dumps(
-            {
-                product_name: login_settings.dict()
-                for product_name, login_settings in login_settings_per_product.items()
-            },
-            indent=1,
-        ),
-    )
 
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}

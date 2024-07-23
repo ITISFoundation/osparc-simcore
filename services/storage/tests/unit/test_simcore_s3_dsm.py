@@ -2,8 +2,8 @@
 # pylint:disable=redefined-outer-name
 
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
-from typing import AsyncContextManager
 
 import pytest
 from aiopg.sa.engine import Engine
@@ -37,7 +37,9 @@ def mock_copy_transfer_cb() -> Callable[[int], None]:
 
 async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
-    directory_with_files: Callable[..., AsyncContextManager[FileUploadSchema]],
+    create_directory_with_files: Callable[
+        ..., AbstractAsyncContextManager[FileUploadSchema]
+    ],
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
@@ -59,16 +61,20 @@ async def test__copy_path_s3_s3(
         )
 
     async def _count_files(s3_file_id: SimcoreS3FileID, expected_count: int) -> None:
-        files = await get_s3_client(simcore_s3_dsm.app).list_files(
-            simcore_s3_dsm.simcore_bucket_name, prefix=s3_file_id
-        )
-        assert len(files) == expected_count
+        s3_client = get_s3_client(simcore_s3_dsm.app)
+        counted_files = 0
+        async for s3_objects in s3_client.list_objects_paginated(
+            bucket=simcore_s3_dsm.simcore_bucket_name, prefix=s3_file_id
+        ):
+            counted_files += len(s3_objects)
+
+        assert counted_files == expected_count
 
     # using directory
 
     FILE_COUNT = 4
     SUBDIR_COUNT = 5
-    async with directory_with_files(
+    async with create_directory_with_files(
         dir_name="some-random",
         file_size_in_dir=file_size,
         subdir_count=SUBDIR_COUNT,

@@ -6,7 +6,9 @@
 --requirement ../../../packages/models-library/requirements/_base.in
 
 click
+cookiecutter
 docker # pytest-plugin
+jinja2_time
 jsonschema # pytest-plugin
 pytest # pytest-plugin
 pyyaml

@@ -4,9 +4,10 @@
 # pylint:disable=protected-access
 
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable
+from typing import Any, Callable
 
 import pytest
+from faker import Faker
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
@@ -42,7 +43,7 @@ async def test_nodeports_auto_updates(
         pass
 
     async def mock_node_port_creator_cb(*args, **kwargs):
-        updated_node_ports = Nodeports(
+        return Nodeports(
             inputs=updated_inputs,
             outputs=updated_outputs,
             db_manager=db_manager,
@@ -53,7 +54,6 @@ async def test_nodeports_auto_updates(
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
         )
-        return updated_node_ports
 
     node_ports = Nodeports(
         inputs=original_inputs,
@@ -83,6 +83,7 @@ async def test_node_ports_accessors(
     user_id: int,
     project_id: str,
     node_uuid: str,
+    faker: Faker,
 ):
     db_manager = mock_db_manager(default_configuration)
 
@@ -93,7 +94,7 @@ async def test_node_ports_accessors(
         pass
 
     async def mock_node_port_creator_cb(*args, **kwargs):
-        updated_node_ports = Nodeports(
+        return Nodeports(
             inputs=original_inputs,
             outputs=original_outputs,
             db_manager=db_manager,
@@ -104,7 +105,6 @@ async def test_node_ports_accessors(
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
         )
-        return updated_node_ports
 
     node_ports = Nodeports(
         inputs=original_inputs,
@@ -123,14 +123,14 @@ async def test_node_ports_accessors(
         await node_ports.set(port.key, port.value)
 
     with pytest.raises(exceptions.UnboundPortError):
-        await node_ports.get("some_invalid_key")
+        await node_ports.get("some_invalid_key")  # type: ignore
 
     for port in original_outputs.values():
         assert await node_ports.get(port.key) == port.value
         await node_ports.set(port.key, port.value)
 
     # test batch add
-    async with ProgressBarData(num_steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await node_ports.set_multiple(
             {
                 port.key: (port.value, None)
@@ -139,7 +139,7 @@ async def test_node_ports_accessors(
             },
             progress_bar=progress_bar,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
 
 @pytest.fixture(scope="session")
@@ -148,15 +148,12 @@ def e_tag() -> str:
 
 
 @pytest.fixture
-async def mock_upload_path(
-    mocker: MockFixture, e_tag: str
-) -> AsyncIterable[MockFixture]:
-    mock = mocker.patch(
+async def mock_upload_path(mocker: MockFixture, e_tag: str) -> MockFixture:
+    return mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_path",
         return_value=UploadedFile(0, e_tag),
         autospec=True,
     )
-    yield mock
 
 
 async def test_node_ports_set_file_by_keymap(
@@ -178,7 +175,7 @@ async def test_node_ports_set_file_by_keymap(
         pass
 
     async def mock_node_port_creator_cb(*args, **kwargs):
-        updated_node_ports = Nodeports(
+        return Nodeports(
             inputs=original_inputs,
             outputs=original_outputs,
             db_manager=db_manager,
@@ -189,7 +186,6 @@ async def test_node_ports_set_file_by_keymap(
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
         )
-        return updated_node_ports
 
     node_ports = Nodeports(
         inputs=original_inputs,

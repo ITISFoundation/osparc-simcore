@@ -18,14 +18,15 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
     PaymentsTransactionsRepo,
 )
 from simcore_service_payments.models.db import PaymentsMethodsDB
+from simcore_service_payments.models.db_to_api import to_payments_api_model
 from simcore_service_payments.services import payments
 from simcore_service_payments.services.notifier import NotifierService
 from simcore_service_payments.services.notifier_email import EmailProvider
@@ -154,7 +155,9 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         == user_id
     )
     assert (
-        mock_email_provider.notify_payment_completed.call_args.kwargs["payment"]
+        to_payments_api_model(
+            mock_email_provider.notify_payment_completed.call_args.kwargs["payment"]
+        )
         == payment
     )
 

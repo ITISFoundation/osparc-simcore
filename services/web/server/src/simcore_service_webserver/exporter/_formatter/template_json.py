@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import cast
 
 import aiofiles
-from servicelib.json_serialization import json_dumps
+from models_library.utils.json_serialization import json_dumps
 
 from ...projects.models import ProjectDict
 

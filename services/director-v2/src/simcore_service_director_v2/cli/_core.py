@@ -16,7 +16,7 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
 

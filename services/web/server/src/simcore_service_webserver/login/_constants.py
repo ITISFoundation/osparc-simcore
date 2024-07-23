@@ -64,6 +64,9 @@ MSG_WRONG_2FA_CODE__INVALID: Final[
     str
 ] = "Invalid code. Please provide valid code or generate new code."
 MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = "Expired code. Please generate new code."
+MSG_WRONG_CAPTCHA__INVALID: Final[
+    str
+] = "The CAPTCHA code entered was incorrect. Please try again."
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 MSG_WEAK_PASSWORD: Final[
     str
@@ -93,3 +96,5 @@ MAX_2FA_CODE_RESEND: Final[int] = 5
 
 # maximum number of trials to validate the passcode
 MAX_2FA_CODE_TRIALS: Final[int] = 5
+
+CAPTCHA_SESSION_KEY: Final[str] = "captcha"

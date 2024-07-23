@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections.abc import Coroutine
 from typing import Annotated, Final, cast
 
 import httpx
@@ -19,16 +18,16 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -79,12 +78,11 @@ async def list_tracked_dynamic_services(
     user_id: UserID | None = None,
     project_id: ProjectID | None = None,
 ) -> list[DynamicServiceGet]:
-    legacy_running_services: list[DynamicServiceGet] = cast(
-        list[DynamicServiceGet],
-        await director_v0_client.get_running_services(user_id, project_id),
+    legacy_running_services = await director_v0_client.get_running_services(
+        user_id, project_id
     )
 
-    get_stack_statuse_tasks: list[Coroutine] = [
+    get_stack_statuse_tasks = [
         scheduler.get_stack_status(service_uuid)
         for service_uuid in scheduler.list_services(
             user_id=user_id, project_id=project_id
@@ -92,11 +90,12 @@ async def list_tracked_dynamic_services(
     ]
 
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
-    dynamic_sidecar_running_services: list[DynamicServiceGet] = cast(
-        list[DynamicServiceGet], await asyncio.gather(*get_stack_statuse_tasks)
-    )
+    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuse_tasks)
 
-    return legacy_running_services + dynamic_sidecar_running_services
+    return cast(
+        list[DynamicServiceGet],
+        legacy_running_services + dynamic_sidecar_running_services,
+    )  # mypy
 
 
 @router.post(
@@ -334,6 +333,7 @@ async def update_projects_networks(
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
 ) -> None:
+    # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,

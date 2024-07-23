@@ -5,14 +5,15 @@
 
 import asyncio
 from typing import Any, Awaitable, Callable
+from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
 from pydantic import ByteSize, parse_obj_as
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
@@ -23,7 +24,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.projects.models import ProjectDict
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -117,7 +118,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     assert len(data) == 1, "there are too many projects in the db!"
 
     # now abort the copy
-    resp = await client.delete(f"{abort_url}")
+    resp = await client.delete(urlparse(abort_url).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(
@@ -163,7 +164,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     # let the copy start
     await asyncio.sleep(2)
     # now abort the copy
-    resp = await client.delete(f"{created_copy_task.abort_href}")
+    resp = await client.delete(urlparse(created_copy_task.abort_href).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(

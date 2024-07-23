@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -96,7 +96,9 @@ async def _pull_legacy_archive(
     progress_bar: ProgressBarData,
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
-    async with progress_bar.sub_progress(steps=2) as sub_prog:
+    async with progress_bar.sub_progress(
+        steps=2, description=f"pulling {destination_path.name}"
+    ) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
                 destination_path, is_archive=True
@@ -170,6 +172,15 @@ async def _delete_legacy_archive(
     owner_id = await DBManager().get_project_owner_user_id(project_id)
     await filemanager.delete_file(
         user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
+    )
+
+
+async def get_remote_size(
+    *, user_id: UserID, project_id: ProjectID, node_uuid: NodeID, source_path: Path
+) -> ByteSize:
+    s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
+    return await filemanager.get_path_size(
+        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
 
 

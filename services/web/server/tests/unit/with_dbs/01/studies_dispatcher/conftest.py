@@ -8,8 +8,8 @@ import logging
 
 import pytest
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher.settings import (
     StudiesDispatcherSettings,
@@ -36,7 +36,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_STORAGE": "null",
             "WEBSERVER_TAGS": "1",
             "WEBSERVER_TRACING": "null",
-            "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
         },

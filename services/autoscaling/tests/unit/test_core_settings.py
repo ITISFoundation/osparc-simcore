@@ -8,7 +8,7 @@ import json
 import pytest
 from faker import Faker
 from pydantic import ValidationError
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import (
     ApplicationSettings,
     EC2InstancesSettings,
@@ -26,7 +26,7 @@ def instance_type_with_invalid_boot_script(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    ec2_instances: list[InstanceTypeType],
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -37,7 +37,7 @@ def instance_type_with_invalid_boot_script(
                         "ami_id": faker.pystr(),
                         "custom_boot_scripts": ['ls"'],
                     }
-                    for ec2_type_name in ec2_instances
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
         },
@@ -64,6 +64,7 @@ def test_settings(app_environment: EnvVarsDict):
 def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_ACCESS
+    assert settings.AUTOSCALING_SSM_ACCESS is None
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING
     assert settings.AUTOSCALING_DASK is None
@@ -74,6 +75,9 @@ def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
 def test_settings_computational_mode(enabled_computational_mode: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_ACCESS
+    assert (
+        settings.AUTOSCALING_SSM_ACCESS is None
+    )  # NOTE: this might change in the future
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING is None
     assert settings.AUTOSCALING_DASK
@@ -86,6 +90,26 @@ def test_defining_both_computational_and_dynamic_modes_is_invalid_and_raises(
 ):
     with pytest.raises(ValidationError):
         ApplicationSettings.create_from_envs()
+
+
+def test_invalid_EC2_INSTANCES_TIME_BEFORE_DRAINING(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_DRAINING": "1:05:00"})
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    assert (
+        datetime.timedelta(minutes=1)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    )
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_DRAINING": "-1:05:00"})
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        datetime.timedelta(seconds=10)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
+    )
 
 
 def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
@@ -110,7 +134,7 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     )
 
 
-def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
+def test_EC2_INSTANCES_ALLOWED_TYPES(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
     settings = ApplicationSettings.create_from_envs()
@@ -162,3 +186,22 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
     ] == next(
         iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
     ).pre_pull_images
+
+
+def test_invalid_instance_names(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # passing an invalid image tag name will fail
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {faker.pystr(): {"ami_id": faker.pystr(), "pre_pull_images": []}}
+            )
+        },
+    )
+    with pytest.raises(ValidationError):
+        ApplicationSettings.create_from_envs()

@@ -11,13 +11,13 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.json_serialization import json_dumps
 
 
 @dataclass

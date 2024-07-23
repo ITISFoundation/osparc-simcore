@@ -69,9 +69,11 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
         width: 40
       });
       hBox.add(sTitle);
-      const sLabel = new qx.ui.basic.Label(label).set({
-        selectable: true
-      });
+      const sLabel = new qx.ui.basic.Label();
+      if (label) {
+        // partially hide the key and secret
+        sLabel.setValue(label.substring(1, 8) + "****")
+      }
       hBox.add(sLabel);
       return hBox;
     }

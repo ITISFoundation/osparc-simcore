@@ -200,7 +200,8 @@ async def pull_file_from_store(
         local_path=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
-        progress_bar=progress_bar or ProgressBarData(num_steps=1),
+        progress_bar=progress_bar
+        or ProgressBarData(num_steps=1, description="pulling file"),
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -250,7 +251,7 @@ async def push_file_to_store(
     assert isinstance(upload_result, UploadedFile)  # nosec
     log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
     return FileLink(
-        store=upload_result.store_id, path=s3_object, e_tag=upload_result.etag
+        store=upload_result.store_id, path=s3_object, eTag=upload_result.etag
     )
 
 
@@ -273,7 +274,8 @@ async def pull_file_from_download_link(
         URL(f"{value.download_link}"),
         local_path,
         io_log_redirect_cb=io_log_redirect_cb,
-        progress_bar=progress_bar or ProgressBarData(num_steps=1),
+        progress_bar=progress_bar
+        or ProgressBarData(num_steps=1, description="pulling file"),
     )
 
     # if a file alias is present use it to rename the file accordingly
@@ -303,10 +305,14 @@ async def get_file_link_from_url(
     s3_object = data_items_utils.create_simcore_file_id(
         Path(new_value.path), project_id, node_id
     )
-    store_id, e_tag = await filemanager.get_file_metadata(
+    file_metadata = await filemanager.get_file_metadata(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )
-    log.debug("file meta data for %s found, received ETag %s", new_value, e_tag)
-    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
+    log.debug(
+        "file meta data for %s found, received ETag %s", new_value, file_metadata.etag
+    )
+    return FileLink(
+        store=file_metadata.location, path=s3_object, eTag=file_metadata.etag
+    )

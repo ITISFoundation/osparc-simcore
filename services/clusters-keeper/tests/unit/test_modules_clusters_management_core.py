@@ -3,10 +3,12 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import dataclasses
 from collections.abc import Awaitable, Callable
 from typing import Final
 from unittest.mock import MagicMock
 
+import arrow
 import pytest
 from attr import dataclass
 from aws_library.ec2.models import EC2InstanceData
@@ -15,8 +17,9 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,
@@ -26,11 +29,6 @@ from simcore_service_clusters_keeper.modules.clusters_management_core import (
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
 
 
 @pytest.fixture(params=("with_wallet", "without_wallet"))
@@ -213,3 +211,114 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     await _assert_instances_state(
         ec2_client, instance_ids=worker_instance_ids, state="terminated"
     )
+
+
+async def test_cluster_management_core_removes_long_starting_clusters_after_some_delay(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+    app_settings: ApplicationSettings,
+    mocker: MockerFixture,
+):
+    created_clusters = await create_cluster(
+        initialized_app, user_id=user_id, wallet_id=wallet_id
+    )
+    assert len(created_clusters) == 1
+
+    # simulate unresponsive dask-scheduler
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = False
+
+    # running the cluster management task shall not remove anything
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+
+    the_cluster = created_clusters[0]
+
+    # running now the cluster management task shall remove the cluster
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
+    mocked_get_all_clusters = mocker.patch(
+        "simcore_service_clusters_keeper.modules.clusters_management_core.get_all_clusters",
+        autospec=True,
+        return_value={
+            dataclasses.replace(
+                the_cluster,
+                launch_time=arrow.utcnow()
+                .shift(
+                    seconds=-app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_START_TIME.total_seconds()
+                )
+                .datetime,
+            )
+        },
+    )
+    await check_clusters(initialized_app)
+    mocked_get_all_clusters.assert_called_once()
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="terminated"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+
+
+async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+    create_ec2_workers: Callable[[int], Awaitable[list[str]]],
+    app_settings: ApplicationSettings,
+    mocker: MockerFixture,
+):
+    created_clusters = await create_cluster(
+        initialized_app, user_id=user_id, wallet_id=wallet_id
+    )
+    assert len(created_clusters) == 1
+
+    # simulate a responsive dask-scheduler
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = True
+
+    # running the cluster management task shall not remove anything
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
+    mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
+
+    # simulate now a non responsive dask-scheduler, which means it is broken
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = False
+
+    # running now the cluster management will not instantly remove the cluster, so now nothing will happen
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+    mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
+
+    # waiting for the termination time will now terminate the cluster
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="terminated"
+    )
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
+    mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+    mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()

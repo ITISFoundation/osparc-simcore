@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_storage import FileLocation
 from models_library.projects_nodes_io import StorageFileID
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
@@ -14,7 +15,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------

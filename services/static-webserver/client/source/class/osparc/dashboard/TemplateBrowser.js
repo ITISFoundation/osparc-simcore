@@ -39,21 +39,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-
-      Promise.all(preResourcePromises)
-        .then(() => {
-          this.getChildControl("resources-layout");
-          this.reloadResources();
-          this.__attachEventHandlers();
-          this._hideLoadingPage();
-        })
-        .catch(err => console.error(err));
+      this.getChildControl("resources-layout");
+      this.reloadResources();
+      this.__attachEventHandlers();
+      this._hideLoadingPage();
     },
 
     reloadResources: function() {
@@ -62,6 +51,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       } else {
         this.__setResourcesToList([]);
       }
+    },
+
+    invalidateTemplates: function() {
+      osparc.store.Store.getInstance().invalidate("templates");
     },
 
     __attachEventHandlers: function() {
@@ -134,7 +127,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (!card.isLocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
-        this._openDetailsView(templateData);
+        this._openResourceDetails(templateData);
       }
       this.resetSelection();
     },
@@ -186,13 +179,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._addGroupByButton();
       this._addViewModeButton();
 
+      this._addResourceFilter();
+
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
       return this._resourcesContainer;
     },
 
     __createUpdateAllButton: function() {
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"));
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all")).set({
+        appearance: "form-button-outlined"
+      });
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
         const templatesText = osparc.product.Utils.getTemplateAlias({plural: true});
@@ -245,17 +242,23 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __updateTemplates: async function(uniqueTemplatesData) {
       for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
-        osparc.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
-        const params = {
-          url: {
-            "studyId": studyData["uuid"]
-          },
-          data: studyData
-        };
-        await osparc.data.Resources.fetch("studies", "put", params)
-          .then(updatedData => {
-            this._updateTemplateData(updatedData);
-          })
+        const templatePromises = [];
+        for (const nodeId in studyData["workbench"]) {
+          const node = studyData["workbench"][nodeId];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          if (latestCompatible && (node["key"] !== latestCompatible["key"] || node["version"] !== latestCompatible["version"])) {
+            const patchData = {};
+            if (node["key"] !== latestCompatible["key"]) {
+              patchData["key"] = latestCompatible["key"];
+            }
+            if (node["version"] !== latestCompatible["version"]) {
+              patchData["version"] = latestCompatible["version"];
+            }
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, patchData));
+          }
+        }
+        Promise.all(templatePromises)
+          .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
             if ("message" in err) {
               osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -360,20 +363,15 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
 
-      const params = {
-        url: {
-          "studyId": studyData.uuid
-        }
-      };
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
-        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
-        params["data"] = studyData;
-        operationPromise = osparc.data.Resources.fetch("templates", "put", params);
+        delete arCopy[myGid];
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
       } else {
         // delete study
-        operationPromise = osparc.data.Resources.fetch("templates", "delete", params, studyData.uuid);
+        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))
@@ -445,12 +443,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     taskToTemplateReceived: function(task, studyName) {
-      const toTemaplateTaskUI = new osparc.task.ToTemplate(studyName);
-      toTemaplateTaskUI.setTask(task);
-      toTemaplateTaskUI.start();
+      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
+      toTemplateTaskUI.setTask(task);
+      toTemplateTaskUI.start();
       const toTemplateCard = this.__createToTemplateCard(studyName);
       toTemplateCard.setTask(task);
-      this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
+      this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
     },
 
     __createToTemplateCard: function(studyName) {

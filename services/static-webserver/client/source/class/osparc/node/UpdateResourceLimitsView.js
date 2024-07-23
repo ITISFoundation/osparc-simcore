@@ -27,25 +27,16 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
     __saveBtn: null,
 
     _applyNode: function(node) {
-      if (node.isComputational() || node.isDynamic()) {
-        if (node.isComputational()) {
-          node.getStatus().bind("interactive", this, "enabled", {
-            converter: () => !osparc.data.model.NodeStatus.isComputationalRunning(node)
-          });
-        } else if (node.isDynamic()) {
-          node.getStatus().bind("interactive", this, "enabled", {
-            converter: interactive => interactive === "idle"
-          });
-        }
-        this.__populateLayout();
-      }
+      this.__populateLayout();
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
       this.__resourceFields = [];
       this._removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("Update Service Limits")).set({
+      this._add(new qx.ui.basic.Label(this.tr("Resource Limits")).set({
         font: "text-14"
       }));
 
@@ -84,7 +75,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                 const resourceInfo = resourcesInfo[resourceKey];
                 let label = resourceKey;
                 if (resourceKey === "RAM") {
-                  label += " (GB)";
+                  label += " (GiB)";
                 }
                 const resourceKeyTitle = new qx.ui.basic.Label(label).set({
                   font: "text-13"
@@ -98,7 +89,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                   if (resourceInfoKey in resourceInfo) {
                     let value = resourceInfo[resourceInfoKey];
                     if (resourceKey === "RAM") {
-                      value = osparc.utils.Utils.bytesToGB(value);
+                      value = osparc.utils.Utils.bytesToGiB(value);
                     }
                     const spinner = new qx.ui.form.Spinner(0, value, 512).set({
                       singleStep: 0.1
@@ -152,7 +143,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
         ) {
           let value = resourceField.getValue();
           if (resourceField.resourceKey === "RAM") {
-            value = osparc.utils.Utils.gBToBytes(value);
+            value = osparc.utils.Utils.giBToBytes(value);
           }
           updatedResources[resourceField.imageName].resources[resourceField.resourceKey]["limit"] = value;
         }

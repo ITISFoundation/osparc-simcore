@@ -44,6 +44,7 @@ from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
+from .users.settings import UsersSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -150,7 +151,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
         auto_default_from_env=True, description="exporter plugin"
     )
-
     WEBSERVER_GARBAGE_COLLECTOR: GarbageCollectorSettings | None = Field(
         auto_default_from_env=True, description="garbage collector plugin"
     )
@@ -211,12 +211,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
         auto_default_from_env=True, description="rabbitmq plugin"
     )
+    WEBSERVER_USERS: UsersSettings | None = Field(
+        auto_default_from_env=True, description="users plugin"
+    )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
     WEBSERVER_API_KEYS: bool = True
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
+    WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
@@ -225,9 +229,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
-    WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
     WEBSERVER_WALLETS: bool = True
+    WEBSERVER_PROFILING: bool = False
 
     #
     WEBSERVER_SECURITY: bool = Field(

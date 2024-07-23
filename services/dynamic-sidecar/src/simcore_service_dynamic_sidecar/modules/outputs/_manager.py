@@ -128,7 +128,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         async def _upload_ports() -> None:
             with log_context(logger, logging.INFO, f"Uploading port keys: {port_keys}"):
                 async with progress_bar.ProgressBarData(
-                    num_steps=1, progress_report_cb=self.task_progress_cb
+                    num_steps=1,
+                    progress_report_cb=self.task_progress_cb,
+                    description="uploading ports",
                 ) as root_progress:
                     await upload_outputs(
                         outputs_path=self.outputs_context.outputs_path,

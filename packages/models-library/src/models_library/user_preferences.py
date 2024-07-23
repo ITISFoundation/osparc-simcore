@@ -90,8 +90,25 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
         ..., description="used by the frontend"
     )
 
+    value: Any
+
     def to_db(self) -> dict:
         return self.dict(exclude={"preference_identifier", "preference_type"})
+
+    @classmethod
+    def update_preference_default_value(cls, new_default: Any) -> None:
+        expected_type = cls.__fields__["value"].type_
+        detected_type = type(new_default)
+        if expected_type != detected_type:
+            msg = (
+                f"Error, {cls.__name__} {expected_type=} differs from {detected_type=}"
+            )
+            raise TypeError(msg)
+
+        if cls.__fields__["value"].default is None:
+            cls.__fields__["value"].default_factory = lambda: new_default
+        else:
+            cls.__fields__["value"].default = new_default
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):

@@ -30,8 +30,6 @@ qx.Class.define("osparc.study.PricingUnit", {
     });
 
     this.setUnitData(new osparc.pricing.UnitData(pricingUnit));
-
-    this.__buildLayout();
   },
 
   events: {
@@ -42,7 +40,8 @@ qx.Class.define("osparc.study.PricingUnit", {
     unitData: {
       check: "osparc.pricing.UnitData",
       nullable: false,
-      init: null
+      init: null,
+      apply: "__buildLayout"
     },
 
     showSpecificInfo: {
@@ -61,42 +60,57 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   members: {
-    __buildLayout: function() {
-      const pricingUnit = this.getUnitData();
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "name":
+          control = new qx.ui.basic.Label().set({
+            font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "price":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "awsSpecificInfo":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          this._add(control);
+          break;
+        case "edit-button":
+          control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
+    __buildLayout: function(pricingUnit) {
       this._removeAll();
       this._setLayout(new qx.ui.layout.VBox(5));
 
-      const unitName = new qx.ui.basic.Label().set({
-        font: "text-16"
-      })
+      const unitName = this.getChildControl("name");
       pricingUnit.bind("unitName", unitName, "value");
-      this._add(unitName);
 
       // add price info
-      const price = new qx.ui.basic.Label().set({
-        font: "text-14"
-      })
+      const price = this.getChildControl("price");
       pricingUnit.bind("currentCostPerUnit", price, "value", {
         converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v,
       });
-      this._add(price);
 
       // add aws specific info
       if ("specificInfo" in pricingUnit) {
-        const label = new qx.ui.basic.Label().set({
-          font: "text-14"
-        })
-        const awsSpecificInfo = new qx.ui.basic.Label().set({
-          font: "text-14"
-        })
-        pricingUnit.bind("awsSpecificInfo", awsSpecificInfo, "value", {
+        const specificInfo = this.getChildControl("awsSpecificInfo");
+        pricingUnit.bind("awsSpecificInfo", specificInfo, "value", {
           converter: v => qx.locale.Manager.tr("EC2") + ": " + v,
         });
-        this.bind("showSpecificInfo", label, "visibility", {
+        this.bind("showSpecificInfo", specificInfo, "visibility", {
           converter: show => show ? "visible" : "excluded"
         })
-        this._add(label);
       }
 
       // add pricing unit extra info
@@ -108,11 +122,10 @@ qx.Class.define("osparc.study.PricingUnit", {
       });
 
       // add edit button
-      const editButton = new qx.ui.form.Button(this.tr("Edit"));
+      const editButton = this.getChildControl("edit-button");
       this.bind("showEditButton", editButton, "visibility", {
         converter: show => show ? "visible" : "excluded"
       })
-      this._add(editButton);
       editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
     }
   }

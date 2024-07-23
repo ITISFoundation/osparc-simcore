@@ -19,7 +19,7 @@ from ..models.domain.projects import InputTypes, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import Job, JobInputs, JobOutputs
 from ..models.schemas.studies import Study, StudyID
-from .storage import to_file_api_model
+from .storage import StorageApi, to_file_api_model
 
 
 class ProjectInputs(NamedTuple):
@@ -87,7 +87,7 @@ async def create_job_outputs_from_project_outputs(
     job_id: StudyID,
     project_outputs: dict[NodeID, dict[str, Any]],
     user_id,
-    storage_client,
+    storage_client: StorageApi,
 ) -> JobOutputs:
     """
 
@@ -111,17 +111,16 @@ async def create_job_outputs_from_project_outputs(
             path = value["path"]
             file_id: UUID = File.create_id(*path.split("/"))
 
-            if found := await storage_client.search_files(
+            if found := await storage_client.search_owned_files(
                 user_id=user_id,
                 file_id=file_id,
                 sha256_checksum=None,
-                access_right="read",
             ):
                 assert len(found) == 1  # nosec
                 results[name] = to_file_api_model(found[0])
             else:
                 api_file: File = await storage_client.create_soft_link(
-                    user_id, path, file_id
+                    user_id=user_id, target_s3_path=path, as_file_id=file_id
                 )
                 results[name] = api_file
         else:

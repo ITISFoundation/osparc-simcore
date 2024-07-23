@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
@@ -15,7 +16,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import (
+from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
     random_user,
@@ -24,6 +25,11 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
+    ProjectNodeCreate,
+    ProjectNodesRepo,
+)
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -261,7 +267,9 @@ async def create_fake_cluster(
 
 
 @pytest.fixture
-async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
+async def create_fake_project(
+    pg_engine: Engine,
+) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
     async def _creator(conn, user: RowProxy, **overrides) -> RowProxy:
@@ -281,6 +289,24 @@ async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )
+
+
+@pytest.fixture
+async def create_fake_projects_node(
+    connection: aiopg.sa.connection.SAConnection,
+    faker: Faker,
+) -> Callable[[uuid.UUID], Awaitable[ProjectNode]]:
+    async def _creator(project_uuid: uuid.UUID) -> ProjectNode:
+        fake_node = ProjectNodeCreate(
+            node_id=uuid.uuid4(),
+            required_resources=faker.pydict(allowed_types=(str,)),
+        )
+        repo = ProjectNodesRepo(project_uuid=project_uuid)
+        created_nodes = await repo.add(connection, nodes=[fake_node])
+        assert created_nodes
+        return created_nodes[0]
+
+    return _creator
 
 
 @pytest.fixture

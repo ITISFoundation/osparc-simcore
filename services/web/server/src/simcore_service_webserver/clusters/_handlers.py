@@ -18,7 +18,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.json_serialization import json_dumps
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix
@@ -87,11 +86,7 @@ async def create_cluster(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         new_cluster=new_cluster,
     )
-    return web.json_response(
-        data={"data": created_cluster},
-        status=status.HTTP_201_CREATED,
-        dumps=json_dumps,
-    )
+    return envelope_json_response(created_cluster, web.HTTPCreated)
 
 
 @routes.get(f"/{api_version_prefix}/clusters", name="list_clusters")

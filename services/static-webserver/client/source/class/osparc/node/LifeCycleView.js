@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.LifeCycleView", {
       if (node.isUpdatable() || node.isDeprecated() || node.isRetired()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
@@ -112,14 +114,14 @@ qx.Class.define("osparc.node.LifeCycleView", {
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node.getKey(), node.getVersion());
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(node.getKey(), node.getVersion());
         node.setVersion(latestCompatibleMetadata["version"]);
-        setTimeout(() => node.getStatus().setInteractive("idle"), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        node.fireEvent("updateStudyDocument");
         setTimeout(() => {
           updateButton.setFetching(false);
           node.requestStartNode();
           this.fireEvent("versionChanged");
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       });
 
       buttonsLayout.add(updateButton);

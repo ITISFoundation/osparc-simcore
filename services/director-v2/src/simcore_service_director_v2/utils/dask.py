@@ -29,8 +29,8 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -52,7 +52,7 @@ from ..core.errors import (
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskJobID
-from ..modules.osparc_variables_substitutions import (
+from ..modules.osparc_variables.substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
@@ -257,9 +257,11 @@ async def compute_output_data_schema(
                 user_id=user_id,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
-                file_name=next(iter(port.file_to_key_map))
-                if port.file_to_key_map
-                else port.key,
+                file_name=(
+                    next(iter(port.file_to_key_map))
+                    if port.file_to_key_map
+                    else port.key
+                ),
                 link_type=file_link_type,
                 file_size=ByteSize(0),  # will create a single presigned link
                 sha256_checksum=None,
@@ -268,9 +270,11 @@ async def compute_output_data_schema(
             assert len(value_links.urls) == 1  # nosec
             output_data_schema[port.key].update(
                 {
-                    "mapping": next(iter(port.file_to_key_map))
-                    if port.file_to_key_map
-                    else None,
+                    "mapping": (
+                        next(iter(port.file_to_key_map))
+                        if port.file_to_key_map
+                        else None
+                    ),
                     "url": f"{value_links.urls[0]}",
                 }
             )
@@ -574,7 +578,11 @@ def check_if_cluster_is_able_to_run_pipeline(
     node_image: Image,
     cluster_id: ClusterID,
 ) -> None:
-    _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
+
+    _logger.debug(
+        "Dask scheduler infos: %s", f"{scheduler_info}"
+    )  # NOTE: be careful not to json_dumps this as it sometimes contain keys that are tuples!
+
     workers = scheduler_info.get("workers", {})
 
     cluster_resources_counter: collections.Counter = collections.Counter()
@@ -593,7 +601,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         json_dumps(task_resources, indent=2),
     )
 
-    if can_a_worker_run_task:
+    if can_a_worker_run_task:  # OsparcErrorMixin
         return
 
     # check if we have missing resources

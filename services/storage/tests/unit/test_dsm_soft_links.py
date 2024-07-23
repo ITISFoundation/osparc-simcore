@@ -124,8 +124,9 @@ async def test_create_soft_link(
     # assert output_file.last_modified < link_file.fmd.last_modified
 
     # can find
-    files_list = await simcore_s3_dsm.search_read_access_files(
-        user_id, f"api/{api_file_id}/{file_name}", None
+    files_list = await simcore_s3_dsm.search_owned_files(
+        user_id=user_id,
+        file_id_prefix=f"api/{api_file_id}/{file_name}",
     )
     assert len(files_list) == 1
     assert files_list[0] == link_file
@@ -136,3 +137,12 @@ async def test_create_soft_link(
     )
 
     assert got_file == link_file
+
+    # Moving the offset will skip the first search hit
+    files_list_without_first_hit = await simcore_s3_dsm.search_owned_files(
+        user_id=user_id,
+        file_id_prefix=f"api/{api_file_id}/{file_name}",
+        # NOTE: that only one
+        offset=1,
+    )
+    assert len(files_list_without_first_hit) == 0

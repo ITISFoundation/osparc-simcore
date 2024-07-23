@@ -90,12 +90,21 @@ qx.Class.define("osparc.data.PollTask", {
     }
   },
 
+  statics: {
+    extractPathname: function(href) {
+      // For the long running tasks, only the pathname is relevant to the frontend
+      const url = new URL(href);
+      return url.pathname;
+    }
+  },
+
   members: {
     __retries: null,
     __aborting: null,
 
     __pollTaskState: function() {
-      fetch(this.getStatusHref())
+      const statusPath = this.self().extractPathname(this.getStatusHref());
+      fetch(statusPath)
         .then(resp => {
           if (this.__aborting || this.getDone()) {
             return null;
@@ -133,7 +142,8 @@ qx.Class.define("osparc.data.PollTask", {
 
     __fetchResults: function() {
       if (this.isDone()) {
-        fetch(this.getResultHref())
+        const resultPath = this.self().extractPathname(this.getResultHref());
+        fetch(resultPath)
           .then(res => res.json())
           .then(result => {
             if ("error" in result && result["error"]) {
@@ -157,7 +167,8 @@ qx.Class.define("osparc.data.PollTask", {
       const abortHref = this.getAbortHref();
       if (abortHref) {
         this.__aborting = true;
-        fetch(abortHref, {
+        const abortPath = this.self().extractPathname(abortHref);
+        fetch(abortPath, {
           method: "DELETE"
         })
           .then(() => this.fireEvent("taskAborted"))

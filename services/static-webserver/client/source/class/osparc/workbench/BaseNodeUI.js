@@ -127,9 +127,11 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
   },
 
   members: {
-    _inputLayout: null,
-    _outputLayout: null,
+    __inputLayout: null,
+    __outputLayout: null,
     _optionsMenu: null,
+    _markerBtn: null,
+    _deleteBtn: null,
     __nodeMoving: null,
 
     __getMenuButton: function() {
@@ -159,7 +161,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
       optionsMenu.add(infoBtn);
 
-      const deleteBtn = new qx.ui.menu.Button().set({
+      const deleteBtn = this._deleteBtn = new qx.ui.menu.Button().set({
         label: this.tr("Delete"),
         icon: "@FontAwesome5Solid/trash/10"
       });
@@ -179,11 +181,11 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     },
 
     getInputPort: function() {
-      return this._inputLayout;
+      return this.__inputLayout;
     },
 
     getOutputPort: function() {
-      return this._outputLayout;
+      return this.__outputLayout;
     },
 
     _createPort: function(isInput, placeholder = false) {
@@ -219,9 +221,9 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       });
 
       if (isInput) {
-        this._inputLayout = port;
+        this.__inputLayout = port;
       } else {
-        this._outputLayout = port;
+        this.__outputLayout = port;
       }
 
       return port;

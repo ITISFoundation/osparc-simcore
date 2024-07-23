@@ -13,8 +13,8 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
@@ -51,6 +51,15 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.email._core._do_send_mail",
         spec=True,
+    )
+
+
+@pytest.fixture
+def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
+    return mocker.patch(
+        "simcore_service_webserver.login._registration_handlers.get_session",
+        spec=True,
+        return_value={"captcha": "123456"},
     )
 
 
@@ -151,7 +160,10 @@ async def test_cannot_unregister_invalid_credentials(
 
 
 async def test_request_an_account(
-    client: TestClient, faker: Faker, mocked_send_email: MagicMock
+    client: TestClient,
+    faker: Faker,
+    mocked_send_email: MagicMock,
+    mocked_captcha_session: MagicMock,
 ):
     assert client.app
     # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
@@ -169,7 +181,7 @@ async def test_request_an_account(
 
     response = await client.post(
         "/v0/auth/request-account",
-        json={"form": user_data},
+        json={"form": user_data, "captcha": 123456},
     )
 
     await assert_status(response, status.HTTP_204_NO_CONTENT)

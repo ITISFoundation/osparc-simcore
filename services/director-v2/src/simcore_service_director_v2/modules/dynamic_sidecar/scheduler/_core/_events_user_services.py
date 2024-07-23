@@ -8,7 +8,7 @@ from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -98,7 +98,6 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         node_id=scheduler_data.node_uuid,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        run_id=scheduler_data.run_id,
     )
 
     _logger.debug(

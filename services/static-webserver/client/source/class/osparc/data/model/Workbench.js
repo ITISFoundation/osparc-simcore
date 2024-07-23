@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const workbench = new osparc.data.model.Workbench(study.workbench)
+ *   const workbench = new osparc.data.model.Workbench(study.workbench, study.workbenchUI)
  *   study.setWorkbench(workbench);
  *   workbench.initWorkbench();
  * </pre>
@@ -40,8 +40,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   /**
     * @param workbenchData {Object} Object containing the workbench raw data
+    * @param workbenchUIData {Object} Object containing the workbenchUI raw data
     */
-  construct: function(workbenchData, workbenchUIData) {
+  construct: function(workbenchData, workbenchUIData = null) {
     this.base(arguments);
 
     this.__workbenchInitData = workbenchData;
@@ -49,6 +50,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
+    "updateStudyDocument": "qx.event.type.Event",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
@@ -68,13 +70,14 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   statics: {
-    CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running")
+    CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running"),
+    CANT_DELETE_NODE: qx.locale.Manager.tr("Nodes can't be deleted while the pipeline is running")
   },
 
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
-    __rootNodes: null,
+    __nodes: null,
     __edges: null,
 
     getWorkbenchInitData: function() {
@@ -83,7 +86,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     // deserializes the workbenchInitData
     buildWorkbench: function() {
-      this.__rootNodes = {};
+      this.__nodes = {};
       this.__edges = {};
       this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
       this.__workbenchInitData = null;
@@ -94,7 +97,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     initWorkbench: function() {
       const allModels = this.getNodes();
       const nodes = Object.values(allModels);
-      nodes.forEach(node => node.startDynamicService());
+      nodes.forEach(node => node.startPollingState());
     },
 
     getUpstreamCompNodes: function(node, recursive = true, upstreamNodes = new Set()) {
@@ -179,7 +182,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getNodes: function() {
-      let nodes = Object.assign({}, this.__rootNodes);
+      let nodes = Object.assign({}, this.__nodes);
       return nodes;
     },
 
@@ -252,12 +255,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
-    __createNode: function(study, key, version, uuid) {
-      osparc.utils.Utils.localCache.serviceToFavs(key);
-      const node = new osparc.data.model.Node(study, key, version, uuid);
+    __createNode: function(study, metadata, uuid) {
+      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+      const node = new osparc.data.model.Node(study, metadata, uuid);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       return node;
     },
 
@@ -273,21 +277,37 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       this.fireEvent("restartAutoSaveTimer");
       // create the node in the backend first
-      const nodeId = osparc.utils.Utils.uuidV4()
       const params = {
         url: {
           studyId: this.getStudy().getUuid()
         },
         data: {
-          "service_id": nodeId,
           "service_key": key,
           "service_version": version
         }
       };
-      await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
-        let errorMsg = this.tr("Error creating ") + key + ":" + version;
+
+      try {
+        const metadata = await osparc.service.Store.getService(key, version);
+        const resp = await osparc.data.Resources.fetch("studies", "addNode", params);
+        const nodeId = resp["node_id"];
+
+        this.fireEvent("restartAutoSaveTimer");
+        const node = this.__createNode(this.getStudy(), metadata, nodeId);
+        this.__initNodeSignals(node);
+        this.__addNode(node);
+
+        node.populateNodeData();
+        this.giveUniqueNameToNode(node, node.getLabel());
+        node.startPollingState();
+
+        return node;
+      } catch (err) {
+        let errorMsg = "";
         if ("status" in err && err.status === 406) {
-          errorMsg = key + ":" + version + this.tr(" is retired");
+          errorMsg = key + ":" + version + qx.locale.Manager.tr(" is retired");
+        } else {
+          errorMsg = err.message || qx.locale.Manager.tr("Error creating ") + key + ":" + version;
         }
         const errorMsgData = {
           msg: errorMsg,
@@ -296,18 +316,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.fireDataEvent("showInLogger", errorMsgData);
         osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         return null;
-      });
-
-      this.fireEvent("restartAutoSaveTimer");
-      const node = this.__createNode(this.getStudy(), key, version, nodeId);
-      this.__initNodeSignals(node);
-      this.__addNode(node);
-
-      node.populateNodeData();
-      this.giveUniqueNameToNode(node, node.getLabel());
-      node.startDynamicService();
-
-      return node;
+      }
     },
 
     __initNodeSignals: function(node) {
@@ -502,12 +511,16 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __addNode: function(node) {
       const nodeId = node.getNodeId();
-      this.__rootNodes[nodeId] = node;
+      this.__nodes[nodeId] = node;
       this.fireEvent("pipelineChanged");
     },
 
     removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+        return false;
+      }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_DELETE_NODE, "ERROR");
         return false;
       }
 
@@ -518,21 +531,18 @@ qx.Class.define("osparc.data.model.Workbench", {
         const removed = await node.removeNode();
         if (removed) {
           this.fireEvent("restartAutoSaveTimer");
+
+          delete this.__nodes[nodeId];
+
           // remove first the connected edges
           const connectedEdges = this.getConnectedEdges(nodeId);
           connectedEdges.forEach(connectedEdgeId => {
             this.removeEdge(connectedEdgeId);
           });
 
-          const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
-          if (isTopLevel) {
-            delete this.__rootNodes[nodeId];
-          }
-
-          // remove it from slideshow
+          // remove it from ui model
           if (this.getStudy()) {
-            this.getStudy().getUi().getSlideshow()
-              .removeNode(nodeId);
+            this.getStudy().getUi().removeNode(nodeId);
           }
 
           this.fireEvent("pipelineChanged");
@@ -588,53 +598,35 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       const edge = this.getEdge(edgeId);
       if (edge) {
-        const inputNodeId = edge.getInputNodeId();
-        const outputNodeId = edge.getOutputNodeId();
-        const node = this.getNode(outputNodeId);
-        if (node) {
-          node.removeInputNode(inputNodeId);
-          node.removeNodePortConnections(inputNodeId);
-          delete this.__edges[edgeId];
+        const rightNodeId = edge.getOutputNodeId();
+        const leftNodeId = edge.getInputNodeId();
 
-          const edges = Object.values(this.__edges);
-          if (edges.findIndex(edg => edg.getInputNodeId() === inputNodeId) === -1) {
-            const nodeLeft = this.getNode(inputNodeId);
-            nodeLeft.setOutputConnected(false);
-          }
-          if (edges.findIndex(edg => edg.getOutputNodeId() === outputNodeId) === -1) {
-            const nodeRight = this.getNode(outputNodeId);
-            nodeRight.setInputConnected(false);
-          }
-
-          return true;
+        const rightNode = this.getNode(rightNodeId);
+        if (rightNode) {
+          // no need to make any changes to a just removed node (it would trigger a patch call)
+          rightNode.removeInputNode(leftNodeId);
+          rightNode.removeNodePortConnections(leftNodeId);
         }
+
+        delete this.__edges[edgeId];
+
+        // update the port decorations (remove dot if there are no more connections)
+        const edges = Object.values(this.__edges);
+        if (edges.findIndex(edg => edg.getInputNodeId() === leftNodeId) === -1) {
+          const leftNode = this.getNode(leftNodeId);
+          if (leftNode) {
+            leftNode.setOutputConnected(false);
+          }
+        }
+        if (edges.findIndex(edg => edg.getOutputNodeId() === rightNodeId) === -1) {
+          if (rightNode) {
+            rightNode.setInputConnected(false);
+          }
+        }
+
+        return true;
       }
       return false;
-    },
-
-    __deserialize: function(workbenchData, workbenchUIData) {
-      this.__deserializeNodes(workbenchData, workbenchUIData);
-      this.__deserializeEdges(workbenchData);
-    },
-
-    __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
-      const nodeIds = Object.keys(workbenchData);
-      // Create first all the nodes
-      for (let i=0; i<nodeIds.length; i++) {
-        const nodeId = nodeIds[i];
-        const nodeData = workbenchData[nodeId];
-        const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
-        this.__initNodeSignals(node);
-        this.__addNode(node);
-      }
-
-      // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      this.__populateNodesData(workbenchData, workbenchUIData);
-
-      nodeIds.forEach(nodeId => {
-        const node = this.getNode(nodeId);
-        this.giveUniqueNameToNode(node, node.getLabel());
-      });
     },
 
     giveUniqueNameToNode: function(node, label, suffix = 2) {
@@ -653,13 +645,54 @@ qx.Class.define("osparc.data.model.Workbench", {
     __populateNodesData: function(workbenchData, workbenchUIData) {
       Object.entries(workbenchData).forEach(([nodeId, nodeData]) => {
         this.getNode(nodeId).populateNodeData(nodeData);
+
         if ("position" in nodeData) {
+          // old way for storing the position
           this.getNode(nodeId).populateNodeUIData(nodeData);
         }
         if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
           this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
         }
       });
+    },
+
+    __deserialize: function(workbenchInitData, workbenchUIInitData) {
+      this.__deserializeNodes(workbenchInitData, workbenchUIInitData)
+        .then(() => {
+          this.__deserializeEdges(workbenchInitData);
+          workbenchInitData = null;
+          workbenchUIInitData = null;
+        });
+    },
+
+    __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
+      const nodeIds = Object.keys(workbenchData);
+
+      const metadataPromises = [];
+      nodeIds.forEach(nodeId => {
+        const nodeData = workbenchData[nodeId];
+        metadataPromises.push(osparc.service.Store.getService(nodeData.key, nodeData.version));
+      });
+
+      return Promise.all(metadataPromises)
+        .then(values => {
+          // Create first all the nodes
+          for (let i=0; i<nodeIds.length; i++) {
+            const metadata = values[i];
+            const nodeId = nodeIds[i];
+            const node = this.__createNode(this.getStudy(), metadata, nodeId);
+            this.__initNodeSignals(node);
+            this.__addNode(node);
+          }
+
+          // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
+          this.__populateNodesData(workbenchData, workbenchUIData);
+
+          nodeIds.forEach(nodeId => {
+            const node = this.getNode(nodeId);
+            this.giveUniqueNameToNode(node, node.getLabel());
+          });
+        });
     },
 
     __deserializeEdges: function(workbenchData) {
@@ -669,12 +702,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node === null) {
           continue;
         }
-        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes, true);
-        this.__addInputOutputNodesAndEdges(node, nodeData.outputNodes, false);
+        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes);
       }
     },
 
-    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds, isInput) {
+    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds) {
       if (inputOutputNodeIds) {
         inputOutputNodeIds.forEach(inputOutputNodeId => {
           const node1 = this.getNode(inputOutputNodeId);
@@ -683,28 +715,9 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
           const edge = new osparc.data.model.Edge(null, node1, node);
           this.addEdge(edge);
-          if (isInput) {
-            node.addInputNode(inputOutputNodeId);
-          } else {
-            node.addOutputNode(inputOutputNodeId);
-          }
+          node.addInputNode(inputOutputNodeId);
         });
       }
-    },
-
-    __getAveragePosition: function(nodes) {
-      let avgX = 0;
-      let avgY = 0;
-      nodes.forEach(node => {
-        avgX += node.getPosition().x;
-        avgY += node.getPosition().y;
-      });
-      avgX /= nodes.length;
-      avgY /= nodes.length;
-      return {
-        x: avgX,
-        y: avgY
-      };
     },
 
     serialize: function(clean = true) {
@@ -743,6 +756,43 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       }
       return workbenchUI;
+    },
+
+    /**
+     * Call patch Node, but the changes were already applied on the frontend
+     * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
+     */
+    patchWorkbenchDelayed: function(workbenchDiffs) {
+      const promises = [];
+      Object.keys(workbenchDiffs).forEach(nodeId => {
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          // the node was removed
+          return;
+        }
+
+        const nodeData = node.serialize();
+        let patchData = {};
+        if (workbenchDiffs[nodeId] instanceof Array) {
+          // if workbenchDiffs is an array means that the node was either added or removed
+          // the node was added
+          patchData = nodeData;
+        } else {
+          // patch only what was changed
+          Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
+          });
+        }
+        const params = {
+          url: {
+            "studyId": this.getStudy().getUuid(),
+            "nodeId": nodeId
+          },
+          data: patchData
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+      })
+      return Promise.all(promises);
     }
   }
 });

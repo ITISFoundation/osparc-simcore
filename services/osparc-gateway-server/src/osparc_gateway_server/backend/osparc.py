@@ -235,7 +235,7 @@ class OsparcBackend(DBBackendBase):
             *[self._check_service_status(w) for w in workers], return_exceptions=True
         )
         self.log.debug("<-- worker status returned: %s", f"{ok=}")
-        return ok
+        return [False if isinstance(_, BaseException) else _ for _ in ok]
 
     async def on_cluster_heartbeat(self, cluster_name, msg) -> None:
         # pylint: disable=no-else-continue, unused-variable, too-many-branches

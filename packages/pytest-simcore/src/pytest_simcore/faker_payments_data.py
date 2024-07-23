@@ -29,7 +29,7 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-from .helpers.rawdata_fakers import random_payment_transaction
+from .helpers.faker_factories import random_payment_transaction
 
 
 @pytest.fixture
@@ -48,6 +48,11 @@ def invoice_url(faker: Faker) -> HttpUrl:
 
 
 @pytest.fixture
+def invoice_pdf_url(faker: Faker) -> HttpUrl:
+    return parse_obj_as(HttpUrl, faker.image_url())
+
+
+@pytest.fixture
 def stripe_invoice_id(faker: Faker) -> StripeInvoiceID:
     return parse_obj_as(StripeInvoiceID, f"in_{faker.word()}")
 
@@ -60,6 +65,7 @@ def successful_transaction(
     user_id: UserID,
     product_name: ProductName,
     invoice_url: HttpUrl,
+    invoice_pdf_url: HttpUrl,
     stripe_invoice_id: StripeInvoiceID,
 ) -> dict[str, Any]:
 
@@ -77,5 +83,6 @@ def successful_transaction(
         wallet_id=wallet_id,
         comment=f"fake fixture in {__name__}.successful_transaction",
         invoice_url=invoice_url,
+        invoice_pdf_url=invoice_pdf_url,
         stripe_invoice_id=stripe_invoice_id,
     )

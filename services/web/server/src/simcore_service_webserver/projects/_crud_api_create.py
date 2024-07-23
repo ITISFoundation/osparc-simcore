@@ -2,20 +2,20 @@ import asyncio
 import logging
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
-from dataclasses import asdict
 from typing import Any, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
@@ -32,9 +32,15 @@ from ..storage.api import (
 )
 from ..users.api import get_user_fullname
 from . import projects_api
+from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ParentNodeNotFoundError,
+    ParentProjectNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .models import ProjectDict
 from .utils import NodesMap, clone_project_document, default_copy_project_name
 
@@ -127,7 +133,7 @@ async def _copy_project_nodes_from_source_project(
             node_id=_mapped_node_id(node),
             **{
                 k: v
-                for k, v in asdict(node).items()
+                for k, v in node.dict().items()
                 if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
             },
         )
@@ -166,9 +172,12 @@ async def _copy_files_from_source_project(
         ):
             task_progress.update(
                 message=long_running_task.progress.message,
-                percent=(
-                    starting_value
-                    + long_running_task.progress.percent * (1.0 - starting_value)
+                percent=parse_obj_as(
+                    ProgressPercent,
+                    (
+                        starting_value
+                        + long_running_task.progress.percent * (1.0 - starting_value)
+                    ),
                 ),
             )
             if long_running_task.done():
@@ -207,8 +216,9 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(
+async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, PLR0913
     task_progress: TaskProgress,
+    *,
     request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
@@ -218,6 +228,8 @@ async def create_project(
     product_name: str,
     predefined_project: ProjectDict | None,
     simcore_user_agent: str,
+    parent_project_uuid: ProjectID | None,
+    parent_node_id: NodeID | None,
 ) -> None:
     """Implements TaskProtocol for 'create_projects' handler
 
@@ -283,9 +295,15 @@ async def create_project(
             hidden=copy_data,
             project_nodes=project_nodes,
         )
-        task_progress.update(
-            message=f"inserted project {new_project['uuid']=} into the db"
+        # add parent linking if needed
+        await set_project_ancestors(
+            request.app,
+            user_id=user_id,
+            project_uuid=new_project["uuid"],
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
         )
+        task_progress.update()
 
         # 4. deep copy source project's files
         if copy_file_coro:
@@ -300,7 +318,7 @@ async def create_project(
         await api.update_dynamic_service_networks_in_project(
             request.app, ProjectID(new_project["uuid"])
         )
-        task_progress.update(message="updated network information in directorv2")
+        task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await api.create_or_update_pipeline(
@@ -317,7 +335,7 @@ async def create_project(
             is_template=as_template,
             app=request.app,
         )
-        task_progress.update(message=f"appended state to {new_project['uuid']}")
+        task_progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
@@ -337,7 +355,17 @@ async def create_project(
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
 
     except ProjectInvalidRightsError as exc:
-        raise web.HTTPUnauthorized from exc
+        raise web.HTTPForbidden from exc
+
+    except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+        if project_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(
+                app=request.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                simcore_user_agent=simcore_user_agent,
+            )
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     except asyncio.CancelledError:
         log.warning(

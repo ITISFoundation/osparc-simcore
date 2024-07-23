@@ -1,9 +1,10 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final, Literal, NamedTuple
 from uuid import UUID
 
+from aws_library.s3 import UploadID
 from models_library.api_schemas_storage import (
     DatasetMetaDataGet,
     ETag,
@@ -20,12 +21,18 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+)
 from models_library.users import UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
     Extra,
+    Field,
     parse_obj_as,
     root_validator,
     validate_arguments,
@@ -33,8 +40,6 @@ from pydantic import (
 )
 
 UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
-
-UploadID = str
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -107,9 +112,9 @@ class FileMetaData(FileMetaDataGet):
             "object_name": file_id,
             "file_name": parts[-1],
             "user_id": user_id,
-            "project_id": parse_obj_as(ProjectID, parts[0])
-            if is_uuid(parts[0])
-            else None,
+            "project_id": (
+                parse_obj_as(ProjectID, parts[0]) if is_uuid(parts[0]) else None
+            ),
             "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
             "file_id": file_id,
             "created_at": now,
@@ -132,12 +137,6 @@ class UploadLinks:
     chunk_size: ByteSize
 
 
-class MultiPartUploadLinks(BaseModel):
-    upload_id: UploadID
-    chunk_size: ByteSize
-    urls: list[AnyUrl]
-
-
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
 
@@ -151,6 +150,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
 
 
 class FilesMetadataQueryParams(StorageQueryParamsBase):
+    project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
 
@@ -200,9 +200,20 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
-    startswith: str = ""
+    startswith: str | None = None
     sha256_checksum: SHA256Str | None = None
-    access_right: Literal["read", "write"] = "read"
+    kind: Literal["owned"]
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        ge=1,
+        le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        description="Page size limit",
+    )
+    offset: int = Field(default=0, ge=0, description="Page offset")
+
+    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
 
 
 class LocationPathParams(BaseModel):
@@ -245,6 +256,11 @@ class CopyAsSoftLinkParams(BaseModel):
         if v is not None:
             return urllib.parse.unquote(f"{v}")
         return v
+
+
+class UserOrProjectFilter(NamedTuple):
+    user_id: UserID | None
+    project_ids: list[ProjectID]
 
 
 __all__ = (

@@ -11,7 +11,7 @@ _MINUTE: Final[NonNegativeInt] = 60
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
-        LogLevel.WARNING.value, env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.WARNING.value, env=["AGENT_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     SC_BOOT_MODE: BootModeEnum | None
 

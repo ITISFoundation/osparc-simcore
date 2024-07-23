@@ -119,6 +119,10 @@ qx.Class.define("osparc.auth.LoginPage", {
         }
         case "login-view": {
           control = new osparc.auth.ui.LoginView();
+          control.addListener("done", msg => {
+            control.resetValues();
+            this.fireDataEvent("done", msg);
+          }, this);
           this.getChildControl("pages-stack").add(control);
           break;
         }
@@ -208,7 +212,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       const registration = this.getChildControl("registration-view");
       const config = osparc.store.Store.getInstance().get("config");
       let requestAccount = null;
-      if (config["invitation_required"] && osparc.product.Utils.isS4LProduct()) {
+      if (config["invitation_required"] && osparc.desktop.credits.Utils.areWalletsEnabled()) {
         requestAccount = this.getChildControl("request-account");
       }
       const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");
@@ -248,12 +252,6 @@ qx.Class.define("osparc.auth.LoginPage", {
       } else if (urlFragment.params && urlFragment.params.registered) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
       }
-
-      // Transitions between pages
-      login.addListener("done", msg => {
-        login.resetValues();
-        this.fireDataEvent("done", msg);
-      }, this);
 
       login.addListener("toRegister", () => {
         pages.setSelection([registration]);
@@ -350,21 +348,11 @@ qx.Class.define("osparc.auth.LoginPage", {
         flex: 1
       });
 
-      const versionLink = new osparc.ui.basic.LinkLabel().set({
+      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink();
+      createReleaseNotesLink.set({
         textColor: "text-darker"
       });
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      let text = "osparc-simcore ";
-      text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      text += platformName.length ? ` (${platformName})` : "";
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
-      versionLink.set({
-        value: text,
-        url
-      });
-      versionLinkLayout.add(versionLink);
+      versionLinkLayout.add(createReleaseNotesLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"

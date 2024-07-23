@@ -50,6 +50,8 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       const descLabel = this.getChildControl("subtitle-text");
       descLabel.setValue(description.toString());
     }
+
+    this.getChildControl("footer").exclude();
   },
 
   members: {

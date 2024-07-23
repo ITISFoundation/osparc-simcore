@@ -1,13 +1,15 @@
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
+from ..projects_nodes import InputID, InputsDict
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
+from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
@@ -18,6 +20,22 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
     service_id: str | None
+
+
+BootOptions: TypeAlias = dict
+
+
+class NodePatch(InputSchemaWithoutCamelCase):
+    service_key: ServiceKey = FieldNotRequired(alias="key")
+    service_version: ServiceVersion = FieldNotRequired(alias="version")
+    label: str = FieldNotRequired()
+    inputs: InputsDict = FieldNotRequired()
+    inputs_required: list[InputID] = FieldNotRequired(alias="inputsRequired")
+    input_nodes: list[NodeID] = FieldNotRequired(alias="inputNodes")
+    progress: float | None = FieldNotRequired(
+        ge=0, le=100
+    )  # NOTE: it is used by frontend for File Picker progress
+    boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
 
 
 class NodeCreated(OutputSchema):

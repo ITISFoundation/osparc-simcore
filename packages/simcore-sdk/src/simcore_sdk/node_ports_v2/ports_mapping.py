@@ -1,7 +1,7 @@
 import re
-from typing import ItemsView, Iterator, KeysView, ValuesView
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 
-from models_library.services import PROPERTY_KEY_RE
+from models_library.basic_regex import PROPERTY_KEY_RE
 from pydantic import BaseModel, ConstrainedStr
 
 from ..node_ports_common.exceptions import UnboundPortError
@@ -19,7 +19,7 @@ class BasePortsMapping(BaseModel):
         if isinstance(key, int):
             if key < len(self.__root__):
                 key = list(self.__root__.keys())[key]
-        if not key in self.__root__:
+        if key not in self.__root__:
             raise UnboundPortError(key)
         assert isinstance(key, str)  # nosec
         return self.__root__[key]

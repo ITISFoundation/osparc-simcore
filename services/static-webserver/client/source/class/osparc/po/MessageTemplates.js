@@ -55,8 +55,11 @@ qx.Class.define("osparc.po.MessageTemplates", {
       });
 
       templatesSB.addListener("changeSelection", e => {
-        const templateId = e.getData()[0].getModel();
-        this.__populateMessage(templateId);
+        const selection = e.getData();
+        if (selection.length) {
+          const templateId = selection[0].getModel();
+          this.__populateMessage(templateId);
+        }
       }, this);
       this.__messageTemplates.forEach(template => {
         const lItem = new qx.ui.form.ListItem(template.id, null, template.id);

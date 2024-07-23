@@ -36,7 +36,7 @@ from simcore_service_director_v2.utils.rabbitmq import (
     publish_service_started_metrics,
     publish_service_stopped_metrics,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -194,6 +194,11 @@ async def test_publish_service_resource_tracking_started(
         project_name=project.name,
         node_id=random_task.node_id,
         node_name=project.workbench[NodeIDStr(f"{random_task.node_id}")].label,
+        parent_project_id=None,
+        parent_node_id=None,
+        root_parent_project_id=None,
+        root_parent_project_name=None,
+        root_parent_node_id=None,
         service_key=ServiceKey(random_task.image.name),
         service_version=ServiceVersion(random_task.image.tag),
         service_type=ServiceType.COMPUTATIONAL,

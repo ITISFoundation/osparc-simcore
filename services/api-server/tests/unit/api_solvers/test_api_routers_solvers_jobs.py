@@ -16,10 +16,11 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
@@ -29,16 +30,6 @@ from starlette import status
 @pytest.fixture
 def bucket_name():
     return "test-bucket"
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> str:
-    return faker.uuid4()
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> str:
-    return faker.uuid4()
 
 
 @pytest.fixture
@@ -183,13 +174,13 @@ async def test_solver_logs(
     solver_key: str,
     solver_version: str,
 ):
-    resp = await client.get("/v0/meta")
+    resp = await client.get(f"/{API_VTAG}/meta")
     assert resp.status_code == 200
 
     job_id = project_id
 
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/outputs/logfile",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/outputs/logfile",
         auth=auth,
         follow_redirects=True,
     )
@@ -323,8 +314,8 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceDockerData.Config.schema_extra["examples"][::-1]
-        if "boot" in e["description"]
+        for e in ServiceMetaDataPublished.Config.schema_extra["examples"]
+        if "boot-options" in e
     )
 
     mocked_catalog_service_api.get(
@@ -345,12 +336,12 @@ async def test_run_solver_job(
 
     # ---------------------------------------------------------------------------------------------------------
 
-    resp = await client.get("/v0/meta")
+    resp = await client.get(f"/{API_VTAG}/meta")
     assert resp.status_code == 200
 
     # Create Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs",
         auth=auth,
         json=JobInputs(
             values={
@@ -371,11 +362,11 @@ async def test_run_solver_job(
 
     # Start Job
     resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
         auth=auth,
         params={"cluster_id": 1},
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_202_ACCEPTED
     assert mocked_directorv2_service_api["inspect_computation"].called
 
     job_status = JobStatus.parse_obj(resp.json())
