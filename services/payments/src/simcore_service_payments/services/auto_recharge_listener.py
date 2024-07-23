@@ -30,7 +30,6 @@ async def _unsubscribe_consumer(app) -> None:
         await rabbit_client.unsubscribe_consumer(
             WalletCreditsMessage.get_channel_name(),
         )
-        return None
 
 
 def setup_auto_recharge_listener(app: FastAPI):
