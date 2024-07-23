@@ -193,6 +193,7 @@ async def test_dev_get_and_patch_service(
         thumbnail=None,
         description="bar",
         classifiers=None,
+        versionDisplay="Some nice name",
     )
     response = await client.patch(
         f"{url}", json=jsonable_encoder(update, exclude_unset=True)
@@ -206,6 +207,7 @@ async def test_dev_get_and_patch_service(
     assert model.version == service_version
     assert model.name == "foo"
     assert model.description == "bar"
+    assert model.version_display == "Some nice name"
 
     assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
     assert mocked_rpc_catalog_service_api["update_service"].call_count == 1
