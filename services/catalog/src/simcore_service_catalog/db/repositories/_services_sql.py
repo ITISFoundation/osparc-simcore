@@ -255,7 +255,7 @@ def list_latest_services_with_history_stmt(
         )
         .order_by(
             services_meta_data.c.key,
-            sa.asc(_version(services_meta_data.c.version)),  # latest version first
+            sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
         .subquery("history_sq")
     )
