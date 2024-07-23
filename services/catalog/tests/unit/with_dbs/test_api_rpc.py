@@ -4,26 +4,34 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from pydantic import ValidationError
+from pytest_simcore.helpers.faker_factories import random_user
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogItemNotFoundError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     check_for_service,
     get_service,
     list_services_paginated,
     update_service,
 )
+from simcore_postgres_database.models.users import users
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -223,4 +231,64 @@ async def test_rpc_check_for_service(
             user_id=user_id,
             service_key="simcore/services/dynamic/unknown",
             service_version="1.0.0",
+        )
+
+
+@pytest.fixture
+async def other_user(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    faker: Faker,
+) -> AsyncIterator[dict[str, Any]]:
+
+    _user = random_user(fake=faker, id=user_id + 1)
+    async with insert_and_get_row_lifespan(
+        sqlalchemy_async_engine,
+        table=users,
+        values=_user,
+        pk_col=users.c.id,
+        pk_value=_user["id"],
+    ) as row:
+        yield row
+
+
+async def test_rpc_get_service_access_rights(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    other_user: dict[str, Any],
+    app: FastAPI,
+):
+    assert app
+
+    service_key = "simcore/services/comp/test-api-rpc-service-0"
+    service_version = "0.0.0"
+    other_user_id = other_user["id"]
+
+    # other_user does not have READ access
+    with pytest.raises(CatalogForbiddenError, match="accesss"):
+        await get_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=other_user_id,
+            service_key=service_key,
+            service_version=service_version,
+        )
+
+    # TODO:  user_id gives read access to other_user
+
+    # REMOVE write access
+    with pytest.raises(CatalogForbiddenError, match="accesss"):
+        await update_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=other_user_id,
+            service_key=service_key,
+            service_version=service_version,
+            update={
+                "name": "foo",
+                "description": "bar",
+            },
         )
