@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import re
@@ -5,7 +6,7 @@ from collections import defaultdict
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from enum import Enum, unique
-from typing import Any, Final
+from typing import Any, Final, Generator
 
 from playwright.sync_api import FrameLocator, Page, Request, WebSocket
 from pytest_simcore.helpers.logging_tools import log_context
@@ -288,6 +289,35 @@ def _trigger_service_start(page: Page, node_id: str) -> None:
         _node_started_predicate, timeout=35 * SECOND
     ):
         page.get_by_test_id(f"Start_{node_id}").click()
+
+
+@dataclass(slots=True, kw_only=True)
+class ServiceRunning:
+    iframe_locator: FrameLocator | None
+
+
+@contextlib.contextmanager
+def expected_service_running(
+    *,
+    page: Page,
+    node_id: str,
+    websocket: WebSocket,
+    timeout: int,
+    press_start_button: bool,
+) -> Generator[ServiceRunning, None, None]:
+    waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
+    service_running = ServiceRunning(iframe_locator=None)
+    with (
+        log_context(logging.INFO, msg="Waiting for node to run"),
+        websocket.expect_event("framereceived", waiter, timeout=timeout),
+    ):
+        if press_start_button:
+            _trigger_service_start(page, node_id)
+        yield service_running
+
+    service_running.iframe_locator = page.frame_locator(
+        f'[osparc-test-id="iframe_{node_id}"]'
+    )
 
 
 def wait_for_service_running(
