@@ -208,7 +208,9 @@ qx.Class.define("osparc.service.Utils", {
       if (versionDisplay) {
         label += ` (${versionDisplay})`
       }
-      return new qx.ui.form.ListItem(label);
+      const listItem = new qx.ui.form.ListItem(label);
+      listItem.version = version;
+      return listItem;
     },
 
     canIWrite: function(serviceAccessRights) {
