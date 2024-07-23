@@ -490,6 +490,7 @@ async def patch_project(request: web.Request):
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         project_patch=project_patch,
+        product_name=req_ctx.product_name,
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
