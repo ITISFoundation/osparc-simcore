@@ -115,3 +115,25 @@ async def update_service(
     assert service.version == service_version  # nosec
 
     return service
+
+
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
+@log_decorator(_logger, level=logging.DEBUG)
+async def check_for_service(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """Checks whether service exists and can be accessed, otherwise it raise"""
+    assert app.state.engine  # nosec
+
+    await services_api.check_for_service(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )

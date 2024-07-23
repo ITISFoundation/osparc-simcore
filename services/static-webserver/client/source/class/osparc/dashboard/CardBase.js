@@ -102,7 +102,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (checks && myGroupId in checks) {
           const myAccessRights = checks[myGroupId];
-          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write_access"];
+          const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write"];
           if (sharedWith === "my-resources") {
             return !totalAccess;
           } else if (sharedWith === "shared-with-me") {
@@ -127,10 +127,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterServiceType: function(resourceType, metaData, serviceType) {
+    filterServiceType: function(resourceType, metadata, serviceType) {
       if (serviceType && resourceType === "service") {
-        if (metaData && metaData.type) {
-          const matches = metaData.type === serviceType;
+        if (metadata && metadata.type) {
+          const matches = metadata.type === serviceType;
           return !matches;
         }
         return false;
@@ -543,27 +543,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.study.Utils.isWorkbenchUpdatable(workbench)
-          .then(updatable => {
-            if (updatable) {
-              this.setUpdatable("updatable");
-            }
-          });
+        const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
+        if (updatable) {
+          this.setUpdatable("updatable");
+        }
       }
 
       // Block card
-      osparc.study.Utils.getInaccessibleServices(workbench)
-        .then(unaccessibleServices => {
-          if (unaccessibleServices.length) {
-            this.__enableCard(false);
-            const image = "@FontAwesome5Solid/ban/";
-            let toolTipText = this.tr("Service info missing");
-            unaccessibleServices.forEach(unSrv => {
-              toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
-            });
-            this.__showBlockedCard(image, toolTipText);
-          }
+      const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
+      if (unaccessibleServices.length) {
+        this.__enableCard(false);
+        const image = "@FontAwesome5Solid/ban/";
+        let toolTipText = this.tr("Service info missing");
+        unaccessibleServices.forEach(unSrv => {
+          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
+        this.__showBlockedCard(image, toolTipText);
+      }
     },
 
     __applyEmptyWorkbench: function(isEmpty) {

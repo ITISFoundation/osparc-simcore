@@ -70,6 +70,7 @@ from servicelib.common_headers import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
@@ -916,7 +917,27 @@ async def patch_project_node(
     if not _user_project_access_rights.write:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
-    # 2. Patch the project node
+    # 2. If patching service key or version make sure it's valid
+    if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
+        _project, _ = await db.get_project(
+            user_id=user_id, project_uuid=f"{project_id}"
+        )
+        _project_node_data = _project["workbench"][f"{node_id}"]
+
+        _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
+        _service_version = _node_patch_exclude_unset.get(
+            "version", _project_node_data["version"]
+        )
+        rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
+        await catalog_rpc.check_for_service(
+            rabbitmq_rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=_service_key,
+            service_version=_service_version,
+        )
+
+    # 3. Patch the project node
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -925,7 +946,7 @@ async def patch_project_node(
         new_node_data=_node_patch_exclude_unset,
     )
 
-    # 3. Notify project node update
+    # 4. Notify project node update
     await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 

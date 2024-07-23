@@ -2,10 +2,8 @@
 
 """
 
-from models_library.basic_types import VersionStr
 from models_library.products import ProductName
-from models_library.services_base import ServiceKeyVersion
-from models_library.services_history import Compatibility
+from models_library.services_history import Compatibility, CompatibleService
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
@@ -78,11 +76,16 @@ async def _evaluate_custom_compatibility(
     ):
         if other_service_key:
             return Compatibility(
-                can_update_to=ServiceKeyVersion(
-                    key=other_service_key, version=VersionStr(latest_version)
+                can_update_to=CompatibleService(
+                    key=other_service_key,
+                    version=f"{latest_version}",
                 )
             )
-        return Compatibility(can_update_to=ServiceKey(f"{latest_version}"))
+        return Compatibility(
+            can_update_to=CompatibleService(
+                version=f"{latest_version}",
+            )
+        )
 
     return None
 
@@ -111,7 +114,9 @@ async def evaluate_service_compatibility_map(
             release.version,
             released_versions,
         ):
-            compatibility = Compatibility(can_update_to=ServiceKey(f"{latest_version}"))
+            compatibility = Compatibility(
+                can_update_to=CompatibleService(version=f"{latest_version}")
+            )
 
         result[release.version] = compatibility
 

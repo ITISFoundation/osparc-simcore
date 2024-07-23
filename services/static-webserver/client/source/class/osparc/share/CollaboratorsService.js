@@ -46,22 +46,22 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       let canWrite = false;
       for (let i=0; i<gIds.length && !canWrite; i++) {
         const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["write_access"] : false;
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
       return canWrite;
     },
 
     getCollaboratorAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": false
+        "execute": true,
+        "write": false
       };
     },
 
     getOwnerAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": true
+        "execute": true,
+        "write": true
       };
     },
 
