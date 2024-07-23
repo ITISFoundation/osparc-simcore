@@ -201,13 +201,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
           callback: this.__copyKeyToClipboard,
           ctx: this
         }
-      }, {
+      });
+
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        extraInfo.push({
+          label: this.tr("INTEGRATION VERSION"),
+          view: this.__createIntegrationVersion(),
+          action: null
+        });
+      }
+
+      extraInfo.push({
         label: this.tr("VERSION"),
-        view: this.__createVersion(),
-        action: null
-      }, {
-        label: this.tr("VERSION DISPLAY"),
-        view: this.__createVersionDisplay(),
+        view: this.__createDisplayVersion(),
         action: {
           button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
           callback: this.__openVersionDisplayEditor,
@@ -284,17 +290,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return osparc.info.ServiceUtils.createKey(this.getService()["key"]);
     },
 
-    __createVersion: function() {
+    __createIntegrationVersion: function() {
       return osparc.info.ServiceUtils.createVersion(this.getService()["version"]);
     },
 
-    __createVersionDisplay: function() {
-      const versionDisplayLabel = osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
-      if (versionDisplayLabel.getValue() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-        // show it if it has a value or if the user can write (useful when it is still empty)
-        return versionDisplayLabel;
-      }
-      return null;
+    __createDisplayVersion: function() {
+      return osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
     },
 
     __createReleasedDate: function() {

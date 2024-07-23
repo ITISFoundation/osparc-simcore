@@ -60,12 +60,13 @@ qx.Class.define("osparc.info.ServiceUtils", {
       version.set({
         value: serviceVersion
       });
-      osparc.utils.Utils.setIdToWidget(version, "serviceVersion");
       return version;
     },
 
     createVersionDisplay: function(key, version) {
-      return new qx.ui.basic.Label(osparc.service.Utils.getVersionDisplay(key, version));
+      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      osparc.utils.Utils.setIdToWidget(version, "serviceVersion");
+      return new qx.ui.basic.Label(versionDisplay ? versionDisplay : version);
     },
 
     createReleasedDate: function(key, version) {
