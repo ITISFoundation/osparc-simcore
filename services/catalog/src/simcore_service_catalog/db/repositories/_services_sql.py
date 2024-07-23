@@ -238,6 +238,7 @@ def list_latest_services_with_history_stmt(
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
+            services_meta_data.c.version_display,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
             services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
@@ -283,6 +284,8 @@ def list_latest_services_with_history_stmt(
                 func.json_build_object(
                     "version",
                     history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
                     "deprecated",
                     history_subquery.c.deprecated,
                     "created",
@@ -403,6 +406,7 @@ def get_service_history_stmt(
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
+            services_meta_data.c.version_display,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
             services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
@@ -447,6 +451,8 @@ def get_service_history_stmt(
                 func.json_build_object(
                     "version",
                     history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
                     "deprecated",
                     history_subquery.c.deprecated,
                     "created",

@@ -78,6 +78,7 @@ def _db_to_api_model(
         history=[
             ServiceRelease.construct(
                 version=h.version,
+                version_display=h.version_display,
                 released=h.created,
                 retired=h.deprecated,
                 compatibility=compatibility_map.get(h.version),
