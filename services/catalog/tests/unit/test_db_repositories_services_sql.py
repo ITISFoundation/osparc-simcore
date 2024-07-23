@@ -62,7 +62,7 @@ def test_building_services_sql_statements():
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        limit=10,
+        limit=100,
         offset=None,
     )
 
