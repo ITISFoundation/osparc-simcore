@@ -12,9 +12,11 @@ from simcore_postgres_database.utils_folders_v2 import (
     InvalidFolderNameError,
     _FolderPermissions,
     _get_permissions_from_role,
-    _requires_permissions,
+    _get_where_clause,
+    _requires,
     create_folder,
 )
+from sqlalchemy.sql.elements import ColumnElement
 
 
 def test_permissions_integrity():
@@ -59,7 +61,7 @@ def test_role_permissions(
 def test__requires_permissions(
     permissions: list[_FolderPermissions] | None, expected: dict[str, bool]
 ):
-    assert _requires_permissions(*permissions) == expected
+    assert _requires(*permissions) == expected
 
 
 @pytest.mark.parametrize(
@@ -87,6 +89,15 @@ def test__requires_permissions(
 async def test_folder_create_wrong_folder_name(invalid_name: str):
     with pytest.raises(InvalidFolderNameError):
         await create_folder(Mock(), invalid_name, Mock())
+
+
+def test__get_where_clause():
+    assert isinstance(_get_where_clause(VIEWER_PERMISSIONS), ColumnElement)
+    assert isinstance(_get_where_clause(EDITOR_PERMISSIONS), ColumnElement)
+    assert isinstance(_get_where_clause(OWNER_PERMISSIONS), ColumnElement)
+    assert isinstance(
+        _get_where_clause({"read": False, "write": False, "delete": False}), bool
+    )
 
 
 # TODO: write down some tests for this
