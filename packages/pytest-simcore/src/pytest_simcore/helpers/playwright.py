@@ -6,9 +6,9 @@ from collections import defaultdict
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from enum import Enum, unique
-from typing import Any, Final
+from typing import Any, Final, Generator
 
-from playwright.sync_api import FrameLocator, Page, Request, WebSocket, expect
+from playwright.sync_api import FrameLocator, Page, Request, WebSocket
 from pytest_simcore.helpers.logging_tools import log_context
 
 SECOND: Final[int] = 1000
@@ -284,16 +284,40 @@ def _node_started_predicate(request: Request) -> bool:
     )
 
 
-def _trigger_service_start_if_button_available(page: Page, node_id: str) -> None:
-    # wait for the start button to auto-disappear if it is still around after the timeout, then we click it
-    with log_context(logging.INFO, msg="trigger start button if needed") as ctx:
-        start_button_locator = page.get_by_test_id(f"Start_{node_id}")
-        with contextlib.suppress(AssertionError, TimeoutError):
-            expect(start_button_locator).to_be_visible(timeout=5000)
-            expect(start_button_locator).to_be_enabled(timeout=5000)
-            with page.expect_request(_node_started_predicate):
-                start_button_locator.click()
-                ctx.logger.info("triggered start button")
+def _trigger_service_start(page: Page, node_id: str) -> None:
+    with log_context(logging.INFO, msg="trigger start button"), page.expect_request(
+        _node_started_predicate, timeout=35 * SECOND
+    ):
+        page.get_by_test_id(f"Start_{node_id}").click()
+
+
+@dataclass(slots=True, kw_only=True)
+class ServiceRunning:
+    iframe_locator: FrameLocator | None
+
+
+@contextlib.contextmanager
+def expected_service_running(
+    *,
+    page: Page,
+    node_id: str,
+    websocket: WebSocket,
+    timeout: int,
+    press_start_button: bool,
+) -> Generator[ServiceRunning, None, None]:
+    waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
+    service_running = ServiceRunning(iframe_locator=None)
+    with (
+        log_context(logging.INFO, msg="Waiting for node to run"),
+        websocket.expect_event("framereceived", waiter, timeout=timeout),
+    ):
+        if press_start_button:
+            _trigger_service_start(page, node_id)
+        yield service_running
+
+    service_running.iframe_locator = page.frame_locator(
+        f'[osparc-test-id="iframe_{node_id}"]'
+    )
 
 
 def wait_for_service_running(
@@ -302,6 +326,7 @@ def wait_for_service_running(
     node_id: str,
     websocket: WebSocket,
     timeout: int,
+    press_start_button: bool,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
@@ -311,7 +336,8 @@ def wait_for_service_running(
         log_context(logging.INFO, msg="Waiting for node to run"),
         websocket.expect_event("framereceived", waiter, timeout=timeout),
     ):
-        _trigger_service_start_if_button_available(page, node_id)
+        if press_start_button:
+            _trigger_service_start(page, node_id)
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
@@ -321,6 +347,4 @@ def app_mode_trigger_next_app(page: Page) -> None:
         page.expect_request(_node_started_predicate),
     ):
         # Move to next step (this auto starts the next service)
-        next_button_locator = page.get_by_test_id("AppMode_NextBtn")
-        if next_button_locator.is_visible() and next_button_locator.is_enabled():
-            page.get_by_test_id("AppMode_NextBtn").click()
+        page.get_by_test_id("AppMode_NextBtn").click()
