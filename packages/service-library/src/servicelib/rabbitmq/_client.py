@@ -224,6 +224,16 @@ class RabbitMQClient(RabbitMQClientBase):
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
 
+            delayed_queue = await declare_queue(
+                channel,
+                self.client_name,
+                delayed_exchange_name,
+                exclusive_queue=exclusive_queue,
+                message_ttl=int(unexpected_error_retry_delay_s * 1000),
+                arguments={"x-dead-letter-exchange": exchange.name},
+            )
+            await delayed_queue.bind(delayed_exchange)
+
             _consumer_tag = await self._get_consumer_tag(exchange_name)
             await queue.consume(
                 partial(_on_message, message_handler, unexpected_error_max_attempts),
