@@ -145,7 +145,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       const latest = new qx.ui.form.ListItem(this.self().LATEST);
       selectBox.add(latest);
       versions.forEach(version => {
-        const listItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+        const listItem = osparc.service.Utils.versionToListItem(serviceKey, version);
         selectBox.add(listItem);
       });
       selectBox.setSelection([latest]);
@@ -153,9 +153,9 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     __showServiceDetails: function() {
       const key = this.getServiceModel().getKey();
-      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      let version = this.__versionsBox.getSelection()[0].version;
       if (version === this.self().LATEST) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
       osparc.service.Store.getService(key, version)
         .then(serviceMetadata => {
