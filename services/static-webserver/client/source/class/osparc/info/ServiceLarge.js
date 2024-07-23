@@ -359,13 +359,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.getService()["key"],
-            this.getService()["version"]
-          )
-        };
-        promise = osparc.data.Resources.get("serviceResources", params);
+        promise = osparc.service.Store.getResources(this.getService()["key"], this.getService()["version"])
       }
       promise
         .then(serviceResources => {

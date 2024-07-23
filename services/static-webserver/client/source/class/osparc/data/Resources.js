@@ -450,7 +450,7 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES DEV
        */
       "servicesDev": {
-        useCache: false, // handled in its store
+        useCache: false, // handled in osparc.service.Store
         idField: ["key", "version"],
         endpoints: {
           get: {
