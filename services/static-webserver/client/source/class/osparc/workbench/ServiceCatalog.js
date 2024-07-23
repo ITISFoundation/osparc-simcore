@@ -272,10 +272,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
       let service = selectedService;
       if (!service) {
-        let serviceMetadata = await this.__getSelectedService();
-        serviceMetadata = osparc.utils.Utils.deepCloneObject(serviceMetadata);
-        osparc.service.Utils.removeFileToKeyMap(serviceMetadata);
-        service = qx.data.marshal.Json.createModel(serviceMetadata);
+        const serviceMetadata = await this.__getSelectedService();
+        service = new osparc.data.model.Service(serviceMetadata);
       }
       const eData = {
         service,

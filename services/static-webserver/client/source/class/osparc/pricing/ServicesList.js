@@ -108,7 +108,6 @@ qx.Class.define("osparc.pricing.ServicesList", {
       srvCat.addListener("addService", e => {
         const data = e.getData();
         const service = data.service;
-        console.log(service);
         const params = {
           url: {
             pricingPlanId: this.getPricingPlanId()
