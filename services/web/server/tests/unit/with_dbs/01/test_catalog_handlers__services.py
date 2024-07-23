@@ -11,7 +11,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
-    ServiceUpdate,
+    CatalogServiceUpdate,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
@@ -94,7 +94,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-        update: ServiceUpdate,
+        update: CatalogServiceUpdate,
     ):
         assert app
         assert product_name
@@ -188,7 +188,7 @@ async def test_dev_get_and_patch_service(
     assert not mocked_rpc_catalog_service_api["update_service"].called
 
     # PATCH
-    update = ServiceUpdate(
+    update = CatalogServiceUpdate(
         name="foo",
         thumbnail=None,
         description="bar",

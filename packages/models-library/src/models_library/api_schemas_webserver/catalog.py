@@ -230,11 +230,6 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         }
 
 
-class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
-    class Config(InputSchema.Config):
-        ...
-
-
 class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
     class Config(OutputSchema.Config):
         ...
@@ -266,3 +261,8 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
                 "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
             }
         }
+
+
+class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
+    class Config(InputSchema.Config):
+        ...
