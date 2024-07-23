@@ -24,14 +24,16 @@ def test_building_services_sql_statements():
 
     # some data
     product_name = "osparc"
-    user_id = 425  # 4
+    user_id = 4  # 425 (san)  # 4 (odei)
+    service_key = "simcore/services/comp/isolve"
+    service_version = "2.11.2"
 
     _check(
         get_service_history_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        service_key="simcore/services/comp/isolve",
+        service_key="simcore/services/dynamic/raw-graphs",
     )
 
     _check(
