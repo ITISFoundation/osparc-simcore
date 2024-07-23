@@ -26,6 +26,7 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
+    service_key: ServiceKey = FieldNotRequired(alias="key")
     service_version: ServiceVersion = FieldNotRequired(alias="version")
     label: str = FieldNotRequired()
     inputs: InputsDict = FieldNotRequired()
