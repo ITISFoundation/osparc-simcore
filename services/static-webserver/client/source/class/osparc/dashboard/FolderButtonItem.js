@@ -262,11 +262,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __openShareWith: function() {
       const title = this.tr("Share Folder");
       const permissionsView = new osparc.share.CollaboratorsFolder(this.getFolder());
-      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title);
-      permissionsView.addListener("updateAccessRights", e => {
-        // TODO update folder icon
-        win.close();
-      });
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title);
+      permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getFolder().getAccessRights()), this);
     },
 
     __deleteStudyRequested: function() {
