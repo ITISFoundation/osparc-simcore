@@ -230,7 +230,10 @@ qx.Class.define("osparc.utils.Utils", {
         largest = Math.max(listItem.getSizeHint().width, largest);
       });
       largest += 15;
-      selectBox.setWidth(maxWidth ? Math.min(maxWidth, largest) : largest);
+      selectBox.set({
+        width: maxWidth ? Math.min(maxWidth, largest) : largest,
+        minWidth: 120
+      });
     },
 
     toTwoDecimals: function(value) {
