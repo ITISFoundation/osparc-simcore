@@ -1,3 +1,4 @@
+import functools
 import logging
 
 from fastapi import FastAPI
@@ -11,6 +12,7 @@ from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
@@ -27,8 +29,30 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
+def _profile_rpc_call(coro):
+    @functools.wraps(coro)
+    async def _wrapper(app: FastAPI, **kwargs):
+        profile_enabled = (
+            (settings := getattr(app.state, "settings", None))
+            and settings.CATALOG_PROFILING
+            and _logger.isEnabledFor(logging.INFO)
+        )
+        if profile_enabled:
+            with Profiler() as profiler:
+                result = await coro(app, **kwargs)
+            profiler_output = profiler.output_text(unicode=True, color=False)
+            _logger.info("[PROFILING]: %s", profiler_output)
+            return result
+
+        # bypasses w/o profiling
+        return await coro(app, **kwargs)
+
+    return _wrapper
+
+
 @router.expose(reraise_if_error_type=(CatalogForbiddenError,))
 @log_decorator(_logger, level=logging.DEBUG)
+@_profile_rpc_call
 async def list_services_paginated(
     app: FastAPI,
     *,
@@ -61,6 +85,7 @@ async def list_services_paginated(
 
 @router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
+@_profile_rpc_call
 async def get_service(
     app: FastAPI,
     *,
