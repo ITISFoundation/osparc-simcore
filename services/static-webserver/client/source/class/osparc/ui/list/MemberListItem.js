@@ -148,7 +148,8 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         });
         removeButton.addListener("execute", () => {
           this.fireDataEvent("leaveResource", {
-            id: this.getKey()
+            id: this.getKey(),
+            name: this.getTitle()
           });
         });
         menu.add(removeButton);
