@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
 
-from .utils_profiling_middleware import dont_profile, is_profiling, profile
+from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +167,7 @@ def run_sequentially_in_context(
                             awaitable = element.input
                             if awaitable is None:
                                 break
-                            with profile(do_profile):
+                            with profile_context(do_profile):
                                 result = await awaitable
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
