@@ -198,8 +198,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           });
           item.addListener("leaveResource", e => {
             const orgMember = e.getData();
-            console.log("leaveResource", orgMember);
-            // this.__deleteMember(orgMember);
+            this.__deleteMyself(orgMember);
           });
         }
       });
@@ -478,7 +477,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          // osparc.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Member"));
           osparc.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(` successfully demoted to ${osparc.data.Roles.ORG[1].label}`));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
@@ -505,7 +503,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          // osparc.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Manager"));
           osparc.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(` successfully demoted to ${osparc.data.Roles.ORG[3].label}`));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
@@ -516,11 +513,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         });
     },
 
-    __deleteMember: function(orgMember) {
-      if (this.__currentOrg === null) {
-        return;
-      }
-
+    __doDeleteMember: function(orgMember) {
       const params = {
         url: {
           "gid": this.__currentOrg.getGid(),
@@ -536,6 +529,48 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
           console.error(err);
+        });
+    },
+
+    __deleteMember: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      this.__doDeleteMember(orgMember);
+    },
+
+    __deleteMyself: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getGid()
+        }
+      };
+      osparc.data.Resources.get("organizationMembers", params)
+        .then(members => {
+          const isThereAnyAdmin = members.some(member => member["accessRights"]["delete"]);
+          const isThereAnyManager = members.some(member => member["accessRights"]["write"]);
+          let rUSure = this.tr("Are you sure you want to leave?");
+          if (isThereAnyAdmin) {
+            rUSure += `<br>There is no ${osparc.data.Roles.ORG[2].label} in this Organization`;
+          } else if (isThereAnyManager) {
+            rUSure += `<br>There is no ${osparc.data.Roles.ORG[3].label} in this Organization`;
+          }
+          const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
+            confirmText: this.tr("Leave"),
+            confirmAction: "delete"
+          });
+          confirmationWin.center();
+          confirmationWin.open();
+          confirmationWin.addListener("close", () => {
+            if (confirmationWin.getConfirmed()) {
+              this.__doDeleteMember(orgMember);
+            }
+          }, this);
         });
     }
   }
