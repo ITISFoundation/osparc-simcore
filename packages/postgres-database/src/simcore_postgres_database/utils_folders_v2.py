@@ -49,7 +49,7 @@ class FolderNotSharedWithGidError(BaseAccessError):
 
 
 class InsufficientPermissionsError(BaseAccessError):
-    msg_template = "no entry found for: folder_id={folder_id}, gid={gid} with permissions={permissions}"
+    msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
 
 
 class BaseCreateFlderError(FoldersError):
@@ -478,7 +478,7 @@ async def folder_delete(
         _BasePermissions.DELETE_FOLDER
     ),
 ) -> None:
-    own_children: list[_FolderID] = []
+    childern_folder_ids: list[_FolderID] = []
 
     async with connection.begin():
         await _check_folder_and_access(
@@ -497,13 +497,13 @@ async def folder_delete(
         rows = await results.fetchall()
         if rows:
             for entry in rows:
-                own_children.append(entry.folder_id)  # noqa: PERF401
+                childern_folder_ids.append(entry.folder_id)  # noqa: PERF401
 
         # directly remove folder, access rigths will be dropped as well
         await connection.execute(folders.delete().where(folders.c.id == folder_id))
 
     # finally remove all the children from the folder
-    for child_folder_id in own_children:
+    for child_folder_id in childern_folder_ids:
         await folder_delete(connection, child_folder_id, gid)
 
 
