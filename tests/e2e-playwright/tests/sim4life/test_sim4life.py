@@ -38,6 +38,7 @@ def test_sim4life(
     log_in_and_out: WebSocket,
     service_key: str,
     autoscaled: bool,
+    check_videostreaming: bool,
 ):
     project_data = create_project_from_service_dashboard(
         ServiceType.DYNAMIC, service_key, None
@@ -69,5 +70,8 @@ def test_sim4life(
         page.wait_for_timeout(30000)
         s4l_iframe.get_by_role("img", name="Remote render").click(button="right")
 
-    with log_context(logging.INFO, "Check videostreaming works"):
-        ...
+    if check_videostreaming:
+        with log_context(logging.INFO, "Check videostreaming works"):
+            raise NotImplementedError(
+                "TODO: currently I was not able to make playwright browser show any videostreaming"
+            )

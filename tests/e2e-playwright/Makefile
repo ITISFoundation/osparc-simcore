@@ -132,6 +132,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
 		echo "--service-key=sim4life-8-0-0-dy" >> $@; \
+		echo "--check-videostreaming" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
@@ -158,7 +159,8 @@ define run_test
 		--color=yes \
 		--browser chromium \
 		--headed \
-		$$TEST_ARGS
+		$$TEST_ARGS \
+		--device="Desktop Chrome"
 endef
 
 clean:
