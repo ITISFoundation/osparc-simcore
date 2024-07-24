@@ -368,7 +368,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.reloadFolders();
 
       const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId())
-      if (currentFolder == null || currentFolder.getAccessRights()["write"]) {
+      if (currentFolder == null || currentFolder.getMyAccessRights()["write"]) {
         const newFolderCard = new osparc.dashboard.FolderButtonNew();
         newFolderCard.setCardKey("new-folder");
         newFolderCard.subscribeToFilterGroup("searchBarFilter");
@@ -548,7 +548,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
         if (currentFolder) {
-          const ar = currentFolder.getAccessRights();
+          const ar = currentFolder.getMyAccessRights();
           if (!ar["write"]) {
             // If user can't write in folder, do not show plus buttons
             return;
