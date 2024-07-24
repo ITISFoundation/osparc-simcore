@@ -25,7 +25,8 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
     "demoteToUser": "qx.event.type.Data",
     "demoteToMember": "qx.event.type.Data",
     "demoteToManager": "qx.event.type.Data",
-    "removeMember": "qx.event.type.Data"
+    "removeMember": "qx.event.type.Data",
+    "leaveResource": "qx.event.type.Data"
   },
 
   members: {
@@ -133,6 +134,21 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
           this.fireDataEvent("removeMember", {
             id: this.getKey(),
             name: this.getTitle()
+          });
+        });
+        menu.add(removeButton);
+      }
+
+      if (options.includes("leave")) {
+        if (menu.getChildren().length) {
+          menu.addSeparator();
+        }
+        const removeButton = new qx.ui.menu.Button(this.tr("Leave")).set({
+          textColor: "danger-red"
+        });
+        removeButton.addListener("execute", () => {
+          this.fireDataEvent("leaveResource", {
+            id: this.getKey()
           });
         });
         menu.add(removeButton);

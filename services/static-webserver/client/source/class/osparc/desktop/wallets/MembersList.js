@@ -194,6 +194,11 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             const walletMember = e.getData();
             this.__deleteMember(walletMember);
           });
+          item.addListener("leaveResource", e => {
+            const walletMember = e.getData();
+            console.log("leaveResource", walletMember);
+            // this.__deleteMember(orgMember);
+          });
         }
       });
 

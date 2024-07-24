@@ -196,6 +196,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
             const orgMember = e.getData();
             this.__deleteMember(orgMember);
           });
+          item.addListener("leaveResource", e => {
+            const orgMember = e.getData();
+            console.log("leaveResource", orgMember);
+            // this.__deleteMember(orgMember);
+          });
         }
       });
 
@@ -277,6 +282,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
                   "removeMember"
                 ];
               }
+            }
+            // Let me go
+            if (canIWrite && member["gid"] === osparc.auth.Data.getInstance().getGroupId()) {
+              options.push("leave");
             }
             member["options"] = options;
             member["showOptions"] = Boolean(options.length);
