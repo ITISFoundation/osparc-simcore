@@ -151,7 +151,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       if (status) {
         statusText = status.charAt(0).toUpperCase() + status.slice(1);
       }
-      return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + node.getVersion() + "</sub></span>";
+      const metadata = node.getMetaData();
+      const version = metadata["versionDisplay"] ? metadata["versionDisplay"] : metadata["version"];
+      return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + version + "</sub></span>";
     },
 
     __nodeState: function(starting=true) {
