@@ -28,16 +28,15 @@ folders = sa.Table(
         doc="user provided description for the folder",
     ),
     sa.Column(
-        "owner",
+        "created_by",
         sa.BigInteger,
         sa.ForeignKey(
             "groups.gid",
             name="fk_folders_to_groups_gid",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="SET NULL",
         ),
         nullable=True,
-        doc="Traces back the creator of the folder",
+        doc="traces who created the folder",
     ),
     sa.Column(
         "created_at",
