@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
+    CatalogServiceUpdate,
     ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
     ServiceOutputGet,
     ServiceOutputKey,
     ServiceResourcesGet,
-    ServiceUpdate,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
@@ -59,7 +59,7 @@ def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 )
 def dev_update_service(
     _path_params: Annotated[ServicePathParams, Depends()],
-    _update: ServiceUpdate,
+    _update: CatalogServiceUpdate,
 ):
     ...
 
@@ -86,7 +86,7 @@ def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 )
 def update_service(
     _path_params: Annotated[ServicePathParams, Depends()],
-    _update: ServiceUpdate,
+    _update: CatalogServiceUpdate,
 ):
     ...
 

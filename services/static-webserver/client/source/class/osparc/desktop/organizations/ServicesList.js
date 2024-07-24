@@ -115,12 +115,13 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       }
 
       const gid = orgModel.getGid();
-      osparc.service.Store.getServicesLatest(false, false)
-        .then(latestServices => {
+      osparc.service.Store.getServicesLatest()
+        .then(servicesLatest => {
           const orgServices = [];
-          latestServices.forEach(latestService => {
-            if (gid in latestService["accessRights"]) {
-              orgServices.push(latestService);
+          Object.keys(servicesLatest).forEach(key => {
+            const serviceLatest = servicesLatest[key];
+            if (gid in serviceLatest["accessRights"]) {
+              orgServices.push(serviceLatest);
             }
           });
           orgServices.forEach(orgService => {

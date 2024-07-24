@@ -207,9 +207,17 @@ qx.Class.define("osparc.info.MergedLarge", {
         }
       });
 
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        extraInfo.splice(i++, 0, {
+          label: this.tr("Service Integration Version"),
+          view: this.__createIntegrationVersion(),
+          action: null
+        });
+      }
+
       extraInfo.splice(i++, 0, {
         label: this.tr("Service Version"),
-        view: this.__createVersion(),
+        view: this.__createDisplayVersion(),
         action: null
       });
 
@@ -247,8 +255,12 @@ qx.Class.define("osparc.info.MergedLarge", {
       return osparc.info.ServiceUtils.createKey(this.getNode().getKey());
     },
 
-    __createVersion: function() {
-      return osparc.info.ServiceUtils.createVersion(this.getNode().getVersion() + "TODO: version display");
+    __createIntegrationVersion: function() {
+      return osparc.info.ServiceUtils.createVersion(this.getNode().getVersion());
+    },
+
+    __createDisplayVersion: function() {
+      return osparc.info.ServiceUtils.createVersionDisplay(this.getNode().getKey(), this.getNode().getVersion());
     },
 
     __createOwner: function() {
@@ -313,13 +325,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.getNode().getKey(),
-            this.getNode().getVersion()
-          )
-        };
-        promise = osparc.data.Resources.get("serviceResources", params);
+        promise = osparc.service.Store.getResources(this.getNode().getKey(), this.getNode().getVersion())
       }
       promise
         .then(serviceResources => {

@@ -69,11 +69,48 @@ qx.Class.define("osparc.service.Store", {
       });
     },
 
+    getResources: function(key, version) {
+      return new Promise(resolve => {
+        if (
+          this.__isInCache(key, version) &&
+          "resources" in this.servicesCached[key][version]
+        ) {
+          resolve(this.servicesCached[key][version]["resources"]);
+          return;
+        }
+
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(key, version)
+        };
+        osparc.data.Resources.get("serviceResources", params)
+          .then(resources => {
+            this.servicesCached[key][version]["resources"] = resources;
+            resolve(resources);
+          });
+      });
+    },
+
     getMetadata: function(key, version) {
       if (this.__isInCache(key, version)) {
         return this.servicesCached[key][version];
       }
       return null;
+    },
+
+    patchServiceData: function(serviceData, fieldKey, value) {
+      const key = serviceData["key"];
+      const version = serviceData["version"];
+      const patchData = {};
+      patchData[fieldKey] = value;
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(key, version),
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("servicesDev", "patch", params)
+        .then(() => {
+          this.servicesCached[key][version][fieldKey] = value;
+          serviceData[fieldKey] = value;
+        });
     },
 
     __addToCache: function(service) {

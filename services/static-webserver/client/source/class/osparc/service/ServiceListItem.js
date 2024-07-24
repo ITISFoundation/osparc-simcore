@@ -18,7 +18,7 @@
 qx.Class.define("osparc.service.ServiceListItem", {
   extend: osparc.dashboard.ListButtonBase,
 
-  construct: function(serviceModel) {
+  construct: function(service) {
     this.base(arguments);
 
     this.set({
@@ -30,8 +30,8 @@ qx.Class.define("osparc.service.ServiceListItem", {
     });
 
     this.setResourceType("service");
-    if (serviceModel) {
-      this.setServiceModel(serviceModel);
+    if (service) {
+      this.setService(service);
     }
 
     this.subscribeToFilterGroup("serviceCatalog");
@@ -46,10 +46,10 @@ qx.Class.define("osparc.service.ServiceListItem", {
   },
 
   properties: {
-    serviceModel: {
+    service: {
       check: "qx.core.Object",
       nullable: false,
-      apply: "__applyServiceModel"
+      apply: "__applyService"
     }
   },
 
@@ -91,41 +91,40 @@ qx.Class.define("osparc.service.ServiceListItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyServiceModel: function(serviceModel) {
+    __applyService: function(service) {
       // BASE
-      if (serviceModel.getThumbnail()) {
-        this.getChildControl("icon").setSource(serviceModel.getThumbnail());
+      if (service.getThumbnail()) {
+        this.getChildControl("icon").setSource(service.getThumbnail());
       } else {
         this.getChildControl("icon").setSource(this.self().SERVICE_ICON);
       }
-      serviceModel.bind("name", this.getChildControl("title"), "value");
+      service.bind("name", this.getChildControl("title"), "value");
 
       // ITEM
-      this.__applyVersion(serviceModel);
-      this.__applyHitsOnItem(serviceModel);
+      this.__applyVersion(service);
+      this.__applyHitsOnItem(service);
     },
 
-    __applyVersion: function(serviceModel) {
-      const latestVLabel = new qx.ui.basic.Label("v" + serviceModel.getVersion()).set({
+    __applyVersion: function(service) {
+      const text = service.getVersionDisplay() ? service.getVersionDisplay() : "v" + service.getVersion();
+      const label = new qx.ui.basic.Label(text).set({
         alignY: "middle"
       });
-      this._add(latestVLabel, {
+      this._add(label, {
         row: 0,
         column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
       });
     },
 
-    __applyHitsOnItem: function(serviceModel) {
-      if ("getHits" in serviceModel) {
-        const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.getHits())).set({
-          alignY: "middle",
-          toolTipText: this.tr("Number of times you instantiated it")
-        });
-        this._add(hitsLabel, {
-          row: 0,
-          column: osparc.dashboard.ListButtonBase.POS.HITS
-        });
-      }
+    __applyHitsOnItem: function(service) {
+      const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(service.getHits())).set({
+        alignY: "middle",
+        toolTipText: this.tr("Number of times you instantiated it")
+      });
+      this._add(hitsLabel, {
+        row: 0,
+        column: osparc.dashboard.ListButtonBase.POS.HITS
+      });
     },
 
     __itemSelected: function(selected) {
@@ -138,24 +137,26 @@ qx.Class.define("osparc.service.ServiceListItem", {
     },
 
     __populateVersions: function() {
-      const serviceKey = this.getServiceModel().getKey();
+      const serviceKey = this.getService().getKey();
       const selectBox = this.__versionsBox;
       selectBox.removeAll();
       const versions = osparc.service.Utils.getVersions(serviceKey);
       const latest = new qx.ui.form.ListItem(this.self().LATEST);
+      latest.version = this.self().LATEST;
       selectBox.add(latest);
       versions.forEach(version => {
-        const listItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+        const listItem = osparc.service.Utils.versionToListItem(serviceKey, version);
         selectBox.add(listItem);
       });
+      osparc.utils.Utils.growSelectBox(selectBox, 200);
       selectBox.setSelection([latest]);
     },
 
     __showServiceDetails: function() {
-      const key = this.getServiceModel().getKey();
-      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      const key = this.getService().getKey();
+      let version = this.__versionsBox.getSelection()[0].version;
       if (version === this.self().LATEST) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
       osparc.service.Store.getService(key, version)
         .then(serviceMetadata => {
@@ -169,9 +170,9 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     _filterText: function(text) {
       const checks = [
-        this.getServiceModel().getName(),
-        this.getServiceModel().getDescription(),
-        this.getServiceModel().getContact()
+        this.getService().getName(),
+        this.getService().getDescription(),
+        this.getService().getContact()
       ];
       return osparc.dashboard.CardBase.filterText(checks, text);
     },
@@ -179,7 +180,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     _filterTags: function(tags) {
       if (tags && tags.length) {
         // xtype is a tuned type by the frontend
-        const type = this.getServiceModel().getXType() || "";
+        const type = this.getService().getXType() || "";
         if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
@@ -188,7 +189,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     },
 
     _filterClassifiers: function(classifiers) {
-      const checks = this.getServiceModel().getClassifiers();
+      const checks = this.getService().getClassifiers();
       return osparc.dashboard.CardBase.filterText(checks, classifiers);
     }
   }

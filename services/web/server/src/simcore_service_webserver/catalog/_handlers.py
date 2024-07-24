@@ -13,10 +13,10 @@ from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
+    CatalogServiceUpdate,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
-    ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -145,7 +145,9 @@ async def dev_get_service(request: Request):
 async def dev_update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
+    update: CatalogServiceUpdate = await parse_request_body_as(
+        CatalogServiceUpdate, request
+    )
 
     assert request_ctx  # nosec
     assert path_params  # nosec
@@ -216,7 +218,7 @@ async def update_service(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update_data: dict[str, Any] = await request.json(loads=json_loads)
 
-    assert parse_obj_as(ServiceUpdate, update_data) is not None  # nosec
+    assert parse_obj_as(CatalogServiceUpdate, update_data) is not None  # nosec
 
     # Evaluate and return validated model
     data = await _api.update_service(
