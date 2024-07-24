@@ -109,11 +109,12 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 
 # Define the files where user input will be saved
 SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
+S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
 JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE):
+$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the test running in autoscaled deployment [y/n]: " AUTOSCALED; \
@@ -129,6 +130,8 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE):
 	if [ "$@" = "$(JUPYTER_LAB_INPUT_FILE)" ]; then \
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
+	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
+		echo "--service-key=sim4life-8-0-0-dy" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
@@ -137,6 +140,9 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE):
 # Run the tests
 test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE)
 	@$(call run_test, $(SLEEPERS_INPUT_FILE), tests/sleepers/test_sleepers.py)
+
+test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE)
+	@$(call run_test, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
 
 test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE)
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
