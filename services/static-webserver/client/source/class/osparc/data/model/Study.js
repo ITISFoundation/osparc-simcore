@@ -209,6 +209,11 @@ qx.Class.define("osparc.data.model.Study", {
       "dev"
     ],
 
+    OwnPatch: [
+      "accessRights",
+      "workbench"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -246,7 +251,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIWrite: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
@@ -256,7 +261,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIDelete: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
@@ -294,8 +299,8 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metaData = osparc.service.Utils.getMetaData(node["key"], node["version"]);
-        if (osparc.data.model.Node.isComputational(metaData)) {
+        const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        if (metadata && osparc.data.model.Node.isComputational(metadata)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;
           nCompNodes++;
@@ -462,23 +467,6 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    computeStudyProgress: function() {
-      const nodes = this.getWorkbench().getNodes();
-      let nCompNodes = 0;
-      let overallProgress = 0;
-      Object.values(nodes).forEach(node => {
-        if (node.isComputational()) {
-          const progress = node.getStatus().getProgress();
-          overallProgress += progress ? progress : 0;
-          nCompNodes++;
-        }
-      });
-      if (nCompNodes === 0) {
-        return null;
-      }
-      return overallProgress/nCompNodes;
-    },
-
     isLocked: function() {
       if (this.getState() && "locked" in this.getState()) {
         return this.getState()["locked"]["value"];
@@ -578,6 +566,12 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     patchStudy: function(studyChanges) {
+      const matches = this.self().OwnPatch.filter(el => Object.keys(studyChanges).indexOf(el) !== -1);
+      if (matches.length) {
+        console.error(matches, "has it's own PATCH path");
+        return null;
+      }
+
       return new Promise((resolve, reject) => {
         const params = {
           url: {

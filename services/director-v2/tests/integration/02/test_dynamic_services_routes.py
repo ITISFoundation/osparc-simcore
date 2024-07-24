@@ -38,7 +38,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -186,6 +186,7 @@ async def director_v2_client(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
+            "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)

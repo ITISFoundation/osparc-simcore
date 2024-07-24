@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = osparc.service.Utils.getLatest(services, key);
+ *   let latestSrv = osparc.service.Utils.getLatest(key);
  * </pre>
  */
 
@@ -117,14 +117,6 @@ qx.Class.define("osparc.service.Utils", {
       });
     },
 
-    addHits: function(servicesArray) {
-      const favServices = osparc.utils.Utils.localCache.getFavServices();
-      servicesArray.forEach(service => {
-        const found = Object.keys(favServices).find(favSrv => favSrv === service["key"]);
-        service.hits = found ? favServices[found]["hits"] : 0;
-      });
-    },
-
     convertArrayToObject: function(servicesArray) {
       let services = {};
       for (let i = 0; i < servicesArray.length; i++) {
@@ -140,147 +132,85 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    convertObjectToArray: function(servicesObject) {
-      let services = [];
-      for (const key in servicesObject) {
-        const serviceVersions = servicesObject[key];
-        for (const serviceVersion in serviceVersions) {
-          services.push(serviceVersions[serviceVersion]);
-        }
-      }
-      return services;
-    },
-
-    getFromObject: function(services, key, version) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
-      if (key in services) {
-        const serviceVersions = services[key];
-        if (version in serviceVersions) {
-          return serviceVersions[version];
-        }
-      }
-      return null;
-    },
-
-    getFromArray: function(services, key, version) {
-      for (let i=0; i<services.length; i++) {
-        if (services[i].key === key && services[i].version === version) {
-          return services[i];
-        }
-      }
-      return null;
-    },
-
-    getVersions: function(services, key, filterDeprecates = true) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
+    getVersions: function(key, filterDeprecated = true) {
+      const services = osparc.service.Store.servicesCached;
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecates) {
-          versions = versions.filter(version => (services[key][version]["deprecated"] === null));
+        if (filterDeprecated) {
+          versions = versions.filter(version => {
+            if (services[key][version]["retired"]) {
+              return false;
+            }
+            return true;
+          });
         }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
-      return versions;
+      return versions.reverse();
     },
 
-    getLatest: function(services, key) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
+    getLatest: function(key) {
+      const services = osparc.service.Store.servicesCached;
       if (key in services) {
-        const versions = this.getVersions(services, key, false);
-        return services[key][versions[versions.length - 1]];
+        const versions = this.getVersions(key, true);
+        return services[key][versions[0]];
       }
       return null;
+    },
+
+    getLatestCompatible: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (key in services && version in services[key]) {
+        const serviceMD = services[key][version];
+        if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
+          const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
+          return {
+            key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
+            version: canUpdateTo["version"]
+          }
+        }
+      }
+      return null;
+    },
+
+    getVersionDisplay: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (
+        key in services &&
+        version in services[key] &&
+        "versionDisplay" in services[key][version]
+      ) {
+        return services[key][version]["versionDisplay"];
+      }
+      return null;
+    },
+
+    getReleasedDate: function(key, version) {
+      const services = osparc.service.Store.servicesCached;
+      if (
+        key in services &&
+        version in services[key] &&
+        "released" in services[key][version]
+      ) {
+        return services[key][version]["released"];
+      }
+      return null;
+    },
+
+    versionToListItem: function(key, version) {
+      const versionDisplay = this.getVersionDisplay(key, version);
+      const label = versionDisplay ? versionDisplay : version;
+      const listItem = new qx.ui.form.ListItem(label);
+      listItem.version = version;
+      return listItem;
     },
 
     canIWrite: function(serviceAccessRights) {
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
       return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
-    },
-
-    /**
-     * Compatibility check:
-     * - compIOFields of src inputs need to be in dest inputs
-     * - compIOFields of src outputs need to be in dest outputs
-     */
-    __areNodesCompatible: function(srcNode, destNode) {
-      const compIOFields = ["keyId"];
-      let compatible = true;
-
-      const arePortsCompatible = (portKey, inOrOut = "inputs") => {
-        if (!(portKey in destNode[inOrOut])) {
-          return false;
-        }
-        const fields = srcNode[inOrOut][portKey];
-        for (let i = 0; i<fields.length; i++) {
-          const field = fields[i];
-          if (compIOFields.includes(field)) {
-            if (!(field in destNode[inOrOut][portKey]) || srcNode[inOrOut][portKey][field] !== destNode[inOrOut][portKey][field]) {
-              return false;
-            }
-          }
-        }
-        return true;
-      }
-
-      // inputs
-      const areInputsCompatible = inputKey => arePortsCompatible(inputKey, "inputs");
-      compatible = compatible && Object.keys(srcNode["inputs"]).every(areInputsCompatible);
-
-      // outputs
-      const areOutputsCompatible = inputKey => arePortsCompatible(inputKey, "outputs");
-      compatible = compatible && Object.keys(srcNode["outputs"]).every(areOutputsCompatible);
-
-      return compatible;
-    },
-
-    getLatestCompatible: function(services, srcKey, srcVersion) {
-      if (services === null) {
-        services = osparc.service.Utils.servicesCached;
-      }
-      let versions = this.getVersions(services, srcKey, false);
-      // only allow patch versions
-      versions = versions.filter(version => {
-        const v1 = version.split(".");
-        const v2 = srcVersion.split(".");
-        return (v1[0] === v2[0] && v1[1] === v2[1]);
-      });
-      versions.reverse();
-
-      const srcNode = this.getFromObject(services, srcKey, srcVersion);
-      const idx = versions.indexOf(srcVersion);
-      if (idx > -1) {
-        versions.length = idx+1;
-        for (let i=0; i<versions.length; i++) {
-          const destVersion = versions[i];
-          const destNode = this.getFromObject(services, srcKey, destVersion);
-          if (this.__areNodesCompatible(srcNode, destNode)) {
-            return destNode;
-          }
-        }
-      }
-      return srcNode;
-    },
-
-    getMetaData: function(key, version) {
-      let metaData = null;
-      if (key && version) {
-        const services = osparc.service.Utils.servicesCached;
-        metaData = this.getFromObject(services, key, version);
-        if (metaData) {
-          metaData = osparc.utils.Utils.deepCloneObject(metaData);
-          return metaData;
-        }
-      }
-      return null;
     },
 
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
@@ -293,8 +223,8 @@ qx.Class.define("osparc.service.Utils", {
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
     isUpdatable: function(metadata) {
-      const latestCompatibleMetadata = this.getLatestCompatible(null, metadata["key"], metadata["version"]);
-      return latestCompatibleMetadata && metadata["version"] !== latestCompatibleMetadata["version"];
+      const latestCompatibleMetadata = this.getLatestCompatible(metadata["key"], metadata["version"]);
+      return latestCompatibleMetadata && (metadata["key"] !== latestCompatibleMetadata["key"] || metadata["version"] !== latestCompatibleMetadata["version"]);
     },
 
     isDeprecated: function(metadata) {
@@ -321,14 +251,14 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getFilePicker: function() {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
+      return this.self().getLatest("simcore/services/frontend/file-picker");
     },
 
     getParametersMetadata: function() {
       const parametersMetadata = [];
       for (const key in this.servicesCached) {
         if (key.includes("simcore/services/frontend/parameter/")) {
-          const latest = this.self().getLatest(this.servicesCached, key);
+          const latest = this.self().getLatest(key);
           if (latest) {
             parametersMetadata.push(latest);
           }
@@ -338,44 +268,11 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getParameterMetadata: function(type) {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/parameter/"+type);
+      return this.self().getLatest("simcore/services/frontend/parameter/"+type);
     },
 
     getProbeMetadata: function(type) {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/iterator-consumer/probe/"+type);
-    },
-
-    getNodesGroup: function() {
-      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
-    },
-
-    addTSRInfo: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
-        Object.values(serviceWVersion).forEach(service => {
-          if (osparc.data.model.Node.isComputational(service)) {
-            osparc.metadata.Quality.attachQualityToObject(service);
-          }
-        });
-      });
-    },
-
-    addExtraTypeInfo: function(services) {
-      Object.values(services).forEach(serviceWVersion => {
-        Object.values(serviceWVersion).forEach(service => {
-          service["xType"] = service["type"];
-          if (["backend", "frontend"].includes(service["xType"])) {
-            if (osparc.data.model.Node.isFilePicker(service)) {
-              service["xType"] = "file";
-            } else if (osparc.data.model.Node.isParameter(service)) {
-              service["xType"] = "parameter";
-            } else if (osparc.data.model.Node.isIterator(service)) {
-              service["xType"] = "iterator";
-            } else if (osparc.data.model.Node.isProbe(service)) {
-              service["xType"] = "probe";
-            }
-          }
-        });
-      });
+      return this.self().getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
     removeFileToKeyMap: function(service) {

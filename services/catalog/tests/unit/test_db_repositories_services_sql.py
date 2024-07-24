@@ -6,6 +6,7 @@
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_catalog.db.repositories._services_sql import (
     AccessRightsClauses,
+    can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
     list_latest_services_with_history_stmt,
@@ -23,14 +24,28 @@ def test_building_services_sql_statements():
 
     # some data
     product_name = "osparc"
-    user_id = 425  # 4
+    user_id = 4  # 425 (san)  # 4 (odei)
+    service_key = "simcore/services/comp/isolve"
+    service_version = "2.0.85"
+
+    service_key = "simcore/services/dynamic/raw-graphs"
+    service_version = "2.11.2"
 
     _check(
         get_service_history_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        service_key="simcore/services/comp/isolve",
+        service_key=service_key,
+    )
+
+    _check(
+        can_get_service_stmt,
+        product_name=product_name,
+        user_id=user_id,
+        access_rights=AccessRightsClauses.can_read,
+        service_key=service_key,
+        service_version=service_version,
     )
 
     _check(
@@ -38,8 +53,8 @@ def test_building_services_sql_statements():
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        service_key="simcore/services/comp/isolve",
-        service_version="2.0.85",
+        service_key=service_key,
+        service_version=service_version,
     )
 
     _check(
@@ -47,7 +62,7 @@ def test_building_services_sql_statements():
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
-        limit=10,
+        limit=100,
         offset=None,
     )
 

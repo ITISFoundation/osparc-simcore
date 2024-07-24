@@ -3,7 +3,7 @@
 import docker
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

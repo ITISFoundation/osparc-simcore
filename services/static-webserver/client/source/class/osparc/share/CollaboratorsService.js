@@ -52,22 +52,22 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       let canWrite = false;
       for (let i=0; i<gIds.length && !canWrite; i++) {
         const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["write_access"] : false;
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
       return canWrite;
     },
 
     getCollaboratorAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": false
+        "execute": true,
+        "write": false
       };
     },
 
     getOwnerAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": true
+        "execute": true,
+        "write": true
       };
     },
 
@@ -96,7 +96,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       gids.forEach(gid => {
         newAccessRights[gid] = this.self().getCollaboratorAccessRight();
       });
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
@@ -125,7 +125,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -145,7 +145,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);

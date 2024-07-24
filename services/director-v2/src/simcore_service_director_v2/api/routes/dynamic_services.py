@@ -27,7 +27,7 @@ from servicelib.utils import logged_gather
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -333,6 +333,7 @@ async def update_projects_networks(
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
 ) -> None:
+    # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,

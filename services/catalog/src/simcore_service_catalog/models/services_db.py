@@ -1,18 +1,14 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
+from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
-from models_library.services_history import ServiceRelease
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
-
-# -------------------------------------------------------------------
-# Databases models
-#  - table services_meta_data
-#  - table services_access_rights
+from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
@@ -30,6 +26,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                 "name": "sim4life",
                 "description": "s4l web",
                 "thumbnail": "http://thumbnailit.org/image",
+                "version_display": "S4L X",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
                 "deprecated": "2099-01-19 12:45:00",
@@ -54,17 +51,12 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
         }
 
 
-class HistoryItem(BaseModel):
+class ReleaseFromDB(BaseModel):
     version: ServiceVersion
+    version_display: str | None
     deprecated: datetime | None
     created: datetime
-
-    def to_api_model(self) -> ServiceRelease:
-        return ServiceRelease.construct(
-            version=self.version,
-            released=self.created,
-            retired=self.deprecated,
-        )
+    compatibility_policy: CompatiblePolicyDict | None
 
 
 class ServiceWithHistoryFromDB(BaseModel):
@@ -74,6 +66,7 @@ class ServiceWithHistoryFromDB(BaseModel):
     name: str
     description: str
     thumbnail: str | None
+    version_display: str | None
     # ownership
     owner_email: str | None
     # tags
@@ -84,19 +77,19 @@ class ServiceWithHistoryFromDB(BaseModel):
     modified: datetime
     deprecated: datetime | None
     # releases
-    history: list[HistoryItem]
+    history: list[ReleaseFromDB]
 
 
-assert set(HistoryItem.__fields__).issubset(  # nosec
-    set(ServiceWithHistoryFromDB.__fields__)
+assert (  # nosec
+    set(ReleaseFromDB.__fields__)
+    .difference({"compatibility_policy"})
+    .issubset(set(ServiceWithHistoryFromDB.__fields__))
 )
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt = Field(..., description="defines the group id", example=1)
-    product_name: str = Field(
-        ..., description="defines the product name", example="osparc"
-    )
+    gid: PositiveInt
+    product_name: ProductName
 
     class Config:
         orm_mode = True

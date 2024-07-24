@@ -87,12 +87,14 @@ def disable_swagger_doc_generation(
 @pytest.fixture(scope="session")
 def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
-
+    redis_cfg = default_app_cfg["resource_manager"]["redis"]
     # docker-compose reads these environs
     with pytest.MonkeyPatch().context() as patcher:
         patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
         patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
         patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
+        # Redis
+        patcher.setenv("TEST_REDIS_PASSWORD", redis_cfg["password"])
         yield patcher
 
 
@@ -531,21 +533,25 @@ async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
+def _is_redis_responsive(host: str, port: int, password: str) -> bool:
+    # username via https://stackoverflow.com/a/78236235
+    r = redis.Redis(host=host, username="default", port=port, password=password)
     return r.ping() is True
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip) -> RedisSettings:
+def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
-    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port)
+    password = default_app_cfg["resource_manager"]["redis"]["password"]
+    redis_settings = RedisSettings(
+        REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password
+    )
 
     docker_services.wait_until_responsive(
-        check=lambda: _is_redis_responsive(host, port),
+        check=lambda: _is_redis_responsive(host, port, password),
         timeout=30.0,
         pause=0.1,
     )

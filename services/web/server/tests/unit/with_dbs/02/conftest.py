@@ -157,6 +157,7 @@ async def template_project(
     all_group: dict[str, str],
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[ProjectDict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -168,7 +169,7 @@ async def template_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=user["id"],
         product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
         as_template=True,
@@ -186,6 +187,7 @@ async def create_template_project(
     all_group: dict[str, str],
     tests_data_dir: Path,
     osparc_product_name: str,
+    user: UserInfoDict,
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectDict]]]:
     created_projects_exit_stack = contextlib.AsyncExitStack()
 
@@ -202,7 +204,7 @@ async def create_template_project(
             NewProject(
                 project_data,
                 client.app,
-                user_id=None,
+                user_id=user["id"],
                 product_name=osparc_product_name,
                 tests_data_dir=tests_data_dir,
                 as_template=True,

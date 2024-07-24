@@ -206,9 +206,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
           setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
-      const metaData = node.getMetaData();
-      this.__createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length)));
-      this.__createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length)));
+      const metadata = node.getMetaData();
+      this.__createPorts(true, Boolean((metadata && metadata.inputs && Object.keys(metadata.inputs).length)));
+      this.__createPorts(false, Boolean((metadata && metadata.outputs && Object.keys(metadata.outputs).length)));
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.getChildControl("progress"), "value", {
           converter: val => val === null ? 0 : val

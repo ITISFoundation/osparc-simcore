@@ -237,7 +237,7 @@ class ServiceGetV2(BaseModel):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: list[str] | None = None
+    classifiers: list[str] | None = []
     quality: dict[str, Any] = {}
 
     history: list[ServiceRelease] = Field(
@@ -263,7 +263,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": "2.0.0",
                             "compatibility": {
-                                "canUpdateTo": _EXAMPLE_SLEEPER["version"],
+                                "canUpdateTo": {"version": _EXAMPLE_SLEEPER["version"]},
                             },
                         },
                         {"version": "0.9.11"},
@@ -271,7 +271,7 @@ class ServiceGetV2(BaseModel):
                         {
                             "version": "0.9.8",
                             "compatibility": {
-                                "canUpdateTo": "0.9.11",
+                                "canUpdateTo": {"version": "0.9.11"},
                             },
                         },
                         {
@@ -279,7 +279,7 @@ class ServiceGetV2(BaseModel):
                             "versionDisplay": "Matterhorn",
                             "released": "2024-01-20T18:49:17",
                             "compatibility": {
-                                "can_update_to": "0.9.11",
+                                "can_update_to": {"version": "0.9.11"},
                             },
                         },
                         {

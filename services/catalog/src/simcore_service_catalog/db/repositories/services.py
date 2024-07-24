@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import PositiveInt, ValidationError
+from pydantic import PositiveInt, ValidationError, parse_obj_as
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -23,6 +23,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 
 from ...models.services_db import (
+    ReleaseFromDB,
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceWithHistoryFromDB,
@@ -32,6 +33,7 @@ from ..tables import services_access_rights, services_meta_data, services_specif
 from ._base import BaseRepository
 from ._services_sql import (
     AccessRightsClauses,
+    can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
     list_latest_services_with_history_stmt,
@@ -268,7 +270,27 @@ class ServicesRepository(BaseRepository):
             assert row  # nosec
         return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
 
-    # NEW CRUD on services ------
+    async def can_get_service(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+        version: ServiceVersion,
+    ) -> bool:
+        """Returns False if it cannot get the service i.e. not found or does not have access"""
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                can_get_service_stmt(
+                    product_name=product_name,
+                    user_id=user_id,
+                    access_rights=AccessRightsClauses.can_read,
+                    service_key=key,
+                    service_version=version,
+                )
+            )
+            return bool(result.scalar())
 
     async def get_service_with_history(
         self,
@@ -303,14 +325,14 @@ class ServicesRepository(BaseRepository):
                 result = await conn.execute(stmt_history)
                 row_h = result.one_or_none()
 
-        return (
-            ServiceWithHistoryFromDB(
+            return ServiceWithHistoryFromDB(
                 key=row.key,
                 version=row.version,
                 # display
                 name=row.name,
                 description=row.description,
                 thumbnail=row.thumbnail,
+                version_display=row.version_display,
                 # ownership
                 owner_email=row.owner_email,
                 # tagging
@@ -323,9 +345,7 @@ class ServicesRepository(BaseRepository):
                 # releases
                 history=row_h.history if row_h else [],
             )
-            if row
-            else None
-        )
+        return None
 
     async def list_latest_services(
         self,
@@ -369,6 +389,7 @@ class ServicesRepository(BaseRepository):
                 name=r.name,
                 description=r.description,
                 thumbnail=r.thumbnail,
+                version_display=r.version_display,
                 # ownership
                 owner_email=r.owner_email,
                 # tagging
@@ -385,6 +406,27 @@ class ServicesRepository(BaseRepository):
         ]
 
         return (total_count, items_page)
+
+    async def get_service_history(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+    ) -> list[ReleaseFromDB] | None:
+
+        stmt_history = get_service_history_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            service_key=key,
+        )
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(stmt_history)
+            row = result.one_or_none()
+
+        return parse_obj_as(list[ReleaseFromDB], row.history) if row else None
 
     # Service Access Rights ----
 

@@ -158,7 +158,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
           });
       } else {
         const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
-        osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, "classifiers", newClassifiers)
+        osparc.service.Store.patchServiceData(serviceDataCopy, "classifiers", newClassifiers)
           .then(() => {
             osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);

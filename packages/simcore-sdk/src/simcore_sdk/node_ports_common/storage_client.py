@@ -26,7 +26,7 @@ from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.aiohttp import status
 from tenacity import RetryCallState
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

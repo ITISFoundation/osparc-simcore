@@ -1289,6 +1289,255 @@ paths:
       responses:
         '200':
           description: Successful Response
+  /v0/folders:
+    get:
+      tags:
+      - folders
+      summary: List Folders
+      operationId: list_folders
+      parameters:
+      - description: Order by field (name|description) and direction (asc|desc). The
+          default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (name|description) and direction (asc|desc).
+            The default sorting order is ascending.
+          default: '{"field": "name", "direction": "desc"}'
+        example: '{"field": "name", "direction": "desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
+    post:
+      tags:
+      - folders
+      summary: Create Folder
+      operationId: create_folder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFolderBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/folders/{folder_id}:
+    get:
+      tags:
+      - folders
+      summary: Get Folder
+      operationId: get_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+    put:
+      tags:
+      - folders
+      summary: Replace Folder
+      operationId: replace_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutFolderBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder
+      operationId: delete_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+  /v0/folders/{folder_id}/groups/{group_id}:
+    put:
+      tags:
+      - folders
+      summary: Replace Folder Group
+      operationId: replace_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    post:
+      tags:
+      - folders
+      summary: Create Folder Group
+      operationId: create_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder Group
+      operationId: delete_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/folders/{folder_id}/groups:
+    get:
+      tags:
+      - folders
+      summary: List Folder Groups
+      operationId: list_folder_groups
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__'
   /v0/groups:
     get:
       tags:
@@ -2521,6 +2770,120 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+  /v0/projects/{project_id}/groups/{group_id}:
+    put:
+      tags:
+      - projects
+      summary: Replace Project Group
+      operationId: replace_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    post:
+      tags:
+      - projects
+      summary: Create Project Group
+      operationId: create_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    delete:
+      tags:
+      - projects
+      summary: Delete Project Group
+      operationId: delete_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/groups:
+    get:
+      tags:
+      - projects
+      summary: List Project Groups
+      operationId: list_project_groups
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -3096,7 +3459,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5542,6 +5905,7 @@ components:
           type: array
           items:
             type: string
+          default: []
         quality:
           title: Quality
           type: object
@@ -5601,17 +5965,20 @@ components:
           released: '2024-07-20T15:00:00'
         - version: 2.0.0
           compatibility:
-            canUpdateTo: 2.2.1
+            canUpdateTo:
+              version: 2.2.1
         - version: 0.9.11
         - version: 0.9.10
         - version: 0.9.8
           compatibility:
-            canUpdateTo: 0.9.11
+            canUpdateTo:
+              version: 0.9.11
         - version: 0.9.1
           versionDisplay: Matterhorn
           released: '2024-01-20T18:49:17'
           compatibility:
-            can_update_to: 0.9.11
+            can_update_to:
+              version: 0.9.11
         - version: 0.9.0
           retired: '2024-07-20T15:00:00'
         - version: 0.8.0
@@ -5946,10 +6313,25 @@ components:
       properties:
         canUpdateTo:
           title: Canupdateto
+          allOf:
+          - $ref: '#/components/schemas/CompatibleService'
+          description: Latest compatible service at this moment
+    CompatibleService:
+      title: CompatibleService
+      required:
+      - version
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: If None, it refer to current service. Used only for inter-service
+            compatibility
+        version:
+          title: Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
-          description: Latest compatible version at this moment.Current service can
-            update to this version and still work
     ComputationStart:
       title: ComputationStart
       type: object
@@ -6005,6 +6387,19 @@ components:
           type: string
         alpha2:
           title: Alpha2
+          type: string
+    CreateFolderBodyParams:
+      title: CreateFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
           type: string
     CreatePricingPlanBodyParams:
       title: CreatePricingPlanBodyParams
@@ -6316,6 +6711,22 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
+    Envelope_FolderGet_:
+      title: Envelope[FolderGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
+    Envelope_FolderGroupGet_:
+      title: Envelope[FolderGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGroupGet'
+        error:
+          title: Error
     Envelope_GetCreditPrice_:
       title: Envelope[GetCreditPrice]
       type: object
@@ -6482,6 +6893,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ProjectGet'
+        error:
+          title: Error
+    Envelope_ProjectGroupGet_:
+      title: Envelope[ProjectGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectGroupGet'
         error:
           title: Error
     Envelope_ProjectMetadataGet_:
@@ -6847,6 +7266,17 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
     Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
       title: Envelope[list[models_library.api_schemas_webserver.groups.GroupUserGet]]
       type: object
@@ -6945,6 +7375,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__:
+      title: Envelope[list[simcore_service_webserver.folders._groups_api.FolderGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGroupGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
+      title: Envelope[list[simcore_service_webserver.projects._groups_api.ProjectGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
@@ -7389,6 +7841,50 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderGet:
+      title: FolderGet
+      required:
+      - folderId
+      type: object
+      properties:
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+    FolderGroupGet:
+      title: FolderGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -8207,6 +8703,10 @@ components:
       title: NodePatch
       type: object
       properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
         version:
           title: Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
@@ -9173,6 +9673,39 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+    ProjectGroupGet:
+      title: ProjectGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     ProjectInputGet:
       title: ProjectInputGet
       required:
@@ -9668,6 +10201,19 @@ components:
           description: Timestamp with last update
           format: date-time
       additionalProperties: false
+    PutFolderBodyParams:
+      title: PutFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
     PutWalletBodyParams:
       title: PutWalletBodyParams
       required:
@@ -10175,7 +10721,7 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
-      description: This pair uniquely identifies a services
+      description: Service `key-version` pair uniquely identifies a service
     ServiceOutputGet:
       title: ServiceOutputGet
       required:
@@ -10315,7 +10861,10 @@ components:
             If retired<now then the service is retired and should not be used. '
           format: date-time
         compatibility:
-          $ref: '#/components/schemas/Compatibility'
+          title: Compatibility
+          allOf:
+          - $ref: '#/components/schemas/Compatibility'
+          description: Compatibility with other releases at this moment
     ServiceRunGet:
       title: ServiceRunGet
       required:
@@ -10442,11 +10991,15 @@ components:
         description:
           title: Description
           type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
         deprecated:
           title: Deprecated
           type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
+          description: Owner can set the date to retire the service. Three possibilities:If
+            None, the service is marked as `published`;If now<deprecated the service
+            is marked as deprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -11659,6 +12212,24 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
+    _FoldersGroupsBodyParams:
+      title: _FoldersGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -11718,6 +12289,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeScreenshot'
+    _ProjectsGroupsBodyParams:
+      title: _ProjectsGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _WalletsGroupsBodyParams:
       title: _WalletsGroupsBodyParams
       required:
@@ -11766,11 +12355,20 @@ components:
           title: Description
           type: string
           description: human readable description of the purpose of the node
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: A user-friendly or marketing name for the release. This can
+            be used to reference the release in a more readable and recognizable format,
+            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
+            name is not used for version comparison but is useful for communication
+            and documentation purposes.
         deprecated:
           title: Deprecated
           type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
+          description: Owner can set the date to retire the service. Three possibilities:If
+            None, the service is marked as `published`;If now<deprecated the service
+            is marked as deprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -11798,14 +12396,6 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
-        versionDisplay:
-          title: Versiondisplay
-          type: string
-          description: A user-friendly or marketing name for the release. This can
-            be used to reference the release in a more readable and recognizable format,
-            such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This
-            name is not used for version comparison but is useful for communication
-            and documentation purposes.
         releaseDate:
           title: Releasedate
           type: string
@@ -11829,6 +12419,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Badge'
+          deprecated: true
         authors:
           title: Authors
           minItems: 1
@@ -11863,6 +12454,11 @@ components:
           title: Progress Regexp
           type: string
           description: regexp pattern for detecting computational service's progress
+        imageDigest:
+          title: Imagedigest
+          type: string
+          description: Image manifest digest. Note that this is NOT injected as an
+            image label
         owner:
           title: Owner
           type: string
