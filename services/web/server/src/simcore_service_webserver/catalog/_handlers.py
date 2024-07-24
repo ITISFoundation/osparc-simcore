@@ -166,7 +166,6 @@ async def dev_update_service(request: Request):
     return envelope_json_response(CatalogServiceGet.parse_obj(updated))
 
 
-# TODO: disable
 @routes.get(f"{VTAG}/catalog/services", name="list_services")
 @login_required
 @permission_required("services.catalog.*")
@@ -189,7 +188,6 @@ async def list_services(request: Request):
     )
 
 
-# TODO: disable
 @routes.get(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
     name="get_service",
@@ -209,7 +207,6 @@ async def get_service(request: Request):
     )
 
 
-# TODO: disable
 @routes.patch(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
     name="update_service",
