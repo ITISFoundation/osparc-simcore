@@ -100,11 +100,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     initResources: function() {
       this._resourcesList = [];
       const promises = [
-        this.__getActiveStudy()
+        this.__getActiveStudy(),
+        osparc.store.Folders.getInstance().fetchFolders(null)
       ];
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        promises.push(osparc.store.Folders.getInstance().fetchFolders(null));
-      }
       Promise.all(promises)
         .then(() => {
           this.getChildControl("resources-layout");
@@ -148,9 +146,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadResources: function() {
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        this.__reloadFolders();
-      }
+      this.__reloadFolders();
       this.__reloadStudies();
     },
 
