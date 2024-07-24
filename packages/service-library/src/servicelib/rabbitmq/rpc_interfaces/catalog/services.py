@@ -17,6 +17,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 from ..._client_rpc import RabbitMQRPCClient
 
@@ -52,6 +53,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
             user_id=user_id,
             limit=limit,
             offset=offset,
+            timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(
@@ -91,6 +93,7 @@ async def get_service(
             user_id=user_id,
             service_key=service_key,
             service_version=service_version,
+            timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(

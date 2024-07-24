@@ -1,13 +1,15 @@
 import contextvars
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Final
 
+from models_library.utils.json_serialization import json_dumps, json_loads
 from pyinstrument import Profiler
-from servicelib.mimetype_constants import (
-    MIMETYPE_APPLICATION_JSON,
-    MIMETYPE_APPLICATION_ND_JSON,
-)
+
+from .mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_ND_JSON
+
+_UNSET: Final = None
 
 _profiler = Profiler(async_mode="enabled")
 _is_profiling = contextvars.ContextVar("_is_profiling", default=False)
@@ -18,11 +20,11 @@ def is_profiling() -> bool:
 
 
 @contextmanager
-def profile(do_profile: bool | None = None) -> Iterator[None]:
+def profile_context(enable: bool | None = _UNSET) -> Iterator[None]:
     """Context manager which temporarily removes request profiler from context"""
-    if do_profile is None:
-        do_profile = _is_profiling.get()
-    if do_profile:
+    if enable is _UNSET:
+        enable = _is_profiling.get()
+    if enable:
         try:
             _profiler.start()
             yield
@@ -46,11 +48,11 @@ def dont_profile() -> Iterator[None]:
 
 def append_profile(body: str, profile_text: str) -> str:
     try:
-        json.loads(body)
+        json_loads(body)
         body += "\n" if not body.endswith("\n") else ""
     except json.decoder.JSONDecodeError:
         pass
-    body += json.dumps({"profile": profile_text})
+    body += json_dumps({"profile": profile_text})
     return body
 
 
@@ -58,10 +60,10 @@ def check_response_headers(
     response_headers: dict[bytes, bytes]
 ) -> list[tuple[bytes, bytes]]:
     original_content_type: str = response_headers[b"content-type"].decode()
-    assert original_content_type in {
+    assert original_content_type in {  # nosec
         MIMETYPE_APPLICATION_ND_JSON,
         MIMETYPE_APPLICATION_JSON,
-    }  # nosec
+    }
     headers: dict = {}
     headers[b"content-type"] = MIMETYPE_APPLICATION_ND_JSON.encode()
     return list(headers.items())
