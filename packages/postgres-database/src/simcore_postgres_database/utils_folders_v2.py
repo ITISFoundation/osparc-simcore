@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
@@ -349,13 +350,51 @@ async def _check_folder_and_access(
     if not shared_with_entry:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
 
-    has_permissions_on_folder: int | None = await connection.scalar(
-        sa.select([folders_access_rights.c.folder_id])
-        .where(folders_access_rights.c.folder_id == folder_id)
+    # has_permissions_on_folder: int | None = await connection.scalar(
+    #     sa.select([folders_access_rights.c.folder_id])
+    #     .where(folders_access_rights.c.folder_id == folder_id)
+    #     .where(folders_access_rights.c.gid == gid)
+    #     .where(_get_where_clause(permissions))
+    # )
+    # if not has_permissions_on_folder:
+    #     raise InsufficientPermissionsError(
+    #         folder_id=folder_id,
+    #         gid=gid,
+    #         permissions=_remove_false_permissions(permissions),
+    #     )
+
+    # TODO: below is temporary
+
+    # Define the CTE
+    folder_cte = (
+        sa.select(
+            folders_access_rights.c.folder_id, folders_access_rights.c.parent_folder
+        )
+        .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
+        .cte(name="folder_cte", recursive=True)
+    )
+
+    recursive_query = folder_cte.union_all(
+        sa.select(
+            folders_access_rights.c.folder_id, folders_access_rights.c.parent_folder
+        ).join(
+            folder_cte, folders_access_rights.c.folder_id == folder_cte.c.parent_folder
+        )
+    )
+
+    # Select the top-most parent
+    top_most_parent_query = (
+        sa.select(recursive_query.c.folder_id)
+        .where(recursive_query.c.parent_folder.is_(None))
         .where(folders_access_rights.c.gid == gid)
         .where(_get_where_clause(permissions))
     )
-    if not has_permissions_on_folder:
+
+    result = await connection.execute(
+        top_most_parent_query.params(start_folder_id=folder_id)
+    )
+    top_most_parent: RowProxy | None = await result.fetchone()
+    if top_most_parent is None:
         raise InsufficientPermissionsError(
             folder_id=folder_id,
             gid=gid,
@@ -437,6 +476,44 @@ async def folder_update(
         await connection.execute(
             folders.update().where(folders.c.id == folder_id).values(**values)
         )
+
+
+async def folder_delete(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions.DELETE_FOLDER
+    ),
+) -> None:
+    own_children: list[_FolderID] = []
+
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=folder_id,
+            gid=gid,
+            permissions=required_permissions,
+        )
+
+        # list all children then delete
+        results = await connection.execute(
+            folders_access_rights.select()
+            .where(folders_access_rights.c.parent_folder == folder_id)
+            .where(folders_access_rights.c.gid == gid)
+        )
+        rows = await results.fetchall()
+        if rows:
+            for entry in rows:
+                own_children.append(entry.folder_id)  # noqa: PERF401
+
+        # directly remove folder, access rigths will be dropped as well
+        await connection.execute(folders.delete().where(folders.c.id == folder_id))
+
+    # finally remove all the children from the folder
+    for child_folder_id in own_children:
+        await folder_delete(connection, child_folder_id, gid)
 
 
 # TODO: add the following
