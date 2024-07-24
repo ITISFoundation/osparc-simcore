@@ -1,26 +1,44 @@
+# pylint:disable=redefined-outer-name
+
+import secrets
+from collections.abc import Awaitable, Callable
 from unittest.mock import Mock
 
 import pytest
+import sqlalchemy as sa
+from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
+from pydantic import NonNegativeInt
+from simcore_postgres_database.models.folders import folders, folders_access_rights
 from simcore_postgres_database.utils_folders_v2 import (
     _FOLDER_NAME_MAX_LENGTH,
     _FOLDER_NAMES_RESERVED_WINDOWS,
-    _PERMISSIONS_BY_ROLE,
+    _ROLE_TO_PERMISSIONS,
     EDITOR_PERMISSIONS,
     OWNER_PERMISSIONS,
     VIEWER_PERMISSIONS,
     FolderAccessRole,
+    FolderAlreadyExistsError,
+    FolderNotFoundError,
+    FolderNotSharedWithGidError,
+    GroupIdDoesNotExistError,
+    InsufficientPermissionsError,
     InvalidFolderNameError,
+    _FolderID,
     _FolderPermissions,
     _get_permissions_from_role,
     _get_where_clause,
+    _GroupID,
+    _ProjectID,
     _requires,
     create_folder,
+    folder_share_or_update_permissions,
 )
 from sqlalchemy.sql.elements import ColumnElement
 
 
 def test_permissions_integrity():
-    assert set(FolderAccessRole) == set(_PERMISSIONS_BY_ROLE.keys())
+    assert set(FolderAccessRole) == set(_ROLE_TO_PERMISSIONS.keys())
 
 
 @pytest.mark.parametrize(
@@ -100,5 +118,236 @@ def test__get_where_clause():
     )
 
 
-# TODO: write down some tests for this
-# - utils for craeting entries in DB for -> groups that can be VIEWER, EDITOR, OWNER
+def _get_random_gid(
+    all_gids: set[_GroupID], already_picked: set[_GroupID] | None = None
+) -> _GroupID:
+    if already_picked is None:
+        already_picked = set()
+    to_random_pick = all_gids - already_picked
+    return secrets.choice(list(to_random_pick))
+
+
+def _get_random_project_id(
+    all_gids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
+) -> _ProjectID:
+    if already_picked is None:
+        already_picked = set()
+    to_random_pick = all_gids - already_picked
+    return secrets.choice(list(to_random_pick))
+
+
+async def _assert_folder_entires(
+    connection: SAConnection,
+    *,
+    folder_count: NonNegativeInt,
+    access_rights_count: NonNegativeInt | None = None,
+) -> None:
+    async def _query_table(table_name: sa.Table, count: NonNegativeInt) -> None:
+        async with connection.execute(table_name.select()) as result:
+            rows = await result.fetchall()
+            assert rows is not None
+            assert len(rows) == count
+
+    await _query_table(folders, folder_count)
+    await _query_table(folders_access_rights, access_rights_count or folder_count)
+
+
+async def _assert_folder_permissions(
+    connection: SAConnection,
+    *,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    role: FolderAccessRole,
+) -> None:
+
+    entry_found: int | None = await connection.scalar(
+        sa.select([folders_access_rights.c.folder_id])
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == gid)
+        .where(_get_where_clause(_get_permissions_from_role(role)))
+    )
+    assert entry_found
+
+
+@pytest.fixture
+async def setup_users(
+    connection: SAConnection, create_fake_user: Callable[..., Awaitable[RowProxy]]
+) -> list[RowProxy]:
+    users: list[RowProxy] = []
+    for _ in range(10):
+        users.append(await create_fake_user(connection))  # noqa: PERF401
+    return users
+
+
+@pytest.fixture
+async def setup_users_and_groups(setup_users: list[RowProxy]) -> set[_GroupID]:
+    return {u.primary_gid for u in setup_users}
+
+
+async def test_create_folder(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+
+    # when GID is missing no entries should be present
+    missing_gid = 10202023302
+    await _assert_folder_entires(connection, folder_count=0)
+    with pytest.raises(GroupIdDoesNotExistError):
+        await create_folder(connection, "f1", missing_gid)
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # create a folder ana subfolder of the same name
+    f1_folder_id = await create_folder(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+    await create_folder(connection, "f1", owner_gid, parent=f1_folder_id)
+    await _assert_folder_entires(connection, folder_count=2)
+
+    # inserting already existing folder fails
+    with pytest.raises(FolderAlreadyExistsError):
+        await create_folder(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=2)
+
+
+async def test_folder_share_or_update_permissions(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    other_owner_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid}
+    )
+    editor_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid, other_owner_gid}
+    )
+    viewer_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid, other_owner_gid, editor_gid}
+    )
+    no_access_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={owner_gid, other_owner_gid, editor_gid, viewer_gid},
+    )
+    share_with_error_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={
+            owner_gid,
+            other_owner_gid,
+            editor_gid,
+            viewer_gid,
+            no_access_gid,
+        },
+    )
+
+    # 1. folder does not exist
+    missing_folder_id = 12313123232
+    with pytest.raises(FolderNotFoundError):
+        await folder_share_or_update_permissions(
+            connection,
+            missing_folder_id,
+            sharing_gid=owner_gid,
+            recipient_gid=share_with_error_gid,
+            recipient_role=FolderAccessRole.OWNER,
+        )
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # 2. share existing folder with all possible roles
+    folder_id = await create_folder(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+    await _assert_folder_permissions(
+        connection, folder_id=folder_id, gid=owner_gid, role=FolderAccessRole.OWNER
+    )
+
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=other_owner_gid,
+        recipient_role=FolderAccessRole.OWNER,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=2)
+    await _assert_folder_permissions(
+        connection,
+        folder_id=folder_id,
+        gid=other_owner_gid,
+        role=FolderAccessRole.OWNER,
+    )
+
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=editor_gid,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=3)
+    await _assert_folder_permissions(
+        connection, folder_id=folder_id, gid=editor_gid, role=FolderAccessRole.EDITOR
+    )
+
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=viewer_gid,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
+    await _assert_folder_permissions(
+        connection, folder_id=folder_id, gid=viewer_gid, role=FolderAccessRole.VIEWER
+    )
+
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=no_access_gid,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
+    await _assert_folder_permissions(
+        connection,
+        folder_id=folder_id,
+        gid=no_access_gid,
+        role=FolderAccessRole.NO_ACCESS,
+    )
+
+    # 3. roles without permissions cannot share with any role
+    for recipient_role in FolderAccessRole:
+        for no_access_gids in (editor_gid, viewer_gid, no_access_gid):
+            with pytest.raises(InsufficientPermissionsError):
+                await folder_share_or_update_permissions(
+                    connection,
+                    folder_id,
+                    sharing_gid=no_access_gids,
+                    recipient_gid=share_with_error_gid,
+                    recipient_role=recipient_role,
+                )
+            await _assert_folder_entires(
+                connection, folder_count=1, access_rights_count=5
+            )
+
+        with pytest.raises(FolderNotSharedWithGidError):
+            await folder_share_or_update_permissions(
+                connection,
+                folder_id,
+                sharing_gid=share_with_error_gid,
+                recipient_gid=share_with_error_gid,
+                recipient_role=recipient_role,
+            )
+        await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
+
+    # 4. all users loose permission on the foler including the issuer
+    # NOTE: anoteher_owner dropped owner's permission and his permission to no access!
+    for gid_to_drop_permission in (owner_gid, editor_gid, viewer_gid, other_owner_gid):
+        await folder_share_or_update_permissions(
+            connection,
+            folder_id,
+            sharing_gid=other_owner_gid,
+            recipient_gid=gid_to_drop_permission,
+            recipient_role=FolderAccessRole.NO_ACCESS,
+        )
+        await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
+        await _assert_folder_permissions(
+            connection,
+            folder_id=folder_id,
+            gid=gid_to_drop_permission,
+            role=FolderAccessRole.NO_ACCESS,
+        )

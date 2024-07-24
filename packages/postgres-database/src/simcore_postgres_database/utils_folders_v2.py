@@ -3,13 +3,14 @@ import uuid
 from collections.abc import Iterable
 from enum import Enum
 from functools import reduce
-from typing import ClassVar, Final, TypeAlias, TypedDict
+from typing import Any, ClassVar, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
 
 from .models.folders import folders, folders_access_rights
@@ -34,8 +35,24 @@ class InvalidFolderNameError(FoldersError):
     msg_template = "Provided folder name='{name}' is invalid: {reason}"
 
 
+class BaseAccessError(FoldersError):
+    pass
+
+
+class FolderNotFoundError(BaseAccessError):
+    msg_template = "no entry for folder_id={folder_id} found"
+
+
+class FolderNotSharedWithGidError(BaseAccessError):
+    msg_template = "folder_id={folder_id} was not shared with gid={gid}"
+
+
+class InsufficientPermissionsError(BaseAccessError):
+    msg_template = "no entry found for: folder_id={folder_id}, gid={gid} with permissions={permissions}"
+
+
 class BaseCreateFlderError(FoldersError):
-    """used as base"""
+    pass
 
 
 class FolderAlreadyExistsError(BaseCreateFlderError):
@@ -64,9 +81,10 @@ class GroupIdDoesNotExistError(BaseCreateFlderError):
 class FolderAccessRole(Enum):
     """Used by the frontend to indicate a role in a simple manner"""
 
-    VIEWER = 0
-    EDITOR = 1
-    OWNER = 2
+    NO_ACCESS = 0
+    VIEWER = 1
+    EDITOR = 2
+    OWNER = 3
 
 
 class _FolderPermissions(TypedDict):
@@ -80,6 +98,10 @@ def _make_permissions(
 ) -> "_FolderPermissions":
     _ = description
     return _FolderPermissions(read=r, write=w, delete=d)
+
+
+def _remove_false_permissions(permissions: _FolderPermissions) -> dict:
+    return {k: v for k, v in permissions.items() if v is True}
 
 
 _ALL_PERMISSION_KEYS: Final[set[str]] = {"read", "write", "delete"}
@@ -119,6 +141,8 @@ class _BasePermissions:
     DELETE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
 
 
+NO_ACCESS_PERMISSIONS: _FolderPermissions = _make_permissions()
+
 VIEWER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
     [
         _BasePermissions.LIST_FOLDERS,
@@ -144,15 +168,32 @@ OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
     ]
 )
 
-_PERMISSIONS_BY_ROLE: dict[FolderAccessRole, _FolderPermissions] = {
+_ROLE_TO_PERMISSIONS: dict[FolderAccessRole, _FolderPermissions] = {
+    FolderAccessRole.NO_ACCESS: NO_ACCESS_PERMISSIONS,
     FolderAccessRole.VIEWER: VIEWER_PERMISSIONS,
     FolderAccessRole.EDITOR: EDITOR_PERMISSIONS,
     FolderAccessRole.OWNER: OWNER_PERMISSIONS,
 }
 
 
+def _hash_permissions(permissions: _FolderPermissions) -> tuple:
+    return tuple(permissions.items())
+
+
+_PERMISSIONS_TO_ROLE: dict[tuple, FolderAccessRole] = {
+    _hash_permissions(NO_ACCESS_PERMISSIONS): FolderAccessRole.NO_ACCESS,
+    _hash_permissions(VIEWER_PERMISSIONS): FolderAccessRole.VIEWER,
+    _hash_permissions(EDITOR_PERMISSIONS): FolderAccessRole.EDITOR,
+    _hash_permissions(OWNER_PERMISSIONS): FolderAccessRole.OWNER,
+}
+
+
 def _get_permissions_from_role(role: FolderAccessRole) -> _FolderPermissions:
-    return _PERMISSIONS_BY_ROLE[role]
+    return _ROLE_TO_PERMISSIONS[role]
+
+
+def _get_role_from_permissions(permissions: _FolderPermissions) -> FolderAccessRole:
+    return _PERMISSIONS_TO_ROLE[_hash_permissions(permissions)]
 
 
 def _requires(*permissions: _FolderPermissions):
@@ -162,6 +203,7 @@ def _requires(*permissions: _FolderPermissions):
 
 
 def _get_where_clause(permissions: _FolderPermissions) -> ColumnElement | bool:
+    """compose SQL where clause where only for the entries that are True"""
     clauses: list[ColumnElement] = []
 
     if permissions["read"]:
@@ -253,6 +295,7 @@ async def create_folder(
                 .where(folders_access_rights.c.gid == gid)
                 .where(_get_where_clause(required_permissions))
             )
+
             if not has_write_access_in_parent:
                 raise ParentFolderIsNotWritableError(parent_folder_id=parent, gid=gid)
 
@@ -260,7 +303,7 @@ async def create_folder(
         try:
             folder_id = await connection.scalar(
                 sa.insert(folders)
-                .values(name=name, description=description, owner=gid)
+                .values(name=name, description=description, created_by=gid)
                 .returning(folders.c.id)
             )
 
@@ -281,8 +324,87 @@ async def create_folder(
         return _FolderID(folder_id)
 
 
+async def _check_folder_and_access(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    permissions: _FolderPermissions,
+) -> None:
+    """Checks the following:
+    - base folder exists
+    - folder was shared with gid
+    - gid has sufficient permissions for the operation
+    """
+    folder_entry: int | None = await connection.scalar(
+        sa.select([folders.c.id]).where(folders.c.id == folder_id)
+    )
+    if not folder_entry:
+        raise FolderNotFoundError(folder_id=folder_id)
+
+    shared_with_entry: int | None = await connection.scalar(
+        sa.select([folders_access_rights.c.folder_id])
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == gid)
+    )
+    if not shared_with_entry:
+        raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
+
+    has_permissions_on_folder: int | None = await connection.scalar(
+        sa.select([folders_access_rights.c.folder_id])
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == gid)
+        .where(_get_where_clause(permissions))
+    )
+    if not has_permissions_on_folder:
+        raise InsufficientPermissionsError(
+            folder_id=folder_id,
+            gid=gid,
+            permissions=_remove_false_permissions(permissions),
+        )
+
+
+async def folder_share_or_update_permissions(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    sharing_gid: _GroupID,
+    *,
+    recipient_gid: _GroupID,
+    recipient_role: FolderAccessRole,
+    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions.SHARE_FOLDER
+    ),
+) -> None:
+    # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=folder_id,
+            gid=sharing_gid,
+            permissions=required_permissions,
+        )
+
+        # update or create permissions entry
+        sharing_permissions: _FolderPermissions = _get_permissions_from_role(
+            recipient_role
+        )
+        data: dict[str, Any] = {
+            "folder_id": folder_id,
+            "gid": recipient_gid,
+            "parent_folder": None,
+            **sharing_permissions,
+        }
+        insert_stmt = postgresql.insert(folders_access_rights).values(**data)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                folders_access_rights.c.folder_id,
+                folders_access_rights.c.gid,
+            ],
+            set_=data,
+        )
+        await connection.execute(upsert_stmt)
+
+
 # TODO: add the following
-# - create folder
 # - delete folder
 # - move folder
 # - add project in folder
