@@ -212,6 +212,9 @@ class SocketIONodeProgressCompleteWaiter:
                             / node_progress_event.total_progress
                         )
                         if (
+                            node_progress_event.progress_type
+                            not in self._current_progress
+                        ) or (
                             new_progress
                             != self._current_progress[node_progress_event.progress_type]
                         ):
