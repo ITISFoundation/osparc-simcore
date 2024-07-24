@@ -533,7 +533,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
         osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
           .then(latestMetadata => {
-            const title = newButtonInfo.title + " " + (latestMetadata["versionDisplay"] ? latestMetadata["versionDisplay"] : latestMetadata["version"]);
+            const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
             const desc = newButtonInfo.description;
             const mode = this._resourcesContainer.getMode();
             const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
