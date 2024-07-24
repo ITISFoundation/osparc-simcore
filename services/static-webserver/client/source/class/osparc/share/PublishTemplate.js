@@ -46,6 +46,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
     __selectedCollabs: null,
 
     __buildLayout: function() {
+      // mark it us template, so that testers can share it with product everyone
       this.__potentialTemplateData["resourceType"] = "template";
       const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData);
       addCollaborators.getChildControl("intro-text").set({
