@@ -144,10 +144,10 @@ async def _assert_folder_entires(
     access_rights_count: NonNegativeInt | None = None,
 ) -> None:
     async def _query_table(table_name: sa.Table, count: NonNegativeInt) -> None:
-        async with connection.execute(table_name.select()) as result:
-            rows = await result.fetchall()
-            assert rows is not None
-            assert len(rows) == count
+        result = await connection.execute(table_name.select())
+        rows = await result.fetchall()
+        assert rows is not None
+        assert len(rows) == count
 
     await _query_table(folders, folder_count)
     await _query_table(folders_access_rights, access_rights_count or folder_count)
@@ -160,14 +160,15 @@ async def _assert_folder_permissions(
     gid: _GroupID,
     role: FolderAccessRole,
 ) -> None:
-
-    entry_found: int | None = await connection.scalar(
+    result = await connection.execute(
         sa.select([folders_access_rights.c.folder_id])
         .where(folders_access_rights.c.folder_id == folder_id)
         .where(folders_access_rights.c.gid == gid)
         .where(_get_where_clause(_get_permissions_from_role(role)))
     )
-    assert entry_found
+    rows = await result.fetchall()
+    assert rows is not None
+    assert len(rows) == 1
 
 
 async def _assert_name_and_description(
