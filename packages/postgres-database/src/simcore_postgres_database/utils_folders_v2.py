@@ -135,7 +135,7 @@ class _BasePermissions:
     )
 
     SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    RENAME_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    UPDATE_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     EDIT_FOLDER_DESCRIPTION: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     DELETE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
@@ -161,7 +161,7 @@ OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
     [
         EDITOR_PERMISSIONS,
         _BasePermissions.SHARE_FOLDER,
-        _BasePermissions.RENAME_FODLER,
+        _BasePermissions.UPDATE_FODLER,
         _BasePermissions.EDIT_FOLDER_DESCRIPTION,
         _BasePermissions.DELETE_FOLDER,
         _BasePermissions.DELETE_PROJECT_FROM_FOLDER,
@@ -402,6 +402,41 @@ async def folder_share_or_update_permissions(
             set_=data,
         )
         await connection.execute(upsert_stmt)
+
+
+async def folder_update(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions.UPDATE_FODLER
+    ),
+) -> None:
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=folder_id,
+            gid=gid,
+            permissions=required_permissions,
+        )
+
+        # do not update if nothing changed
+        if name is None and description is None:
+            return
+
+        values: dict[str, str] = {}
+        if name:
+            values["name"] = name
+        if description:
+            values["description"] = description
+
+        # update entry
+        await connection.execute(
+            folders.update().where(folders.c.id == folder_id).values(**values)
+        )
 
 
 # TODO: add the following
