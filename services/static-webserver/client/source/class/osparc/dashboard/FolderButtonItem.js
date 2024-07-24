@@ -246,7 +246,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __updateTooltip: function() {
-      const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : null);
+      const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : "");
       this.set({
         toolTipText
       })
