@@ -35,8 +35,12 @@ qx.Class.define("osparc.data.model.Service", {
       name: serviceData.name,
       description: serviceData.description,
       thumbnail: serviceData.thumbnail,
+      serviceType: serviceData.type,
+      contact: serviceData.contact,
+      authors: serviceData.authors,
       owner: serviceData.owner || "",
       accessRights: serviceData.accessRights,
+      bootOptions: serviceData.bootOptions,
       classifiers: serviceData.classifiers || [],
       quality: serviceData.quality || null,
       hits: serviceData.hits || 0
@@ -74,14 +78,42 @@ qx.Class.define("osparc.data.model.Service", {
 
     description: {
       check: "String",
-      nullable: false,
+      nullable: true,
       event: "changeDescription",
       init: null
     },
 
+    thumbnail: {
+      check: "String",
+      nullable: true,
+      event: "changeThumbnail",
+      init: null
+    },
+
+    serviceType: {
+      check: "String",
+      nullable: true,
+      event: "changeServiceType",
+      init: ""
+    },
+
+    contact: {
+      check: "String",
+      nullable: true,
+      event: "changeContact",
+      init: ""
+    },
+
+    authors: {
+      check: "Object",
+      nullable: true,
+      event: "changeAuthors",
+      init: {}
+    },
+
     owner: {
       check: "String",
-      nullable: false,
+      nullable: true,
       event: "changeOwner",
       init: ""
     },
@@ -93,11 +125,11 @@ qx.Class.define("osparc.data.model.Service", {
       init: {}
     },
 
-    thumbnail: {
-      check: "String",
-      nullable: true,
-      event: "changeThumbnail",
-      init: null
+    bootOptions: {
+      check: "Object",
+      init: {},
+      event: "changeBootOptions",
+      nullable: true
     },
 
     classifiers: {
