@@ -351,22 +351,11 @@ async def _check_folder_and_access(
     if not shared_with_entry:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
 
-    # has_permissions_on_folder: int | None = await connection.scalar(
-    #     sa.select([folders_access_rights.c.folder_id])
-    #     .where(folders_access_rights.c.folder_id == folder_id)
-    #     .where(folders_access_rights.c.gid == gid)
-    #     .where(_get_where_clause(permissions))
-    # )
-    # if not has_permissions_on_folder:
-    #     raise InsufficientPermissionsError(
-    #         folder_id=folder_id,
-    #         gid=gid,
-    #         permissions=_remove_false_permissions(permissions),
-    #     )
+    # NOTE: access rights are always resolved by picking them from the top most level
+    # via the `original_parent_id` hierarchy (meaning an entry where
+    # `original_parent_id is None` is searched for).
+    # The entry `original_parent_id` never changeds from the moment the folde's creation.
 
-    # TODO: below is temporary
-
-    # Define the CTE
     folder_cte = (
         sa.select(
             folders_access_rights.c.folder_id,
@@ -375,7 +364,6 @@ async def _check_folder_and_access(
         .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
         .cte(name="folder_cte", recursive=True)
     )
-
     recursive_query = folder_cte.union_all(
         sa.select(
             folders_access_rights.c.folder_id,
@@ -385,8 +373,6 @@ async def _check_folder_and_access(
             folders_access_rights.c.folder_id == folder_cte.c.original_parent_id,
         )
     )
-
-    # Select the top-most parent
     top_most_parent_query = (
         sa.select(recursive_query.c.folder_id)
         .where(recursive_query.c.original_parent_id.is_(None))
