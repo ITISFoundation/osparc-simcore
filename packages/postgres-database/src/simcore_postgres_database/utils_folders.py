@@ -191,6 +191,7 @@ async def folder_create(
     name: str,
     gid: _GroupID,
     *,
+    description: str = "",
     parent: _FolderID | None = None,
 ) -> _FolderID:
     _validate_folder_name(name)
@@ -226,7 +227,9 @@ async def folder_create(
         # folder entry can now be inserted
         try:
             folder_id = await connection.scalar(
-                sa.insert(folders).values(name=name, owner=gid).returning(folders.c.id)
+                sa.insert(folders)
+                .values(name=name, description=description, owner=gid)
+                .returning(folders.c.id)
             )
 
             if not folder_id:

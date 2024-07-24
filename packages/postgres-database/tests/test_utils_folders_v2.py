@@ -33,6 +33,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _requires,
     create_folder,
     folder_share_or_update_permissions,
+    folder_update,
 )
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -167,6 +168,26 @@ async def _assert_folder_permissions(
         .where(_get_where_clause(_get_permissions_from_role(role)))
     )
     assert entry_found
+
+
+async def _assert_name_and_description(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    *,
+    name: str,
+    description: str,
+):
+    async with connection.execute(
+        sa.select([folders.c.name, folders.c.description]).where(
+            folders.c.id == folder_id
+        )
+    ) as result_proxy:
+        results = await result_proxy.fetchall()
+        assert results
+        assert len(results) == 1
+        result = results[0]
+        assert result["name"] == name
+        assert result["description"] == description
 
 
 @pytest.fixture
@@ -351,3 +372,131 @@ async def test_folder_share_or_update_permissions(
             gid=gid_to_drop_permission,
             role=FolderAccessRole.NO_ACCESS,
         )
+
+
+async def test_folder_update(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_gid = _get_random_gid(setup_users_and_groups)
+    other_owner_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid}
+    )
+    editor_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid, other_owner_gid}
+    )
+    viewer_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_gid, other_owner_gid, editor_gid}
+    )
+    no_access_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={owner_gid, other_owner_gid, editor_gid, viewer_gid},
+    )
+    share_with_error_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={
+            owner_gid,
+            other_owner_gid,
+            editor_gid,
+            viewer_gid,
+            no_access_gid,
+        },
+    )
+
+    # 1. folder is missing
+    missing_folder_id = 1231321332
+    with pytest.raises(FolderNotFoundError):
+        await folder_update(connection, missing_folder_id, owner_gid)
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # 2. owner updates created fodler
+    folder_id = await create_folder(connection, "f1", owner_gid)
+    await _assert_folder_entires(connection, folder_count=1)
+    await _assert_name_and_description(connection, folder_id, name="f1", description="")
+
+    # nothing changes
+    await folder_update(connection, folder_id, owner_gid)
+    await _assert_name_and_description(connection, folder_id, name="f1", description="")
+
+    # both changed
+    await folder_update(
+        connection, folder_id, owner_gid, name="new_folder", description="new_desc"
+    )
+    await _assert_name_and_description(
+        connection, folder_id, name="new_folder", description="new_desc"
+    )
+
+    # 3. another_owner can also update
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=other_owner_gid,
+        recipient_role=FolderAccessRole.OWNER,
+    )
+    await folder_update(
+        connection,
+        folder_id,
+        owner_gid,
+        name="another_owner_name",
+        description="another_owner_description",
+    )
+    await _assert_name_and_description(
+        connection,
+        folder_id,
+        name="another_owner_name",
+        description="another_owner_description",
+    )
+
+    # 4. other roles have no permission to update
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=editor_gid,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=viewer_gid,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        sharing_gid=owner_gid,
+        recipient_gid=no_access_gid,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+
+    for target_user_gid in (editor_gid, viewer_gid, no_access_gid):
+        with pytest.raises(InsufficientPermissionsError):
+            await folder_update(
+                connection,
+                folder_id,
+                target_user_gid,
+                name="error_name",
+                description="error_description",
+            )
+        await _assert_name_and_description(
+            connection,
+            folder_id,
+            name="another_owner_name",
+            description="another_owner_description",
+        )
+
+    with pytest.raises(FolderNotSharedWithGidError):
+        await folder_update(
+            connection,
+            folder_id,
+            share_with_error_gid,
+            name="error_name",
+            description="error_description",
+        )
+    await _assert_name_and_description(
+        connection,
+        folder_id,
+        name="another_owner_name",
+        description="another_owner_description",
+    )
