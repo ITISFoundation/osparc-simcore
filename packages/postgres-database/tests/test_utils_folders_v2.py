@@ -27,6 +27,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _FolderID,
     _FolderPermissions,
     _get_permissions_from_role,
+    _get_top_most_parent,
     _get_where_clause,
     _GroupID,
     _ProjectID,
@@ -229,6 +230,83 @@ async def test_create_folder(
     with pytest.raises(FolderAlreadyExistsError):
         await create_folder(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=2)
+
+
+async def test__get_top_most_parent(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    owner_a_gid = _get_random_gid(setup_users_and_groups)
+    owner_b_gid = _get_random_gid(setup_users_and_groups, already_picked={owner_a_gid})
+    owner_c_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_a_gid, owner_b_gid}
+    )
+    owner_d_gid = _get_random_gid(
+        setup_users_and_groups, already_picked={owner_a_gid, owner_b_gid, owner_c_gid}
+    )
+    editor_a_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={owner_a_gid, owner_b_gid, owner_c_gid, owner_d_gid},
+    )
+
+    # share folder with all owners
+    root_folder_id = await create_folder(connection, "root_folder", owner_a_gid)
+    for other_owner_gid in (owner_b_gid, owner_c_gid, owner_d_gid):
+        await folder_share_or_update_permissions(
+            connection,
+            root_folder_id,
+            sharing_gid=owner_a_gid,
+            recipient_gid=other_owner_gid,
+            recipient_role=FolderAccessRole.OWNER,
+        )
+    await folder_share_or_update_permissions(
+        connection,
+        root_folder_id,
+        sharing_gid=owner_a_gid,
+        recipient_gid=editor_a_gid,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
+
+    # create folders
+    b_folder_id = await create_folder(
+        connection, "b_folder", owner_b_gid, parent=root_folder_id
+    )
+    c_folder_id = await create_folder(
+        connection, "c_folder", owner_c_gid, parent=root_folder_id
+    )
+    d_folder_id = await create_folder(
+        connection, "d_folder", owner_d_gid, parent=c_folder_id
+    )
+    editor_a_folder_id = await create_folder(
+        connection, "editor_a_folder", editor_a_gid, parent=c_folder_id
+    )
+    await _assert_folder_entires(connection, folder_count=5, access_rights_count=9)
+
+    # check top most parent resolution
+    async def _assert_reloves_to(
+        *, folder_id: _FolderID, gid: _GroupID, permissions: _FolderPermissions
+    ) -> None:
+        folder_parent = await _get_top_most_parent(
+            connection, folder_id, gid, permissions
+        )
+        assert folder_parent
+        assert folder_parent["gid"] == gid
+
+    await _assert_reloves_to(
+        folder_id=root_folder_id, gid=owner_a_gid, permissions=OWNER_PERMISSIONS
+    )
+    await _assert_reloves_to(
+        folder_id=b_folder_id, gid=owner_b_gid, permissions=OWNER_PERMISSIONS
+    )
+    await _assert_reloves_to(
+        folder_id=c_folder_id, gid=owner_c_gid, permissions=OWNER_PERMISSIONS
+    )
+    await _assert_reloves_to(
+        folder_id=d_folder_id, gid=owner_d_gid, permissions=OWNER_PERMISSIONS
+    )
+    await _assert_reloves_to(
+        folder_id=editor_a_folder_id, gid=editor_a_gid, permissions=EDITOR_PERMISSIONS
+    )
 
 
 async def test_folder_share_or_update_permissions(
