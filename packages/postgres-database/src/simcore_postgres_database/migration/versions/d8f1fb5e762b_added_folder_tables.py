@@ -1,15 +1,15 @@
-"""added folders tables
+"""added folder tables
 
-Revision ID: 9de9ffe9f9fa
+Revision ID: d8f1fb5e762b
 Revises: 056ed0eb1ba6
-Create Date: 2024-07-24 09:50:22.816745+00:00
+Create Date: 2024-07-24 12:48:33.635365+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "9de9ffe9f9fa"
+revision = "d8f1fb5e762b"
 down_revision = "056ed0eb1ba6"
 branch_labels = None
 depends_on = None
@@ -44,7 +44,8 @@ def upgrade():
         "folders_access_rights",
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.Column("gid", sa.BigInteger(), nullable=False),
-        sa.Column("parent_folder", sa.BigInteger(), nullable=True),
+        sa.Column("traversal_parent_id", sa.BigInteger(), nullable=True),
+        sa.Column("original_parent_id", sa.BigInteger(), nullable=True),
         sa.Column("read", sa.Boolean(), nullable=False),
         sa.Column("write", sa.Boolean(), nullable=False),
         sa.Column("delete", sa.Boolean(), nullable=False),
@@ -63,7 +64,13 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["parent_folder"],
+            ["original_parent_id"],
+            ["folders.id"],
+            name="fk_folders_to_folders_id",
+            ondelete="SET NULL",
+        ),
+        sa.ForeignKeyConstraint(
+            ["traversal_parent_id"],
             ["folders.id"],
             name="fk_folders_to_folders_id",
             ondelete="SET NULL",

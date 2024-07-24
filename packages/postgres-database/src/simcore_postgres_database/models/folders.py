@@ -79,12 +79,30 @@ folders_access_rights = sa.Table(
         ),
     ),
     sa.Column(
-        "parent_folder",
+        "traversal_parent_id",
         sa.BigInteger,
         sa.ForeignKey(
             "folders.id",
             name="fk_folders_to_folders_id",
             ondelete="SET NULL",
+        ),
+        doc=(
+            "used for listing the contes of the folders, "
+            "can be changed by the user by moving the folder"
+        ),
+    ),
+    sa.Column(
+        "original_parent_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "folders.id",
+            name="fk_folders_to_folders_id",
+            ondelete="SET NULL",
+        ),
+        doc=(
+            "initially equal the same as `traversal_parent_id`, "
+            "keeps track of the original parent, "
+            "can never be changed once insteted"
         ),
     ),
     sa.Column(
