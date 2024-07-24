@@ -287,9 +287,9 @@ async def test__get_top_most_parent(
         *,
         target_folder_id: _FolderID,
         gid: _GroupID,
+        permissions: _FolderPermissions,
         resolved_folder_id: _FolderID,
         resolved_gid: _FolderID,
-        permissions: _FolderPermissions,
     ) -> None:
         folder_parent = await _get_top_most_parent(
             connection, target_folder_id, gid, permissions
@@ -301,37 +301,37 @@ async def test__get_top_most_parent(
     await _assert_reloves_to(
         target_folder_id=root_folder_id,
         gid=owner_a_gid,
+        permissions=OWNER_PERMISSIONS,
         resolved_folder_id=root_folder_id,
         resolved_gid=owner_a_gid,
-        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
         target_folder_id=b_folder_id,
         gid=owner_b_gid,
+        permissions=OWNER_PERMISSIONS,
         resolved_folder_id=root_folder_id,
         resolved_gid=owner_b_gid,
-        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
         target_folder_id=c_folder_id,
         gid=owner_c_gid,
+        permissions=OWNER_PERMISSIONS,
         resolved_folder_id=root_folder_id,
         resolved_gid=owner_c_gid,
-        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
         target_folder_id=d_folder_id,
         gid=owner_d_gid,
+        permissions=OWNER_PERMISSIONS,
         resolved_folder_id=root_folder_id,
         resolved_gid=owner_d_gid,
-        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
         target_folder_id=editor_a_folder_id,
         gid=editor_a_gid,
+        permissions=EDITOR_PERMISSIONS,
         resolved_folder_id=root_folder_id,
         resolved_gid=editor_a_gid,
-        permissions=EDITOR_PERMISSIONS,
     )
 
 
