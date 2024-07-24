@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
               }
             }
             // Let me go
-            if (canIWrite && member["gid"] === osparc.auth.Data.getInstance().getGroupId()) {
+            if (canIWrite && members.length > 1 && member["gid"] === osparc.auth.Data.getInstance().getGroupId()) {
               options.push("leave");
             }
             member["options"] = options;

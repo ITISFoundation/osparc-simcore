@@ -254,6 +254,10 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
               ];
             }
           }
+          // Let me go
+          if (canIWrite && wallet.getAccessRights().length > 1 && gid === osparc.auth.Data.getInstance().getGroupId()) {
+            options.push("leave");
+          }
           collaborator["options"] = options;
           collaborator["showOptions"] = Boolean(options.length);
           membersList.push(collaborator);
