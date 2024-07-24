@@ -1,15 +1,16 @@
-"""add folders tables
+"""added folders tables
 
-Revision ID: d94b711e8023
+Revision ID: bdf8e87a755a
 Revises: d1fafda96f4c
-Create Date: 2024-07-17 12:26:35.768742+00:00
+Create Date: 2024-07-24 08:37:45.172691+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "d94b711e8023"
+revision = "bdf8e87a755a"
 down_revision = "d1fafda96f4c"
 branch_labels = None
 depends_on = None
@@ -22,7 +23,7 @@ def upgrade():
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), server_default="", nullable=False),
-        sa.Column("owner", sa.BigInteger(), nullable=True),
+        sa.Column("created_by", sa.BigInteger(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
@@ -33,11 +34,11 @@ def upgrade():
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["owner"],
+            ["created_by"],
             ["groups.gid"],
             name="fk_folders_to_groups_gid",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
