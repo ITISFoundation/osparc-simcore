@@ -159,8 +159,7 @@ define run_test
 		--color=yes \
 		--browser chromium \
 		--headed \
-		$$TEST_ARGS \
-		--device="Desktop Chrome"
+		$$TEST_ARGS
 endef
 
 clean:
