@@ -835,7 +835,7 @@ class _ScaleUpParams:
     imposed_instance_type: str | None
     service_resources: Resources
     num_services: int
-    expected_instance_type: str
+    expected_instance_type: InstanceTypeType
     expected_num_instances: int
 
 
