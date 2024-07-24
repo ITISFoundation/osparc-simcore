@@ -284,28 +284,48 @@ async def test__get_top_most_parent(
 
     # check top most parent resolution
     async def _assert_reloves_to(
-        *, folder_id: _FolderID, gid: _GroupID, permissions: _FolderPermissions
+        *,
+        target_folder_id: _FolderID,
+        gid: _GroupID,
+        resolved_folder_id: _FolderID,
+        permissions: _FolderPermissions,
     ) -> None:
         folder_parent = await _get_top_most_parent(
-            connection, folder_id, gid, permissions
+            connection, target_folder_id, gid, permissions
         )
         assert folder_parent
         assert folder_parent["gid"] == gid
+        assert folder_parent["folder_id"] == resolved_folder_id
 
     await _assert_reloves_to(
-        folder_id=root_folder_id, gid=owner_a_gid, permissions=OWNER_PERMISSIONS
+        target_folder_id=root_folder_id,
+        gid=owner_a_gid,
+        resolved_folder_id=root_folder_id,
+        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
-        folder_id=b_folder_id, gid=owner_b_gid, permissions=OWNER_PERMISSIONS
+        target_folder_id=b_folder_id,
+        gid=owner_b_gid,
+        resolved_folder_id=root_folder_id,
+        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
-        folder_id=c_folder_id, gid=owner_c_gid, permissions=OWNER_PERMISSIONS
+        target_folder_id=c_folder_id,
+        gid=owner_c_gid,
+        resolved_folder_id=root_folder_id,
+        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
-        folder_id=d_folder_id, gid=owner_d_gid, permissions=OWNER_PERMISSIONS
+        target_folder_id=d_folder_id,
+        gid=owner_d_gid,
+        resolved_folder_id=root_folder_id,
+        permissions=OWNER_PERMISSIONS,
     )
     await _assert_reloves_to(
-        folder_id=editor_a_folder_id, gid=editor_a_gid, permissions=EDITOR_PERMISSIONS
+        target_folder_id=editor_a_folder_id,
+        gid=editor_a_gid,
+        resolved_folder_id=root_folder_id,
+        permissions=EDITOR_PERMISSIONS,
     )
 
 
