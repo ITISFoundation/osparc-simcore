@@ -144,7 +144,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       };
     },
 
-    drawAnnotationText: function(draw, x, y, label, color, fontSize) {
+    drawAnnotationText: function(draw, x = 0, y = 0, label = "text", color = "#777", fontSize = 12) {
       const defaultFont = osparc.utils.Utils.getDefaultFont();
       const text = draw.text(label)
         .font({
@@ -160,7 +160,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return text;
     },
 
-    drawAnnotationNote: function(draw, x, y, recipientName, note) {
+    drawAnnotationNote: function(draw, x = 0, y = 0, recipientName = "", note = "note") {
       const lines = note.split("\n");
       const width = 200;
       const minHeight = 120;
@@ -259,7 +259,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return gNote;
     },
 
-    drawAnnotationRect: function(draw, width, height, x, y, color) {
+    drawAnnotationRect: function(draw, width = 50, height = 50, x = 0, y = 0, color = "#777") {
       const rect = draw.rect(width, height)
         .fill("none")
         .stroke({
