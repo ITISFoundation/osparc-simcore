@@ -1879,7 +1879,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       };
       if (type === "rect") {
         if ([null, undefined].includes(annotation)) {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Draw a rectangle first"), "WARNING");
           return false;
         }
         serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
