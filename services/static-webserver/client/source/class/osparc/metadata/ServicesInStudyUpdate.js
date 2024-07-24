@@ -185,10 +185,10 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         if (isUpdatable) {
           updatableServices.push(nodeId);
         }
-        const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
+        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        const currentVersionLabel = new qx.ui.basic.Label(nodeMetadata["versionDisplay"] ? nodeMetadata["versionDisplay"] : nodeMetadata["version"]).set({
           font: "text-14"
         });
-        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
         this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
         this._servicesGrid.add(currentVersionLabel, {
           row: i,
@@ -202,8 +202,10 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         if (latestCompatible) {
           // updatable
           osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(metadata => {
-              const label = node["key"] === metadata["key"] ? metadata["version"] : metadata["name"] + ":" + metadata["version"];
+            .then(latestMetadata => {
+              let label = node["key"] === latestMetadata["key"] ? "" : latestMetadata["name"];
+              label += ":";
+              label += latestMetadata["versionDisplay"] ? latestMetadata["versionDisplay"] : latestMetadata["version"];
               compatibleVersionLabel.setValue(label);
             })
             .catch(err => console.error(err));
