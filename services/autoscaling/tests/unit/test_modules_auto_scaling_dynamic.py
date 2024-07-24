@@ -349,33 +349,10 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     )
 
 
-@pytest.mark.acceptance_test()
-@pytest.mark.parametrize(
-    "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
-    [
-        pytest.param(
-            None,
-            parse_obj_as(ByteSize, "128Gib"),
-            "r5n.4xlarge",
-            id="No explicit instance defined",
-        ),
-        pytest.param(
-            "t2.xlarge",
-            parse_obj_as(ByteSize, "4Gib"),
-            "t2.xlarge",
-            id="Explicitely ask for t2.xlarge",
-        ),
-        pytest.param(
-            "r5n.8xlarge",
-            parse_obj_as(ByteSize, "128Gib"),
-            "r5n.8xlarge",
-            id="Explicitely ask for r5n.8xlarge",
-        ),
-    ],
-)
-async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
-    minimal_configuration: None,
+async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
+    *,
     service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
@@ -405,7 +382,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # create a service
     docker_service = await create_service(
         task_template | create_task_reservations(4, docker_service_ram),
-        service_monitored_labels,
+        service_monitored_labels
+        | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "pending",
         (
             [
@@ -613,7 +591,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     #
     assert docker_service.ID
     await async_docker_client.services.delete(docker_service.ID)
-    #
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     # check the number of instances did not change and is still running
     await assert_autoscaled_dynamic_ec2_instances(
@@ -774,6 +752,81 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=expected_ec2_type,
         expected_instance_state="terminated",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+    )
+
+
+@pytest.mark.acceptance_test()
+@pytest.mark.parametrize(
+    "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
+    [
+        pytest.param(
+            None,
+            parse_obj_as(ByteSize, "128Gib"),
+            "r5n.4xlarge",
+            id="No explicit instance defined",
+        ),
+        pytest.param(
+            "t2.xlarge",
+            parse_obj_as(ByteSize, "4Gib"),
+            "t2.xlarge",
+            id="Explicitely ask for t2.xlarge",
+        ),
+        pytest.param(
+            "r5n.8xlarge",
+            parse_obj_as(ByteSize, "128Gib"),
+            "r5n.8xlarge",
+            id="Explicitely ask for r5n.8xlarge",
+        ),
+    ],
+)
+async def test_cluster_scaling_up_and_down(
+    minimal_configuration: None,
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    ec2_client: EC2Client,
+    mock_docker_tag_node: mock.Mock,
+    fake_node: Node,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    mocker: MockerFixture,
+    docker_service_imposed_ec2_type: InstanceTypeType | None,
+    docker_service_ram: ByteSize,
+    expected_ec2_type: InstanceTypeType,
+    async_docker_client: aiodocker.Docker,
+    with_drain_nodes_labelled: bool,
+    ec2_instance_custom_tags: dict[str, str],
+):
+    await _test_cluster_scaling_up_and_down(
+        service_monitored_labels=service_monitored_labels,
+        osparc_docker_label_keys=osparc_docker_label_keys,
+        app_settings=app_settings,
+        initialized_app=initialized_app,
+        create_service=create_service,
+        task_template=task_template,
+        create_task_reservations=create_task_reservations,
+        ec2_client=ec2_client,
+        mock_docker_tag_node=mock_docker_tag_node,
+        fake_node=fake_node,
+        mock_rabbitmq_post_message=mock_rabbitmq_post_message,
+        mock_find_node_with_name_returns_fake_node=mock_find_node_with_name_returns_fake_node,
+        mock_docker_set_node_availability=mock_docker_set_node_availability,
+        mock_compute_node_used_resources=mock_compute_node_used_resources,
+        mocker=mocker,
+        docker_service_imposed_ec2_type=docker_service_imposed_ec2_type,
+        docker_service_ram=docker_service_ram,
+        expected_ec2_type=expected_ec2_type,
+        async_docker_client=async_docker_client,
+        with_drain_nodes_labelled=with_drain_nodes_labelled,
+        ec2_instance_custom_tags=ec2_instance_custom_tags,
     )
 
 
