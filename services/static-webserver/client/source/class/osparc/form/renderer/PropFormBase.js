@@ -181,18 +181,23 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const extendedVersion = firstColumnWidth > 300;
 
       const inputs = this.getNode().getInputs();
-      for (const portId in inputs) {
+      Object.keys(inputs).forEach((portId, idx) => {
         if (inputs[portId].description) {
           this._getLabelFieldChild(portId).child.set({
             value: extendedVersion ? inputs[portId].label + ". " + inputs[portId].description + ":" : inputs[portId].label,
             toolTipText: extendedVersion ? inputs[portId].label + "<br>" + inputs[portId].description : inputs[portId].label
           });
 
-          this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
+          if (grid.getRowHeight(idx) === 0) {
+            // the port might be hidden
+            this._getInfoFieldChild(portId).child.setVisibility("hidden");
+          } else {
+            this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
+          }
 
           grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, extendedVersion ? 150 : 50);
         }
-      }
+      });
     },
 
     getValues: function() {

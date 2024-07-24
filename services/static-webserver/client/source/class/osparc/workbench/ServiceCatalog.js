@@ -137,8 +137,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       scrolledServices.add(serviceList);
 
       this.__serviceList.addListener("changeValue", e => {
-        if (e.getData() && e.getData().getServiceModel()) {
-          const selectedService = e.getData().getServiceModel();
+        if (e.getData() && e.getData().getService()) {
+          const selectedService = e.getData().getService();
           this.__changedSelection(selectedService.getKey());
         } else {
           this.__changedSelection(null);
@@ -229,10 +229,9 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
-        let service = osparc.service.Utils.getLatest(key);
-        service = osparc.utils.Utils.deepCloneObject(service);
-        osparc.service.Utils.removeFileToKeyMap(service);
-        groupedServicesList.push(qx.data.marshal.Json.createModel(service));
+        const serviceMetadata = osparc.service.Utils.getLatest(key);
+        const service = new osparc.data.model.Service(serviceMetadata);
+        groupedServicesList.push(service);
       }
 
       this.__serviceList.setModel(new qx.data.Array(groupedServicesList));
@@ -243,13 +242,15 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
-          const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
+          const latest = new qx.ui.form.ListItem(this.self().LATEST);
+          latest.version = this.self().LATEST;
           selectBox.add(latest);
           const versions = osparc.service.Utils.getVersions(key);
           versions.forEach(version => {
             const listItem = osparc.service.Utils.versionToListItem(key, version);
             selectBox.add(listItem);
           });
+          osparc.utils.Utils.growSelectBox(selectBox, 200);
           selectBox.setSelection([latest]);
         }
       }
@@ -264,20 +265,18 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       }
     },
 
-    __onAddService: async function(selectedServiceModel) {
-      if (selectedServiceModel == null && this.__serviceList.isSelectionEmpty()) {
+    __onAddService: async function(selectedService) {
+      if (selectedService == null && this.__serviceList.isSelectionEmpty()) {
         return;
       }
 
-      let serviceModel = selectedServiceModel;
-      if (!serviceModel) {
-        let serviceMetadata = await this.__getSelectedService();
-        serviceMetadata = osparc.utils.Utils.deepCloneObject(serviceMetadata);
-        osparc.service.Utils.removeFileToKeyMap(serviceMetadata);
-        serviceModel = qx.data.marshal.Json.createModel(serviceMetadata);
+      let service = selectedService;
+      if (!service) {
+        const serviceMetadata = await this.__getSelectedService();
+        service = new osparc.data.model.Service(serviceMetadata);
       }
       const eData = {
-        service: serviceModel,
+        service,
         nodeLeftId: this.__contextLeftNodeId,
         nodeRightId: this.__contextRightNodeId
       };

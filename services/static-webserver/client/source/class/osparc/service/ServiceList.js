@@ -70,11 +70,11 @@ qx.Class.define("osparc.service.ServiceList", {
         group.add(button);
         this._add(button);
         button.addListener("dbltap", () => {
-          this.fireDataEvent("serviceAdd", button.getServiceModel());
+          this.fireDataEvent("serviceAdd", button.getService());
         }, this);
         button.addListener("keypress", e => {
           if (e.getKeyIdentifier() === "Enter") {
-            this.fireDataEvent("serviceAdd", button.getServiceModel());
+            this.fireDataEvent("serviceAdd", button.getService());
           }
         }, this);
       });
@@ -89,7 +89,7 @@ qx.Class.define("osparc.service.ServiceList", {
      */
     getSelected: function() {
       if (this.__buttonGroup && this.__buttonGroup.getSelection().length) {
-        return this.__buttonGroup.getSelection()[0].getServiceModel();
+        return this.__buttonGroup.getSelection()[0].getService();
       }
       return null;
     },
