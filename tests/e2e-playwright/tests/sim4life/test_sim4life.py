@@ -72,6 +72,8 @@ def test_sim4life(
 
     if check_videostreaming:
         with log_context(logging.INFO, "Check videostreaming works"):
+            page.wait_for_timeout(15000)
+            s4l_iframe.locator("video").click()
             expect(
                 s4l_iframe.locator("video"), "videostreaming is not working!!"
             ).to_be_visible()
