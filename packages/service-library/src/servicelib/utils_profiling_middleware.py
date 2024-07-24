@@ -4,10 +4,8 @@ from contextlib import contextmanager
 from typing import Iterator
 
 from pyinstrument import Profiler
-from servicelib.mimetype_constants import (
-    MIMETYPE_APPLICATION_JSON,
-    MIMETYPE_APPLICATION_ND_JSON,
-)
+
+from .mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_ND_JSON
 
 _profiler = Profiler(async_mode="enabled")
 _is_profiling = contextvars.ContextVar("_is_profiling", default=False)
