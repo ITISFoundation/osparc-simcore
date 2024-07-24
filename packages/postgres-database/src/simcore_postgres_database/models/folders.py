@@ -83,7 +83,7 @@ folders_access_rights = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "folders.id",
-            name="fk_folders_to_folders_id",
+            name="fk_folders_to_folders_id_via_traversal_parent_id",
             ondelete="SET NULL",
         ),
         doc=(
@@ -96,7 +96,7 @@ folders_access_rights = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "folders.id",
-            name="fk_folders_to_folders_id",
+            name="fk_folders_to_folders_id_via_original_parent_id",
             ondelete="SET NULL",
         ),
         doc=(
@@ -193,8 +193,7 @@ BEGIN
     UPDATE folders f
     SET last_modified = NOW()
     FROM folders_access_rights far
-    WHERE far.folder_id = NEW.folder_id
-      AND f.id = far.parent_folder;
+    WHERE far.folder_id = NEW.folder_id;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

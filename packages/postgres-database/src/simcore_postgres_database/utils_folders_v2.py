@@ -283,7 +283,7 @@ async def create_folder(
             )
             .where(folders.c.name == name)
             .where(folders_access_rights.c.gid == gid)
-            .where(folders_access_rights.c.parent_folder == parent)
+            .where(folders_access_rights.c.original_parent_id == parent)
         )
         if entry_exists:
             raise FolderAlreadyExistsError(folder=name, parent=parent, gid=gid)
@@ -315,7 +315,8 @@ async def create_folder(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
                     gid=gid,
-                    parent_folder=parent,
+                    traversal_parent_id=parent,
+                    original_parent_id=parent,
                     **OWNER_PERMISSIONS,
                 )
             )
@@ -368,7 +369,8 @@ async def _check_folder_and_access(
     # Define the CTE
     folder_cte = (
         sa.select(
-            folders_access_rights.c.folder_id, folders_access_rights.c.parent_folder
+            folders_access_rights.c.folder_id,
+            folders_access_rights.c.original_parent_id,
         )
         .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
         .cte(name="folder_cte", recursive=True)
@@ -376,16 +378,18 @@ async def _check_folder_and_access(
 
     recursive_query = folder_cte.union_all(
         sa.select(
-            folders_access_rights.c.folder_id, folders_access_rights.c.parent_folder
+            folders_access_rights.c.folder_id,
+            folders_access_rights.c.original_parent_id,
         ).join(
-            folder_cte, folders_access_rights.c.folder_id == folder_cte.c.parent_folder
+            folder_cte,
+            folders_access_rights.c.folder_id == folder_cte.c.original_parent_id,
         )
     )
 
     # Select the top-most parent
     top_most_parent_query = (
         sa.select(recursive_query.c.folder_id)
-        .where(recursive_query.c.parent_folder.is_(None))
+        .where(recursive_query.c.original_parent_id.is_(None))
         .where(folders_access_rights.c.gid == gid)
         .where(_get_where_clause(permissions))
     )
@@ -429,7 +433,8 @@ async def folder_share_or_update_permissions(
         data: dict[str, Any] = {
             "folder_id": folder_id,
             "gid": recipient_gid,
-            "parent_folder": None,
+            "original_parent_id": None,
+            "traversal_parent_id": None,
             **sharing_permissions,
         }
         insert_stmt = postgresql.insert(folders_access_rights).values(**data)
@@ -500,7 +505,7 @@ async def folder_delete(
         # list all children then delete
         results = await connection.execute(
             folders_access_rights.select()
-            .where(folders_access_rights.c.parent_folder == folder_id)
+            .where(folders_access_rights.c.traversal_parent_id == folder_id)
             .where(folders_access_rights.c.gid == gid)
         )
         rows = await results.fetchall()
