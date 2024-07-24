@@ -207,14 +207,21 @@ class SocketIONodeProgressCompleteWaiter:
                         decoded_message
                     )
                     if node_progress_event.node_id == self.node_id:
-                        self._current_progress[node_progress_event.progress_type] = (
+                        new_progress = (
                             node_progress_event.current_progress
                             / node_progress_event.total_progress
                         )
-                        ctx.logger.info(
-                            "current startup progress: %s",
-                            f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
-                        )
+                        if (
+                            new_progress
+                            != self._current_progress[node_progress_event.progress_type]
+                        ):
+                            self._current_progress[
+                                node_progress_event.progress_type
+                            ] = new_progress
+                            ctx.logger.info(
+                                "current startup progress: %s",
+                                f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
+                            )
 
                     return all(
                         progress_type in self._current_progress
