@@ -508,9 +508,8 @@ async def folder_delete(
 
 
 # TODO: add the following
-# - delete folder
 # - move folder
 # - add project in folder
 # - remove project form folder
-# - still need a way to compute permissions (for now we do a basic thing, only list our own permissions)
-# - listing is on matus
+# - list folders
+# - listing projects in folders is on Matus?
