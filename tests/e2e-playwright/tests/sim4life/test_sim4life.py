@@ -11,7 +11,7 @@ import logging
 import re
 from typing import Any, Callable, Final
 
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Page, WebSocket, expect
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
@@ -67,11 +67,14 @@ def test_sim4life(
     # Wait until grid is shown
     with log_context(logging.INFO, "Interact with S4l"):
         s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click()
-        page.wait_for_timeout(30000)
-        s4l_iframe.get_by_role("img", name="Remote render").click(button="right")
+        page.wait_for_timeout(3000)
+        # s4l_iframe.get_by_role("img", name="Remote render").click(button="right")
 
     if check_videostreaming:
         with log_context(logging.INFO, "Check videostreaming works"):
-            raise NotImplementedError(
-                "TODO: currently I was not able to make playwright browser show any videostreaming"
-            )
+            expect(
+                s4l_iframe.locator("video"), "videostreaming is not working!!"
+            ).to_be_visible()
+            page.wait_for_timeout(3000)
+            # here we would need the osparc-test-id to get to the bitrate and check that it grows,
+            # otherwise the cable might be broken.
