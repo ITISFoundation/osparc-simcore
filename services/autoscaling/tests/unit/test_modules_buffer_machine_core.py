@@ -35,8 +35,10 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
 )
 from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
     _PREPULLED_EC2_TAG_KEY,
-    _get_buffer_ec2_tags,
     monitor_buffer_machines,
+)
+from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
+    get_buffer_ec2_tags,
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -281,7 +283,7 @@ async def create_buffer_machines(
 
         resource_tags: list[TagTypeDef] = [
             {"Key": tag_key, "Value": tag_value}
-            for tag_key, tag_value in _get_buffer_ec2_tags(
+            for tag_key, tag_value in get_buffer_ec2_tags(
                 initialized_app, DynamicAutoscaling()
             ).items()
         ]

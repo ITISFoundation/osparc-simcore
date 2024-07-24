@@ -24,7 +24,6 @@ from aws_library.ec2.models import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
-    EC2Tags,
     Resources,
 )
 from fastapi import FastAPI
@@ -35,16 +34,11 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
+from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
 
-_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "io.simcore.autoscaling.buffer_machine"
-)
-_BUFFER_MACHINE_EC2_TAGS: EC2Tags = {
-    _BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "true")
-}
 _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "pulling"
 )
@@ -60,14 +54,6 @@ _PREPULLED_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
 _logger = logging.getLogger(__name__)
 
 
-def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
-    base_ec2_tags = auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
-    base_ec2_tags[AWSTagKey("Name")] = AWSTagValue(
-        f"{base_ec2_tags[AWSTagKey('Name')]}-buffer"
-    )
-    return base_ec2_tags
-
-
 async def _analyse_current_state(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> BufferPoolManager:
@@ -77,7 +63,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
 
@@ -193,7 +179,7 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
