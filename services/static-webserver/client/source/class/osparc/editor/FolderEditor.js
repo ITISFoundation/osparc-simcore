@@ -29,6 +29,9 @@ qx.Class.define("osparc.editor.FolderEditor", {
     manager.add(title);
     this.getChildControl("description");
     newFolder ? this.getChildControl("create") : this.getChildControl("save");
+
+    this.addListener("appear", () => this.__onAppear(newFolder), this);
+    this.addListener("disappear", () => this.__onDisappear(newFolder), this);
   },
 
   properties: {
@@ -132,6 +135,21 @@ qx.Class.define("osparc.editor.FolderEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __onAppear: function(newFolder) {
+      const title = this.getChildControl("title");
+      title.focus();
+      title.activate();
+
+      const command = new qx.ui.command.Command("Enter");
+      const mainButton = newFolder ? this.getChildControl("create") : this.getChildControl("save");
+      mainButton.setCommand(command);
+    },
+
+    __onDisappear: function(newFolder) {
+      const mainButton = newFolder ? this.getChildControl("create") : this.getChildControl("save");
+      mainButton.setCommand(null);
     }
   }
 });
