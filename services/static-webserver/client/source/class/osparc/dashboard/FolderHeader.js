@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
 
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-        const ar = currentFolder.getAccessRights();
+        const ar = currentFolder.getMyAccessRights();
         const permissions = ar["read"] + ar["write"] + ar["delete"];
         const roleTitle = new qx.ui.basic.Label().set({
           value: osparc.data.Roles.FOLDERS[permissions].label
