@@ -42,6 +42,10 @@
         "0.0.1"
       ]
     },
+    "version_display": {
+      "type": "string",
+      "description": "human readable version"
+    },
     "type": {
       "type": "string",
       "description": "service type",

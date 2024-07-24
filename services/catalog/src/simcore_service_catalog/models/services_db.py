@@ -53,6 +53,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
 
 class ReleaseFromDB(BaseModel):
     version: ServiceVersion
+    version_display: str | None
     deprecated: datetime | None
     created: datetime
     compatibility_policy: CompatiblePolicyDict | None
