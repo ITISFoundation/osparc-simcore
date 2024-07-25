@@ -3,6 +3,7 @@ import uuid
 from collections.abc import Iterable
 from enum import Enum
 from functools import reduce
+from os import write
 from typing import Any, ClassVar, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
@@ -201,18 +202,28 @@ def _requires(*permissions: _FolderPermissions):
     return _or_dicts_list(permissions)
 
 
-def _get_where_clause(permissions: _FolderPermissions) -> ColumnElement | bool:
+def _get_true_permissions(
+    permissions: _FolderPermissions, table
+) -> ColumnElement | bool:
     """compose SQL where clause where only for the entries that are True"""
     clauses: list[ColumnElement] = []
 
     if permissions["read"]:
-        clauses.append(folders_access_rights.c.read.is_(True))
+        clauses.append(table.c.read.is_(True))
     if permissions["write"]:
-        clauses.append(folders_access_rights.c.write.is_(True))
+        clauses.append(table.c.write.is_(True))
     if permissions["delete"]:
-        clauses.append(folders_access_rights.c.delete.is_(True))
+        clauses.append(table.c.delete.is_(True))
 
     return sa.and_(*clauses) if clauses else True
+
+
+def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElement:
+    return sa.and_(
+        table.c.read.is_(permissions["read"]),
+        table.c.write.is_(permissions["write"]),
+        table.c.delete.is_(permissions["delete"]),
+    )
 
 
 ###
@@ -261,43 +272,80 @@ async def _get_top_most_parent(
     connection: SAConnection,
     folder_id: _FolderID,
     gid: _GroupID,
-    permissions: _FolderPermissions,
+    *,
+    permissions: _FolderPermissions | None,
+    enforece_all_permissions: bool,
 ) -> RowProxy | None:
-    # NOTE: access rights are always resolved by picking them from the top most level
-    # via the `original_parent_id` hierarchy (meaning an entry where
-    # `original_parent_id is None` is searched for).
-    # The entry `original_parent_id` never changeds from the moment the folde's creation.
 
-    folder_cte = (
+    # Define the anchor CTE
+    access_rights_cte = (
         sa.select(
-            folders_access_rights.c.folder_id,
-            folders_access_rights.c.original_parent_id,
+            [
+                folders_access_rights.c.folder_id,
+                folders_access_rights.c.gid,
+                folders_access_rights.c.traversal_parent_id,
+                folders_access_rights.c.original_parent_id,
+                folders_access_rights.c.read,
+                folders_access_rights.c.write,
+                folders_access_rights.c.delete,
+                sa.literal_column("0").label("level"),
+            ]
         )
         .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
-        .cte(name="folder_cte", recursive=True)
-    )
-    recursive_query = folder_cte.union_all(
-        sa.select(
-            folders_access_rights.c.folder_id,
-            folders_access_rights.c.original_parent_id,
-        ).join(
-            folder_cte,
-            folders_access_rights.c.folder_id == folder_cte.c.original_parent_id,
-        )
-    )
-    top_most_parent_query = (
-        sa.select(
-            recursive_query.c.folder_id,
-            folders_access_rights.c.gid,
-        )
-        .where(recursive_query.c.original_parent_id.is_(None))
-        .where(folders_access_rights.c.gid == gid)
-        .where(_get_where_clause(permissions))
+        .cte(name="access_rights_cte", recursive=True)
     )
 
-    result = await connection.execute(
-        top_most_parent_query.params(start_folder_id=folder_id)
+    # Define the recursive part of the CTE
+    recursive = sa.select(
+        [
+            folders_access_rights.c.folder_id,
+            folders_access_rights.c.gid,
+            folders_access_rights.c.traversal_parent_id,
+            folders_access_rights.c.original_parent_id,
+            folders_access_rights.c.read,
+            folders_access_rights.c.write,
+            folders_access_rights.c.delete,
+            sa.literal_column("access_rights_cte.level + 1").label("level"),
+        ]
+    ).select_from(
+        folders_access_rights.join(
+            access_rights_cte,
+            folders_access_rights.c.folder_id == access_rights_cte.c.original_parent_id,
+        )
     )
+
+    # Combine anchor and recursive CTE
+    folder_hierarchy = access_rights_cte.union_all(recursive)
+
+    # Final query to filter and order results
+    query = (
+        sa.select(
+            [
+                folder_hierarchy.c.folder_id,
+                folder_hierarchy.c.gid,
+                folder_hierarchy.c.traversal_parent_id,
+                folder_hierarchy.c.original_parent_id,
+                folder_hierarchy.c.read,
+                folder_hierarchy.c.write,
+                folder_hierarchy.c.delete,
+                folder_hierarchy.c.level,
+            ]
+        )
+        .where(
+            (
+                _get_all_permissions(permissions, folder_hierarchy)
+                if enforece_all_permissions
+                else _get_true_permissions(permissions, folder_hierarchy)
+            )
+            if permissions
+            else True
+        )
+        .where(folder_hierarchy.c.original_parent_id.is_(None))
+        .where(folder_hierarchy.c.gid == gid)
+        .order_by(folder_hierarchy.c.level.asc())
+    )
+
+    result = await connection.execute(query.params(start_folder_id=folder_id))
     top_most_parent: RowProxy | None = await result.fetchone()
     return top_most_parent
 
@@ -306,7 +354,9 @@ async def _check_folder_and_access(
     connection: SAConnection,
     folder_id: _FolderID,
     gid: _GroupID,
+    *,
     permissions: _FolderPermissions,
+    enforece_all_permissions: bool,
 ) -> None:
     """Checks the following:
     - base folder exists
@@ -321,14 +371,22 @@ async def _check_folder_and_access(
 
     # check if folder was shared
     top_most_parent_without_permissions = await _get_top_most_parent(
-        connection, folder_id, gid, NO_ACCESS_PERMISSIONS
+        connection,
+        folder_id,
+        gid,
+        permissions=None,
+        enforece_all_permissions=enforece_all_permissions,
     )
     if not top_most_parent_without_permissions:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
 
     # check if there are permissions
     top_most_parent_with_permissions = await _get_top_most_parent(
-        connection, folder_id, gid, permissions
+        connection,
+        folder_id,
+        gid,
+        permissions=permissions,
+        enforece_all_permissions=enforece_all_permissions,
     )
     if top_most_parent_with_permissions is None:
         raise InsufficientPermissionsError(
@@ -374,6 +432,7 @@ async def create_folder(
                 folder_id=parent,
                 gid=gid,
                 permissions=required_permissions,
+                enforece_all_permissions=False,
             )
 
         # folder entry can now be inserted
@@ -420,6 +479,7 @@ async def folder_share_or_update_permissions(
             folder_id=folder_id,
             gid=sharing_gid,
             permissions=required_permissions,
+            enforece_all_permissions=False,
         )
 
         # update or create permissions entry
@@ -461,6 +521,7 @@ async def folder_update(
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
+            enforece_all_permissions=False,
         )
 
         # do not update if nothing changed
@@ -496,6 +557,7 @@ async def folder_delete(
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
+            enforece_all_permissions=False,
         )
 
         # list all children then delete

@@ -28,7 +28,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _FolderPermissions,
     _get_permissions_from_role,
     _get_top_most_parent,
-    _get_where_clause,
+    _get_true_permissions,
     _GroupID,
     _ProjectID,
     _requires,
@@ -113,11 +113,20 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
 
 
 def test__get_where_clause():
-    assert isinstance(_get_where_clause(VIEWER_PERMISSIONS), ColumnElement)
-    assert isinstance(_get_where_clause(EDITOR_PERMISSIONS), ColumnElement)
-    assert isinstance(_get_where_clause(OWNER_PERMISSIONS), ColumnElement)
     assert isinstance(
-        _get_where_clause({"read": False, "write": False, "delete": False}), bool
+        _get_true_permissions(VIEWER_PERMISSIONS, folders_access_rights), ColumnElement
+    )
+    assert isinstance(
+        _get_true_permissions(EDITOR_PERMISSIONS, folders_access_rights), ColumnElement
+    )
+    assert isinstance(
+        _get_true_permissions(OWNER_PERMISSIONS, folders_access_rights), ColumnElement
+    )
+    assert isinstance(
+        _get_true_permissions(
+            {"read": False, "write": False, "delete": False}, folders_access_rights
+        ),
+        bool,
     )
 
 
@@ -166,7 +175,11 @@ async def _assert_folder_permissions(
         sa.select([folders_access_rights.c.folder_id])
         .where(folders_access_rights.c.folder_id == folder_id)
         .where(folders_access_rights.c.gid == gid)
-        .where(_get_where_clause(_get_permissions_from_role(role)))
+        .where(
+            _get_true_permissions(
+                _get_permissions_from_role(role), folders_access_rights
+            )
+        )
     )
     rows = await result.fetchall()
     assert rows is not None
@@ -247,6 +260,16 @@ async def test__get_top_most_parent(
         setup_users_and_groups,
         already_picked={owner_a_gid, owner_b_gid, owner_c_gid, owner_d_gid},
     )
+    editor_b_gid = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={
+            owner_a_gid,
+            owner_b_gid,
+            owner_c_gid,
+            owner_d_gid,
+            editor_a_gid,
+        },
+    )
 
     # share folder with all owners
     root_folder_id = await create_folder(connection, "root_folder", owner_a_gid)
@@ -278,9 +301,25 @@ async def test__get_top_most_parent(
         connection, "d_folder", owner_d_gid, parent=c_folder_id
     )
     editor_a_folder_id = await create_folder(
-        connection, "editor_a_folder", editor_a_gid, parent=c_folder_id
+        connection, "editor_a_folder", editor_a_gid, parent=d_folder_id
     )
     await _assert_folder_entires(connection, folder_count=5, access_rights_count=9)
+    # share existing folder in hierarchy with a new user
+    await folder_share_or_update_permissions(
+        connection,
+        d_folder_id,
+        sharing_gid=owner_a_gid,
+        recipient_gid=editor_b_gid,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await _assert_folder_entires(connection, folder_count=5, access_rights_count=10)
+
+    # Folder structure: `FOLDER_NAME(OWNER)[SHARED_WITH]`:
+    # - root_folder(owner_a)[owner_b,owner_c,owner_d, editor_a]
+    #   - b_folder(owner_b)
+    #   - c_folder(owner_c):
+    #       - d_folder(owner_d)[editor_b]:
+    #           - editor_a_folder(editor_a)
 
     # check top most parent resolution
     async def _assert_reloves_to(
@@ -288,51 +327,66 @@ async def test__get_top_most_parent(
         target_folder_id: _FolderID,
         gid: _GroupID,
         permissions: _FolderPermissions,
-        resolved_folder_id: _FolderID,
-        resolved_gid: _FolderID,
+        expected_folder_id: _FolderID,
+        expected_gids: set[_FolderID],
     ) -> None:
-        folder_parent = await _get_top_most_parent(
-            connection, target_folder_id, gid, permissions
+        resolved_parent = await _get_top_most_parent(
+            connection,
+            target_folder_id,
+            gid,
+            permissions=permissions,
+            enforece_all_permissions=True,
         )
-        assert folder_parent
-        assert folder_parent["gid"] == resolved_gid
-        assert folder_parent["folder_id"] == resolved_folder_id
+        assert resolved_parent
+        assert resolved_parent["folder_id"] == expected_folder_id
+        assert resolved_parent["gid"] in expected_gids
 
     await _assert_reloves_to(
         target_folder_id=root_folder_id,
         gid=owner_a_gid,
         permissions=OWNER_PERMISSIONS,
-        resolved_folder_id=root_folder_id,
-        resolved_gid=owner_a_gid,
+        expected_folder_id=root_folder_id,
+        expected_gids={owner_a_gid},
     )
     await _assert_reloves_to(
         target_folder_id=b_folder_id,
         gid=owner_b_gid,
         permissions=OWNER_PERMISSIONS,
-        resolved_folder_id=root_folder_id,
-        resolved_gid=owner_b_gid,
+        expected_folder_id=root_folder_id,
+        expected_gids={owner_b_gid},
     )
     await _assert_reloves_to(
         target_folder_id=c_folder_id,
         gid=owner_c_gid,
         permissions=OWNER_PERMISSIONS,
-        resolved_folder_id=root_folder_id,
-        resolved_gid=owner_c_gid,
+        expected_folder_id=root_folder_id,
+        expected_gids={owner_c_gid},
     )
     await _assert_reloves_to(
         target_folder_id=d_folder_id,
         gid=owner_d_gid,
         permissions=OWNER_PERMISSIONS,
-        resolved_folder_id=root_folder_id,
-        resolved_gid=owner_d_gid,
+        expected_folder_id=root_folder_id,
+        expected_gids={owner_d_gid},
     )
     await _assert_reloves_to(
         target_folder_id=editor_a_folder_id,
         gid=editor_a_gid,
         permissions=EDITOR_PERMISSIONS,
-        resolved_folder_id=root_folder_id,
-        resolved_gid=editor_a_gid,
+        expected_folder_id=root_folder_id,
+        expected_gids={editor_a_gid},
     )
+    await _assert_reloves_to(
+        target_folder_id=editor_a_folder_id,
+        gid=editor_b_gid,
+        permissions=EDITOR_PERMISSIONS,
+        expected_folder_id=d_folder_id,
+        expected_gids={editor_b_gid},
+    )
+
+    # TODO: we need a test when the sharing of a folder happens with someone it needs to reoslve properly with the new owner and not others
+
+    # TODO: after moving is added add a test to test that this till works when parents are changed
 
 
 async def test_folder_share_or_update_permissions(
