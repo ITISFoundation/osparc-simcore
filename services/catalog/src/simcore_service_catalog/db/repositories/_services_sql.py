@@ -197,18 +197,16 @@ def list_latest_services_with_history_stmt(
             isouter=True,
         )
         .join(users, user_to_groups.c.uid == users.c.id, isouter=True)
-        .subquery()
+        .subquery("latest_sq")
     )
 
     # get history for every unique service-key in CTE
-    history_subquery = (
+    _accessible_sq = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
-            services_meta_data.c.deprecated,
-            services_meta_data.c.created,
-            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
         )
+        .distinct()
         .select_from(
             services_meta_data.join(
                 cte,
@@ -233,11 +231,34 @@ def list_latest_services_with_history_stmt(
             )
         )
         .where(access_rights)
+        .subquery("accessible_sq")
+    )
+
+    history_subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.version_display,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
+        )
+        .select_from(
+            services_meta_data.join(
+                _accessible_sq,
+                (services_meta_data.c.key == _accessible_sq.c.key)
+                & (services_meta_data.c.version == _accessible_sq.c.version),
+            ).outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
+            )
+        )
         .order_by(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
-        .subquery()
+        .subquery("history_sq")
     )
 
     return (
@@ -263,6 +284,8 @@ def list_latest_services_with_history_stmt(
                 func.json_build_object(
                     "version",
                     history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
                     "deprecated",
                     history_subquery.c.deprecated,
                     "created",
@@ -367,6 +390,7 @@ def get_service_stmt(
                 service_version=service_version,
             )
         )
+        .limit(1)
     )
 
 
@@ -377,10 +401,12 @@ def get_service_history_stmt(
     access_rights: sa.sql.ClauseElement,
     service_key: ServiceKey,
 ):
-    history_subquery = (
+
+    _sq = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
+            services_meta_data.c.version_display,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
             services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
@@ -408,9 +434,13 @@ def get_service_history_stmt(
             & (user_to_groups.c.uid == user_id)
             & access_rights
         )
+        .distinct()
+    ).subquery()
+
+    history_subquery = (
+        sa.select(_sq)
         .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+            sa.desc(_version(_sq.c.version)),  # latest version first
         )
         .alias("history_subquery")
     )
@@ -421,6 +451,8 @@ def get_service_history_stmt(
                 func.json_build_object(
                     "version",
                     history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
                     "deprecated",
                     history_subquery.c.deprecated,
                     "created",

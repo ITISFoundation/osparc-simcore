@@ -151,7 +151,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
         auto_default_from_env=True, description="exporter plugin"
     )
-
     WEBSERVER_GARBAGE_COLLECTOR: GarbageCollectorSettings | None = Field(
         auto_default_from_env=True, description="garbage collector plugin"
     )
@@ -221,6 +220,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_API_KEYS: bool = True
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
+    WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)

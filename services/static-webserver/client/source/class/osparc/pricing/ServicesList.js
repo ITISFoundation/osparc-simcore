@@ -93,7 +93,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
             const version = service["serviceVersion"];
             const serviceMetadata = osparc.service.Store.getMetadata(key, version);
             if (serviceMetadata) {
-              sList.push(qx.data.marshal.Json.createModel(serviceMetadata));
+              sList.push(new osparc.data.model.Service(serviceMetadata));
             }
           });
 
@@ -108,7 +108,6 @@ qx.Class.define("osparc.pricing.ServicesList", {
       srvCat.addListener("addService", e => {
         const data = e.getData();
         const service = data.service;
-        console.log(service);
         const params = {
           url: {
             pricingPlanId: this.getPricingPlanId()

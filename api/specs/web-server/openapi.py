@@ -24,6 +24,7 @@ openapi_modules = [
         "_computations",
         "_diagnostics",
         "_exporter",
+        "_folders",
         "_groups",
         "_long_running_tasks",
         "_metamodeling",

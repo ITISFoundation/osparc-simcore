@@ -248,12 +248,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           versionsBox.setSelection([selectedItem]);
         }
       });
+      osparc.utils.Utils.growSelectBox(versionsBox, 200);
 
       // then listen to changes
       versionsBox.addListener("changeSelection", e => {
         const selection = e.getData();
         if (selection.length) {
-          const serviceVersion = selection[0].getLabel();
+          const serviceVersion = selection[0].version;
           if (serviceVersion !== this.__resourceData["version"]) {
             osparc.service.Store.getService(this.__resourceData["key"], serviceVersion)
               .then(serviceData => {

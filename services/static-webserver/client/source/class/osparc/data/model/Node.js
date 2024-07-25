@@ -303,7 +303,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getMinVisibleInputs: function(metadata) {
-      return ("min-visible-inputs" in metadata) ? metadata["min-visible-inputs"] : null;
+      return ("minVisibleInputs" in metadata) ? metadata["minVisibleInputs"] : null;
     },
 
     getOutput: function(outputs, outputKey) {

@@ -333,6 +333,7 @@ async def update_projects_networks(
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
 ) -> None:
+    # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
