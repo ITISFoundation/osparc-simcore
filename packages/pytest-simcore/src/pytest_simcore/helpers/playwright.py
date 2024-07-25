@@ -96,11 +96,11 @@ class SocketIOEvent:
     obj: dict[str, Any]
 
 
-_SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
-    data = json.loads(message.removeprefix(_SOCKETIO_MESSAGE_PREFIX))
+    data = json.loads(message.removeprefix(SOCKETIO_MESSAGE_PREFIX))
     return SocketIOEvent(name=data[0], obj=data[1])
 
 
@@ -136,23 +136,22 @@ def retrieve_node_progress_from_decoded_message(
 
 @dataclass
 class SocketIOProjectClosedWaiter:
-    def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
-            # socket.io encodes messages like so
-            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
-                decoded_message = decode_socketio_42_message(message)
-                if (
-                    (
-                        decoded_message.name
-                        == _OSparcMessages.PROJECT_STATE_UPDATED.value
-                    )
-                    and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
-                    and (decoded_message.obj["data"]["locked"]["value"] is False)
-                ):
-                    return True
+    logger: logging.Logger
 
-            return False
+    def __call__(self, message: str) -> bool:
+        # socket.io encodes messages like so
+        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+            decoded_message = decode_socketio_42_message(message)
+            if (
+                (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
+                and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
+                and (decoded_message.obj["data"]["locked"]["value"] is False)
+            ):
+                self.logger.info("project successfully closed")
+                return True
+
+        return False
 
 
 @dataclass
@@ -163,7 +162,7 @@ class SocketIOProjectStateUpdatedWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
                     return (
@@ -183,7 +182,7 @@ class SocketIOOsparcMessagePrinter:
         if not self.include_logger_messages:
             osparc_messages.pop(osparc_messages.index(_OSparcMessages.LOGGER.value))
 
-        if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
             if decoded_message.name in osparc_messages:
                 print("WS Message:", decoded_message.name, decoded_message.obj)
@@ -192,39 +191,48 @@ class SocketIOOsparcMessagePrinter:
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
+    logger: logging.Logger
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
-            # socket.io encodes messages like so
-            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
-                decoded_message = decode_socketio_42_message(message)
-                if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
-                    node_progress_event = retrieve_node_progress_from_decoded_message(
-                        decoded_message
+        # socket.io encodes messages like so
+        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+            decoded_message = decode_socketio_42_message(message)
+            if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
+                node_progress_event = retrieve_node_progress_from_decoded_message(
+                    decoded_message
+                )
+                if node_progress_event.node_id == self.node_id:
+                    new_progress = (
+                        node_progress_event.current_progress
+                        / node_progress_event.total_progress
                     )
-                    if node_progress_event.node_id == self.node_id:
-                        self._current_progress[node_progress_event.progress_type] = (
-                            node_progress_event.current_progress
-                            / node_progress_event.total_progress
-                        )
-                        ctx.logger.info(
+                    if (
+                        node_progress_event.progress_type not in self._current_progress
+                    ) or (
+                        new_progress
+                        != self._current_progress[node_progress_event.progress_type]
+                    ):
+                        self._current_progress[
+                            node_progress_event.progress_type
+                        ] = new_progress
+                        self.logger.info(
                             "current startup progress: %s",
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
-                    return all(
-                        progress_type in self._current_progress
-                        for progress_type in NodeProgressType.required_types_for_started_service()
-                    ) and all(
-                        round(progress, 1) == 1.0
-                        for progress in self._current_progress.values()
-                    )
+                return all(
+                    progress_type in self._current_progress
+                    for progress_type in NodeProgressType.required_types_for_started_service()
+                ) and all(
+                    round(progress, 1) == 1.0
+                    for progress in self._current_progress.values()
+                )
 
-            return False
+        return False
 
 
 def wait_for_pipeline_state(
@@ -305,15 +313,13 @@ def expected_service_running(
     timeout: int,
     press_start_button: bool,
 ) -> Generator[ServiceRunning, None, None]:
-    waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
-    service_running = ServiceRunning(iframe_locator=None)
-    with (
-        log_context(logging.INFO, msg="Waiting for node to run"),
-        websocket.expect_event("framereceived", waiter, timeout=timeout),
-    ):
-        if press_start_button:
-            _trigger_service_start(page, node_id)
-        yield service_running
+    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
+        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+        service_running = ServiceRunning(iframe_locator=None)
+        with websocket.expect_event("framereceived", waiter, timeout=timeout):
+            if press_start_button:
+                _trigger_service_start(page, node_id)
+            yield service_running
 
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
@@ -331,13 +337,11 @@ def wait_for_service_running(
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
 
-    waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id)
-    with (
-        log_context(logging.INFO, msg="Waiting for node to run"),
-        websocket.expect_event("framereceived", waiter, timeout=timeout),
-    ):
-        if press_start_button:
-            _trigger_service_start(page, node_id)
+    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
+        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+        with websocket.expect_event("framereceived", waiter, timeout=timeout):
+            if press_start_button:
+                _trigger_service_start(page, node_id)
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
