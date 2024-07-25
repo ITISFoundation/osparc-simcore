@@ -132,7 +132,10 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
 		echo "--service-key=sim4life-8-0-0-dy" >> $@; \
-		echo "--check-videostreaming" >> $@; \
+		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
+		if [ "$$VIDEOSTREAM" = "y" ]; then \
+			echo "--check-videostreaming" >> $@; \
+		fi; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
