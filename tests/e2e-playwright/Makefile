@@ -146,7 +146,7 @@ test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE)
 	@$(call run_test, $(SLEEPERS_INPUT_FILE), tests/sleepers/test_sleepers.py)
 
 test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE)
-	@$(call run_test, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
+	@$(call run_test_on_chrome, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
 
 test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE)
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
@@ -161,6 +161,16 @@ define run_test
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
+		--headed \
+		$$TEST_ARGS
+endef
+
+define run_test_on_chrome
+	TEST_ARGS=$$(cat $1 | xargs); \
+	echo $$TEST_ARGS; \
+	pytest -s $2 \
+		--color=yes \
+		--browser-channel chrome \
 		--headed \
 		$$TEST_ARGS
 endef
