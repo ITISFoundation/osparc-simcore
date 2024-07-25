@@ -271,7 +271,7 @@ def register(
     def _do() -> AutoRegisteredUser:
         with log_context(
             logging.INFO,
-            f"------> Registering in {product_url=} using {user_name=}/{user_password=}",
+            f"Register in {product_url=} using {user_name=}/{user_password=}",
         ):
             response = page.goto(f"{product_url}")
             assert response
@@ -303,7 +303,7 @@ def log_in_and_out(
 ) -> Iterator[WebSocket]:
     with log_context(
         logging.INFO,
-        f"Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -325,7 +325,7 @@ def log_in_and_out(
         else:
             with log_context(
                 logging.INFO,
-                f"Logging in {product_url=} using {user_name=}/{user_password=}",
+                f"Log in {product_url=} using {user_name=}/{user_password=}",
             ):
                 _user_email_box = page.get_by_test_id("loginUserEmailFld")
                 _user_email_box.click()
@@ -359,7 +359,7 @@ def log_in_and_out(
 
     with log_context(
         logging.INFO,
-        f"Logging out of {product_url=} using {user_name=}/{user_password=}",
+        f"Log out of {product_url=} using {user_name=}/{user_password=}",
     ):
         page.keyboard.press("Escape")
         page.get_by_test_id("userMenuBtn").click()
@@ -392,7 +392,7 @@ def create_new_project_and_delete(
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"Opening project in {product_url=} as {product_billable=}",
+            f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with (
@@ -424,18 +424,18 @@ def create_new_project_and_delete(
     # go back to dashboard and wait for project to close
     with ExitStack() as stack:
         for project_uuid in created_project_uuids:
-            stack.enter_context(
-                log_context(logging.INFO, f"Waiting for closed project {project_uuid=}")
+            ctx = stack.enter_context(
+                log_context(logging.INFO, f"Wait for closed project {project_uuid=}")
             )
             stack.enter_context(
                 log_in_and_out.expect_event(
                     "framereceived",
-                    SocketIOProjectClosedWaiter(),
+                    SocketIOProjectClosedWaiter(ctx.logger),
                     timeout=_PROJECT_CLOSING_TIMEOUT,
                 )
             )
         if created_project_uuids:
-            with log_context(logging.INFO, "Going back to dashboard"):
+            with log_context(logging.INFO, "Go back to dashboard"):
                 page.get_by_test_id("dashboardBtn").click()
                 page.get_by_test_id("confirmDashboardBtn").click()
                 page.get_by_test_id("studiesTabBtn").click()
@@ -443,7 +443,7 @@ def create_new_project_and_delete(
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"Delete project with {project_uuid=} in {product_url=} as {product_billable=}",
         ):
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
