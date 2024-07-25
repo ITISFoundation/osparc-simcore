@@ -92,20 +92,15 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                 # NOTE: MaG says the value might also go down, but it shall definitely change,
                 # if this code proves unsafe we should change it.
                 elapsed_time = arrow.utcnow().datetime - self._initial_bit_rate_time
-                self.logger.info("%s", f"{elapsed_time=}/{self.observation_time=}")
                 if (
                     elapsed_time > self.observation_time
                     and "bitrate" in decoded_message.obj
                 ):
                     current_bitrate = decoded_message.obj["bitrate"]
-                    bitrate_test = bool(
-                        self._initial_bit_rate
-                        > current_bitrate
-                        > self._initial_bit_rate
-                    )
+                    bitrate_test = bool(self._initial_bit_rate != current_bitrate)
                     self.logger.info(
                         "%s",
-                        f"{current_bitrate=} after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not increase sufficiently'}",
+                        f"{current_bitrate=} after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 
