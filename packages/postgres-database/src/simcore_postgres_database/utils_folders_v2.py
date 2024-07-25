@@ -3,7 +3,6 @@ import uuid
 from collections.abc import Iterable
 from enum import Enum
 from functools import reduce
-from os import write
 from typing import Any, ClassVar, Final, TypeAlias, TypedDict
 
 import sqlalchemy as sa
