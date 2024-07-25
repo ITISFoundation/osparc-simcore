@@ -137,7 +137,7 @@ class _BasePermissions:
     ADD_PROJECT_TO_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
 
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
-        # ask odei if it makes sense for the permission on source to be Delete or Write (for sure read is wrong)
+        # TODO: ask OM if it makes sense for the permission on source to be Delete or Write (for sure read is wrong)
         r=True,
         description="apply to folder form which data is copied",
     )
