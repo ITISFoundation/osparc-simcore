@@ -267,7 +267,7 @@ def _validate_folder_name(value: str) -> None:
 ###
 
 
-async def _get_top_most_parent(
+async def _get_top_most_access_rights_entry(
     connection: SAConnection,
     folder_id: _FolderID,
     gid: _GroupID,
@@ -369,18 +369,20 @@ async def _check_folder_and_access(
         raise FolderNotFoundError(folder_id=folder_id)
 
     # check if folder was shared
-    top_most_parent_without_permissions = await _get_top_most_parent(
-        connection,
-        folder_id,
-        gid,
-        permissions=None,
-        enforece_all_permissions=enforece_all_permissions,
+    top_most_access_rights_without_permissions = (
+        await _get_top_most_access_rights_entry(
+            connection,
+            folder_id,
+            gid,
+            permissions=None,
+            enforece_all_permissions=False,
+        )
     )
-    if not top_most_parent_without_permissions:
+    if not top_most_access_rights_without_permissions:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
 
     # check if there are permissions
-    top_most_parent_with_permissions = await _get_top_most_parent(
+    top_most_parent_with_permissions = await _get_top_most_access_rights_entry(
         connection,
         folder_id,
         gid,
