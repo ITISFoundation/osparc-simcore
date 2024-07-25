@@ -10,8 +10,9 @@
 import datetime
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Final
+from typing import Any, Final
 
 import arrow
 from playwright.sync_api import Page, WebSocket, expect
