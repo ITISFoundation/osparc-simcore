@@ -1,4 +1,5 @@
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-variable
 
 import secrets
 from collections.abc import Awaitable, Callable
@@ -34,6 +35,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _requires,
     create_folder,
     folder_delete,
+    folder_move,
     folder_share_or_update_permissions,
     folder_update,
 )
@@ -756,3 +758,323 @@ async def test_folder_delete(
         await folder_delete(connection, folder_id, share_with_error_gid)
 
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
+
+
+async def test_folder_move(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    gid_sharing = _get_random_gid(setup_users_and_groups)
+    gid_user_a = _get_random_gid(setup_users_and_groups, already_picked={gid_sharing})
+    gid_user_b = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_sharing, gid_user_a}
+    )
+
+    ################
+    # CREATE FOLDERS
+    ################
+
+    # Folder structure
+    # (a list of users whom are owners of their folders)
+    # `USER_SHARING` -> no files directory is empty
+    # `USER_A` (`f_user_a`)
+    # `USER_B` (`f_user_b`)
+    # (all below are owned by `USER_SHARING`)
+    # `SHARED_AS_OWNER` (`f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`)
+    # `SHARED_AS_EDITOR` (`f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`)
+    # `SHARED_AS_VIEWER` (`f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`)
+    # `SHARED_AS_NO_ACCESS` (`f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`)
+    # `NOT_SHARED` (`f_not_shared_user_a`, `f_not_shared_user_b`)
+
+    # USER_SHARING contains NO_FOLDERS
+    folder_id_user_sharing = await create_folder(
+        connection, "USER_SHARING", gid_sharing
+    )
+
+    # `USER_A` contains `f_user_a`
+    folder_id_user_a = await create_folder(connection, "USER_A", gid_user_a)
+    folder_id_f_user_a = await create_folder(
+        connection, "f_user_a", gid_user_a, parent=folder_id_user_a
+    )
+
+    # `USER_B` contains `f_user_b`
+    folder_id_user_b = await create_folder(connection, "USER_B", gid_user_b)
+    folder_id_f_user_b = await create_folder(
+        connection, "f_user_b", gid_user_b, parent=folder_id_user_b
+    )
+
+    # SHARED_AS_OWNER contains `f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`
+    folder_id_shared_as_owner = await create_folder(
+        connection, "SHARED_AS_OWNER", gid_sharing
+    )
+    folder_id_f_shared_as_owner_user_a = await create_folder(
+        connection,
+        "f_shared_as_owner_user_a",
+        gid_sharing,
+        parent=folder_id_shared_as_owner,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_owner_user_a,
+        gid_sharing,
+        recipient_gid=gid_user_a,
+        recipient_role=FolderAccessRole.OWNER,
+    )
+    folder_id_f_shared_as_owner_user_b = await create_folder(
+        connection,
+        "f_shared_as_owner_user_b",
+        gid_sharing,
+        parent=folder_id_shared_as_owner,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_owner_user_b,
+        gid_sharing,
+        recipient_gid=gid_user_b,
+        recipient_role=FolderAccessRole.OWNER,
+    )
+
+    # SHARED_AS_EDITOR contains `f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`
+    folder_id_shared_as_editor = await create_folder(
+        connection, "SHARED_AS_EDITOR", gid_sharing
+    )
+    folder_id_f_shared_as_editor_user_a = await create_folder(
+        connection,
+        "f_shared_as_editor_user_a",
+        gid_sharing,
+        parent=folder_id_shared_as_editor,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_editor_user_a,
+        gid_sharing,
+        recipient_gid=gid_user_a,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    folder_id_f_shared_as_editor_user_b = await create_folder(
+        connection,
+        "f_shared_as_editor_user_b",
+        gid_sharing,
+        parent=folder_id_shared_as_editor,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_editor_user_b,
+        gid_sharing,
+        recipient_gid=gid_user_b,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+
+    # SHARED_AS_VIEWER contains `f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`
+    folder_id_shared_as_viewer = await create_folder(
+        connection, "SHARED_AS_VIEWER", gid_sharing
+    )
+    folder_id_f_shared_as_viewer_user_a = await create_folder(
+        connection,
+        "f_shared_as_viewer_user_a",
+        gid_sharing,
+        parent=folder_id_shared_as_viewer,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_viewer_user_a,
+        gid_sharing,
+        recipient_gid=gid_user_a,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+    folder_id_f_shared_as_viewer_user_b = await create_folder(
+        connection,
+        "f_shared_as_viewer_user_b",
+        gid_sharing,
+        parent=folder_id_shared_as_viewer,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_viewer_user_b,
+        gid_sharing,
+        recipient_gid=gid_user_b,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+
+    # SHARED_AS_NO_ACCESS contains `f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`
+    folder_id_shared_as_no_access = await create_folder(
+        connection, "SHARED_AS_NO_ACCESS", gid_sharing
+    )
+    folder_id_f_shared_as_no_access_user_a = await create_folder(
+        connection,
+        "f_shared_as_no_access_user_a",
+        gid_sharing,
+        parent=folder_id_shared_as_no_access,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_no_access_user_a,
+        gid_sharing,
+        recipient_gid=gid_user_a,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+    folder_id_f_shared_as_no_access_user_b = await create_folder(
+        connection,
+        "f_shared_as_no_access_user_b",
+        gid_sharing,
+        parent=folder_id_shared_as_no_access,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_shared_as_no_access_user_b,
+        gid_sharing,
+        recipient_gid=gid_user_b,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+
+    # NOT_SHARED contains `f_not_shared_user_a`, `f_not_shared_user_b`
+    folder_id_not_shared = await create_folder(connection, "NOT_SHARED", gid_sharing)
+
+    #######
+    # TESTS
+    #######
+    async def _move_fails_not_shared_with_error(
+        gid: _GroupID, *, source: _FolderID, destination: _FolderID
+    ) -> None:
+        with pytest.raises(FolderNotSharedWithGidError):
+            await folder_move(
+                connection,
+                source,
+                gid,
+                destination_folder_id=destination,
+            )
+
+    async def _move_fails_insufficient_permissions_error(
+        gid: _GroupID, *, source: _FolderID, destination: _FolderID
+    ) -> None:
+        with pytest.raises(InsufficientPermissionsError):
+            await folder_move(
+                connection,
+                source,
+                gid,
+                destination_folder_id=destination,
+            )
+
+    async def _move_back_and_forth(
+        gid: _GroupID,
+        *,
+        source: _FolderID,
+        destination: _FolderID,
+        source_parent: _FolderID,
+    ) -> None:
+        async def _assert_folder_permissions(
+            connection: SAConnection,
+            *,
+            folder_id: _FolderID,
+            gid: _GroupID,
+            parent_folder: _FolderID,
+        ) -> None:
+            result = await connection.execute(
+                sa.select([folders_access_rights.c.folder_id])
+                .where(folders_access_rights.c.folder_id == folder_id)
+                .where(folders_access_rights.c.gid == gid)
+                .where(folders_access_rights.c.traversal_parent_id == parent_folder)
+            )
+            rows = await result.fetchall()
+            assert rows is not None
+            assert len(rows) == 1
+
+        # check parent should be parent_before
+        await _assert_folder_permissions(
+            connection, folder_id=source, gid=gid, parent_folder=source_parent
+        )
+
+        await folder_move(
+            connection,
+            source,
+            gid,
+            destination_folder_id=destination,
+        )
+
+        # check parent should be destination
+        await _assert_folder_permissions(
+            connection, folder_id=source, gid=gid, parent_folder=destination
+        )
+
+        await folder_move(
+            connection,
+            source,
+            gid,
+            destination_folder_id=source_parent,
+        )
+
+        # check parent should be parent_before
+        await _assert_folder_permissions(
+            connection, folder_id=source, gid=gid, parent_folder=source_parent
+        )
+
+    # 1. not working:
+    # - `USER_A/f_user_a -> USER_B`
+    await _move_fails_not_shared_with_error(
+        gid_user_a, source=folder_id_f_user_a, destination=folder_id_user_b
+    )
+    # - `USER_B.f_user_b -/> USER_A`
+    await _move_fails_not_shared_with_error(
+        gid_user_b, source=folder_id_f_user_b, destination=folder_id_user_a
+    )
+    # - `USER_A/f_user_a -> NOT_SHARED`
+    await _move_fails_not_shared_with_error(
+        gid_user_a, source=folder_id_f_user_a, destination=folder_id_not_shared
+    )
+    # - `USER_B/f_user_b -> NOT_SHARED`
+    await _move_fails_not_shared_with_error(
+        gid_user_b, source=folder_id_f_user_b, destination=folder_id_not_shared
+    )
+    # - `USER_A/f_user_a -> f_shared_as_no_access_user_a`
+    await _move_fails_insufficient_permissions_error(
+        gid_user_a,
+        source=folder_id_f_user_a,
+        destination=folder_id_f_shared_as_no_access_user_a,
+    )
+    # - `USER_B/f_user_b -> f_shared_as_no_access_user_b`
+    await _move_fails_insufficient_permissions_error(
+        gid_user_b,
+        source=folder_id_f_user_b,
+        destination=folder_id_f_shared_as_no_access_user_b,
+    )
+    # - `USER_A/f_user_a -> f_shared_as_viewer_user_a`
+    await _move_fails_insufficient_permissions_error(
+        gid_user_a,
+        source=folder_id_f_user_a,
+        destination=folder_id_f_shared_as_viewer_user_a,
+    )
+    # - `USER_B/f_user_b -> f_shared_as_viewer_user_b`
+    await _move_fails_insufficient_permissions_error(
+        gid_user_b,
+        source=folder_id_f_user_b,
+        destination=folder_id_f_shared_as_viewer_user_b,
+    )
+
+    # 2. allowed oeprations:
+    # - `USER_A/f_user_a -> f_shared_as_editor_user_a` (& reverse)
+    await _move_back_and_forth(
+        gid_user_a,
+        source=folder_id_f_user_a,
+        destination=folder_id_f_shared_as_editor_user_a,
+        source_parent=folder_id_user_a,
+    )
+    # - `USER_B/f_user_b -> f_shared_as_editor_user_b` (& reverse)
+    await _move_back_and_forth(
+        gid_user_b,
+        source=folder_id_f_user_b,
+        destination=folder_id_f_shared_as_editor_user_b,
+        source_parent=folder_id_user_b,
+    )
+    # - `USER_A/f_user_a -> f_shared_as_owner_user_a` (& reverse)
+    await _move_back_and_forth(
+        gid_user_a,
+        source=folder_id_f_user_a,
+        destination=folder_id_f_shared_as_owner_user_a,
+        source_parent=folder_id_user_a,
+    )
+    # - `USER_B/f_user_b -> f_shared_as_owner_user_b` (& reverse)
+    await _move_back_and_forth(
+        gid_user_b,
+        source=folder_id_f_user_b,
+        destination=folder_id_f_shared_as_owner_user_b,
+        source_parent=folder_id_user_b,
+    )

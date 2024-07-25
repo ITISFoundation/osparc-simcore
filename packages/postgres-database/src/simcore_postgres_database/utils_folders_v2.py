@@ -101,7 +101,7 @@ def _make_permissions(
     return _FolderPermissions(read=r, write=w, delete=d)
 
 
-def _remove_false_permissions(permissions: _FolderPermissions) -> dict:
+def _only_true_permissions(permissions: _FolderPermissions) -> dict:
     return {k: v for k, v in permissions.items() if v is True}
 
 
@@ -128,11 +128,11 @@ class _BasePermissions:
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
         r=True, description="apply to folder form which data is copied"
     )
-    _MOVE_FOLDER_TARGET: ClassVar[_FolderPermissions] = _make_permissions(
+    _MOVE_FOLDER_DESTINATION: ClassVar[_FolderPermissions] = _make_permissions(
         w=True, description="apply to folder to which data will be copied"
     )
-    MOVE_VOLDER: ClassVar[_FolderPermissions] = _or_dicts_list(
-        [_MOVE_FOLDER_SOURCE, _MOVE_FOLDER_TARGET]
+    MOVE_FOLDER: ClassVar[_FolderPermissions] = _or_dicts_list(
+        [_MOVE_FOLDER_SOURCE, _MOVE_FOLDER_DESTINATION]
     )
 
     SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
@@ -154,7 +154,7 @@ EDITOR_PERMISSIONS: _FolderPermissions = _or_dicts_list(
         VIEWER_PERMISSIONS,
         _BasePermissions.CREATE_FOLDER,
         _BasePermissions.ADD_PROJECT_TO_FOLDER,
-        _BasePermissions.MOVE_VOLDER,
+        _BasePermissions.MOVE_FOLDER,
     ]
 )
 OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
@@ -393,7 +393,7 @@ async def _check_folder_and_access(
         raise InsufficientPermissionsError(
             folder_id=folder_id,
             gid=gid,
-            permissions=_remove_false_permissions(permissions),
+            permissions=_only_true_permissions(permissions),
         )
 
 
@@ -580,8 +580,49 @@ async def folder_delete(
         await folder_delete(connection, child_folder_id, gid)
 
 
+async def folder_move(
+    connection: SAConnection,
+    source_folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    destination_folder_id: _FolderID,
+    required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions._MOVE_FOLDER_SOURCE  # pylint:disable=protected-access # noqa: SLF001
+    ),
+    required_permissions_destination: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions._MOVE_FOLDER_DESTINATION  # pylint:disable=protected-access # noqa: SLF001
+    ),
+) -> None:
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=source_folder_id,
+            gid=gid,
+            permissions=required_permissions_source,
+            enforece_all_permissions=False,
+        )
+        await _check_folder_and_access(
+            connection,
+            folder_id=destination_folder_id,
+            gid=gid,
+            permissions=required_permissions_destination,
+            enforece_all_permissions=False,
+        )
+
+        # set new traversa_parent_id on the source_folder_id which is equal to destination_folder_id
+        await connection.execute(
+            folders_access_rights.update()
+            .where(
+                sa.and_(
+                    folders_access_rights.c.folder_id == source_folder_id,
+                    folders_access_rights.c.gid == gid,
+                )
+            )
+            .values(traversal_parent_id=destination_folder_id)
+        )
+
+
 # TODO: add the following
-# - move folder
 # - add project in folder
 # - remove project form folder
 # - list folders
