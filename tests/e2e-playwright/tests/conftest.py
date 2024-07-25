@@ -225,14 +225,6 @@ def autoscaled(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def service_test_id(request: pytest.FixtureRequest) -> str:
-    if test_id := request.config.getoption("--service-test-id"):
-        assert isinstance(test_id, str)
-        return test_id
-    return os.environ["SERVICE_TEST_ID"]
-
-
-@pytest.fixture(scope="session")
 def service_key(request: pytest.FixtureRequest) -> str:
     if key := request.config.getoption("--service-key"):
         assert isinstance(key, str)
