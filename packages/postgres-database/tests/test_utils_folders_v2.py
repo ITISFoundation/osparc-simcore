@@ -335,6 +335,9 @@ async def test__get_top_most_access_rights_entry(
             target_folder_id,
             gid,
             permissions=permissions,
+            # NOTE: this is the more restricitve case
+            # and we test against exact user roles,
+            # the APIs use only a subset of the permissions ususally set to True
             enforece_all_permissions=True,
         )
         assert resolved_parent
