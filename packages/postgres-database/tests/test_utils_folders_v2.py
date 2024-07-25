@@ -11,6 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders import folders, folders_access_rights
+from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.utils_folders_v2 import (
     _FOLDER_NAME_MAX_LENGTH,
     _FOLDER_NAMES_RESERVED_WINDOWS,
@@ -18,6 +19,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     EDITOR_PERMISSIONS,
     OWNER_PERMISSIONS,
     VIEWER_PERMISSIONS,
+    CannotMoveFolderSharedViaNonPrimaryGroupError,
     FolderAccessRole,
     FolderAlreadyExistsError,
     FolderNotFoundError,
@@ -316,12 +318,12 @@ async def test__get_top_most_access_rights_entry(
     )
     await _assert_folder_entires(connection, folder_count=5, access_rights_count=10)
 
-    # Folder structure: `FOLDER_NAME(OWNER)[SHARED_WITH]`:
-    # - root_folder(owner_a)[owner_b,owner_c,owner_d, editor_a]
-    #   - b_folder(owner_b)
-    #   - c_folder(owner_c):
-    #       - d_folder(owner_d)[editor_b]:
-    #           - editor_a_folder(editor_a)
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    #  `root_folder`(`owner_a`)[`owner_b`,`owner_c`,`owner_d`,`editor_a`]
+    #   - `b_folder`(`owner_b`)
+    #   - `c_folder`(`owner_c`):
+    #       - `d_folder`(`owner_d`)[`editor_b`]:
+    #           - `editor_a_folder`(`editor_a`)
 
     # check top most parent resolution
     async def _assert_reloves_to(
@@ -388,10 +390,6 @@ async def test__get_top_most_access_rights_entry(
         expected_folder_id=d_folder_id,
         expected_gids={editor_b_gid},
     )
-
-    # TODO: we need a test when the sharing of a folder happens with someone it needs to reoslve properly with the new owner and not others
-
-    # TODO: after moving is added add a test to test that this till works when parents are changed
 
 
 async def test_folder_share_or_update_permissions(
@@ -773,19 +771,27 @@ async def test_folder_move(
     # CREATE FOLDERS
     ################
 
-    # Folder structure
-    # (a list of users whom are owners of their folders)
-    # `USER_SHARING` -> no files directory is empty
-    # `USER_A` (`f_user_a`)
-    # `USER_B` (`f_user_b`)
-    # (all below are owned by `USER_SHARING`)
-    # `SHARED_AS_OWNER` (`f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`)
-    # `SHARED_AS_EDITOR` (`f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`)
-    # `SHARED_AS_VIEWER` (`f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`)
-    # `SHARED_AS_NO_ACCESS` (`f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`)
-    # `NOT_SHARED` (`f_not_shared_user_a`, `f_not_shared_user_b`)
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # `USER_SHARING`(`gid_sharing`)
+    # `USER_A`(`gid_user_a`):
+    #   - `f_user_a`
+    # `USER_B`(`gid_user_b`):
+    #   - `f_user_b`
+    # `SHARED_AS_OWNER`(`gid_sharing`):
+    #   - `f_shared_as_owner_user_a`[`gid_user_a`]
+    #   - `f_shared_as_owner_user_b`[`gid_user_b`]
+    # `SHARED_AS_EDITOR`(`gid_sharing`):
+    #   - `f_shared_as_editor_user_a`[`gid_user_a`]
+    #   - `f_shared_as_editor_user_b`[`gid_user_b`]
+    # `SHARED_AS_VIEWER`(`gid_sharing`):
+    #   - `f_shared_as_viewer_user_a`[`gid_user_a`]
+    #   - `f_shared_as_viewer_user_b`[`gid_user_b`]
+    # `SHARED_AS_NO_ACCESS`(`gid_sharing`):
+    #   - `f_shared_as_no_access_user_a`[`gid_user_a`]
+    #   - `f_shared_as_no_access_user_b`[`gid_user_b`]
+    # `NOT_SHARED`(`gid_sharing`)
 
-    # USER_SHARING contains NO_FOLDERS
+    # `USER_SHARING`
     folder_id_user_sharing = await create_folder(
         connection, "USER_SHARING", gid_sharing
     )
@@ -802,7 +808,7 @@ async def test_folder_move(
         connection, "f_user_b", gid_user_b, parent=folder_id_user_b
     )
 
-    # SHARED_AS_OWNER contains `f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`
+    # `SHARED_AS_OWNER` contains `f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`
     folder_id_shared_as_owner = await create_folder(
         connection, "SHARED_AS_OWNER", gid_sharing
     )
@@ -833,7 +839,7 @@ async def test_folder_move(
         recipient_role=FolderAccessRole.OWNER,
     )
 
-    # SHARED_AS_EDITOR contains `f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`
+    # `SHARED_AS_EDITOR` contains `f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`
     folder_id_shared_as_editor = await create_folder(
         connection, "SHARED_AS_EDITOR", gid_sharing
     )
@@ -864,7 +870,7 @@ async def test_folder_move(
         recipient_role=FolderAccessRole.EDITOR,
     )
 
-    # SHARED_AS_VIEWER contains `f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`
+    # `SHARED_AS_VIEWER` contains `f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`
     folder_id_shared_as_viewer = await create_folder(
         connection, "SHARED_AS_VIEWER", gid_sharing
     )
@@ -895,7 +901,7 @@ async def test_folder_move(
         recipient_role=FolderAccessRole.VIEWER,
     )
 
-    # SHARED_AS_NO_ACCESS contains `f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`
+    # `SHARED_AS_NO_ACCESS` contains `f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`
     folder_id_shared_as_no_access = await create_folder(
         connection, "SHARED_AS_NO_ACCESS", gid_sharing
     )
@@ -926,7 +932,7 @@ async def test_folder_move(
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
 
-    # NOT_SHARED contains `f_not_shared_user_a`, `f_not_shared_user_b`
+    # `NOT_SHARED`
     folder_id_not_shared = await create_folder(connection, "NOT_SHARED", gid_sharing)
 
     #######
@@ -1077,4 +1083,65 @@ async def test_folder_move(
         source=folder_id_f_user_b,
         destination=folder_id_f_shared_as_owner_user_b,
         source_parent=folder_id_user_b,
+    )
+
+
+async def test_move_group_non_standard_groups_raise_error(
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+):
+    gid_sharing = _get_random_gid(setup_users_and_groups)
+    gid_primary = (await create_fake_group(connection, type=GroupType.PRIMARY)).gid
+    gid_everyone = await connection.scalar(
+        sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
+    )
+    assert gid_everyone
+    gid_standard = (await create_fake_group(connection, type=GroupType.STANDARD)).gid
+
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # `SHARING_USER`(`gid_sharing`)[`gid_primary`,`gid_everyone`,`gid_standard`]
+    # `PRIMARY`(`gid_primary`)
+    # `EVERYONE`(`gid_everyone`)
+    # `STANDARD`(`gid_standard`)
+
+    folder_id_sharing_user = await create_folder(
+        connection, "SHARING_USER", gid_sharing
+    )
+    for gid_to_share_with in (gid_primary, gid_everyone, gid_standard):
+        await folder_share_or_update_permissions(
+            connection,
+            folder_id_sharing_user,
+            gid_sharing,
+            recipient_gid=gid_to_share_with,
+            recipient_role=FolderAccessRole.EDITOR,
+        )
+    folder_id_primary = await create_folder(connection, "PRIMARY", gid_primary)
+    folder_id_everyone = await create_folder(connection, "EVERYONE", gid_everyone)
+    folder_id_standard = await create_folder(connection, "STANDARD", gid_standard)
+
+    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exec:
+        await folder_move(
+            connection,
+            folder_id_everyone,
+            gid_everyone,
+            destination_folder_id=folder_id_sharing_user,
+        )
+    assert "EVERYONE" in f"{exec.value}"
+
+    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exec:
+        await folder_move(
+            connection,
+            folder_id_standard,
+            gid_standard,
+            destination_folder_id=folder_id_sharing_user,
+        )
+    assert "STANDARD" in f"{exec.value}"
+
+    # primary gorup does not raise error
+    await folder_move(
+        connection,
+        folder_id_primary,
+        gid_primary,
+        destination_folder_id=folder_id_sharing_user,
     )

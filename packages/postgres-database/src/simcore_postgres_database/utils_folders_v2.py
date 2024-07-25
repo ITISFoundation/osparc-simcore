@@ -15,6 +15,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
 
 from .models.folders import folders, folders_access_rights
+from .models.groups import GroupType, groups
 
 _ProjectID: TypeAlias = uuid.UUID
 _GroupID: TypeAlias = PositiveInt
@@ -74,6 +75,16 @@ class GroupIdDoesNotExistError(BaseCreateFlderError):
     msg_template = "Provided group id '{gid}' does not exist "
 
 
+class BaseMoveFolderError(FoldersError):
+    pass
+
+
+class CannotMoveFolderSharedViaNonPrimaryGroupError(BaseMoveFolderError):
+    msg_template = (
+        "deltected group_type={group_type} for gid={gid} which is not allowed"
+    )
+
+
 ###
 ### UTILS ACCESS LAYER
 ###
@@ -126,7 +137,9 @@ class _BasePermissions:
     ADD_PROJECT_TO_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
 
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
-        r=True, description="apply to folder form which data is copied"
+        # ask odei if it makes sense for the permission on source to be Delete or Write (for sure read is wrong)
+        r=True,
+        description="apply to folder form which data is copied",
     )
     _MOVE_FOLDER_DESTINATION: ClassVar[_FolderPermissions] = _make_permissions(
         w=True, description="apply to folder to which data will be copied"
@@ -356,12 +369,7 @@ async def _check_folder_and_access(
     *,
     permissions: _FolderPermissions,
     enforece_all_permissions: bool,
-) -> None:
-    """Checks the following:
-    - base folder exists
-    - folder was shared with gid
-    - gid has sufficient permissions for the operation
-    """
+) -> RowProxy:
     folder_entry: int | None = await connection.scalar(
         sa.select([folders.c.id]).where(folders.c.id == folder_id)
     )
@@ -395,6 +403,8 @@ async def _check_folder_and_access(
             gid=gid,
             permissions=_only_true_permissions(permissions),
         )
+
+    return top_most_parent_with_permissions
 
 
 async def create_folder(
@@ -594,13 +604,23 @@ async def folder_move(
     ),
 ) -> None:
     async with connection.begin():
-        await _check_folder_and_access(
+        source_access_entry = await _check_folder_and_access(
             connection,
             folder_id=source_folder_id,
             gid=gid,
             permissions=required_permissions_source,
             enforece_all_permissions=False,
         )
+
+        source_access_gid = source_access_entry["gid"]
+        group_type: GroupType | None = await connection.scalar(
+            sa.select([groups.c.type]).where(groups.c.gid == source_access_gid)
+        )
+        if group_type is None or group_type != GroupType.PRIMARY:
+            raise CannotMoveFolderSharedViaNonPrimaryGroupError(
+                group_type=group_type, gid=source_access_gid
+            )
+
         await _check_folder_and_access(
             connection,
             folder_id=destination_folder_id,
