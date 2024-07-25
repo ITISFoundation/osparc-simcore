@@ -96,11 +96,11 @@ class SocketIOEvent:
     obj: dict[str, Any]
 
 
-_SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
-    data = json.loads(message.removeprefix(_SOCKETIO_MESSAGE_PREFIX))
+    data = json.loads(message.removeprefix(SOCKETIO_MESSAGE_PREFIX))
     return SocketIOEvent(name=data[0], obj=data[1])
 
 
@@ -140,7 +140,7 @@ class SocketIOProjectClosedWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if (
                     (
@@ -163,7 +163,7 @@ class SocketIOProjectStateUpdatedWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
                     return (
@@ -183,7 +183,7 @@ class SocketIOOsparcMessagePrinter:
         if not self.include_logger_messages:
             osparc_messages.pop(osparc_messages.index(_OSparcMessages.LOGGER.value))
 
-        if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
             if decoded_message.name in osparc_messages:
                 print("WS Message:", decoded_message.name, decoded_message.obj)
@@ -200,7 +200,7 @@ class SocketIONodeProgressCompleteWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                     node_progress_event = retrieve_node_progress_from_decoded_message(
