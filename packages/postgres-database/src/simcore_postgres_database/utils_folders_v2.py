@@ -131,7 +131,7 @@ def _or_dicts_list(dicts: Iterable[_FolderPermissions]) -> _FolderPermissions:
 
 class _BasePermissions:
     LIST_FOLDERS: ClassVar[_FolderPermissions] = _make_permissions(r=True)
-    LIST_PROJECTS: ClassVar[_FolderPermissions] = _make_permissions(r=True)
+    # NOTE `LIST_PROJECTS` bypasses these access rights and always lists all projects in the fodler
 
     CREATE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
     ADD_PROJECT_TO_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
@@ -159,7 +159,6 @@ NO_ACCESS_PERMISSIONS: _FolderPermissions = _make_permissions()
 VIEWER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
     [
         _BasePermissions.LIST_FOLDERS,
-        _BasePermissions.LIST_PROJECTS,
     ]
 )
 EDITOR_PERMISSIONS: _FolderPermissions = _or_dicts_list(

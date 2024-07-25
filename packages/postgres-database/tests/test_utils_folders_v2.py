@@ -1120,23 +1120,23 @@ async def test_move_group_non_standard_groups_raise_error(
     folder_id_everyone = await create_folder(connection, "EVERYONE", gid_everyone)
     folder_id_standard = await create_folder(connection, "STANDARD", gid_standard)
 
-    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exec:
+    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exc:
         await folder_move(
             connection,
             folder_id_everyone,
             gid_everyone,
             destination_folder_id=folder_id_sharing_user,
         )
-    assert "EVERYONE" in f"{exec.value}"
+    assert "EVERYONE" in f"{exc.value}"
 
-    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exec:
+    with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exc:
         await folder_move(
             connection,
             folder_id_standard,
             gid_standard,
             destination_folder_id=folder_id_sharing_user,
         )
-    assert "STANDARD" in f"{exec.value}"
+    assert "STANDARD" in f"{exc.value}"
 
     # primary gorup does not raise error
     await folder_move(
