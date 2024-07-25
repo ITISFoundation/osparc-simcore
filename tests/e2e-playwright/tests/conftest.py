@@ -311,7 +311,13 @@ def log_in_and_out(
         if newReleaseCloseBtnLocator.is_visible():
             newReleaseCloseBtnLocator.click()
 
-    with page.expect_websocket() as ws_info:
+    with (
+        log_context(
+            logging.INFO,
+            f"Log in {product_url} using {user_name=}/{user_password=}/{auto_register=}",
+        ),
+        page.expect_websocket() as ws_info,
+    ):
         if auto_register:
             register()
         else:
@@ -343,9 +349,6 @@ def log_in_and_out(
     quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
-    print(
-        f"------> Successfully logged in {product_url=} using {user_name=}/{user_password=}"
-    )
 
     yield ws
 
@@ -502,7 +505,7 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"------> Starting computation in {product_url=}...",
+            f"Start computation in {product_url=}...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(
@@ -541,7 +544,7 @@ def start_and_stop_pipeline(
             started_pipeline_ids.append(pipeline_id)
 
             ctx.messages.done = (
-                f"------> Started computation with {pipeline_id=} in {product_url=}..."
+                f"Started computation with {pipeline_id=} in {product_url=}..."
             )
 
             return decode_socketio_42_message(event.value)
@@ -551,11 +554,6 @@ def start_and_stop_pipeline(
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:
         with log_context(
-            logging.INFO,
-            (
-                "<------ Stopping computation with %s",
-                "<------ Stopped computation with %s",
-            ),
-            f"{pipeline_id=} in {product_url=}...",
+            logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"
         ):
             api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
