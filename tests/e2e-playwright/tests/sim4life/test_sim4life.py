@@ -15,6 +15,7 @@ from playwright.sync_api import Page, WebSocket, expect
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
     ServiceType,
     wait_for_service_running,
 )
@@ -28,6 +29,9 @@ _S4L_DOCKER_PULLING_MAX_TIME: Final[int] = 10 * MINUTE
 _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
 )
+
+_S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
 
 
 def test_sim4life(
@@ -63,19 +67,24 @@ def test_sim4life(
             press_start_button=False,
         )
 
-    # NOTE: here the startup screen is up there. from the test it seems the default timeout is enough.
+    # NOTE: the startup screen is shown and typically takes some time to complete
     # Wait until grid is shown
     with log_context(logging.INFO, "Interact with S4l"):
-        s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click()
+        s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click(
+            timeout=_S4L_STARTUP_SCREEN_MAX_TIME
+        )
         page.wait_for_timeout(3000)
         # s4l_iframe.get_by_role("img", name="Remote render").click(button="right")
 
     if check_videostreaming:
         with log_context(logging.INFO, "Check videostreaming works"):
-            page.wait_for_timeout(15000)
+            page.wait_for_timeout(_S4L_STREAMING_ESTABLISHMENT_MAX_TIME)
             s4l_iframe.locator("video").click()
             expect(
-                s4l_iframe.locator("video"), "videostreaming is not working!!"
+                s4l_iframe.locator("video"),
+                "videostreaming is not established. "
+                "TIP: if using playwright integrated open source chromIUM, "
+                "webkit or firefox this is expected, switch to chrome/msedge!!",
             ).to_be_visible()
             page.wait_for_timeout(3000)
             # here we would need the osparc-test-id to get to the bitrate and check that it grows,
