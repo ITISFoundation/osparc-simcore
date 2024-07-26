@@ -137,8 +137,7 @@
         "selector": "osparc-test-id=billingCenterWindow",
         "action": "close"
       },
-      "title": "Credits Indicator",
-      "text": "Once the payment is validated, the Credits will be added to your Credit Account."
+      "text": "Once the payment is validated, the Credits will be added to your Credit Account and they will be ready to be used."
     }]
   }
 }
