@@ -42,8 +42,8 @@ async def list_datasets(
 ) -> Page[DatasetsOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
-    assert raw_params.limit  # nosec
-    assert raw_params.offset  # nosec
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
@@ -75,8 +75,8 @@ async def list_dataset_top_level_files(
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
-    assert raw_params.limit  # nosec
-    assert raw_params.offset  # nosec
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_dataset(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
@@ -109,8 +109,8 @@ async def list_dataset_collection_files(
 ) -> Page[FileMetaDataOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
-    assert raw_params.limit  # nosec
-    assert raw_params.offset  # nosec
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_collection(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
