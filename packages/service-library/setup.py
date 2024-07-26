@@ -38,6 +38,7 @@ SETUP = {
     "python_requires": "~=3.10",
     "install_requires": tuple(PROD_REQUIREMENTS),
     "packages": find_packages(where="src"),
+    "package_data": {"": ["py.typed"]},
     "package_dir": {"": "src"},
     "test_suite": "tests",
     "tests_require": tuple(TEST_REQUIREMENTS),
