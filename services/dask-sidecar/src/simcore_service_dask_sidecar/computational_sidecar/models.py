@@ -1,6 +1,6 @@
 import re
 
-from models_library.basic_types import VERSION_RE
+from models_library.basic_regex import VERSION_RE
 from models_library.services import ServiceMetaDataPublished
 from packaging import version
 from pydantic import BaseModel, ByteSize, Extra, Field, validator
