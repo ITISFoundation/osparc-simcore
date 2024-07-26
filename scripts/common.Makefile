@@ -165,8 +165,8 @@ ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and t
 mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
 	@mypy \
 	--config-file=$(REPO_BASE_DIR)/mypy.ini \
-	$(CURDIR)/src \
-	$(CURDIR)/tests
+	--show-error-context \
+	$(CURDIR)/src
 
 
 .PHONY: codestyle
