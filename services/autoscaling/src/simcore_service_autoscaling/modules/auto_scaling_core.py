@@ -244,7 +244,7 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(  # type: ignore
+        cast(
             set[InstanceTypeType],
             set(
                 app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
