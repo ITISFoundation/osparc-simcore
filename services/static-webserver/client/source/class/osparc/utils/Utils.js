@@ -91,6 +91,64 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 110000,
 
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    forceRatioAfterLoad: function(image, force ="width", maxDimension = null) {
+      image.set({
+        scale: true,
+        allowStretchX: true,
+        allowStretchY: true,
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      const recheckSize = () => {
+        const source = image.getSource();
+        if (source) {
+          const srcWidth = qx.io.ImageLoader.getWidth(source);
+          const srcHeight = qx.io.ImageLoader.getHeight(source);
+          if (srcWidth && srcHeight) {
+            const aspectRatio = srcWidth/srcHeight;
+            switch (force) {
+              case "width": {
+                const newHeight = srcWidth/aspectRatio;
+                if (maxDimension) {
+                  image.set({
+                    maxHeight: parseInt(newHeight)
+                  });
+                } else {
+                  image.set({
+                    height: parseInt(newHeight)
+                  });
+                }
+                break;
+              }
+              case "height": {
+                const newWidth = srcHeight*aspectRatio;
+                if (maxDimension) {
+                  image.set({
+                    maxWidth: parseInt(newWidth)
+                  });
+                } else {
+                  image.set({
+                    width: parseInt(newWidth)
+                  });
+                }
+                break;
+              }
+            }
+          }
+        }
+      };
+      [
+        "appear",
+        "loaded"
+      ].forEach(eventName => {
+        image.addListener(eventName, () => recheckSize(), this);
+      });
+    },
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,

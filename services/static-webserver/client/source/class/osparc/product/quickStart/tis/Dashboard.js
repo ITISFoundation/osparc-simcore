@@ -32,11 +32,9 @@ qx.Class.define("osparc.product.quickStart.tis.Dashboard", {
       const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);
 
-      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/dashboard.png").set({
-        alignX: "center",
-        scale: true,
-        width: osparc.product.quickStart.SlidesBase.CONTENT_WIDTH,
-        height: 235
+      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/dashboard.png");
+      osparc.utils.Utils.forceRatioAfterLoad(image, "width", {
+        maxWidth: osparc.product.quickStart.SlidesBase.CONTENT_WIDTH
       });
       this._add(image);
 
