@@ -1854,6 +1854,3 @@ async def test_folder_list_shared_with_different_permissions(
             ),
         },
     )
-
-
-# TODO: add test to move folder in "root" None
