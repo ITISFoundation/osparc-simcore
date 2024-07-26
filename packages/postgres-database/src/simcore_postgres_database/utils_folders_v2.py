@@ -128,7 +128,7 @@ _ALL_PERMISSION_KEYS: Final[set[str]] = {"read", "write", "delete"}
 
 
 def _or_reduce(x: _FolderPermissions, y: _FolderPermissions) -> _FolderPermissions:
-    return {key: x[key] or y[key] for key in _ALL_PERMISSION_KEYS}
+    return {key: x[key] or y[key] for key in _ALL_PERMISSION_KEYS}  # type: ignore
 
 
 def _or_dicts_list(dicts: Iterable[_FolderPermissions]) -> _FolderPermissions:
@@ -414,7 +414,7 @@ async def _check_folder_and_access(
     return top_most_parent_with_permissions
 
 
-async def create_folder(
+async def folder_create(
     connection: SAConnection,
     name: str,
     gid: _GroupID,

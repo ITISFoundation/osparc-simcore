@@ -39,8 +39,8 @@ from simcore_postgres_database.utils_folders_v2 import (
     _GroupID,
     _ProjectID,
     _requires,
-    create_folder,
     folder_add_project,
+    folder_create,
     folder_delete,
     folder_move,
     folder_remove_project,
@@ -119,7 +119,7 @@ def test__requires_permissions(
 )
 async def test_folder_create_wrong_folder_name(invalid_name: str):
     with pytest.raises(InvalidFolderNameError):
-        await create_folder(Mock(), invalid_name, Mock())
+        await folder_create(Mock(), invalid_name, Mock())
 
 
 def test__get_where_clause():
@@ -253,18 +253,18 @@ async def test_create_folder(
     missing_gid = 10202023302
     await _assert_folder_entires(connection, folder_count=0)
     with pytest.raises(GroupIdDoesNotExistError):
-        await create_folder(connection, "f1", missing_gid)
+        await folder_create(connection, "f1", missing_gid)
     await _assert_folder_entires(connection, folder_count=0)
 
     # create a folder ana subfolder of the same name
-    f1_folder_id = await create_folder(connection, "f1", owner_gid)
+    f1_folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
-    await create_folder(connection, "f1", owner_gid, parent=f1_folder_id)
+    await folder_create(connection, "f1", owner_gid, parent=f1_folder_id)
     await _assert_folder_entires(connection, folder_count=2)
 
     # inserting already existing folder fails
     with pytest.raises(FolderAlreadyExistsError):
-        await create_folder(connection, "f1", owner_gid)
+        await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=2)
 
 
@@ -295,7 +295,7 @@ async def test__get_top_most_access_rights_entry(
     )
 
     # share folder with all owners
-    root_folder_id = await create_folder(connection, "root_folder", owner_a_gid)
+    root_folder_id = await folder_create(connection, "root_folder", owner_a_gid)
     for other_owner_gid in (owner_b_gid, owner_c_gid, owner_d_gid):
         await folder_share_or_update_permissions(
             connection,
@@ -314,16 +314,16 @@ async def test__get_top_most_access_rights_entry(
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
 
     # create folders
-    b_folder_id = await create_folder(
+    b_folder_id = await folder_create(
         connection, "b_folder", owner_b_gid, parent=root_folder_id
     )
-    c_folder_id = await create_folder(
+    c_folder_id = await folder_create(
         connection, "c_folder", owner_c_gid, parent=root_folder_id
     )
-    d_folder_id = await create_folder(
+    d_folder_id = await folder_create(
         connection, "d_folder", owner_d_gid, parent=c_folder_id
     )
-    editor_a_folder_id = await create_folder(
+    editor_a_folder_id = await folder_create(
         connection, "editor_a_folder", editor_a_gid, parent=d_folder_id
     )
     await _assert_folder_entires(connection, folder_count=5, access_rights_count=9)
@@ -452,7 +452,7 @@ async def test_folder_share_or_update_permissions(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. share existing folder with all possible roles
-    folder_id = await create_folder(connection, "f1", owner_gid)
+    folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_folder_permissions(
         connection, folder_id=folder_id, gid=owner_gid, role=FolderAccessRole.OWNER
@@ -591,7 +591,7 @@ async def test_folder_update(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner updates created fodler
-    folder_id = await create_folder(connection, "f1", owner_gid)
+    folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
@@ -719,14 +719,14 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner deletes folder
-    folder_id = await create_folder(connection, "f1", owner_gid)
+    folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_delete(connection, folder_id, owner_gid)
     await _assert_folder_entires(connection, folder_count=0)
 
     # 3. other owners can delete the folder
-    folder_id = await create_folder(connection, "f1", owner_gid)
+    folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
@@ -741,7 +741,7 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 4. non owner users cannot delete the folder
-    folder_id = await create_folder(connection, "f1", owner_gid)
+    folder_id = await folder_create(connection, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
@@ -811,27 +811,27 @@ async def test_folder_move(
     # `NOT_SHARED`(`gid_sharing`)
 
     # `USER_SHARING`
-    folder_id_user_sharing = await create_folder(
+    folder_id_user_sharing = await folder_create(
         connection, "USER_SHARING", gid_sharing
     )
 
     # `USER_A` contains `f_user_a`
-    folder_id_user_a = await create_folder(connection, "USER_A", gid_user_a)
-    folder_id_f_user_a = await create_folder(
+    folder_id_user_a = await folder_create(connection, "USER_A", gid_user_a)
+    folder_id_f_user_a = await folder_create(
         connection, "f_user_a", gid_user_a, parent=folder_id_user_a
     )
 
     # `USER_B` contains `f_user_b`
-    folder_id_user_b = await create_folder(connection, "USER_B", gid_user_b)
-    folder_id_f_user_b = await create_folder(
+    folder_id_user_b = await folder_create(connection, "USER_B", gid_user_b)
+    folder_id_f_user_b = await folder_create(
         connection, "f_user_b", gid_user_b, parent=folder_id_user_b
     )
 
     # `SHARED_AS_OWNER` contains `f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`
-    folder_id_shared_as_owner = await create_folder(
+    folder_id_shared_as_owner = await folder_create(
         connection, "SHARED_AS_OWNER", gid_sharing
     )
-    folder_id_f_shared_as_owner_user_a = await create_folder(
+    folder_id_f_shared_as_owner_user_a = await folder_create(
         connection,
         "f_shared_as_owner_user_a",
         gid_sharing,
@@ -844,7 +844,7 @@ async def test_folder_move(
         recipient_gid=gid_user_a,
         recipient_role=FolderAccessRole.OWNER,
     )
-    folder_id_f_shared_as_owner_user_b = await create_folder(
+    folder_id_f_shared_as_owner_user_b = await folder_create(
         connection,
         "f_shared_as_owner_user_b",
         gid_sharing,
@@ -859,10 +859,10 @@ async def test_folder_move(
     )
 
     # `SHARED_AS_EDITOR` contains `f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`
-    folder_id_shared_as_editor = await create_folder(
+    folder_id_shared_as_editor = await folder_create(
         connection, "SHARED_AS_EDITOR", gid_sharing
     )
-    folder_id_f_shared_as_editor_user_a = await create_folder(
+    folder_id_f_shared_as_editor_user_a = await folder_create(
         connection,
         "f_shared_as_editor_user_a",
         gid_sharing,
@@ -875,7 +875,7 @@ async def test_folder_move(
         recipient_gid=gid_user_a,
         recipient_role=FolderAccessRole.EDITOR,
     )
-    folder_id_f_shared_as_editor_user_b = await create_folder(
+    folder_id_f_shared_as_editor_user_b = await folder_create(
         connection,
         "f_shared_as_editor_user_b",
         gid_sharing,
@@ -890,10 +890,10 @@ async def test_folder_move(
     )
 
     # `SHARED_AS_VIEWER` contains `f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`
-    folder_id_shared_as_viewer = await create_folder(
+    folder_id_shared_as_viewer = await folder_create(
         connection, "SHARED_AS_VIEWER", gid_sharing
     )
-    folder_id_f_shared_as_viewer_user_a = await create_folder(
+    folder_id_f_shared_as_viewer_user_a = await folder_create(
         connection,
         "f_shared_as_viewer_user_a",
         gid_sharing,
@@ -906,7 +906,7 @@ async def test_folder_move(
         recipient_gid=gid_user_a,
         recipient_role=FolderAccessRole.VIEWER,
     )
-    folder_id_f_shared_as_viewer_user_b = await create_folder(
+    folder_id_f_shared_as_viewer_user_b = await folder_create(
         connection,
         "f_shared_as_viewer_user_b",
         gid_sharing,
@@ -921,10 +921,10 @@ async def test_folder_move(
     )
 
     # `SHARED_AS_NO_ACCESS` contains `f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`
-    folder_id_shared_as_no_access = await create_folder(
+    folder_id_shared_as_no_access = await folder_create(
         connection, "SHARED_AS_NO_ACCESS", gid_sharing
     )
-    folder_id_f_shared_as_no_access_user_a = await create_folder(
+    folder_id_f_shared_as_no_access_user_a = await folder_create(
         connection,
         "f_shared_as_no_access_user_a",
         gid_sharing,
@@ -937,7 +937,7 @@ async def test_folder_move(
         recipient_gid=gid_user_a,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
-    folder_id_f_shared_as_no_access_user_b = await create_folder(
+    folder_id_f_shared_as_no_access_user_b = await folder_create(
         connection,
         "f_shared_as_no_access_user_b",
         gid_sharing,
@@ -952,7 +952,7 @@ async def test_folder_move(
     )
 
     # `NOT_SHARED`
-    folder_id_not_shared = await create_folder(connection, "NOT_SHARED", gid_sharing)
+    folder_id_not_shared = await folder_create(connection, "NOT_SHARED", gid_sharing)
 
     #######
     # TESTS
@@ -1124,7 +1124,7 @@ async def test_move_group_non_standard_groups_raise_error(
     # `EVERYONE`(`gid_everyone`)
     # `STANDARD`(`gid_standard`)
 
-    folder_id_sharing_user = await create_folder(
+    folder_id_sharing_user = await folder_create(
         connection, "SHARING_USER", gid_sharing
     )
     for gid_to_share_with in (gid_primary, gid_everyone, gid_standard):
@@ -1135,9 +1135,9 @@ async def test_move_group_non_standard_groups_raise_error(
             recipient_gid=gid_to_share_with,
             recipient_role=FolderAccessRole.EDITOR,
         )
-    folder_id_primary = await create_folder(connection, "PRIMARY", gid_primary)
-    folder_id_everyone = await create_folder(connection, "EVERYONE", gid_everyone)
-    folder_id_standard = await create_folder(connection, "STANDARD", gid_standard)
+    folder_id_primary = await folder_create(connection, "PRIMARY", gid_primary)
+    folder_id_everyone = await folder_create(connection, "EVERYONE", gid_everyone)
+    folder_id_standard = await folder_create(connection, "STANDARD", gid_standard)
 
     with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exc:
         await folder_move(
@@ -1196,7 +1196,7 @@ async def test_add_remove_project_in_folder(
     project_id = _get_random_project_id(setup_projects_for_users)
 
     # setup
-    folder_id = await create_folder(connection, "f1", gid_owner)
+    folder_id = await folder_create(connection, "f1", gid_owner)
     await folder_share_or_update_permissions(
         connection,
         folder_id,
