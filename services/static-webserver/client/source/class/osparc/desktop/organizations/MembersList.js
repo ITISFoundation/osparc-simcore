@@ -32,10 +32,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     });
   },
 
-  events: {
-    "organizationLeft": "qx.event.type.Event"
-  },
-
   statics: {
     getNoReadAccess: function() {
       return {
@@ -565,10 +561,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           const isThereAnyManager = members.some(member => member["accessRights"]["write"]);
           let rUSure = this.tr("Are you sure you want to leave?");
           if (isThereAnyAdmin) {
-            rUSure += `<br>There is no ${osparc.data.Roles.ORG[2].label} in this Organization`;
+            rUSure += `<br>There is no ${osparc.data.Roles.ORG[2].label} in this Organization.`;
           } else if (isThereAnyManager) {
-            rUSure += `<br>There is no ${osparc.data.Roles.ORG[3].label} in this Organization`;
+            rUSure += `<br>There is no ${osparc.data.Roles.ORG[3].label} in this Organization.`;
           }
+          rUSure += "<br><br>" + this.tr("If you Leave, the page will be reloaded.");
           const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
             confirmText: this.tr("Leave"),
             confirmAction: "delete"
@@ -578,7 +575,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
               this.__doDeleteMember(orgMember)
-                .then(() => this.fireEvent("organizationLeft"));
+                .then(() => window.location.reload());
             }
           }, this);
         });

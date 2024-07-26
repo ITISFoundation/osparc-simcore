@@ -168,7 +168,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
       const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
-      membersList.addListener("organizationLeft", () => this.fireEvent("backToOrganizations"));
       membersListPage.add(membersList, {
         flex: 1
       });
