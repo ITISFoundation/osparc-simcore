@@ -139,6 +139,19 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    openImageOnTap: function(image) {
+      const source = image.getSource();
+      if (source) {
+        image.set({
+          cursor: "pointer"
+        });
+        image.addListener("tap", () => window.open(source, "_blank"));
+      }
+    },
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,
