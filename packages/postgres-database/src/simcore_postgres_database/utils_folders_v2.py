@@ -790,6 +790,7 @@ class FolderEntry(BaseModel):
     name: str
     description: str
     access_via_gid: _GroupID
+    access_rights: dict[_GroupID, _FolderPermissions]
 
     class Config:
         orm_mode = True
@@ -828,11 +829,31 @@ async def folder_list(
             )
             access_via_gid = top_most_parent_with_permissions["gid"]
 
+        access_rights_subquery = (
+            sa.select(
+                sa.func.jsonb_object_agg(
+                    folders_access_rights.c.gid,
+                    sa.func.jsonb_build_object(
+                        "read",
+                        folders_access_rights.c.read,
+                        "write",
+                        folders_access_rights.c.write,
+                        "delete",
+                        folders_access_rights.c.delete,
+                    ),
+                ).label("access_rights"),
+            )
+            .where(folders_access_rights.c.folder_id == folders.c.id)
+            .correlate(folders)
+            .scalar_subquery()
+        )
+
         query = (
             sa.select(
                 folders,
                 folders_access_rights,
                 sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
+                access_rights_subquery.label("access_rights"),
             )
             .join(
                 folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
