@@ -509,7 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
-                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
+                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+20, 600).set({
                       clickAwayClose: false,
                       resizable: true
                     });
