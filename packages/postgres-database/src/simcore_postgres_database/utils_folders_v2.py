@@ -14,7 +14,7 @@ from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
 
-from .models.folders import folders, folders_access_rights
+from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
 
 _ProjectID: TypeAlias = uuid.UUID
@@ -85,6 +85,14 @@ class CannotMoveFolderSharedViaNonPrimaryGroupError(BaseMoveFolderError):
     )
 
 
+class BaseAddProjectError(FoldersError):
+    pass
+
+
+class ProjectAlreadyExistsInFolderError(BaseAddProjectError):
+    msg_template = "project_id={project_id} in folder_id={folder_id} is already present"
+
+
 ###
 ### UTILS ACCESS LAYER
 ###
@@ -151,7 +159,7 @@ class _BasePermissions:
     SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     UPDATE_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    DELETE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    REMOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
 
 
 NO_ACCESS_PERMISSIONS: _FolderPermissions = _make_permissions()
@@ -175,7 +183,7 @@ OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
         _BasePermissions.SHARE_FOLDER,
         _BasePermissions.UPDATE_FODLER,
         _BasePermissions.DELETE_FOLDER,
-        _BasePermissions.DELETE_PROJECT_FROM_FOLDER,
+        _BasePermissions.REMOVE_PROJECT_FROM_FOLDER,
     ]
 )
 
@@ -641,8 +649,72 @@ async def folder_move(
         )
 
 
+async def folder_add_project(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    project_id: _ProjectID,
+    required_permissions=_requires(  # noqa: B008
+        _BasePermissions.ADD_PROJECT_TO_FOLDER
+    ),
+) -> None:
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=folder_id,
+            gid=gid,
+            permissions=required_permissions,
+            enforece_all_permissions=False,
+        )
+
+        # check if already added in folder
+        project_in_folder_entry = await (
+            await connection.execute(
+                folders_to_projects.select()
+                .where(folders_to_projects.c.folder_id == folder_id)
+                .where(folders_to_projects.c.project_id == project_id)
+            )
+        ).fetchone()
+        if project_in_folder_entry:
+            raise ProjectAlreadyExistsInFolderError(
+                project_id=project_id, folder_id=folder_id
+            )
+
+        # finally add project to folder
+        await connection.execute(
+            folders_to_projects.insert().values(
+                folder_id=folder_id, project_id=project_id
+            )
+        )
+
+
+async def folder_remove_project(
+    connection: SAConnection,
+    folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    project_id: _ProjectID,
+    required_permissions=_requires(  # noqa: B008
+        _BasePermissions.REMOVE_PROJECT_FROM_FOLDER
+    ),
+) -> None:
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            folder_id=folder_id,
+            gid=gid,
+            permissions=required_permissions,
+            enforece_all_permissions=False,
+        )
+
+        await connection.execute(
+            folders_to_projects.delete()
+            .where(folders_to_projects.c.folder_id == folder_id)
+            .where(folders_to_projects.c.project_id == project_id)
+        )
+
+
 # TODO: add the following
-# - add project in folder
-# - remove project form folder
 # - list folders
 # - listing projects in folders is on Matus?

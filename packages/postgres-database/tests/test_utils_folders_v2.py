@@ -10,7 +10,11 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.folders import folders, folders_access_rights
+from simcore_postgres_database.models.folders import (
+    folders,
+    folders_access_rights,
+    folders_to_projects,
+)
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.utils_folders_v2 import (
     _FOLDER_NAME_MAX_LENGTH,
@@ -36,8 +40,10 @@ from simcore_postgres_database.utils_folders_v2 import (
     _ProjectID,
     _requires,
     create_folder,
+    folder_add_project,
     folder_delete,
     folder_move,
+    folder_remove_project,
     folder_share_or_update_permissions,
     folder_update,
 )
@@ -223,6 +229,19 @@ async def setup_users(
 @pytest.fixture
 async def setup_users_and_groups(setup_users: list[RowProxy]) -> set[_GroupID]:
     return {u.primary_gid for u in setup_users}
+
+
+@pytest.fixture
+async def setup_projects_for_users(
+    connection: SAConnection,
+    setup_users: list[RowProxy],
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+) -> set[_ProjectID]:
+    projects: set[_ProjectID] = set()
+    for user in setup_users:
+        project = await create_fake_project(connection, user)
+        projects.add(project.id)
+    return projects
 
 
 async def test_create_folder(
@@ -1145,3 +1164,89 @@ async def test_move_group_non_standard_groups_raise_error(
         gid_primary,
         destination_folder_id=folder_id_sharing_user,
     )
+
+
+async def test_add_remove_project_in_folder(
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    setup_projects_for_users: set[_ProjectID],
+):
+    async def _is_project_present(
+        connection: SAConnection,
+        folder_id: _FolderID,
+        project_id: _ProjectID,
+    ) -> bool:
+        async with connection.execute(
+            folders_to_projects.select()
+            .where(folders_to_projects.c.folder_id == folder_id)
+            .where(folders_to_projects.c.project_id == project_id)
+        ) as result:
+            rows = await result.fetchall()
+            assert rows is not None
+            return len(rows) == 1
+
+    gid_owner = _get_random_gid(setup_users_and_groups)
+    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
+    gid_viewer = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor}
+    )
+    gid_no_access = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
+    )
+    project_id = _get_random_project_id(setup_projects_for_users)
+
+    # setup
+    folder_id = await create_folder(connection, "f1", gid_owner)
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        gid_owner,
+        recipient_gid=gid_editor,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        gid_owner,
+        recipient_gid=gid_viewer,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id,
+        gid_owner,
+        recipient_gid=gid_no_access,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+
+    async def _add_folder_as(gid: _GroupID) -> None:
+        await folder_add_project(connection, folder_id, gid, project_id=project_id)
+        assert await _is_project_present(connection, folder_id, project_id) is True
+
+    async def _remove_folder_as(gid: _GroupID) -> None:
+        await folder_remove_project(connection, folder_id, gid, project_id=project_id)
+        assert await _is_project_present(connection, folder_id, project_id) is False
+
+    assert await _is_project_present(connection, folder_id, project_id) is False
+
+    # 1. owner can add and remove
+    await _add_folder_as(gid_owner)
+    await _remove_folder_as(gid_owner)
+
+    # 2 editor can add and can't remove
+    await _add_folder_as(gid_editor)
+    with pytest.raises(InsufficientPermissionsError):
+        await _remove_folder_as(gid_editor)
+    await _remove_folder_as(gid_owner)  # cleanup
+
+    # 3. viwer can't add and can't remove
+    with pytest.raises(InsufficientPermissionsError):
+        await _add_folder_as(gid_viewer)
+    with pytest.raises(InsufficientPermissionsError):
+        await _remove_folder_as(gid_viewer)
+
+    # 4. no_access can't add and can't remove
+    with pytest.raises(InsufficientPermissionsError):
+        await _add_folder_as(gid_no_access)
+    with pytest.raises(InsufficientPermissionsError):
+        await _remove_folder_as(gid_no_access)
