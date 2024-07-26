@@ -304,6 +304,27 @@ def _validate_folder_name(value: str) -> None:
 ###
 
 
+class FolderEntry(BaseModel):
+    id: _FolderID
+    parent_folder: _FolderID | None = Field(alias="traversal_parent_id")
+    name: str
+    description: str
+    owner: _GroupID = Field(alias="created_by")
+    created_at: datetime
+    last_modified: datetime
+    my_access_rights: _FolderPermissions
+    access_rights: dict[_GroupID, _FolderPermissions]
+
+    access_via_gid: _GroupID = Field(
+        ...,
+        description="used to compute my_access_rights, should be used by the frotned",
+    )
+    gid: _GroupID = Field(..., description="actual gid of this entry")
+
+    class Config:
+        orm_mode = True
+
+
 async def _get_top_most_access_rights_entry(
     connection: SAConnection,
     folder_id: _FolderID,
@@ -783,27 +804,6 @@ async def folder_remove_project(
             .where(folders_to_projects.c.folder_id == folder_id)
             .where(folders_to_projects.c.project_id == project_id)
         )
-
-
-class FolderEntry(BaseModel):
-    id: _FolderID
-    parent_folder: _FolderID | None = Field(alias="traversal_parent_id")
-    name: str
-    description: str
-    owner: _GroupID = Field(alias="created_by")
-    created_at: datetime
-    last_modified: datetime
-    my_access_rights: _FolderPermissions
-    access_rights: dict[_GroupID, _FolderPermissions]
-
-    access_via_gid: _GroupID = Field(
-        ...,
-        description="used to compute my_access_rights, should be used by the frotned",
-    )
-    gid: _GroupID = Field(..., description="actual gid of this entry")
-
-    class Config:
-        orm_mode = True
 
 
 async def folder_list(
