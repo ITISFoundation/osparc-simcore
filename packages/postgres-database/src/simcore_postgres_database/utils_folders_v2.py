@@ -853,6 +853,11 @@ async def folder_list(
                 if folder_id is None
                 else True
             )
+            .where(
+                _get_true_permissions(required_permissions, folders_access_rights)
+                if folder_id is None
+                else True
+            )
             .offset(offset)
             .limit(limit)
         )
