@@ -53,12 +53,14 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
-          this._addAt(control, 0);
+          this._addAt(control, 0, {flex: 1});
           break;
         case "permissions-info": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
-          }));
+          })).set({
+            paddingRight: 14
+          });
           this._addAt(control, 1);
           break;
         }
