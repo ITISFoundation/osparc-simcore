@@ -228,10 +228,6 @@ def _get_permissions_from_role(role: FolderAccessRole) -> _FolderPermissions:
     return _ROLE_TO_PERMISSIONS[role]
 
 
-def _get_role_from_permissions(permissions: _FolderPermissions) -> FolderAccessRole:
-    return _PERMISSIONS_TO_ROLE[_hash_permissions(permissions)]
-
-
 def _requires(*permissions: _FolderPermissions):
     if len(permissions) == 0:
         return _make_permissions()
@@ -673,7 +669,7 @@ async def folder_move(
     source_folder_id: _FolderID,
     gid: _GroupID,
     *,
-    destination_folder_id: _FolderID,
+    destination_folder_id: _FolderID | None,
     required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions._MOVE_FOLDER_SOURCE  # pylint:disable=protected-access # noqa: SLF001
     ),
