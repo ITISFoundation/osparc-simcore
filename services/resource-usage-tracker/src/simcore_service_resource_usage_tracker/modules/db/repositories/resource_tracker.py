@@ -126,7 +126,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Service was not created: {data}"
             )
-        return row[0]
+        return cast(ServiceRunId, row[0])
 
     async def update_service_run_last_heartbeat(
         self, data: ServiceRunLastHeartbeatUpdate
@@ -557,7 +557,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Transaction was not created: {data}"
             )
-        return row[0]
+        return cast(CreditTransactionId, row[0])
 
     async def update_credit_transaction_credits(
         self, data: CreditTransactionCreditsUpdate
@@ -590,7 +590,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return row[0]
+        return cast(CreditTransactionId | None, row[0])
 
     async def update_credit_transaction_credits_and_status(
         self, data: CreditTransactionCreditsAndStatusUpdate
@@ -619,7 +619,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return row[0]
+        return cast(CreditTransactionId | None, row[0])
 
     async def sum_credit_transactions_by_product_and_wallet(
         self, product_name: ProductName, wallet_id: WalletID

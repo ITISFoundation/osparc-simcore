@@ -255,7 +255,7 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
     )
 
 
-RabbitResourceTrackingMessages = (
+RabbitResourceTrackingMessages: TypeAlias = (
     RabbitResourceTrackingStartedMessage
     | RabbitResourceTrackingStoppedMessage
     | RabbitResourceTrackingHeartbeatMessage
