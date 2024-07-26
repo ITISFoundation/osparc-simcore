@@ -1348,6 +1348,70 @@ async def test_add_remove_project_in_folder(
         await _remove_folder_as(gid_no_access)
 
 
+class ExpectedValues(NamedTuple):
+    folder_id: _FolderID
+    gid: _GroupID
+    my_access_rights: _FolderPermissions
+    access_rights: dict[_GroupID, _FolderPermissions]
+
+    def __hash__(self):
+        return hash(
+            (
+                self.folder_id,
+                self.gid,
+                tuple(sorted(self.my_access_rights.items())),
+                tuple(
+                    (k, tuple(sorted(v.items())))
+                    for k, v in sorted(self.access_rights.items())
+                ),
+            )
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, ExpectedValues):
+            return False
+        return (
+            self.folder_id == other.folder_id
+            and self.gid == other.gid
+            and self.my_access_rights == other.my_access_rights
+            and self.access_rights == other.access_rights
+        )
+
+
+def _assert_expected_entries(
+    folders: list[FolderEntry], *, expected: set[ExpectedValues]
+) -> None:
+    for folder_entry in folders:
+        expected_values = ExpectedValues(
+            folder_entry.id,
+            folder_entry.access_via_gid,
+            folder_entry.my_access_rights,
+            folder_entry.access_rights,
+        )
+        assert expected_values in expected
+
+
+ALL_IN_ONE_PAGE_OFFSET: NonNegativeInt = 0
+ALL_IN_ONE_PAGE_LIMIT: NonNegativeInt = 1000
+
+
+async def _list_folder_as(
+    connection: SAConnection,
+    folder_id: _FolderID | None,
+    gid: _GroupID,
+    offset: NonNegativeInt = ALL_IN_ONE_PAGE_OFFSET,
+    limit: NonNegativeInt = ALL_IN_ONE_PAGE_LIMIT,
+) -> list[FolderEntry]:
+
+    return await folder_list(
+        connection,
+        folder_id,
+        gid,
+        offset=offset,
+        limit=limit,
+    )
+
+
 async def test_folder_list(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
@@ -1496,61 +1560,6 @@ async def test_folder_list(
 
     # TESTS
 
-    class ExpectedValues(NamedTuple):
-        folder_id: _FolderID
-        gid: _GroupID
-        my_access_rights: _FolderPermissions
-        access_rights: dict[_GroupID, _FolderPermissions]
-
-        def __hash__(self):
-            return hash(
-                (
-                    self.folder_id,
-                    self.gid,
-                    tuple(sorted(self.my_access_rights.items())),
-                    tuple(
-                        (k, tuple(sorted(v.items())))
-                        for k, v in sorted(self.access_rights.items())
-                    ),
-                )
-            )
-
-        def __eq__(self, other):
-            if not isinstance(other, ExpectedValues):
-                return False
-            return (
-                self.folder_id == other.folder_id
-                and self.gid == other.gid
-                and self.my_access_rights == other.my_access_rights
-                and self.access_rights == other.access_rights
-            )
-
-    def _assert_expected_entries(
-        folders: list[FolderEntry], *, expected: set[ExpectedValues]
-    ) -> None:
-        for folder_entry in folders:
-            expected_values = ExpectedValues(
-                folder_entry.id,
-                folder_entry.access_via_gid,
-                folder_entry.my_access_rights,
-                folder_entry.access_rights,
-            )
-            assert expected_values in expected
-
-    async def _list_folder_as(
-        folder_id: _FolderID | None, gid: _GroupID
-    ) -> list[FolderEntry]:
-        ALL_IN_ONE_PAGE_LIMIT = 100
-        ALL_IN_ONE_PAGE_OFFSET = 0
-
-        return await folder_list(
-            connection,
-            folder_id,
-            gid,
-            offset=ALL_IN_ONE_PAGE_OFFSET,
-            limit=ALL_IN_ONE_PAGE_LIMIT,
-        )
-
     ACCESS_RIGHTS_BY_GID: dict[_GroupID, _FolderPermissions] = {
         gid_owner: OWNER_PERMISSIONS,
         gid_editor: EDITOR_PERMISSIONS,
@@ -1562,7 +1571,7 @@ async def test_folder_list(
     for listing_gid in (gid_owner, gid_editor, gid_viewer):
         # list `root` for gid
         _assert_expected_entries(
-            await _list_folder_as(None, listing_gid),
+            await _list_folder_as(connection, None, listing_gid),
             expected={
                 ExpectedValues(
                     folder_id_owner_folder,
@@ -1579,7 +1588,7 @@ async def test_folder_list(
         )
         # list `owner_folder` for gid
         _assert_expected_entries(
-            await _list_folder_as(folder_id_owner_folder, listing_gid),
+            await _list_folder_as(connection, folder_id_owner_folder, listing_gid),
             expected={
                 ExpectedValues(
                     fx,
@@ -1592,7 +1601,7 @@ async def test_folder_list(
         )
         # list `f10` for gid
         _assert_expected_entries(
-            await _list_folder_as(folder_id_f10, listing_gid),
+            await _list_folder_as(connection, folder_id_f10, listing_gid),
             expected={
                 ExpectedValues(
                     sub_fx,
@@ -1606,17 +1615,42 @@ async def test_folder_list(
 
     # 2. lisit all levels for `gid_no_access`
     # can always be ran but should not list any entry
-    _assert_expected_entries(await _list_folder_as(None, gid_no_access), expected=set())
+    _assert_expected_entries(
+        await _list_folder_as(connection, None, gid_no_access), expected=set()
+    )
     # there are insusficient permissions
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(InsufficientPermissionsError):
-            await _list_folder_as(folder_id_to_check, gid_no_access)
+            await _list_folder_as(connection, folder_id_to_check, gid_no_access)
 
     # 3. lisit all levels for `gid_not_shared``
     # can always list the contets of the "root" folder for a gid
     _assert_expected_entries(
-        await _list_folder_as(None, gid_not_shared), expected=set()
+        await _list_folder_as(connection, None, gid_not_shared), expected=set()
     )
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(FolderNotSharedWithGidError):
-            await _list_folder_as(folder_id_to_check, gid_not_shared)
+            await _list_folder_as(connection, folder_id_to_check, gid_not_shared)
+
+    # 4. list with pagination
+    for initial_limit in (1, 2, 3, 4, 5):
+        offset = 0
+        limit = initial_limit
+        found_folders: list[FolderEntry] = []
+        while items := await _list_folder_as(
+            connection, folder_id_owner_folder, gid_owner, offset=offset, limit=limit
+        ):
+            found_folders.extend(items)
+            offset += limit
+            if len(items) != limit:
+                break
+
+        one_shot_query = await _list_folder_as(
+            connection, folder_id_owner_folder, gid_owner
+        )
+
+        assert len(found_folders) == len(one_shot_query)
+        assert found_folders == one_shot_query
+
+
+# TODO: sharing a child with someone else that does not have access to the root
