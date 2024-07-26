@@ -22,6 +22,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _FOLDER_NAMES_RESERVED_WINDOWS,
     _ROLE_TO_PERMISSIONS,
     EDITOR_PERMISSIONS,
+    NO_ACCESS_PERMISSIONS,
     OWNER_PERMISSIONS,
     VIEWER_PERMISSIONS,
     CannotMoveFolderSharedViaNonPrimaryGroupError,
@@ -1498,15 +1499,43 @@ async def test_folder_list(
     class ExpectedValues(NamedTuple):
         folder_id: _FolderID
         gid: _GroupID
+        my_access_rights: _FolderPermissions
+        access_rights: dict[_GroupID, _FolderPermissions]
+
+        def __hash__(self):
+            return hash(
+                (
+                    self.folder_id,
+                    self.gid,
+                    tuple(sorted(self.my_access_rights.items())),
+                    tuple(
+                        (k, tuple(sorted(v.items())))
+                        for k, v in sorted(self.access_rights.items())
+                    ),
+                )
+            )
+
+        def __eq__(self, other):
+            if not isinstance(other, ExpectedValues):
+                return False
+            return (
+                self.folder_id == other.folder_id
+                and self.gid == other.gid
+                and self.my_access_rights == other.my_access_rights
+                and self.access_rights == other.access_rights
+            )
 
     def _assert_expected_entries(
         folders: list[FolderEntry], *, expected: set[ExpectedValues]
     ) -> None:
         for folder_entry in folders:
-            assert (
-                ExpectedValues(folder_entry.folder_id, folder_entry.access_via_gid)
-                in expected
+            expected_values = ExpectedValues(
+                folder_entry.id,
+                folder_entry.access_via_gid,
+                folder_entry.my_access_rights,
+                folder_entry.access_rights,
             )
+            assert expected_values in expected
 
     async def _list_folder_as(
         folder_id: _FolderID | None, gid: _GroupID
@@ -1522,25 +1551,56 @@ async def test_folder_list(
             limit=ALL_IN_ONE_PAGE_LIMIT,
         )
 
+    ACCESS_RIGHTS_BY_GID: dict[_GroupID, _FolderPermissions] = {
+        gid_owner: OWNER_PERMISSIONS,
+        gid_editor: EDITOR_PERMISSIONS,
+        gid_viewer: VIEWER_PERMISSIONS,
+        gid_no_access: NO_ACCESS_PERMISSIONS,
+    }
+
     # 1. list all levels per gid with access
     for listing_gid in (gid_owner, gid_editor, gid_viewer):
         # list `root` for gid
         _assert_expected_entries(
             await _list_folder_as(None, listing_gid),
             expected={
-                ExpectedValues(folder_id_owner_folder, listing_gid),
+                ExpectedValues(
+                    folder_id_owner_folder,
+                    listing_gid,
+                    ACCESS_RIGHTS_BY_GID[listing_gid],
+                    {
+                        gid_owner: OWNER_PERMISSIONS,
+                        gid_editor: EDITOR_PERMISSIONS,
+                        gid_viewer: VIEWER_PERMISSIONS,
+                        gid_no_access: NO_ACCESS_PERMISSIONS,
+                    },
+                ),
             },
         )
         # list `owner_folder` for gid
         _assert_expected_entries(
             await _list_folder_as(folder_id_owner_folder, listing_gid),
-            expected={ExpectedValues(fx, listing_gid) for fx in ALL_FOLDERS_FX},
+            expected={
+                ExpectedValues(
+                    fx,
+                    listing_gid,
+                    ACCESS_RIGHTS_BY_GID[listing_gid],
+                    {gid_owner: OWNER_PERMISSIONS},
+                )
+                for fx in ALL_FOLDERS_FX
+            },
         )
         # list `f10` for gid
         _assert_expected_entries(
             await _list_folder_as(folder_id_f10, listing_gid),
             expected={
-                ExpectedValues(sub_fx, listing_gid) for sub_fx in ALL_FOLDERS_SUB_FX
+                ExpectedValues(
+                    sub_fx,
+                    listing_gid,
+                    ACCESS_RIGHTS_BY_GID[listing_gid],
+                    {gid_owner: OWNER_PERMISSIONS},
+                )
+                for sub_fx in ALL_FOLDERS_SUB_FX
             },
         )
 

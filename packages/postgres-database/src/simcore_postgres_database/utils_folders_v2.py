@@ -146,7 +146,7 @@ _ALL_PERMISSION_KEYS: Final[set[str]] = {"read", "write", "delete"}
 
 
 def _or_reduce(x: _FolderPermissions, y: _FolderPermissions) -> _FolderPermissions:
-    return {key: x[key] or y[key] for key in _ALL_PERMISSION_KEYS}  # type: ignore
+    return _FolderPermissions(**{key: x[key] or y[key] for key in _ALL_PERMISSION_KEYS})
 
 
 def _or_dicts_list(dicts: Iterable[_FolderPermissions]) -> _FolderPermissions:
