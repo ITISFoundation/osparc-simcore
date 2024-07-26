@@ -704,14 +704,14 @@ async def folder_move(
             raise CannotMoveFolderSharedViaNonPrimaryGroupError(
                 group_type=group_type, gid=source_access_gid
             )
-
-        await _check_folder_and_access(
-            connection,
-            folder_id=destination_folder_id,
-            gid=gid,
-            permissions=required_permissions_destination,
-            enforece_all_permissions=False,
-        )
+        if destination_folder_id:
+            await _check_folder_and_access(
+                connection,
+                folder_id=destination_folder_id,
+                gid=gid,
+                permissions=required_permissions_destination,
+                enforece_all_permissions=False,
+            )
 
         # set new traversa_parent_id on the source_folder_id which is equal to destination_folder_id
         await connection.execute(
