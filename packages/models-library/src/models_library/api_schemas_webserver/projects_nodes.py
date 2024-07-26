@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import Field
