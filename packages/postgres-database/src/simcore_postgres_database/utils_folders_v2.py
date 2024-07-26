@@ -790,7 +790,6 @@ class FolderEntry(BaseModel):
     name: str
     description: str
     access_via_gid: _GroupID
-    access_via_folder_id: _FolderID | None
 
     class Config:
         orm_mode = True
@@ -817,7 +816,6 @@ async def folder_list(
 
     async with connection.begin():
         access_via_gid: _GroupID = gid
-        access_via_folder_id: _FolderID | None = None
 
         if folder_id:
             # this one provides the set of access rights
@@ -829,16 +827,12 @@ async def folder_list(
                 enforece_all_permissions=False,
             )
             access_via_gid = top_most_parent_with_permissions["gid"]
-            access_via_folder_id = top_most_parent_with_permissions["folder_id"]
 
         query = (
             sa.select(
                 folders,
                 folders_access_rights,
                 sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
-                sa.literal_column(
-                    f"{access_via_folder_id}" if access_via_folder_id else "NULL"
-                ).label("access_via_folder_id"),
             )
             .join(
                 folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
