@@ -782,7 +782,7 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
 
 
-async def test_folder_move(
+async def test_folder_move(  # noqa: PLR0915
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     gid_sharing = _get_random_gid(setup_users_and_groups)
@@ -1108,6 +1108,53 @@ async def test_folder_move(
         destination=folder_id_f_shared_as_owner_user_b,
         source_parent=folder_id_user_b,
     )
+
+    # 3. allowed to move in `root` folder
+    for to_move_folder_id, to_move_gid in [
+        (folder_id_f_user_a, gid_user_a),
+        (folder_id_f_user_b, gid_user_b),
+        (folder_id_f_shared_as_owner_user_a, gid_user_a),
+        (folder_id_f_shared_as_owner_user_b, gid_user_b),
+    ]:
+        await folder_move(
+            connection,
+            to_move_folder_id,
+            to_move_gid,
+            destination_folder_id=None,
+        )
+
+    # 4. not allowed to move in `root` folder
+    for to_move_folder_id, to_move_gid in [
+        (folder_id_f_shared_as_editor_user_a, gid_user_a),
+        (folder_id_f_shared_as_editor_user_b, gid_user_b),
+        (folder_id_f_shared_as_viewer_user_a, gid_user_a),
+        (folder_id_f_shared_as_viewer_user_b, gid_user_b),
+        (folder_id_f_shared_as_no_access_user_a, gid_user_a),
+        (folder_id_f_shared_as_no_access_user_b, gid_user_b),
+    ]:
+        with pytest.raises(InsufficientPermissionsError):
+            await folder_move(
+                connection,
+                to_move_folder_id,
+                to_move_gid,
+                destination_folder_id=None,
+            )
+
+    for to_move_gid in [
+        folder_id_f_shared_as_editor_user_a,
+        folder_id_f_shared_as_editor_user_b,
+        folder_id_f_shared_as_viewer_user_a,
+        folder_id_f_shared_as_viewer_user_b,
+        folder_id_f_shared_as_no_access_user_a,
+        folder_id_f_shared_as_no_access_user_b,
+    ]:
+        with pytest.raises(FolderNotSharedWithGidError):
+            await folder_move(
+                connection,
+                folder_id_not_shared,
+                to_move_gid,
+                destination_folder_id=None,
+            )
 
 
 async def test_move_only_owners_can_move(
