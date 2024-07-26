@@ -1518,8 +1518,8 @@ async def test_folder_list(
             connection,
             folder_id,
             gid,
-            limit=ALL_IN_ONE_PAGE_LIMIT,
             offset=ALL_IN_ONE_PAGE_OFFSET,
+            limit=ALL_IN_ONE_PAGE_LIMIT,
         )
 
     # 1. list all levels per gid with access

@@ -800,8 +800,8 @@ async def folder_list(
     folder_id: _FolderID | None,
     gid: _GroupID,
     *,
-    limit: NonNegativeInt,
     offset: NonNegativeInt,
+    limit: NonNegativeInt,
     required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
 ) -> list[FolderEntry]:
     """
