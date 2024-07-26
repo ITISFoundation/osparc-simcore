@@ -24,6 +24,8 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/aws-library
   make mypy
   popd

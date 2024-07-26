@@ -27,6 +27,8 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/simcore-sdk
   make mypy
   popd

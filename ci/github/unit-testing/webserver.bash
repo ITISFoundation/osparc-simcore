@@ -40,6 +40,8 @@ test_with_db() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
   make mypy
   popd

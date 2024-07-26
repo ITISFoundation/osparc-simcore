@@ -24,6 +24,8 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/api-server
   make mypy
   popd

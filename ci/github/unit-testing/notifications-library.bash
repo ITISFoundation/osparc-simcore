@@ -25,6 +25,8 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd packages/notifications-library
   make mypy
   popd
