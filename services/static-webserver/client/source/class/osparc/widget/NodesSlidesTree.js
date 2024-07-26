@@ -33,7 +33,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     const disable = this.getChildControl("disable");
     disable.addListener("execute", () => this.__disableSlides(), this);
     const enable = this.getChildControl("save-button");
-    enable.addListener("execute", () => this.__enableSlides(), this);
+    enable.addListener("execute", () => this.__saveSlides(), this);
 
     const model = this.__initRoot();
     this.__tree.setModel(model);
@@ -310,7 +310,7 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
       return slideshow;
     },
 
-    __enableSlides: function() {
+    __saveSlides: function() {
       const slideshow = this.__serialize();
       this.__study.getUi().getSlideshow().setData(slideshow);
       this.fireEvent("finished");
