@@ -286,8 +286,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
                 ];
               }
             }
-            // Let me go
-            if (canIWrite && members.length > 1 && member["gid"] === osparc.auth.Data.getInstance().getGroupId()) {
+            // Let me go?
+            const openStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+            if (
+              openStudyId === null &&
+              canIWrite &&
+              members.length > 1 && member["gid"] === osparc.auth.Data.getInstance().getGroupId()
+            ) {
               options.push("leave");
             }
             member["options"] = options;
