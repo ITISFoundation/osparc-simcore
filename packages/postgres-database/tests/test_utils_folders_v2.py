@@ -3,6 +3,7 @@
 
 import secrets
 from collections.abc import Awaitable, Callable
+from typing import NamedTuple
 from unittest.mock import Mock
 
 import pytest
@@ -26,6 +27,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     CannotMoveFolderSharedViaNonPrimaryGroupError,
     FolderAccessRole,
     FolderAlreadyExistsError,
+    FolderEntry,
     FolderNotFoundError,
     FolderNotSharedWithGidError,
     GroupIdDoesNotExistError,
@@ -42,6 +44,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     folder_add_project,
     folder_create,
     folder_delete,
+    folder_list,
     folder_move,
     folder_remove_project,
     folder_share_or_update_permissions,
@@ -1287,7 +1290,7 @@ async def test_add_remove_project_in_folder(
     )
     project_id = _get_random_project_id(setup_projects_for_users)
 
-    # setup
+    # SETUP
     folder_id = await folder_create(connection, "f1", gid_owner)
     await folder_share_or_update_permissions(
         connection,
@@ -1347,6 +1350,213 @@ async def test_add_remove_project_in_folder(
 async def test_folder_list(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
+    gid_owner = _get_random_gid(setup_users_and_groups)
+    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
+    gid_viewer = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor}
+    )
+    gid_no_access = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
+    )
+    gid_not_shared = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
+    )
 
     # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    pass
+    # `owner_folder`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]:
+    #   - `f1`(`gid_owner`)
+    #   - `f2`(`gid_owner`)
+    #   - `f3`(`gid_owner`)
+    #   - `f4`(`gid_owner`)
+    #   - `f5`(`gid_owner`)
+    #   - `f6`(`gid_owner`)
+    #   - `f7`(`gid_owner`)
+    #   - `f8`(`gid_owner`)
+    #   - `f9`(`gid_owner`)
+    #   - `f10`(`gid_owner`):
+    #       - `sub_f1`(`gid_owner`)
+    #       - `sub_f2`(`gid_owner`)
+    #       - `sub_f3`(`gid_owner`)
+    #       - `sub_f4`(`gid_owner`)
+    #       - `sub_f5`(`gid_owner`)
+    #       - `sub_f6`(`gid_owner`)
+    #       - `sub_f7`(`gid_owner`)
+    #       - `sub_f8`(`gid_owner`)
+    #       - `sub_f9`(`gid_owner`)
+    #       - `sub_f10`(`gid_owner`)
+
+    folder_id_owner_folder = await folder_create(connection, "owner_folder", gid_owner)
+    for recipient_gid, recipient_role in [
+        (gid_editor, FolderAccessRole.EDITOR),
+        (gid_viewer, FolderAccessRole.VIEWER),
+        (gid_no_access, FolderAccessRole.NO_ACCESS),
+    ]:
+        await folder_share_or_update_permissions(
+            connection,
+            folder_id_owner_folder,
+            gid_owner,
+            recipient_gid=recipient_gid,
+            recipient_role=recipient_role,
+        )
+    folder_id_f1 = await folder_create(
+        connection, "f1", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f2 = await folder_create(
+        connection, "f2", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f3 = await folder_create(
+        connection, "f3", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f4 = await folder_create(
+        connection, "f4", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f5 = await folder_create(
+        connection, "f5", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f6 = await folder_create(
+        connection, "f6", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f7 = await folder_create(
+        connection, "f7", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f8 = await folder_create(
+        connection, "f8", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f9 = await folder_create(
+        connection, "f9", gid_owner, parent=folder_id_owner_folder
+    )
+    folder_id_f10 = await folder_create(
+        connection, "f10", gid_owner, parent=folder_id_owner_folder
+    )
+
+    folder_id_sub_f1 = await folder_create(
+        connection, "sub_f1", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f2 = await folder_create(
+        connection, "sub_f2", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f3 = await folder_create(
+        connection, "sub_f3", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f4 = await folder_create(
+        connection, "sub_f4", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f5 = await folder_create(
+        connection, "sub_f5", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f6 = await folder_create(
+        connection, "sub_f6", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f7 = await folder_create(
+        connection, "sub_f7", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f8 = await folder_create(
+        connection, "sub_f8", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f9 = await folder_create(
+        connection, "sub_f9", gid_owner, parent=folder_id_f10
+    )
+    folder_id_sub_f10 = await folder_create(
+        connection, "sub_f10", gid_owner, parent=folder_id_f10
+    )
+
+    ALL_FOLDERS_FX = (
+        folder_id_f1,
+        folder_id_f2,
+        folder_id_f3,
+        folder_id_f4,
+        folder_id_f5,
+        folder_id_f6,
+        folder_id_f7,
+        folder_id_f8,
+        folder_id_f9,
+        folder_id_f10,
+    )
+
+    ALL_FOLDERS_SUB_FX = (
+        folder_id_sub_f1,
+        folder_id_sub_f2,
+        folder_id_sub_f3,
+        folder_id_sub_f4,
+        folder_id_sub_f5,
+        folder_id_sub_f6,
+        folder_id_sub_f7,
+        folder_id_sub_f8,
+        folder_id_sub_f9,
+        folder_id_sub_f10,
+    )
+
+    ALL_FOLDERS_AND_SUBFOLDERS = (
+        folder_id_owner_folder,
+        *ALL_FOLDERS_FX,
+        *ALL_FOLDERS_SUB_FX,
+    )
+
+    # TESTS
+
+    class ExpectedValues(NamedTuple):
+        folder_id: _FolderID
+        gid: _GroupID
+
+    def _assert_expected_entries(
+        folders: list[FolderEntry], *, expected: set[ExpectedValues]
+    ) -> None:
+        for folder_entry in folders:
+            assert (
+                ExpectedValues(folder_entry.folder_id, folder_entry.access_via_gid)
+                in expected
+            )
+
+    async def _list_folder_as(
+        folder_id: _FolderID | None, gid: _GroupID
+    ) -> list[FolderEntry]:
+        ALL_IN_ONE_PAGE_LIMIT = 100
+        ALL_IN_ONE_PAGE_OFFSET = 0
+
+        return await folder_list(
+            connection,
+            folder_id,
+            gid,
+            limit=ALL_IN_ONE_PAGE_LIMIT,
+            offset=ALL_IN_ONE_PAGE_OFFSET,
+        )
+
+    # 1. list all levels per gid with access
+    for listing_gid in (gid_owner, gid_editor, gid_viewer):
+        # list `root` for gid
+        _assert_expected_entries(
+            await _list_folder_as(None, listing_gid),
+            expected={
+                ExpectedValues(folder_id_owner_folder, listing_gid),
+            },
+        )
+        # list `owner_folder` for gid
+        _assert_expected_entries(
+            await _list_folder_as(folder_id_owner_folder, listing_gid),
+            expected={ExpectedValues(fx, listing_gid) for fx in ALL_FOLDERS_FX},
+        )
+        # list `f10` for gid
+        _assert_expected_entries(
+            await _list_folder_as(folder_id_f10, listing_gid),
+            expected={
+                ExpectedValues(sub_fx, listing_gid) for sub_fx in ALL_FOLDERS_SUB_FX
+            },
+        )
+
+    # 2. lisit all levels for `gid_not_shared``
+    # can always list the contets of the "root" folder for a gid
+    _assert_expected_entries(
+        await _list_folder_as(None, gid_not_shared), expected=set()
+    )
+    for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
+        with pytest.raises(FolderNotSharedWithGidError):
+            await _list_folder_as(folder_id_to_check, gid_not_shared)
+
+    # 3. lisit all levels for `gid_no_access`
+    # can always be ran but should not list any entry
+    _assert_expected_entries(await _list_folder_as(None, gid_no_access), expected=set())
+    # there are insusficient permissions
+    for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
+        with pytest.raises(InsufficientPermissionsError):
+            await _list_folder_as(folder_id_to_check, gid_no_access)

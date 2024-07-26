@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic import BaseModel, NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
@@ -784,6 +784,18 @@ async def folder_remove_project(
         )
 
 
+class FolderEntry(BaseModel):
+    folder_id: _FolderID
+    gid: _GroupID
+    name: str
+    description: str
+    access_via_gid: _GroupID
+    access_via_folder_id: _FolderID | None
+
+    class Config:
+        orm_mode = True
+
+
 async def folder_list(
     connection: SAConnection,
     folder_id: _FolderID | None,
@@ -792,19 +804,20 @@ async def folder_list(
     limit: NonNegativeInt,
     offset: NonNegativeInt,
     required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
-) -> list[Any]:
+) -> list[FolderEntry]:
     """
     Raises:
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
     """
-    # NOTE: when folder_id is None it means listing the gid's root folder
+    # NOTE: when `folder_id is None` list the root folder of `gid`
 
     results = []
 
     async with connection.begin():
         access_via_gid: _GroupID = gid
+        access_via_folder_id: _FolderID | None = None
 
         if folder_id:
             # this one provides the set of access rights
@@ -816,22 +829,35 @@ async def folder_list(
                 enforece_all_permissions=False,
             )
             access_via_gid = top_most_parent_with_permissions["gid"]
+            access_via_folder_id = top_most_parent_with_permissions["folder_id"]
 
         query = (
-            sa.select(folders, folders_access_rights)
+            sa.select(
+                folders,
+                folders_access_rights,
+                sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
+                sa.literal_column(
+                    f"{access_via_folder_id}" if access_via_folder_id else "NULL"
+                ).label("access_via_folder_id"),
+            )
             .join(
                 folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
             )
             .where(
-                folders_access_rights.c.traversal_parent_id == folder_id
+                folders_access_rights.c.traversal_parent_id.is_(None)
                 if folder_id is None
-                else folders_access_rights.c.traversal_parent_id.is_(None)
+                else folders_access_rights.c.traversal_parent_id == folder_id
+            )
+            .where(
+                folders_access_rights.c.gid == access_via_gid
+                if folder_id is None
+                else True
             )
             .offset(offset)
             .limit(limit)
         )
 
         async for entry in connection.execute(query):
-            results.append(entry)  # noqa: PERF401s
+            results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
     return results
