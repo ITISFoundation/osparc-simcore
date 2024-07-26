@@ -51,8 +51,8 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
 
   statics: {
     WINDOW_WIDTH: 700,
-    CONTENT_PADDING: 15,
-    CONTENT_WIDTH: 670
+    CONTENT_PADDING: 20,
+    CONTENT_WIDTH: 660
   },
 
   members: {
