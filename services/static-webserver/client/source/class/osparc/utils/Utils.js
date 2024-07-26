@@ -112,29 +112,17 @@ qx.Class.define("osparc.utils.Utils", {
             const aspectRatio = srcWidth/srcHeight;
             switch (force) {
               case "width": {
-                const newHeight = srcWidth/aspectRatio;
-                if (maxDimension) {
-                  image.set({
-                    maxHeight: parseInt(newHeight)
-                  });
-                } else {
-                  image.set({
-                    height: parseInt(newHeight)
-                  });
-                }
+                const newHeight = maxDimension/aspectRatio;
+                image.set({
+                  maxHeight: parseInt(newHeight)
+                });
                 break;
               }
               case "height": {
-                const newWidth = srcHeight*aspectRatio;
-                if (maxDimension) {
-                  image.set({
-                    maxWidth: parseInt(newWidth)
-                  });
-                } else {
-                  image.set({
-                    width: parseInt(newWidth)
-                  });
-                }
+                const newWidth = maxDimension*aspectRatio;
+                image.set({
+                  maxWidth: parseInt(newWidth)
+                });
                 break;
               }
             }
