@@ -144,9 +144,13 @@ class _BasePermissions:
     CREATE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
     ADD_PROJECT_TO_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
 
+    SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    UPDATE_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    REMOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
-        # TODO: ask OM if it makes sense for the permission on source to be Delete or Write (for sure read is wrong)
-        r=True,
+        d=True,
         description="apply to folder form which data is copied",
     )
     _MOVE_FOLDER_DESTINATION: ClassVar[_FolderPermissions] = _make_permissions(
@@ -155,11 +159,6 @@ class _BasePermissions:
     MOVE_FOLDER: ClassVar[_FolderPermissions] = _or_dicts_list(
         [_MOVE_FOLDER_SOURCE, _MOVE_FOLDER_DESTINATION]
     )
-
-    SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    UPDATE_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    REMOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
 
 
 NO_ACCESS_PERMISSIONS: _FolderPermissions = _make_permissions()
@@ -174,7 +173,6 @@ EDITOR_PERMISSIONS: _FolderPermissions = _or_dicts_list(
         VIEWER_PERMISSIONS,
         _BasePermissions.CREATE_FOLDER,
         _BasePermissions.ADD_PROJECT_TO_FOLDER,
-        _BasePermissions.MOVE_FOLDER,
     ]
 )
 OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
@@ -184,6 +182,7 @@ OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
         _BasePermissions.UPDATE_FODLER,
         _BasePermissions.DELETE_FOLDER,
         _BasePermissions.REMOVE_PROJECT_FROM_FOLDER,
+        _BasePermissions.MOVE_FOLDER,
     ]
 )
 
@@ -713,6 +712,53 @@ async def folder_remove_project(
             .where(folders_to_projects.c.folder_id == folder_id)
             .where(folders_to_projects.c.project_id == project_id)
         )
+
+
+async def folder_list(
+    connection: SAConnection,
+    folder_id: _FolderID | None,
+    gid: _GroupID,
+    *,
+    limit: NonNegativeInt,
+    offset: NonNegativeInt,
+    required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
+) -> list[Any]:
+    # NOTE: when folder_id is None it means listing the gid's root folder
+
+    results = []
+
+    async with connection.begin():
+        access_via_gid: _GroupID = gid
+
+        if folder_id:
+            # this one provides the set of access rights
+            top_most_parent_with_permissions = await _check_folder_and_access(
+                connection,
+                folder_id=folder_id,
+                gid=gid,
+                permissions=required_permissions,
+                enforece_all_permissions=False,
+            )
+            access_via_gid = top_most_parent_with_permissions["gid"]
+
+        query = (
+            sa.select(folders, folders_access_rights)
+            .join(
+                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
+            )
+            .where(
+                folders_access_rights.c.traversal_parent_id == folder_id
+                if folder_id is None
+                else folders_access_rights.c.traversal_parent_id.is_(None)
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        async for entry in connection.execute(query):
+            results.append(entry)  # noqa: PERF401s
+
+    return results
 
 
 # TODO: add the following

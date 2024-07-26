@@ -244,7 +244,7 @@ async def setup_projects_for_users(
     return projects
 
 
-async def test_create_folder(
+async def test_folder_create(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     owner_gid = _get_random_gid(setup_users_and_groups)
@@ -1250,3 +1250,11 @@ async def test_add_remove_project_in_folder(
         await _add_folder_as(gid_no_access)
     with pytest.raises(InsufficientPermissionsError):
         await _remove_folder_as(gid_no_access)
+
+
+async def test_folder_list(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    pass
