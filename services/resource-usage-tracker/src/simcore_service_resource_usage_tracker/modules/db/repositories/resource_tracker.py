@@ -48,9 +48,6 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit_costs import (
-    PricingUnitCostsDB,
-)
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from ....models.resource_tracker_credit_transactions import (
@@ -63,6 +60,7 @@ from ....models.resource_tracker_pricing_plans import (
     PricingPlansWithServiceDefaultPlanDB,
     PricingPlanToServiceDB,
 )
+from ....models.resource_tracker_pricing_unit_costs import PricingUnitCostsDB
 from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
     ServiceRunCreate,
