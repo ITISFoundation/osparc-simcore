@@ -393,6 +393,12 @@ async def _check_folder_and_access(
     permissions: _FolderPermissions,
     enforece_all_permissions: bool,
 ) -> RowProxy:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     folder_entry: int | None = await connection.scalar(
         sa.select([folders.c.id]).where(folders.c.id == folder_id)
     )
@@ -441,6 +447,15 @@ async def folder_create(
         _BasePermissions.CREATE_FOLDER
     ),
 ) -> _FolderID:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        FolderAlreadyExistsError
+        CouldNotCreateFolderError
+        GroupIdDoesNotExistError
+    """
     _validate_folder_name(name)
 
     async with connection.begin():
@@ -506,6 +521,12 @@ async def folder_share_or_update_permissions(
         _BasePermissions.SHARE_FOLDER
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
     async with connection.begin():
         await _check_folder_and_access(
@@ -549,6 +570,12 @@ async def folder_update(
         _BasePermissions.UPDATE_FODLER
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     async with connection.begin():
         await _check_folder_and_access(
             connection,
@@ -583,6 +610,12 @@ async def folder_delete(
         _BasePermissions.DELETE_FOLDER
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     childern_folder_ids: list[_FolderID] = []
 
     async with connection.begin():
@@ -626,6 +659,13 @@ async def folder_move(
         _BasePermissions._MOVE_FOLDER_DESTINATION  # pylint:disable=protected-access # noqa: SLF001
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        CannotMoveFolderSharedViaNonPrimaryGroupError:
+    """
     async with connection.begin():
         source_access_entry = await _check_folder_and_access(
             connection,
@@ -675,6 +715,13 @@ async def folder_add_project(
         _BasePermissions.ADD_PROJECT_TO_FOLDER
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        ProjectAlreadyExistsInFolderError
+    """
     async with connection.begin():
         await _check_folder_and_access(
             connection,
@@ -715,6 +762,12 @@ async def folder_remove_project(
         _BasePermissions.REMOVE_PROJECT_FROM_FOLDER
     ),
 ) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     async with connection.begin():
         await _check_folder_and_access(
             connection,
@@ -740,6 +793,12 @@ async def folder_list(
     offset: NonNegativeInt,
     required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
 ) -> list[Any]:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
     # NOTE: when folder_id is None it means listing the gid's root folder
 
     results = []
