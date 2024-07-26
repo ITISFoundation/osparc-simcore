@@ -1544,7 +1544,15 @@ async def test_folder_list(
             },
         )
 
-    # 2. lisit all levels for `gid_not_shared``
+    # 2. lisit all levels for `gid_no_access`
+    # can always be ran but should not list any entry
+    _assert_expected_entries(await _list_folder_as(None, gid_no_access), expected=set())
+    # there are insusficient permissions
+    for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
+        with pytest.raises(InsufficientPermissionsError):
+            await _list_folder_as(folder_id_to_check, gid_no_access)
+
+    # 3. lisit all levels for `gid_not_shared``
     # can always list the contets of the "root" folder for a gid
     _assert_expected_entries(
         await _list_folder_as(None, gid_not_shared), expected=set()
@@ -1552,11 +1560,3 @@ async def test_folder_list(
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(FolderNotSharedWithGidError):
             await _list_folder_as(folder_id_to_check, gid_not_shared)
-
-    # 3. lisit all levels for `gid_no_access`
-    # can always be ran but should not list any entry
-    _assert_expected_entries(await _list_folder_as(None, gid_no_access), expected=set())
-    # there are insusficient permissions
-    for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
-        with pytest.raises(InsufficientPermissionsError):
-            await _list_folder_as(folder_id_to_check, gid_no_access)

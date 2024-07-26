@@ -813,7 +813,7 @@ async def folder_list(
     """
     # NOTE: when `folder_id is None` list the root folder of `gid`
 
-    results = []
+    results: list[FolderEntry] = []
 
     async with connection.begin():
         access_via_gid: _GroupID = gid
