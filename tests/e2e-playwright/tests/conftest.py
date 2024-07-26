@@ -225,14 +225,6 @@ def autoscaled(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def service_test_id(request: pytest.FixtureRequest) -> str:
-    if test_id := request.config.getoption("--service-test-id"):
-        assert isinstance(test_id, str)
-        return test_id
-    return os.environ["SERVICE_TEST_ID"]
-
-
-@pytest.fixture(scope="session")
 def service_key(request: pytest.FixtureRequest) -> str:
     if key := request.config.getoption("--service-key"):
         assert isinstance(key, str)
@@ -271,7 +263,7 @@ def register(
     def _do() -> AutoRegisteredUser:
         with log_context(
             logging.INFO,
-            f"------> Registering in {product_url=} using {user_name=}/{user_password=}",
+            f"Register in {product_url=} using {user_name=}/{user_password=}",
         ):
             response = page.goto(f"{product_url}")
             assert response
@@ -303,7 +295,7 @@ def log_in_and_out(
 ) -> Iterator[WebSocket]:
     with log_context(
         logging.INFO,
-        f"Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -319,13 +311,19 @@ def log_in_and_out(
         if newReleaseCloseBtnLocator.is_visible():
             newReleaseCloseBtnLocator.click()
 
-    with page.expect_websocket() as ws_info:
+    with (
+        log_context(
+            logging.INFO,
+            f"Log in {product_url} using {user_name=}/{user_password=}/{auto_register=}",
+        ),
+        page.expect_websocket() as ws_info,
+    ):
         if auto_register:
             register()
         else:
             with log_context(
                 logging.INFO,
-                f"Logging in {product_url=} using {user_name=}/{user_password=}",
+                f"Log in {product_url=} using {user_name=}/{user_password=}",
             ):
                 _user_email_box = page.get_by_test_id("loginUserEmailFld")
                 _user_email_box.click()
@@ -351,15 +349,12 @@ def log_in_and_out(
     quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
-    print(
-        f"------> Successfully logged in {product_url=} using {user_name=}/{user_password=}"
-    )
 
     yield ws
 
     with log_context(
         logging.INFO,
-        f"Logging out of {product_url=} using {user_name=}/{user_password=}",
+        f"Log out of {product_url=} using {user_name=}/{user_password=}",
     ):
         page.keyboard.press("Escape")
         page.get_by_test_id("userMenuBtn").click()
@@ -392,7 +387,7 @@ def create_new_project_and_delete(
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"Opening project in {product_url=} as {product_billable=}",
+            f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with (
@@ -424,18 +419,18 @@ def create_new_project_and_delete(
     # go back to dashboard and wait for project to close
     with ExitStack() as stack:
         for project_uuid in created_project_uuids:
-            stack.enter_context(
-                log_context(logging.INFO, f"Waiting for closed project {project_uuid=}")
+            ctx = stack.enter_context(
+                log_context(logging.INFO, f"Wait for closed project {project_uuid=}")
             )
             stack.enter_context(
                 log_in_and_out.expect_event(
                     "framereceived",
-                    SocketIOProjectClosedWaiter(),
+                    SocketIOProjectClosedWaiter(ctx.logger),
                     timeout=_PROJECT_CLOSING_TIMEOUT,
                 )
             )
         if created_project_uuids:
-            with log_context(logging.INFO, "Going back to dashboard"):
+            with log_context(logging.INFO, "Go back to dashboard"):
                 page.get_by_test_id("dashboardBtn").click()
                 page.get_by_test_id("confirmDashboardBtn").click()
                 page.get_by_test_id("studiesTabBtn").click()
@@ -443,7 +438,7 @@ def create_new_project_and_delete(
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"Delete project with {project_uuid=} in {product_url=} as {product_billable=}",
         ):
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
@@ -510,7 +505,7 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"------> Starting computation in {product_url=}...",
+            f"Start computation in {product_url=}...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(
@@ -549,7 +544,7 @@ def start_and_stop_pipeline(
             started_pipeline_ids.append(pipeline_id)
 
             ctx.messages.done = (
-                f"------> Started computation with {pipeline_id=} in {product_url=}..."
+                f"Started computation with {pipeline_id=} in {product_url=}..."
             )
 
             return decode_socketio_42_message(event.value)
@@ -559,11 +554,6 @@ def start_and_stop_pipeline(
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:
         with log_context(
-            logging.INFO,
-            (
-                "<------ Stopping computation with %s",
-                "<------ Stopped computation with %s",
-            ),
-            f"{pipeline_id=} in {product_url=}...",
+            logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"
         ):
             api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
