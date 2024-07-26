@@ -1349,16 +1349,16 @@ async def test_add_remove_project_in_folder(
 
 
 class ExpectedValues(NamedTuple):
-    folder_id: _FolderID
-    gid: _GroupID
+    id: _FolderID
+    access_via_gid: _GroupID
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
     def __hash__(self):
         return hash(
             (
-                self.folder_id,
-                self.gid,
+                self.id,
+                self.access_via_gid,
                 tuple(sorted(self.my_access_rights.items())),
                 tuple(
                     (k, tuple(sorted(v.items())))
@@ -1371,8 +1371,8 @@ class ExpectedValues(NamedTuple):
         if not isinstance(other, ExpectedValues):
             return False
         return (
-            self.folder_id == other.folder_id
-            and self.gid == other.gid
+            self.id == other.id
+            and self.access_via_gid == other.access_via_gid
             and self.my_access_rights == other.my_access_rights
             and self.access_rights == other.access_rights
         )
@@ -1653,4 +1653,156 @@ async def test_folder_list(
         assert found_folders == one_shot_query
 
 
-# TODO: sharing a child with someone else that does not have access to the root
+async def test_folder_list_shared_with_different_permissions(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    gid_owner_a = _get_random_gid(setup_users_and_groups)
+    gid_owner_b = _get_random_gid(setup_users_and_groups, already_picked={gid_owner_a})
+    gid_owner_c = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b}
+    )
+    gid_owner_level_2 = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b, gid_owner_c}
+    )
+
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # `f_owner_a`(`gid_owner_a`)[`gid_owner_b`,`gid_owner_c`]:
+    #   - `f_owner_b`(`gid_owner_b`):
+    #       - `f_owner_c`(`gid_owner_c`)[`gid_owner_level_2`]:
+    #           - `f_sub_owner_c`(`gid_owner_c`)
+    #           - `f_owner_level_2`(`gid_owner_level_2`)
+    folder_id_f_owner_a = await folder_create(connection, "f_owner_a", gid_owner_a)
+    for target_gid in (gid_owner_b, gid_owner_c):
+        await folder_share_or_update_permissions(
+            connection,
+            folder_id_f_owner_a,
+            gid_owner_a,
+            recipient_gid=target_gid,
+            recipient_role=FolderAccessRole.OWNER,
+        )
+    folder_id_f_owner_b = await folder_create(
+        connection, "f_owner_b", gid_owner_b, parent=folder_id_f_owner_a
+    )
+    folder_id_f_owner_c = await folder_create(
+        connection, "f_owner_c", gid_owner_c, parent=folder_id_f_owner_b
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_f_owner_c,
+        gid_owner_c,
+        recipient_gid=gid_owner_level_2,
+        recipient_role=FolderAccessRole.OWNER,
+    )
+    folder_id_f_sub_owner_c = await folder_create(
+        connection, "f_sub_owner_c", gid_owner_c, parent=folder_id_f_owner_c
+    )
+    folder_id_f_owner_level_2 = await folder_create(
+        connection, "f_owner_level_2", gid_owner_level_2, parent=folder_id_f_owner_c
+    )
+
+    # 1. `gid_owner_a`, `gid_owner_b`, `gid_owner_c` have the exact same veiw
+    for listing_gid in (gid_owner_a, gid_owner_b, gid_owner_c):
+        # list `root` for gid
+        _assert_expected_entries(
+            await _list_folder_as(connection, None, listing_gid),
+            expected={
+                ExpectedValues(
+                    folder_id_f_owner_a,
+                    listing_gid,
+                    OWNER_PERMISSIONS,
+                    {
+                        gid_owner_a: OWNER_PERMISSIONS,
+                        gid_owner_b: OWNER_PERMISSIONS,
+                        gid_owner_c: OWNER_PERMISSIONS,
+                    },
+                ),
+            },
+        )
+        # list `f_owner_a` for gid
+        _assert_expected_entries(
+            await _list_folder_as(connection, folder_id_f_owner_a, listing_gid),
+            expected={
+                ExpectedValues(
+                    folder_id_f_owner_b,
+                    listing_gid,
+                    OWNER_PERMISSIONS,
+                    {gid_owner_b: OWNER_PERMISSIONS},
+                ),
+            },
+        )
+        # list `f_owner_b` for gid
+        _assert_expected_entries(
+            await _list_folder_as(connection, folder_id_f_owner_b, listing_gid),
+            expected={
+                ExpectedValues(
+                    folder_id_f_owner_c,
+                    listing_gid,
+                    OWNER_PERMISSIONS,
+                    {
+                        gid_owner_c: OWNER_PERMISSIONS,
+                        gid_owner_level_2: OWNER_PERMISSIONS,
+                    },
+                ),
+            },
+        )
+        # list `f_owner_c` for gid
+        _assert_expected_entries(
+            await _list_folder_as(connection, folder_id_f_owner_c, listing_gid),
+            expected={
+                ExpectedValues(
+                    folder_id_f_sub_owner_c,
+                    listing_gid,
+                    OWNER_PERMISSIONS,
+                    {
+                        gid_owner_c: OWNER_PERMISSIONS,
+                    },
+                ),
+                ExpectedValues(
+                    folder_id_f_owner_level_2,
+                    listing_gid,
+                    OWNER_PERMISSIONS,
+                    {
+                        gid_owner_level_2: OWNER_PERMISSIONS,
+                    },
+                ),
+            },
+        )
+
+    # 2. `gid_owner_level_2` can only access from `f_owner_c` downwards
+    # list `f_owner_c` for `gid_owner_level_2`
+    _assert_expected_entries(
+        await _list_folder_as(connection, None, gid_owner_level_2),
+        expected={
+            ExpectedValues(
+                folder_id_f_owner_c,
+                gid_owner_level_2,
+                OWNER_PERMISSIONS,
+                {
+                    gid_owner_c: OWNER_PERMISSIONS,
+                    gid_owner_level_2: OWNER_PERMISSIONS,
+                },
+            ),
+        },
+    )
+    # list `root` for `gid_owner_level_2`
+    _assert_expected_entries(
+        await _list_folder_as(connection, folder_id_f_owner_c, gid_owner_level_2),
+        expected={
+            ExpectedValues(
+                folder_id_f_sub_owner_c,
+                gid_owner_level_2,
+                OWNER_PERMISSIONS,
+                {
+                    gid_owner_c: OWNER_PERMISSIONS,
+                },
+            ),
+            ExpectedValues(
+                folder_id_f_owner_level_2,
+                gid_owner_level_2,
+                OWNER_PERMISSIONS,
+                {
+                    gid_owner_level_2: OWNER_PERMISSIONS,
+                },
+            ),
+        },
+    )
