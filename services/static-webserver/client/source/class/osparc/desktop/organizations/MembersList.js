@@ -283,9 +283,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
               }
             }
             // Let me go?
-            const openStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+            const openStudy = osparc.store.Store.getInstance().getCurrentStudy();
             if (
-              openStudyId === null &&
+              openStudy === null &&
               canIWrite &&
               members.length > 1 && member["gid"] === osparc.auth.Data.getInstance().getGroupId()
             ) {

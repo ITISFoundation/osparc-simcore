@@ -86,7 +86,7 @@ qx.Class.define("osparc.Application", {
           // allow reloading in login page
           webSocket.isConnected() &&
           // allow reloading in dashboard
-          osparc.store.Store.getInstance().getCurrentStudyId()
+          osparc.store.Store.getInstance().getCurrentStudy()
         ) {
           // Cancel the event as stated by the standard.
           e.preventDefault();
