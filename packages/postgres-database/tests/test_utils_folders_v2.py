@@ -1105,6 +1105,98 @@ async def test_folder_move(
     )
 
 
+async def test_move_only_owners_can_move(
+    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+):
+    gid_owner = _get_random_gid(setup_users_and_groups)
+    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
+    gid_viewer = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor}
+    )
+    gid_no_access = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
+    )
+    gid_not_shared = _get_random_gid(
+        setup_users_and_groups,
+        already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
+    )
+
+    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # `to_move`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]
+    # `target_owner`(`gid_owner`)
+    # `target_editor`(`gid_editor`)
+    # `target_viewer`(`gid_viewer`)
+    # `target_no_access`(`gid_no_access`)
+    # `target_not_shared`(`gid_not_shared`)
+    folder_id_to_move = await folder_create(connection, "to_move", gid_owner)
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_to_move,
+        gid_owner,
+        recipient_gid=gid_editor,
+        recipient_role=FolderAccessRole.EDITOR,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_to_move,
+        gid_owner,
+        recipient_gid=gid_viewer,
+        recipient_role=FolderAccessRole.VIEWER,
+    )
+    await folder_share_or_update_permissions(
+        connection,
+        folder_id_to_move,
+        gid_owner,
+        recipient_gid=gid_no_access,
+        recipient_role=FolderAccessRole.NO_ACCESS,
+    )
+
+    folder_id_target_owner = await folder_create(connection, "target_owner", gid_owner)
+    folder_id_target_editor = await folder_create(
+        connection, "target_editor", gid_editor
+    )
+    folder_id_target_viewer = await folder_create(
+        connection, "target_viewer", gid_viewer
+    )
+    folder_id_target_no_access = await folder_create(
+        connection, "target_no_access", gid_no_access
+    )
+    folder_id_target_not_shared = await folder_create(
+        connection, "target_not_shared", gid_not_shared
+    )
+
+    async def _fails_to_move(gid: _GroupID, destination_folder_id: _FolderID) -> None:
+        with pytest.raises(InsufficientPermissionsError):
+            await folder_move(
+                connection,
+                folder_id_to_move,
+                gid,
+                destination_folder_id=destination_folder_id,
+            )
+
+    # 1. no permissions to move
+    await _fails_to_move(gid_editor, folder_id_target_editor)
+    await _fails_to_move(gid_viewer, folder_id_target_viewer)
+    await _fails_to_move(gid_no_access, folder_id_target_no_access)
+
+    # 2. not shared with user
+    with pytest.raises(FolderNotSharedWithGidError):
+        await folder_move(
+            connection,
+            folder_id_to_move,
+            gid_not_shared,
+            destination_folder_id=folder_id_target_not_shared,
+        )
+
+    # 3. owner us able to move
+    await folder_move(
+        connection,
+        folder_id_to_move,
+        gid_owner,
+        destination_folder_id=folder_id_target_owner,
+    )
+
+
 async def test_move_group_non_standard_groups_raise_error(
     connection: SAConnection,
     setup_users_and_groups: set[_GroupID],
