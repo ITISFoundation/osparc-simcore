@@ -1,6 +1,7 @@
 import re
 import uuid
 from collections.abc import Iterable
+from datetime import datetime
 from enum import Enum
 from functools import reduce
 from typing import Any, ClassVar, Final, TypeAlias, TypedDict
@@ -9,7 +10,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import BaseModel, NonNegativeInt, PositiveInt
+from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
@@ -785,12 +786,21 @@ async def folder_remove_project(
 
 
 class FolderEntry(BaseModel):
-    folder_id: _FolderID
-    gid: _GroupID
+    id: _FolderID
+    parent_folder: _FolderID | None = Field(alias="traversal_parent_id")
     name: str
     description: str
-    access_via_gid: _GroupID
+    owner: _GroupID = Field(alias="created_by")
+    created_at: datetime
+    last_modified: datetime
+    my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
+
+    access_via_gid: _GroupID = Field(
+        ...,
+        description="used to compute my_access_rights, should be used by the frotned",
+    )
+    gid: _GroupID = Field(..., description="actual gid of this entry")
 
     class Config:
         orm_mode = True
@@ -817,6 +827,7 @@ async def folder_list(
 
     async with connection.begin():
         access_via_gid: _GroupID = gid
+        access_via_folder_id: _FolderID | None = None
 
         if folder_id:
             # this one provides the set of access rights
@@ -828,8 +839,30 @@ async def folder_list(
                 enforece_all_permissions=False,
             )
             access_via_gid = top_most_parent_with_permissions["gid"]
+            access_via_folder_id = top_most_parent_with_permissions["folder_id"]
 
-        access_rights_subquery = (
+        subquery_my_access_rights = (
+            sa.select(
+                sa.func.jsonb_build_object(
+                    "read",
+                    folders_access_rights.c.read,
+                    "write",
+                    folders_access_rights.c.write,
+                    "delete",
+                    folders_access_rights.c.delete,
+                ).label("my_access_rights"),
+            )
+            .where(
+                folders_access_rights.c.folder_id == access_via_folder_id
+                if access_via_gid and access_via_folder_id
+                else folders_access_rights.c.folder_id == folders.c.id
+            )
+            .where(folders_access_rights.c.gid == access_via_gid)
+            .correlate(folders)
+            .scalar_subquery()
+        )
+
+        subquery_access_rights = (
             sa.select(
                 sa.func.jsonb_object_agg(
                     folders_access_rights.c.gid,
@@ -853,7 +886,8 @@ async def folder_list(
                 folders,
                 folders_access_rights,
                 sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
-                access_rights_subquery.label("access_rights"),
+                subquery_my_access_rights.label("my_access_rights"),
+                subquery_access_rights.label("access_rights"),
             )
             .join(
                 folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
