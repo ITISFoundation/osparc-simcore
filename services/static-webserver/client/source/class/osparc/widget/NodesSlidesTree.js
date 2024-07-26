@@ -295,6 +295,10 @@ qx.Class.define("osparc.widget.NodesSlidesTree", {
     __saveInstructions: function(item, instructions) {
       const itemMdl = item.getModel();
       itemMdl.setInstructions(instructions);
+
+      // save instructions
+      const nodeId = itemMdl.getNodeId();
+      this.__study.getUi().getSlideshow().setInstructions(nodeId, instructions);
     },
 
     __serialize: function() {
