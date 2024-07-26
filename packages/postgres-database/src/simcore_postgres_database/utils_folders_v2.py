@@ -142,11 +142,14 @@ def _only_true_permissions(permissions: _FolderPermissions) -> dict:
     return {k: v for k, v in permissions.items() if v is True}
 
 
-_ALL_PERMISSION_KEYS: Final[set[str]] = {"read", "write", "delete"}
-
-
 def _or_reduce(x: _FolderPermissions, y: _FolderPermissions) -> _FolderPermissions:
-    return _FolderPermissions(**{key: x[key] or y[key] for key in _ALL_PERMISSION_KEYS})
+    return _FolderPermissions(
+        {
+            "read": x["read"] or y["read"],
+            "write": x["write"] or y["write"],
+            "delete": x["delete"] or y["delete"],
+        }
+    )
 
 
 def _or_dicts_list(dicts: Iterable[_FolderPermissions]) -> _FolderPermissions:
