@@ -194,11 +194,6 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             const walletMember = e.getData();
             this.__deleteMember(walletMember);
           });
-          item.addListener("leaveResource", e => {
-            const walletMember = e.getData();
-            console.log("leaveResource", walletMember);
-            // this.__deleteMember(orgMember);
-          });
         }
       });
 
@@ -253,10 +248,6 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
                 "removeMember"
               ];
             }
-          }
-          // Let me go
-          if (canIWrite && wallet.getAccessRights().length > 1 && gid === osparc.auth.Data.getInstance().getGroupId()) {
-            options.push("leave");
           }
           collaborator["options"] = options;
           collaborator["showOptions"] = Boolean(options.length);

@@ -30,8 +30,7 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
   events: {
     "promoteToAccountant": "qx.event.type.Data",
     "demoteToMember": "qx.event.type.Data",
-    "removeMember": "qx.event.type.Data",
-    "leaveResource": "qx.event.type.Data"
+    "removeMember": "qx.event.type.Data"
   },
 
   members: {
@@ -106,21 +105,6 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
           this.fireDataEvent("removeMember", {
             gid: this.getGid(),
             name: this.getTitle()
-          });
-        });
-        menu.add(removeButton);
-      }
-
-      if (options.includes("leave")) {
-        if (menu.getChildren().length) {
-          menu.addSeparator();
-        }
-        const removeButton = new qx.ui.menu.Button(this.tr("Leave")).set({
-          textColor: "danger-red"
-        });
-        removeButton.addListener("execute", () => {
-          this.fireDataEvent("leaveResource", {
-            gid: this.getGid()
           });
         });
         menu.add(removeButton);
