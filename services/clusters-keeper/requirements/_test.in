@@ -30,3 +30,4 @@ pytest-mock
 pytest-runner
 python-dotenv
 respx
+types-PyYAML
