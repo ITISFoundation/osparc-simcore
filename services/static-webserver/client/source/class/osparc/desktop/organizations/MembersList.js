@@ -32,6 +32,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     });
   },
 
+  events: {
+    "organizationLeft": "qx.event.type.Event"
+  },
+
   statics: {
     getNoReadAccess: function() {
       return {
@@ -520,11 +524,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           "uid": orgMember["id"]
         }
       };
-      osparc.data.Resources.fetch("organizationMembers", "delete", params)
+      return osparc.data.Resources.fetch("organizationMembers", "delete", params)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully removed"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
@@ -537,7 +540,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      this.__doDeleteMember(orgMember);
+      this.__doDeleteMember(orgMember)
+        .then(() => this.__reloadOrgMembers());
     },
 
     __deleteMyself: function(orgMember) {
@@ -568,7 +572,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           confirmationWin.open();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              this.__doDeleteMember(orgMember);
+              this.__doDeleteMember(orgMember)
+                .then(() => this.fireEvent("organizationLeft"));
             }
           }, this);
         });
