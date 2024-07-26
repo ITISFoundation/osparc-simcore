@@ -26,7 +26,24 @@ _FolderID: TypeAlias = PositiveInt
 ###
 
 
-# TODO: add error hierarchy here
+"""Errors hierarcy
+
+FoldersError
+    * InvalidFolderNameError
+    * BaseAccessError
+        * FolderNotFoundError
+        * FolderNotSharedWithGidError
+        * InsufficientPermissionsError
+    * BaseCreateFlderError
+        * FolderAlreadyExistsError
+        * ParentFolderIsNotWritableError
+        * CouldNotCreateFolderError
+        * GroupIdDoesNotExistError
+    * BaseMoveFolderError
+        * CannotMoveFolderSharedViaNonPrimaryGroupError
+    * BaseAddProjectError
+        * ProjectAlreadyExistsInFolderError
+"""
 
 
 class FoldersError(PydanticErrorMixin, RuntimeError):
