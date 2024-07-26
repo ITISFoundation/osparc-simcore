@@ -128,26 +128,29 @@ def test_sim4life(
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-    with log_context(logging.INFO, "launch S4l"):
-        s4l_iframe = wait_for_service_running(
-            page=page,
-            node_id=node_ids[0],
-            websocket=log_in_and_out,
-            timeout=(
-                _S4L_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
-                else _S4L_MAX_STARTUP_TIME
-            ),
-            press_start_button=False,
-        )
-
-    with log_context(logging.INFO, "Wait for S4L websocket in startup screen") as ctx:
+    with log_context(logging.INFO, "launch S4l") as ctx:
         predicate = _S4LWaitForWebsocket(logger=ctx.logger)
         with page.expect_websocket(
             predicate,
-            timeout=_S4L_STARTUP_SCREEN_MAX_TIME,
+            timeout=_S4L_STARTUP_SCREEN_MAX_TIME
+            + (
+                _S4L_AUTOSCALED_MAX_STARTUP_TIME
+                if autoscaled
+                else _S4L_MAX_STARTUP_TIME
+            )
+            + 10 * SECOND,
         ) as ws_info:
-            ...
+            s4l_iframe = wait_for_service_running(
+                page=page,
+                node_id=node_ids[0],
+                websocket=log_in_and_out,
+                timeout=(
+                    _S4L_AUTOSCALED_MAX_STARTUP_TIME
+                    if autoscaled
+                    else _S4L_MAX_STARTUP_TIME
+                ),
+                press_start_button=False,
+            )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")
 
