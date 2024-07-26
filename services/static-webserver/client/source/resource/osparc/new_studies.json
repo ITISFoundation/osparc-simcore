@@ -19,12 +19,12 @@
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
       "description": "",
-      "newStudyLabel": "Phase-Modulation TI",
+      "newStudyLabel": "Phase-modulation TI",
       "category": "precomputed",
       "idToWidget": "newPMTIPlanButton"
     }, {
       "expectedTemplateLabel": "personalized TI Planning Tool",
-      "title": "Personalized Classic TI",
+      "title": "Personalized<br>Classic TI",
       "description": "",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
@@ -32,7 +32,7 @@
       "billable": true
     }, {
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
-      "title": "Personalized Multichannel TI",
+      "title": "Personalized<br>Multichannel TI",
       "description": "",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
@@ -40,9 +40,9 @@
       "billable": true
     }, {
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
-      "title": "Personalized Phase-Modulation TI",
+      "title": "Personalized<br>Phase-modulation TI",
       "description": "",
-      "newStudyLabel": "Personalized Phase-Modulation TI",
+      "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton",
       "billable": true
@@ -52,7 +52,7 @@
       "label": "Precomputed"
     }, {
       "id": "personalized",
-      "label": "Personalized: In the process, TIP will launch simulations on AWS. The associated resource costs will be deduced from your Credits."
+      "label": "Personalized: In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
   "s4l": {
