@@ -7,7 +7,8 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
+from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.profiler_middleware import profiling_middleware

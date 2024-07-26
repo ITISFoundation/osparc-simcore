@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 
 from aiohttp import web
-from models_library.api_schemas_storage import LinkType, UploadedPart
+from models_library.api_schemas_storage import (
+    DatCoreDatasetName,
+    LinkType,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
@@ -48,7 +52,7 @@ class DatCoreDataManager(BaseDataManager):
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_files_metadatas_in_dataset(
-            self.app, user_id, api_token, api_secret, dataset_id
+            self.app, user_id, api_token, api_secret, DatCoreDatasetName(dataset_id)
         )
 
     async def list_files(
@@ -92,6 +96,7 @@ class DatCoreDataManager(BaseDataManager):
             node_id=None,
             user_id=user_id,
             is_soft_link=False,
+            sha256_checksum=None,
         )
 
     async def create_file_upload_links(
