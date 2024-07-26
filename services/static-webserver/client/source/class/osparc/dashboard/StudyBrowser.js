@@ -477,7 +477,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addTIPPlusButtons: function() {
-      const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
           if (templates) {
@@ -486,6 +485,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
                   const newButtonsInfo = newStudiesData[product].resources;
+                  const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
                   const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -526,10 +526,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyFromServiceButtons: function(serviceKey, newButtonInfo) {
-      const mode = this._resourcesContainer.getMode();
       // Make sure we have access to that service
       const versions = osparc.service.Utils.getVersions(serviceKey);
       if (versions.length && newButtonInfo) {
+        const mode = this._resourcesContainer.getMode();
         const title = newButtonInfo.title;
         const desc = newButtonInfo.description;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
