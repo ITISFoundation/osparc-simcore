@@ -166,6 +166,7 @@ mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this 
 	@mypy \
 	--config-file=$(REPO_BASE_DIR)/mypy.ini \
 	--show-error-context \
+	--show-traceback \
 	$(CURDIR)/src
 
 
