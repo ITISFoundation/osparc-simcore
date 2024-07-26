@@ -880,7 +880,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     instances_to_terminate = [
         i
         for i in cluster.terminating_nodes
-        if (now - utils_docker.get_node_termination_started_since(i.node))
+        if (now - (utils_docker.get_node_termination_started_since(i.node) or now))
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION
     ]
     terminated_instance_ids = []
