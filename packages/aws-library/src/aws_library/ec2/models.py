@@ -4,7 +4,7 @@ import tempfile
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypeAlias
 
-import sh
+import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
