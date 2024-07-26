@@ -42,12 +42,8 @@ qx.Class.define("osparc.product.quickStart.tis.PostPro", {
       const label2 = osparc.product.quickStart.Utils.createLabel(text2);
       this._add(label2);
 
-      const image1 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_1.gif").set({
-        alignX: "center",
-        scale: true,
-        width: 740,
-        height: 538
-      });
+      const image1 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_1.gif");
+      osparc.utils.Utils.forceRatioAfterLoad(image1, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
       this._add(image1);
 
       const text3 = this.tr("\
@@ -59,12 +55,8 @@ qx.Class.define("osparc.product.quickStart.tis.PostPro", {
       const label3 = osparc.product.quickStart.Utils.createLabel(text3);
       this._add(label3);
 
-      const image2 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_2.gif").set({
-        alignX: "center",
-        scale: true,
-        width: 740,
-        height: 520
-      });
+      const image2 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_2.gif");
+      osparc.utils.Utils.forceRatioAfterLoad(image2, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
       this._add(image2);
 
       const text4 = this.tr("\
@@ -76,12 +68,8 @@ qx.Class.define("osparc.product.quickStart.tis.PostPro", {
       const label4 = osparc.product.quickStart.Utils.createLabel(text4);
       this._add(label4);
 
-      const image3 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_3.gif").set({
-        alignX: "center",
-        scale: true,
-        width: 740,
-        height: 520
-      });
+      const image3 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_3.gif");
+      osparc.utils.Utils.forceRatioAfterLoad(image3, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
       this._add(image3);
     }
   }

@@ -32,12 +32,8 @@ qx.Class.define("osparc.product.quickStart.tis.S4LPostPro", {
       const label1 = osparc.product.quickStart.Utils.createLabel(text1);
       this._add(label1);
 
-      const image1 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_s4l.gif").set({
-        alignX: "center",
-        scale: true,
-        width: 737,
-        height: 443
-      });
+      const image1 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_s4l.gif");
+      osparc.utils.Utils.forceRatioAfterLoad(image1, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
       this._add(image1);
     }
   }
