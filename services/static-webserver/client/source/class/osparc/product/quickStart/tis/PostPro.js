@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.PostPro", {
+qx.Class.define("osparc.product.quickStart.tis.PostPro", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {

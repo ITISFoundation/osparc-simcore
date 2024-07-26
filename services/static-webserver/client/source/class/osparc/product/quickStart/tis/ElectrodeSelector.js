@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.ElectrodeSelector", {
+qx.Class.define("osparc.product.quickStart.tis.ElectrodeSelector", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
