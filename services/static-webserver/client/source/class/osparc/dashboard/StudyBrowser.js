@@ -464,7 +464,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addEmptyStudyPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      const title = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      })
+      const desc = this.tr("Start with an empty study");
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
       newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
