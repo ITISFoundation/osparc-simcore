@@ -759,8 +759,3 @@ async def folder_list(
             results.append(entry)  # noqa: PERF401s
 
     return results
-
-
-# TODO: add the following
-# - list folders
-# - listing projects in folders is on Matus?
