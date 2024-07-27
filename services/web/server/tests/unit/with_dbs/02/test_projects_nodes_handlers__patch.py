@@ -170,6 +170,21 @@ async def test_patch_project_node(
         data=json.dumps(_patch_boot_options),
     )
     await assert_status(resp, expected)
+    # outputs
+    _patch_outputs = {
+        "outputs": {
+            "output_1": {
+                "store": "0",
+                "path": "9934cba6-4b51-11ef-968a-02420a00f1c1/571ffc8d-fa6e-411f-afc8-9c62d08dd2fa/matus.txt",
+                "eTag": "d41d8cd98f00b204e9800998ecf8427e",
+            }
+        }
+    }
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_outputs),
+    )
+    await assert_status(resp, expected)
 
     # Get project
     get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
@@ -185,6 +200,7 @@ async def test_patch_project_node(
     assert _tested_node["inputsRequired"] == _patch_inputs_required["inputsRequired"]
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
+    assert _tested_node["outputs"] == _patch_boot_options["outputs"]
 
 
 @pytest.mark.parametrize(
