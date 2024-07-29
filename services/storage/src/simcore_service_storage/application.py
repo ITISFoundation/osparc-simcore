@@ -54,7 +54,7 @@ def create(settings: Settings) -> web.Application:
             service_name="simcore_service_storage",
             host=settings.STORAGE_HOST,
             port=settings.STORAGE_PORT,
-            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_ZIPKIN_ENDPOINT}",
+            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_OBSERVABILITY_BACKEND_ENDPOINT}",
             skip_routes=None,
         )
 

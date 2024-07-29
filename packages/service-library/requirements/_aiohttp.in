@@ -7,9 +7,10 @@
 
 aiohttp
 aiopg[sa]
-aiozipkin
 attrs
 jsonschema
 openapi-core
+opentelemetry-instrumentation-aiohttp-client
+opentelemetry-sdk
 prometheus_client
 werkzeug

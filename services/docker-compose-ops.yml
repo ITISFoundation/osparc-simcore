@@ -30,7 +30,16 @@ services:
       - "18080:8080"
     networks:
       - simcore_default
-
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    networks:
+      - default
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger HTTP Thrift
+      - "14250:14250"  # Jaeger gRPC
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
   portainer:
     image: portainer/portainer-ce
     init: true
