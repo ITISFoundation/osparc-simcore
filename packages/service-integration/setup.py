@@ -72,6 +72,7 @@ SETUP = {
     "include_package_data": True,
     "package_data": {
         "": [
+            "py.typed",
             "service/tests/**/*.py",
             "service/tests/unit/*.py",
         ]

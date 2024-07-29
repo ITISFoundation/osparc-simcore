@@ -12,7 +12,7 @@ def create_lock_key_and_value(app: FastAPI) -> tuple[str, str]:
     if app_settings.AUTOSCALING_NODES_MONITORING:
         lock_key_parts += [
             "dynamic",
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
+            *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
         ]
         lock_value = json.dumps(
             {

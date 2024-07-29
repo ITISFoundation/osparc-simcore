@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 """
     Factory to build catalog of i/o metadata for functions implemented in the front-end
 

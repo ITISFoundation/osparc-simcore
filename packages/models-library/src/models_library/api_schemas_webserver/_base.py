@@ -27,7 +27,7 @@ class InputSchemaWithoutCamelCase(BaseModel):
 
 
 class InputSchema(BaseModel):
-    class Config(InputSchemaWithoutCamelCase.Config):  # type: ignore[pydantic-alias]
+    class Config(InputSchemaWithoutCamelCase.Config):
         alias_generator = snake_to_camel
 
 

@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from datetime import datetime
 from typing import Any, ClassVar
 
@@ -17,9 +18,9 @@ assert ServiceVersion  # nosec
 
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
-    name: str | None
+    name: str | None  # type: ignore[assignment]
     thumbnail: HttpUrl | None
-    description: str | None
+    description: str | None  # type: ignore[assignment]
     version_display: str | None = None
 
     # Below fields only in the database ----

@@ -24,6 +24,9 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  uv pip install mypy
   pushd packages/postgres-database
   make mypy
   popd

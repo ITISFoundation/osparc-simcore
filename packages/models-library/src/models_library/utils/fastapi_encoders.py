@@ -7,7 +7,7 @@
 #
 
 try:
-    from fastapi.encoders import jsonable_encoder
+    from fastapi.encoders import jsonable_encoder  # type: ignore[import-not-found]
 
 except ImportError:  # for aiohttp-only services
     # Taken 'as is' from https://github.com/tiangolo/fastapi/blob/master/fastapi/encoders.py
