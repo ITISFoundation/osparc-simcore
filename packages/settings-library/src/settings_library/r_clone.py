@@ -29,3 +29,7 @@ class RCloneSettings(BaseCustomSettings):
         default="0M",
         description="`--buffer-size X`: sets the amount of RAM to use for each individual transfer",
     )
+    R_CLONE_ENABLED: bool = Field(
+        default=True,
+        description="If disabled, AWS S3 CLI is used instead (current plan is to replace RClone with AWS CLI)",
+    )

@@ -272,6 +272,8 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      AWS_S3_CLI_PROVIDER: ${AWS_S3_CLI_PROVIDER}
+
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
 
@@ -313,6 +315,7 @@ services:
       R_CLONE_OPTION_RETRIES: ${R_CLONE_OPTION_RETRIES}
       R_CLONE_OPTION_TRANSFERS: ${R_CLONE_OPTION_TRANSFERS}
       R_CLONE_PROVIDER: ${R_CLONE_PROVIDER}
+      R_CLONE_ENABLED: ${R_CLONE_ENABLED}
 
       EFS_DNS_NAME: ${EFS_DNS_NAME}
       EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}

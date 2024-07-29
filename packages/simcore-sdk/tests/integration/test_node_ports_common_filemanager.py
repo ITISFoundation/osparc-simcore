@@ -49,7 +49,12 @@ class _SyncSettings(BaseModel):
 
 @pytest.fixture(
     params=[(True, True), (False, True), (True, False), (False, False)],
-    ids=["with RClone", "without RClone", "with AwsS3Cli", "without AwsS3Cli"],
+    ids=[
+        "with RClone, RClone is enabled",
+        "without RClone, RClone is enabled",
+        "with AwsS3Cli, RClone is disabled",
+        "without AwsS3Cli, RClone is disabled",
+    ],
 )
 def optional_sync_settings(
     r_clone_settings: RCloneSettings,
