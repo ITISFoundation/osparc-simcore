@@ -1,3 +1,5 @@
+from typing import Final
+
 import sqlalchemy as sa
 
 from ._common import (
@@ -165,3 +167,55 @@ folders_to_projects = sa.Table(
 )
 
 register_modified_datetime_auto_update_trigger(folders_to_projects)
+
+
+_TRIGGER_NAME_UPDATE_FOLDER_MODIFIED: Final[str] = "update_folder_modified_timestamp"
+
+
+def register_update_folder_modified_trigger(
+    parent_table: sa.Table, child_table: sa.Table, parent_column_name: str
+) -> None:
+    """Registers a trigger to update the parent table's modified timestamp
+    when changes occur in the child table.
+
+    Arguments:
+        parent_table -- the parent table to update the timestamp
+        child_table -- the child table where changes are detected
+        parent_column_name -- the column in the child table that references the parent
+    """
+    parent_table_name = parent_table.name
+    child_table_name = child_table.name
+
+    procedure_name = (
+        f"{child_table_name}_update_{parent_table_name}_modified_timestamp()"
+    )
+
+    update_parent_modified_trigger = sa.DDL(
+        f"""
+    DROP TRIGGER IF EXISTS {child_table_name}_{_TRIGGER_NAME_UPDATE_FOLDER_MODIFIED} on {child_table_name};
+    CREATE TRIGGER {child_table_name}_{_TRIGGER_NAME_UPDATE_FOLDER_MODIFIED}
+    AFTER INSERT OR UPDATE OR DELETE ON {child_table_name}
+    FOR EACH ROW EXECUTE PROCEDURE {procedure_name};
+        """
+    )
+    update_parent_modified_procedure = sa.DDL(
+        f"""
+    CREATE OR REPLACE FUNCTION {procedure_name}
+    RETURNS TRIGGER AS $$
+    BEGIN
+    UPDATE {parent_table_name}
+    SET modified = current_timestamp
+    WHERE id = NEW.{parent_column_name} OR id = OLD.{parent_column_name};
+    RETURN NULL;
+    END;
+    $$ LANGUAGE plpgsql;
+        """  # noqa: S608
+    )
+
+    sa.event.listen(child_table, "after_create", update_parent_modified_procedure)
+    sa.event.listen(child_table, "after_create", update_parent_modified_trigger)
+
+
+# Register triggers for folders and subfolders
+register_update_folder_modified_trigger(folders, folders_access_rights, "folder_id")
+register_update_folder_modified_trigger(folders, folders_to_projects, "folder_id")

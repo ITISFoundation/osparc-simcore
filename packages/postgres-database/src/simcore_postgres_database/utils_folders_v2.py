@@ -311,8 +311,8 @@ class FolderEntry(BaseModel):
     name: str
     description: str
     owner: _GroupID = Field(alias="created_by")
-    created_at: datetime
-    last_modified: datetime
+    created: datetime
+    modified: datetime
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
