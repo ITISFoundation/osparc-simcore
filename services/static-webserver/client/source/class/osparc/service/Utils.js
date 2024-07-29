@@ -177,14 +177,14 @@ qx.Class.define("osparc.service.Utils", {
 
     getVersionDisplay: function(key, version) {
       const services = osparc.service.Store.servicesCached;
-      if (
-        key in services &&
-        version in services[key] &&
-        "versionDisplay" in services[key][version]
-      ) {
-        return services[key][version]["versionDisplay"];
+      if (key in services && version in services[key]) {
+        return this.extractVersionDisplay(services[key][version]);
       }
       return null;
+    },
+
+    extractVersionDisplay: function(metadata) {
+      return metadata["versionDisplay"] ? metadata["versionDisplay"] : metadata["version"];
     },
 
     getReleasedDate: function(key, version) {
@@ -201,8 +201,7 @@ qx.Class.define("osparc.service.Utils", {
 
     versionToListItem: function(key, version) {
       const versionDisplay = this.getVersionDisplay(key, version);
-      const label = versionDisplay ? versionDisplay : version;
-      const listItem = new qx.ui.form.ListItem(label);
+      const listItem = new qx.ui.form.ListItem(versionDisplay);
       listItem.version = version;
       return listItem;
     },

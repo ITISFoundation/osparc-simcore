@@ -329,7 +329,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     )
 
     callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        default_factory=CallbacksMapping,
+        default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
         alias="simcore.service.callbacks-mapping",
         description="exposes callbacks from user services to the sidecar",
     )
@@ -503,7 +503,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     spec will be generated before starting the service.
     """
 
-    settings: Json[SimcoreServiceSettingsLabel] = Field(  # type: ignore
+    settings: Json[SimcoreServiceSettingsLabel] = Field(
         default_factory=dict,
         alias="simcore.service.settings",
         description=(

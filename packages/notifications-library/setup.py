@@ -54,6 +54,7 @@ SETUP = {
     "include_package_data": True,
     "package_data": {
         "": [
+            "py.typed",
             "templates/**/*.jinja2",
             "templates/**/*.html",
             "templates/**/*.txt",

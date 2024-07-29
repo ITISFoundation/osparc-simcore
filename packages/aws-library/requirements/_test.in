@@ -24,3 +24,5 @@ pytest-runner
 pytest-sugar
 python-dotenv
 pyyaml
+types-aioboto3
+types-boto3

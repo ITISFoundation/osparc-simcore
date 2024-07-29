@@ -1,12 +1,11 @@
 import datetime
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_postgres_database.storage_models import file_meta_data
@@ -123,13 +122,17 @@ async def list_fmds(
     stmt = sa.select(file_meta_data).where(
         and_(
             (file_meta_data.c.user_id == f"{user_id}") if user_id else True,
-            (file_meta_data.c.project_id.in_([f"{p}" for p in project_ids]))
-            if project_ids
-            else True,
+            (
+                (file_meta_data.c.project_id.in_([f"{p}" for p in project_ids]))
+                if project_ids
+                else True
+            ),
             (file_meta_data.c.file_id.in_(file_ids)) if file_ids else True,
-            (file_meta_data.c.upload_expires_at < expired_after)
-            if expired_after
-            else True,
+            (
+                (file_meta_data.c.upload_expires_at < expired_after)
+                if expired_after
+                else True
+            ),
         )
     )
 

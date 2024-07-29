@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from math import ceil
 from typing import Any, ClassVar, Generic
 
@@ -34,15 +35,19 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
             {
                 "self": {"offset": offset, "limit": limit},
                 "first": {"offset": 0, "limit": limit},
-                "prev": {"offset": max(offset - limit, 0), "limit": limit}
-                if offset > 0
-                else None,
-                "next": {
-                    "offset": min(offset + limit, last_page * limit),
-                    "limit": limit,
-                }
-                if offset < (last_page * limit)
-                else None,
+                "prev": (
+                    {"offset": max(offset - limit, 0), "limit": limit}
+                    if offset > 0
+                    else None
+                ),
+                "next": (
+                    {
+                        "offset": min(offset + limit, last_page * limit),
+                        "limit": limit,
+                    }
+                    if offset < (last_page * limit)
+                    else None
+                ),
                 "last": {"offset": last_page * limit, "limit": limit},
             }
         )

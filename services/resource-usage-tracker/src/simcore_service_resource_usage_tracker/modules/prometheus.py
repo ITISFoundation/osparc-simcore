@@ -3,7 +3,7 @@ from typing import cast
 
 import requests
 from fastapi import FastAPI
-from prometheus_api_client import PrometheusConnect
+from prometheus_api_client import PrometheusConnect  # type: ignore[import-untyped]
 from servicelib.logging_utils import log_context
 from settings_library.prometheus import PrometheusSettings
 from tenacity import retry
@@ -16,16 +16,14 @@ from ..core.errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 
-_PROMETHEUS_INIT_RETRY = {
-    "reraise": True,
-    "stop": stop_after_delay(120),
-    "wait": wait_random_exponential(max=30),
-    "before_sleep": before_sleep_log(_logger, logging.WARNING),
-    "retry": retry_if_exception_type(ConfigurationError),
-}
 
-
-@retry(**_PROMETHEUS_INIT_RETRY)
+@retry(
+    reraise=True,
+    retry=retry_if_exception_type(ConfigurationError),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+    stop=stop_after_delay(120),
+    wait=wait_random_exponential(max=30),
+)
 async def _wait_till_prometheus_responsive(client: PrometheusConnect) -> bool:
     try:
         connected: bool = client.check_prometheus_connection()

@@ -93,10 +93,7 @@ def test_sleepers(
     # we are now in the workbench
     with log_context(
         logging.INFO,
-        (
-            f"creating {num_sleepers} sleeper(s)...",
-            f"{num_sleepers} sleeper(s) created",
-        ),
+        f"create {num_sleepers} sleeper(s)...",
     ):
         for _ in range(1, num_sleepers):
             with page.expect_response(
@@ -115,7 +112,7 @@ def test_sleepers(
     for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
         with log_context(
             logging.INFO,
-            f"getting sleeper {index} version...",
+            f"get sleeper {index} version...",
         ) as ctx:
             sleeper.click()
             page.keyboard.press("i")
@@ -141,11 +138,7 @@ def test_sleepers(
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
             with log_context(
-                logging.INFO,
-                (
-                    f"setting sleeper {index} input time to {input_sleep_time}...",
-                    f"sleeper {index} input time set to {input_sleep_time}",
-                ),
+                logging.INFO, f"set sleeper {index} input time to {input_sleep_time}"
             ):
                 sleeper.click()
                 sleep_interval_selector = page.get_by_role("textbox").nth(1)
@@ -161,7 +154,7 @@ def test_sleepers(
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
     current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    test_logger.info("--- pipeline is in %s", f"{current_state=}")
+    test_logger.info("pipeline is in %s", f"{current_state=}")
 
     # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
     current_state = wait_for_pipeline_state(
@@ -213,9 +206,9 @@ def test_sleepers(
     with log_context(
         logging.INFO,
         ContextMessages(
-            starting=f"Looking for {sleeper_expected_output_files=} in all {num_sleepers} sleeper services...",
-            done="All good, we're done here! This was really great!",
-            raised="Error checking outputs!",
+            starting=f"-> Looking for {sleeper_expected_output_files=} in all {num_sleepers} sleeper services...",
+            done="<- All good, we're done here! This was really great!",
+            raised="! Error checking outputs!",
         ),
     ) as ctx:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -226,7 +219,9 @@ def test_sleepers(
                 page.get_by_test_id("nodeFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
-            msg = f"--- found {output_file_names_found=} in sleeper {index} service outputs."
+            msg = (
+                f"found {output_file_names_found=} in sleeper {index} service outputs."
+            )
             ctx.logger.info(msg)
             assert output_file_names_found == sleeper_expected_output_files
             page.get_by_test_id("nodeDataManagerCloseBtn").click()

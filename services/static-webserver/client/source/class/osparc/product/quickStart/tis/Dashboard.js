@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.Dashboard", {
+qx.Class.define("osparc.product.quickStart.tis.Dashboard", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
@@ -32,12 +32,9 @@ qx.Class.define("osparc.product.quickStart.ti.Dashboard", {
       const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);
 
-      const image = new qx.ui.basic.Image("osparc/tutorial/ti/Dashboard.png").set({
-        alignX: "center",
-        scale: true,
-        width: 738,
-        height: 235
-      });
+      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/dashboard.png");
+      osparc.utils.Utils.forceRatioAfterLoad(image, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
+      osparc.utils.Utils.openImageOnTap(image);
       this._add(image);
 
       const newPlanText = this.tr("\
@@ -48,7 +45,7 @@ qx.Class.define("osparc.product.quickStart.ti.Dashboard", {
       this._add(newPlan);
 
       const otherPlansText = this.tr("\
-        2) The other cards are TI Plans that were already created by you or shared with you. You can reopen them to do further anaylisis \
+        2) The other cards are TI Plans that were already created by you or shared with you. You can reopen them to do further analysis \
         or by clicking three dots, on the top right corner, you can share, delete or check the details and metadata.\
       ");
       const otherPlans = osparc.product.quickStart.Utils.createLabel(otherPlansText);

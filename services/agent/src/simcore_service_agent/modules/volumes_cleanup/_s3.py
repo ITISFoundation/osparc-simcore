@@ -159,7 +159,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-
+    assert process.stdout  # nosec
     r_clone_ls_output = await _read_stream(process.stdout)
     await process.wait()
     _log_expected_operation(
@@ -197,7 +197,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-
+    assert process.stdout  # nosec
     r_clone_sync_output = await _read_stream(process.stdout)
     await process.wait()
     logger.info("Sync result:\n%s", r_clone_sync_output)
