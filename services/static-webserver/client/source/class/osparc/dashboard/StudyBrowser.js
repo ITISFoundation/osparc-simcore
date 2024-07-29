@@ -464,7 +464,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addEmptyStudyPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      const title = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      })
+      const desc = this.tr("Start with an empty study");
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
       newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
@@ -477,7 +481,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addTIPPlusButtons: function() {
-      const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
           if (templates) {
@@ -486,6 +489,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
                   const newButtonsInfo = newStudiesData[product].resources;
+                  const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
                   const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -505,7 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
-                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
+                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
                       clickAwayClose: false,
                       resizable: true
                     });

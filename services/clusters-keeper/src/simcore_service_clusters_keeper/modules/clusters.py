@@ -140,7 +140,9 @@ async def get_cluster_workers(
             app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
         ],
         tags={
-            "Name": f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            AWSTagKey("Name"): AWSTagValue(
+                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            )
         },
     )
     return ec2_instance_data

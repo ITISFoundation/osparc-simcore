@@ -335,8 +335,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           source: noThumbnail
         });
         thumbnail.getChildControl("image").set({
-          minWidth: 120,
-          minHeight: 139
+          minWidth: Math.max(120, maxWidth),
+          minHeight: Math.max(139, maxHeight)
         });
       }
       return thumbnail;

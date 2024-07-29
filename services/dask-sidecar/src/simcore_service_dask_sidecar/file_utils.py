@@ -4,13 +4,14 @@ import logging
 import mimetypes
 import time
 import zipfile
+from collections.abc import Awaitable, Callable
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, TypedDict, cast
+from typing import Any, Final, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
-import fsspec
+import fsspec  # type: ignore[import-untyped]
 from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr

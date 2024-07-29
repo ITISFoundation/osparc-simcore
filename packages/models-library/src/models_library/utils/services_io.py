@@ -22,9 +22,10 @@ def guess_media_type(io: ServiceInput | ServiceOutput) -> str:
     media_type = io.property_type.removeprefix("data:")
     if media_type == "*/*" and io.file_to_key_map:
         filename = next(iter(io.file_to_key_map.keys()))
-        media_type, _ = mimetypes.guess_type(filename)
-        if media_type is None:
-            media_type = "*/*"
+        guessed_media_type, _ = mimetypes.guess_type(filename)
+        if guessed_media_type is None:
+            return "*/*"
+        return guessed_media_type
     return media_type
 
 

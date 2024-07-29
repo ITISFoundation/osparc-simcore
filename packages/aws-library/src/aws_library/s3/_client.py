@@ -375,7 +375,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
-        upload_options = {
+        upload_options: dict[str, Any] = {
             "Bucket": bucket,
             "Key": object_key,
             "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
@@ -394,7 +394,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
-        copy_options = {
+        copy_options: dict[str, Any] = {
             "CopySource": {"Bucket": bucket, "Key": src_object_key},
             "Bucket": bucket,
             "Key": dst_object_key,
