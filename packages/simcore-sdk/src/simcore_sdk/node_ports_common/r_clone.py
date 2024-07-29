@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
 from pydantic import AnyUrl, BaseModel, ByteSize
 from pydantic.errors import PydanticErrorMixin

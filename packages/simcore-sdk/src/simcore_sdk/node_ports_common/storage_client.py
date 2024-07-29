@@ -15,12 +15,11 @@ from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadSchema,
     LinkType,
-    LocationID,
     PresignedLink,
-    StorageFileID,
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
@@ -239,6 +238,7 @@ async def get_file_metadata(
             raise exceptions.S3InvalidPathError(file_id)
 
         file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
+        assert file_metadata_enveloped.data  # nosec
         return file_metadata_enveloped.data
 
 
