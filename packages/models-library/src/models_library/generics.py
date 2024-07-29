@@ -40,6 +40,9 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def __len__(self) -> int:
         return self.__root__.__len__()
 
+    class Config(GenericModel.Config):  # mypy complains without it
+        ...
+
 
 DataT = TypeVar("DataT")
 
