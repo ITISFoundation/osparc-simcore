@@ -1,6 +1,10 @@
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
+from ._common import (
+    column_created_datetime,
+    column_modified_datetime,
+    register_modified_datetime_auto_update_trigger,
+)
 from .base import metadata
 
 folders = sa.Table(
@@ -38,22 +42,12 @@ folders = sa.Table(
         nullable=True,
         doc="traces who created the folder",
     ),
-    sa.Column(
-        "created_at",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "last_modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Timestamp with last update",
-    ),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
 )
+
+
+register_modified_datetime_auto_update_trigger(folders)
 
 folders_access_rights = sa.Table(
     "folders_access_rights",
@@ -165,100 +159,9 @@ folders_to_projects = sa.Table(
             ondelete="CASCADE",
         ),
     ),
-    sa.Column(
-        "created_at",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "last_modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Timestamp with last update",
-    ),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
     sa.PrimaryKeyConstraint("folder_id", "project_uuid", name="projects_to_folder_pk"),
 )
 
-# PROCEDURES ------------------------
-
-update_parent_last_modified_ddl = sa.DDL(
-    """
-CREATE OR REPLACE FUNCTION update_parent_last_modified()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE folders f
-    SET last_modified = NOW()
-    FROM folders_access_rights far
-    WHERE far.folder_id = NEW.folder_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-"""
-)
-
-update_folders_last_modified_ddl = sa.DDL(
-    """
-CREATE OR REPLACE FUNCTION update_folders_last_modified()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE folders
-    SET last_modified = NOW()
-    WHERE id = NEW.folder_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-"""
-)
-
-
-# TRIGGERS ------------------------
-
-trg_update_parent_last_modified_ddl = sa.DDL(
-    """
-DROP TRIGGER IF EXISTS trg_update_parent_last_modified on folders_access_rights;
-CREATE TRIGGER trg_update_parent_last_modified
-AFTER INSERT OR UPDATE ON folders_access_rights
-    FOR EACH ROW
-    EXECUTE FUNCTION update_parent_last_modified();
-"""
-)
-
-trg_update_folders_access_rights_last_modified_ddl = sa.DDL(
-    """
-DROP TRIGGER IF EXISTS trg_update_folders_access_rights_last_modified on folders_access_rights;
-CREATE TRIGGER trg_update_folders_access_rights_last_modified
-AFTER INSERT OR UPDATE OR DELETE ON folders_access_rights
-    FOR EACH ROW
-    EXECUTE FUNCTION update_folders_last_modified();
-"""
-)
-
-trg_update_folders_to_projects_last_modified_ddl = sa.DDL(
-    """
-DROP TRIGGER IF EXISTS trg_update_folders_to_projects_last_modified on folders_to_projects;
-CREATE TRIGGER trg_update_folders_to_projects_last_modified
-AFTER INSERT OR UPDATE OR DELETE ON folders_to_projects
-    FOR EACH ROW
-    EXECUTE FUNCTION update_folders_last_modified();
-"""
-)
-
-sa.event.listen(folders, "after_create", update_parent_last_modified_ddl)
-sa.event.listen(folders, "after_create", update_folders_last_modified_ddl)
-sa.event.listen(
-    folders_access_rights, "after_create", trg_update_parent_last_modified_ddl
-)
-sa.event.listen(
-    folders_access_rights,
-    "after_create",
-    trg_update_folders_access_rights_last_modified_ddl,
-)
-sa.event.listen(
-    folders_to_projects,
-    "after_create",
-    trg_update_folders_to_projects_last_modified_ddl,
-)
+register_modified_datetime_auto_update_trigger(folders_to_projects)

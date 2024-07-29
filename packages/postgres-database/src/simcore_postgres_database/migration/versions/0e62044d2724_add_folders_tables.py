@@ -1,15 +1,15 @@
-"""adding folders tables
+"""add folders tables
 
-Revision ID: 743f607ce737
+Revision ID: 0e62044d2724
 Revises: 056ed0eb1ba6
-Create Date: 2024-07-29 09:36:20.373341+00:00
+Create Date: 2024-07-29 13:10:05.238558+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "743f607ce737"
+revision = "0e62044d2724"
 down_revision = "056ed0eb1ba6"
 branch_labels = None
 depends_on = None
@@ -24,11 +24,14 @@ def upgrade():
         sa.Column("description", sa.String(), server_default="", nullable=False),
         sa.Column("created_by", sa.BigInteger(), nullable=True),
         sa.Column(
-            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+            "created",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.Column(
-            "last_modified",
-            sa.DateTime(),
+            "modified",
+            sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
         ),
@@ -82,11 +85,14 @@ def upgrade():
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column(
-            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+            "created",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.Column(
-            "last_modified",
-            sa.DateTime(),
+            "modified",
+            sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
         ),
