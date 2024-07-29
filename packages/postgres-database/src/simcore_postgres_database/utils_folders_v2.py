@@ -323,6 +323,20 @@ class FolderEntry(BaseModel):
         orm_mode = True
 
 
+class _TopMostParent(BaseModel):
+    folder_id: _FolderID
+    gid: _GroupID
+    traversal_parent_id: _FolderID | None
+    original_parent_id: _FolderID | None
+    read: bool
+    write: bool
+    delete: bool
+    level: int
+
+    class Config:
+        orm_mode = True
+
+
 async def _get_top_most_access_rights_entry(
     connection: SAConnection,
     folder_id: _FolderID,
@@ -330,7 +344,7 @@ async def _get_top_most_access_rights_entry(
     *,
     permissions: _FolderPermissions | None,
     enforece_all_permissions: bool,
-) -> RowProxy | None:
+) -> _TopMostParent | None:
 
     # Define the anchor CTE
     access_rights_cte = (
@@ -402,7 +416,7 @@ async def _get_top_most_access_rights_entry(
 
     result = await connection.execute(query.params(start_folder_id=folder_id))
     top_most_parent: RowProxy | None = await result.fetchone()
-    return top_most_parent
+    return _TopMostParent.from_orm(top_most_parent) if top_most_parent else None
 
 
 async def _check_folder_and_access(
@@ -412,7 +426,7 @@ async def _check_folder_and_access(
     *,
     permissions: _FolderPermissions,
     enforece_all_permissions: bool,
-) -> RowProxy:
+) -> _TopMostParent:
     """
     Raises:
         FolderNotFoundError
@@ -695,7 +709,7 @@ async def folder_move(
             enforece_all_permissions=False,
         )
 
-        source_access_gid = source_access_entry["gid"]
+        source_access_gid = source_access_entry.gid
         group_type: GroupType | None = await connection.scalar(
             sa.select([groups.c.type]).where(groups.c.gid == source_access_gid)
         )
@@ -836,8 +850,8 @@ async def folder_list(
                 permissions=required_permissions,
                 enforece_all_permissions=False,
             )
-            access_via_gid = top_most_parent_with_permissions["gid"]
-            access_via_folder_id = top_most_parent_with_permissions["folder_id"]
+            access_via_gid = top_most_parent_with_permissions.gid
+            access_via_folder_id = top_most_parent_with_permissions.folder_id
 
         subquery_my_access_rights = (
             sa.select(

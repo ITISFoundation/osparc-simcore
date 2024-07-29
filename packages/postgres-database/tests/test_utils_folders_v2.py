@@ -403,8 +403,8 @@ async def test__get_top_most_access_rights_entry(
             enforece_all_permissions=True,
         )
         assert resolved_parent
-        assert resolved_parent["folder_id"] == expected_folder_id
-        assert resolved_parent["gid"] in expected_gids
+        assert resolved_parent.folder_id == expected_folder_id
+        assert resolved_parent.gid in expected_gids
 
     await _assert_reloves_to(
         target_folder_id=root_folder_id,
