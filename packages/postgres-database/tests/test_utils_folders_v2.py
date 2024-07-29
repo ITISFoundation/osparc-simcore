@@ -2,6 +2,7 @@
 # pylint:disable=too-many-statements
 # pylint:disable=unused-variable
 
+import itertools
 import secrets
 from collections.abc import Awaitable, Callable
 from typing import NamedTuple
@@ -60,11 +61,40 @@ def test_permissions_integrity():
 
 
 @pytest.mark.parametrize(
+    "read, write, delete", list(itertools.product([True, False], repeat=3))
+)
+def test__folder_permissions_to_dict(read: bool, write: bool, delete: bool):
+    folder_permissions = _FolderPermissions(read=read, write=write, delete=delete)
+    assert folder_permissions.to_dict() == {
+        "read": read,
+        "write": write,
+        "delete": delete,
+    }
+    only_true: dict[str, bool] = {}
+    if read:
+        only_true["read"] = True
+    if write:
+        only_true["write"] = True
+    if delete:
+        only_true["delete"] = True
+    assert folder_permissions.to_dict(include_only_true=True) == only_true
+
+
+@pytest.mark.parametrize(
     "role, expected_permissions",
     [
-        (FolderAccessRole.VIEWER, {"read": True, "write": False, "delete": False}),
-        (FolderAccessRole.EDITOR, {"read": True, "write": True, "delete": False}),
-        (FolderAccessRole.OWNER, {"read": True, "write": True, "delete": True}),
+        (
+            FolderAccessRole.VIEWER,
+            _FolderPermissions(read=True, write=False, delete=False),
+        ),
+        (
+            FolderAccessRole.EDITOR,
+            _FolderPermissions(read=True, write=True, delete=False),
+        ),
+        (
+            FolderAccessRole.OWNER,
+            _FolderPermissions(read=True, write=True, delete=True),
+        ),
     ],
 )
 def test_role_permissions(
@@ -76,21 +106,24 @@ def test_role_permissions(
 @pytest.mark.parametrize(
     "permissions, expected",
     [
-        ([], {"read": False, "write": False, "delete": False}),
-        ([VIEWER_PERMISSIONS], {"read": True, "write": False, "delete": False}),
-        ([EDITOR_PERMISSIONS], {"read": True, "write": True, "delete": False}),
+        ([], _FolderPermissions(read=False, write=False, delete=False)),
+        (
+            [VIEWER_PERMISSIONS],
+            _FolderPermissions(read=True, write=False, delete=False),
+        ),
+        ([EDITOR_PERMISSIONS], _FolderPermissions(read=True, write=True, delete=False)),
         (
             [EDITOR_PERMISSIONS, VIEWER_PERMISSIONS],
-            {"read": True, "write": True, "delete": False},
+            _FolderPermissions(read=True, write=True, delete=False),
         ),
-        ([OWNER_PERMISSIONS], {"read": True, "write": True, "delete": True}),
+        ([OWNER_PERMISSIONS], _FolderPermissions(read=True, write=True, delete=True)),
         (
             [OWNER_PERMISSIONS, EDITOR_PERMISSIONS],
-            {"read": True, "write": True, "delete": True},
+            _FolderPermissions(read=True, write=True, delete=True),
         ),
         (
             [OWNER_PERMISSIONS, EDITOR_PERMISSIONS, VIEWER_PERMISSIONS],
-            {"read": True, "write": True, "delete": True},
+            _FolderPermissions(read=True, write=True, delete=True),
         ),
     ],
 )
@@ -139,7 +172,8 @@ def test__get_where_clause():
     )
     assert isinstance(
         _get_true_permissions(
-            {"read": False, "write": False, "delete": False}, folders_access_rights
+            _FolderPermissions(read=False, write=False, delete=False),
+            folders_access_rights,
         ),
         bool,
     )
@@ -1402,11 +1436,8 @@ class ExpectedValues(NamedTuple):
             (
                 self.id,
                 self.access_via_gid,
-                tuple(sorted(self.my_access_rights.items())),
-                tuple(
-                    (k, tuple(sorted(v.items())))
-                    for k, v in sorted(self.access_rights.items())
-                ),
+                self.my_access_rights,
+                tuple(sorted(self.access_rights.items())),
             )
         )
 

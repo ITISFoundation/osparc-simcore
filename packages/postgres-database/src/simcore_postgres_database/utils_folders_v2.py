@@ -1,10 +1,11 @@
 import re
 import uuid
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, Final, TypeAlias, TypedDict
+from typing import Any, ClassVar, Final, TypeAlias
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -27,15 +28,15 @@ _FolderID: TypeAlias = PositiveInt
 ###
 
 
-"""Errors hierarcy
+"""Errors hierarchy
 
 FoldersError
     * InvalidFolderNameError
-    * BaseAccessError
+    * FolderAccessError
         * FolderNotFoundError
         * FolderNotSharedWithGidError
         * InsufficientPermissionsError
-    * BaseCreateFlderError
+    * BaseCreateFolderError
         * FolderAlreadyExistsError
         * ParentFolderIsNotWritableError
         * CouldNotCreateFolderError
@@ -55,41 +56,41 @@ class InvalidFolderNameError(FoldersError):
     msg_template = "Provided folder name='{name}' is invalid: {reason}"
 
 
-class BaseAccessError(FoldersError):
+class FolderAccessError(FoldersError):
     pass
 
 
-class FolderNotFoundError(BaseAccessError):
+class FolderNotFoundError(FolderAccessError):
     msg_template = "no entry for folder_id={folder_id} found"
 
 
-class FolderNotSharedWithGidError(BaseAccessError):
+class FolderNotSharedWithGidError(FolderAccessError):
     msg_template = "folder_id={folder_id} was not shared with gid={gid}"
 
 
-class InsufficientPermissionsError(BaseAccessError):
+class InsufficientPermissionsError(FolderAccessError):
     msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
 
 
-class BaseCreateFlderError(FoldersError):
+class BaseCreateFolderError(FoldersError):
     pass
 
 
-class FolderAlreadyExistsError(BaseCreateFlderError):
+class FolderAlreadyExistsError(BaseCreateFolderError):
     msg_template = (
         "A folder='{folder}' with parent='{parent}' for group='{gid}' already exists"
     )
 
 
-class ParentFolderIsNotWritableError(BaseCreateFlderError):
+class ParentFolderIsNotWritableError(BaseCreateFolderError):
     msg_template = "Cannot create any sub-folders inside folder_id={parent_folder_id} since it is not writable for gid={gid}."
 
 
-class CouldNotCreateFolderError(BaseCreateFlderError):
+class CouldNotCreateFolderError(BaseCreateFolderError):
     msg_template = "Could not create folder='{folder}' and parent='{parent}'"
 
 
-class GroupIdDoesNotExistError(BaseCreateFlderError):
+class GroupIdDoesNotExistError(BaseCreateFolderError):
     msg_template = "Provided group id '{gid}' does not exist "
 
 
@@ -127,10 +128,23 @@ class FolderAccessRole(Enum):
     OWNER = 3
 
 
-class _FolderPermissions(TypedDict):
+@dataclass(frozen=True)
+class _FolderPermissions:
     read: bool
     write: bool
     delete: bool
+
+    def to_dict(self, *, include_only_true: bool = False) -> dict[str, bool]:
+        data: dict[str, bool] = {
+            "read": self.read,
+            "write": self.write,
+            "delete": self.delete,
+        }
+        if include_only_true:
+            for key_to_remove in [k for k, v in data.items() if not v]:
+                data.pop(key_to_remove)
+
+        return data
 
 
 def _make_permissions(
@@ -141,16 +155,12 @@ def _make_permissions(
 
 
 def _only_true_permissions(permissions: _FolderPermissions) -> dict:
-    return {k: v for k, v in permissions.items() if v is True}
+    return permissions.to_dict(include_only_true=True)
 
 
 def _or_reduce(x: _FolderPermissions, y: _FolderPermissions) -> _FolderPermissions:
     return _FolderPermissions(
-        {
-            "read": x["read"] or y["read"],
-            "write": x["write"] or y["write"],
-            "delete": x["delete"] or y["delete"],
-        }
+        read=x.read or y.read, write=x.write or y.write, delete=x.delete or y.delete
     )
 
 
@@ -162,13 +172,12 @@ def _or_dicts_list(dicts: Iterable[_FolderPermissions]) -> _FolderPermissions:
 
 class _BasePermissions:
     LIST_FOLDERS: ClassVar[_FolderPermissions] = _make_permissions(r=True)
-    # NOTE `LIST_PROJECTS` bypasses these access rights and always lists all projects in the fodler
 
     CREATE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
     ADD_PROJECT_TO_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(w=True)
 
     SHARE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
-    UPDATE_FODLER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+    UPDATE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     REMOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
 
@@ -202,7 +211,7 @@ OWNER_PERMISSIONS: _FolderPermissions = _or_dicts_list(
     [
         EDITOR_PERMISSIONS,
         _BasePermissions.SHARE_FOLDER,
-        _BasePermissions.UPDATE_FODLER,
+        _BasePermissions.UPDATE_FOLDER,
         _BasePermissions.DELETE_FOLDER,
         _BasePermissions.REMOVE_PROJECT_FROM_FOLDER,
         _BasePermissions.MOVE_FOLDER,
@@ -217,23 +226,11 @@ _ROLE_TO_PERMISSIONS: dict[FolderAccessRole, _FolderPermissions] = {
 }
 
 
-def _hash_permissions(permissions: _FolderPermissions) -> tuple:
-    return tuple(permissions.items())
-
-
-_PERMISSIONS_TO_ROLE: dict[tuple, FolderAccessRole] = {
-    _hash_permissions(NO_ACCESS_PERMISSIONS): FolderAccessRole.NO_ACCESS,
-    _hash_permissions(VIEWER_PERMISSIONS): FolderAccessRole.VIEWER,
-    _hash_permissions(EDITOR_PERMISSIONS): FolderAccessRole.EDITOR,
-    _hash_permissions(OWNER_PERMISSIONS): FolderAccessRole.OWNER,
-}
-
-
 def _get_permissions_from_role(role: FolderAccessRole) -> _FolderPermissions:
     return _ROLE_TO_PERMISSIONS[role]
 
 
-def _requires(*permissions: _FolderPermissions):
+def _requires(*permissions: _FolderPermissions) -> _FolderPermissions:
     if len(permissions) == 0:
         return _make_permissions()
     return _or_dicts_list(permissions)
@@ -245,11 +242,11 @@ def _get_true_permissions(
     """compose SQL where clause where only for the entries that are True"""
     clauses: list[ColumnElement] = []
 
-    if permissions["read"]:
+    if permissions.read:
         clauses.append(table.c.read.is_(True))
-    if permissions["write"]:
+    if permissions.write:
         clauses.append(table.c.write.is_(True))
-    if permissions["delete"]:
+    if permissions.delete:
         clauses.append(table.c.delete.is_(True))
 
     return sa.and_(*clauses) if clauses else True
@@ -257,9 +254,9 @@ def _get_true_permissions(
 
 def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElement:
     return sa.and_(
-        table.c.read.is_(permissions["read"]),
-        table.c.write.is_(permissions["write"]),
-        table.c.delete.is_(permissions["delete"]),
+        table.c.read.is_(permissions.read),
+        table.c.write.is_(permissions.write),
+        table.c.delete.is_(permissions.delete),
     )
 
 
@@ -491,7 +488,7 @@ async def folder_create(
                 )
             )
             .where(folders.c.name == name)
-            .where(folders_access_rights.c.gid == gid)
+            # .where(folders_access_rights.c.gid == gid)
             .where(folders_access_rights.c.original_parent_id == parent)
         )
         if entry_exists:
@@ -524,7 +521,7 @@ async def folder_create(
                     gid=gid,
                     traversal_parent_id=parent,
                     original_parent_id=parent,
-                    **OWNER_PERMISSIONS,
+                    **OWNER_PERMISSIONS.to_dict(),
                 )
             )
         except ForeignKeyViolation as e:
@@ -569,7 +566,7 @@ async def folder_share_or_update_permissions(
             "gid": recipient_gid,
             "original_parent_id": None,
             "traversal_parent_id": None,
-            **sharing_permissions,
+            **sharing_permissions.to_dict(),
         }
         insert_stmt = postgresql.insert(folders_access_rights).values(**data)
         upsert_stmt = insert_stmt.on_conflict_do_update(
@@ -590,7 +587,7 @@ async def folder_update(
     name: str | None = None,
     description: str | None = None,
     required_permissions: _FolderPermissions = _requires(  # noqa: B008
-        _BasePermissions.UPDATE_FODLER
+        _BasePermissions.UPDATE_FOLDER
     ),
 ) -> None:
     """
