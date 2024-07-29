@@ -98,7 +98,7 @@ PortValue: TypeAlias = Union[
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -122,7 +122,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
     # does not work well in that case. For that reason, the schema is
     # sent as a json-schema instead of with a dynamically-created model class
     #
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -176,7 +176,7 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
 
         return cls.parse_obj(data)
 
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
