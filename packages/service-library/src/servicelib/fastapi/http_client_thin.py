@@ -153,7 +153,7 @@ def retry_on_errors(
                     _log_pool_status(zelf.client, "pool timeout")
                 raise ClientHttpError(error=e) from e
 
-            # NOTE: this satisfies mypy, both eexceptions from retrial are HTTPError
+            # NOTE: this satisfies mypy, both exceptions from retrial are HTTPError
             msg = "Unexpected error!"
             raise NotImplementedError(msg)
 
