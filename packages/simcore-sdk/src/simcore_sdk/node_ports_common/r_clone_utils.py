@@ -11,7 +11,7 @@ from servicelib.progress_bar import ProgressBarData
 _logger = logging.getLogger(__name__)
 
 
-class BaseRCloneLogParser:
+class BaseLogParser:
     @abstractmethod
     async def __call__(self, logs: str) -> None:
         ...
@@ -52,7 +52,7 @@ _RCloneSyncMessages = Union[  # noqa: UP007
 ]
 
 
-class SyncProgressLogParser(BaseRCloneLogParser):
+class SyncProgressLogParser(BaseLogParser):
     """
     log processor that only yields and progress updates detected in the logs.
 
@@ -91,12 +91,12 @@ class SyncProgressLogParser(BaseRCloneLogParser):
                 await self.progress_bar.set_(rclone_message.stats.bytes)
 
 
-class DebugLogParser(BaseRCloneLogParser):
+class DebugLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("|>>>| %s |", logs)
 
 
-class CommandResultCaptureParser(BaseRCloneLogParser):
+class CommandResultCaptureParser(BaseLogParser):
     def __init__(self) -> None:
         super().__init__()
         self._logs: list[str] = []

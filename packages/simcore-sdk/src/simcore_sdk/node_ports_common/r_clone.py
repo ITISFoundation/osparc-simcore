@@ -18,7 +18,7 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
 from .r_clone_utils import (
-    BaseRCloneLogParser,
+    BaseLogParser,
     CommandResultCaptureParser,
     DebugLogParser,
     SyncProgressLogParser,
@@ -55,9 +55,7 @@ async def _config_file(config: str) -> AsyncIterator[str]:
         yield f.name
 
 
-async def _read_stream(
-    stream: StreamReader, r_clone_log_parsers: list[BaseRCloneLogParser]
-):
+async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogParser]):
     while True:
         line: bytes = await stream.readline()
         if line:
@@ -71,7 +69,7 @@ async def _read_stream(
 
 async def _async_r_clone_command(
     *cmd: str,
-    r_clone_log_parsers: list[BaseRCloneLogParser] | None = None,
+    r_clone_log_parsers: list[BaseLogParser] | None = None,
     cwd: str | None = None,
 ) -> str:
     str_cmd = " ".join(cmd)
@@ -226,7 +224,7 @@ async def _sync_sources(
             progress_unit="Byte",
             description=f"transferring {local_dir.name}",
         ) as sub_progress:
-            r_clone_log_parsers: list[BaseRCloneLogParser] = (
+            r_clone_log_parsers: list[BaseLogParser] = (
                 [DebugLogParser()] if debug_logs else []
             )
             r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))

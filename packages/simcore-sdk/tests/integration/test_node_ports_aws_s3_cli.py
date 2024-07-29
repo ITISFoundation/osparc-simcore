@@ -4,7 +4,6 @@
 import asyncio
 import filecmp
 import os
-import re
 import urllib.parse
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
@@ -21,8 +20,8 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
-from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common import r_clone
+from settings_library.aws_s3_cli import AwsS3CliSettings
+from simcore_sdk.node_ports_common import aws_s3_cli
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -41,42 +40,29 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
 @pytest.fixture
-async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
+async def cleanup_bucket_after_test(aws_s3_cli_settings: AwsS3CliSettings) -> None:
     session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        aws_access_key_id=aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=aws_s3_cli_settings.AWS_S3_CLI_S3.S3_SECRET_KEY,
     )
     async with session.resource(
         "s3",
-        endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        endpoint_url=aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ENDPOINT,
     ) as s_3:
-        bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
+        bucket = await s_3.Bucket(aws_s3_cli_settings.AWS_S3_CLI_S3.S3_BUCKET_NAME)
         s3_objects = [_ async for _ in bucket.objects.all()]
         await asyncio.gather(*[o.delete() for o in s3_objects])
 
 
-def _fake_s3_link(r_clone_settings: RCloneSettings, s3_object: str) -> AnyUrl:
+# put to shared config
+def _fake_s3_link(aws_s3_cli_settings: AwsS3CliSettings, s3_object: str) -> AnyUrl:
     return parse_obj_as(
         AnyUrl,
-        f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
+        f"s3://{aws_s3_cli_settings.AWS_S3_CLI_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
     )
 
 
-def test_s3_url_quote_and_unquote():
-    """This test was added to validate quotation operations in _fake_s3_link
-    against unquotation operation in
-
-    """
-    src = "53a35372-d44d-4d2e-8319-b40db5f31ce0/2f67d5cb-ea9c-4f8c-96ef-eae8445a0fe7/6fa73b0f-4006-46c6-9847-967b45ff3ae7.bin"
-    # as in _fake_s3_link
-    url = f"s3://simcore/{urllib.parse.quote(src)}"
-
-    # as in sync_local_to_s3
-    unquoted_url = urllib.parse.unquote(url)
-    truncated_url = re.sub(r"^s3://", "", unquoted_url)
-    assert truncated_url == f"simcore/{src}"
-
-
+# put to shared config
 async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
@@ -93,6 +79,7 @@ async def _create_random_binary_file(
         assert bytes_written == file_size
 
 
+# put to shared config
 async def _create_file_of_size(
     tmp_path: Path, *, name: str, file_size: ByteSize
 ) -> Path:
@@ -106,6 +93,7 @@ async def _create_file_of_size(
     return file
 
 
+# put to shared config
 async def _create_files_in_dir(
     target_dir: Path, file_count: int, file_size: ByteSize
 ) -> set[str]:
@@ -120,7 +108,7 @@ async def _create_files_in_dir(
 
 
 async def _upload_local_dir_to_s3(
-    r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     s3_directory_link: AnyUrl,
     source_dir: Path,
     *,
@@ -144,8 +132,8 @@ async def _upload_local_dir_to_s3(
         progress_report_cb=_report_progress_upload,
         description=faker.pystr(),
     ) as progress_bar:
-        await r_clone.sync_local_to_s3(
-            r_clone_settings,
+        await aws_s3_cli.sync_local_to_s3(
+            aws_s3_cli_settings,
             progress_bar,
             local_directory_path=source_dir,
             upload_s3_link=s3_directory_link,
@@ -153,12 +141,12 @@ async def _upload_local_dir_to_s3(
         )
     if check_progress:
         # NOTE: a progress of 1 is always sent by the progress bar
-        # we want to check that rclone also reports some progress entries
+        # we want to check that aws cli also reports some progress entries
         assert len(progress_entries) > 1
 
 
 async def _download_from_s3_to_local_dir(
-    r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     s3_directory_link: AnyUrl,
     destination_dir: Path,
     faker: Faker,
@@ -171,8 +159,8 @@ async def _download_from_s3_to_local_dir(
         progress_report_cb=_report_progress_download,
         description=faker.pystr(),
     ) as progress_bar:
-        await r_clone.sync_s3_to_local(
-            r_clone_settings,
+        await aws_s3_cli.sync_s3_to_local(
+            aws_s3_cli_settings,
             progress_bar,
             local_directory_path=destination_dir,
             download_s3_link=s3_directory_link,
@@ -249,7 +237,7 @@ async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[
     ],
 )
 async def test_local_to_remote_to_local(
-    r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     create_valid_file_uuid: Callable[[str, Path], str],
     dir_locally_created_files: Path,
     dir_downloaded_files_1: Path,
@@ -263,18 +251,18 @@ async def test_local_to_remote_to_local(
 
     # get s3 reference link
     directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
-    s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
+    s3_directory_link = _fake_s3_link(aws_s3_cli_settings, directory_uuid)
 
     # run the test
     await _upload_local_dir_to_s3(
-        r_clone_settings,
+        aws_s3_cli_settings,
         s3_directory_link,
         dir_locally_created_files,
         check_progress=check_progress,
         faker=faker,
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
+        aws_s3_cli_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -340,17 +328,17 @@ def _regression_add_broken_symlink(
 @pytest.mark.parametrize(
     "changes_callable",
     [
-        # _change_content_of_one_file,
-        # _change_content_of_all_file,
-        # _remove_one_file,
-        # _remove_all_files,
-        # _rename_one_file,
-        # _add_a_new_file,
+        _change_content_of_one_file,
+        _change_content_of_all_file,
+        _remove_one_file,
+        _remove_all_files,
+        _rename_one_file,
+        _add_a_new_file,
         _regression_add_broken_symlink,
     ],
 )
 async def test_overwrite_an_existing_file_and_sync_again(
-    r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     create_valid_file_uuid: Callable[[str, Path], str],
     dir_locally_created_files: Path,
     dir_downloaded_files_1: Path,
@@ -361,21 +349,21 @@ async def test_overwrite_an_existing_file_and_sync_again(
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
-        r_clone_settings.R_CLONE_OPTION_TRANSFERS * 3,
+        3,
         parse_obj_as(ByteSize, "1kib"),
     )
     assert len(generated_file_names) > 0
 
     # get s3 reference link
     directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
-    s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
+    s3_directory_link = _fake_s3_link(aws_s3_cli_settings, directory_uuid)
 
     # sync local to remote and check
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
+        aws_s3_cli_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
+        aws_s3_cli_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -391,10 +379,10 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
     # upload and check new local and new remote are in sync
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
+        aws_s3_cli_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_2, faker=faker
+        aws_s3_cli_settings, s3_directory_link, dir_downloaded_files_2, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_2
@@ -411,17 +399,17 @@ async def test_raises_error_if_local_directory_path_is_a_file(
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
     )
-    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
-        await r_clone.sync_local_to_s3(
-            r_clone_settings=AsyncMock(),
+    with pytest.raises(aws_s3_cli.AwsS3CliDirectoryNotFoundError):
+        await aws_s3_cli.sync_local_to_s3(
+            aws_s3_cli_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             upload_s3_link=AsyncMock(),
             debug_logs=True,
         )
-    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
-        await r_clone.sync_s3_to_local(
-            r_clone_settings=AsyncMock(),
+    with pytest.raises(aws_s3_cli.AwsS3CliDirectoryNotFoundError):
+        await aws_s3_cli.sync_s3_to_local(
+            aws_s3_cli_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             download_s3_link=AsyncMock(),
