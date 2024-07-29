@@ -525,22 +525,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(serviceKey, newButtonInfo) {
-      const mode = this._resourcesContainer.getMode();
-      // Make sure we have access to that service
-      const versions = osparc.service.Utils.getVersions(serviceKey);
+    __addNewStudyFromServiceButtons: function(key, newButtonInfo) {
+      const versions = osparc.service.Utils.getVersions(key);
       if (versions.length && newButtonInfo) {
-        const title = newButtonInfo.title;
-        const desc = newButtonInfo.description;
-        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-        newStudyFromServiceButton.setCardKey("new-"+serviceKey);
-        osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[0], newButtonInfo.newStudyLabel));
-        if (this._resourcesContainer.getMode() === "list") {
-          const width = this._resourcesContainer.getBounds().width - 15;
-          newStudyFromServiceButton.setWidth(width);
-        }
-        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+        // scale to latest compatible
+        const latestVersion = versions[0];
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+        osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+          .then(latestMetadata => {
+            const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+            const desc = newButtonInfo.description;
+            const mode = this._resourcesContainer.getMode();
+            const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+            newStudyFromServiceButton.setCardKey("new-"+key);
+            osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+            newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            if (this._resourcesContainer.getMode() === "list") {
+              const width = this._resourcesContainer.getBounds().width - 15;
+              newStudyFromServiceButton.setWidth(width);
+            }
+            this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+          })
       }
     },
 
