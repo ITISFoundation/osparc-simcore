@@ -51,6 +51,10 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     "newStudyClicked": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 600
+  },
+
   members: {
     __newStudies: null,
     __groups: null,
@@ -126,7 +130,10 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       });
       osparc.utils.Utils.setIdToWidget(groupContainer, groupId.toString() + "Group");
       const atom = groupContainer.getChildControl("header");
-      atom.setFont("text-16");
+      atom.set({
+        font: "text-16",
+        maxWidth: this.self().WIDTH
+      });
       this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },

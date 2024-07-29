@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.Slides", {
+qx.Class.define("osparc.product.quickStart.tis.Slides", {
   extend: osparc.product.quickStart.SlidesBase,
 
   construct: function() {
@@ -61,12 +61,12 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
     // overriden
     _getSlides: function() {
       return [
-        new osparc.product.quickStart.ti.Welcome(),
-        new osparc.product.quickStart.ti.Dashboard(),
-        new osparc.product.quickStart.ti.ElectrodeSelector(),
-        new osparc.product.quickStart.ti.PostPro(),
-        new osparc.product.quickStart.ti.S4LPostPro(),
-        new osparc.product.quickStart.ti.MoreInformation()
+        new osparc.product.quickStart.tis.Welcome(),
+        new osparc.product.quickStart.tis.Dashboard(),
+        new osparc.product.quickStart.tis.ElectrodeSelector(),
+        new osparc.product.quickStart.tis.PostPro(),
+        new osparc.product.quickStart.tis.S4LPostPro(),
+        new osparc.product.quickStart.tis.MoreInformation()
       ];
     },
 
