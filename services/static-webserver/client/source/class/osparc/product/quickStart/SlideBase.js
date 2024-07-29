@@ -24,10 +24,6 @@ qx.Class.define("osparc.product.quickStart.SlideBase", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.set({
-      padding: 5
-    });
-
     if (title) {
       const label = osparc.product.quickStart.Utils.createTitle(title);
       this._add(label);

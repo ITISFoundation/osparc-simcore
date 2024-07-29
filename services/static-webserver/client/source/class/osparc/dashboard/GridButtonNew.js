@@ -36,8 +36,6 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       appearance: "pb-new"
     });
 
-    this._buildLayout();
-
     if (title) {
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
@@ -51,22 +49,12 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       descLabel.setValue(description.toString());
     }
 
+    this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
+
     this.getChildControl("footer").exclude();
   },
 
   members: {
-    _buildLayout: function() {
-      const title = this.getChildControl("title");
-      title.setValue(this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true
-      }));
-
-      const desc = this.getChildControl("subtitle-text");
-      desc.setValue(this.tr("Start with an empty study").toString());
-
-      this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
-    },
-
     _onToggleChange: function(e) {
       this.setValue(false);
     },

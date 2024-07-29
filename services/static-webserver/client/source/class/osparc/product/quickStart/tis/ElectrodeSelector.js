@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.ElectrodeSelector", {
+qx.Class.define("osparc.product.quickStart.tis.ElectrodeSelector", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
@@ -38,12 +38,9 @@ qx.Class.define("osparc.product.quickStart.ti.ElectrodeSelector", {
       const label2 = osparc.product.quickStart.Utils.createLabel(text2);
       this._add(label2);
 
-      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/electrode_selector.gif").set({
-        alignX: "center",
-        scale: true,
-        width: 737,
-        height: 540
-      });
+      const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/electrode_selector.gif");
+      osparc.utils.Utils.forceRatioAfterLoad(image, "width", osparc.product.quickStart.SlidesBase.CONTENT_WIDTH);
+      osparc.utils.Utils.openImageOnTap(image);
       this._add(image);
 
       const text4 = this.tr("\
@@ -53,7 +50,7 @@ qx.Class.define("osparc.product.quickStart.ti.ElectrodeSelector", {
       this._add(label4);
 
       const text5 = this.tr("\
-        Now the Arrow that says 'Next' can be pushed and the optimization will immediatly start.\
+        Now the Arrow that says 'Next' can be pushed and the optimization will immediately start.\
       ");
       const label5 = osparc.product.quickStart.Utils.createLabel(text5);
       this._add(label5);

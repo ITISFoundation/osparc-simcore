@@ -97,6 +97,10 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             maxWidth: 32,
             maxHeight: 32
           });
+          control.getChildControl("label").set({
+            rich: true,
+            wrap: true
+          })
           control.getContentElement().setStyles({
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"
