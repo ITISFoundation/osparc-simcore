@@ -399,7 +399,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openVersionDisplayEditor: function() {
       const title = this.tr("Edit Version Display");
-      const oldVersionDisplay = this.getService()["versionDisplay"] ? this.getService()["versionDisplay"] : "";
+      const oldVersionDisplay = osparc.service.Utils.extractVersionDisplay(this.getService());
       const versionDisplayEditor = new osparc.widget.Renamer(oldVersionDisplay, null, title);
       versionDisplayEditor.addListener("labelChanged", e => {
         versionDisplayEditor.close();

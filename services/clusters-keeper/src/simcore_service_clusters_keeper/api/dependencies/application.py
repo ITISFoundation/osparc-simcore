@@ -1,5 +1,7 @@
+from typing import cast
+
 from fastapi import FastAPI, Request
 
 
 def get_app(request: Request) -> FastAPI:
-    return request.app
+    return cast(FastAPI, request.app)

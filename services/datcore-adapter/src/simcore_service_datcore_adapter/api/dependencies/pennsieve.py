@@ -7,7 +7,7 @@ from ...modules.pennsieve import PennsieveApiClient
 
 
 def _get_app(request: Request) -> FastAPI:
-    return request.app
+    return cast(FastAPI, request.app)
 
 
 def get_pennsieve_api_client(

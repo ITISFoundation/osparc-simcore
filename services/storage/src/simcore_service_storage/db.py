@@ -3,12 +3,11 @@ from typing import Any
 
 from aiohttp import web
 from aiopg.sa import Engine
-from servicelib.aiohttp.aiopg_utils import DataSourceName, is_pg_responsive
-from servicelib.common_aiopg_utils import create_pg_engine
+from servicelib.aiohttp.aiopg_utils import is_pg_responsive
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (
-    close_engine,
     get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
@@ -16,26 +15,18 @@ from tenacity import retry
 
 from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-@retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
-async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> Engine:
-    log.info("Creating pg engine for %s", dsn)
+@retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)  # type: ignore[call-overload]
+async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> None:
+    _logger.info("Checking pg is ready %s", dsn)
 
-    engine = await create_pg_engine(dsn, minsize=min_size, maxsize=max_size)
-    try:
+    async with create_pg_engine(dsn, minsize=min_size, maxsize=max_size) as engine:
         await raise_if_migration_not_ready(engine)
-    except Exception:
-        await close_engine(engine)
-        raise
-
-    return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application):
-    engine = None
-
     pg_cfg: PostgresSettings = app[APP_CONFIG_KEY].STORAGE_POSTGRES
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
@@ -46,35 +37,25 @@ async def postgres_cleanup_ctx(app: web.Application):
         port=pg_cfg.POSTGRES_PORT,
     )
 
-    log.info("Creating pg engine for %s", dsn)
-
-    engine = await _ensure_pg_ready(
+    await _ensure_pg_ready(
         dsn, min_size=pg_cfg.POSTGRES_MINSIZE, max_size=pg_cfg.POSTGRES_MAXSIZE
     )
+    _logger.info("Creating pg engine for %s", dsn)
+    async with create_pg_engine(
+        dsn, minsize=pg_cfg.POSTGRES_MINSIZE, maxsize=pg_cfg.POSTGRES_MAXSIZE
+    ) as engine:
 
-    assert engine  # nosec
-    app[APP_DB_ENGINE_KEY] = engine
-
-    yield  # ----------
-
-    if engine is not app.get(APP_DB_ENGINE_KEY):
-        log.critical("app does not hold right db engine. Somebody has changed it??")
-
-    if engine:
-        await close_engine(engine)
-
-        log.debug(
-            "engine '%s' after shutdown: closed=%s, size=%d",
-            engine.dsn,
-            engine.closed,
-            engine.size,
-        )
+        assert engine  # nosec
+        app[APP_DB_ENGINE_KEY] = engine
+        _logger.info("Created pg engine for %s", dsn)
+        yield  # ----------
+        _logger.info("Deleting pg engine for %s", dsn)
+    _logger.info("Deleted pg engine for %s", dsn)
 
 
-async def is_service_responsive(app: web.Application):
+async def is_service_responsive(app: web.Application) -> bool:
     """Returns true if the app can connect to db service"""
-    is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
-    return is_responsive
+    return await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
@@ -89,7 +70,7 @@ def setup_db(app: web.Application):
     app[APP_DB_ENGINE_KEY] = None
 
     # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, "postgres")
+    _logger.debug("Setting up %s [service: %s] ...", __name__, "postgres")
 
     # async connection to db
     app.cleanup_ctx.append(postgres_cleanup_ctx)

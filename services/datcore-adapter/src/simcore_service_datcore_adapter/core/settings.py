@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import cast
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, parse_obj_as, validator
@@ -54,4 +53,4 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value) -> str:
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)

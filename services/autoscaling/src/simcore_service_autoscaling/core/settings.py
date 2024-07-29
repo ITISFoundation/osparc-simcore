@@ -44,7 +44,7 @@ class AutoscalingEC2Settings(EC2Settings):
     class Config(EC2Settings.Config):
         env_prefix = AUTOSCALING_ENV_PREFIX
 
-        schema_extra: ClassVar[dict[str, Any]] = {
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
                 {
                     f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -279,8 +279,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
     @root_validator()
     @classmethod
