@@ -1,10 +1,10 @@
 import datetime
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, TypeAlias
+from typing import Any, Coroutine, ParamSpec, TypeAlias, TypeVar
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
@@ -41,10 +41,15 @@ RequestContextManager: TypeAlias = (
     aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
 )
 
+P = ParamSpec("P")
+R = TypeVar("R")
 
-def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
+
+def handle_client_exception(
+    handler: Callable[P, Coroutine[Any, Any, R]]
+) -> Callable[P, Coroutine[Any, Any, R]]:
     @wraps(handler)
-    async def wrapped(*args, **kwargs):
+    async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return await handler(*args, **kwargs)
         except ClientResponseError as err:

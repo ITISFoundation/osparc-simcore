@@ -5,7 +5,7 @@ from pprint import pformat
 from typing import Any
 
 import pydantic
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.r_clone import RCloneSettings
@@ -164,7 +164,7 @@ async def dump(nodeports: Nodeports) -> None:
             # pylint: disable=protected-access
             if (
                 port_values["value"] is not None
-                and not getattr(nodeports, f"internal_{port_type}")[
+                and not getattr(nodeports, f"internal_{port_type}")[  # noqa: SLF001
                     port_key
                 ]._used_default_value
             ):

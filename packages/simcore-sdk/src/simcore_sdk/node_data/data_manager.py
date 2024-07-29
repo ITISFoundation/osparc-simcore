@@ -23,7 +23,7 @@ def __create_s3_object_key(
     project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
+    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")  # type: ignore[arg-type]
 
 
 def __get_s3_name(path: Path, *, is_archive: bool) -> str:

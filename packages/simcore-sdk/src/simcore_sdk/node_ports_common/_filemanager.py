@@ -7,11 +7,10 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
     FileUploadCompleteState,
     FileUploadCompletionBody,
-    LocationID,
-    LocationName,
     UploadedPart,
 )
 from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, parse_obj_as

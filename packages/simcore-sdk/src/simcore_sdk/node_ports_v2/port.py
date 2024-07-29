@@ -248,7 +248,7 @@ class Port(BaseServiceIOModel):
                     key=self.key,
                     value=self.value,
                     file_to_key_map=self.file_to_key_map,
-                    node_port_creator=self._node_ports._node_ports_creator_cb,
+                    node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
                     progress_bar=progress_bar,
                 )
                 value = other_port_concretevalue
