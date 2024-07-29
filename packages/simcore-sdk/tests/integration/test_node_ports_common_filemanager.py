@@ -72,13 +72,6 @@ def optional_sync_settings(
     )
 
 
-# @pytest.fixture(params=[True, False], ids=["with AwsS3Cli", "without AwsS3Cli"])
-# def optional_aws_s3_cli_settings(
-#     aws_s3_cli_settings: AwsS3CliSettings, request: pytest.FixtureRequest
-# ) -> AwsS3CliSettings | None:
-#     return aws_s3_cli_settings if request.param else None  # type: ignore
-
-
 def _file_size(size_str: str, **pytest_params):
     return pytest.param(parse_obj_as(ByteSize, size_str), id=size_str, **pytest_params)
 

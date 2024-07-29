@@ -340,12 +340,12 @@ def _regression_add_broken_symlink(
 @pytest.mark.parametrize(
     "changes_callable",
     [
-        # _change_content_of_one_file,
-        # _change_content_of_all_file,
-        # _remove_one_file,
-        # _remove_all_files,
-        # _rename_one_file,
-        # _add_a_new_file,
+        _change_content_of_one_file,
+        _change_content_of_all_file,
+        _remove_one_file,
+        _remove_all_files,
+        _rename_one_file,
+        _add_a_new_file,
         _regression_add_broken_symlink,
     ],
 )
