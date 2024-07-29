@@ -217,9 +217,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                     logging.DEBUG,
                     f"Remove `start` patch for {class_unique_reference}",
                 ):
-                    subclass.start = (  # type: ignore
-                        subclass.start.original_start  # type: ignore
-                    )
+                    subclass.start = subclass.start.original_start
 
             if isinstance(subclass.cancel, _PatchCancelDeferred):
                 with log_context(

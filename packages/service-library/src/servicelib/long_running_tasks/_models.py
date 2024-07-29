@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from asyncio import Task
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime
