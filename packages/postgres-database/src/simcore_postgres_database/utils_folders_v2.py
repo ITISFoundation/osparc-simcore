@@ -108,7 +108,9 @@ class BaseAddProjectError(FoldersError):
 
 
 class ProjectAlreadyExistsInFolderError(BaseAddProjectError):
-    msg_template = "project_id={project_id} in folder_id={folder_id} is already present"
+    msg_template = (
+        "project_id={project_uuid} in folder_id={folder_id} is already present"
+    )
 
 
 ###
@@ -731,7 +733,7 @@ async def folder_add_project(
     folder_id: _FolderID,
     gid: _GroupID,
     *,
-    project_id: _ProjectID,
+    project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
         _BasePermissions.ADD_PROJECT_TO_FOLDER
     ),
@@ -757,18 +759,18 @@ async def folder_add_project(
             await connection.execute(
                 folders_to_projects.select()
                 .where(folders_to_projects.c.folder_id == folder_id)
-                .where(folders_to_projects.c.project_id == project_id)
+                .where(folders_to_projects.c.project_uuid == project_uuid)
             )
         ).fetchone()
         if project_in_folder_entry:
             raise ProjectAlreadyExistsInFolderError(
-                project_id=project_id, folder_id=folder_id
+                project_uuid=project_uuid, folder_id=folder_id
             )
 
         # finally add project to folder
         await connection.execute(
             folders_to_projects.insert().values(
-                folder_id=folder_id, project_id=project_id
+                folder_id=folder_id, project_uuid=project_uuid
             )
         )
 
@@ -778,7 +780,7 @@ async def folder_remove_project(
     folder_id: _FolderID,
     gid: _GroupID,
     *,
-    project_id: _ProjectID,
+    project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
         _BasePermissions.REMOVE_PROJECT_FROM_FOLDER
     ),
@@ -801,7 +803,7 @@ async def folder_remove_project(
         await connection.execute(
             folders_to_projects.delete()
             .where(folders_to_projects.c.folder_id == folder_id)
-            .where(folders_to_projects.c.project_id == project_id)
+            .where(folders_to_projects.c.project_uuid == project_uuid)
         )
 
 

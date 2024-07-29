@@ -154,12 +154,12 @@ def _get_random_gid(
     return secrets.choice(list(to_random_pick))
 
 
-def _get_random_project_id(
-    all_gids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
+def _get_random_project_uuid(
+    all_project_ids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
 ) -> _ProjectID:
     if already_picked is None:
         already_picked = set()
-    to_random_pick = all_gids - already_picked
+    to_random_pick = all_project_ids - already_picked
     return secrets.choice(list(to_random_pick))
 
 
@@ -245,7 +245,7 @@ async def setup_projects_for_users(
     projects: set[_ProjectID] = set()
     for user in setup_users:
         project = await create_fake_project(connection, user)
-        projects.add(project.id)
+        projects.add(project.uuid)
     return projects
 
 
@@ -1323,7 +1323,7 @@ async def test_add_remove_project_in_folder(
         async with connection.execute(
             folders_to_projects.select()
             .where(folders_to_projects.c.folder_id == folder_id)
-            .where(folders_to_projects.c.project_id == project_id)
+            .where(folders_to_projects.c.project_uuid == project_id)
         ) as result:
             rows = await result.fetchall()
             assert rows is not None
@@ -1337,7 +1337,7 @@ async def test_add_remove_project_in_folder(
     gid_no_access = _get_random_gid(
         setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
     )
-    project_id = _get_random_project_id(setup_projects_for_users)
+    project_uuid = _get_random_project_uuid(setup_projects_for_users)
 
     # SETUP
     folder_id = await folder_create(connection, "f1", gid_owner)
@@ -1364,14 +1364,16 @@ async def test_add_remove_project_in_folder(
     )
 
     async def _add_folder_as(gid: _GroupID) -> None:
-        await folder_add_project(connection, folder_id, gid, project_id=project_id)
-        assert await _is_project_present(connection, folder_id, project_id) is True
+        await folder_add_project(connection, folder_id, gid, project_uuid=project_uuid)
+        assert await _is_project_present(connection, folder_id, project_uuid) is True
 
     async def _remove_folder_as(gid: _GroupID) -> None:
-        await folder_remove_project(connection, folder_id, gid, project_id=project_id)
-        assert await _is_project_present(connection, folder_id, project_id) is False
+        await folder_remove_project(
+            connection, folder_id, gid, project_uuid=project_uuid
+        )
+        assert await _is_project_present(connection, folder_id, project_uuid) is False
 
-    assert await _is_project_present(connection, folder_id, project_id) is False
+    assert await _is_project_present(connection, folder_id, project_uuid) is False
 
     # 1. owner can add and remove
     await _add_folder_as(gid_owner)
