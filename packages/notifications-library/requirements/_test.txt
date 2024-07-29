@@ -95,6 +95,8 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
+types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
