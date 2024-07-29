@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 from aiohttp import ClientError, ClientSession
 from models_library.api_schemas_storage import (
@@ -36,7 +37,7 @@ async def _get_location_id_from_location_name(
     resp = await storage_client.get_storage_locations(session=session, user_id=user_id)
     for location in resp:
         if location.name == store:
-            return location.id
+            return cast(LocationID, location.id)  # mypy wants it
     # location id not found
     raise exceptions.S3InvalidStore(store)
 

@@ -145,7 +145,7 @@ async def dump(nodeports: Nodeports) -> None:
     )
 
     # convert to DB
-    port_cfg = {
+    port_cfg: dict[str, Any] = {
         "schema": {"inputs": {}, "outputs": {}},
         "inputs": {},
         "outputs": {},

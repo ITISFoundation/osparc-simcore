@@ -397,7 +397,7 @@ class Port(BaseServiceIOModel):
                 new_item_value
             )
             self.value_concrete = None
-            self.value = new_concrete_value
+            self.value = new_concrete_value  # type: ignore[assignment]
 
         self.value_item = None
         self.value_concrete = None

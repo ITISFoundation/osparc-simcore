@@ -73,6 +73,9 @@ def handle_client_exception(
         except JSONDecodeError as err:
             msg = f"{err}"
             raise exceptions.StorageServerIssue(msg) from err
+        # satisfy mypy
+        msg = "Unhandled control flow"
+        raise RuntimeError(msg)
 
     return wrapped
 
