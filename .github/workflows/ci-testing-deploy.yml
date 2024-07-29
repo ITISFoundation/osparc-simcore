@@ -1683,7 +1683,6 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/simcore-sdk.bash test
