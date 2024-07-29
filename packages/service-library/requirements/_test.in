@@ -32,3 +32,7 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 respx
+sqlalchemy[mypy]
+types_aiofiles
+types-psycopg2
+types_tqdm

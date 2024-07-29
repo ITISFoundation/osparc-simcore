@@ -8,10 +8,10 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
     TaskId,
+    TaskProgress,
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
-    TaskProgress,
     TaskResult,
     TaskStatus,
 )
