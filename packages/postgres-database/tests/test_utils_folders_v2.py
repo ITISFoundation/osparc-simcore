@@ -39,7 +39,7 @@ from simcore_postgres_database.utils_folders_v2 import (
     _FolderID,
     _FolderPermissions,
     _get_permissions_from_role,
-    _get_top_most_access_rights_entry,
+    _get_resolved_access_rights,
     _get_true_permissions,
     _GroupID,
     _ProjectID,
@@ -307,7 +307,7 @@ async def test_folder_create(
     await _assert_folder_entires(connection, folder_count=2)
 
 
-async def test__get_top_most_access_rights_entry(
+async def test__get_resolved_access_rights(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
     owner_a_gid = _get_random_gid(setup_users_and_groups)
@@ -383,7 +383,7 @@ async def test__get_top_most_access_rights_entry(
     #       - `d_folder`(`owner_d`)[`editor_b`]:
     #           - `editor_a_folder`(`editor_a`)
 
-    # check top most parent resolution
+    # check resolved access rgihts resolution
     async def _assert_resolves_to(
         *,
         target_folder_id: _FolderID,
@@ -392,7 +392,7 @@ async def test__get_top_most_access_rights_entry(
         expected_folder_id: _FolderID,
         expected_gids: set[_FolderID],
     ) -> None:
-        resolved_parent = await _get_top_most_access_rights_entry(
+        resolved_parent = await _get_resolved_access_rights(
             connection,
             target_folder_id,
             gid,

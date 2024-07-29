@@ -323,7 +323,7 @@ class FolderEntry(BaseModel):
         orm_mode = True
 
 
-class _TopMostParent(BaseModel):
+class _ResolvedAccessRights(BaseModel):
     folder_id: _FolderID
     gid: _GroupID
     traversal_parent_id: _FolderID | None
@@ -337,14 +337,14 @@ class _TopMostParent(BaseModel):
         orm_mode = True
 
 
-async def _get_top_most_access_rights_entry(
+async def _get_resolved_access_rights(
     connection: SAConnection,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
     enforece_all_permissions: bool,
-) -> _TopMostParent | None:
+) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
     access_rights_cte = (
@@ -415,8 +415,12 @@ async def _get_top_most_access_rights_entry(
     )
 
     result = await connection.execute(query.params(start_folder_id=folder_id))
-    top_most_parent: RowProxy | None = await result.fetchone()
-    return _TopMostParent.from_orm(top_most_parent) if top_most_parent else None
+    resolved_access_rights: RowProxy | None = await result.fetchone()
+    return (
+        _ResolvedAccessRights.from_orm(resolved_access_rights)
+        if resolved_access_rights
+        else None
+    )
 
 
 async def _check_folder_and_access(
@@ -426,7 +430,7 @@ async def _check_folder_and_access(
     *,
     permissions: _FolderPermissions,
     enforece_all_permissions: bool,
-) -> _TopMostParent:
+) -> _ResolvedAccessRights:
     """
     Raises:
         FolderNotFoundError
@@ -440,34 +444,32 @@ async def _check_folder_and_access(
         raise FolderNotFoundError(folder_id=folder_id)
 
     # check if folder was shared
-    top_most_access_rights_without_permissions = (
-        await _get_top_most_access_rights_entry(
-            connection,
-            folder_id,
-            gid,
-            permissions=None,
-            enforece_all_permissions=False,
-        )
+    resolved_access_rights_without_permissions = await _get_resolved_access_rights(
+        connection,
+        folder_id,
+        gid,
+        permissions=None,
+        enforece_all_permissions=False,
     )
-    if not top_most_access_rights_without_permissions:
+    if not resolved_access_rights_without_permissions:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
 
     # check if there are permissions
-    top_most_parent_with_permissions = await _get_top_most_access_rights_entry(
+    resolved_access_rights = await _get_resolved_access_rights(
         connection,
         folder_id,
         gid,
         permissions=permissions,
         enforece_all_permissions=enforece_all_permissions,
     )
-    if top_most_parent_with_permissions is None:
+    if resolved_access_rights is None:
         raise InsufficientPermissionsError(
             folder_id=folder_id,
             gid=gid,
             permissions=_only_true_permissions(permissions),
         )
 
-    return top_most_parent_with_permissions
+    return resolved_access_rights
 
 
 async def folder_create(
@@ -843,15 +845,15 @@ async def folder_list(
 
         if folder_id:
             # this one provides the set of access rights
-            top_most_parent_with_permissions = await _check_folder_and_access(
+            resolved_access_rights = await _check_folder_and_access(
                 connection,
                 folder_id=folder_id,
                 gid=gid,
                 permissions=required_permissions,
                 enforece_all_permissions=False,
             )
-            access_via_gid = top_most_parent_with_permissions.gid
-            access_via_folder_id = top_most_parent_with_permissions.folder_id
+            access_via_gid = resolved_access_rights.gid
+            access_via_folder_id = resolved_access_rights.folder_id
 
         subquery_my_access_rights = (
             sa.select(
