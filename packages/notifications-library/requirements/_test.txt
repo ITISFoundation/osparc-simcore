@@ -14,6 +14,10 @@ exceptiongroup==1.2.2
     # via pytest
 faker==26.0.0
     # via -r requirements/_test.in
+greenlet==3.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 icdiff==2.0.7
     # via pytest-icdiff
 idna==3.7
@@ -22,6 +26,10 @@ idna==3.7
     #   requests
 iniconfig==2.0.0
     # via pytest
+mypy==1.11.0
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 packaging==24.1
     # via
     #   pytest
@@ -71,6 +79,13 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
+sqlalchemy==1.4.52
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 tenacity==8.5.0
     # via -r requirements/_test.in
 termcolor==2.4.0
@@ -78,7 +93,13 @@ termcolor==2.4.0
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pytest
+typing-extensions==4.12.2
+    # via
+    #   -c requirements/_base.txt
+    #   mypy
+    #   sqlalchemy2-stubs
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
