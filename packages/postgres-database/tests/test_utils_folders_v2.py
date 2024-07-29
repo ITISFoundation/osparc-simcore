@@ -384,7 +384,7 @@ async def test__get_top_most_access_rights_entry(
     #           - `editor_a_folder`(`editor_a`)
 
     # check top most parent resolution
-    async def _assert_reloves_to(
+    async def _assert_resolves_to(
         *,
         target_folder_id: _FolderID,
         gid: _GroupID,
@@ -406,42 +406,42 @@ async def test__get_top_most_access_rights_entry(
         assert resolved_parent.folder_id == expected_folder_id
         assert resolved_parent.gid in expected_gids
 
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=root_folder_id,
         gid=owner_a_gid,
         permissions=OWNER_PERMISSIONS,
         expected_folder_id=root_folder_id,
         expected_gids={owner_a_gid},
     )
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=b_folder_id,
         gid=owner_b_gid,
         permissions=OWNER_PERMISSIONS,
         expected_folder_id=root_folder_id,
         expected_gids={owner_b_gid},
     )
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=c_folder_id,
         gid=owner_c_gid,
         permissions=OWNER_PERMISSIONS,
         expected_folder_id=root_folder_id,
         expected_gids={owner_c_gid},
     )
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=d_folder_id,
         gid=owner_d_gid,
         permissions=OWNER_PERMISSIONS,
         expected_folder_id=root_folder_id,
         expected_gids={owner_d_gid},
     )
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=editor_a_folder_id,
         gid=editor_a_gid,
         permissions=EDITOR_PERMISSIONS,
         expected_folder_id=root_folder_id,
         expected_gids={editor_a_gid},
     )
-    await _assert_reloves_to(
+    await _assert_resolves_to(
         target_folder_id=editor_a_folder_id,
         gid=editor_b_gid,
         permissions=EDITOR_PERMISSIONS,
