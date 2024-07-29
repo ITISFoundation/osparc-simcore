@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from models_library.basic_types import LogLevel
 from pydantic import Field, validator
@@ -53,4 +53,4 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value: Any) -> str:
-        return cast(str, cls.validate_log_level(f"{value}"))
+        return cls.validate_log_level(f"{value}")

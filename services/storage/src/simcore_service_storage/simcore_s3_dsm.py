@@ -146,7 +146,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         data: list[FileMetaData] = []
         accessible_projects_ids = []
-        uid = UserID | None
+        uid: UserID | None = None
         async with self.engine.acquire() as conn:
             if project_id is not None:
                 project_access_rights = await get_project_access_rights(
@@ -530,7 +530,7 @@ class SimcoreS3DataManager(BaseDataManager):
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
         async with self.engine.acquire() as conn:
-            can: AccessRights | None = await get_project_access_rights(
+            can: AccessRights = await get_project_access_rights(
                 conn, user_id, project_id
             )
             if not can.delete:
@@ -782,7 +782,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 len(file_ids_to_remove),
             )
 
-        return file_ids_to_remove
+        return cast(list[StorageFileID], file_ids_to_remove)
 
     async def _clean_pending_upload(
         self, conn: SAConnection, file_id: SimcoreS3FileID

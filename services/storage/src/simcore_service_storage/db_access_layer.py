@@ -36,7 +36,6 @@
 
 """
 
-
 import logging
 from dataclasses import dataclass
 
@@ -143,14 +142,14 @@ async def list_projects_access_rights(
 
         if row.access_rights:
             # TODO: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
-            projects_access_rights[row.uuid] = _aggregate_access_rights(
+            projects_access_rights[ProjectID(row.uuid)] = _aggregate_access_rights(
                 row.access_rights, user_group_ids
             )
 
         else:
             # backwards compatibility
             # - no access_rights defined BUT project is owned
-            projects_access_rights[row.uuid] = AccessRights.all()
+            projects_access_rights[ProjectID(row.uuid)] = AccessRights.all()
 
     return projects_access_rights
 

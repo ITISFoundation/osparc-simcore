@@ -67,7 +67,7 @@ def setup(app: FastAPI):
                 app_settings.AUTOSCALING_DASK,
             ]
         )
-        or not app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+        or not app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE  # type: ignore[union-attr] # checked above
     ):
         _logger.warning(
             "%s task is disabled by settings, there will be no buffer v2!",

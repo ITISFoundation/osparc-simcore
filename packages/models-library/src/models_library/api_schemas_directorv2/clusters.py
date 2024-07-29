@@ -112,7 +112,7 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None
+    owner: GroupID | None  # type: ignore[assignment]
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
@@ -166,14 +166,14 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None
+    name: str | None  # type: ignore[assignment]
     description: str | None
-    type: ClusterTypeInModel | None
-    owner: GroupID | None
+    type: ClusterTypeInModel | None  # type: ignore[assignment]
+    owner: GroupID | None  # type: ignore[assignment]
     thumbnail: HttpUrl | None
-    endpoint: AnyUrl | None
-    authentication: ExternalClusterAuthentication | None
-    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(
+    endpoint: AnyUrl | None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None  # type: ignore[assignment]
+    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
         alias="accessRights"
     )
 
