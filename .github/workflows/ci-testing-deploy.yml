@@ -1266,6 +1266,7 @@ jobs:
       - name: typecheck
         run: |
           source .venv/bin/activate && \
+          uv pip install mypy && \
           pushd services/efs-guardian && \
           make mypy
         continue-on-error: true
