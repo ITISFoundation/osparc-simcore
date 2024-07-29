@@ -20,7 +20,7 @@ from .r_clone_utils import BaseLogParser, CommandResultCaptureParser
 _logger = logging.getLogger(__name__)
 
 
-_CONVERT_SYMLINK_TO_OSPARC_LINK = "osparclink"
+_CONVERT_SYMLINK_TO_OSPARC_LINK = "rclonelink"  # We call it `rclonelink` to maintain backward compatibility with rclone
 
 
 class BaseAwsS3CliError(PydanticErrorMixin, RuntimeError):
@@ -300,7 +300,7 @@ async def sync_s3_to_local(
         debug_logs=debug_logs,
     )
 
-    # Conver .osparclink files to real symlink files after they were downloaded from S3
+    # Convert .osparclink files to real symlink files after they were downloaded from S3
     for textfile_path in local_directory_path.rglob(
         f"*.{_CONVERT_SYMLINK_TO_OSPARC_LINK}"
     ):

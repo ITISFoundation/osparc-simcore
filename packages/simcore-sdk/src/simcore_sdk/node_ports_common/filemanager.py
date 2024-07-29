@@ -420,7 +420,11 @@ async def _upload_path(
                 aws_s3_cli_settings=aws_s3_cli_settings,
                 is_rclone_enabled=is_rclone_enabled,
             )
-        except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
+        except (
+            r_clone.RCloneFailedError,
+            aws_s3_cli.AwsS3CliFailedError,
+            exceptions.S3TransferError,
+        ) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
                 await _abort_upload(
@@ -454,6 +458,7 @@ async def _upload_to_s3(
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert r_clone_settings  # nosec
+        assert aws_s3_cli_settings  # nosec
         assert isinstance(path_to_upload, Path)  # nosec
         assert len(upload_links.urls) > 0  # nosec
         if is_rclone_enabled:
