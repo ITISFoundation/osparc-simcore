@@ -1140,14 +1140,7 @@ async def test_folder_move(  # noqa: PLR0915
                 destination_folder_id=None,
             )
 
-    for to_move_gid in [
-        folder_id_f_shared_as_editor_user_a,
-        folder_id_f_shared_as_editor_user_b,
-        folder_id_f_shared_as_viewer_user_a,
-        folder_id_f_shared_as_viewer_user_b,
-        folder_id_f_shared_as_no_access_user_a,
-        folder_id_f_shared_as_no_access_user_b,
-    ]:
+    for to_move_gid in [gid_user_a, gid_user_b]:
         with pytest.raises(FolderNotSharedWithGidError):
             await folder_move(
                 connection,
