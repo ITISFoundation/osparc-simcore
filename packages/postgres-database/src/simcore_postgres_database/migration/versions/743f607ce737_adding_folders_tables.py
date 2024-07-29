@@ -1,15 +1,15 @@
-"""add folders tables
+"""adding folders tables
 
-Revision ID: 35410188c8c7
+Revision ID: 743f607ce737
 Revises: 056ed0eb1ba6
-Create Date: 2024-07-24 12:53:49.778785+00:00
+Create Date: 2024-07-29 09:36:20.373341+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "35410188c8c7"
+revision = "743f607ce737"
 down_revision = "056ed0eb1ba6"
 branch_labels = None
 depends_on = None
@@ -80,7 +80,7 @@ def upgrade():
     op.create_table(
         "folders_to_projects",
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
-        sa.Column("project_id", sa.BigInteger(), nullable=False),
+        sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column(
             "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
@@ -98,14 +98,14 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["project_id"],
-            ["projects.id"],
-            name="fk_folders_to_projects_to_projects_id",
+            ["project_uuid"],
+            ["projects.uuid"],
+            name="fk_folders_to_projects_to_projects_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint(
-            "folder_id", "project_id", name="projects_to_folder_pk"
+            "folder_id", "project_uuid", name="projects_to_folder_pk"
         ),
     )
     # ### end Alembic commands ###

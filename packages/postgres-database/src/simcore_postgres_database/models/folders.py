@@ -156,11 +156,11 @@ folders_to_projects = sa.Table(
         ),
     ),
     sa.Column(
-        "project_id",
-        sa.BigInteger,
+        "project_uuid",
+        sa.String,
         sa.ForeignKey(
-            "projects.id",
-            name="fk_folders_to_projects_to_projects_id",
+            "projects.uuid",
+            name="fk_folders_to_projects_to_projects_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
@@ -180,7 +180,7 @@ folders_to_projects = sa.Table(
         onupdate=func.now(),
         doc="Timestamp with last update",
     ),
-    sa.PrimaryKeyConstraint("folder_id", "project_id", name="projects_to_folder_pk"),
+    sa.PrimaryKeyConstraint("folder_id", "project_uuid", name="projects_to_folder_pk"),
 )
 
 # PROCEDURES ------------------------
