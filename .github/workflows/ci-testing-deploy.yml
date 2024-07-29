@@ -1428,7 +1428,6 @@ jobs:
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/invitations.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/invitations.bash test
