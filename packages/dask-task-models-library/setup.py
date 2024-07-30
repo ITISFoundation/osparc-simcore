@@ -48,6 +48,7 @@ SETUP = {
     "license": "MIT license",
     "install_requires": INSTALL_REQUIREMENTS,
     "packages": find_packages(where="src"),
+    "package_data": {"": ["py.typed"]},
     "package_dir": {"": "src"},
     "include_package_data": True,
     "test_suite": "tests",

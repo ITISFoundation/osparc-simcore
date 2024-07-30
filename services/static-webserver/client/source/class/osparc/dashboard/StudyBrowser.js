@@ -464,7 +464,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addEmptyStudyPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      const title = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      })
+      const desc = this.tr("Start with an empty study");
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
       newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
@@ -477,7 +481,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addTIPPlusButtons: function() {
-      const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
           if (templates) {
@@ -486,6 +489,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
                   const newButtonsInfo = newStudiesData[product].resources;
+                  const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
                   const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -505,7 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
-                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
+                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
                       clickAwayClose: false,
                       resizable: true
                     });
@@ -525,22 +529,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(serviceKey, newButtonInfo) {
-      const mode = this._resourcesContainer.getMode();
-      // Make sure we have access to that service
-      const versions = osparc.service.Utils.getVersions(serviceKey);
+    __addNewStudyFromServiceButtons: function(key, newButtonInfo) {
+      const versions = osparc.service.Utils.getVersions(key);
       if (versions.length && newButtonInfo) {
-        const title = newButtonInfo.title;
-        const desc = newButtonInfo.description;
-        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-        newStudyFromServiceButton.setCardKey("new-"+serviceKey);
-        osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[0], newButtonInfo.newStudyLabel));
-        if (this._resourcesContainer.getMode() === "list") {
-          const width = this._resourcesContainer.getBounds().width - 15;
-          newStudyFromServiceButton.setWidth(width);
-        }
-        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+        // scale to latest compatible
+        const latestVersion = versions[0];
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+        osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+          .then(latestMetadata => {
+            const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+            const desc = newButtonInfo.description;
+            const mode = this._resourcesContainer.getMode();
+            const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+            newStudyFromServiceButton.setCardKey("new-"+key);
+            osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+            newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            if (this._resourcesContainer.getMode() === "list") {
+              const width = this._resourcesContainer.getBounds().width - 15;
+              newStudyFromServiceButton.setWidth(width);
+            }
+            this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+          })
       }
     },
 

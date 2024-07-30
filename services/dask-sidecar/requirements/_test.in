@@ -21,3 +21,5 @@ pytest-localftpserver
 pytest-mock
 pytest-sugar
 python-dotenv
+# mypy
+types-aiofiles

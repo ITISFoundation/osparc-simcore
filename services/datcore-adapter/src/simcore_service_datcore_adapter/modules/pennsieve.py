@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Final, TypedDict, cast
 
 import boto3
-from aiocache import SimpleMemoryCache
+from aiocache import SimpleMemoryCache  # type: ignore[import-untyped]
 from fastapi.applications import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -304,9 +304,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    package_files[pck["content"]["id"]]
-                    if pck["content"]["packageType"] != "Collection"
-                    else [],
+                    (
+                        package_files[pck["content"]["id"]]
+                        if pck["content"]["packageType"] != "Collection"
+                        else []
+                    ),
                     base_path=Path(dataset_pck["content"]["name"]),
                 )
                 for pck in islice(dataset_pck["children"], offset, offset + limit)
@@ -353,9 +355,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    package_files[pck["content"]["id"]]
-                    if pck["content"]["packageType"] != "Collection"
-                    else [],
+                    (
+                        package_files[pck["content"]["id"]]
+                        if pck["content"]["packageType"] != "Collection"
+                        else []
+                    ),
                     base_path=base_path,
                 )
                 for pck in islice(collection_pck["children"], offset, offset + limit)
@@ -384,7 +388,8 @@ class PennsieveApiClient(BaseServiceClientApi):
         while resp := await self._get_dataset_packages(
             api_key, api_secret, dataset_id, PAGE_SIZE, cursor
         ):
-            cursor = resp.get("cursor")
+            cursor = resp.get("cursor")  # type: ignore[assignment]
+            assert isinstance(cursor, str | None)  # nosec
             all_packages.update(
                 {p["content"]["id"]: p for p in resp.get("packages", [])}
             )

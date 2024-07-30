@@ -125,6 +125,13 @@ qx.Class.define("osparc.data.model.Slideshow", {
       return "";
     },
 
+    setInstructions: function(nodeId, instructions) {
+      const slideshow = this.getData();
+      if (nodeId in slideshow) {
+        slideshow[nodeId]["instructions"] = instructions;
+      }
+    },
+
     addNodeToSlideshow: function(newNode, leftNodeId, rightNodeId) {
       const nodeId = newNode.getNodeId();
       if (leftNodeId) {

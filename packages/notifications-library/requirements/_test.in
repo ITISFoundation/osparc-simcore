@@ -22,3 +22,5 @@ pytest-sugar
 python-dotenv
 pyyaml
 tenacity
+sqlalchemy[mypy]
+types-aiofiles

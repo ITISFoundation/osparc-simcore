@@ -335,8 +335,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           source: noThumbnail
         });
         thumbnail.getChildControl("image").set({
-          minWidth: 120,
-          minHeight: 139
+          minWidth: Math.max(120, maxWidth),
+          minHeight: Math.max(139, maxHeight)
         });
       }
       return thumbnail;
@@ -399,7 +399,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openVersionDisplayEditor: function() {
       const title = this.tr("Edit Version Display");
-      const oldVersionDisplay = this.getService()["versionDisplay"] ? this.getService()["versionDisplay"] : "";
+      const oldVersionDisplay = osparc.service.Utils.extractVersionDisplay(this.getService());
       const versionDisplayEditor = new osparc.widget.Renamer(oldVersionDisplay, null, title);
       versionDisplayEditor.addListener("labelChanged", e => {
         versionDisplayEditor.close();

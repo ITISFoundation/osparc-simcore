@@ -2,6 +2,7 @@
     https://github.com/microsoft/debugpy
 
 """
+
 import logging
 
 
@@ -9,7 +10,7 @@ def setup_remote_debugging(logger: logging.Logger) -> None:
     try:
         logger.debug("Attaching debugpy ...")
 
-        import debugpy
+        import debugpy  # type: ignore[import-untyped]
 
         REMOTE_DEBUGGING_PORT = 3000
         debugpy.listen(("0.0.0.0", REMOTE_DEBUGGING_PORT))  # nosec

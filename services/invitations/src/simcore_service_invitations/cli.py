@@ -5,7 +5,7 @@ import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
 from models_library.invitations import InvitationContent, InvitationInputs
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic import EmailStr, HttpUrl, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import (
@@ -117,7 +117,7 @@ def invite(
 
     invitation_data = InvitationInputs(
         issuer=issuer,
-        guest=email,
+        guest=parse_obj_as(EmailStr, email),
         trial_account_days=trial_account_days,
         extra_credits_in_usd=None,
         product=product,

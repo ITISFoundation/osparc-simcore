@@ -28,7 +28,7 @@ from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 async def _create_pricing_plan_get(
     pricing_plan_db: PricingPlansDB, pricing_plan_unit_db: list[PricingUnitsDB]
-):
+) -> PricingPlanGet:
     return PricingPlanGet(
         pricing_plan_id=pricing_plan_db.pricing_plan_id,
         display_name=pricing_plan_db.display_name,
@@ -107,7 +107,7 @@ async def connect_service_to_pricing_plan(
     resource_tracker_repo: Annotated[
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
-):
+) -> PricingPlanToServiceGet:
     output: PricingPlanToServiceDB = (
         await resource_tracker_repo.upsert_service_to_pricing_plan(
             product_name=product_name,

@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, TypeAlias
 
+import dask.typing
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, validator
 
@@ -22,6 +23,14 @@ class BaseTaskEvent(BaseModel, ABC):
         extra = Extra.forbid
 
 
+def _dask_key_to_dask_task_id(key: dask.typing.Key) -> str:
+    if isinstance(key, bytes):
+        return key.decode("utf-8")
+    if isinstance(key, tuple):
+        return "(" + ", ".join(_dask_key_to_dask_task_id(k) for k in key) + ")"
+    return f"{key}"
+
+
 class TaskProgressEvent(BaseTaskEvent):
     progress: float
 
@@ -37,7 +46,7 @@ class TaskProgressEvent(BaseTaskEvent):
         job_id = worker.get_current_task()
 
         return cls(
-            job_id=job_id,
+            job_id=_dask_key_to_dask_task_id(job_id),
             progress=progress,
             task_owner=task_owner,
         )
@@ -97,7 +106,7 @@ class TaskLogEvent(BaseTaskEvent):
         worker = get_worker()
         job_id = worker.get_current_task()
         return cls(
-            job_id=job_id,
+            job_id=_dask_key_to_dask_task_id(job_id),
             log=log,
             log_level=log_level,
             task_owner=task_owner,

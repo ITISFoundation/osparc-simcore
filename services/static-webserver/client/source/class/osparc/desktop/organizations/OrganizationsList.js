@@ -179,7 +179,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
-      osparc.data.Resources.get("organizations")
+      const useCache = false;
+      osparc.data.Resources.get("organizations", null, useCache)
         .then(async respOrgs => {
           const orgs = respOrgs["organizations"];
           const promises = await orgs.map(async org => {

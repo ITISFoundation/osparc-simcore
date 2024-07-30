@@ -14,10 +14,10 @@ from models_library.api_schemas_storage import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import (
     LocationID,
     LocationName,
+    NodeID,
     SimcoreS3FileID,
     StorageFileID,
 )

@@ -46,7 +46,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     if (servicesInStudy.length) {
       const promises = [];
       servicesInStudy.forEach(srv => promises.push(osparc.service.Store.getService(srv.key, srv.version)));
-      Promise.all(servicesInStudy)
+      Promise.all(promises)
         .then(() => this._populateLayout());
     } else {
       this.__populateEmptyLayout();

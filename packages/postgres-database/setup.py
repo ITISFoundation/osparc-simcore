@@ -54,6 +54,7 @@ SETUP = {
     "include_package_data": True,
     "package_data": {
         "": [
+            "py.typed",
             "*.ini",
             "migration/*.py",
             "migration/*.mako",
