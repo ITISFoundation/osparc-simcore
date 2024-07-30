@@ -1511,7 +1511,6 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-library.bash test_all

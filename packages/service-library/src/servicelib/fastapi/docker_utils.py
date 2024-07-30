@@ -3,6 +3,7 @@ import logging
 from typing import Final
 
 import httpx
+from models_library.basic_types import IDStr
 from models_library.docker import DockerGenericTag
 from pydantic import ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
@@ -123,7 +124,9 @@ async def pull_images(
         num_steps=images_total_size,
         progress_report_cb=progress_cb,
         progress_unit="Byte",
-        description=f"pulling {len(images)} images",
+        description=IDStr(
+            f"pulling {len(images)} images",
+        ),
     ) as pbar:
 
         await asyncio.gather(

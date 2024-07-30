@@ -18,7 +18,7 @@ from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 _logger = logging.getLogger(__name__)
 
 
-@retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)  # type: ignore[call-overload]
+@retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) -> None:
     _logger.info("Checking pg is ready %s", dsn)
 

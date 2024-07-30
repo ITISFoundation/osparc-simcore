@@ -113,7 +113,7 @@ class RedisClientSDK:
             await _cancel_or_warn(self._health_check_task)
             self._health_check_task = None
 
-        await self._client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
+        await self._client.aclose(close_connection_pool=True)
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
