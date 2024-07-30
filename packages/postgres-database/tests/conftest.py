@@ -177,9 +177,11 @@ def create_fake_group(
     created_ids = []
 
     async def _creator(conn: SAConnection, **overrides) -> RowProxy:
+        if "type" not in overrides:
+            overrides["type"] = GroupType.STANDARD
         result: ResultProxy = await conn.execute(
             groups.insert()
-            .values(**random_group(type=GroupType.STANDARD, **overrides))
+            .values(**random_group(**overrides))
             .returning(sa.literal_column("*"))
         )
         group = await result.fetchone()

@@ -12,7 +12,6 @@
     NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
 """
 
-
 import itertools
 import json
 import random
@@ -57,7 +56,8 @@ def random_user(
     assert set(overrides.keys()).issubset({c.name for c in users.columns})
 
     data = {
-        "name": fake.user_name(),
+        # NOTE: ensures user name is unique to avoid flaky tests
+        "name": f"{fake.user_name()}_{fake.uuid4()}",
         "email": fake.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
