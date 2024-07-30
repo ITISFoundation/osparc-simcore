@@ -31,13 +31,13 @@ _DELAYED_EXCHANGE_NAME: Final[str] = "delayed_{exchange_name}"
 
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     count: int = 0
-
-    if (x_death := message.headers.get(_HEADER_X_DEATH, None)) and (
+    if (x_death := message.headers.get(_HEADER_X_DEATH, [])) and (
         isinstance(x_death, list)
         and x_death
         and isinstance(x_death[0], dict)
-        and "count" in x_death
+        and "count" in x_death[0]
     ):
+
         assert isinstance(x_death[0]["count"], int)  # nosec
         count = x_death[0]["count"]
 
