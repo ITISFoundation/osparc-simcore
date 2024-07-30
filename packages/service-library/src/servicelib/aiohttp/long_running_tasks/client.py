@@ -20,7 +20,7 @@ RequestBody: TypeAlias = Any
 _MINUTE: Final[int] = 60  # in secs
 _HOUR: Final[int] = 60 * _MINUTE  # in secs
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 1
-_DEFAULT_AIOHTTP_RETRY_POLICY = {
+_DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
     "retry": retry_if_exception_type(ClientConnectionError),
     "wait": wait_random_exponential(max=20),
     "stop": stop_after_delay(60),

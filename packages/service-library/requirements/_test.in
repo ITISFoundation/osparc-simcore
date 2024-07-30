@@ -25,6 +25,7 @@ pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-docker
+pytest-icdiff
 pytest-instafail
 pytest-mock
 pytest-runner
@@ -32,3 +33,7 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 respx
+sqlalchemy[mypy]
+types_aiofiles
+types-psycopg2
+types_tqdm

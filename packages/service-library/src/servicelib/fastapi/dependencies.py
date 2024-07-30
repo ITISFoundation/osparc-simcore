@@ -2,13 +2,13 @@
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI, Request
 
 
 def get_app(request: Request) -> FastAPI:
-    return request.app
+    return cast(FastAPI, request.app)
 
 
 def get_reverse_url_mapper(request: Request) -> Callable[..., str]:
