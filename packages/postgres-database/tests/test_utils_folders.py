@@ -836,7 +836,15 @@ async def test_folder_delete_nested_folders(
     #######
     # SETUP
     #######
-    (gid_owner_a, gid_owner_b, gid_editor_a, gid_editor_b) = get_unique_gids(4)
+    (
+        gid_owner_a,
+        gid_owner_b,
+        gid_editor_a,
+        gid_editor_b,
+        gid_viewer,
+        gid_no_access,
+        gid_not_shared,
+    ) = get_unique_gids(7)
 
     async def _setup_folders() -> _FolderID:
         await _assert_folder_entires(connection, folder_count=0)
@@ -849,12 +857,14 @@ async def test_folder_delete_nested_folders(
                         gid_owner_b: FolderAccessRole.OWNER,
                         gid_editor_a: FolderAccessRole.EDITOR,
                         gid_editor_b: FolderAccessRole.EDITOR,
+                        gid_viewer: FolderAccessRole.VIEWER,
+                        gid_no_access: FolderAccessRole.NO_ACCESS,
                     },
                 )
             }
         )
         folder_id_root_folder = folder_ids["root_folder"]
-        await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
+        await _assert_folder_entires(connection, folder_count=1, access_rights_count=6)
 
         GIDS_WITH_CREATE_PERMISSIONS: tuple[_GroupID, ...] = (
             gid_owner_a,
@@ -872,7 +882,7 @@ async def test_folder_delete_nested_folders(
                 parent=previous_folder_id,
             )
         await _assert_folder_entires(
-            connection, folder_count=101, access_rights_count=104
+            connection, folder_count=101, access_rights_count=106
         )
         return folder_id_root_folder
 
@@ -889,6 +899,16 @@ async def test_folder_delete_nested_folders(
     folder_id_root_folder = await _setup_folders()
     await folder_delete(connection, folder_id_root_folder, gid_owner_b)
     await _assert_folder_entires(connection, folder_count=0)
+
+    # 3. delete is not permitted
+    folder_id_root_folder = await _setup_folders()
+    for no_permissions_gid in (gid_editor_a, gid_editor_b, gid_viewer):
+        with pytest.raises(InsufficientPermissionsError):
+            await folder_delete(connection, folder_id_root_folder, no_permissions_gid)
+    for no_permissions_gid in (gid_not_shared,):
+        with pytest.raises(FolderNotSharedWithGidError):
+            await folder_delete(connection, folder_id_root_folder, no_permissions_gid)
+    await _assert_folder_entires(connection, folder_count=101, access_rights_count=106)
 
 
 async def test_folder_move(
