@@ -365,6 +365,15 @@ async def _get_resolved_access_rights(
     # Combine anchor and recursive CTE
     folder_hierarchy = access_rights_cte.union_all(recursive)
 
+    def _get_permissions_where_clause() -> ColumnElement | bool:
+        if not permissions:
+            return True
+        return (
+            _get_all_permissions(permissions, folder_hierarchy)
+            if enforece_all_permissions
+            else _get_true_permissions(permissions, folder_hierarchy)
+        )
+
     # Final query to filter and order results
     query = (
         sa.select(
@@ -379,15 +388,7 @@ async def _get_resolved_access_rights(
                 folder_hierarchy.c.level,
             ]
         )
-        .where(
-            (
-                _get_all_permissions(permissions, folder_hierarchy)
-                if enforece_all_permissions
-                else _get_true_permissions(permissions, folder_hierarchy)
-            )
-            if permissions
-            else True
-        )
+        .where(_get_permissions_where_clause())
         .where(folder_hierarchy.c.original_parent_id.is_(None))
         .where(folder_hierarchy.c.gid == gid)
         .order_by(folder_hierarchy.c.level.asc())
