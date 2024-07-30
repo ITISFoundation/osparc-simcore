@@ -3,6 +3,7 @@
 # pylint:disable=unused-variable
 
 import itertools
+import secrets
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from typing import NamedTuple
@@ -825,6 +826,69 @@ async def test_folder_delete(
         await folder_delete(connection, folder_id, share_with_error_gid)
 
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
+
+
+async def test_folder_delete_nested_folders(
+    connection: SAConnection,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+):
+    #######
+    # SETUP
+    #######
+    (gid_owner_a, gid_owner_b, gid_editor_a, gid_editor_b) = get_unique_gids(4)
+
+    async def _setup_folders() -> _FolderID:
+        await _assert_folder_entires(connection, folder_count=0)
+        folder_ids = await make_folders(
+            {
+                MkFolder(
+                    name="root_folder",
+                    gid=gid_owner_a,
+                    shared_with={
+                        gid_owner_b: FolderAccessRole.OWNER,
+                        gid_editor_a: FolderAccessRole.EDITOR,
+                        gid_editor_b: FolderAccessRole.EDITOR,
+                    },
+                )
+            }
+        )
+        folder_id_root_folder = folder_ids["root_folder"]
+        await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
+
+        GIDS_WITH_CREATE_PERMISSIONS: tuple[_GroupID, ...] = (
+            gid_owner_a,
+            gid_owner_b,
+            gid_editor_a,
+            gid_editor_b,
+        )
+
+        previous_folder_id = folder_id_root_folder
+        for i in range(100):
+            previous_folder_id = await folder_create(
+                connection,
+                f"f{i}",
+                secrets.choice(GIDS_WITH_CREATE_PERMISSIONS),
+                parent=previous_folder_id,
+            )
+        await _assert_folder_entires(
+            connection, folder_count=101, access_rights_count=104
+        )
+        return folder_id_root_folder
+
+    #######
+    # TESTS
+    #######
+
+    # 1. delete via `gid_owner_a`
+    folder_id_root_folder = await _setup_folders()
+    await folder_delete(connection, folder_id_root_folder, gid_owner_a)
+    await _assert_folder_entires(connection, folder_count=0)
+
+    # 2. delete via shared with `gid_owner_b`
+    folder_id_root_folder = await _setup_folders()
+    await folder_delete(connection, folder_id_root_folder, gid_owner_b)
+    await _assert_folder_entires(connection, folder_count=0)
 
 
 async def test_folder_move(

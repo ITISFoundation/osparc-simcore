@@ -649,21 +649,22 @@ async def folder_delete(
 
         # list all children then delete
         results = await connection.execute(
-            folders_access_rights.select()
-            .where(folders_access_rights.c.traversal_parent_id == folder_id)
-            .where(folders_access_rights.c.gid == gid)
+            folders_access_rights.select().where(
+                folders_access_rights.c.traversal_parent_id == folder_id
+            )
         )
         rows = await results.fetchall()
         if rows:
             for entry in rows:
                 childern_folder_ids.append(entry.folder_id)  # noqa: PERF401
 
-        # directly remove folder, access rigths will be dropped as well
-        await connection.execute(folders.delete().where(folders.c.id == folder_id))
-
-    # finally remove all the children from the folder
+    # first remove all childeren
     for child_folder_id in childern_folder_ids:
         await folder_delete(connection, child_folder_id, gid)
+
+    # as a last step remove the folder per se
+    async with connection.begin():
+        await connection.execute(folders.delete().where(folders.c.id == folder_id))
 
 
 async def folder_move(
