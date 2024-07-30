@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from asyncio import Task
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime
@@ -7,10 +8,10 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
     TaskId,
+    TaskProgress,
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
-    TaskProgress,
     TaskResult,
     TaskStatus,
 )
@@ -21,7 +22,7 @@ TaskName: TypeAlias = str
 TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
 
 ProgressCallback: TypeAlias = Callable[
-    [ProgressMessage, ProgressPercent, TaskId], Awaitable[None]
+    [ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]
 ]
 
 

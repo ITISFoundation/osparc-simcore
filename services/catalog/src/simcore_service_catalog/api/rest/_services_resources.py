@@ -197,7 +197,7 @@ async def get_service_resources(
         )
 
     service_spec: ComposeSpecLabelDict | None = parse_raw_as(
-        ComposeSpecLabelDict | None,
+        ComposeSpecLabelDict | None,  # type: ignore[arg-type]
         service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
     )
     _logger.debug("received %s", f"{service_spec=}")

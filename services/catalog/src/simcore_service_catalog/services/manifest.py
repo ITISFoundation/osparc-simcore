@@ -27,7 +27,7 @@ This ensures data integrity and consistency across the system.
 import logging
 from typing import Any, TypeAlias, cast
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion

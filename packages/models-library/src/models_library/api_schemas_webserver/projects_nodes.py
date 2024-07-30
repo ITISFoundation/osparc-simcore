@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import Field
@@ -26,6 +27,7 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
+    service_key: ServiceKey = FieldNotRequired(alias="key")
     service_version: ServiceVersion = FieldNotRequired(alias="version")
     label: str = FieldNotRequired()
     inputs: InputsDict = FieldNotRequired()
@@ -35,6 +37,9 @@ class NodePatch(InputSchemaWithoutCamelCase):
         ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
     boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
+    outputs: dict[
+        str, Any
+    ] = FieldNotRequired()  # NOTE: it is used by frontend for File Picker
 
 
 class NodeCreated(OutputSchema):

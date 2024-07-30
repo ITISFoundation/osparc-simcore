@@ -244,7 +244,7 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(  # type: ignore
+        cast(
             set[InstanceTypeType],
             set(
                 app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
@@ -880,7 +880,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     instances_to_terminate = [
         i
         for i in cluster.terminating_nodes
-        if (now - utils_docker.get_node_termination_started_since(i.node))
+        if (now - (utils_docker.get_node_termination_started_since(i.node) or now))
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION
     ]
     terminated_instance_ids = []

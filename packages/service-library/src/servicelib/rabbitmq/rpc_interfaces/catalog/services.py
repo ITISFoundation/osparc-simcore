@@ -3,6 +3,7 @@
 """
 
 import logging
+from typing import Any, cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
@@ -17,6 +18,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 from ..._client_rpc import RabbitMQRPCClient
 
@@ -52,13 +54,14 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
             user_id=user_id,
             limit=limit,
             offset=offset,
+            timeout_s=4 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
     assert parse_obj_as(PageRpc[ServiceGetV2], result) is not None  # nosec
-    return result
+    return cast(PageRpc[ServiceGetV2], result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -83,7 +86,7 @@ async def get_service(
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ):
+    ) -> Any:
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "get_service"),
@@ -91,6 +94,7 @@ async def get_service(
             user_id=user_id,
             service_key=service_key,
             service_version=service_version,
+            timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(
@@ -100,7 +104,7 @@ async def get_service(
         service_version=service_version,
     )
     assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
-    return result
+    return cast(ServiceGetV2, result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -147,4 +151,44 @@ async def update_service(
         update=update,
     )
     assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
-    return result
+    return cast(ServiceGetV2, result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def check_for_service(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogItemNotFoundError: service not found in catalog
+        CatalogForbiddenError: not access rights to read this service
+    """
+
+    @validate_arguments()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            parse_obj_as(RPCMethodName, "check_for_service"),
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+        )
+
+    await _call(
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )

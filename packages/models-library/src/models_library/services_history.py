@@ -3,16 +3,22 @@ from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
 
-from .services_types import ServiceVersion
+from .services_types import ServiceKey, ServiceVersion
 from .utils.change_case import snake_to_camel
+
+
+class CompatibleService(BaseModel):
+    key: ServiceKey | None = Field(
+        default=None,
+        description="If None, it refer to current service. Used only for inter-service compatibility",
+    )
+    version: ServiceVersion
 
 
 class Compatibility(BaseModel):
     # NOTE: as an object it is more maintainable than a list
-    can_update_to: ServiceVersion = Field(
-        ...,
-        description="Latest compatible version at this moment."
-        "Current service can update to this version and still work",
+    can_update_to: CompatibleService = Field(
+        ..., description="Latest compatible service at this moment"
     )
 
     class Config:
@@ -36,9 +42,9 @@ class ServiceRelease(BaseModel):
         "If now<retired then the service is deprecated. "
         "If retired<now then the service is retired and should not be used. ",
     )
-
-    # computed compatibility
-    compatibility: Compatibility | None = Field(default=None)
+    compatibility: Compatibility | None = Field(
+        default=None, description="Compatibility with other releases at this moment"
+    )
 
     class Config:
         alias_generator = snake_to_camel
@@ -55,7 +61,12 @@ class ServiceRelease(BaseModel):
                     "version_display": "Matterhorn",
                     "released": "2024-06-20T18:49:17",
                     "retired": "2034-06-20T00:00:00",
-                    "compatibility": {"can_update_to": "0.9.10"},
+                    "compatibility": {
+                        "can_update_to": {
+                            "version": "0.9.10",
+                            "service": "simcore/services/comp/foo",
+                        }
+                    },
                 },
             ]
         }

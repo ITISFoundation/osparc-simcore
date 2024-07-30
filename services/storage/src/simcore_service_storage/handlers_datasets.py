@@ -32,7 +32,9 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
     f"/{API_VTAG}/locations/{{location_id}}/datasets", name="get_datasets_metadata"
 )
 async def get_datasets_metadata(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
         "received call to get_datasets_metadata with %s",
@@ -50,7 +52,7 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
     name="get_files_metadata_dataset",
 )
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(
+    query_params: FilesMetadataDatasetQueryParams = parse_request_query_parameters_as(
         FilesMetadataDatasetQueryParams, request
     )
     path_params = parse_request_path_parameters_as(

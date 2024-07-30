@@ -91,6 +91,67 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 110000,
 
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    forceRatioAfterLoad: function(image, force ="width", maxDimension = null) {
+      image.set({
+        scale: true,
+        allowStretchX: true,
+        allowStretchY: true,
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      const recheckSize = () => {
+        const source = image.getSource();
+        if (source) {
+          const srcWidth = qx.io.ImageLoader.getWidth(source);
+          const srcHeight = qx.io.ImageLoader.getHeight(source);
+          if (srcWidth && srcHeight) {
+            const aspectRatio = srcWidth/srcHeight;
+            switch (force) {
+              case "width": {
+                const newHeight = maxDimension/aspectRatio;
+                image.set({
+                  maxWidth: maxDimension,
+                  maxHeight: parseInt(newHeight)
+                });
+                break;
+              }
+              case "height": {
+                const newWidth = maxDimension*aspectRatio;
+                image.set({
+                  maxHeight: maxDimension,
+                  maxWidth: parseInt(newWidth)
+                });
+                break;
+              }
+            }
+          }
+        }
+      };
+      [
+        "appear",
+        "loaded"
+      ].forEach(eventName => {
+        image.addListener(eventName, () => recheckSize(), this);
+      });
+    },
+
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    openImageOnTap: function(image) {
+      const source = image.getSource();
+      if (source) {
+        image.set({
+          cursor: "pointer"
+        });
+        image.addListener("tap", () => window.open(source, "_blank"));
+      }
+    },
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,
@@ -222,6 +283,18 @@ qx.Class.define("osparc.utils.Utils", {
       const domElem = elem.getContentElement().getDomElement();
       const checkIsOnScreen = isInViewport(domElem);
       return checkIsOnScreen;
+    },
+
+    growSelectBox: function(selectBox, maxWidth) {
+      let largest = 0;
+      selectBox.getSelectables().forEach(listItem => {
+        largest = Math.max(listItem.getSizeHint().width, largest);
+      });
+      largest += 15;
+      selectBox.set({
+        width: maxWidth ? Math.min(maxWidth, largest) : largest,
+        minWidth: 120
+      });
     },
 
     toTwoDecimals: function(value) {

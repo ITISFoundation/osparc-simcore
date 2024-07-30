@@ -32,7 +32,9 @@ routes = RouteTableDef()
 # HANDLERS ---------------------------------------------------
 @routes.get(f"/{API_VTAG}/locations", name="get_storage_locations")
 async def get_storage_locations(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     log.debug(
         "received call to get_storage_locations with %s",
         f"{query_params=}",
@@ -52,7 +54,9 @@ async def get_storage_locations(request: web.Request) -> web.Response:
     f"/{API_VTAG}/locations/{{location_id}}:sync", name="synchronise_meta_data_table"
 )
 async def synchronise_meta_data_table(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(SyncMetadataQueryParams, request)
+    query_params: SyncMetadataQueryParams = parse_request_query_parameters_as(
+        SyncMetadataQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
         "received call to synchronise_meta_data_table with %s",

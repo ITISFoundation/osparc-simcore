@@ -33,32 +33,23 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
       appearance: "pb-new"
     });
 
-    this._buildLayout();
-
     if (title) {
       const titleLabel = this.getChildControl("title");
-      titleLabel.setValue(title);
+      titleLabel.set({
+        value: title,
+        rich: true
+      });
     }
 
     if (description) {
       const descLabel = this.getChildControl("description");
-      descLabel.setValue(description.toString());
+      descLabel.setValue(description);
     }
+
+    this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
   },
 
   members: {
-    _buildLayout: function() {
-      const title = this.getChildControl("title");
-      title.setValue(this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
-        firstUpperCase: true
-      }));
-
-      const desc = this.getChildControl("description");
-      desc.setValue(this.tr("Start with an empty study").toString());
-
-      this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
-    },
-
     _onToggleChange: function(e) {
       this.setValue(false);
     },

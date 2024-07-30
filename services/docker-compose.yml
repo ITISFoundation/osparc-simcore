@@ -112,6 +112,7 @@ services:
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
       REDIS_HOST: ${REDIS_HOST}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_PORT: ${REDIS_PORT}
       REGISTRY_USER: ${REGISTRY_USER}
       REGISTRY_PW: ${REGISTRY_PW}
@@ -135,7 +136,7 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
@@ -201,6 +202,7 @@ services:
       RABBIT_USER: ${RABBIT_USER}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
       CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: ${CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES}
       WORKERS_EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
@@ -325,6 +327,7 @@ services:
 
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       REGISTRY_AUTH: ${REGISTRY_AUTH}
       REGISTRY_PATH: ${REGISTRY_PATH}
@@ -388,7 +391,7 @@ services:
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "inv-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -404,7 +407,7 @@ services:
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "pay-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -466,6 +469,7 @@ services:
       RABBIT_USER: ${RABBIT_USER}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       RESOURCE_USAGE_TRACKER_LOGLEVEL: ${RESOURCE_USAGE_TRACKER_LOGLEVEL}
       RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED: ${RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED}
       RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC: ${RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC}
@@ -487,6 +491,7 @@ services:
       RABBIT_USER: ${RABBIT_USER}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
       DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: ${DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT}
@@ -647,6 +652,7 @@ services:
       # WEBSERVER_REDIS
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # WEBSERVER_REST
       REST_SWAGGER_API_DOC_ENABLED: ${REST_SWAGGER_API_DOC_ENABLED}
@@ -759,7 +765,6 @@ services:
 
     networks: *webserver_networks
 
-
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -798,6 +803,7 @@ services:
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
       WEBSERVER_EMAIL: ${WB_DB_EL_EMAIL}
       WEBSERVER_EXPORTER: ${WB_DB_EL_EXPORTER}
+      WEBSERVER_FOLDERS: ${WB_DB_EL_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_DB_EL_FRONTEND}
       WEBSERVER_GARBAGE_COLLECTOR: ${WB_DB_EL_GARBAGE_COLLECTOR}
       WEBSERVER_GROUPS: ${WB_DB_EL_GROUPS}
@@ -830,6 +836,7 @@ services:
       # WEBSERVER_REDIS
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 
@@ -876,6 +883,7 @@ services:
 
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
 
@@ -893,6 +901,7 @@ services:
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
       WEBSERVER_EMAIL: ${WB_GC_EMAIL}
       WEBSERVER_EXPORTER: ${WB_GC_EXPORTER}
+      WEBSERVER_FOLDERS: ${WB_GC_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_GC_FRONTEND}
       WEBSERVER_GROUPS: ${WB_GC_GROUPS}
       WEBSERVER_INVITATIONS: ${WB_GC_INVITATIONS}
@@ -998,7 +1007,7 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       BF_API_KEY: ${BF_API_KEY}
       BF_API_SECRET: ${BF_API_SECRET}
@@ -1012,6 +1021,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_ENDPOINT: ${S3_ENDPOINT}
@@ -1133,7 +1143,9 @@ services:
         "--databases",
         "8",
         "--appendonly",
-        "yes"
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD}"
       ]
     networks:
       - default
@@ -1141,7 +1153,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 30s
       retries: 50
@@ -1204,12 +1216,6 @@ services:
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services
-    #healthcheck:
-    #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
-    #  interval: 3s
-    #  timeout: 1s
-    #  retries: 3
-    #  start_period: 20s
 
 
 volumes:

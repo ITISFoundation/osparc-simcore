@@ -1,13 +1,13 @@
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-not-found]
 from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from servicelib.async_utils import run_sequentially_in_context
 
+from ....async_utils import run_sequentially_in_context
 from ..._client_rpc import RabbitMQRPCClient
 from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 

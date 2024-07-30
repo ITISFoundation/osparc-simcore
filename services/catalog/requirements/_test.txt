@@ -185,6 +185,10 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
+types-psycopg2==2.9.21.20240417
+    # via -r requirements/_test.in
+types-pyyaml==6.0.12.20240724
+    # via -r requirements/_test.in
 typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt

@@ -2,6 +2,7 @@
 
     SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
+
 import asyncio
 import json
 import logging
@@ -108,7 +109,7 @@ def error_middleware_factory(
                         err.text = json_dumps(payload)
                 except Exception as other_error:  # pylint: disable=broad-except
                     _process_and_raise_unexpected_error(request, other_error)
-            raise err
+            raise
 
         except web.HTTPRedirection as err:
             _logger.debug("Redirected to %s", err)
@@ -136,9 +137,11 @@ def error_middleware_factory(
             _process_and_raise_unexpected_error(request, err)
 
     # adds identifier (mostly for debugging)
-    _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
+    setattr(  # noqa: B010
+        _middleware_handler, "__middleware_name__", f"{__name__}.error_{api_version}"
+    )
 
-    return _middleware_handler  # type: ignore[no-any-return]
+    return _middleware_handler
 
 
 _ResponseOrBodyData = Union[StreamResponse, Any]
@@ -179,9 +182,11 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
         return resp
 
     # adds identifier (mostly for debugging)
-    _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
+    setattr(  # noqa: B010
+        _middleware_handler, "__middleware_name__", f"{__name__}.envelope_{api_version}"
+    )
 
-    return _middleware_handler  # type: ignore[no-any-return]
+    return _middleware_handler
 
 
 def append_rest_middlewares(

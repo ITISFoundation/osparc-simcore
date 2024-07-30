@@ -75,27 +75,27 @@ class StandardSimcoreDockerLabels(BaseModel):
     In order to create this object in code, please use construct() method!
     """
 
-    user_id: UserID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id")
-    project_id: ProjectID = Field(
+    user_id: UserID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id")  # type: ignore[literal-required]
+    project_id: ProjectID = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id"
     )
-    node_id: NodeID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id")
+    node_id: NodeID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id")  # type: ignore[literal-required]
 
-    product_name: ProductName = Field(
+    product_name: ProductName = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name"
     )
-    simcore_user_agent: str = Field(
+    simcore_user_agent: str = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent"
     )
 
-    swarm_stack_name: str = Field(
+    swarm_stack_name: str = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name"
     )
 
-    memory_limit: ByteSize = Field(
+    memory_limit: ByteSize = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit"
     )
-    cpu_limit: float = Field(
+    cpu_limit: float = Field(  # type: ignore[literal-required]
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"
     )
 

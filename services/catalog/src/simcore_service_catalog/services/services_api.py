@@ -5,13 +5,15 @@ from models_library.api_schemas_catalog.services import (
     ServiceGroupAccessRightsV2,
     ServiceUpdate,
 )
+from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
+from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import HttpUrl, NonNegativeInt, parse_obj_as
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -25,6 +27,7 @@ from simcore_service_catalog.services import manifest
 from simcore_service_catalog.services.director import DirectorApi
 
 from ..db.repositories.services import ServicesRepository
+from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
@@ -42,21 +45,32 @@ def _db_to_api_model(
     service_db: ServiceWithHistoryFromDB,
     access_rights_db: list[ServiceAccessRightsAtDB],
     service_manifest: ServiceMetaDataPublished,
+    compatibility_map: dict[ServiceVersion, Compatibility | None] | None = None,
 ) -> ServiceGetV2:
-    assert (
+    compatibility_map = compatibility_map or {}
+    assert (  # nosec
         _deduce_service_type_from(service_db.key) == service_manifest.service_type
-    )  # nosec
+    )
+
     return ServiceGetV2(
         key=service_db.key,
         version=service_db.version,
         name=service_db.name,
-        thumbnail=service_db.thumbnail or None,
+        thumbnail=(
+            parse_obj_as(HttpUrl, service_db.thumbnail)
+            if service_db.thumbnail
+            else None
+        ),
         description=service_db.description,
-        version_display=service_manifest.version_display,
+        version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
-        owner=service_db.owner_email or None,
+        owner=(
+            LowerCaseEmailStr(service_db.owner_email)
+            if service_db.owner_email
+            else None
+        ),
         inputs=service_manifest.inputs or {},
         outputs=service_manifest.outputs or {},
         boot_options=service_manifest.boot_options,
@@ -70,7 +84,16 @@ def _db_to_api_model(
         },
         classifiers=service_db.classifiers,
         quality=service_db.quality,
-        history=[h.to_api_model() for h in service_db.history],
+        history=[
+            ServiceRelease.construct(
+                version=h.version,
+                version_display=h.version_display,
+                released=h.created,
+                retired=h.deprecated,
+                compatibility=compatibility_map.get(h.version),
+            )
+            for h in service_db.history
+        ],
     )
 
 
@@ -110,13 +133,24 @@ async def list_services_paginated(
         (s.key, s.version): s for s in got if isinstance(s, ServiceMetaDataPublished)
     }
 
-    # NOTE: aggregates published (i.e. not editable) is still missing in this version
     items = [
-        _db_to_api_model(s, ar, sm)
+        _db_to_api_model(
+            service_db=s, access_rights_db=ar, service_manifest=sm, compatibility_map=cm
+        )
         for s in services
         if (
             (ar := access_rights.get((s.key, s.version)))
             and (sm := service_manifest.get((s.key, s.version)))
+            and (
+                # NOTE: This operation might be resource-intensive.
+                # It is temporarily implemented on a trial basis.
+                cm := await evaluate_service_compatibility_map(
+                    repo,
+                    product_name=product_name,
+                    user_id=user_id,
+                    service_release_history=s.history,
+                )
+            )
         )
     ]
 
@@ -167,7 +201,14 @@ async def get_service(
         director_client=director_api,
     )
 
-    return _db_to_api_model(service, access_rights, service_manifest)
+    compatibility_map = await evaluate_service_compatibility_map(
+        repo,
+        product_name=product_name,
+        user_id=user_id,
+        service_release_history=service.history,
+    )
+
+    return _db_to_api_model(service, access_rights, service_manifest, compatibility_map)
 
 
 async def update_service(
@@ -261,3 +302,46 @@ async def update_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+async def check_for_service(
+    repo: ServicesRepository,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """Raises if the service canot be read
+
+    Raises:
+        CatalogItemNotFoundError: service (key,version) not found
+        CatalogForbiddenError: insufficient access rights to get read accss
+    """
+
+    access_rights = await repo.get_service_access_rights(
+        key=service_key,
+        version=service_version,
+        product_name=product_name,
+    )
+    if not access_rights:
+        raise CatalogItemNotFoundError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    if not await repo.can_get_service(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
+    ):
+        raise CatalogForbiddenError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )

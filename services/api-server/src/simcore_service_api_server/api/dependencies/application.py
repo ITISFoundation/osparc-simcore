@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from fastapi import Request
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 

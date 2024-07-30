@@ -37,7 +37,11 @@ async def redis_settings(
         "simcore_redis", testing_environ_vars["REDIS_PORT"]
     )
     # test runner is running on the host computer
-    settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=PortInt(port))
+    settings = RedisSettings(
+        REDIS_HOST=get_localhost_ip(),
+        REDIS_PORT=PortInt(port),
+        REDIS_PASSWORD=testing_environ_vars["REDIS_PASSWORD"],
+    )
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
     return settings
@@ -54,6 +58,9 @@ def redis_service(
     """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
+    monkeypatch.setenv(
+        "REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value()
+    )
     return redis_settings
 
 
@@ -99,7 +106,6 @@ async def redis_locks_client(
 )
 async def wait_till_redis_responsive(redis_url: URL | str) -> None:
     client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
-
     try:
         if not await client.ping():
             msg = f"{redis_url=} not available"

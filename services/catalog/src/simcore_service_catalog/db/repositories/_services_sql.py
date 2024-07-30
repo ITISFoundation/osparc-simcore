@@ -1,3 +1,5 @@
+from typing import Any
+
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -7,7 +9,13 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data, user_to_groups, users
+from ..tables import (
+    services_access_rights,
+    services_compatibility,
+    services_meta_data,
+    user_to_groups,
+    users,
+)
 
 
 def list_services_stmt(
@@ -20,13 +28,13 @@ def list_services_stmt(
 ) -> Select:
     stmt = sa.select(services_meta_data)
     if gids or execute_access or write_access:
-        conditions = []
+        conditions: list[Any] = []
 
         # access rights
         logic_operator = and_ if combine_access_with_and else or_
         default = bool(combine_access_with_and)
 
-        access_query_part = logic_operator(
+        access_query_part = logic_operator(  # type: ignore[type-var]
             services_access_rights.c.execute_access if execute_access else default,
             services_access_rights.c.write_access if write_access else default,
         )
@@ -70,6 +78,34 @@ class AccessRightsClauses:
     can_edit = services_access_rights.c.write_access
     is_owner = (
         services_access_rights.c.execute_access & services_access_rights.c.write_access
+    )
+
+
+def _join_services_with_access_rights():
+    # services_meta_data | services_access_rights | user_to_groups
+    return services_meta_data.join(
+        services_access_rights,
+        (services_meta_data.c.key == services_access_rights.c.key)
+        & (services_meta_data.c.version == services_access_rights.c.version),
+    ).join(
+        user_to_groups,
+        (user_to_groups.c.gid == services_access_rights.c.gid),
+    )
+
+
+def _has_access_rights(
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+):
+    return (
+        (services_meta_data.c.key == service_key)
+        & (services_meta_data.c.version == service_version)
+        & (user_to_groups.c.uid == user_id)
+        & (services_access_rights.c.product_name == product_name)
+        & access_rights
     )
 
 
@@ -144,6 +180,7 @@ def list_latest_services_with_history_stmt(
             services_meta_data.c.name,
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.version_display,
             services_meta_data.c.classifiers,
             services_meta_data.c.created,
             services_meta_data.c.modified,
@@ -162,17 +199,16 @@ def list_latest_services_with_history_stmt(
             isouter=True,
         )
         .join(users, user_to_groups.c.uid == users.c.id, isouter=True)
-        .subquery()
+        .subquery("latest_sq")
     )
 
     # get history for every unique service-key in CTE
-    history_subquery = (
+    _accessible_sq = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
-            services_meta_data.c.deprecated,
-            services_meta_data.c.created,
         )
+        .distinct()
         .select_from(
             services_meta_data.join(
                 cte,
@@ -184,18 +220,47 @@ def list_latest_services_with_history_stmt(
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version)
                 & (services_access_rights.c.product_name == product_name),
-            ).join(
+            )
+            .join(
                 user_to_groups,
                 (user_to_groups.c.gid == services_access_rights.c.gid)
                 & (user_to_groups.c.uid == user_id),
             )
+            .outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
+            )
         )
         .where(access_rights)
+        .subquery("accessible_sq")
+    )
+
+    history_subquery = (
+        sa.select(
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.version_display,
+            services_meta_data.c.deprecated,
+            services_meta_data.c.created,
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
+        )
+        .select_from(
+            services_meta_data.join(
+                _accessible_sq,
+                (services_meta_data.c.key == _accessible_sq.c.key)
+                & (services_meta_data.c.version == _accessible_sq.c.version),
+            ).outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
+            )
+        )
         .order_by(
             services_meta_data.c.key,
             sa.desc(_version(services_meta_data.c.version)),  # latest version first
         )
-        .subquery()
+        .subquery("history_sq")
     )
 
     return (
@@ -206,6 +271,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.name,
             latest_query.c.description,
             latest_query.c.thumbnail,
+            latest_query.c.version_display,
             # ownership
             latest_query.c.owner_email,
             # tags
@@ -220,10 +286,14 @@ def list_latest_services_with_history_stmt(
                 func.json_build_object(
                     "version",
                     history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
                     "deprecated",
                     history_subquery.c.deprecated,
                     "created",
                     history_subquery.c.created,
+                    "compatibility_policy",  # NOTE: this is the `policy`
+                    history_subquery.c.custom_policy,
                 )
             ).label("history"),
         )
@@ -239,6 +309,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.name,
             latest_query.c.description,
             latest_query.c.thumbnail,
+            latest_query.c.version_display,
             latest_query.c.classifiers,
             latest_query.c.created,
             latest_query.c.modified,
@@ -247,6 +318,32 @@ def list_latest_services_with_history_stmt(
         )
         .order_by(history_subquery.c.key)
     )
+
+
+def can_get_service_stmt(
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    access_rights: sa.sql.ClauseElement,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+):
+    subquery = (
+        sa.select(1)
+        .select_from(_join_services_with_access_rights())
+        .where(
+            _has_access_rights(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=access_rights,
+                service_key=service_key,
+                service_version=service_version,
+            )
+        )
+        .limit(1)
+    )
+
+    return sa.select(sa.exists(subquery))
 
 
 def get_service_stmt(
@@ -273,6 +370,7 @@ def get_service_stmt(
             services_meta_data.c.name,
             services_meta_data.c.description,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.version_display,
             # ownership
             owner_subquery.label("owner_email"),
             # tags
@@ -284,22 +382,17 @@ def get_service_stmt(
             services_meta_data.c.deprecated,
             # w/o releases history!
         )
-        .select_from(
-            services_meta_data.join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
-                user_to_groups, (user_to_groups.c.gid == services_access_rights.c.gid)
+        .select_from(_join_services_with_access_rights())
+        .where(
+            _has_access_rights(
+                product_name=product_name,
+                user_id=user_id,
+                access_rights=access_rights,
+                service_key=service_key,
+                service_version=service_version,
             )
         )
-        .where(
-            (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-            & (user_to_groups.c.uid == user_id)
-            & (services_access_rights.c.product_name == product_name)
-            & access_rights
-        )
+        .limit(1)
     )
 
 
@@ -310,12 +403,15 @@ def get_service_history_stmt(
     access_rights: sa.sql.ClauseElement,
     service_key: ServiceKey,
 ):
-    history_subquery = (
+
+    _sq = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
+            services_meta_data.c.version_display,
             services_meta_data.c.deprecated,
             services_meta_data.c.created,
+            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
         )
         .select_from(
             # joins because access-rights might change per version
@@ -323,9 +419,15 @@ def get_service_history_stmt(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
                 & (services_meta_data.c.version == services_access_rights.c.version),
-            ).join(
+            )
+            .join(
                 user_to_groups,
                 (user_to_groups.c.gid == services_access_rights.c.gid),
+            )
+            .outerjoin(
+                services_compatibility,
+                (services_meta_data.c.key == services_compatibility.c.key)
+                & (services_meta_data.c.version == services_compatibility.c.version),
             )
         )
         .where(
@@ -334,22 +436,34 @@ def get_service_history_stmt(
             & (user_to_groups.c.uid == user_id)
             & access_rights
         )
+        .distinct()
+    ).subquery()
+
+    history_subquery = (
+        sa.select(_sq)
         .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
+            sa.desc(_version(_sq.c.version)),  # latest version first
         )
-        .subquery()
+        .alias("history_subquery")
     )
 
-    return sa.select(
-        array_agg(
-            func.json_build_object(
-                "version",
-                history_subquery.c.version,
-                "deprecated",
-                history_subquery.c.deprecated,
-                "created",
-                history_subquery.c.created,
-            )
-        ).label("history"),
-    ).group_by(history_subquery.c.key)
+    return (
+        sa.select(
+            array_agg(
+                func.json_build_object(
+                    "version",
+                    history_subquery.c.version,
+                    "version_display",
+                    history_subquery.c.version_display,
+                    "deprecated",
+                    history_subquery.c.deprecated,
+                    "created",
+                    history_subquery.c.created,
+                    "compatibility_policy",  # NOTE: this is the `policy`
+                    history_subquery.c.custom_policy,
+                )
+            ).label("history"),
+        )
+        .select_from(history_subquery)
+        .group_by(history_subquery.c.key)
+    )

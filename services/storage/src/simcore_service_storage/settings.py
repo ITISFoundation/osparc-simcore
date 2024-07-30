@@ -14,7 +14,7 @@ from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
-    STORAGE_PORT: PortInt = 8080
+    STORAGE_PORT: PortInt = PortInt(8080)
 
     LOG_LEVEL: LogLevel = Field(
         "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]

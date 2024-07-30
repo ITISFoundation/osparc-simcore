@@ -115,16 +115,15 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       }
 
       const gid = orgModel.getGid();
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices(false, false)
-        .then(services => {
+      osparc.service.Store.getServicesLatest()
+        .then(servicesLatest => {
           const orgServices = [];
-          for (const key in services) {
-            const latestService = osparc.service.Utils.getLatest(services, key);
-            if (gid in latestService["accessRights"]) {
-              orgServices.push(latestService);
+          Object.keys(servicesLatest).forEach(key => {
+            const serviceLatest = servicesLatest[key];
+            if (gid in serviceLatest["accessRights"]) {
+              orgServices.push(serviceLatest);
             }
-          }
+          });
           orgServices.forEach(orgService => {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
             orgServiceCopy["orgId"] = gid;

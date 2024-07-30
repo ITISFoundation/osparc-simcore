@@ -1,9 +1,9 @@
-from typing import Final
+from typing import Any, Final
 
 # These are equivalent to pydantic export models but for responses
 # SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
 # SEE https://fastapi.tiangolo.com/tutorial/response-model/#use-the-response_model_exclude_unset-parameter
-RESPONSE_MODEL_POLICY: Final[dict[str, bool]] = {
+RESPONSE_MODEL_POLICY: Final[dict[str, Any]] = {
     "response_model_by_alias": True,
     "response_model_exclude_unset": True,
     "response_model_exclude_defaults": False,

@@ -90,7 +90,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __qualityPage: null,
     __servicesUpdatePage: null,
     __openButton: null,
-    _services: null,
 
     __createToolbar: function() {
       const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
@@ -151,10 +150,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           let anyUpdatable = false;
           for (const nodeId in workbench) {
             const node = workbench[nodeId];
-            const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
-            if (latestCompatibleMetadata === null) {
-              osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
-            }
             const isUpdatable = osparc.service.Utils.isUpdatable(node);
             if (isUpdatable) {
               anyUpdatable = true;
@@ -241,36 +236,35 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const versionsBox = new osparc.ui.toolbar.SelectBox();
       hBox.add(versionsBox);
 
-      // populate it with owned versions
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
-          let selectedItem = null;
 
-          // first setSelection
-          versions.reverse().forEach(version => {
-            selectedItem = new qx.ui.form.ListItem(version);
-            versionsBox.add(selectedItem);
-            if (this.__resourceData["version"] === version) {
-              versionsBox.setSelection([selectedItem]);
-            }
-          });
+      const versions = osparc.service.Utils.getVersions(this.__resourceData["key"]);
+      let selectedItem = null;
 
-          // then listen to changes
-          versionsBox.addListener("changeSelection", e => {
-            const selection = e.getData();
-            if (selection.length) {
-              const serviceVersion = selection[0].getLabel();
-              if (serviceVersion !== this.__resourceData["version"]) {
-                const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
+      // first setSelection
+      versions.forEach(version => {
+        selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+        versionsBox.add(selectedItem);
+        if (this.__resourceData["version"] === version) {
+          versionsBox.setSelection([selectedItem]);
+        }
+      });
+      osparc.utils.Utils.growSelectBox(versionsBox, 200);
+
+      // then listen to changes
+      versionsBox.addListener("changeSelection", e => {
+        const selection = e.getData();
+        if (selection.length) {
+          const serviceVersion = selection[0].version;
+          if (serviceVersion !== this.__resourceData["version"]) {
+            osparc.service.Store.getService(this.__resourceData["key"], serviceVersion)
+              .then(serviceData => {
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
-              }
-            }
-          }, this);
-        });
+              });
+          }
+        }
+      }, this);
 
       return hBox;
     },

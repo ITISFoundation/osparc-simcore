@@ -365,3 +365,65 @@ def random_payment_method_view(
     assert set(overrides.keys()).issubset(data.keys())
     data.update(**overrides)
     return data
+
+
+def random_service_meta_data(
+    owner_primary_gid: int | None = None,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.services import services_meta_data
+
+    _pick_from = random.choice
+    _version = ".".join([str(fake.pyint()) for _ in range(3)])
+    _name = fake.name()
+
+    data: dict[str, Any] = {
+        # required
+        "key": f"simcore/services/{_pick_from(['dynamic', 'computational'])}/{_name}",
+        "version": _version,
+        "name": f"the-{_name}-service",  # display
+        "description": fake.sentence(),
+        # optional
+        "owner": owner_primary_gid,
+        "thumbnail": _pick_from([fake.image_url(), None]),  # nullable
+        "version_display": _pick_from([f"v{_version}", None]),  # nullable
+        "classifiers": [],  # has default
+        "quality": {},  # has default
+        "deprecated": None,  # nullable
+    }
+
+    assert set(data.keys()).issubset(  # nosec
+        {c.name for c in services_meta_data.columns}
+    )
+
+    data.update(**overrides)
+    return data
+
+
+def random_service_access_rights(
+    key: str,
+    version: str,
+    gid: int,
+    product_name: str,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.services import services_access_rights
+
+    data: dict[str, Any] = {
+        # required
+        "key": key,
+        "version": version,
+        "gid": gid,
+        "execute_access": fake.pybool(),
+        "write_access": fake.pybool(),
+        "product_name": product_name,
+    }
+
+    assert set(data.keys()).issubset(  # nosec
+        {c.name for c in services_access_rights.columns}
+    )
+
+    data.update(**overrides)
+    return data

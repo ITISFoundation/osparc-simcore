@@ -19,6 +19,7 @@ from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogItemNotFoundError
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
+    check_for_service,
     get_service,
     list_services_paginated,
     update_service,
@@ -148,6 +149,7 @@ async def test_rpc_catalog_client(
         update={
             "name": "foo",
             "description": "bar",
+            "version_display": "this is a nice version",
         },
     )
 
@@ -155,6 +157,7 @@ async def test_rpc_catalog_client(
     assert updated.version == got.version
     assert updated.name == "foo"
     assert updated.description == "bar"
+    assert updated.version_display == "this is a nice version"
     assert not updated.classifiers
 
     got = await get_service(
@@ -167,7 +170,7 @@ async def test_rpc_catalog_client(
     assert got == updated
 
 
-async def test_rpc_service_not_found_error(
+async def test_rpc_get_service_not_found_error(
     background_sync_task_mocked: None,
     mocked_director_service_api: MockRouter,
     app: FastAPI,
@@ -185,11 +188,39 @@ async def test_rpc_service_not_found_error(
             service_version="1.0.0",
         )
 
+
+async def test_rpc_get_service_validation_error(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+
     with pytest.raises(ValidationError, match="service_key"):
         await get_service(
             rpc_client,
             product_name=product_name,
             user_id=user_id,
             service_key="wrong-format/unknown",
+            service_version="1.0.0",
+        )
+
+
+async def test_rpc_check_for_service(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+):
+    with pytest.raises(CatalogItemNotFoundError, match="unknown"):
+        await check_for_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key="simcore/services/dynamic/unknown",
             service_version="1.0.0",
         )

@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
@@ -42,13 +42,15 @@ async def list_datasets(
 ) -> Page[DatasetsOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         limit=raw_params.limit,
         offset=raw_params.offset,
     )
-    return create_page(datasets, total=total, params=params)
+    return create_page(datasets, total=total, params=params)  # type: ignore[return-value]
 
 
 @router.get(
@@ -73,6 +75,8 @@ async def list_dataset_top_level_files(
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_dataset(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
@@ -80,7 +84,7 @@ async def list_dataset_top_level_files(
         limit=raw_params.limit,
         offset=raw_params.offset,
     )
-    return create_page(file_metas, total=total, params=params)
+    return create_page(file_metas, total=total, params=params)  # type: ignore[return-value]
 
 
 @router.get(
@@ -105,7 +109,8 @@ async def list_dataset_collection_files(
 ) -> Page[FileMetaDataOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
-
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_collection(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
@@ -114,7 +119,7 @@ async def list_dataset_collection_files(
         dataset_id=dataset_id,
         collection_id=collection_id,
     )
-    return create_page(file_metas, total=total, params=params)
+    return create_page(file_metas, total=total, params=params)  # type: ignore[return-value]
 
 
 @router.get(

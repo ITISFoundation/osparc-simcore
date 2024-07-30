@@ -7,9 +7,10 @@ import zipfile
 from contextlib import AsyncExitStack, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Awaitable, Callable, Final, Iterator
+from typing import Any, Awaitable, Callable, Final, Iterator
 
 import tqdm
+from models_library.basic_types import IDStr
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 from .file_utils import remove_directory
@@ -89,17 +90,17 @@ class _FastZipFileReader(zipfile.ZipFile):
         """method disabled"""
 
 
-_TQDM_FILE_OPTIONS = dict(
-    unit="byte",
-    unit_scale=True,
-    unit_divisor=1024,
-    colour="yellow",
-    miniters=1,
-)
-_TQDM_MULTI_FILES_OPTIONS = _TQDM_FILE_OPTIONS | dict(
-    unit="file",
-    unit_divisor=1000,
-)
+_TQDM_FILE_OPTIONS: Final[dict[str, Any]] = {
+    "unit": "byte",
+    "unit_scale": True,
+    "unit_divisor": 1024,
+    "colour": "yellow",
+    "miniters": 1,
+}
+_TQDM_MULTI_FILES_OPTIONS: Final[dict[str, Any]] = _TQDM_FILE_OPTIONS | {
+    "unit": "file",
+    "unit_divisor": 1000,
+}
 
 
 def _zipfile_single_file_extract_worker(
@@ -172,7 +173,7 @@ async def unarchive_dir(
     """
     if not progress_bar:
         progress_bar = ProgressBarData(
-            num_steps=1, description=f"extracting {archive_to_extract.name}"
+            num_steps=1, description=IDStr(f"extracting {archive_to_extract.name}")
         )
     async with AsyncExitStack() as zip_stack:
         zip_file_handler = zip_stack.enter_context(
@@ -215,7 +216,9 @@ async def unarchive_dir(
             )
             async with AsyncExitStack() as progress_stack:
                 sub_prog = await progress_stack.enter_async_context(
-                    progress_bar.sub_progress(steps=total_file_size, description="...")
+                    progress_bar.sub_progress(
+                        steps=total_file_size, description=IDStr("...")
+                    )
                 )
                 tqdm_progress = progress_stack.enter_context(
                     tqdm.tqdm(
@@ -247,17 +250,18 @@ async def unarchive_dir(
             if destination_folder.exists() and destination_folder.is_dir():
                 await remove_directory(destination_folder, ignore_errors=True)
 
-            raise ArchiveError(
+            msg = (
                 f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
                 f"Details: {err}"
-            ) from err
+            )
+            raise ArchiveError(msg) from err
 
-        # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
-        return {
-            p
-            for p in extracted_paths
-            if p.is_file() or (p.is_dir() and not any(p.glob("*")))
-        }
+    # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
+    return {
+        p
+        for p in extracted_paths
+        if p.is_file() or (p.is_dir() and not any(p.glob("*")))
+    }
 
 
 @contextmanager
@@ -358,7 +362,7 @@ async def archive_dir(
     """
     if not progress_bar:
         progress_bar = ProgressBarData(
-            num_steps=1, description=f"compressing {dir_to_compress.name}"
+            num_steps=1, description=IDStr(f"compressing {dir_to_compress.name}")
         )
 
     async with AsyncExitStack() as stack:
@@ -367,7 +371,7 @@ async def archive_dir(
             for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
         )
         sub_progress = await stack.enter_async_context(
-            progress_bar.sub_progress(folder_size_bytes, description="...")
+            progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
         )
         thread_pool = stack.enter_context(
             non_blocking_thread_pool_executor(max_workers=1)
