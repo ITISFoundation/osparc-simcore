@@ -46,7 +46,7 @@ from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 
 @pytest.fixture
-def pre_pull_images() -> list[DockerGenericTag]:
+def fake_pre_pull_images() -> list[DockerGenericTag]:
     return parse_obj_as(
         list[DockerGenericTag],
         [
@@ -150,6 +150,7 @@ async def _test_monitor_buffer_machines(
     instance_type_filters: Sequence[FilterTypeDef],
     initialized_app: FastAPI,
     buffer_count: int,
+    pre_pulled_images: list[DockerGenericTag],
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     ec2_instance_custom_tags: dict[str, str],
 ):
@@ -157,7 +158,7 @@ async def _test_monitor_buffer_machines(
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances[
         "Reservations"
-    ], f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] for i in r['Instances']]}"
+    ], f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"
 
     # 1. run, this will create as many buffer machines as needed
     with log_context(logging.INFO, "create buffer machines"):
@@ -218,10 +219,13 @@ async def _test_monitor_buffer_machines(
                 instance_filters=instance_type_filters,
             )
 
-        await _assert_run_ssm_command_for_pulling()
+        if pre_pulled_images:
+            await _assert_run_ssm_command_for_pulling()
 
     # 3. is the command finished?
-    with log_context(logging.INFO, "wait for SSM commands to finish") as ctx:
+    with log_context(
+        logging.INFO, "wait for SSM commands and the machine to be stopped to finish"
+    ) as ctx:
 
         @tenacity.retry(
             wait=tenacity.wait_fixed(5),
@@ -255,6 +259,7 @@ async def test_monitor_buffer_machines(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
+    pre_pull_images: list[DockerGenericTag],
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
@@ -266,6 +271,7 @@ async def test_monitor_buffer_machines(
         instance_type_filters=instance_type_filters,
         initialized_app=initialized_app,
         buffer_count=buffer_count,
+        pre_pulled_images=pre_pull_images,
         ec2_instances_allowed_types=ec2_instances_allowed_types,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
     )
@@ -418,16 +424,15 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
 @pytest.fixture
 def ec2_instances_allowed_types(
     faker: Faker,
-    pre_pull_images: list[DockerGenericTag],
-    buffer_count: int,
+    fake_pre_pull_images: list[DockerGenericTag],
     external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
 ) -> dict[InstanceTypeType, Any]:
     if not external_ec2_instances_allowed_types:
         return {
             "t2.micro": {
                 "ami_id": faker.pystr(),
-                "pre_pull_images": pre_pull_images,
-                "buffer_count": buffer_count,
+                "pre_pull_images": fake_pre_pull_images,
+                "buffer_count": faker.pyint(min_value=1, max_value=10),
             }
         }
 
@@ -483,13 +488,9 @@ def external_ec2_instances_allowed_types(
 
 @pytest.fixture
 def buffer_count(
-    faker: Faker,
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
 ) -> int:
-    if not external_ec2_instances_allowed_types:
-        return faker.pyint(min_value=1, max_value=9)
-
-    allowed_ec2_types = external_ec2_instances_allowed_types
+    allowed_ec2_types = ec2_instances_allowed_types
     allowed_ec2_types_with_buffer_defined = dict(
         filter(
             lambda instance_type_and_settings: instance_type_and_settings[
@@ -507,6 +508,30 @@ def buffer_count(
 
 
 @pytest.fixture
+def pre_pull_images(
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any]
+) -> list[DockerGenericTag]:
+    allowed_ec2_types = ec2_instances_allowed_types
+    allowed_ec2_types_with_pre_pull_images_defined = dict(
+        filter(
+            lambda instance_type_and_settings: instance_type_and_settings[
+                1
+            ].pre_pull_images,
+            allowed_ec2_types.items(),
+        )
+    )
+    assert (
+        len(allowed_ec2_types_with_pre_pull_images_defined) <= 1
+    ), "more than one type with pre-pulled-images is disallowed in this test!"
+
+    if allowed_ec2_types_with_pre_pull_images_defined:
+        return next(
+            iter(allowed_ec2_types_with_pre_pull_images_defined.values())
+        ).pre_pull_images
+    return []
+
+
+@pytest.fixture
 def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
     if not external_envfile_dict:
         pytest.skip("Skipping test since external-envfile is not set")
@@ -520,6 +545,7 @@ async def test_monitor_buffer_machines_against_aws(
     external_envfile_dict: EnvVarsDict,
     ec2_client: EC2Client,
     buffer_count: int,
+    pre_pull_images: list[DockerGenericTag],
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
@@ -535,6 +561,7 @@ async def test_monitor_buffer_machines_against_aws(
         instance_type_filters=instance_type_filters,
         initialized_app=initialized_app,
         buffer_count=buffer_count,
+        pre_pulled_images=pre_pull_images,
         ec2_instances_allowed_types=ec2_instances_allowed_types,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
     )
