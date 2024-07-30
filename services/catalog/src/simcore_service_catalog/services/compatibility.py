@@ -96,9 +96,9 @@ async def evaluate_service_compatibility_map(
     product_name: ProductName,
     user_id: UserID,
     service_release_history: list[ReleaseFromDB],
-) -> dict[ServiceVersion, Compatibility]:
+) -> dict[ServiceVersion, Compatibility | None]:
     released_versions = _convert_to_versions(service_release_history)
-    result: dict[ServiceVersion, Compatibility] = {}
+    result: dict[ServiceVersion, Compatibility | None] = {}
 
     for release in service_release_history:
         compatibility = None
@@ -120,7 +120,6 @@ async def evaluate_service_compatibility_map(
                     version=parse_obj_as(ServiceVersion, f"{latest_version}")
                 )
             )
-        if compatibility:
-            result[release.version] = compatibility
+        result[release.version] = compatibility
 
     return result

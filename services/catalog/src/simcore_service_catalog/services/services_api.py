@@ -45,7 +45,7 @@ def _db_to_api_model(
     service_db: ServiceWithHistoryFromDB,
     access_rights_db: list[ServiceAccessRightsAtDB],
     service_manifest: ServiceMetaDataPublished,
-    compatibility_map: dict[ServiceVersion, Compatibility] | None = None,
+    compatibility_map: dict[ServiceVersion, Compatibility | None] | None = None,
 ) -> ServiceGetV2:
     compatibility_map = compatibility_map or {}
     assert (  # nosec
