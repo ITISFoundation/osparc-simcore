@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pydantic import NonNegativeInt, ValidationError
+from pydantic import BaseModel, Field, NonNegativeInt, ValidationError
 from simcore_postgres_database.models.folders import (
     folders,
     folders_access_rights,
@@ -284,6 +284,79 @@ async def setup_projects_for_users(
     return projects
 
 
+class MkFolder(BaseModel):
+    name: str
+    gid: _GroupID
+    description: str = ""
+    parent: _FolderID | None = None
+
+    shared_with: dict[_GroupID, FolderAccessRole] = Field(default_factory=dict)
+    children: set["MkFolder"] = Field(default_factory=set)
+
+    def __hash__(self):
+        return hash(
+            (
+                self.name,
+                self.description,
+                self.gid,
+                tuple(sorted(self.shared_with.items())),
+                frozenset(self.children),
+            )
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, MkFolder):
+            return False
+        return (
+            self.name == other.name
+            and self.description == other.description
+            and self.gid == other.gid
+            and self.shared_with == other.shared_with
+            and self.children == other.children
+        )
+
+
+@pytest.fixture
+def make_folders(
+    connection: SAConnection,
+) -> Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]]:
+    async def _(
+        root_folders: set[MkFolder], *, parent: _FolderID | None = None
+    ) -> dict[str, _FolderID]:
+        folder_names_map: dict[str, _FolderID] = {}
+
+        for root in root_folders:
+            # create folder
+            folder_names_map[root.name] = root_folder_id = await folder_create(
+                connection,
+                root.name,
+                root.gid,
+                description=root.description,
+                parent=parent,
+            )
+            # share with others
+            for gid, role in root.shared_with.items():
+                await folder_share_or_update_permissions(
+                    connection,
+                    root_folder_id,
+                    root.gid,
+                    recipient_gid=gid,
+                    recipient_role=role,
+                )
+            # create subfolders one by one
+            subfolders_names_map = await _(root.children, parent=root_folder_id)
+            root_name = set(folder_names_map.keys())
+            subfolder_names = set(subfolders_names_map.keys())
+            if subfolder_names & root_name != set():
+                msg = f"{root_name=} and {subfolder_names=} are not allowed to have common folder names"
+                raise ValueError(msg)
+            folder_names_map.update(subfolders_names_map)
+
+        return folder_names_map
+
+    return _
+
+
 async def test_folder_create(
     connection: SAConnection, setup_users_and_groups: set[_GroupID]
 ):
@@ -377,7 +450,7 @@ async def test__get_resolved_access_rights(
     )
     await _assert_folder_entires(connection, folder_count=5, access_rights_count=10)
 
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
     #  `root_folder`(`owner_a`)[`owner_b`,`owner_c`,`owner_d`,`editor_a`]
     #   - `b_folder`(`owner_b`)
     #   - `c_folder`(`owner_c`):
@@ -817,182 +890,119 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
 
 
+async def test_folder_delete_nested():
+    # create a folder structure that then needs to be deleted
+    assert False
+
+
 async def test_folder_move(  # noqa: PLR0915
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
+    #######
+    # SETUP
+    #######
+
     gid_sharing = _get_random_gid(setup_users_and_groups)
     gid_user_a = _get_random_gid(setup_users_and_groups, already_picked={gid_sharing})
     gid_user_b = _get_random_gid(
         setup_users_and_groups, already_picked={gid_sharing, gid_user_a}
     )
 
-    ################
-    # CREATE FOLDERS
-    ################
-
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    # `USER_SHARING`(`gid_sharing`)
-    # `USER_A`(`gid_user_a`):
-    #   - `f_user_a`
-    # `USER_B`(`gid_user_b`):
-    #   - `f_user_b`
-    # `SHARED_AS_OWNER`(`gid_sharing`):
-    #   - `f_shared_as_owner_user_a`[`gid_user_a`]
-    #   - `f_shared_as_owner_user_b`[`gid_user_b`]
-    # `SHARED_AS_EDITOR`(`gid_sharing`):
-    #   - `f_shared_as_editor_user_a`[`gid_user_a`]
-    #   - `f_shared_as_editor_user_b`[`gid_user_b`]
-    # `SHARED_AS_VIEWER`(`gid_sharing`):
-    #   - `f_shared_as_viewer_user_a`[`gid_user_a`]
-    #   - `f_shared_as_viewer_user_b`[`gid_user_b`]
-    # `SHARED_AS_NO_ACCESS`(`gid_sharing`):
-    #   - `f_shared_as_no_access_user_a`[`gid_user_a`]
-    #   - `f_shared_as_no_access_user_b`[`gid_user_b`]
-    # `NOT_SHARED`(`gid_sharing`)
-
-    # `USER_SHARING`
-    folder_id_user_sharing = await folder_create(
-        connection, "USER_SHARING", gid_sharing
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="USER_A",
+                gid=gid_user_a,
+                children={MkFolder(name="f_user_a", gid=gid_user_a)},
+            ),
+            MkFolder(
+                name="USER_B",
+                gid=gid_user_b,
+                children={MkFolder(name="f_user_b", gid=gid_user_b)},
+            ),
+            MkFolder(
+                name="SHARED_AS_OWNER",
+                gid=gid_sharing,
+                children={
+                    MkFolder(
+                        name="f_shared_as_owner_user_a",
+                        gid=gid_sharing,
+                        shared_with={gid_user_a: FolderAccessRole.OWNER},
+                    ),
+                    MkFolder(
+                        name="f_shared_as_owner_user_b",
+                        gid=gid_sharing,
+                        shared_with={gid_user_b: FolderAccessRole.OWNER},
+                    ),
+                },
+            ),
+            MkFolder(
+                name="SHARED_AS_EDITOR",
+                gid=gid_sharing,
+                children={
+                    MkFolder(
+                        name="f_shared_as_editor_user_a",
+                        gid=gid_sharing,
+                        shared_with={gid_user_a: FolderAccessRole.EDITOR},
+                    ),
+                    MkFolder(
+                        name="f_shared_as_editor_user_b",
+                        gid=gid_sharing,
+                        shared_with={gid_user_b: FolderAccessRole.EDITOR},
+                    ),
+                },
+            ),
+            MkFolder(
+                name="SHARED_AS_VIEWER",
+                gid=gid_sharing,
+                children={
+                    MkFolder(
+                        name="f_shared_as_viewer_user_a",
+                        gid=gid_sharing,
+                        shared_with={gid_user_a: FolderAccessRole.VIEWER},
+                    ),
+                    MkFolder(
+                        name="f_shared_as_viewer_user_b",
+                        gid=gid_sharing,
+                        shared_with={gid_user_b: FolderAccessRole.VIEWER},
+                    ),
+                },
+            ),
+            MkFolder(
+                name="SHARED_AS_NO_ACCESS",
+                gid=gid_sharing,
+                children={
+                    MkFolder(
+                        name="f_shared_as_no_access_user_a",
+                        gid=gid_sharing,
+                        shared_with={gid_user_a: FolderAccessRole.NO_ACCESS},
+                    ),
+                    MkFolder(
+                        name="f_shared_as_no_access_user_b",
+                        gid=gid_sharing,
+                        shared_with={gid_user_b: FolderAccessRole.NO_ACCESS},
+                    ),
+                },
+            ),
+            MkFolder(name="NOT_SHARED", gid=gid_sharing),
+        }
     )
 
-    # `USER_A` contains `f_user_a`
-    folder_id_user_a = await folder_create(connection, "USER_A", gid_user_a)
-    folder_id_f_user_a = await folder_create(
-        connection, "f_user_a", gid_user_a, parent=folder_id_user_a
-    )
-
-    # `USER_B` contains `f_user_b`
-    folder_id_user_b = await folder_create(connection, "USER_B", gid_user_b)
-    folder_id_f_user_b = await folder_create(
-        connection, "f_user_b", gid_user_b, parent=folder_id_user_b
-    )
-
-    # `SHARED_AS_OWNER` contains `f_shared_as_owner_user_a`, `f_shared_as_owner_user_b`
-    folder_id_shared_as_owner = await folder_create(
-        connection, "SHARED_AS_OWNER", gid_sharing
-    )
-    folder_id_f_shared_as_owner_user_a = await folder_create(
-        connection,
-        "f_shared_as_owner_user_a",
-        gid_sharing,
-        parent=folder_id_shared_as_owner,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_owner_user_a,
-        gid_sharing,
-        recipient_gid=gid_user_a,
-        recipient_role=FolderAccessRole.OWNER,
-    )
-    folder_id_f_shared_as_owner_user_b = await folder_create(
-        connection,
-        "f_shared_as_owner_user_b",
-        gid_sharing,
-        parent=folder_id_shared_as_owner,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_owner_user_b,
-        gid_sharing,
-        recipient_gid=gid_user_b,
-        recipient_role=FolderAccessRole.OWNER,
-    )
-
-    # `SHARED_AS_EDITOR` contains `f_shared_as_editor_user_a`, `f_shared_as_editor_user_b`
-    folder_id_shared_as_editor = await folder_create(
-        connection, "SHARED_AS_EDITOR", gid_sharing
-    )
-    folder_id_f_shared_as_editor_user_a = await folder_create(
-        connection,
-        "f_shared_as_editor_user_a",
-        gid_sharing,
-        parent=folder_id_shared_as_editor,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_editor_user_a,
-        gid_sharing,
-        recipient_gid=gid_user_a,
-        recipient_role=FolderAccessRole.EDITOR,
-    )
-    folder_id_f_shared_as_editor_user_b = await folder_create(
-        connection,
-        "f_shared_as_editor_user_b",
-        gid_sharing,
-        parent=folder_id_shared_as_editor,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_editor_user_b,
-        gid_sharing,
-        recipient_gid=gid_user_b,
-        recipient_role=FolderAccessRole.EDITOR,
-    )
-
-    # `SHARED_AS_VIEWER` contains `f_shared_as_viewer_user_a`, `f_shared_as_viewer_user_b`
-    folder_id_shared_as_viewer = await folder_create(
-        connection, "SHARED_AS_VIEWER", gid_sharing
-    )
-    folder_id_f_shared_as_viewer_user_a = await folder_create(
-        connection,
-        "f_shared_as_viewer_user_a",
-        gid_sharing,
-        parent=folder_id_shared_as_viewer,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_viewer_user_a,
-        gid_sharing,
-        recipient_gid=gid_user_a,
-        recipient_role=FolderAccessRole.VIEWER,
-    )
-    folder_id_f_shared_as_viewer_user_b = await folder_create(
-        connection,
-        "f_shared_as_viewer_user_b",
-        gid_sharing,
-        parent=folder_id_shared_as_viewer,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_viewer_user_b,
-        gid_sharing,
-        recipient_gid=gid_user_b,
-        recipient_role=FolderAccessRole.VIEWER,
-    )
-
-    # `SHARED_AS_NO_ACCESS` contains `f_shared_as_no_access_user_a`, `f_shared_as_no_access_user_b`
-    folder_id_shared_as_no_access = await folder_create(
-        connection, "SHARED_AS_NO_ACCESS", gid_sharing
-    )
-    folder_id_f_shared_as_no_access_user_a = await folder_create(
-        connection,
-        "f_shared_as_no_access_user_a",
-        gid_sharing,
-        parent=folder_id_shared_as_no_access,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_no_access_user_a,
-        gid_sharing,
-        recipient_gid=gid_user_a,
-        recipient_role=FolderAccessRole.NO_ACCESS,
-    )
-    folder_id_f_shared_as_no_access_user_b = await folder_create(
-        connection,
-        "f_shared_as_no_access_user_b",
-        gid_sharing,
-        parent=folder_id_shared_as_no_access,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_shared_as_no_access_user_b,
-        gid_sharing,
-        recipient_gid=gid_user_b,
-        recipient_role=FolderAccessRole.NO_ACCESS,
-    )
-
-    # `NOT_SHARED`
-    folder_id_not_shared = await folder_create(connection, "NOT_SHARED", gid_sharing)
+    folder_id_user_a = folder_ids["USER_A"]
+    folder_id_f_user_a = folder_ids["f_user_a"]
+    folder_id_user_b = folder_ids["USER_B"]
+    folder_id_f_user_b = folder_ids["f_user_b"]
+    folder_id_f_shared_as_owner_user_a = folder_ids["f_shared_as_owner_user_a"]
+    folder_id_f_shared_as_owner_user_b = folder_ids["f_shared_as_owner_user_b"]
+    folder_id_f_shared_as_editor_user_a = folder_ids["f_shared_as_editor_user_a"]
+    folder_id_f_shared_as_editor_user_b = folder_ids["f_shared_as_editor_user_b"]
+    folder_id_f_shared_as_viewer_user_a = folder_ids["f_shared_as_viewer_user_a"]
+    folder_id_f_shared_as_viewer_user_b = folder_ids["f_shared_as_viewer_user_b"]
+    folder_id_f_shared_as_no_access_user_a = folder_ids["f_shared_as_no_access_user_a"]
+    folder_id_f_shared_as_no_access_user_b = folder_ids["f_shared_as_no_access_user_b"]
+    folder_id_not_shared = folder_ids["NOT_SHARED"]
 
     async def _move_fails_not_shared_with_error(
         gid: _GroupID, *, source: _FolderID, destination: _FolderID
@@ -1202,7 +1212,7 @@ async def test_move_only_owners_can_move(
         already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
     )
 
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
     # `to_move`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]
     # `target_owner`(`gid_owner`)
     # `target_editor`(`gid_editor`)
@@ -1291,7 +1301,7 @@ async def test_move_group_non_standard_groups_raise_error(
     assert gid_everyone
     gid_standard = (await create_fake_group(connection, type=GroupType.STANDARD)).gid
 
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
     # `SHARING_USER`(`gid_sharing`)[`gid_primary`,`gid_everyone`,`gid_standard`]
     # `PRIMARY`(`gid_primary`)
     # `EVERYONE`(`gid_everyone`)
@@ -1504,7 +1514,7 @@ async def test_folder_list(
         already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
     )
 
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
     # `owner_folder`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]:
     #   - `f1`(`gid_owner`)
     #   - `f2`(`gid_owner`)
@@ -1741,7 +1751,7 @@ async def test_folder_list_shared_with_different_permissions(
         setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b, gid_owner_c}
     )
 
-    # FOLDER STRUCTURE {`fodler_name`(`owner_gid`)[`shared_with_gid`, ...]}
+    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
     # `f_owner_a`(`gid_owner_a`)[`gid_owner_b`,`gid_owner_c`]:
     #   - `f_owner_b`(`gid_owner_b`):
     #       - `f_owner_c`(`gid_owner_c`)[`gid_owner_level_2`]:
