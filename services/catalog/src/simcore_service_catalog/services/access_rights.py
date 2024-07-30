@@ -1,6 +1,7 @@
 """ Services Access Rights policies
 
 """
+
 import logging
 import operator
 from collections.abc import Callable
@@ -11,6 +12,7 @@ from urllib.parse import quote_plus
 import arrow
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
+from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -184,8 +186,8 @@ def reduce_access_rights(
 
     reduced_access_rights: list[ServiceAccessRightsAtDB] = [
         ServiceAccessRightsAtDB(
-            key=f"{target[0]}",
-            version=f"{target[1]}",
+            key=ServiceKey(f"{target[0]}"),
+            version=ServiceVersion(f"{target[1]}"),
             gid=int(target[2]),
             product_name=f"{target[3]}",
             **access_flags_map[target],

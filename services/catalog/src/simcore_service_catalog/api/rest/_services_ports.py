@@ -30,11 +30,11 @@ async def list_service_ports(
     ports: list[ServicePortGet] = []
 
     if service.inputs:
-        for name, port in service.inputs.items():
-            ports.append(ServicePortGet.from_service_io("input", name, port))
+        for name, input_port in service.inputs.items():
+            ports.append(ServicePortGet.from_service_io("input", name, input_port))
 
     if service.outputs:
-        for name, port in service.outputs.items():
-            ports.append(ServicePortGet.from_service_io("output", name, port))
+        for name, output_port in service.outputs.items():
+            ports.append(ServicePortGet.from_service_io("output", name, output_port))
 
     return ports

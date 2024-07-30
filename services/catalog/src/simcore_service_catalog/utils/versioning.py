@@ -18,4 +18,4 @@ def is_patch_release(version: _VersionOrStr, reference: _VersionOrStr) -> bool:
     """Returns True if version is a patch release from reference"""
     v: Version = as_version(version)
     r: Version = as_version(reference)
-    return v.major == r.major and v.minor == r.minor and r.micro < v.micro  # type: ignore
+    return v.major == r.major and v.minor == r.minor and r.micro < v.micro

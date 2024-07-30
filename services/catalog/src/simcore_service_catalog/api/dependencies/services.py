@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from models_library.api_schemas_catalog.services_specifications import (
@@ -92,10 +92,13 @@ async def get_service_from_manifest(
     Retrieves service metadata from the docker registry via the director
     """
     try:
-        return await manifest.get_service(
-            key=service_key,
-            version=service_version,
-            director_client=director_client,
+        return cast(
+            ServiceMetaDataPublished,
+            await manifest.get_service(
+                key=service_key,
+                version=service_version,
+                director_client=director_client,
+            ),
         )
 
     except ValidationError as exc:

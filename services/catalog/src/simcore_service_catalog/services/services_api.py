@@ -5,6 +5,7 @@ from models_library.api_schemas_catalog.services import (
     ServiceGroupAccessRightsV2,
     ServiceUpdate,
 )
+from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
@@ -12,7 +13,7 @@ from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import HttpUrl, NonNegativeInt, parse_obj_as
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -44,7 +45,7 @@ def _db_to_api_model(
     service_db: ServiceWithHistoryFromDB,
     access_rights_db: list[ServiceAccessRightsAtDB],
     service_manifest: ServiceMetaDataPublished,
-    compatibility_map: dict[ServiceKey, Compatibility] | None = None,
+    compatibility_map: dict[ServiceVersion, Compatibility] | None = None,
 ) -> ServiceGetV2:
     compatibility_map = compatibility_map or {}
     assert (  # nosec
@@ -55,13 +56,21 @@ def _db_to_api_model(
         key=service_db.key,
         version=service_db.version,
         name=service_db.name,
-        thumbnail=service_db.thumbnail or None,
+        thumbnail=(
+            parse_obj_as(HttpUrl, service_db.thumbnail)
+            if service_db.thumbnail
+            else None
+        ),
         description=service_db.description,
         version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
-        owner=service_db.owner_email or None,
+        owner=(
+            LowerCaseEmailStr(service_db.owner_email)
+            if service_db.owner_email
+            else None
+        ),
         inputs=service_manifest.inputs or {},
         outputs=service_manifest.outputs or {},
         boot_options=service_manifest.boot_options,
