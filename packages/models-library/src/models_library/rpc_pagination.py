@@ -1,6 +1,6 @@
 # mypy: disable-error-code=truthy-function
 from math import ceil
-from typing import Any, ClassVar, Generic, Self
+from typing import Any, ClassVar, Generic
 
 from pydantic import Extra, Field
 
@@ -65,7 +65,7 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
         total: int,
         limit: int,
         offset: int,
-    ) -> Self:
+    ) -> "PageRpc":
         return cls(
             _meta=PageMetaInfoLimitOffset(
                 total=total, count=len(chunk), limit=limit, offset=offset
