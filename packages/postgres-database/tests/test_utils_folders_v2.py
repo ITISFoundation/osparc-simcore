@@ -994,9 +994,6 @@ async def test_folder_move(  # noqa: PLR0915
     # `NOT_SHARED`
     folder_id_not_shared = await folder_create(connection, "NOT_SHARED", gid_sharing)
 
-    #######
-    # TESTS
-    #######
     async def _move_fails_not_shared_with_error(
         gid: _GroupID, *, source: _FolderID, destination: _FolderID
     ) -> None:
@@ -1071,6 +1068,10 @@ async def test_folder_move(  # noqa: PLR0915
         await _assert_folder_permissions(
             connection, folder_id=source, gid=gid, parent_folder=source_parent
         )
+
+    #######
+    # TESTS
+    #######
 
     # 1. not working:
     # - `USER_A/f_user_a -> USER_B`
