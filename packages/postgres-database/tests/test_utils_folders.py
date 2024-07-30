@@ -1424,118 +1424,67 @@ async def _list_folder_as(
 
 
 async def test_folder_list(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
-    gid_owner = _get_random_gid(setup_users_and_groups)
-    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
-    gid_viewer = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor}
-    )
-    gid_no_access = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
-    )
-    gid_not_shared = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
+    #######
+    # SETUP
+    #######
+    (
+        gid_owner,
+        gid_editor,
+        gid_viewer,
+        gid_no_access,
+        gid_not_shared,
+    ) = get_unique_gids(5)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="owner_folder",
+                gid=gid_owner,
+                shared_with={
+                    gid_editor: FolderAccessRole.EDITOR,
+                    gid_viewer: FolderAccessRole.VIEWER,
+                    gid_no_access: FolderAccessRole.NO_ACCESS,
+                },
+                children={
+                    *{MkFolder(name=f"f{i}", gid=gid_owner) for i in range(1, 10)},
+                    MkFolder(
+                        name="f10",
+                        gid=gid_owner,
+                        children={
+                            MkFolder(name=f"sub_f{i}", gid=gid_owner)
+                            for i in range(1, 11)
+                        },
+                    ),
+                },
+            )
+        }
     )
 
-    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    # `owner_folder`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]:
-    #   - `f1`(`gid_owner`)
-    #   - `f2`(`gid_owner`)
-    #   - `f3`(`gid_owner`)
-    #   - `f4`(`gid_owner`)
-    #   - `f5`(`gid_owner`)
-    #   - `f6`(`gid_owner`)
-    #   - `f7`(`gid_owner`)
-    #   - `f8`(`gid_owner`)
-    #   - `f9`(`gid_owner`)
-    #   - `f10`(`gid_owner`):
-    #       - `sub_f1`(`gid_owner`)
-    #       - `sub_f2`(`gid_owner`)
-    #       - `sub_f3`(`gid_owner`)
-    #       - `sub_f4`(`gid_owner`)
-    #       - `sub_f5`(`gid_owner`)
-    #       - `sub_f6`(`gid_owner`)
-    #       - `sub_f7`(`gid_owner`)
-    #       - `sub_f8`(`gid_owner`)
-    #       - `sub_f9`(`gid_owner`)
-    #       - `sub_f10`(`gid_owner`)
-
-    folder_id_owner_folder = await folder_create(connection, "owner_folder", gid_owner)
-    for recipient_gid, recipient_role in [
-        (gid_editor, FolderAccessRole.EDITOR),
-        (gid_viewer, FolderAccessRole.VIEWER),
-        (gid_no_access, FolderAccessRole.NO_ACCESS),
-    ]:
-        await folder_share_or_update_permissions(
-            connection,
-            folder_id_owner_folder,
-            gid_owner,
-            recipient_gid=recipient_gid,
-            recipient_role=recipient_role,
-        )
-    folder_id_f1 = await folder_create(
-        connection, "f1", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f2 = await folder_create(
-        connection, "f2", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f3 = await folder_create(
-        connection, "f3", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f4 = await folder_create(
-        connection, "f4", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f5 = await folder_create(
-        connection, "f5", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f6 = await folder_create(
-        connection, "f6", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f7 = await folder_create(
-        connection, "f7", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f8 = await folder_create(
-        connection, "f8", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f9 = await folder_create(
-        connection, "f9", gid_owner, parent=folder_id_owner_folder
-    )
-    folder_id_f10 = await folder_create(
-        connection, "f10", gid_owner, parent=folder_id_owner_folder
-    )
-
-    folder_id_sub_f1 = await folder_create(
-        connection, "sub_f1", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f2 = await folder_create(
-        connection, "sub_f2", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f3 = await folder_create(
-        connection, "sub_f3", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f4 = await folder_create(
-        connection, "sub_f4", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f5 = await folder_create(
-        connection, "sub_f5", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f6 = await folder_create(
-        connection, "sub_f6", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f7 = await folder_create(
-        connection, "sub_f7", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f8 = await folder_create(
-        connection, "sub_f8", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f9 = await folder_create(
-        connection, "sub_f9", gid_owner, parent=folder_id_f10
-    )
-    folder_id_sub_f10 = await folder_create(
-        connection, "sub_f10", gid_owner, parent=folder_id_f10
-    )
+    folder_id_owner_folder = folder_ids["owner_folder"]
+    folder_id_f1 = folder_ids["f1"]
+    folder_id_f2 = folder_ids["f2"]
+    folder_id_f3 = folder_ids["f3"]
+    folder_id_f4 = folder_ids["f4"]
+    folder_id_f5 = folder_ids["f5"]
+    folder_id_f6 = folder_ids["f6"]
+    folder_id_f7 = folder_ids["f7"]
+    folder_id_f8 = folder_ids["f8"]
+    folder_id_f9 = folder_ids["f9"]
+    folder_id_f10 = folder_ids["f10"]
+    folder_id_sub_f1 = folder_ids["sub_f1"]
+    folder_id_sub_f2 = folder_ids["sub_f2"]
+    folder_id_sub_f3 = folder_ids["sub_f3"]
+    folder_id_sub_f4 = folder_ids["sub_f4"]
+    folder_id_sub_f5 = folder_ids["sub_f5"]
+    folder_id_sub_f6 = folder_ids["sub_f6"]
+    folder_id_sub_f7 = folder_ids["sub_f7"]
+    folder_id_sub_f8 = folder_ids["sub_f8"]
+    folder_id_sub_f9 = folder_ids["sub_f9"]
+    folder_id_sub_f10 = folder_ids["sub_f10"]
 
     ALL_FOLDERS_FX = (
         folder_id_f1,
@@ -1569,14 +1518,16 @@ async def test_folder_list(
         *ALL_FOLDERS_SUB_FX,
     )
 
-    # TESTS
-
     ACCESS_RIGHTS_BY_GID: dict[_GroupID, _FolderPermissions] = {
         gid_owner: OWNER_PERMISSIONS,
         gid_editor: EDITOR_PERMISSIONS,
         gid_viewer: VIEWER_PERMISSIONS,
         gid_no_access: NO_ACCESS_PERMISSIONS,
     }
+
+    #######
+    # TESTS
+    #######
 
     # 1. list all levels per gid with access
     for listing_gid in (gid_owner, gid_editor, gid_viewer):
@@ -1665,51 +1616,57 @@ async def test_folder_list(
 
 
 async def test_folder_list_shared_with_different_permissions(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
-    gid_owner_a = _get_random_gid(setup_users_and_groups)
-    gid_owner_b = _get_random_gid(setup_users_and_groups, already_picked={gid_owner_a})
-    gid_owner_c = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b}
-    )
-    gid_owner_level_2 = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b, gid_owner_c}
+    #######
+    # SETUP
+    #######
+
+    (gid_owner_a, gid_owner_b, gid_owner_c, gid_owner_level_2) = get_unique_gids(4)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="f_owner_a",
+                gid=gid_owner_a,
+                shared_with={
+                    gid_owner_b: FolderAccessRole.OWNER,
+                    gid_owner_c: FolderAccessRole.OWNER,
+                },
+                children={
+                    MkFolder(
+                        name="f_owner_b",
+                        gid=gid_owner_b,
+                        children={
+                            MkFolder(
+                                name="f_owner_c",
+                                gid=gid_owner_c,
+                                shared_with={gid_owner_level_2: FolderAccessRole.OWNER},
+                                children={
+                                    MkFolder(name="f_sub_owner_c", gid=gid_owner_c),
+                                    MkFolder(
+                                        name="f_owner_level_2", gid=gid_owner_level_2
+                                    ),
+                                },
+                            )
+                        },
+                    )
+                },
+            )
+        }
     )
 
-    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    # `f_owner_a`(`gid_owner_a`)[`gid_owner_b`,`gid_owner_c`]:
-    #   - `f_owner_b`(`gid_owner_b`):
-    #       - `f_owner_c`(`gid_owner_c`)[`gid_owner_level_2`]:
-    #           - `f_sub_owner_c`(`gid_owner_c`)
-    #           - `f_owner_level_2`(`gid_owner_level_2`)
-    folder_id_f_owner_a = await folder_create(connection, "f_owner_a", gid_owner_a)
-    for target_gid in (gid_owner_b, gid_owner_c):
-        await folder_share_or_update_permissions(
-            connection,
-            folder_id_f_owner_a,
-            gid_owner_a,
-            recipient_gid=target_gid,
-            recipient_role=FolderAccessRole.OWNER,
-        )
-    folder_id_f_owner_b = await folder_create(
-        connection, "f_owner_b", gid_owner_b, parent=folder_id_f_owner_a
-    )
-    folder_id_f_owner_c = await folder_create(
-        connection, "f_owner_c", gid_owner_c, parent=folder_id_f_owner_b
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_f_owner_c,
-        gid_owner_c,
-        recipient_gid=gid_owner_level_2,
-        recipient_role=FolderAccessRole.OWNER,
-    )
-    folder_id_f_sub_owner_c = await folder_create(
-        connection, "f_sub_owner_c", gid_owner_c, parent=folder_id_f_owner_c
-    )
-    folder_id_f_owner_level_2 = await folder_create(
-        connection, "f_owner_level_2", gid_owner_level_2, parent=folder_id_f_owner_c
-    )
+    folder_id_f_owner_a = folder_ids["f_owner_a"]
+    folder_id_f_owner_b = folder_ids["f_owner_b"]
+    folder_id_f_owner_c = folder_ids["f_owner_c"]
+    folder_id_f_sub_owner_c = folder_ids["f_sub_owner_c"]
+    folder_id_f_owner_level_2 = folder_ids["f_owner_level_2"]
+
+    #######
+    # TESTS
+    #######
 
     # 1. `gid_owner_a`, `gid_owner_b`, `gid_owner_c` have the exact same veiw
     for listing_gid in (gid_owner_a, gid_owner_b, gid_owner_c):
