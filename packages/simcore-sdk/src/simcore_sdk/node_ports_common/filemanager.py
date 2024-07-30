@@ -115,7 +115,7 @@ async def get_upload_links_from_s3(
         return (store_id, file_links)
 
 
-async def download_path_from_s3(
+async def download_path_from_s3(  # noqa: PLR0913
     *,
     user_id: UserID,
     store_name: LocationName | None,
@@ -188,6 +188,7 @@ async def download_path_from_s3(
 
         if file_meta_data.is_directory:
             assert r_clone_settings  # nosec
+            assert aws_s3_cli_settings  # nosec
             if is_rclone_enabled:
                 await r_clone.sync_s3_to_local(
                     r_clone_settings,
@@ -289,7 +290,7 @@ async def _generate_checksum(
     return checksum
 
 
-async def upload_path(
+async def upload_path(  # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,
@@ -341,7 +342,7 @@ async def upload_path(
     return result
 
 
-async def _upload_path(
+async def _upload_path(  # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,

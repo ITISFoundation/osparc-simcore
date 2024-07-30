@@ -52,6 +52,15 @@ RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
 
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && apt-get update && apt-get install -y unzip \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && apt-get remove --purge -y unzip \
+    && rm awscliv2.zip \
+    && rm -rf awscliv2 \
+    && aws --version
+
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
   SC_USER_NAME=scu \

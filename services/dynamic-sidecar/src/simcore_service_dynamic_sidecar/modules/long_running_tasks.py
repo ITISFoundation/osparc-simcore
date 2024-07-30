@@ -409,6 +409,8 @@ async def _save_state_folder(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
         progress_bar=progress_bar,
+        aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
+        is_rclone_enabled=settings.DY_SIDECAR_IS_RCLONE_ENABLED,
     )
 
 
