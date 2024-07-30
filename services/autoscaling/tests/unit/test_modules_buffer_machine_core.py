@@ -122,6 +122,7 @@ async def test_if_send_command_is_mocked_by_moto(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state="running",
         expected_additional_tag_keys=[],
+        expected_pre_pulled_images=[],
         instance_filters=None,
     )
 
@@ -185,6 +186,7 @@ async def _test_monitor_buffer_machines(
                     expected_instance_type=next(iter(ec2_instances_allowed_types)),
                     expected_instance_state="running",
                     expected_additional_tag_keys=list(ec2_instance_custom_tags),
+                    expected_pre_pulled_images=[],
                     instance_filters=instance_type_filters,
                 )
 
@@ -216,6 +218,7 @@ async def _test_monitor_buffer_machines(
                     "ssm-command-id",
                     *list(ec2_instance_custom_tags),
                 ],
+                expected_pre_pulled_images=[],
                 instance_filters=instance_type_filters,
             )
 
@@ -249,6 +252,7 @@ async def _test_monitor_buffer_machines(
                     _PREPULLED_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
+                expected_pre_pulled_images=[],
                 instance_filters=instance_type_filters,
             )
 
@@ -283,11 +287,15 @@ async def create_buffer_machines(
     aws_ami_id: str,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-) -> Callable[[int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]]:
+) -> Callable[
+    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+    Awaitable[list[str]],
+]:
     async def _do(
         num: int,
         instance_type: InstanceTypeType,
         instance_state_name: InstanceStateNameType,
+        pre_pull_images: list[DockerGenericTag],
     ) -> list[str]:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
 
@@ -302,6 +310,10 @@ async def create_buffer_machines(
                 initialized_app, DynamicAutoscaling()
             ).items()
         ]
+        if pre_pull_images:
+            resource_tags.append(
+                {"Key": _PREPULLED_EC2_TAG_KEY, "Value": f"{pre_pull_images}"}
+            )
         with log_context(
             logging.INFO, f"creating {num} buffer machines of {instance_type}"
         ):
@@ -383,6 +395,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
     # this will terminate the supernumerary instances
@@ -396,6 +409,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
 
@@ -412,14 +426,19 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
     create_buffer_machines: Callable[
-        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+        Awaitable[list[str]],
     ],
 ):
-    # have machines of correct type with wrong pre-pulled images
+    # have machines of correct type with missing pre-pulled images
+    assert (
+        len(pre_pull_images) > 1
+    ), "this test relies on pre-pulled images being filled with more than 1 image"
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types))),
         expected_state_name,
+        pre_pull_images[:-1],
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -428,9 +447,10 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=pre_pull_images[:-1],
         instance_filters=instance_type_filters,
     )
-    # this will terminate the supernumerary instances
+    # this will terminate the wrong instances and start new ones and pre-pull the new set of images
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
@@ -441,6 +461,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=pre_pull_images,
         instance_filters=instance_type_filters,
     )
 
@@ -466,13 +487,14 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
     create_buffer_machines: Callable[
-        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+        Awaitable[list[str]],
     ],
     unneeded_instance_type: InstanceTypeType,
 ):
     # have too many machines of accepted type
     buffer_machines_unneeded = await create_buffer_machines(
-        5, unneeded_instance_type, expected_state_name
+        5, unneeded_instance_type, expected_state_name, []
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -481,6 +503,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         expected_instance_type=unneeded_instance_type,
         expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
 
@@ -495,6 +518,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
 
