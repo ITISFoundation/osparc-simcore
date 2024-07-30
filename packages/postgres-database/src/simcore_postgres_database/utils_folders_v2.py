@@ -190,10 +190,10 @@ class _BasePermissions:
 
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
         d=True,
-        description="apply to folder form which data is copied",
+        description="apply to folder providing the data",
     )
     _MOVE_FOLDER_DESTINATION: ClassVar[_FolderPermissions] = _make_permissions(
-        w=True, description="apply to folder to which data will be copied"
+        w=True, description="apply on the folder receiving the data"
     )
     MOVE_FOLDER: ClassVar[_FolderPermissions] = _or_dicts_list(
         [_MOVE_FOLDER_SOURCE, _MOVE_FOLDER_DESTINATION]
