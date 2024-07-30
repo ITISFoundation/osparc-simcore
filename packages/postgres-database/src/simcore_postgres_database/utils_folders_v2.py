@@ -5,13 +5,20 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, Final, TypeAlias
+from typing import Any, ClassVar, TypeAlias
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
+from pydantic import (
+    BaseModel,
+    ConstrainedStr,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    parse_obj_as,
+)
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
@@ -264,37 +271,18 @@ def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElemen
 ### UTILS NAMING
 ###
 
-_RE_FOLDER_NAME_INVALID_CHARS: Final[str] = r'[<>:"/\\|?*]'
-_FOLDER_NAMES_RESERVED_WINDOWS: Final[set[str]] = {
-    "CON",
-    "PRN",
-    "AUX",
-    "NUL",
-    *[f"COM{i}" for i in range(1, 10)],
-    *[f"LPT{i}" for i in range(1, 10)],
-}
-_FOLDER_NAME_MAX_LENGTH: Final[NonNegativeInt] = 255
+
+class FolderName(ConstrainedStr):
+    regex = re.compile(
+        r'^(?!.*[<>:"/\\|?*\]])(?!.*\b(?:LPT9|COM1|LPT1|COM2|LPT3|LPT4|CON|COM5|COM3|COM4|AUX|PRN|LPT2|LPT5|COM6|LPT7|NUL|COM8|LPT6|COM9|COM7|LPT8)\b).+$',
+        re.IGNORECASE,
+    )
+    min_length = 1
+    max_length = 255
 
 
 def _validate_folder_name(value: str) -> None:
-    if not value:
-        raise InvalidFolderNameError(name=value, reason="folder cannot be empty")
-
-    if re.search(_RE_FOLDER_NAME_INVALID_CHARS, value):
-        reason = f"name contains invalid characters. Must comply to regex={_RE_FOLDER_NAME_INVALID_CHARS}"
-        raise InvalidFolderNameError(name=value, reason=reason)
-
-    if value.upper() in _FOLDER_NAMES_RESERVED_WINDOWS:
-        raise InvalidFolderNameError(
-            name=value,
-            reason=f"name is a reserved word in Windows. Can't be any of the following: {_FOLDER_NAMES_RESERVED_WINDOWS}",
-        )
-
-    if len(value) > _FOLDER_NAME_MAX_LENGTH:
-        raise InvalidFolderNameError(
-            name=value,
-            reason=f"name is too long. Maximum length is {_FOLDER_NAME_MAX_LENGTH} characters",
-        )
+    parse_obj_as(FolderName, value)
 
 
 ###

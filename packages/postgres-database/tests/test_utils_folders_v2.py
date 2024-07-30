@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, ValidationError
 from simcore_postgres_database.models.folders import (
     folders,
     folders_access_rights,
@@ -20,8 +20,6 @@ from simcore_postgres_database.models.folders import (
 )
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.utils_folders_v2 import (
-    _FOLDER_NAME_MAX_LENGTH,
-    _FOLDER_NAMES_RESERVED_WINDOWS,
     _ROLE_TO_PERMISSIONS,
     EDITOR_PERMISSIONS,
     NO_ACCESS_PERMISSIONS,
@@ -148,15 +146,18 @@ def test__requires_permissions(
         "?",
         "My/Folder",
         "MyFolder<",
-        "CON",
-        "AUX",
         "My*Folder",
-        "A" * (_FOLDER_NAME_MAX_LENGTH + 1),
-        *_FOLDER_NAMES_RESERVED_WINDOWS,
+        "A" * (256),
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        *[f"COM{i}" for i in range(1, 10)],
+        *[f"LPT{i}" for i in range(1, 10)],
     ],
 )
 async def test_folder_create_wrong_folder_name(invalid_name: str):
-    with pytest.raises(InvalidFolderNameError):
+    with pytest.raises((InvalidFolderNameError, ValidationError)):
         await folder_create(Mock(), invalid_name, Mock())
 
 
