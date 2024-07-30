@@ -382,8 +382,13 @@ async def test_folder_create(
 
 
 async def test__get_resolved_access_rights(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection,
+    setup_users_and_groups: set[_GroupID],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
+    #######
+    # SETUP
+    #######
     owner_a_gid = _get_random_gid(setup_users_and_groups)
     owner_b_gid = _get_random_gid(setup_users_and_groups, already_picked={owner_a_gid})
     owner_c_gid = _get_random_gid(
@@ -407,55 +412,43 @@ async def test__get_resolved_access_rights(
         },
     )
 
-    # share folder with all owners
-    root_folder_id = await folder_create(connection, "root_folder", owner_a_gid)
-    for other_owner_gid in (owner_b_gid, owner_c_gid, owner_d_gid):
-        await folder_share_or_update_permissions(
-            connection,
-            root_folder_id,
-            sharing_gid=owner_a_gid,
-            recipient_gid=other_owner_gid,
-            recipient_role=FolderAccessRole.OWNER,
-        )
-    await folder_share_or_update_permissions(
-        connection,
-        root_folder_id,
-        sharing_gid=owner_a_gid,
-        recipient_gid=editor_a_gid,
-        recipient_role=FolderAccessRole.EDITOR,
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="root_folder",
+                gid=owner_a_gid,
+                shared_with={
+                    owner_b_gid: FolderAccessRole.OWNER,
+                    owner_c_gid: FolderAccessRole.OWNER,
+                    owner_d_gid: FolderAccessRole.OWNER,
+                    editor_a_gid: FolderAccessRole.EDITOR,
+                },
+                children={
+                    MkFolder(name="b_folder", gid=owner_b_gid),
+                    MkFolder(
+                        name="c_folder",
+                        gid=owner_c_gid,
+                        children={
+                            MkFolder(
+                                name="d_folder",
+                                gid=owner_d_gid,
+                                shared_with={editor_b_gid: FolderAccessRole.EDITOR},
+                                children={
+                                    MkFolder(name="editor_a_folder", gid=editor_a_gid)
+                                },
+                            )
+                        },
+                    ),
+                },
+            ),
+        }
     )
-    await _assert_folder_entires(connection, folder_count=1, access_rights_count=5)
 
-    # create folders
-    b_folder_id = await folder_create(
-        connection, "b_folder", owner_b_gid, parent=root_folder_id
-    )
-    c_folder_id = await folder_create(
-        connection, "c_folder", owner_c_gid, parent=root_folder_id
-    )
-    d_folder_id = await folder_create(
-        connection, "d_folder", owner_d_gid, parent=c_folder_id
-    )
-    editor_a_folder_id = await folder_create(
-        connection, "editor_a_folder", editor_a_gid, parent=d_folder_id
-    )
-    await _assert_folder_entires(connection, folder_count=5, access_rights_count=9)
-    # share existing folder in hierarchy with a new user
-    await folder_share_or_update_permissions(
-        connection,
-        d_folder_id,
-        sharing_gid=owner_a_gid,
-        recipient_gid=editor_b_gid,
-        recipient_role=FolderAccessRole.EDITOR,
-    )
-    await _assert_folder_entires(connection, folder_count=5, access_rights_count=10)
-
-    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    #  `root_folder`(`owner_a`)[`owner_b`,`owner_c`,`owner_d`,`editor_a`]
-    #   - `b_folder`(`owner_b`)
-    #   - `c_folder`(`owner_c`):
-    #       - `d_folder`(`owner_d`)[`editor_b`]:
-    #           - `editor_a_folder`(`editor_a`)
+    root_folder_id = folder_ids["root_folder"]
+    b_folder_id = folder_ids["b_folder"]
+    c_folder_id = folder_ids["c_folder"]
+    d_folder_id = folder_ids["d_folder"]
+    editor_a_folder_id = folder_ids["editor_a_folder"]
 
     # check resolved access rgihts resolution
     async def _assert_resolves_to(
@@ -479,6 +472,10 @@ async def test__get_resolved_access_rights(
         assert resolved_parent
         assert resolved_parent.folder_id == expected_folder_id
         assert resolved_parent.gid in expected_gids
+
+    #######
+    # TESTS
+    #######
 
     await _assert_resolves_to(
         target_folder_id=root_folder_id,
