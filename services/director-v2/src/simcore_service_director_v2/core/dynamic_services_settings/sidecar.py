@@ -129,7 +129,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings = Field(
         auto_default_from_env=True
     )
-    DYNAMIC_SIDECAR_IS_RCLONE_ENABLED: bool = Field(auto_default_from_env=True)
+    DYNAMIC_SIDECAR_IS_RCLONE_ENABLED: bool = Field(
+        default=True,
+        description="If disabled, the AWS S3 CLI is used instead. As of now, we have decided to move away from RClone.",
+    )
     DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
         auto_default_from_env=True
     )

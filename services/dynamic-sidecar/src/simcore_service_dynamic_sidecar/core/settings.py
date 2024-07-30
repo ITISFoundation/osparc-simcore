@@ -147,8 +147,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
-    DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings = Field(auto_default_from_env=True)
-    DY_SIDECAR_IS_RCLONE_ENABLED: bool = Field(auto_default_from_env=True)
+    DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings = Field(
+        ..., description=""  # NOTE: MD TODO
+    )
+    DY_SIDECAR_IS_RCLONE_ENABLED: bool = Field(..., description="")  # NOTE: MD TODO
 
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
     RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
