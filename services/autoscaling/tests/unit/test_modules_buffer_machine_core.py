@@ -185,8 +185,10 @@ async def _test_monitor_buffer_machines(
                     expected_num_instances=buffer_count,
                     expected_instance_type=next(iter(ec2_instances_allowed_types)),
                     expected_instance_state="running",
-                    expected_additional_tag_keys=list(ec2_instance_custom_tags),
-                    expected_pre_pulled_images=[],
+                    expected_additional_tag_keys=[
+                        *list(ec2_instance_custom_tags),
+                    ],
+                    expected_pre_pulled_images=None,
                     instance_filters=instance_type_filters,
                 )
 
@@ -218,7 +220,7 @@ async def _test_monitor_buffer_machines(
                     "ssm-command-id",
                     *list(ec2_instance_custom_tags),
                 ],
-                expected_pre_pulled_images=[],
+                expected_pre_pulled_images=None,
                 instance_filters=instance_type_filters,
             )
 
@@ -252,7 +254,7 @@ async def _test_monitor_buffer_machines(
                     _PREPULLED_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
-                expected_pre_pulled_images=[],
+                expected_pre_pulled_images=pre_pulled_images,
                 instance_filters=instance_type_filters,
             )
 
@@ -378,7 +380,8 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
     create_buffer_machines: Callable[
-        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+        Awaitable[list[str]],
     ],
     expected_state_name: InstanceStateNameType,
 ):
@@ -387,6 +390,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types))),
         expected_state_name,
+        [],
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -394,7 +398,10 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_num_instances=len(buffer_machines),
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            "io.simcore.autoscaling.pre_pulled_images",
+        ],
         expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
@@ -408,7 +415,10 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state=expected_state_name,
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            "io.simcore.autoscaling.pre_pulled_images",
+        ],
         expected_pre_pulled_images=[],
         instance_filters=instance_type_filters,
     )
