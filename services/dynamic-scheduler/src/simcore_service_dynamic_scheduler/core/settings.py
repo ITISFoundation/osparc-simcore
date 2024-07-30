@@ -50,7 +50,6 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @validator("DYNAMIC_SCHEDULER__LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
         return cls.validate_log_level(value)
 
 
