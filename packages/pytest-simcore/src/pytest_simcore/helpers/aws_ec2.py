@@ -64,7 +64,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
-    expected_pre_pulled_images: list[DockerGenericTag],
+    expected_pre_pulled_images: list[DockerGenericTag] | None,
     instance_filters: Sequence[FilterTypeDef] | None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
@@ -77,7 +77,6 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
             "io.simcore.autoscaling.buffer_machine",
-            "io.simcore.autoscaling.pre_pulled_images",
             *expected_additional_tag_keys,
         ],
         expected_pre_pulled_images=expected_pre_pulled_images,

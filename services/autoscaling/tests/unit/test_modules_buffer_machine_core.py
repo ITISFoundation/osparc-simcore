@@ -414,13 +414,11 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     )
 
 
-@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
 async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_pulled_images(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
     pre_pull_images: list[DockerGenericTag],
-    expected_state_name: InstanceStateNameType,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
@@ -437,7 +435,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types))),
-        expected_state_name,
+        "stopped",
         pre_pull_images[:-1],
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -445,8 +443,11 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state=expected_state_name,
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_instance_state="stopped",
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            "io.simcore.autoscaling.pre_pulled_images",
+        ],
         expected_pre_pulled_images=pre_pull_images[:-1],
         instance_filters=instance_type_filters,
     )
@@ -459,9 +460,9 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state=expected_state_name,
+        expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=pre_pull_images,
+        expected_pre_pulled_images=None,  # NOTE: these are not pre-pulled yet, just started
         instance_filters=instance_type_filters,
     )
 
