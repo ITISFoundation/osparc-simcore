@@ -19,7 +19,7 @@ from simcore_postgres_database.models.folders import (
     folders_to_projects,
 )
 from simcore_postgres_database.models.groups import GroupType, groups
-from simcore_postgres_database.utils_folders_v2 import (
+from simcore_postgres_database.utils_folders import (
     _ROLE_TO_PERMISSIONS,
     EDITOR_PERMISSIONS,
     NO_ACCESS_PERMISSIONS,
