@@ -9,6 +9,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import filemanager
@@ -67,6 +68,8 @@ async def _pull_directory(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings,
+    is_rclone_enabled: bool,
     save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
@@ -83,6 +86,8 @@ async def _pull_directory(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=aws_s3_cli_settings,
+            is_rclone_enabled=is_rclone_enabled,
         )
 
 
@@ -115,6 +120,7 @@ async def _pull_legacy_archive(
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=None,
                 progress_bar=sub_prog,
+                aws_s3_cli_settings=None,
             )
             _logger.info("completed pull of %s.", destination_path)
 
@@ -235,6 +241,8 @@ async def pull(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings,
+    is_rclone_enabled: bool,
 ) -> None:
     """restores the state folder"""
 
@@ -273,6 +281,8 @@ async def pull(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=aws_s3_cli_settings,
+            is_rclone_enabled=is_rclone_enabled,
         )
         return
 
