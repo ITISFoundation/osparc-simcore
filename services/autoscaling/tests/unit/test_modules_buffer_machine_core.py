@@ -9,7 +9,7 @@ import json
 import logging
 import random
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Any, cast
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -41,7 +41,7 @@ from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
     get_buffer_ec2_tags,
 )
 from types_aiobotocore_ec2 import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 
@@ -283,9 +283,18 @@ async def create_buffer_machines(
     aws_ami_id: str,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-) -> Callable[[int, InstanceTypeType], Awaitable[list[str]]]:
-    async def _do(num: int, instance_type: InstanceTypeType) -> list[str]:
+) -> Callable[[int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]]:
+    async def _do(
+        num: int,
+        instance_type: InstanceTypeType,
+        instance_state_name: InstanceStateNameType,
+    ) -> list[str]:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
+
+        assert instance_state_name in [
+            "running",
+            "stopped",
+        ], "only 'running' and 'stopped' are supported for testing"
 
         resource_tags: list[TagTypeDef] = [
             {"Key": tag_key, "Value": tag_value}
@@ -330,12 +339,16 @@ async def create_buffer_machines(
             assert "Name" in instance["State"]
             assert instance["State"]["Name"] == "running"
 
+        if instance_state_name == "stopped":
+            await ec2_client.stop_instances(InstanceIds=instance_ids)
+
         return instance_ids
 
     return _do
 
 
-async def test_monitor_buffer_machines_terminates_unneeded_instances(
+@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
+async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
@@ -343,18 +356,23 @@ async def test_monitor_buffer_machines_terminates_unneeded_instances(
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
-    create_buffer_machines: Callable[[int, InstanceTypeType], Awaitable[list[str]]],
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+    ],
+    expected_state_name: InstanceStateNameType,
 ):
     # have too many machines of accepted type
     buffer_machines = await create_buffer_machines(
-        buffer_count + 5, next(iter(list(ec2_instances_allowed_types)))
+        buffer_count + 5,
+        next(iter(list(ec2_instances_allowed_types))),
+        expected_state_name,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="running",
+        expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
@@ -367,7 +385,52 @@ async def test_monitor_buffer_machines_terminates_unneeded_instances(
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="running",
+        expected_instance_state=expected_state_name,
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+
+@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
+async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_pulled_images(
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    buffer_count: int,
+    pre_pull_images: list[DockerGenericTag],
+    expected_state_name: InstanceStateNameType,
+    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    instance_type_filters: Sequence[FilterTypeDef],
+    ec2_instance_custom_tags: dict[str, str],
+    initialized_app: FastAPI,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+    ],
+):
+    # have machines of correct type with wrong pre-pulled images
+    buffer_machines = await create_buffer_machines(
+        buffer_count + 5,
+        next(iter(list(ec2_instances_allowed_types))),
+        expected_state_name,
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=len(buffer_machines),
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state=expected_state_name,
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    # this will terminate the supernumerary instances
+    await monitor_buffer_machines(
+        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
@@ -383,25 +446,31 @@ def unneeded_instance_type(
     return random_type
 
 
+@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
 async def test_monitor_buffer_machines_terminates_unneeded_pool(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
+    expected_state_name: InstanceStateNameType,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
-    create_buffer_machines: Callable[[int, InstanceTypeType], Awaitable[list[str]]],
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType], Awaitable[list[str]]
+    ],
     unneeded_instance_type: InstanceTypeType,
 ):
     # have too many machines of accepted type
-    buffer_machines_unneeded = await create_buffer_machines(5, unneeded_instance_type)
+    buffer_machines_unneeded = await create_buffer_machines(
+        5, unneeded_instance_type, expected_state_name
+    )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines_unneeded),
         expected_instance_type=unneeded_instance_type,
-        expected_instance_state="running",
+        expected_instance_state=expected_state_name,
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
@@ -426,14 +495,14 @@ def ec2_instances_allowed_types(
     faker: Faker,
     fake_pre_pull_images: list[DockerGenericTag],
     external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
-) -> dict[InstanceTypeType, Any]:
+) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
     if not external_ec2_instances_allowed_types:
         return {
-            "t2.micro": {
-                "ami_id": faker.pystr(),
-                "pre_pull_images": fake_pre_pull_images,
-                "buffer_count": faker.pyint(min_value=1, max_value=10),
-            }
+            "t2.micro": EC2InstanceBootSpecific(
+                ami_id=faker.pystr(),
+                pre_pull_images=fake_pre_pull_images,
+                buffer_count=faker.pyint(min_value=1, max_value=10),
+            )
         }
 
     allowed_ec2_types = external_ec2_instances_allowed_types
@@ -450,7 +519,7 @@ def ec2_instances_allowed_types(
         len(allowed_ec2_types_with_buffer_defined) == 1
     ), "more than one type with buffer is disallowed in this test!"
     return {
-        cast(InstanceTypeType, k): v
+        parse_obj_as(InstanceTypeType, k): v
         for k, v in allowed_ec2_types_with_buffer_defined.items()
     }
 
@@ -488,17 +557,17 @@ def external_ec2_instances_allowed_types(
 
 @pytest.fixture
 def buffer_count(
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types: dict[InstanceTypeType, EC2InstanceBootSpecific],
 ) -> int:
+    def _by_buffer_count(
+        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
+    ) -> bool:
+        _, boot_specific = instance_type_and_settings
+        return boot_specific.buffer_count > 0
+
     allowed_ec2_types = ec2_instances_allowed_types
     allowed_ec2_types_with_buffer_defined = dict(
-        filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].buffer_count
-            > 0,
-            allowed_ec2_types.items(),
-        )
+        filter(_by_buffer_count, allowed_ec2_types.items())
     )
     assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
     assert (
