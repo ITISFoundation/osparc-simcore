@@ -268,7 +268,7 @@ def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElemen
 
 
 ###
-### UTILS NAMING
+### UTILS
 ###
 
 
@@ -279,11 +279,6 @@ class FolderName(ConstrainedStr):
     )
     min_length = 1
     max_length = 255
-
-
-###
-### DB LAYER API
-###
 
 
 class FolderEntry(BaseModel):
@@ -454,6 +449,11 @@ async def _check_folder_and_access(
         )
 
     return resolved_access_rights
+
+
+###
+### API DB LAYER
+###
 
 
 async def folder_create(
