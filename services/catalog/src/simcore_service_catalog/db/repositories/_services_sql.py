@@ -1,3 +1,5 @@
+from typing import Any
+
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -26,13 +28,13 @@ def list_services_stmt(
 ) -> Select:
     stmt = sa.select(services_meta_data)
     if gids or execute_access or write_access:
-        conditions = []
+        conditions: list[Any] = []
 
         # access rights
         logic_operator = and_ if combine_access_with_and else or_
         default = bool(combine_access_with_and)
 
-        access_query_part = logic_operator(
+        access_query_part = logic_operator(  # type: ignore[type-var]
             services_access_rights.c.execute_access if execute_access else default,
             services_access_rights.c.write_access if write_access else default,
         )
