@@ -2,7 +2,7 @@ import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any
 
 import packaging.version
 import sqlalchemy as sa
@@ -140,7 +140,7 @@ class ServicesRepository(BaseRepository):
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
         def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
-            return cast(packaging.version.Version, packaging.version.parse(x.version))
+            return packaging.version.parse(x.version)
 
         return sorted(releases, key=_by_version, reverse=True)
 
@@ -163,7 +163,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+            return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
     async def get_service(
@@ -207,7 +207,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+            return ServiceMetaDataAtDB.from_orm(row)
         return None  # mypy
 
     async def create_or_update_service(
@@ -233,9 +233,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = cast(
-                ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row)
-            )
+            created_service = ServiceMetaDataAtDB.from_orm(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -268,7 +266,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(stmt_update)
             row = result.first()
             assert row  # nosec
-        return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+        return ServiceMetaDataAtDB.from_orm(row)
 
     async def can_get_service(
         self,

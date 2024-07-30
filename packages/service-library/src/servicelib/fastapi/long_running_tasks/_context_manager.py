@@ -1,7 +1,7 @@
 import asyncio
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Final, Optional
+from typing import Any, AsyncIterator, Final
 
 from pydantic import PositiveFloat
 
@@ -30,18 +30,18 @@ class _ProgressManager:
 
     def __init__(
         self,
-        update_callback: Optional[ProgressCallback],
+        update_callback: ProgressCallback | None,
     ) -> None:
         self._callback = update_callback
-        self._last_message: Optional[ProgressMessage] = None
-        self._last_percent: Optional[ProgressPercent] = None
+        self._last_message: ProgressMessage | None = None
+        self._last_percent: ProgressPercent | None = None
 
     async def update(
         self,
         task_id: TaskId,
         *,
-        message: Optional[ProgressMessage] = None,
-        percent: Optional[ProgressPercent] = None,
+        message: ProgressMessage | None = None,
+        percent: ProgressPercent | None = None,
     ) -> None:
         if self._callback is None:
             return
@@ -56,7 +56,11 @@ class _ProgressManager:
             has_changes = True
 
         if has_changes:
-            await self._callback(self._last_message, self._last_percent, task_id)
+            await self._callback(
+                self._last_message or "",
+                self._last_percent,
+                task_id,
+            )
 
 
 @asynccontextmanager
@@ -65,9 +69,9 @@ async def periodic_task_result(
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
-    progress_callback: Optional[ProgressCallback] = None,
+    progress_callback: ProgressCallback | None = None,
     status_poll_interval: PositiveFloat = 5,
-) -> AsyncIterator[Optional[Any]]:
+) -> AsyncIterator[Any | None]:
     """
     A convenient wrapper around the Client. Polls for results and returns them
     once available.
@@ -109,7 +113,7 @@ async def periodic_task_result(
     try:
         await asyncio.wait_for(_wait_task_completion(), timeout=task_timeout)
 
-        result: Optional[Any] = await client.get_task_result(task_id)
+        result = await client.get_task_result(task_id)
 
         logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 

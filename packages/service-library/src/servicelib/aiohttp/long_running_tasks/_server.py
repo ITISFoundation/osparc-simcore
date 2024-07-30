@@ -1,13 +1,14 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator, Callable
 from functools import wraps
-from typing import Any, AsyncGenerator, Callable
+from typing import Any
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, PositiveFloat
-from servicelib.aiohttp import status
 
+from ...aiohttp import status
 from ...long_running_tasks._models import TaskGet
 from ...long_running_tasks._task import (
     TaskContext,
@@ -62,6 +63,7 @@ async def start_long_running_task(
             task_name=task_name,
             **task_kwargs,
         )
+        assert request_.transport  # nosec
         ip_addr, port = request_.transport.get_extra_info(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
@@ -105,6 +107,7 @@ def _wrap_and_add_routes(
 ):
     # add routing paths
     for route in _routes.routes:
+        assert isinstance(route, web.RouteDef)  # nosec
         app.router.add_route(
             method=route.method,
             path=f"{router_prefix}{route.path}",

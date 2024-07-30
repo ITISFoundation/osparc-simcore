@@ -65,7 +65,7 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
         total: int,
         limit: int,
         offset: int,
-    ):
+    ) -> "PageRpc":
         return cls(
             _meta=PageMetaInfoLimitOffset(
                 total=total, count=len(chunk), limit=limit, offset=offset
