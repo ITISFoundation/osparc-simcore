@@ -5,7 +5,7 @@ import logging
 import urllib.parse
 from typing import Annotated, Any, TypeAlias, cast
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
@@ -335,6 +335,7 @@ async def update_service(
 
     if updated_service.access_rights:
         # start by updating/inserting new entries
+        assert x_simcore_products_name  # nosec
         new_access_rights = [
             ServiceAccessRightsAtDB(
                 key=service_key,
@@ -366,6 +367,7 @@ async def update_service(
         await services_repo.delete_service_access_rights(deleted_access_rights)
 
     # now return the service
+    assert x_simcore_products_name  # nosec
     return await get_service(
         user_id=user_id,
         service_in_manifest=await get_service_from_manifest(

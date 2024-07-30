@@ -665,7 +665,6 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/catalog.bash test

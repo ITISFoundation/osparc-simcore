@@ -8,6 +8,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from pydantic import parse_obj_as
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..db.repositories.services import ServicesRepository
@@ -78,12 +79,12 @@ async def _evaluate_custom_compatibility(
             return Compatibility(
                 can_update_to=CompatibleService(
                     key=other_service_key,
-                    version=f"{latest_version}",
+                    version=parse_obj_as(ServiceVersion, f"{latest_version}"),
                 )
             )
         return Compatibility(
             can_update_to=CompatibleService(
-                version=f"{latest_version}",
+                version=parse_obj_as(ServiceVersion, f"{latest_version}"),
             )
         )
 
@@ -95,9 +96,9 @@ async def evaluate_service_compatibility_map(
     product_name: ProductName,
     user_id: UserID,
     service_release_history: list[ReleaseFromDB],
-) -> dict[ServiceVersion, Compatibility]:
+) -> dict[ServiceVersion, Compatibility | None]:
     released_versions = _convert_to_versions(service_release_history)
-    result = {}
+    result: dict[ServiceVersion, Compatibility | None] = {}
 
     for release in service_release_history:
         compatibility = None
@@ -108,16 +109,17 @@ async def evaluate_service_compatibility_map(
                 repo=repo,
                 target_version=release.version,
                 released_versions=released_versions,
-                compatibility_policy=release.compatibility_policy,
+                compatibility_policy={**release.compatibility_policy},
             )
         elif latest_version := _get_latest_compatible_version(
             release.version,
             released_versions,
         ):
             compatibility = Compatibility(
-                can_update_to=CompatibleService(version=f"{latest_version}")
+                can_update_to=CompatibleService(
+                    version=parse_obj_as(ServiceVersion, f"{latest_version}")
+                )
             )
-
         result[release.version] = compatibility
 
     return result
