@@ -341,6 +341,15 @@ async def create_buffer_machines(
 
         if instance_state_name == "stopped":
             await ec2_client.stop_instances(InstanceIds=instance_ids)
+            instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+            assert "Reservations" in instances
+            assert instances["Reservations"]
+            assert "Instances" in instances["Reservations"][0]
+            assert len(instances["Reservations"][0]["Instances"]) == num
+            for instance in instances["Reservations"][0]["Instances"]:
+                assert "State" in instance
+                assert "Name" in instance["State"]
+                assert instance["State"]["Name"] == "stopped"
 
         return instance_ids
 
