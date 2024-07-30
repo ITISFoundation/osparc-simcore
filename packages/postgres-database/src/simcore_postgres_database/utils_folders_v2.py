@@ -267,11 +267,6 @@ def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElemen
     )
 
 
-###
-### UTILS NAMING
-###
-
-
 class FolderName(ConstrainedStr):
     regex = re.compile(
         r'^(?!.*[<>:"/\\|?*\]])(?!.*\b(?:LPT9|COM1|LPT1|COM2|LPT3|LPT4|CON|COM5|COM3|COM4|AUX|PRN|LPT2|LPT5|COM6|LPT7|NUL|COM8|LPT6|COM9|COM7|LPT8)\b).+$',
@@ -279,10 +274,6 @@ class FolderName(ConstrainedStr):
     )
     min_length = 1
     max_length = 255
-
-
-def _validate_folder_name(value: str) -> None:
-    parse_obj_as(FolderName, value)
 
 
 ###
@@ -480,7 +471,7 @@ async def folder_create(
         CouldNotCreateFolderError
         GroupIdDoesNotExistError
     """
-    _validate_folder_name(name)
+    parse_obj_as(FolderName, name)
 
     async with connection.begin():
         entry_exists: int | None = await connection.scalar(
