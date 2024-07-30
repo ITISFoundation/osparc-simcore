@@ -142,6 +142,36 @@ async def _terminate_unneeded_pools(
     return buffers_manager
 
 
+async def _terminate_instances_with_invalid_pre_pulled_images(
+    app: FastAPI, buffers_manager: BufferPoolManager
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    terminateable_instances = set()
+    for (
+        ec2_type,
+        ec2_boot_config,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
+        instance_type = cast(InstanceTypeType, ec2_type)
+        all_pre_pulled_instances = buffers_manager.buffer_pools[
+            instance_type
+        ].pre_pulled_instances()
+
+        for instance in all_pre_pulled_instances:
+            if (
+                pre_pulled_images := instance.tags.get(_PREPULLED_EC2_TAG_KEY, None)
+                is not None
+            ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
+                terminateable_instances.add(instance)
+
+    if terminateable_instances:
+        await ec2_client.terminate_instances(terminateable_instances)
+        for instance in terminateable_instances:
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    return buffers_manager
+
+
 async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: BufferPoolManager,
@@ -152,6 +182,7 @@ async def _add_remove_buffer_instances(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
+    # let's find what is missing and what is not needed
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
     for (
@@ -169,6 +200,7 @@ async def _add_remove_buffer_instances(
                 list(all_pool_instances)[ec2_boot_config.buffer_count :]
             )
             unneeded_instances = unneeded_instances.union(terminateable_instances)
+
     for ec2_type, num_to_start in missing_instances.items():
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
@@ -286,10 +318,14 @@ async def monitor_buffer_machines(
     buffers_manager = await _analyse_current_state(
         app, auto_scaling_mode=auto_scaling_mode
     )
-    # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
+    # 2. Terminate unneeded warm pools (e.g. if the user changed the allowed instance types)
     buffers_manager = await _terminate_unneeded_pools(app, buffers_manager)
 
-    # 3 add/remove buffer instances if needed based on needed buffer counts
+    buffers_manager = await _terminate_instances_with_invalid_pre_pulled_images(
+        app, buffers_manager
+    )
+
+    # 3. add/remove buffer instances base on ec2 boot specific data
     buffers_manager = await _add_remove_buffer_instances(
         app, buffers_manager, auto_scaling_mode=auto_scaling_mode
     )
