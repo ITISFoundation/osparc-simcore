@@ -287,8 +287,8 @@ class FolderEntry(BaseModel):
     name: str
     description: str
     owner: _GroupID = Field(alias="created_by")
-    created: datetime = Field(alias="selected_created")
-    modified: datetime = Field(alias="selected_modified")
+    created: datetime = Field(alias="access_created")
+    modified: datetime = Field(alias="access_modified")
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
@@ -884,8 +884,8 @@ async def folder_list(
             sa.select(
                 folders,
                 folders_access_rights,
-                folders_access_rights.c.created.label("selected_created"),
-                folders_access_rights.c.modified.label("selected_modified"),
+                folders_access_rights.c.created.label("access_created"),
+                folders_access_rights.c.modified.label("access_modified"),
                 sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
                 subquery_my_access_rights.label("my_access_rights"),
                 subquery_access_rights.label("access_rights"),
