@@ -3,7 +3,6 @@
 # pylint:disable=unused-variable
 
 import itertools
-import secrets
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from typing import NamedTuple
@@ -181,15 +180,6 @@ def test__get_where_clause():
     )
 
 
-def _get_random_project_uuid(
-    all_project_ids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
-) -> _ProjectID:
-    if already_picked is None:
-        already_picked = set()
-    to_random_pick = all_project_ids - already_picked
-    return secrets.choice(list(to_random_pick))
-
-
 async def _assert_folder_entires(
     connection: SAConnection,
     *,
@@ -285,6 +275,17 @@ async def setup_projects_for_users(
         project = await create_fake_project(connection, user)
         projects.add(project.uuid)
     return projects
+
+
+@pytest.fixture
+def get_unique_project_uuids(
+    setup_projects_for_users: set[_ProjectID],
+) -> Callable[[int], tuple[_ProjectID, ...]]:
+    def _(tuple_size: int) -> tuple[_ProjectID, ...]:
+        copied_projects = deepcopy(setup_projects_for_users)
+        return tuple(copied_projects.pop() for _ in range(tuple_size))
+
+    return _
 
 
 class MkFolder(BaseModel):
@@ -826,12 +827,6 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
 
 
-async def test_folder_delete_nested():
-    # create a folder structure that then needs to be deleted
-    # TODO: finish this
-    assert False
-
-
 async def test_folder_move(
     connection: SAConnection,
     get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
@@ -1281,14 +1276,14 @@ async def test_add_remove_project_in_folder(
     connection: SAConnection,
     get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
     make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
-    setup_projects_for_users: set[_ProjectID],
+    get_unique_project_uuids: Callable[[int], tuple[_ProjectID, ...]],
 ):
     #######
     # SETUP
     #######
 
     (gid_owner, gid_editor, gid_viewer, gid_no_access) = get_unique_gids(4)
-    project_uuid = _get_random_project_uuid(setup_projects_for_users)
+    (project_uuid,) = get_unique_project_uuids(1)
 
     folder_ids = await make_folders(
         {
