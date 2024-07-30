@@ -37,9 +37,9 @@ from simcore_postgres_database.utils_folders import (
     InvalidFolderNameError,
     _FolderID,
     _FolderPermissions,
+    _get_and_calsue_with_only_true_entries,
     _get_permissions_from_role,
     _get_resolved_access_rights,
-    _get_true_permissions,
     _GroupID,
     _ProjectID,
     _requires,
@@ -164,16 +164,25 @@ async def test_folder_create_wrong_folder_name(invalid_name: str):
 
 def test__get_where_clause():
     assert isinstance(
-        _get_true_permissions(VIEWER_PERMISSIONS, folders_access_rights), ColumnElement
+        _get_and_calsue_with_only_true_entries(
+            VIEWER_PERMISSIONS, folders_access_rights
+        ),
+        ColumnElement,
     )
     assert isinstance(
-        _get_true_permissions(EDITOR_PERMISSIONS, folders_access_rights), ColumnElement
+        _get_and_calsue_with_only_true_entries(
+            EDITOR_PERMISSIONS, folders_access_rights
+        ),
+        ColumnElement,
     )
     assert isinstance(
-        _get_true_permissions(OWNER_PERMISSIONS, folders_access_rights), ColumnElement
+        _get_and_calsue_with_only_true_entries(
+            OWNER_PERMISSIONS, folders_access_rights
+        ),
+        ColumnElement,
     )
     assert isinstance(
-        _get_true_permissions(
+        _get_and_calsue_with_only_true_entries(
             _FolderPermissions(read=False, write=False, delete=False),
             folders_access_rights,
         ),
@@ -209,7 +218,7 @@ async def _assert_folder_permissions(
         .where(folders_access_rights.c.folder_id == folder_id)
         .where(folders_access_rights.c.gid == gid)
         .where(
-            _get_true_permissions(
+            _get_and_calsue_with_only_true_entries(
                 _get_permissions_from_role(role), folders_access_rights
             )
         )

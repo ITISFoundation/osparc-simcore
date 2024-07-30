@@ -243,10 +243,9 @@ def _requires(*permissions: _FolderPermissions) -> _FolderPermissions:
     return _or_dicts_list(permissions)
 
 
-def _get_true_permissions(
+def _get_and_calsue_with_only_true_entries(
     permissions: _FolderPermissions, table
 ) -> ColumnElement | bool:
-    """compose SQL where clause where only for the entries that are True"""
     clauses: list[ColumnElement] = []
 
     if permissions.read:
@@ -257,14 +256,6 @@ def _get_true_permissions(
         clauses.append(table.c.delete.is_(True))
 
     return sa.and_(*clauses) if clauses else True
-
-
-def _get_all_permissions(permissions: _FolderPermissions, table) -> ColumnElement:
-    return sa.and_(
-        table.c.read.is_(permissions.read),
-        table.c.write.is_(permissions.write),
-        table.c.delete.is_(permissions.delete),
-    )
 
 
 ###
@@ -369,9 +360,13 @@ async def _get_resolved_access_rights(
         if not permissions:
             return True
         return (
-            _get_all_permissions(permissions, folder_hierarchy)
+            sa.and_(
+                folder_hierarchy.c.read.is_(permissions.read),
+                folder_hierarchy.c.write.is_(permissions.write),
+                folder_hierarchy.c.delete.is_(permissions.delete),
+            )
             if enforece_all_permissions
-            else _get_true_permissions(permissions, folder_hierarchy)
+            else _get_and_calsue_with_only_true_entries(permissions, folder_hierarchy)
         )
 
     # Final query to filter and order results
@@ -905,7 +900,9 @@ async def folder_list(
                 else True
             )
             .where(
-                _get_true_permissions(required_permissions, folders_access_rights)
+                _get_and_calsue_with_only_true_entries(
+                    required_permissions, folders_access_rights
+                )
                 if folder_id is None
                 else True
             )
