@@ -389,53 +389,51 @@ async def test__get_resolved_access_rights(
     #######
     # SETUP
     #######
-    owner_a_gid = _get_random_gid(setup_users_and_groups)
-    owner_b_gid = _get_random_gid(setup_users_and_groups, already_picked={owner_a_gid})
-    owner_c_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_a_gid, owner_b_gid}
+    gid_owner_a = _get_random_gid(setup_users_and_groups)
+    gid_owner_b = _get_random_gid(setup_users_and_groups, already_picked={gid_owner_a})
+    gid_owner_c = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b}
     )
-    owner_d_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_a_gid, owner_b_gid, owner_c_gid}
+    gid_owner_d = _get_random_gid(
+        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b, gid_owner_c}
     )
-    editor_a_gid = _get_random_gid(
+    gid_editor_a = _get_random_gid(
         setup_users_and_groups,
-        already_picked={owner_a_gid, owner_b_gid, owner_c_gid, owner_d_gid},
+        already_picked={gid_owner_a, gid_owner_b, gid_owner_c, gid_owner_d},
     )
-    editor_b_gid = _get_random_gid(
+    gid_editor_b = _get_random_gid(
         setup_users_and_groups,
         already_picked={
-            owner_a_gid,
-            owner_b_gid,
-            owner_c_gid,
-            owner_d_gid,
-            editor_a_gid,
+            gid_owner_a,
+            gid_owner_b,
+            gid_owner_c,
+            gid_owner_d,
+            gid_editor_a,
         },
     )
 
     folder_ids = await make_folders(
         {
             MkFolder(
-                name="root_folder",
-                gid=owner_a_gid,
+                name="root",
+                gid=gid_owner_a,
                 shared_with={
-                    owner_b_gid: FolderAccessRole.OWNER,
-                    owner_c_gid: FolderAccessRole.OWNER,
-                    owner_d_gid: FolderAccessRole.OWNER,
-                    editor_a_gid: FolderAccessRole.EDITOR,
+                    gid_owner_b: FolderAccessRole.OWNER,
+                    gid_owner_c: FolderAccessRole.OWNER,
+                    gid_owner_d: FolderAccessRole.OWNER,
+                    gid_editor_a: FolderAccessRole.EDITOR,
                 },
                 children={
-                    MkFolder(name="b_folder", gid=owner_b_gid),
+                    MkFolder(name="b", gid=gid_owner_b),
                     MkFolder(
-                        name="c_folder",
-                        gid=owner_c_gid,
+                        name="c",
+                        gid=gid_owner_c,
                         children={
                             MkFolder(
-                                name="d_folder",
-                                gid=owner_d_gid,
-                                shared_with={editor_b_gid: FolderAccessRole.EDITOR},
-                                children={
-                                    MkFolder(name="editor_a_folder", gid=editor_a_gid)
-                                },
+                                name="d",
+                                gid=gid_owner_d,
+                                shared_with={gid_editor_b: FolderAccessRole.EDITOR},
+                                children={MkFolder(name="editor_a", gid=gid_editor_a)},
                             )
                         },
                     ),
@@ -444,11 +442,11 @@ async def test__get_resolved_access_rights(
         }
     )
 
-    root_folder_id = folder_ids["root_folder"]
-    b_folder_id = folder_ids["b_folder"]
-    c_folder_id = folder_ids["c_folder"]
-    d_folder_id = folder_ids["d_folder"]
-    editor_a_folder_id = folder_ids["editor_a_folder"]
+    folder_id_root = folder_ids["root"]
+    folder_id_b = folder_ids["b"]
+    folder_id_c = folder_ids["c"]
+    folder_id_d = folder_ids["d"]
+    folder_id_editor_a = folder_ids["editor_a"]
 
     # check resolved access rgihts resolution
     async def _assert_resolves_to(
@@ -478,46 +476,46 @@ async def test__get_resolved_access_rights(
     #######
 
     await _assert_resolves_to(
-        target_folder_id=root_folder_id,
-        gid=owner_a_gid,
+        target_folder_id=folder_id_root,
+        gid=gid_owner_a,
         permissions=OWNER_PERMISSIONS,
-        expected_folder_id=root_folder_id,
-        expected_gids={owner_a_gid},
+        expected_folder_id=folder_id_root,
+        expected_gids={gid_owner_a},
     )
     await _assert_resolves_to(
-        target_folder_id=b_folder_id,
-        gid=owner_b_gid,
+        target_folder_id=folder_id_b,
+        gid=gid_owner_b,
         permissions=OWNER_PERMISSIONS,
-        expected_folder_id=root_folder_id,
-        expected_gids={owner_b_gid},
+        expected_folder_id=folder_id_root,
+        expected_gids={gid_owner_b},
     )
     await _assert_resolves_to(
-        target_folder_id=c_folder_id,
-        gid=owner_c_gid,
+        target_folder_id=folder_id_c,
+        gid=gid_owner_c,
         permissions=OWNER_PERMISSIONS,
-        expected_folder_id=root_folder_id,
-        expected_gids={owner_c_gid},
+        expected_folder_id=folder_id_root,
+        expected_gids={gid_owner_c},
     )
     await _assert_resolves_to(
-        target_folder_id=d_folder_id,
-        gid=owner_d_gid,
+        target_folder_id=folder_id_d,
+        gid=gid_owner_d,
         permissions=OWNER_PERMISSIONS,
-        expected_folder_id=root_folder_id,
-        expected_gids={owner_d_gid},
+        expected_folder_id=folder_id_root,
+        expected_gids={gid_owner_d},
     )
     await _assert_resolves_to(
-        target_folder_id=editor_a_folder_id,
-        gid=editor_a_gid,
+        target_folder_id=folder_id_editor_a,
+        gid=gid_editor_a,
         permissions=EDITOR_PERMISSIONS,
-        expected_folder_id=root_folder_id,
-        expected_gids={editor_a_gid},
+        expected_folder_id=folder_id_root,
+        expected_gids={gid_editor_a},
     )
     await _assert_resolves_to(
-        target_folder_id=editor_a_folder_id,
-        gid=editor_b_gid,
+        target_folder_id=folder_id_editor_a,
+        gid=gid_editor_b,
         permissions=EDITOR_PERMISSIONS,
-        expected_folder_id=d_folder_id,
-        expected_gids={editor_b_gid},
+        expected_folder_id=folder_id_d,
+        expected_gids={gid_editor_b},
     )
 
 
