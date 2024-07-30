@@ -22,7 +22,7 @@ TaskName: TypeAlias = str
 TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
 
 ProgressCallback: TypeAlias = Callable[
-    [ProgressMessage, ProgressPercent, TaskId], Awaitable[None]
+    [ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]
 ]
 
 

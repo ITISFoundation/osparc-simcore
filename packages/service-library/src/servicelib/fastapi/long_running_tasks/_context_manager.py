@@ -58,7 +58,7 @@ class _ProgressManager:
         if has_changes:
             await self._callback(
                 self._last_message or "",
-                self._last_percent or ProgressPercent(0),
+                self._last_percent,
                 task_id,
             )
 
