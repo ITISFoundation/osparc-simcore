@@ -537,6 +537,15 @@ def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
         pytest.skip("Skipping test since external-envfile is not set")
 
 
+def _skip_test_if_not_using_external_envfile(
+    external_envfile_dict: EnvVarsDict,
+) -> None:
+    if not external_envfile_dict:
+        pytest.skip(
+            "This test is only for use directly with AWS server, please define --external-envfile"
+        )
+
+
 async def test_monitor_buffer_machines_against_aws(
     skip_if_external_envfile_dict: None,
     disable_buffers_pool_background_task: None,
@@ -551,10 +560,7 @@ async def test_monitor_buffer_machines_against_aws(
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
 ):
-    if not external_envfile_dict:
-        pytest.skip(
-            "This test is only for use directly with AWS server, please define --external-envfile"
-        )
+    _skip_test_if_not_using_external_envfile(external_envfile_dict)
 
     await _test_monitor_buffer_machines(
         ec2_client=ec2_client,
