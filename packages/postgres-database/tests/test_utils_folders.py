@@ -5,6 +5,7 @@
 import itertools
 import secrets
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from typing import NamedTuple
 from unittest.mock import Mock
 
@@ -180,15 +181,6 @@ def test__get_where_clause():
     )
 
 
-def _get_random_gid(
-    all_gids: set[_GroupID], already_picked: set[_GroupID] | None = None
-) -> _GroupID:
-    if already_picked is None:
-        already_picked = set()
-    to_random_pick = all_gids - already_picked
-    return secrets.choice(list(to_random_pick))
-
-
 def _get_random_project_uuid(
     all_project_ids: set[_ProjectID], already_picked: set[_ProjectID] | None = None
 ) -> _ProjectID:
@@ -269,6 +261,17 @@ async def setup_users(
 @pytest.fixture
 async def setup_users_and_groups(setup_users: list[RowProxy]) -> set[_GroupID]:
     return {u.primary_gid for u in setup_users}
+
+
+@pytest.fixture
+def get_unique_gids(
+    setup_users_and_groups: set[_GroupID],
+) -> Callable[[int], tuple[_GroupID, ...]]:
+    def _(tuple_size: int) -> tuple[_GroupID, ...]:
+        copied_groups = deepcopy(setup_users_and_groups)
+        return tuple(copied_groups.pop() for _ in range(tuple_size))
+
+    return _
 
 
 @pytest.fixture
@@ -358,9 +361,9 @@ def make_folders(
 
 
 async def test_folder_create(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection, get_unique_gids: Callable[[int], tuple[_GroupID, ...]]
 ):
-    owner_gid = _get_random_gid(setup_users_and_groups)
+    (owner_gid,) = get_unique_gids(1)
 
     # when GID is missing no entries should be present
     missing_gid = 10202023302
@@ -383,34 +386,20 @@ async def test_folder_create(
 
 async def test__get_resolved_access_rights(
     connection: SAConnection,
-    setup_users_and_groups: set[_GroupID],
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
     make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
     #######
     # SETUP
     #######
-    gid_owner_a = _get_random_gid(setup_users_and_groups)
-    gid_owner_b = _get_random_gid(setup_users_and_groups, already_picked={gid_owner_a})
-    gid_owner_c = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b}
-    )
-    gid_owner_d = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner_a, gid_owner_b, gid_owner_c}
-    )
-    gid_editor_a = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={gid_owner_a, gid_owner_b, gid_owner_c, gid_owner_d},
-    )
-    gid_editor_b = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={
-            gid_owner_a,
-            gid_owner_b,
-            gid_owner_c,
-            gid_owner_d,
-            gid_editor_a,
-        },
-    )
+    (
+        gid_owner_a,
+        gid_owner_b,
+        gid_owner_c,
+        gid_owner_d,
+        gid_editor_a,
+        gid_editor_b,
+    ) = get_unique_gids(6)
 
     folder_ids = await make_folders(
         {
@@ -520,39 +509,16 @@ async def test__get_resolved_access_rights(
 
 
 async def test_folder_share_or_update_permissions(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection, get_unique_gids: Callable[[int], tuple[_GroupID, ...]]
 ):
-    #######
-    # SETUP
-    #######
-    gid_owner = _get_random_gid(setup_users_and_groups)
-    gid_other_owner = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner}
-    )
-    gid_editor = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_other_owner}
-    )
-    gid_viewer = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_other_owner, gid_editor}
-    )
-    gid_no_access = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={gid_owner, gid_other_owner, gid_editor, gid_viewer},
-    )
-    gid_share_with_error = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={
-            gid_owner,
-            gid_other_owner,
-            gid_editor,
-            gid_viewer,
-            gid_no_access,
-        },
-    )
-
-    #######
-    # TESTS
-    #######
+    (
+        gid_owner,
+        gid_other_owner,
+        gid_editor,
+        gid_viewer,
+        gid_no_access,
+        gid_share_with_error,
+    ) = get_unique_gids(6)
 
     # 1. folder does not exist
     folder_id_missing = 12313123232
@@ -672,32 +638,16 @@ async def test_folder_share_or_update_permissions(
 
 
 async def test_folder_update(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection, get_unique_gids: Callable[[int], tuple[_GroupID, ...]]
 ):
-    owner_gid = _get_random_gid(setup_users_and_groups)
-    other_owner_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid}
-    )
-    editor_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid, other_owner_gid}
-    )
-    viewer_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid, other_owner_gid, editor_gid}
-    )
-    no_access_gid = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={owner_gid, other_owner_gid, editor_gid, viewer_gid},
-    )
-    share_with_error_gid = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={
-            owner_gid,
-            other_owner_gid,
-            editor_gid,
-            viewer_gid,
-            no_access_gid,
-        },
-    )
+    (
+        owner_gid,
+        other_owner_gid,
+        editor_gid,
+        viewer_gid,
+        no_access_gid,
+        share_with_error_gid,
+    ) = get_unique_gids(6)
 
     # 1. folder is missing
     missing_folder_id = 1231321332
@@ -800,32 +750,16 @@ async def test_folder_update(
 
 
 async def test_folder_delete(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection, get_unique_gids: Callable[[int], tuple[_GroupID, ...]]
 ):
-    owner_gid = _get_random_gid(setup_users_and_groups)
-    other_owner_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid}
-    )
-    editor_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid, other_owner_gid}
-    )
-    viewer_gid = _get_random_gid(
-        setup_users_and_groups, already_picked={owner_gid, other_owner_gid, editor_gid}
-    )
-    no_access_gid = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={owner_gid, other_owner_gid, editor_gid, viewer_gid},
-    )
-    share_with_error_gid = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={
-            owner_gid,
-            other_owner_gid,
-            editor_gid,
-            viewer_gid,
-            no_access_gid,
-        },
-    )
+    (
+        owner_gid,
+        other_owner_gid,
+        editor_gid,
+        viewer_gid,
+        no_access_gid,
+        share_with_error_gid,
+    ) = get_unique_gids(6)
 
     # 1. folder is missing
     missing_folder_id = 1231321332
@@ -894,23 +828,20 @@ async def test_folder_delete(
 
 async def test_folder_delete_nested():
     # create a folder structure that then needs to be deleted
+    # TODO: finish this
     assert False
 
 
-async def test_folder_move(  # noqa: PLR0915
+async def test_folder_move(
     connection: SAConnection,
-    setup_users_and_groups: set[_GroupID],
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
     make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
     #######
     # SETUP
     #######
 
-    gid_sharing = _get_random_gid(setup_users_and_groups)
-    gid_user_a = _get_random_gid(setup_users_and_groups, already_picked={gid_sharing})
-    gid_user_b = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_sharing, gid_user_a}
-    )
+    (gid_sharing, gid_user_a, gid_user_b) = get_unique_gids(3)
 
     folder_ids = await make_folders(
         {
@@ -1199,64 +1130,46 @@ async def test_folder_move(  # noqa: PLR0915
 
 
 async def test_move_only_owners_can_move(
-    connection: SAConnection, setup_users_and_groups: set[_GroupID]
+    connection: SAConnection,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
 ):
-    gid_owner = _get_random_gid(setup_users_and_groups)
-    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
-    gid_viewer = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor}
-    )
-    gid_no_access = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
-    )
-    gid_not_shared = _get_random_gid(
-        setup_users_and_groups,
-        already_picked={gid_owner, gid_editor, gid_viewer, gid_no_access},
+    #######
+    # SETUP
+    #######
+    (
+        gid_owner,
+        gid_editor,
+        gid_viewer,
+        gid_no_access,
+        gid_not_shared,
+    ) = get_unique_gids(5)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="to_move",
+                gid=gid_owner,
+                shared_with={
+                    gid_editor: FolderAccessRole.EDITOR,
+                    gid_viewer: FolderAccessRole.VIEWER,
+                    gid_no_access: FolderAccessRole.NO_ACCESS,
+                },
+            ),
+            MkFolder(name="target_owner", gid=gid_owner),
+            MkFolder(name="target_editor", gid=gid_editor),
+            MkFolder(name="target_viewer", gid=gid_viewer),
+            MkFolder(name="target_no_access", gid=gid_no_access),
+            MkFolder(name="target_not_shared", gid=gid_not_shared),
+        }
     )
 
-    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    # `to_move`(`gid_owner`)[`gid_editor`,`gid_viewer`,`gid_no_access`]
-    # `target_owner`(`gid_owner`)
-    # `target_editor`(`gid_editor`)
-    # `target_viewer`(`gid_viewer`)
-    # `target_no_access`(`gid_no_access`)
-    # `target_not_shared`(`gid_not_shared`)
-    folder_id_to_move = await folder_create(connection, "to_move", gid_owner)
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_to_move,
-        gid_owner,
-        recipient_gid=gid_editor,
-        recipient_role=FolderAccessRole.EDITOR,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_to_move,
-        gid_owner,
-        recipient_gid=gid_viewer,
-        recipient_role=FolderAccessRole.VIEWER,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id_to_move,
-        gid_owner,
-        recipient_gid=gid_no_access,
-        recipient_role=FolderAccessRole.NO_ACCESS,
-    )
-
-    folder_id_target_owner = await folder_create(connection, "target_owner", gid_owner)
-    folder_id_target_editor = await folder_create(
-        connection, "target_editor", gid_editor
-    )
-    folder_id_target_viewer = await folder_create(
-        connection, "target_viewer", gid_viewer
-    )
-    folder_id_target_no_access = await folder_create(
-        connection, "target_no_access", gid_no_access
-    )
-    folder_id_target_not_shared = await folder_create(
-        connection, "target_not_shared", gid_not_shared
-    )
+    folder_id_to_move = folder_ids["to_move"]
+    folder_id_target_owner = folder_ids["target_owner"]
+    folder_id_target_editor = folder_ids["target_editor"]
+    folder_id_target_viewer = folder_ids["target_viewer"]
+    folder_id_target_no_access = folder_ids["target_no_access"]
+    folder_id_target_not_shared = folder_ids["target_not_shared"]
 
     async def _fails_to_move(gid: _GroupID, destination_folder_id: _FolderID) -> None:
         with pytest.raises(InsufficientPermissionsError):
@@ -1266,6 +1179,10 @@ async def test_move_only_owners_can_move(
                 gid,
                 destination_folder_id=destination_folder_id,
             )
+
+    #######
+    # TESTS
+    #######
 
     # 1. no permissions to move
     await _fails_to_move(gid_editor, folder_id_target_editor)
@@ -1292,10 +1209,14 @@ async def test_move_only_owners_can_move(
 
 async def test_move_group_non_standard_groups_raise_error(
     connection: SAConnection,
-    setup_users_and_groups: set[_GroupID],
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
     create_fake_group: Callable[..., Awaitable[RowProxy]],
 ):
-    gid_sharing = _get_random_gid(setup_users_and_groups)
+    #######
+    # SETUP
+    #######
+    (gid_sharing,) = get_unique_gids(1)
     gid_primary = (await create_fake_group(connection, type=GroupType.PRIMARY)).gid
     gid_everyone = await connection.scalar(
         sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
@@ -1303,26 +1224,31 @@ async def test_move_group_non_standard_groups_raise_error(
     assert gid_everyone
     gid_standard = (await create_fake_group(connection, type=GroupType.STANDARD)).gid
 
-    # FOLDER STRUCTURE {`folder_name`(`owner_gid`)[`shared_with_gid`, ...]}
-    # `SHARING_USER`(`gid_sharing`)[`gid_primary`,`gid_everyone`,`gid_standard`]
-    # `PRIMARY`(`gid_primary`)
-    # `EVERYONE`(`gid_everyone`)
-    # `STANDARD`(`gid_standard`)
-
-    folder_id_sharing_user = await folder_create(
-        connection, "SHARING_USER", gid_sharing
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="SHARING_USER",
+                gid=gid_sharing,
+                shared_with={
+                    gid_primary: FolderAccessRole.EDITOR,
+                    gid_everyone: FolderAccessRole.EDITOR,
+                    gid_standard: FolderAccessRole.EDITOR,
+                },
+            ),
+            MkFolder(name="PRIMARY", gid=gid_primary),
+            MkFolder(name="EVERYONE", gid=gid_everyone),
+            MkFolder(name="STANDARD", gid=gid_standard),
+        }
     )
-    for gid_to_share_with in (gid_primary, gid_everyone, gid_standard):
-        await folder_share_or_update_permissions(
-            connection,
-            folder_id_sharing_user,
-            gid_sharing,
-            recipient_gid=gid_to_share_with,
-            recipient_role=FolderAccessRole.EDITOR,
-        )
-    folder_id_primary = await folder_create(connection, "PRIMARY", gid_primary)
-    folder_id_everyone = await folder_create(connection, "EVERYONE", gid_everyone)
-    folder_id_standard = await folder_create(connection, "STANDARD", gid_standard)
+
+    folder_id_sharing_user = folder_ids["SHARING_USER"]
+    folder_id_primary = folder_ids["PRIMARY"]
+    folder_id_everyone = folder_ids["EVERYONE"]
+    folder_id_standard = folder_ids["STANDARD"]
+
+    #######
+    # TESTS
+    #######
 
     with pytest.raises(CannotMoveFolderSharedViaNonPrimaryGroupError) as exc:
         await folder_move(
@@ -1353,9 +1279,32 @@ async def test_move_group_non_standard_groups_raise_error(
 
 async def test_add_remove_project_in_folder(
     connection: SAConnection,
-    setup_users_and_groups: set[_GroupID],
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
     setup_projects_for_users: set[_ProjectID],
 ):
+    #######
+    # SETUP
+    #######
+
+    (gid_owner, gid_editor, gid_viewer, gid_no_access) = get_unique_gids(4)
+    project_uuid = _get_random_project_uuid(setup_projects_for_users)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="f1",
+                gid=gid_owner,
+                shared_with={
+                    gid_editor: FolderAccessRole.EDITOR,
+                    gid_viewer: FolderAccessRole.VIEWER,
+                    gid_no_access: FolderAccessRole.NO_ACCESS,
+                },
+            )
+        }
+    )
+    folder_id_f1 = folder_ids["f1"]
+
     async def _is_project_present(
         connection: SAConnection,
         folder_id: _FolderID,
@@ -1370,51 +1319,25 @@ async def test_add_remove_project_in_folder(
             assert rows is not None
             return len(rows) == 1
 
-    gid_owner = _get_random_gid(setup_users_and_groups)
-    gid_editor = _get_random_gid(setup_users_and_groups, already_picked={gid_owner})
-    gid_viewer = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor}
-    )
-    gid_no_access = _get_random_gid(
-        setup_users_and_groups, already_picked={gid_owner, gid_editor, gid_viewer}
-    )
-    project_uuid = _get_random_project_uuid(setup_projects_for_users)
-
-    # SETUP
-    folder_id = await folder_create(connection, "f1", gid_owner)
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id,
-        gid_owner,
-        recipient_gid=gid_editor,
-        recipient_role=FolderAccessRole.EDITOR,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id,
-        gid_owner,
-        recipient_gid=gid_viewer,
-        recipient_role=FolderAccessRole.VIEWER,
-    )
-    await folder_share_or_update_permissions(
-        connection,
-        folder_id,
-        gid_owner,
-        recipient_gid=gid_no_access,
-        recipient_role=FolderAccessRole.NO_ACCESS,
-    )
-
     async def _add_folder_as(gid: _GroupID) -> None:
-        await folder_add_project(connection, folder_id, gid, project_uuid=project_uuid)
-        assert await _is_project_present(connection, folder_id, project_uuid) is True
+        await folder_add_project(
+            connection, folder_id_f1, gid, project_uuid=project_uuid
+        )
+        assert await _is_project_present(connection, folder_id_f1, project_uuid) is True
 
     async def _remove_folder_as(gid: _GroupID) -> None:
         await folder_remove_project(
-            connection, folder_id, gid, project_uuid=project_uuid
+            connection, folder_id_f1, gid, project_uuid=project_uuid
         )
-        assert await _is_project_present(connection, folder_id, project_uuid) is False
+        assert (
+            await _is_project_present(connection, folder_id_f1, project_uuid) is False
+        )
 
-    assert await _is_project_present(connection, folder_id, project_uuid) is False
+    assert await _is_project_present(connection, folder_id_f1, project_uuid) is False
+
+    #######
+    # TESTS
+    #######
 
     # 1. owner can add and remove
     await _add_folder_as(gid_owner)
