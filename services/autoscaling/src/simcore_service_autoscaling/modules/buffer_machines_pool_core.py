@@ -27,7 +27,7 @@ from aws_library.ec2.models import (
     Resources,
 )
 from fastapi import FastAPI
-from models_library.utils.json_serialization import json_loads
+from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -296,9 +296,11 @@ async def _handle_pool_image_pulling(
             tuple(instances_to_stop),
             tags={
                 _PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
-                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance_type
-                    ].pre_pull_images
+                    json_dumps(
+                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                            instance_type
+                        ].pre_pull_images
+                    )
                 )
             },
         )

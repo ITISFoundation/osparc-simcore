@@ -2,6 +2,7 @@ import base64
 from typing import Sequence
 
 from models_library.docker import DockerGenericTag
+from models_library.utils.json_serialization import json_dumps
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef, TagTypeDef
@@ -135,7 +136,7 @@ async def assert_ec2_instances(
                 assert "Value" in instance_pre_pulled_images_aws_tag
                 assert (
                     instance_pre_pulled_images_aws_tag["Value"]
-                    == f"{expected_pre_pulled_images}"
+                    == f"{json_dumps(expected_pre_pulled_images)}"
                 )
 
             assert "PrivateDnsName" in instance

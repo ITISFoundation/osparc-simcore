@@ -20,6 +20,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
+from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
@@ -315,7 +316,10 @@ async def create_buffer_machines(
         ]
         if pre_pull_images is not None and instance_state_name == "stopped":
             resource_tags.append(
-                {"Key": _PRE_PULLED_IMAGES_EC2_TAG_KEY, "Value": f"{pre_pull_images}"}
+                {
+                    "Key": _PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    "Value": f"{json_dumps(pre_pull_images)}",
+                }
             )
         with log_context(
             logging.INFO, f"creating {num} buffer machines of {instance_type}"
@@ -432,12 +436,12 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state="running",
+        expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
-            *[],
+            *expected_buffer_params.tag_keys,
         ],
-        expected_pre_pulled_images=None,
+        expected_pre_pulled_images=expected_buffer_params.pre_pulled_images,
         instance_filters=instance_type_filters,
     )
 
