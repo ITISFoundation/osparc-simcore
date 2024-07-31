@@ -12,6 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
@@ -133,7 +134,7 @@ class SchedulerPublicInterface(ABC):
 
     @abstractmethod
     async def retrieve_service_inputs(
-        self, node_uuid: NodeID, port_keys: list[str]
+        self, node_uuid: NodeID, port_keys: list[ServicePortKey]
     ) -> RetrieveDataOutEnveloped:
         """Pulls data from input ports for the service"""
 

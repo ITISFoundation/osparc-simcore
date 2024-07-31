@@ -15,6 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
+from models_library.services_types import ServicePortKey
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.http_client_thin import (
@@ -374,7 +375,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def pull_service_input_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: list[str] | None = None,
+        port_keys: list[ServicePortKey] | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys

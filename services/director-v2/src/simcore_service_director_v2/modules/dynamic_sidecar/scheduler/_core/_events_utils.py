@@ -6,6 +6,7 @@ import logging
 from typing import Any, cast
 
 from fastapi import FastAPI
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -28,7 +29,7 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from tenacity import TryAgain
+from tenacity import RetryError, TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -65,6 +66,7 @@ from ...docker_api import (
 )
 from ...errors import EntrypointContainerNotFoundError
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
+from .._task import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -94,7 +96,7 @@ def are_all_user_services_containers_running(
 
 
 def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = (  # type: ignore
+    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = (
         app.state.dynamic_sidecar_scheduler
     )
     # pylint: disable=protected-access
@@ -191,13 +193,15 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
     # remove the 2 services
-    task_progress.update(message="removing dynamic sidecar stack", percent=0.1)
+    task_progress.update(
+        message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
+    )
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
     )
     # remove network
-    task_progress.update(message="removing network", percent=0.2)
+    task_progress.update(message="removing network", percent=ProgressPercent(0.2))
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
     if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
@@ -208,7 +212,9 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             )
         else:
             # Remove all dy-sidecar associated volumes from node
-            task_progress.update(message="removing volumes", percent=0.3)
+            task_progress.update(
+                message="removing volumes", percent=ProgressPercent(0.3)
+            )
             unique_volume_names = [
                 DynamicSidecarVolumesPathsResolver.source(
                     path=volume_path,
@@ -239,7 +245,9 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         scheduler_data.service_name,
     )
 
-    task_progress.update(message="removing project networks", percent=0.8)
+    task_progress.update(
+        message="removing project networks", percent=ProgressPercent(0.8)
+    )
     used_projects_networks = await get_projects_networks_containers(
         project_id=scheduler_data.project_id
     )
@@ -256,7 +264,9 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
-    task_progress.update(message="finished removing resources", percent=1)
+    task_progress.update(
+        message="finished removing resources", percent=ProgressPercent(1)
+    )
 
 
 async def attempt_pod_removal_and_data_saving(
@@ -399,21 +409,22 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
-
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(
-            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
-        ),
-        wait=wait_fixed(1),
-        retry_error_cls=EntrypointContainerNotFoundError,
-        before_sleep=before_sleep_log(_logger, logging.DEBUG),
-    ):
-        with attempt:
-            if not await get_dynamic_sidecar_service_health(
-                app, scheduler_data, with_retry=False
-            ):
-                raise TryAgain
-            scheduler_data.dynamic_sidecar.is_healthy = True
+    try:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(
+                dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
+            ),
+            wait=wait_fixed(1),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        ):
+            with attempt:
+                if not await get_dynamic_sidecar_service_health(
+                    app, scheduler_data, with_retry=False
+                ):
+                    raise TryAgain
+                scheduler_data.dynamic_sidecar.is_healthy = True
+    except RetryError as e:
+        raise EntrypointContainerNotFoundError from e
 
 
 async def prepare_services_environment(

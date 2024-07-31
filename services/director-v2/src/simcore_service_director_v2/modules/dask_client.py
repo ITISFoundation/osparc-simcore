@@ -16,11 +16,10 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any
+from typing import Any, cast
 
 import dask.typing
 import distributed
-import distributed.scheduler
 from aiohttp import ClientResponseError
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -439,29 +438,30 @@ class DaskClient:
         # try to get the task from the scheduler
         def _get_pipeline_statuses(
             dask_scheduler: distributed.Scheduler,
-        ) -> dict[dask.typing.Key, distributed.scheduler.TaskStateState | None]:
+        ) -> dict[dask.typing.Key, DaskSchedulerTaskState | None]:
             statuses: dict[
-                dask.typing.Key, distributed.scheduler.TaskStateState | None
+                dask.typing.Key, DaskSchedulerTaskState | None
             ] = dask_scheduler.get_task_status(keys=job_ids)
             return statuses
 
         task_statuses: dict[
-            dask.typing.Key, distributed.scheduler.TaskStateState | None
-        ] = await dask_utils.wrap_client_async_routine(
-            self.backend.client.run_on_scheduler(_get_pipeline_statuses)
-        )
+            dask.typing.Key, DaskSchedulerTaskState | None
+        ] = await self.backend.client.run_on_scheduler(_get_pipeline_statuses)
+        assert isinstance(task_statuses, dict)  # nosec
+
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
         running_states: list[DaskClientTaskState] = []
         for job_id in job_ids:
-            dask_status = task_statuses.get(job_id, "lost")
+            dask_status = cast(
+                DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
+            )
             if dask_status == "erred":
                 # find out if this was a cancellation
-                exception = await dask_utils.wrap_client_async_routine(
-                    distributed.Future(job_id).exception(
-                        timeout=_DASK_DEFAULT_TIMEOUT_S
-                    )
+                exception = await distributed.Future(job_id).exception(
+                    timeout=_DASK_DEFAULT_TIMEOUT_S
                 )
+                assert isinstance(exception, Exception)  # nosec
 
                 if isinstance(exception, TaskCancelledError):
                     running_states.append(DaskClientTaskState.ABORTED)
@@ -474,7 +474,10 @@ class DaskClient:
                         "".join(traceback.format_exception(exception)),
                     )
                     running_states.append(DaskClientTaskState.ERRED)
+            elif dask_status is None:
+                running_states.append(DaskClientTaskState.PENDING)
             else:
+                assert dask_status is not None  # nosec
                 running_states.append(
                     _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP.get(
                         dask_status, DaskClientTaskState.LOST
@@ -515,8 +518,9 @@ class DaskClient:
                     self.backend.client.get_dataset(name=job_id)
                 )
             )
-            return await dask_utils.wrap_client_async_routine(
-                task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S)
+            return cast(
+                TaskOutputData,
+                await task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S),
             )
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc

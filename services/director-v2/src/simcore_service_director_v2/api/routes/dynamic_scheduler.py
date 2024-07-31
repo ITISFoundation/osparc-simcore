@@ -103,7 +103,7 @@ async def delete_service_containers(
         task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent, _: TaskId
+            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
@@ -114,7 +114,7 @@ async def delete_service_containers(
     try:
         return start_task(
             tasks_manager,
-            task=_task_remove_service_containers,
+            task=_task_remove_service_containers,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
         )
@@ -162,7 +162,7 @@ async def save_service_state(
         node_uuid: NodeID,
     ) -> None:
         async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent, _: TaskId
+            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
@@ -173,7 +173,7 @@ async def save_service_state(
     try:
         return start_task(
             tasks_manager,
-            task=_task_save_service_state,
+            task=_task_save_service_state,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
         )
@@ -203,7 +203,7 @@ async def push_service_outputs(
         task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent, _: TaskId
+            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
@@ -214,7 +214,7 @@ async def push_service_outputs(
     try:
         return start_task(
             tasks_manager,
-            task=_task_push_service_outputs,
+            task=_task_push_service_outputs,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
         )
@@ -250,7 +250,7 @@ async def delete_service_docker_resources(
     try:
         return start_task(
             tasks_manager,
-            task=_task_cleanup_service_docker_resources,
+            task=_task_cleanup_service_docker_resources,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
         )
