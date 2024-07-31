@@ -82,7 +82,7 @@ def mock_registry_settings_with_auth(
     )
 
 
-async def test_is_registry_reachable(
+async def test__login_registry(
     mock_registry_settings_with_auth: None,
     app: FastAPI,
     docker_registry: str,
