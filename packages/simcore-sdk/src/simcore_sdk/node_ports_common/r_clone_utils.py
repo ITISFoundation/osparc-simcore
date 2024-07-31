@@ -1,6 +1,5 @@
 import datetime
 import logging
-from abc import abstractmethod
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
@@ -8,13 +7,9 @@ from pydantic import BaseModel, ByteSize, Field, parse_raw_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
+from ._common_utils import BaseLogParser
+
 _logger = logging.getLogger(__name__)
-
-
-class BaseLogParser:
-    @abstractmethod
-    async def __call__(self, logs: str) -> None:
-        ...
 
 
 class _RCloneSyncMessageBase(BaseModel):

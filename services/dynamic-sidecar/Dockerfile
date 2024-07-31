@@ -52,7 +52,8 @@ RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+RUN AWS_CLI_VERSION="2.11.11" \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
     && apt-get update && apt-get install -y unzip \
     && unzip awscliv2.zip \
     && ./aws/install \

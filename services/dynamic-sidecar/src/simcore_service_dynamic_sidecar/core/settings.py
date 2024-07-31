@@ -148,10 +148,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
     DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings = Field(
-        ..., description=""  # NOTE: MD TODO
+        ...,
+        description="AWS S3 settings are used for the AWS S3 CLI. If these settings are filled, the AWS S3 CLI is used instead of RClone.",
     )
-    DY_SIDECAR_IS_RCLONE_ENABLED: bool = Field(..., description="")  # NOTE: MD TODO
-
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
     RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
 

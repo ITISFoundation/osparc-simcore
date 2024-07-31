@@ -264,7 +264,6 @@ class Port(BaseServiceIOModel):
                     r_clone_settings=self._node_ports.r_clone_settings,
                     progress_bar=progress_bar,
                     aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
-                    is_rclone_enabled=self._node_ports.is_rclone_enabled,
                 )
 
             elif isinstance(self.value, DownloadLink):
@@ -341,7 +340,6 @@ class Port(BaseServiceIOModel):
                     file_base_path=base_path,
                     progress_bar=progress_bar,
                     aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
-                    is_rclone_enabled=self._node_ports.is_rclone_enabled,
                 )
             else:
                 new_value = converted_value

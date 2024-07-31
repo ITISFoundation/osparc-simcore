@@ -5,7 +5,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
-from .r_clone_utils import BaseLogParser
+from ._common_utils import BaseLogParser
 
 _logger = logging.getLogger(__name__)
 
@@ -21,11 +21,11 @@ def _parse_size(log_string):
 
 class SyncAwsCliS3ProgressLogParser(BaseLogParser):
     """
-    log processor that only yields and progress updates detected in the logs.
+    log processor that onlyyields progress updates detected in the logs.
 
 
     This command:
-    aws --endpoint-url http://172.17.0.1:9001 s3 sync s3://pytestbucket/d3882024-4310-472c-9b78-4e5b1d8f5dc2 . --delete --no-follow-symlinks
+    aws --endpoint-url ENDPOINT_URL s3 sync s3://BUCKET/S3_KEY . --delete --no-follow-symlinks
     generates this log lines:
     Completed 2.9 GiB/4.9 GiB (102.8 MiB/s) with 1 file(s) remaining
     """

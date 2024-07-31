@@ -166,8 +166,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
-            aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=False,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(1.0)  # noqa: SLF001
 
@@ -183,8 +182,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=False,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2.0)  # noqa: SLF001
 
@@ -214,8 +212,7 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
-            aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=False,
+            aws_s3_cli_settings=None,
         )
         # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -235,8 +232,7 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=False,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 

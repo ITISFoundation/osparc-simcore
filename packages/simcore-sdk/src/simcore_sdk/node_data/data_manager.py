@@ -41,8 +41,7 @@ async def _push_directory(
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings,
-    is_rclone_enabled: bool,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
     with log_context(
@@ -59,7 +58,6 @@ async def _push_directory(
             progress_bar=progress_bar,
             exclude_patterns=exclude_patterns,
             aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=is_rclone_enabled,
         )
 
 
@@ -72,8 +70,7 @@ async def _pull_directory(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings,
-    is_rclone_enabled: bool,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
     save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
@@ -91,7 +88,6 @@ async def _pull_directory(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
             aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=is_rclone_enabled,
         )
 
 
@@ -204,8 +200,7 @@ async def push(
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings,
-    is_rclone_enabled: bool,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
@@ -219,7 +214,6 @@ async def push(
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
         aws_s3_cli_settings=aws_s3_cli_settings,
-        is_rclone_enabled=is_rclone_enabled,
     )
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
@@ -249,8 +243,7 @@ async def pull(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings,
-    is_rclone_enabled: bool,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     """restores the state folder"""
 
@@ -290,7 +283,6 @@ async def pull(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
             aws_s3_cli_settings=aws_s3_cli_settings,
-            is_rclone_enabled=is_rclone_enabled,
         )
         return
 

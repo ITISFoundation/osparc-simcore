@@ -276,9 +276,11 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
 
-        if not is_directory:
+        if (
+            not is_directory
+        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone/aws s3 cli).
             # ensure file is deleted first in case it already exists
-            await self.delete_file(  # NOTE: MD check
+            await self.delete_file(
                 user_id=user_id,
                 file_id=file_id,
                 # NOTE: bypassing check since the project access rights don't play well

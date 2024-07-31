@@ -101,9 +101,6 @@ def _get_environment_variables(
     aws_s3_cli_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
     )
-    is_rclone_enabled = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_IS_RCLONE_ENABLED
-    )
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -141,7 +138,6 @@ def _get_environment_variables(
         "DY_SIDECAR_AWS_S3_CLI_SETTINGS": aws_s3_cli_settings.json(
             encoder=create_json_encoder_wo_secrets(AwsS3CliSettings),
         ),
-        "DY_SIDECAR_IS_RCLONE_ENABLED": is_rclone_enabled,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",

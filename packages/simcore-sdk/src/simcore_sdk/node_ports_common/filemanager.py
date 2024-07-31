@@ -115,7 +115,7 @@ async def get_upload_links_from_s3(
         return (store_id, file_links)
 
 
-async def download_path_from_s3(  # noqa: PLR0913
+async def download_path_from_s3(
     *,
     user_id: UserID,
     store_name: LocationName | None,
@@ -127,7 +127,6 @@ async def download_path_from_s3(  # noqa: PLR0913
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
     aws_s3_cli_settings: AwsS3CliSettings | None,
-    is_rclone_enabled: bool = True,
 ) -> Path:
     """Downloads a file from S3
 
@@ -157,14 +156,14 @@ async def download_path_from_s3(  # noqa: PLR0913
 
         if (
             file_meta_data.is_directory
-            and is_rclone_enabled
+            and aws_s3_cli_settings
             and not await r_clone.is_r_clone_available(r_clone_settings)
         ):
             msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
             raise exceptions.NodeportsException(msg)
         if (
             file_meta_data.is_directory
-            and not is_rclone_enabled
+            and not aws_s3_cli_settings
             and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
         ):
             msg = f"Requested to download directory {s3_object}, but no aws cli support was detected"
@@ -188,17 +187,16 @@ async def download_path_from_s3(  # noqa: PLR0913
 
         if file_meta_data.is_directory:
             assert r_clone_settings  # nosec
-            assert aws_s3_cli_settings  # nosec
-            if is_rclone_enabled:
-                await r_clone.sync_s3_to_local(
-                    r_clone_settings,
+            if aws_s3_cli_settings:
+                await aws_s3_cli.sync_s3_to_local(
+                    aws_s3_cli_settings,
                     progress_bar,
                     local_directory_path=local_path,
                     download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
                 )
             else:
-                await aws_s3_cli.sync_s3_to_local(
-                    aws_s3_cli_settings,
+                await r_clone.sync_s3_to_local(
+                    r_clone_settings,
                     progress_bar,
                     local_directory_path=local_path,
                     download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
@@ -303,7 +301,6 @@ async def upload_path(  # noqa: PLR0913
     progress_bar: ProgressBarData | None = None,
     exclude_patterns: set[str] | None = None,
     aws_s3_cli_settings: AwsS3CliSettings | None = None,
-    is_rclone_enabled: bool = True,
 ) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -337,7 +334,6 @@ async def upload_path(  # noqa: PLR0913
                 progress_bar=progress_bar,
                 exclude_patterns=exclude_patterns,
                 aws_s3_cli_settings=aws_s3_cli_settings,
-                is_rclone_enabled=is_rclone_enabled,
             )
     return result
 
@@ -355,7 +351,6 @@ async def _upload_path(  # noqa: PLR0913
     progress_bar: ProgressBarData | None,
     exclude_patterns: set[str] | None,
     aws_s3_cli_settings: AwsS3CliSettings | None,
-    is_rclone_enabled: bool = True,
 ) -> UploadedFile | UploadedFolder:
     _logger.debug(
         "Uploading %s to %s:%s@%s",
@@ -371,14 +366,14 @@ async def _upload_path(  # noqa: PLR0913
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if (
         is_directory
-        and is_rclone_enabled
+        and aws_s3_cli_settings
         and not await r_clone.is_r_clone_available(r_clone_settings)
     ):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
         raise exceptions.NodeportsException(msg)
     if (
         is_directory
-        and not is_rclone_enabled
+        and not aws_s3_cli_settings
         and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
     ):
         msg = f"Requested to upload directory {path_to_upload}, but no aws cli support was detected"
@@ -419,7 +414,6 @@ async def _upload_path(  # noqa: PLR0913
                 session=session,
                 exclude_patterns=exclude_patterns,
                 aws_s3_cli_settings=aws_s3_cli_settings,
-                is_rclone_enabled=is_rclone_enabled,
             )
         except (
             r_clone.RCloneFailedError,
@@ -454,25 +448,23 @@ async def _upload_to_s3(
     session: ClientSession,
     exclude_patterns: set[str] | None,
     aws_s3_cli_settings: AwsS3CliSettings | None,
-    is_rclone_enabled: bool = True,
 ) -> tuple[ETag | None, FileUploadSchema]:
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert r_clone_settings  # nosec
-        assert aws_s3_cli_settings  # nosec
         assert isinstance(path_to_upload, Path)  # nosec
         assert len(upload_links.urls) > 0  # nosec
-        if is_rclone_enabled:
-            await r_clone.sync_local_to_s3(
-                r_clone_settings,
+        if aws_s3_cli_settings:
+            await aws_s3_cli.sync_local_to_s3(
+                aws_s3_cli_settings,
                 progress_bar,
                 local_directory_path=path_to_upload,
                 upload_s3_link=upload_links.urls[0],
                 exclude_patterns=exclude_patterns,
             )
         else:
-            await aws_s3_cli.sync_local_to_s3(
-                aws_s3_cli_settings,
+            await r_clone.sync_local_to_s3(
+                r_clone_settings,
                 progress_bar,
                 local_directory_path=path_to_upload,
                 upload_s3_link=upload_links.urls[0],

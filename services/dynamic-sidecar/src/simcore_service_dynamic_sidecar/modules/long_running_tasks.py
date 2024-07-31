@@ -337,7 +337,6 @@ async def _restore_state_folder(
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
-        is_rclone_enabled=settings.DY_SIDECAR_IS_RCLONE_ENABLED,
     )
 
 
@@ -410,7 +409,6 @@ async def _save_state_folder(
         ),
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
-        is_rclone_enabled=settings.DY_SIDECAR_IS_RCLONE_ENABLED,
     )
 
 

@@ -190,7 +190,6 @@ async def pull_file_from_store(
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData | None,
     aws_s3_cli_settings: AwsS3CliSettings | None,
-    is_rclone_enabled: bool,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -206,7 +205,6 @@ async def pull_file_from_store(
         progress_bar=progress_bar
         or ProgressBarData(num_steps=1, description="pulling file"),
         aws_s3_cli_settings=aws_s3_cli_settings,
-        is_rclone_enabled=is_rclone_enabled,
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -255,7 +253,6 @@ async def push_file_to_store(
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
         aws_s3_cli_settings=aws_s3_cli_settings,
-        is_rclone_enabled=is_rclone_enabled,
     )
     assert isinstance(upload_result, UploadedFile)  # nosec
     log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
