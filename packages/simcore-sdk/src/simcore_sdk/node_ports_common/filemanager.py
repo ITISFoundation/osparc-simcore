@@ -186,7 +186,6 @@ async def download_path_from_s3(
             raise exceptions.S3InvalidPathError(s3_object)
 
         if file_meta_data.is_directory:
-            assert r_clone_settings  # nosec
             if aws_s3_cli_settings:
                 await aws_s3_cli.sync_s3_to_local(
                     aws_s3_cli_settings,
@@ -195,6 +194,7 @@ async def download_path_from_s3(
                     download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
                 )
             else:
+                assert r_clone_settings  # nosec
                 await r_clone.sync_s3_to_local(
                     r_clone_settings,
                     progress_bar,
