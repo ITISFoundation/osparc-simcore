@@ -66,6 +66,7 @@ def mock_environment(
 @pytest.fixture
 async def app(
     mock_environment: EnvVarsDict,
+    mock_registry_service: AsyncMock,
     mock_storage_check: None,
     mock_postgres_check: None,
     mocker: MockerFixture,

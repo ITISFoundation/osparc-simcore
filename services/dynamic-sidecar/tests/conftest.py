@@ -7,7 +7,7 @@
 import json
 import logging
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import AsyncIterable, Iterable, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -291,6 +291,14 @@ def caplog_info_debug(
 
 
 @pytest.fixture
+def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.core.registry._login_registry",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
     """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
     return {
@@ -329,7 +337,7 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
 
 
 @pytest.fixture
-def cleanup_reserved_disk_space() -> Iterable[None]:
+def cleanup_reserved_disk_space() -> AsyncIterable[None]:
     remove_reserved_disk_space()
     yield
     remove_reserved_disk_space()
