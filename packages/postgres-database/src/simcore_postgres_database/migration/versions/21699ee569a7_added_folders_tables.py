@@ -1,15 +1,13 @@
-"""add product name to folders
-
-Revision ID: 964ce031e43f
+"""added folders tables
+Revision ID: 21699ee569a7
 Revises: 056ed0eb1ba6
-Create Date: 2024-07-31 06:56:09.467707+00:00
-
+Create Date: 2024-07-30 13:38:57.694754+00:00
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "964ce031e43f"
+revision = "21699ee569a7"
 down_revision = "056ed0eb1ba6"
 branch_labels = None
 depends_on = None
