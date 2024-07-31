@@ -26,6 +26,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
 
+_ProductName: TypeAlias = str
 _ProjectID: TypeAlias = uuid.UUID
 _GroupID: TypeAlias = PositiveInt
 _FolderID: TypeAlias = PositiveInt
@@ -68,7 +69,9 @@ class FolderAccessError(FoldersError):
 
 
 class FolderNotFoundError(FolderAccessError):
-    msg_template = "no entry for folder_id={folder_id} found"
+    msg_template = (
+        "no entry found for folder_id={folder_id} and product_name={product_name}"
+    )
 
 
 class FolderNotSharedWithGidError(FolderAccessError):
@@ -400,6 +403,7 @@ async def _get_resolved_access_rights(
 
 async def _check_folder_and_access(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -413,10 +417,12 @@ async def _check_folder_and_access(
         InsufficientPermissionsError
     """
     folder_entry: int | None = await connection.scalar(
-        sa.select([folders.c.id]).where(folders.c.id == folder_id)
+        sa.select([folders.c.id])
+        .where(folders.c.id == folder_id)
+        .where(folders.c.product_name == product_name)
     )
     if not folder_entry:
-        raise FolderNotFoundError(folder_id=folder_id)
+        raise FolderNotFoundError(folder_id=folder_id, product_name=product_name)
 
     # check if folder was shared
     resolved_access_rights_without_permissions = await _get_resolved_access_rights(
@@ -454,6 +460,7 @@ async def _check_folder_and_access(
 
 async def folder_create(
     connection: SAConnection,
+    product_name: _ProductName,
     name: str,
     gid: _GroupID,
     *,
@@ -484,7 +491,7 @@ async def folder_create(
                 )
             )
             .where(folders.c.name == name)
-            # .where(folders_access_rights.c.gid == gid)
+            .where(folders.c.product_name == product_name)
             .where(folders_access_rights.c.original_parent_id == parent)
         )
         if entry_exists:
@@ -494,6 +501,7 @@ async def folder_create(
             # check if parent has permissions
             await _check_folder_and_access(
                 connection,
+                product_name,
                 folder_id=parent,
                 gid=gid,
                 permissions=required_permissions,
@@ -504,7 +512,12 @@ async def folder_create(
         try:
             folder_id = await connection.scalar(
                 sa.insert(folders)
-                .values(name=name, description=description, created_by=gid)
+                .values(
+                    name=name,
+                    description=description,
+                    created_by=gid,
+                    product_name=product_name,
+                )
                 .returning(folders.c.id)
             )
 
@@ -528,6 +541,7 @@ async def folder_create(
 
 async def folder_share_or_update_permissions(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     sharing_gid: _GroupID,
     *,
@@ -547,6 +561,7 @@ async def folder_share_or_update_permissions(
     async with connection.begin():
         await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=folder_id,
             gid=sharing_gid,
             permissions=required_permissions,
@@ -577,6 +592,7 @@ async def folder_share_or_update_permissions(
 
 async def folder_update(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -595,6 +611,7 @@ async def folder_update(
     async with connection.begin():
         await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
@@ -619,6 +636,7 @@ async def folder_update(
 
 async def folder_delete(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -637,6 +655,7 @@ async def folder_delete(
     async with connection.begin():
         await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
@@ -656,7 +675,7 @@ async def folder_delete(
 
     # first remove all childeren
     for child_folder_id in childern_folder_ids:
-        await folder_delete(connection, child_folder_id, gid)
+        await folder_delete(connection, product_name, child_folder_id, gid)
 
     # as a last step remove the folder per se
     async with connection.begin():
@@ -665,6 +684,7 @@ async def folder_delete(
 
 async def folder_move(
     connection: SAConnection,
+    product_name: _ProductName,
     source_folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -686,6 +706,7 @@ async def folder_move(
     async with connection.begin():
         source_access_entry = await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=source_folder_id,
             gid=gid,
             permissions=required_permissions_source,
@@ -703,6 +724,7 @@ async def folder_move(
         if destination_folder_id:
             await _check_folder_and_access(
                 connection,
+                product_name,
                 folder_id=destination_folder_id,
                 gid=gid,
                 permissions=required_permissions_destination,
@@ -724,6 +746,7 @@ async def folder_move(
 
 async def folder_add_project(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -742,6 +765,7 @@ async def folder_add_project(
     async with connection.begin():
         await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
@@ -771,6 +795,7 @@ async def folder_add_project(
 
 async def folder_remove_project(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
@@ -788,6 +813,7 @@ async def folder_remove_project(
     async with connection.begin():
         await _check_folder_and_access(
             connection,
+            product_name,
             folder_id=folder_id,
             gid=gid,
             permissions=required_permissions,
@@ -803,6 +829,7 @@ async def folder_remove_project(
 
 async def folder_list(
     connection: SAConnection,
+    product_name: _ProductName,
     folder_id: _FolderID | None,
     gid: _GroupID,
     *,
@@ -828,6 +855,7 @@ async def folder_list(
             # this one provides the set of access rights
             resolved_access_rights = await _check_folder_and_access(
                 connection,
+                product_name,
                 folder_id=folder_id,
                 gid=gid,
                 permissions=required_permissions,
