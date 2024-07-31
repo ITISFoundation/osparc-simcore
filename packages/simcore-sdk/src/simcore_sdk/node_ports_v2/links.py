@@ -8,7 +8,7 @@ from pydantic import AnyUrl, Extra, Field, StrictBool, StrictFloat, StrictInt, S
 
 
 class PortLink(BasePortLink):
-    node_uuid: str = Field(..., regex=UUID_RE, alias="nodeUuid")
+    node_uuid: str = Field(..., regex=UUID_RE, alias="nodeUuid")  # type: ignore[assignment] # This overrides the base class it is ugly but needs its own PR to fix it
 
 
 class FileLink(BaseFileLink):
