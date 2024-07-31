@@ -2,7 +2,7 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, Optional, cast, get_args
+from typing import Any, Final, NoReturn, Optional, ParamSpec, TypeVar, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -630,6 +630,10 @@ def check_if_cluster_is_able_to_run_pipeline(
         f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
         "TIP: Reduce service required resources or contact oSparc support",
     )
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 async def wrap_client_async_routine(
