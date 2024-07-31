@@ -272,8 +272,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      AWS_S3_CLI_PROVIDER: ${AWS_S3_CLI_PROVIDER}
-
+      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
 

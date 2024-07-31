@@ -355,9 +355,7 @@ async def aws_s3_cli_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
 ) -> Awaitable[AwsS3CliSettings]:
     async def _factory() -> AwsS3CliSettings:
-        settings = AwsS3CliSettings(
-            AWS_S3_CLI_S3=minio_s3_settings, AWS_S3_CLI_PROVIDER=S3Provider.MINIO
-        )
+        settings = AwsS3CliSettings(AWS_S3_CLI_S3=minio_s3_settings)
         if not await is_aws_s3_cli_available(settings):
             pytest.skip("aws cli not installed")
 
