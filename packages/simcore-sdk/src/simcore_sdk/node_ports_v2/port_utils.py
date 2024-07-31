@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
-from models_library.basic_types import SHA256Str
+from models_library.basic_types import IDStr, SHA256Str
 from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
@@ -202,7 +202,7 @@ async def pull_file_from_store(
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        or ProgressBarData(num_steps=1, description=IDStr("pulling file")),
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -276,7 +276,7 @@ async def pull_file_from_download_link(
         local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        or ProgressBarData(num_steps=1, description=IDStr("pulling file")),
     )
 
     # if a file alias is present use it to rename the file accordingly
