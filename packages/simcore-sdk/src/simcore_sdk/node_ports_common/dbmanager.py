@@ -54,7 +54,7 @@ async def _get_node_from_db(
 
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
 async def _ensure_postgres_ready(dsn: DataSourceName) -> Engine:
-    engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
+    engine: aiopg.sa.Engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
     try:
         await raise_if_migration_not_ready(engine)
     except Exception:
@@ -80,7 +80,7 @@ class DBContextManager:
             port=settings.POSTGRES_SETTINGS.POSTGRES_PORT,
         )
 
-        engine = await _ensure_postgres_ready(dsn)
+        engine: aiopg.sa.Engine = await _ensure_postgres_ready(dsn)
         return engine
 
     async def __aenter__(self):

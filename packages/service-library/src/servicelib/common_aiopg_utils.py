@@ -3,6 +3,7 @@
     This module was necessary because simcore-sdk (an aiohttp-independent package) still needs some
     of the helpers here.
 """
+
 import logging
 from dataclasses import asdict, dataclass
 
