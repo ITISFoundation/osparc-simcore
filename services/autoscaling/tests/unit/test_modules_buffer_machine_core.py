@@ -591,6 +591,9 @@ def ec2_instances_allowed_types(
         )
     )
     assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
         len(allowed_ec2_types_with_buffer_defined) == 1
     ), "more than one type with buffer is disallowed in this test!"
     return {
