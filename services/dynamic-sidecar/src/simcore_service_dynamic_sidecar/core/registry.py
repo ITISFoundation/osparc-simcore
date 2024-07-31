@@ -18,16 +18,15 @@ class _RegistryNotReachableError(Exception):
     pass
 
 
-def _get_registry_url(registry_settings: RegistrySettings) -> str:
-    protocol = "https" if registry_settings.REGISTRY_SSL else "http"
-    return f"{protocol}://{registry_settings.resolved_registry_url}/"
+def _get_login_url(registry_settings: RegistrySettings) -> str:
+    return registry_settings.resolved_registry_url
 
 
 async def _login_registry(registry_settings: RegistrySettings) -> None:
     command_result: CommandResult = await async_command(
         (
             f"echo '{registry_settings.REGISTRY_PW.get_secret_value()}' | "
-            f"docker login {registry_settings.api_url} "
+            f"docker login {_get_login_url(registry_settings)} "
             f"--username '{registry_settings.REGISTRY_USER}' "
             "--password-stdin"
         ),
@@ -48,7 +47,7 @@ async def wait_for_registries_liveness(app: FastAPI) -> None:
     await wait_for_service_liveness(
         _login_registry,
         service_name="Internal Registry",
-        endpoint=_get_registry_url(settings.DY_DEPLOYMENT_REGISTRY_SETTINGS),
+        endpoint=_get_login_url(settings.DY_DEPLOYMENT_REGISTRY_SETTINGS),
         registry_settings=settings.DY_DEPLOYMENT_REGISTRY_SETTINGS,
     )
 
@@ -56,6 +55,6 @@ async def wait_for_registries_liveness(app: FastAPI) -> None:
         await wait_for_service_liveness(
             _login_registry,
             service_name="DockerHub Registry",
-            endpoint=_get_registry_url(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS),
+            endpoint=_get_login_url(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS),
             registry_settings=settings.DY_DOCKER_HUB_REGISTRY_SETTINGS,
         )
