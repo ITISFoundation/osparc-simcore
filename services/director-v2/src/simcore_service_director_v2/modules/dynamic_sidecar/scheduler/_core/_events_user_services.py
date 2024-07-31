@@ -32,7 +32,9 @@ from ._events_utils import get_director_v0_client
 _logger = logging.getLogger(__name__)
 
 
-async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
+async def create_user_services(  # pylint: disable=too-many-statements
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
     _logger.debug(
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
