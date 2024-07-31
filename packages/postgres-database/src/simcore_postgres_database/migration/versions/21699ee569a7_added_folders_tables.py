@@ -21,7 +21,6 @@ def upgrade():
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), server_default="", nullable=False),
-        sa.Column("product_name", sa.String(), nullable=False),
         sa.Column("created_by", sa.BigInteger(), nullable=True),
         sa.Column(
             "created",
@@ -40,13 +39,6 @@ def upgrade():
             ["groups.gid"],
             name="fk_folders_to_groups_gid",
             ondelete="SET NULL",
-        ),
-        sa.ForeignKeyConstraint(
-            ["product_name"],
-            ["products.name"],
-            name="fk_folders_to_products_name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
