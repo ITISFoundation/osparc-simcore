@@ -1,8 +1,10 @@
 from collections.abc import Iterable
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
 from models_library.users import UserID
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import users
 
@@ -11,6 +13,14 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.rabbit_service",
 ]
+
+
+@pytest.fixture
+def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.core.registry._login_registry",
+        autospec=True,
+    )
 
 
 @pytest.fixture

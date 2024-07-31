@@ -117,6 +117,7 @@ def mock_environment(
 @pytest.fixture
 def app(
     mock_environment: EnvVarsDict,
+    mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
     """creates app with registry and rabbitMQ services mocked"""
