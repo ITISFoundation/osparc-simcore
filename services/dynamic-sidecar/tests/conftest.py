@@ -7,7 +7,7 @@
 import json
 import logging
 import sys
-from collections.abc import AsyncIterable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -329,7 +329,7 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
 
 
 @pytest.fixture
-def cleanup_reserved_disk_space() -> AsyncIterable[None]:
+def cleanup_reserved_disk_space() -> Iterable[None]:
     remove_reserved_disk_space()
     yield
     remove_reserved_disk_space()
