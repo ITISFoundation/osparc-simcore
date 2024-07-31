@@ -24,10 +24,10 @@ from aws_library.ec2.models import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
-    EC2Tags,
     Resources,
 )
 from fastapi import FastAPI
+from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -35,16 +35,11 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
+from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
 
-_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "io.simcore.autoscaling.buffer_machine"
-)
-_BUFFER_MACHINE_EC2_TAGS: EC2Tags = {
-    _BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "true")
-}
 _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "pulling"
 )
@@ -52,16 +47,12 @@ _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "ssm-command-id"
 )
 _PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
+_PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "io.simcore.autoscaling.pre_pulled_images"
+)
+
 
 _logger = logging.getLogger(__name__)
-
-
-def _get_buffer_ec2_tags(app: FastAPI, auto_scaling_mode: BaseAutoscaling) -> EC2Tags:
-    base_ec2_tags = auto_scaling_mode.get_ec2_tags(app) | _BUFFER_MACHINE_EC2_TAGS
-    base_ec2_tags[AWSTagKey("Name")] = AWSTagValue(
-        f"{base_ec2_tags[AWSTagKey('Name')]}-buffer"
-    )
-    return base_ec2_tags
 
 
 async def _analyse_current_state(
@@ -73,7 +64,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
 
@@ -152,6 +143,41 @@ async def _terminate_unneeded_pools(
     return buffers_manager
 
 
+async def _terminate_instances_with_invalid_pre_pulled_images(
+    app: FastAPI, buffers_manager: BufferPoolManager
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    terminateable_instances = set()
+    for (
+        ec2_type,
+        ec2_boot_config,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
+        instance_type = cast(InstanceTypeType, ec2_type)
+        all_pre_pulled_instances = buffers_manager.buffer_pools[
+            instance_type
+        ].pre_pulled_instances()
+
+        for instance in all_pre_pulled_instances:
+            if (
+                pre_pulled_images := json_loads(
+                    instance.tags.get(_PRE_PULLED_IMAGES_EC2_TAG_KEY, "[]")
+                )
+            ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
+                _logger.info(
+                    "%s",
+                    f"{instance.id=} has invalid {pre_pulled_images=}, expected is {ec2_boot_config.pre_pull_images=}",
+                )
+                terminateable_instances.add(instance)
+
+    if terminateable_instances:
+        await ec2_client.terminate_instances(terminateable_instances)
+        for instance in terminateable_instances:
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    return buffers_manager
+
+
 async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: BufferPoolManager,
@@ -162,6 +188,7 @@ async def _add_remove_buffer_instances(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
+    # let's find what is missing and what is not needed
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
     for (
@@ -179,6 +206,7 @@ async def _add_remove_buffer_instances(
                 list(all_pool_instances)[ec2_boot_config.buffer_count :]
             )
             unneeded_instances = unneeded_instances.union(terminateable_instances)
+
     for ec2_type, num_to_start in missing_instances.items():
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
@@ -189,7 +217,7 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=_get_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
@@ -218,7 +246,7 @@ _DOCKER_PULL_COMMAND: Final[
 
 
 async def _handle_pool_image_pulling(
-    app: FastAPI, pool: BufferPool
+    app: FastAPI, instance_type: InstanceTypeType, pool: BufferPool
 ) -> tuple[InstancesToStop, InstancesToTerminate]:
     ec2_client = get_ec2_client(app)
     ssm_client = get_ssm_client(app)
@@ -261,44 +289,35 @@ async def _handle_pool_image_pulling(
                         f"{ssm_command.status}: {ssm_command.message}",
                     )
                     broken_instances_to_terminate.add(instance)
+    if instances_to_stop:
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+        await ec2_client.set_instances_tags(
+            tuple(instances_to_stop),
+            tags={
+                _PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
+                    json_dumps(
+                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                            instance_type
+                        ].pre_pull_images
+                    )
+                )
+            },
+        )
     return instances_to_stop, broken_instances_to_terminate
 
 
-async def monitor_buffer_machines(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+async def _handle_image_pre_pulling(
+    app: FastAPI, buffers_manager: BufferPoolManager
 ) -> None:
-    """Buffer machine creation works like so:
-    1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
-    2. once running, a AWS SSM task is started to pull the necessary images in a controlled way
-    3. once the task is completed, the EC2 is stopped and is made available as a buffer EC2
-    4. once needed the buffer machine is started, and as it is up a SSM task is sent to connect to the swarm,
-    5. the usual then happens
-    """
     ec2_client = get_ec2_client(app)
-    app_settings = get_application_settings(app)
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-
-    # 1. Analyze the current state by type
-    buffers_manager = await _analyse_current_state(
-        app, auto_scaling_mode=auto_scaling_mode
-    )
-    # 2. Terminate unneded warm pools (e.g. if the user changed the allowed instance types)
-    buffers_manager = await _terminate_unneeded_pools(app, buffers_manager)
-
-    # 3 add/remove buffer instances if needed based on needed buffer counts
-    buffers_manager = await _add_remove_buffer_instances(
-        app, buffers_manager, auto_scaling_mode=auto_scaling_mode
-    )
-
-    # 4. pull docker images if needed
     instances_to_stop: set[EC2InstanceData] = set()
     broken_instances_to_terminate: set[EC2InstanceData] = set()
-    for pool in buffers_manager.buffer_pools.values():
+    for instance_type, pool in buffers_manager.buffer_pools.items():
         (
             pool_instances_to_stop,
             pool_instances_to_terminate,
-        ) = await _handle_pool_image_pulling(app, pool)
+        ) = await _handle_pool_image_pulling(app, instance_type, pool)
         instances_to_stop.update(pool_instances_to_stop)
         broken_instances_to_terminate.update(pool_instances_to_terminate)
     # 5. now stop and terminate if necessary
@@ -322,3 +341,38 @@ async def monitor_buffer_machines(
             _logger, logging.WARNING, "broken buffer instances, terminating them"
         ):
             await ec2_client.terminate_instances(broken_instances_to_terminate)
+
+
+async def monitor_buffer_machines(
+    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+) -> None:
+    """Buffer machine creation works like so:
+    1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
+    2. once running, a AWS SSM task is started to pull the necessary images in a controlled way
+    3. once the task is completed, the EC2 is stopped and is made available as a buffer EC2
+    4. once needed the buffer machine is started, and as it is up a SSM task is sent to connect to the swarm,
+    5. the usual then happens
+    """
+
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    # 1. Analyze the current state by type
+    buffers_manager = await _analyse_current_state(
+        app, auto_scaling_mode=auto_scaling_mode
+    )
+    # 2. Terminate unneeded warm pools (e.g. if the user changed the allowed instance types)
+    buffers_manager = await _terminate_unneeded_pools(app, buffers_manager)
+
+    buffers_manager = await _terminate_instances_with_invalid_pre_pulled_images(
+        app, buffers_manager
+    )
+
+    # 3. add/remove buffer instances base on ec2 boot specific data
+    buffers_manager = await _add_remove_buffer_instances(
+        app, buffers_manager, auto_scaling_mode=auto_scaling_mode
+    )
+
+    # 4. pull docker images if needed
+    await _handle_image_pre_pulling(app, buffers_manager)

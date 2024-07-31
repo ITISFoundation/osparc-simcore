@@ -52,7 +52,7 @@ class NonAssociatedInstance(_BaseInstance):
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class Cluster:
+class Cluster:  # pylint: disable=too-many-instance-attributes
     active_nodes: list[AssociatedInstance] = field(
         metadata={
             "description": "This is a EC2-backed docker node which is active and ready to receive tasks (or with running tasks)"
@@ -81,6 +81,11 @@ class Cluster:
     broken_ec2s: list[NonAssociatedInstance] = field(
         metadata={
             "description": "This is an existing EC2 instance that never properly joined the cluster and is deemed as broken and will be terminated"
+        }
+    )
+    buffer_ec2s: list[NonAssociatedInstance] = field(
+        metadata={
+            "description": "This is a prepared stopped EC2 instance, not yet associated to a docker node, ready to be used"
         }
     )
     disconnected_nodes: list[Node] = field(
@@ -126,8 +131,9 @@ class Cluster:
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
             f"reserve-drained-nodes: count={len(self.reserve_drained_nodes)} {_get_instance_ids(self.reserve_drained_nodes)}, "
-            f"pending-ec2-instances: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
-            f"broken-ec2-instances: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
+            f"pending-ec2s: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
+            f"broken-ec2s: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
+            f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
         )
@@ -176,6 +182,10 @@ class BufferPool:
             yield from reversed(order)
         else:
             yield from order
+
+    def pre_pulled_instances(self) -> set[EC2InstanceData]:
+        """returns all the instances that completed image pre pulling"""
+        return self.ready_instances.union(self.stopping_instances)
 
     def all_instances(self) -> set[EC2InstanceData]:
         """sorted by importance: READY (stopped) > STOPPING >"""
