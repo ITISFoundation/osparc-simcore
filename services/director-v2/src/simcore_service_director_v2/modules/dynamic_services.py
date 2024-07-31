@@ -2,11 +2,12 @@
 
 
 """
+
 import logging
 from dataclasses import dataclass
 
 import httpx
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 
 from ..core.dynamic_services_settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def setup(app: FastAPI, settings: DynamicServicesSettings):
     if not settings:
-        settings = DynamicServicesSettings()
+        settings = DynamicServicesSettings()  # type: ignore[call-arg] # the setting will autofill itself on construction due to pydantic
 
     def on_startup() -> None:
         ServicesClient.create(
@@ -51,5 +52,5 @@ class ServicesClient:
 
     @handle_errors("DynamicService", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> Response:
+    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)

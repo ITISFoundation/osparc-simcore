@@ -162,7 +162,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             return container_name
         except UnexpectedStatusError as e:
             if (
-                e.response.status_code  # pylint: disable=no-member # type: ignore
+                e.response.status_code  # type: ignore[attr-defined] # pylint: disable=no-member # type: ignore
                 == status.HTTP_404_NOT_FOUND
             ):
                 raise EntrypointContainerNotFoundError from e

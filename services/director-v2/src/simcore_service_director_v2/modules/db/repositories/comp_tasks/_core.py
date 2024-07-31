@@ -239,7 +239,10 @@ class CompTasksRepository(BaseRepository):
             optional_started -- _description_ (default: {None})
             optional_stopped -- _description_ (default: {None})
         """
-        update_values = {"state": RUNNING_STATE_TO_DB[state], "errors": errors}
+        update_values: dict[str, Any] = {
+            "state": RUNNING_STATE_TO_DB[state],
+            "errors": errors,
+        }
         if optional_progress is not None:
             update_values["progress"] = optional_progress
         if optional_started is not None:

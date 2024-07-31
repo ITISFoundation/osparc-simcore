@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
+)
+from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.basic_types import PortInt

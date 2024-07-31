@@ -20,7 +20,6 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
 from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.node_ports import StorageAuthSettings
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -62,9 +61,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     password: str = "null"
     secure: str = "0"
 
-    storage_auth_settings: StorageAuthSettings = (
-        app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-    )
+    storage_auth_settings = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
 
     if storage_auth_settings and storage_auth_settings.auth_required:
         host = storage_auth_settings.STORAGE_HOST
@@ -437,18 +434,18 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    standard_simcore_docker_labels: dict[
-        DockerLabelKey, str
-    ] = StandardSimcoreDockerLabels(
-        user_id=scheduler_data.user_id,
-        project_id=scheduler_data.project_id,
-        node_id=scheduler_data.node_uuid,
-        product_name=scheduler_data.product_name,
-        simcore_user_agent=scheduler_data.request_simcore_user_agent,
-        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        memory_limit=ByteSize(0),  # this should get overwritten
-        cpu_limit=0,  # this should get overwritten
-    ).to_simcore_runtime_docker_labels()
+    standard_simcore_docker_labels: dict[DockerLabelKey, str] = (
+        StandardSimcoreDockerLabels(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+            memory_limit=ByteSize(0),  # this should get overwritten
+            cpu_limit=0,  # this should get overwritten
+        ).to_simcore_runtime_docker_labels()
+    )
 
     service_labels: dict[str, str] = (
         {
@@ -481,9 +478,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[
-        str, DockerPlacementConstraint
-    ] = (
+    placement_substitutions: dict[str, DockerPlacementConstraint] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
