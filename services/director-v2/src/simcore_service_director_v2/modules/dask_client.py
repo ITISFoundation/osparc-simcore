@@ -220,8 +220,8 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import (
-                run_computational_sidecar,  # type: ignore[import-not-found]
+            from simcore_service_dask_sidecar.tasks import (  # type: ignore[import-not-found]
+                run_computational_sidecar,
             )
 
             return run_computational_sidecar(

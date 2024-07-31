@@ -4,7 +4,7 @@ from fastapi import Depends, Request
 from models_library.api_schemas_directorv2.dynamic_services import (
     RunningDynamicServiceDetails,
 )
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from servicelib.logging_utils import log_decorator
 from starlette.datastructures import URL
 

@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypedDict
+from typing import Any, Final, TypeAlias, TypedDict
 
 from fastapi.applications import FastAPI
 from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
@@ -36,8 +36,8 @@ from ..osparc_variables.substitutions import (
 )
 from .docker_compose_egress_config import add_egress_configuration
 
-EnvKeyEqValueList = list[str]
-EnvVarsMap = dict[str, str | None]
+EnvKeyEqValueList: TypeAlias = list[str]
+EnvVarsMap: TypeAlias = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 
@@ -94,7 +94,10 @@ class _EnvironmentSection:
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [  # noqa: RUF005
+                    None
+                ]
+                assert key is not None  # nosec
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -281,9 +284,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: (
-        RegistrySettings
-    ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    docker_registry_settings: RegistrySettings = (
+        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    )
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION

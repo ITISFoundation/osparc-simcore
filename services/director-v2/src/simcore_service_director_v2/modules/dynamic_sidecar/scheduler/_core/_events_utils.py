@@ -8,8 +8,7 @@ from typing import Any, cast
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
@@ -95,7 +94,7 @@ def are_all_user_services_containers_running(
 
 
 def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
-    dynamic_sidecars_scheduler: "DynamicSidecarsScheduler" = (  # type: ignore
+    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = (  # type: ignore
         app.state.dynamic_sidecar_scheduler
     )
     # pylint: disable=protected-access
@@ -496,4 +495,4 @@ async def get_allow_metrics_collection(
     allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.parse_obj(
         preference
     )
-    return cast(bool, allow_metrics_collection.value)
+    return allow_metrics_collection.value

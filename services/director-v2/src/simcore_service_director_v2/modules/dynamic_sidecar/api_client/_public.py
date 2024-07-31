@@ -46,7 +46,7 @@ _STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
 
 async def _debug_progress_callback(
-    message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
 ) -> None:
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
