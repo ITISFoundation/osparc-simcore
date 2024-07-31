@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
@@ -23,7 +24,7 @@ def __create_s3_object_key(
     project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
+    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")  # type: ignore[arg-type]
 
 
 def __get_s3_name(path: Path, *, is_archive: bool) -> str:
@@ -97,7 +98,7 @@ async def _pull_legacy_archive(
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
     async with progress_bar.sub_progress(
-        steps=2, description=f"pulling {destination_path.name}"
+        steps=2, description=IDStr(f"pulling {destination_path.name}")
     ) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
