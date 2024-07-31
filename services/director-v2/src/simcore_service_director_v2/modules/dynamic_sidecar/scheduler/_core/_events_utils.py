@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
@@ -66,7 +66,11 @@ from ...docker_api import (
 )
 from ...errors import EntrypointContainerNotFoundError
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
-from .._task import DynamicSidecarsScheduler
+
+if TYPE_CHECKING:
+    # NOTE: TYPE_CHECKING is True when static type checkers are running,
+    # allowing for circular imports only for them (mypy, pylance, ruff)
+    from .._task import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -192,7 +196,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     if set_were_state_and_outputs_saved is not None:
         scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
-    # remove the 2 services
     task_progress.update(
         message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
     )
