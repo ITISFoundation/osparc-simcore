@@ -130,7 +130,7 @@ def test_role_permissions(
     ],
 )
 def test__requires_permissions(
-    permissions: list[_FolderPermissions] | None, expected: dict[str, bool]
+    permissions: list[_FolderPermissions], expected: dict[str, bool]
 ):
     assert _requires(*permissions) == expected
 
