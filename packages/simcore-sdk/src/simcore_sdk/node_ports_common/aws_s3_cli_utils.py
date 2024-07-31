@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _parse_size(log_string):
-    match = re.search(r"(\d+\.\d+|\d+)\s*(GiB|MiB|KiB|TiB|B)", log_string)
+    match = re.search(r"^\w+ (?P<size>[^\/]+)", log_string)
     if match:
         value = float(match.group(1))
         unit = match.group(2)

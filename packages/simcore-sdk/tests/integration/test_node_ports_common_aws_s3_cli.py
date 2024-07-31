@@ -399,7 +399,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
     )
-    with pytest.raises(aws_s3_cli.AwsS3CliDirectoryNotFoundError):
+    with pytest.raises(aws_s3_cli.AwsS3CliPathIsAFileError):
         await aws_s3_cli.sync_local_to_s3(
             aws_s3_cli_settings=AsyncMock(),
             progress_bar=AsyncMock(),
@@ -407,7 +407,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             upload_s3_link=AsyncMock(),
             debug_logs=True,
         )
-    with pytest.raises(aws_s3_cli.AwsS3CliDirectoryNotFoundError):
+    with pytest.raises(aws_s3_cli.AwsS3CliPathIsAFileError):
         await aws_s3_cli.sync_s3_to_local(
             aws_s3_cli_settings=AsyncMock(),
             progress_bar=AsyncMock(),

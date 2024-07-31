@@ -33,7 +33,7 @@ class AwsS3CliFailedError(BaseAwsS3CliError):
     )
 
 
-class AwsS3CliDirectoryNotFoundError(BaseAwsS3CliError):
+class AwsS3CliPathIsAFileError(BaseAwsS3CliError):
     msg_template: str = (
         "Provided path '{local_directory_path}' is a file. Expects a directory!"
     )
@@ -222,7 +222,7 @@ async def _sync_sources(
 
 def _raise_if_directory_is_file(local_directory_path: Path) -> None:
     if local_directory_path.exists() and local_directory_path.is_file():
-        raise AwsS3CliDirectoryNotFoundError(local_directory_path=local_directory_path)
+        raise AwsS3CliPathIsAFileError(local_directory_path=local_directory_path)
 
 
 @contextlib.asynccontextmanager
