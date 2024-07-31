@@ -35,7 +35,7 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
-    _PREPULLED_EC2_TAG_KEY,
+    _PRE_PULLED_IMAGES_EC2_TAG_KEY,
     monitor_buffer_machines,
 )
 from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
@@ -252,7 +252,7 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
                 expected_additional_tag_keys=[
-                    _PREPULLED_EC2_TAG_KEY,
+                    _PRE_PULLED_IMAGES_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=pre_pulled_images,
@@ -315,7 +315,7 @@ async def create_buffer_machines(
         ]
         if pre_pull_images is not None and instance_state_name == "stopped":
             resource_tags.append(
-                {"Key": _PREPULLED_EC2_TAG_KEY, "Value": f"{pre_pull_images}"}
+                {"Key": _PRE_PULLED_IMAGES_EC2_TAG_KEY, "Value": f"{pre_pull_images}"}
             )
         with log_context(
             logging.INFO, f"creating {num} buffer machines of {instance_type}"

@@ -185,9 +185,7 @@ class BufferPool:
 
     def pre_pulled_instances(self) -> set[EC2InstanceData]:
         """returns all the instances that completed image pre pulling"""
-        return self.ready_instances.union(
-            self.stopping_instances, self.waiting_to_stop_instances
-        )
+        return self.ready_instances.union(self.stopping_instances)
 
     def all_instances(self) -> set[EC2InstanceData]:
         """sorted by importance: READY (stopped) > STOPPING >"""
