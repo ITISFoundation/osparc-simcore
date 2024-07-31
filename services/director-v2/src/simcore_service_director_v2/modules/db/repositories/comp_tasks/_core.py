@@ -5,6 +5,7 @@ from typing import Any
 import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -274,7 +275,7 @@ class CompTasksRepository(BaseRepository):
 
     async def get_outputs_from_tasks(
         self, project_id: ProjectID, node_ids: set[NodeID]
-    ) -> dict[NodeID, dict[str, Any]]:
+    ) -> dict[NodeID, dict[IDStr, Any]]:
         selection = list(map(str, node_ids))
         query = sa.select(comp_tasks.c.node_id, comp_tasks.c.outputs).where(
             (comp_tasks.c.project_id == f"{project_id}")

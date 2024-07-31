@@ -297,6 +297,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     )
 
     # when no compose yaml file was provided
+    container_name: str | None = None
     if compose_spec is None:
         service_spec: ComposeSpecLabelDict = {
             "version": docker_compose_version,
@@ -306,7 +307,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
                 }
             },
         }
-        container_name = DEFAULT_SINGLE_SERVICE_NAME
+        container_name = f"{DEFAULT_SINGLE_SERVICE_NAME}"
     else:
         service_spec = deepcopy(compose_spec)
         container_name = container_http_entry

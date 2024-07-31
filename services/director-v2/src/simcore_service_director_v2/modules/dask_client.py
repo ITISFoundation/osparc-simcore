@@ -18,7 +18,9 @@ from dataclasses import dataclass, field
 from http.client import HTTPException
 from typing import Any
 
+import dask.typing
 import distributed
+import distributed.scheduler
 from aiohttp import ClientResponseError
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -220,11 +222,11 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import (  # type: ignore[import-not-found]
+            from simcore_service_dask_sidecar.tasks import (  # type: ignore[import-not-found]  # this runs inside the dask-sidecar
                 run_computational_sidecar,
             )
 
-            return run_computational_sidecar(
+            return run_computational_sidecar(  # type: ignore[no-any-return] # this runs inside the dask-sidecar
                 task_parameters=task_parameters,
                 docker_auth=docker_auth,
                 log_file_url=log_file_url,
@@ -437,13 +439,15 @@ class DaskClient:
         # try to get the task from the scheduler
         def _get_pipeline_statuses(
             dask_scheduler: distributed.Scheduler,
-        ) -> dict[str, str | None]:
-            statuses: dict[str, str | None] = dask_scheduler.get_task_status(
-                keys=job_ids
-            )
+        ) -> dict[dask.typing.Key, distributed.scheduler.TaskStateState | None]:
+            statuses: dict[
+                dask.typing.Key, distributed.scheduler.TaskStateState | None
+            ] = dask_scheduler.get_task_status(keys=job_ids)
             return statuses
 
-        task_statuses = await dask_utils.wrap_client_async_routine(
+        task_statuses: dict[
+            dask.typing.Key, distributed.scheduler.TaskStateState | None
+        ] = await dask_utils.wrap_client_async_routine(
             self.backend.client.run_on_scheduler(_get_pipeline_statuses)
         )
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
