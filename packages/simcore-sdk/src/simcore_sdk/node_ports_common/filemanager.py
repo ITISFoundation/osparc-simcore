@@ -156,14 +156,14 @@ async def download_path_from_s3(
 
         if (
             file_meta_data.is_directory
-            and aws_s3_cli_settings
+            and not aws_s3_cli_settings
             and not await r_clone.is_r_clone_available(r_clone_settings)
         ):
             msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
             raise exceptions.NodeportsException(msg)
         if (
             file_meta_data.is_directory
-            and not aws_s3_cli_settings
+            and aws_s3_cli_settings
             and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
         ):
             msg = f"Requested to download directory {s3_object}, but no aws cli support was detected"
@@ -366,14 +366,14 @@ async def _upload_path(  # noqa: PLR0913
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if (
         is_directory
-        and aws_s3_cli_settings
+        and not aws_s3_cli_settings
         and not await r_clone.is_r_clone_available(r_clone_settings)
     ):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
         raise exceptions.NodeportsException(msg)
     if (
         is_directory
-        and not aws_s3_cli_settings
+        and aws_s3_cli_settings
         and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
     ):
         msg = f"Requested to upload directory {path_to_upload}, but no aws cli support was detected"
@@ -451,7 +451,6 @@ async def _upload_to_s3(
 ) -> tuple[ETag | None, FileUploadSchema]:
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
-        assert r_clone_settings  # nosec
         assert isinstance(path_to_upload, Path)  # nosec
         assert len(upload_links.urls) > 0  # nosec
         if aws_s3_cli_settings:
@@ -463,6 +462,7 @@ async def _upload_to_s3(
                 exclude_patterns=exclude_patterns,
             )
         else:
+            assert r_clone_settings  # nosec
             await r_clone.sync_local_to_s3(
                 r_clone_settings,
                 progress_bar,
