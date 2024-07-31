@@ -665,7 +665,6 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/catalog.bash test
@@ -1120,7 +1119,6 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
@@ -1512,7 +1510,6 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-library.bash test_all
@@ -1686,7 +1683,6 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/simcore-sdk.bash test

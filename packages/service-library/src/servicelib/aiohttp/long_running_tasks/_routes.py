@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
@@ -57,7 +58,7 @@ async def get_task_status(request: web.Request) -> web.Response:
 
 
 @routes.get("/{task_id}/result", name="get_task_result")
-async def get_task_result(request: web.Request) -> web.Response:
+async def get_task_result(request: web.Request) -> web.Response | Any:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     tasks_manager = get_tasks_manager(request.app)
     task_context = get_task_context(request)

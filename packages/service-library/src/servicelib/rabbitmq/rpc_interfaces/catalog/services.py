@@ -3,6 +3,7 @@
 """
 
 import logging
+from typing import Any, cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
@@ -60,7 +61,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
     assert parse_obj_as(PageRpc[ServiceGetV2], result) is not None  # nosec
-    return result
+    return cast(PageRpc[ServiceGetV2], result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -85,7 +86,7 @@ async def get_service(
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ):
+    ) -> Any:
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "get_service"),
@@ -103,7 +104,7 @@ async def get_service(
         service_version=service_version,
     )
     assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
-    return result
+    return cast(ServiceGetV2, result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -150,7 +151,7 @@ async def update_service(
         update=update,
     )
     assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
-    return result
+    return cast(ServiceGetV2, result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

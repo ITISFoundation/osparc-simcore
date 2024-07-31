@@ -1,6 +1,7 @@
 from typing import Final
 from uuid import uuid4
 
+from models_library.basic_types import IDStr
 from pydantic import NonNegativeInt
 
 from ..redis import RedisClientSDK
@@ -24,7 +25,7 @@ class RedisTaskTracker(BaseTaskTracker):
     async def get_new_unique_identifier(self) -> TaskUID:
         candidate_already_exists = True
         while candidate_already_exists:
-            candidate = f"{uuid4()}"
+            candidate = IDStr(f"{uuid4()}")
             candidate_already_exists = (
                 await self.redis_client_sdk.redis.get(_get_key(candidate)) is not None
             )

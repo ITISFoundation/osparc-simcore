@@ -16,7 +16,7 @@ class DBMigrationError(RuntimeError):
     pass
 
 
-async def raise_if_migration_not_ready(engine: AsyncEngine):
+async def raise_if_migration_not_ready(engine: AsyncEngine) -> None:
     """Ensures db migration is complete
 
     :raises DBMigrationError

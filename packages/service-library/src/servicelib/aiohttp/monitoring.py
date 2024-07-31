@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, cast
 
 import prometheus_client
 from aiohttp import web
@@ -107,18 +107,18 @@ log = logging.getLogger(__name__)
 # http_request_latency_seconds_created{app_name="simcore_service_webserver",endpoint="/metrics",method="GET"} 1.641806371709292e+09
 
 
-kREQUEST_COUNT = f"{__name__}.request_count"
-kINFLIGHTREQUESTS = f"{__name__}.in_flight_requests"
-kRESPONSELATENCY = f"{__name__}.in_response_latency"
+kREQUEST_COUNT = f"{__name__}.request_count"  # noqa: N816
+kINFLIGHTREQUESTS = f"{__name__}.in_flight_requests"  # noqa: N816
+kRESPONSELATENCY = f"{__name__}.in_response_latency"  # noqa: N816
 
-kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
-kPROCESS_COLLECTOR = f"{__name__}.collector_process"
-kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
-kGC_COLLECTOR = f"{__name__}.collector_gc"
+kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"  # noqa: N816
+kPROCESS_COLLECTOR = f"{__name__}.collector_process"  # noqa: N816
+kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"  # noqa: N816
+kGC_COLLECTOR = f"{__name__}.collector_gc"  # noqa: N816
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    return app[kCOLLECTOR_REGISTRY]
+    return cast(CollectorRegistry, app[kCOLLECTOR_REGISTRY])
 
 
 async def metrics_handler(request: web.Request):
@@ -146,7 +146,7 @@ def middleware_factory(
     async def middleware_handler(request: web.Request, handler: Handler):
         # See https://prometheus.io/docs/concepts/metric_types
 
-        log_exception = None
+        log_exception: BaseException | None = None
         resp: web.StreamResponse = web.HTTPInternalServerError(
             reason="Unexpected exception"
         )
@@ -240,7 +240,9 @@ def middleware_factory(
         return resp
 
     # adds identifier
-    middleware_handler.__middleware_name__ = f"{__name__}.monitor_{app_name}"
+    setattr(  # noqa: B010
+        middleware_handler, "__middleware_name__", f"{__name__}.monitor_{app_name}"
+    )
 
     return middleware_handler
 
