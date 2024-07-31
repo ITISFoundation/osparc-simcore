@@ -9,12 +9,13 @@ import json
 import logging
 import random
 from collections.abc import Awaitable, Callable, Sequence
+from dataclasses import dataclass
 from typing import Any
 from unittest import mock
 
 import pytest
 import tenacity
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2.models import AWSTagKey, EC2InstanceBootSpecific
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -312,7 +313,7 @@ async def create_buffer_machines(
                 initialized_app, DynamicAutoscaling()
             ).items()
         ]
-        if pre_pull_images:
+        if pre_pull_images is not None and instance_state_name == "stopped":
             resource_tags.append(
                 {"Key": _PREPULLED_EC2_TAG_KEY, "Value": f"{pre_pull_images}"}
             )
@@ -370,7 +371,24 @@ async def create_buffer_machines(
     return _do
 
 
-@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
+@dataclass
+class _BufferMachineParams:
+    instance_state_name: InstanceStateNameType
+    pre_pulled_images: list[DockerGenericTag] | None
+    tag_keys: list[AWSTagKey]
+
+
+@pytest.mark.parametrize(
+    "expected_buffer_params",
+    [
+        _BufferMachineParams("running", None, []),
+        _BufferMachineParams(
+            "stopped",
+            [],
+            [parse_obj_as(AWSTagKey, "io.simcore.autoscaling.pre_pulled_images")],
+        ),
+    ],
+)
 async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     minimal_configuration: None,
     ec2_client: EC2Client,
@@ -383,13 +401,13 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
         Awaitable[list[str]],
     ],
-    expected_state_name: InstanceStateNameType,
+    expected_buffer_params: _BufferMachineParams,
 ):
     # have too many machines of accepted type
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types))),
-        expected_state_name,
+        expected_buffer_params.instance_state_name,
         [],
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -397,15 +415,15 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state=expected_state_name,
+        expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
-            "io.simcore.autoscaling.pre_pulled_images",
+            *expected_buffer_params.tag_keys,
         ],
-        expected_pre_pulled_images=[],
+        expected_pre_pulled_images=expected_buffer_params.pre_pulled_images,
         instance_filters=instance_type_filters,
     )
-    # this will terminate the supernumerary instances
+    # this will terminate the supernumerary instances and start new ones
     await monitor_buffer_machines(
         initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
@@ -414,12 +432,12 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
-        expected_instance_state=expected_state_name,
+        expected_instance_state="running",
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
-            "io.simcore.autoscaling.pre_pulled_images",
+            *[],
         ],
-        expected_pre_pulled_images=[],
+        expected_pre_pulled_images=None,
         instance_filters=instance_type_filters,
     )
 
@@ -487,12 +505,21 @@ def unneeded_instance_type(
     return random_type
 
 
-@pytest.mark.parametrize("expected_state_name", ["running", "stopped"])
+@pytest.mark.parametrize(
+    "expected_buffer_params",
+    [
+        _BufferMachineParams("running", None, []),
+        _BufferMachineParams(
+            "stopped",
+            [],
+            [parse_obj_as(AWSTagKey, "io.simcore.autoscaling.pre_pulled_images")],
+        ),
+    ],
+)
 async def test_monitor_buffer_machines_terminates_unneeded_pool(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
-    expected_state_name: InstanceStateNameType,
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
@@ -502,19 +529,23 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         Awaitable[list[str]],
     ],
     unneeded_instance_type: InstanceTypeType,
+    expected_buffer_params: _BufferMachineParams,
 ):
-    # have too many machines of accepted type
+    # have machines of unneeded type
     buffer_machines_unneeded = await create_buffer_machines(
-        5, unneeded_instance_type, expected_state_name, []
+        5, unneeded_instance_type, expected_buffer_params.instance_state_name, []
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines_unneeded),
         expected_instance_type=unneeded_instance_type,
-        expected_instance_state=expected_state_name,
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=[],
+        expected_instance_state=expected_buffer_params.instance_state_name,
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            *expected_buffer_params.tag_keys,
+        ],
+        expected_pre_pulled_images=expected_buffer_params.pre_pulled_images,
         instance_filters=instance_type_filters,
     )
 
@@ -529,7 +560,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         expected_instance_type=next(iter(ec2_instances_allowed_types)),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=[],
+        expected_pre_pulled_images=None,
         instance_filters=instance_type_filters,
     )
 
