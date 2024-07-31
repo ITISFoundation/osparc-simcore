@@ -102,7 +102,6 @@ def mock_environment(  # pylint:disable=too-many-arguments
 @pytest.fixture
 async def app(
     mock_environment: EnvVarsDict,
-    mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> AsyncIterable[FastAPI]:
     app = create_app()

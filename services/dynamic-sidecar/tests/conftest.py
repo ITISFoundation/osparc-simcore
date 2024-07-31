@@ -291,14 +291,6 @@ def caplog_info_debug(
 
 
 @pytest.fixture
-def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_dynamic_sidecar.core.registry._is_registry_reachable",
-        autospec=True,
-    )
-
-
-@pytest.fixture
 def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
     """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
     return {

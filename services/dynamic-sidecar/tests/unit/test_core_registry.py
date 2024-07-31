@@ -10,8 +10,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.registry import (
     DOCKER_CONFIG_JSON_PATH,
-    _is_registry_reachable,
-    _login_registries,
+    _login_registry,
 )
 
 
@@ -35,15 +34,22 @@ def _get_registry_config(
 
 
 @pytest.fixture
-def cleanup_config_file() -> Iterable[None]:
-    def _remove_config_json_file():
-        if DOCKER_CONFIG_JSON_PATH.exists():
-            DOCKER_CONFIG_JSON_PATH.unlink()
-        assert DOCKER_CONFIG_JSON_PATH.exists() is False
+def backup_docker_config_file() -> Iterable[None]:
+    backup_path = (
+        DOCKER_CONFIG_JSON_PATH.parent / f"{DOCKER_CONFIG_JSON_PATH.name}.backup"
+    )
 
-    _remove_config_json_file()
+    if not backup_path.exists() and DOCKER_CONFIG_JSON_PATH.exists():
+        backup_path.write_text(DOCKER_CONFIG_JSON_PATH.read_text())
+
+    if DOCKER_CONFIG_JSON_PATH.exists():
+        DOCKER_CONFIG_JSON_PATH.unlink()
+
     yield
-    _remove_config_json_file()
+
+    if backup_path.exists():
+        DOCKER_CONFIG_JSON_PATH.write_text(backup_path.read_text())
+        backup_path.unlink()
 
 
 @pytest.fixture
@@ -64,7 +70,7 @@ def unset_registry_envs(
 @pytest.fixture
 def mock_registry_settings_with_auth(
     unset_registry_envs: None,
-    cleanup_config_file: None,
+    backup_docker_config_file: None,
     monkeypatch: pytest.MonkeyPatch,
     docker_registry: str,
 ) -> None:
@@ -89,54 +95,9 @@ async def test_is_registry_reachable(
     assert registry_settings.REGISTRY_USER == "testuser"
     assert registry_settings.REGISTRY_PW.get_secret_value() == "testpassword"
     assert registry_settings.REGISTRY_SSL is False
-    await _is_registry_reachable(registry_settings)
 
+    await _login_registry(registry_settings)
 
-@pytest.fixture
-def registries_env_mocker(
-    unset_registry_envs: None,
-    cleanup_config_file: None,
-    monkeypatch: pytest.MonkeyPatch,
-    envs: dict[str, str],
-) -> None:
-    for name, value in envs.items():
-        monkeypatch.setenv(name, value)
-
-
-@pytest.mark.parametrize(
-    "envs, expected_config_file_content",
-    [
-        pytest.param(
-            {
-                "DY_DEPLOYMENT_REGISTRY_SETTINGS": _get_registry_config(),
-            },
-            '{"auths": {"localhost:1111": {"auth": "dXNlcjpwYXNzd29yZA=="}}}',
-            id="only_internal_registry_no_dockerhub",
-        ),
-        pytest.param(
-            {
-                "DY_DEPLOYMENT_REGISTRY_SETTINGS": _get_registry_config(),
-                "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
-            },
-            '{"auths": {"localhost:1111": {"auth": "dXNlcjpwYXNzd29yZA=="}}}',
-            id="only_internal_registry_dockerhub_set_null",
-        ),
-        pytest.param(
-            {
-                "DY_DEPLOYMENT_REGISTRY_SETTINGS": _get_registry_config(),
-                "DY_DOCKER_HUB_REGISTRY_SETTINGS": _get_registry_config(
-                    url="https://index.docker.io/v1/"
-                ),
-            },
-            '{"auths": {"localhost:1111": {"auth": "dXNlcjpwYXNzd29yZA=="}, "https://index.docker.io/v1/": {"auth": "dXNlcjpwYXNzd29yZA=="}}}',
-            id="internal_and_dockerhub_registry",
-        ),
-    ],
-)
-async def test__login_registries(
-    registries_env_mocker: None,
-    app: FastAPI,
-    expected_config_file_content: str,
-) -> None:
-    await _login_registries(app.state.settings)
-    assert DOCKER_CONFIG_JSON_PATH.read_text() == expected_config_file_content
+    config_json = json.loads(DOCKER_CONFIG_JSON_PATH.read_text())
+    assert len(config_json["auths"]) == 1
+    assert registry_settings.REGISTRY_URL in config_json["auths"]
