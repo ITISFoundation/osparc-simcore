@@ -9,16 +9,12 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI
 
-from ..core.dynamic_services_settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, settings: DynamicServicesSettings):
-    if not settings:
-        settings = DynamicServicesSettings()  # type: ignore[call-arg] # the setting will autofill itself on construction due to pydantic
-
+def setup(app: FastAPI) -> None:
     def on_startup() -> None:
         ServicesClient.create(
             app,
