@@ -87,9 +87,7 @@ class BaseCreateFolderError(FoldersError):
 
 
 class FolderAlreadyExistsError(BaseCreateFolderError):
-    msg_template = (
-        "A folder='{folder}' with parent='{parent}' for group='{gid}' already exists"
-    )
+    msg_template = "A folder='{folder}' with parent='{parent}' for group='{gid}' in product_name={product_name} already exists"
 
 
 class ParentFolderIsNotWritableError(BaseCreateFolderError):
@@ -495,7 +493,9 @@ async def folder_create(
             .where(folders_access_rights.c.original_parent_id == parent)
         )
         if entry_exists:
-            raise FolderAlreadyExistsError(folder=name, parent=parent, gid=gid)
+            raise FolderAlreadyExistsError(
+                product_name=product_name, folder=name, parent=parent, gid=gid
+            )
 
         if parent:
             # check if parent has permissions
