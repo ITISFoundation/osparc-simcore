@@ -10,6 +10,7 @@
 
 aioresponses
 alembic
+asyncpg-stubs
 click
 coverage
 docker
