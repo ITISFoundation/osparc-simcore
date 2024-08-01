@@ -1,15 +1,10 @@
-import re
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 
-from models_library.basic_regex import PROPERTY_KEY_RE
-from pydantic import BaseModel, ConstrainedStr
+from pydantic import BaseModel
 
 from ..node_ports_common.exceptions import UnboundPortError
 from .port import Port
-
-
-class PortKey(ConstrainedStr):
-    regex = re.compile(PROPERTY_KEY_RE)
+from .types import PortKey
 
 
 class BasePortsMapping(BaseModel):

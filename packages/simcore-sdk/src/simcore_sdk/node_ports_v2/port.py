@@ -29,7 +29,7 @@ from .links import (
     PortLink,
 )
 from .port_validation import validate_port_content
-from .ports_mapping import PortKey
+from .types import PortKey
 
 log = logging.getLogger(__name__)
 

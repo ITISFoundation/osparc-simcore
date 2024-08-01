@@ -5,10 +5,11 @@ import shutil
 import sys
 import time
 from collections import deque
+from collections.abc import Coroutine
 from contextlib import AsyncExitStack
 from enum import Enum
 from pathlib import Path
-from typing import Coroutine, cast
+from typing import cast
 
 import aiofiles.os
 import magic
@@ -30,7 +31,7 @@ from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
-from simcore_sdk.node_ports_v2.ports_mapping import PortKey
+from simcore_sdk.node_ports_v2.types import PortKey
 
 from ..core.settings import ApplicationSettings, get_settings
 
