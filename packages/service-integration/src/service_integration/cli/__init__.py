@@ -13,7 +13,7 @@ from ._config import config_app
 app = typer.Typer()
 
 
-def _version_callback(value: bool):  # noqa: FBT002
+def _version_callback(value: bool) -> None:  # noqa: FBT001
     if value:
         rich.print(__version__)
         raise typer.Exit
@@ -22,15 +22,18 @@ def _version_callback(value: bool):  # noqa: FBT002
 @app.callback()
 def main(
     ctx: typer.Context,
-    registry_name: Annotated[
-        str,
-        typer.Option(
-            "--REGISTRY_NAME",
-            help="image registry name. Full url or prefix used as prefix in an image name",
-        ),
-    ] = None,
+    registry_name: (
+        Annotated[
+            str | None,
+            typer.Option(
+                "--REGISTRY_NAME",
+                help="image registry name. Full url or prefix used as prefix in an image name",
+            ),
+        ]
+        | None
+    ) = None,
     compose_version: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--COMPOSE_VERSION",
             help="version used for docker compose specification",
@@ -56,7 +59,7 @@ def main(
         overrides["COMPOSE_VERSION"] = compose_version
 
     # save states
-    ctx.settings = AppSettings.parse_obj(overrides)
+    ctx.settings = AppSettings.parse_obj(overrides)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 #
