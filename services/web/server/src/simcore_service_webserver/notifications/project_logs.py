@@ -6,6 +6,7 @@ from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
+    RabbitMessageBase,
 )
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
@@ -15,7 +16,7 @@ from ..rabbitmq import get_rabbitmq_client
 _logger = logging.getLogger(__name__)
 
 
-_SUBSCRIBABLE_EXCHANGES = [
+_SUBSCRIBABLE_EXCHANGES: list[type[RabbitMessageBase]] = [
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
