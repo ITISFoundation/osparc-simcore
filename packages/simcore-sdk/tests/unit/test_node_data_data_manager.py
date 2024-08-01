@@ -241,6 +241,7 @@ async def test_pull_legacy_archive(
         io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=None,
         progress_bar=progress_bar._children[0],  # noqa: SLF001
+        aws_s3_cli_settings=None,
     )
 
     matchs, mismatchs, errors = cmpfiles(

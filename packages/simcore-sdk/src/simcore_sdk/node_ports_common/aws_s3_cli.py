@@ -6,7 +6,7 @@ import shlex
 from asyncio.streams import StreamReader
 from pathlib import Path
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.basic_types import IDStr
 from pydantic import AnyUrl, ByteSize
 from pydantic.errors import PydanticErrorMixin
