@@ -20,6 +20,7 @@ from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList, PortKey
+from .types import PortKey
 
 log = logging.getLogger(__name__)
 
