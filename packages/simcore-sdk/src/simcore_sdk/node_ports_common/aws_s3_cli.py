@@ -39,11 +39,43 @@ class AwsS3CliPathIsAFileError(BaseAwsS3CliError):
     )
 
 
+class CRLFStreamReaderWrapper:
+    """
+    A wrapper for asyncio streams that converts carriage return characters to newlines.
+
+    When the AWS S3 CLI provides progress updates, it uses carriage return ('\r') characters
+    to overwrite the output. This wrapper converts '\r' to '\n' to standardize line endings,
+    allowing the stream to be read line by line using newlines as delimiters.
+    """
+
+    def __init__(self, reader):
+        self.reader = reader
+        self.buffer = bytearray()
+
+    async def readline(self):
+        while True:
+            # Check if there's a newline character in the buffer
+            if b"\n" in self.buffer:
+                line, self.buffer = self.buffer.split(b"\n", 1)
+                return line + b"\n"
+            # Read a chunk of data from the stream
+            chunk = await self.reader.read(1024)
+            if not chunk:
+                # If no more data is available, return the buffer as the final line
+                line = self.buffer
+                self.buffer = bytearray()
+                return line
+            # Replace \r with \n in the chunk
+            chunk = chunk.replace(b"\r", b"\n")
+            self.buffer.extend(chunk)
+
+
 async def _read_stream(
     stream: StreamReader, aws_s3_cli_log_parsers: list[BaseLogParser]
 ):
+    reader_wrapper = CRLFStreamReaderWrapper(stream)
     while True:
-        line: bytes = await stream.readline()
+        line: bytes = await reader_wrapper.readline()
         if line:
             decoded_line = line.decode()
             await logged_gather(
