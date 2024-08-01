@@ -5,7 +5,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
-from ._common_utils import BaseLogParser
+from ._utils import BaseLogParser
 
 _logger = logging.getLogger(__name__)
 

@@ -387,7 +387,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_2
     )
-    # check that old remote and new remote are nto the same
+    # check that old remote and new remote are not the same
     assert not _directories_have_the_same_content(
         dir_downloaded_files_1, dir_downloaded_files_2
     )

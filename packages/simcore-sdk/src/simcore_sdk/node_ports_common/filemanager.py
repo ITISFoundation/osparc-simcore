@@ -191,15 +191,16 @@ async def download_path_from_s3(
                     local_directory_path=local_path,
                     download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
                 )
-            else:
-                assert r_clone_settings  # nosec
+            elif r_clone_settings:
                 await r_clone.sync_s3_to_local(
                     r_clone_settings,
                     progress_bar,
                     local_directory_path=local_path,
                     download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
                 )
-
+            else:
+                msg = "Unexpected configuration"
+                raise RuntimeError(msg)
             return local_path
 
         return await download_file_from_link(
@@ -459,8 +460,7 @@ async def _upload_to_s3(
                 upload_s3_link=upload_links.urls[0],
                 exclude_patterns=exclude_patterns,
             )
-        else:
-            assert r_clone_settings  # nosec
+        elif r_clone_settings:
             await r_clone.sync_local_to_s3(
                 r_clone_settings,
                 progress_bar,
@@ -468,6 +468,9 @@ async def _upload_to_s3(
                 upload_s3_link=upload_links.urls[0],
                 exclude_patterns=exclude_patterns,
             )
+        else:
+            msg = "Unexpected configuration"
+            raise RuntimeError(msg)
     else:
         uploaded_parts = await upload_file_to_presigned_links(
             session,
