@@ -1,9 +1,11 @@
 from functools import lru_cache
 from pathlib import Path
 
-import openapi_core
+import openapi_core  # type: ignore[import-untyped]
 import yaml
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from openapi_core.schema.specs.models import (
+    Spec as OpenApiSpecs,  # type: ignore[import-untyped]
+)
 
 from .._meta import api_version_prefix
 from .._resources import webserver_resources

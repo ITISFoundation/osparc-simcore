@@ -37,4 +37,5 @@ sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs
 tenacity
 types-aiofiles
 types-openpyxl
+types-PyYAML
 websockets
