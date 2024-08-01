@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
@@ -19,7 +20,7 @@ from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
-from .ports_mapping import InputsList, OutputsList, PortKey
+from .ports_mapping import InputsList, OutputsList
 from .types import PortKey
 
 log = logging.getLogger(__name__)
