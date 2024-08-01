@@ -19,7 +19,7 @@ from aiohttp import (
 )
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from models_library.basic_types import SHA256Str
+from models_library.basic_types import IDStr, SHA256Str
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
@@ -216,7 +216,7 @@ async def download_link_to_file(
                     sub_progress = await stack.enter_async_context(
                         progress_bar.sub_progress(
                             steps=file_size or 1,
-                            description=f"downloading {file_path.name}",
+                            description=IDStr(f"downloading {file_path.name}"),
                         )
                     )
 
@@ -400,7 +400,7 @@ async def upload_file_to_presigned_links(
         )
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(
-                steps=file_size, description=f"uploading {file_name}"
+                steps=file_size, description=IDStr(f"uploading {file_name}")
             )
         )
 

@@ -10,12 +10,10 @@ from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadSchema,
     LinkType,
-    LocationID,
-    LocationName,
     UploadedPart,
 )
-from models_library.basic_types import SHA256Str
-from models_library.projects_nodes_io import StorageFileID
+from models_library.basic_types import IDStr, SHA256Str
+from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import create_sha256_checksum
@@ -361,7 +359,7 @@ async def _upload_path(  # noqa: PLR0913
     )
 
     if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=1, description="uploading")
+        progress_bar = ProgressBarData(num_steps=1, description=IDStr("uploading"))
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if (

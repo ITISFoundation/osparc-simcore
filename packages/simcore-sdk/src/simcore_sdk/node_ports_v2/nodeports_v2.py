@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Coroutine
 
 from models_library.api_schemas_storage import LinkType
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
@@ -149,7 +150,7 @@ class Nodeports(BaseModel):
         """
         tasks = []
         async with progress_bar.sub_progress(
-            steps=len(port_values.items()), description="set multiple"
+            steps=len(port_values.items()), description=IDStr("set multiple")
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
                 # pylint: disable=protected-access

@@ -32,7 +32,7 @@ class _RCloneSyncTransferringStats(BaseModel):
     bytes: ByteSize
     total_bytes: ByteSize
 
-    class Config:  # type: ignore[pydantic-alias]
+    class Config:
         alias_generator = snake_to_camel
 
 
