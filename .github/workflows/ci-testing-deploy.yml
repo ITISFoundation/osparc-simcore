@@ -1076,7 +1076,6 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/payments.bash test
