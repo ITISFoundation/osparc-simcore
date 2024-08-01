@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from servicelib.logging_utils import log_catch
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT, BaseObserver
-from watchdog.observers.inotify import InotifyBuffer, InotifyEmitter
+from watchdog.observers.inotify import InotifyEmitter
+from watchdog.observers.inotify_buffer import InotifyBuffer
 from watchdog.observers.inotify_c import Inotify, InotifyConstants
 from watchdog.utils import BaseThread
 from watchdog.utils.delayed_queue import DelayedQueue

@@ -29,6 +29,7 @@ from .links import (
     PortLink,
 )
 from .port_validation import validate_port_content
+from .ports_mapping import PortKey
 
 log = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class SetKWargs:
 
 
 class Port(BaseServiceIOModel):
-    key: str = Field(..., regex=PROPERTY_KEY_RE)
+    key: PortKey = Field(..., regex=PROPERTY_KEY_RE)
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 

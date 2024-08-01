@@ -12,7 +12,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
 )
-from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_utils import docker_client
@@ -106,7 +105,6 @@ async def get_containers_activity(
 
     container_name = inactivity_command.service
 
-    inactivity_response: str | None = None
     try:
         inactivity_response = await run_command_in_container(
             shared_store.original_to_container_names[inactivity_command.service],
@@ -127,7 +125,7 @@ async def get_containers_activity(
         return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
     try:
-        return parse_raw_as(ActivityInfo, inactivity_response)
+        return ActivityInfo.parse_raw(inactivity_response)
     except json.JSONDecodeError:
         _logger.warning(
             "Could not parse command result '%s' as '%s'",
