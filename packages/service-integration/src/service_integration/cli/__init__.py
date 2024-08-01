@@ -22,16 +22,13 @@ def _version_callback(value: bool) -> None:  # noqa: FBT001
 @app.callback()
 def main(
     ctx: typer.Context,
-    registry_name: (
-        Annotated[
-            str | None,
-            typer.Option(
-                "--REGISTRY_NAME",
-                help="image registry name. Full url or prefix used as prefix in an image name",
-            ),
-        ]
-        | None
-    ) = None,
+    registry_name: Annotated[
+        str | None,
+        typer.Option(
+            "--REGISTRY_NAME",
+            help="image registry name. Full url or prefix used as prefix in an image name",
+        ),
+    ] = None,
     compose_version: Annotated[
         str | None,
         typer.Option(
