@@ -136,7 +136,7 @@ def test__requires_permissions(
 
 
 @pytest.fixture
-async def get_product(
+async def create_product(
     connection: SAConnection,
 ) -> AsyncIterable[Callable[[str], Awaitable[_ProductName]]]:
     created_products: list[_ProductName] = []
@@ -159,9 +159,9 @@ async def get_product(
 
 @pytest.fixture
 async def default_product_name(
-    get_product: Callable[[str], Awaitable[_ProductName]]
+    create_product: Callable[[str], Awaitable[_ProductName]]
 ) -> _ProductName:
-    return await get_product("test_product")
+    return await create_product("test_product")
 
 
 @pytest.mark.parametrize(
@@ -407,14 +407,14 @@ def make_folders(
 
 async def test_folder_create(
     connection: SAConnection,
-    get_product: Callable[[str], Awaitable[_ProductName]],
+    create_product: Callable[[str], Awaitable[_ProductName]],
     get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
 ):
 
     (owner_gid,) = get_unique_gids(1)
 
-    product_a = await get_product("product_a")
-    product_b = await get_product("product_b")
+    product_a = await create_product("product_a")
+    product_b = await create_product("product_b")
 
     expected_folder_count: int = 0
     for product_name in (
