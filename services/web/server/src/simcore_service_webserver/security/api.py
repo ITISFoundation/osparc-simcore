@@ -8,7 +8,7 @@ NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 
 
 import aiohttp_security.api  # type: ignore[import-untyped]
-import passlib.hash  # type: ignore[import-untyped]
+import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 
