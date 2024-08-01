@@ -13,10 +13,8 @@ _logger = logging.getLogger(__name__)
 def _parse_size(log_string):
     match = re.search(r"^\w+ (?P<size>[^\/]+)", log_string)
     if match:
-        value = float(match.group(1))
-        unit = match.group(2)
-        return value, unit
-    return None, None
+        return match
+    return None
 
 
 class SyncAwsCliS3ProgressLogParser(BaseLogParser):
@@ -36,7 +34,6 @@ class SyncAwsCliS3ProgressLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
-            value, unit = _parse_size(logs)
-            if value and unit:
-                _bytes = parse_obj_as(ByteSize, f"{value}{unit}")
+            if _value := _parse_size(logs):
+                _bytes = parse_obj_as(ByteSize, f"{_value}")
                 await self.progress_bar.set_(_bytes)
