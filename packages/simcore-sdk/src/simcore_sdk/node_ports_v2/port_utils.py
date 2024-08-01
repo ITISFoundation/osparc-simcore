@@ -230,7 +230,6 @@ async def push_file_to_store(
     file_base_path: Path | None = None,
     progress_bar: ProgressBarData,
     aws_s3_cli_settings: AwsS3CliSettings | None = None,
-    is_rclone_enabled: bool,
 ) -> FileLink:
     """
     :raises exceptions.NodeportsException
