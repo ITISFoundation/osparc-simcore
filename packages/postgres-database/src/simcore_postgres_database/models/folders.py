@@ -32,6 +32,18 @@ folders = sa.Table(
         doc="user provided description for the folder",
     ),
     sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_folders_to_products_name",
+        ),
+        nullable=False,
+        doc="product identifier",
+    ),
+    sa.Column(
         "created_by",
         sa.BigInteger,
         sa.ForeignKey(
