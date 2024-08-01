@@ -287,7 +287,7 @@ async def _generate_checksum(
     return checksum
 
 
-async def upload_path(  # noqa: PLR0913
+async def upload_path(  # pylint: disable=too-many-arguments
     *,
     user_id: UserID,
     store_id: LocationID | None,
@@ -337,7 +337,7 @@ async def upload_path(  # noqa: PLR0913
     return result
 
 
-async def _upload_path(  # noqa: PLR0913
+async def _upload_path(  # pylint: disable=too-many-arguments
     *,
     user_id: UserID,
     store_id: LocationID | None,

@@ -18,8 +18,8 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
+from ._utils import BaseLogParser
 from .r_clone_utils import (
-    BaseLogParser,
     CommandResultCaptureParser,
     DebugLogParser,
     SyncProgressLogParser,
