@@ -7,7 +7,7 @@ from email.headerregistry import Address
 from email.message import EmailMessage
 from email.mime.application import MIMEApplication
 from pathlib import Path
-from typing import Final, cast
+from typing import Final
 
 import httpx
 from aiosmtplib import SMTP
@@ -206,11 +206,12 @@ async def _create_user_email(
         match = invoice_file_name_pattern.search(
             pdf_response.headers["content-disposition"]
         )
-        _file_name = match.group("filename")
+        if match:
+            _file_name = match.group("filename")
 
-        attachment = MIMEApplication(pdf_response.content, Name=_file_name)
-        attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
-        msg.attach(attachment)
+            attachment = MIMEApplication(pdf_response.content, Name=_file_name)
+            attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
+            msg.attach(attachment)
 
     return msg
 
@@ -259,7 +260,7 @@ async def _create_email_session(
                 settings.SMTP_PASSWORD.get_secret_value(),
             )
 
-        yield cast(SMTP, smtp)
+        yield smtp
 
 
 class EmailProvider(NotificationProvider):
@@ -296,8 +297,8 @@ class EmailProvider(NotificationProvider):
             payment=_PaymentData(
                 price_dollars=f"{payment.price_dollars:.2f}",
                 osparc_credits=f"{payment.osparc_credits:.2f}",
-                invoice_url=payment.invoice_url,
-                invoice_pdf_url=payment.invoice_pdf_url,
+                invoice_url=f"{payment.invoice_url}",
+                invoice_pdf_url=f"{payment.invoice_pdf_url}",
             ),
             product=_ProductData(
                 product_name=data.product_name,
