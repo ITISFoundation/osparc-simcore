@@ -1,13 +1,16 @@
 """ AUTHoriZation (auth) policy:
 """
+
 import contextlib
 import logging
 from typing import Final
 
-from aiocache import cached
-from aiocache.base import BaseCache
+from aiocache import cached  # type: ignore[import-untyped]
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from aiohttp import web
-from aiohttp_security.abc import AbstractAuthorizationPolicy
+from aiohttp_security.abc import (  # type: ignore[import-untyped]
+    AbstractAuthorizationPolicy,
+)
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError

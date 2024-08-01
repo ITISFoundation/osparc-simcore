@@ -1,4 +1,6 @@
-from aiohttp_security.session_identity import SessionIdentityPolicy
+from aiohttp_security.session_identity import (
+    SessionIdentityPolicy,  # type: ignore[import-untyped]
+)
 
 assert SessionIdentityPolicy  # nosec
 
