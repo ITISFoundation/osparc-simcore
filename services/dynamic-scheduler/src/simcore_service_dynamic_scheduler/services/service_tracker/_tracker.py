@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from models_library.projects_nodes_io import NodeID
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 
 from ._models import TrackedServiceModel
 
@@ -15,7 +15,7 @@ def _get_key(node_id: NodeID) -> str:
 
 @dataclass
 class Tracker:
-    redis_client_sdk: RedisClientSDKHealthChecked
+    redis_client_sdk: RedisClientSDK
 
     async def save(self, node_id: NodeID, model: TrackedServiceModel) -> None:
         await self.redis_client_sdk.redis.set(_get_key(node_id), model.to_bytes())

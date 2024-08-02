@@ -39,7 +39,7 @@ async def notify_service_status_change(
     await notifier.notify_service_status(user_id=user_id, status=status)
 
 
-def setup_notifier(app: FastAPI):
+def setup(app: FastAPI):
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
 
