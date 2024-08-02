@@ -464,7 +464,7 @@ async def folder_create(
     *,
     description: str = "",
     parent: _FolderID | None = None,
-    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+    _required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.CREATE_FOLDER
     ),
 ) -> _FolderID:
@@ -504,7 +504,7 @@ async def folder_create(
                 product_name,
                 folder_id=parent,
                 gid=gid,
-                permissions=required_permissions,
+                permissions=_required_permissions,
                 enforece_all_permissions=False,
             )
 
@@ -527,7 +527,7 @@ async def folder_create(
             await connection.execute(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
-                    gid=gid,
+                    gid=gid,  # <-- MD: this can be also Osparc group ID if it was shared with me as an owner
                     traversal_parent_id=parent,
                     original_parent_id=parent,
                     **OWNER_PERMISSIONS.to_dict(),
@@ -923,7 +923,7 @@ async def folder_list(
                 else folders_access_rights.c.traversal_parent_id == folder_id
             )
             .where(
-                folders_access_rights.c.gid == access_via_gid
+                folders_access_rights.c.gid.in_([access_via_gid])
                 if folder_id is None
                 else True
             )
