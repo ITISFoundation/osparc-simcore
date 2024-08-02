@@ -52,7 +52,10 @@ class MockKeys(StrAutoEnum):
 async def redis_client_sdk(
     redis_service: RedisSettings,
 ) -> AsyncIterable[RedisClientSDK]:
-    sdk = RedisClientSDK(redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS))
+    sdk = RedisClientSDK(
+        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+        decode_responses=False,
+    )
     await sdk.setup()
     yield sdk
     await sdk.shutdown()

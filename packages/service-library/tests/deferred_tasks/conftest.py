@@ -9,8 +9,10 @@ from settings_library.redis import RedisDatabase
 @pytest.fixture
 async def redis_client_sdk_deferred_tasks(
     get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+        [RedisDatabase, bool], AbstractAsyncContextManager[RedisClientSDK]
     ]
 ) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(RedisDatabase.DEFERRED_TASKS) as client:
+    async with get_redis_client_sdk(
+        RedisDatabase.DEFERRED_TASKS, False  # noqa: FBT003
+    ) as client:
         yield client
