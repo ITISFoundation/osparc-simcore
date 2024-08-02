@@ -81,7 +81,7 @@ def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGe
     return NodeGet.parse_obj(dict_data)
 
 
-def __get_dynamic_service_get_legacy_with(
+def _get_dynamic_service_get_legacy_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
     dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][0])
@@ -96,7 +96,7 @@ def __get_dynamic_service_get_legacy_with(
     return DynamicServiceGet.parse_obj(dict_data)
 
 
-def __get_dynamic_service_get_new_style_with(
+def _get_dynamic_service_get_new_style_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
     dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][1])
@@ -111,7 +111,7 @@ def __get_dynamic_service_get_new_style_with(
     return DynamicServiceGet.parse_obj(dict_data)
 
 
-def __get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
+def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
     dict_data = NodeGetIdle.Config.schema_extra["example"]
     _add_to_dict(
         dict_data,
@@ -143,7 +143,7 @@ class _ResponseTimeline:
 
         # always return node idle when timeline finished playing
         if self._client_access_history[node_id] >= len(self._timeline):
-            return __get_node_get_idle()
+            return _get_node_get_idle()
 
         status = self._timeline[self._client_access_history[node_id]]
         self._client_access_history[node_id] += 1
@@ -217,7 +217,7 @@ async def mock_director_v2_status(
         if isinstance(service_status, NodeGetIdle):
             return Response(status.HTTP_404_NOT_FOUND)
 
-        raise TypeError()
+        raise TypeError
 
     with respx.mock(
         base_url=app.state.settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
@@ -290,7 +290,7 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
         pytest.param(
             True,
             _ResponseTimeline(
-                [__get_dynamic_service_get_legacy_with("running") for _ in range(10)]
+                [_get_dynamic_service_get_legacy_with("running") for _ in range(10)]
             ),
             1,
             0,
@@ -298,14 +298,14 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
         ),
         pytest.param(
             True,
-            _ResponseTimeline([__get_node_get_idle()]),
+            _ResponseTimeline([_get_node_get_idle()]),
             1,
             0,
             id="requested_running_state_idle_no_removal",
         ),
         pytest.param(
             False,
-            _ResponseTimeline([__get_node_get_idle()]),
+            _ResponseTimeline([_get_node_get_idle()]),
             1,
             1,
             id="requested_stopped_state_idle_is_removed",
@@ -314,17 +314,17 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
             True,
             _ResponseTimeline(
                 [
-                    *[__get_node_get_idle() for _ in range(10)],
-                    __get_dynamic_service_get_new_style_with("pending"),
-                    __get_dynamic_service_get_new_style_with("pulling"),
+                    *[_get_node_get_idle() for _ in range(10)],
+                    _get_dynamic_service_get_new_style_with("pending"),
+                    _get_dynamic_service_get_new_style_with("pulling"),
                     *[
-                        __get_dynamic_service_get_new_style_with("starting")
+                        _get_dynamic_service_get_new_style_with("starting")
                         for _ in range(10)
                     ],
-                    __get_dynamic_service_get_new_style_with("running"),
-                    __get_dynamic_service_get_new_style_with("stopping"),
-                    __get_dynamic_service_get_new_style_with("complete"),
-                    __get_node_get_idle(),
+                    _get_dynamic_service_get_new_style_with("running"),
+                    _get_dynamic_service_get_new_style_with("stopping"),
+                    _get_dynamic_service_get_new_style_with("complete"),
+                    _get_node_get_idle(),
                 ]
             ),
             8,
@@ -335,16 +335,16 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
             False,
             _ResponseTimeline(
                 [
-                    __get_dynamic_service_get_new_style_with("pending"),
-                    __get_dynamic_service_get_new_style_with("pulling"),
+                    _get_dynamic_service_get_new_style_with("pending"),
+                    _get_dynamic_service_get_new_style_with("pulling"),
                     *[
-                        __get_dynamic_service_get_new_style_with("starting")
+                        _get_dynamic_service_get_new_style_with("starting")
                         for _ in range(10)
                     ],
-                    __get_dynamic_service_get_new_style_with("running"),
-                    __get_dynamic_service_get_new_style_with("stopping"),
-                    __get_dynamic_service_get_new_style_with("complete"),
-                    __get_node_get_idle(),
+                    _get_dynamic_service_get_new_style_with("running"),
+                    _get_dynamic_service_get_new_style_with("stopping"),
+                    _get_dynamic_service_get_new_style_with("complete"),
+                    _get_node_get_idle(),
                 ]
             ),
             7,
