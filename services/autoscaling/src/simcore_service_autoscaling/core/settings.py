@@ -27,6 +27,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.ssm import SSMSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -35,11 +36,15 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
 
+class AutoscalingSSMSettings(SSMSettings):
+    ...
+
+
 class AutoscalingEC2Settings(EC2Settings):
     class Config(EC2Settings.Config):
         env_prefix = AUTOSCALING_ENV_PREFIX
 
-        schema_extra: ClassVar[dict[str, Any]] = {
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
                 {
                     f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -119,6 +124,10 @@ class EC2InstancesSettings(BaseCustomSettings):
         ...,
         description="Allows to define tags that should be added to the created EC2 instance default tags. "
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+    )
+    EC2_INSTANCES_ATTACHED_IAM_PROFILE: str = Field(
+        ...,
+        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
@@ -228,6 +237,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
+    AUTOSCALING_SSM_ACCESS: AutoscalingSSMSettings | None = Field(
+        auto_default_from_env=True
+    )
+
     AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None = Field(
         auto_default_from_env=True
     )
@@ -266,8 +279,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
     @root_validator()
     @classmethod

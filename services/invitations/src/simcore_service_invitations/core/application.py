@@ -29,7 +29,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings()
+    app.state.settings = settings or ApplicationSettings()  # type: ignore[call-arg]
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP

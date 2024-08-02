@@ -12,11 +12,11 @@ describe('Calls after logging in', () => {
     await auto.register(page, user, pass);
     await page.waitFor(1000);
   }, ourTimeout);
-  
+
   afterAll(async () => {
     await auto.logOut(page);
   }, ourTimeout);
-  
+
   test('Profile', async () => {
     const responseEnv = await utils.fetchReq('me');
     expect(responseEnv.data["login"]).toBe(user);

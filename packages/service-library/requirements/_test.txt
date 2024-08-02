@@ -9,7 +9,7 @@ aiosignal==1.3.1
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.3.0
+anyio==4.4.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -29,7 +29,7 @@ attrs==23.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -41,13 +41,13 @@ charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
     #   requests
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -55,7 +55,7 @@ exceptiongroup==1.2.1
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -65,6 +65,10 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.0.3
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_fastapi.txt
@@ -78,6 +82,8 @@ httpx==0.27.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_fastapi.txt
     #   respx
+icdiff==2.0.7
+    # via pytest-icdiff
 idna==3.7
     # via
     #   -c requirements/_aiohttp.txt
@@ -89,13 +95,13 @@ idna==3.7
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.2
+jsonschema-path==0.3.3
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
@@ -115,6 +121,10 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+mypy==1.11.0
+    # via sqlalchemy
+mypy-extensions==1.0.0
+    # via mypy
 openapi-schema-validator==0.6.2
     # via
     #   -c requirements/_aiohttp.txt
@@ -123,7 +133,7 @@ openapi-spec-validator==0.7.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
@@ -133,11 +143,13 @@ pathable==0.4.3
     #   jsonschema-path
 pluggy==1.5.0
     # via pytest
-psutil==5.9.8
+pprintpp==0.4.0
+    # via pytest-icdiff
+psutil==6.0.0
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -145,6 +157,7 @@ pytest==8.2.0
     #   pytest-benchmark
     #   pytest-cov
     #   pytest-docker
+    #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
@@ -161,6 +174,8 @@ pytest-benchmark==4.0.0
 pytest-cov==5.0.0
     # via -r requirements/_test.in
 pytest-docker==3.1.1
+    # via -r requirements/_test.in
+pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -191,7 +206,7 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.32.2
+requests==2.32.3
     # via
     #   -c requirements/_aiohttp.txt
     #   docker
@@ -202,7 +217,7 @@ rfc3339-validator==0.1.4
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-schema-validator
-rpds-py==0.18.0
+rpds-py==0.19.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -221,18 +236,34 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
+sqlalchemy==1.4.52
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_aiohttp.txt
+    #   -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
+    #   mypy
     #   pytest
-typing-extensions==4.11.0
+types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
+types-psycopg2==2.9.21.20240417
+    # via -r requirements/_test.in
+types-tqdm==4.66.0.20240417
+    # via -r requirements/_test.in
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   anyio
-urllib3==2.2.1
+    #   mypy
+    #   sqlalchemy2-stubs
+urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt

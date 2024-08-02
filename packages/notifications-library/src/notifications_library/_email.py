@@ -4,7 +4,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
-from typing import cast
 
 from aiosmtplib import SMTP
 from settings_library.email import EmailProtocol, SMTPSettings
@@ -86,4 +85,4 @@ async def create_email_session(
                 settings.SMTP_PASSWORD.get_secret_value(),
             )
 
-        yield cast(SMTP, smtp)
+        yield smtp

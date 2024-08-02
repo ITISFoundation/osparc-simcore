@@ -137,10 +137,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           if (nStudies === 0) {
-            const store = osparc.store.Store.getInstance();
             Promise.all([
-              store.getTemplates(),
-              store.getAllServices()
+              osparc.store.Store.getInstance().getTemplates(),
+              osparc.service.Store.getServicesLatest()
             ]).then(values => {
               const templates = values[0];
               const services = values[1];
@@ -310,7 +309,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__itemClicked(card, e.getNativeEvent().shiftKey);
           }
         }, this);
-        card.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
         this._populateCardMenu(card);
       });
     },
@@ -466,7 +464,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addEmptyStudyPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      const title = this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      })
+      const desc = this.tr("Start with an empty study");
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
       newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
@@ -479,7 +481,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addTIPPlusButtons: function() {
-      const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
           if (templates) {
@@ -488,6 +489,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
                   const newButtonsInfo = newStudiesData[product].resources;
+                  const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
                   const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -507,7 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
-                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
+                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
                       clickAwayClose: false,
                       resizable: true
                     });
@@ -527,40 +529,41 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(services, serviceKey, newButtonInfo) {
-      const mode = this._resourcesContainer.getMode();
-      // Make sure we have access to that service
-      const versions = osparc.service.Utils.getVersions(services, serviceKey);
+    __addNewStudyFromServiceButtons: function(key, newButtonInfo) {
+      const versions = osparc.service.Utils.getVersions(key);
       if (versions.length && newButtonInfo) {
-        const title = newButtonInfo.title;
-        const desc = newButtonInfo.description;
-        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-        newStudyFromServiceButton.setCardKey("new-"+serviceKey);
-        osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1], newButtonInfo.newStudyLabel));
-        if (this._resourcesContainer.getMode() === "list") {
-          const width = this._resourcesContainer.getBounds().width - 15;
-          newStudyFromServiceButton.setWidth(width);
-        }
-        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+        // scale to latest compatible
+        const latestVersion = versions[0];
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+        osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+          .then(latestMetadata => {
+            const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+            const desc = newButtonInfo.description;
+            const mode = this._resourcesContainer.getMode();
+            const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+            newStudyFromServiceButton.setCardKey("new-"+key);
+            osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+            newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            if (this._resourcesContainer.getMode() === "list") {
+              const width = this._resourcesContainer.getBounds().width - 15;
+              newStudyFromServiceButton.setWidth(width);
+            }
+            this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
+          })
       }
     },
 
     __addPlusButtonsFromServices: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          // add new plus buttons if key services exists
-          osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
-            .then(newStudiesData => {
-              const product = osparc.product.Utils.getProductName()
-              if (product in newStudiesData) {
-                const newButtonsInfo = newStudiesData[product].resources;
-                newButtonsInfo.forEach(newButtonInfo => {
-                  this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonInfo);
-                });
-              }
+      // add new plus buttons if key services exists
+      osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+        .then(newStudiesData => {
+          const product = osparc.product.Utils.getProductName()
+          if (product in newStudiesData) {
+            const newButtonsInfo = newStudiesData[product].resources;
+            newButtonsInfo.forEach(newButtonInfo => {
+              this.__addNewStudyFromServiceButtons(newButtonInfo.expectedKey, newButtonInfo);
             });
+          }
         });
     },
 
@@ -957,17 +960,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getThumbnailStudyMenuButton: function(studyData) {
       const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."));
       thumbButton.addListener("execute", () => {
-        const title = this.tr("Edit Thumbnail");
-        const oldThumbnail = studyData.thumbnail;
-        const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData);
-        const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-        const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
-        thumbnailEditor.addListener("updateThumbnail", e => {
-          win.close();
-          const newUrl = e.getData();
-          this.__updateThumbnail(studyData, newUrl);
-        }, this);
-        thumbnailEditor.addListener("cancel", () => win.close());
+        osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData)
+          .then(suggestions => {
+            const title = this.tr("Edit Thumbnail");
+            const oldThumbnail = studyData.thumbnail;
+            const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+            const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
+            thumbnailEditor.addListener("updateThumbnail", e => {
+              win.close();
+              const newUrl = e.getData();
+              this.__updateThumbnail(studyData, newUrl);
+            }, this);
+            thumbnailEditor.addListener("cancel", () => win.close());
+          })
+          .catch(err => console.error(err));
       }, this);
       return thumbButton;
     },

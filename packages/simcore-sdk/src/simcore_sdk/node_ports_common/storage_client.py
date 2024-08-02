@@ -1,10 +1,10 @@
 import datetime
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, TypeAlias
+from typing import Any, Coroutine, ParamSpec, TypeAlias, TypeVar
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
@@ -15,18 +15,17 @@ from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadSchema,
     LinkType,
-    LocationID,
     PresignedLink,
-    StorageFileID,
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.aiohttp import status
 from tenacity import RetryCallState
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -42,10 +41,15 @@ RequestContextManager: TypeAlias = (
     aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
 )
 
+P = ParamSpec("P")
+R = TypeVar("R")
 
-def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
+
+def handle_client_exception(
+    handler: Callable[P, Coroutine[Any, Any, R]]
+) -> Callable[P, Coroutine[Any, Any, R]]:
     @wraps(handler)
-    async def wrapped(*args, **kwargs):
+    async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return await handler(*args, **kwargs)
         except ClientResponseError as err:
@@ -69,6 +73,9 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
         except JSONDecodeError as err:
             msg = f"{err}"
             raise exceptions.StorageServerIssue(msg) from err
+        # satisfy mypy
+        msg = "Unhandled control flow"
+        raise RuntimeError(msg)
 
     return wrapped
 
@@ -239,6 +246,7 @@ async def get_file_metadata(
             raise exceptions.S3InvalidPathError(file_id)
 
         file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
+        assert file_metadata_enveloped.data  # nosec
         return file_metadata_enveloped.data
 
 

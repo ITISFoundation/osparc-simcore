@@ -1,25 +1,18 @@
-""" Services table
-
-    - List of 3rd party services in the framework
-    - Services have a key, version, and access rights defined by group ids
-"""
-
 import sqlalchemy as sa
-from sqlalchemy import null
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
-#
-#   Combines properties as
-#     - service identifier: key, version
-#     - overridable properties of the service metadata defined upon publication (injected in the image labels)
-#     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
-
 services_meta_data = sa.Table(
+    #
+    #   Combines properties as
+    #     - service identifier: key, version
+    #     - overridable properties of the service metadata defined upon publication (injected in the image labels)
+    #     - extra properties assigned during its lifetime (e.g. deprecated, quality, etc)
+    #
     "services_meta_data",
     metadata,
+    # PRIMARY KEY ----------------------------
     sa.Column(
         "key",
         sa.String,
@@ -30,8 +23,9 @@ services_meta_data = sa.Table(
         "version",
         sa.String,
         nullable=False,
-        doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
+        doc="Service version. See format in ServiceVersion",
     ),
+    # OWNERSHIP ----------------------------
     sa.Column(
         "owner",
         sa.BigInteger,
@@ -42,73 +36,81 @@ services_meta_data = sa.Table(
             ondelete="RESTRICT",
         ),
         nullable=True,
-        doc="Identifier of the group that owns this service",
+        doc="Identifier of the group that owns this service (editable)",
     ),
+    # DISPLAY ----------------------------
     sa.Column(
         "name",
         sa.String,
         nullable=False,
-        doc="Display label",
+        doc="Display label (editable)",
     ),
     sa.Column(
         "description",
         sa.String,
         nullable=False,
-        doc="Markdown-compatible description",
+        doc="Markdown-compatible description (editable)",
     ),
     sa.Column(
         "thumbnail",
         sa.String,
         nullable=True,
-        doc="Link to image to us as service thumbnail",
+        doc="Link to image to us as service thumbnail (editable)",
     ),
+    sa.Column(
+        "version_display",
+        sa.String,
+        nullable=True,
+        doc="A user-friendly or version of the inner software e.g. Matterhorn 2.3 (editable)",
+    ),
+    # TAGGING -----------------------------
     sa.Column(
         "classifiers",
         ARRAY(sa.String, dimensions=1),
         nullable=False,
         server_default="{}",
-        doc="List of standard labels that describe this service (see classifiers table)",
-    ),
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp on creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Timestamp with last update",
-    ),
-    sa.Column(
-        "deprecated",
-        sa.DateTime(),
-        nullable=True,
-        server_default=null(),
-        doc="Timestamp when the service is retired."
-        "A fixed time before this date, service is marked as deprecated",
+        doc="List of standard labels that describe this service (see classifiers table) (editable) ",
     ),
     sa.Column(
         "quality",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR",
+        doc="Free JSON with quality assesment based on TSR (editable)",
+    ),
+    # LIFECYCLE ----------------------------
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=sa.func.now(),
+        doc="Timestamp on creation",
+    ),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
+        doc="Timestamp with last update",
+    ),
+    sa.Column(
+        "deprecated",
+        sa.DateTime(),
+        nullable=True,
+        server_default=sa.null(),
+        doc="Timestamp when the service is retired (editable)."
+        "A fixed time before this date, service is marked as deprecated.",
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
 
 
-#
-#   Defines access rights (execute_access, write_access) on a service (key)
-#   for a given group (gid) on a product (project_name)
-#
-
 services_access_rights = sa.Table(
+    #
+    #   Defines access rights (execute_access, write_access) on a service (key)
+    #   for a given group (gid) on a product (project_name)
+    #
     "services_access_rights",
     metadata,
     sa.Column(
@@ -132,21 +134,21 @@ services_access_rights = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        doc="Group Identifier",
+        doc="Group Identifier of user that get these access-rights",
     ),
-    # Access Rights flags ---
+    # ACCESS RIGHTS FLAGS ---------------------------------------
     sa.Column(
         "execute_access",
         sa.Boolean,
         nullable=False,
-        server_default=expression.false(),
+        server_default=sa.false(),
         doc="If true, group can execute the service",
     ),
     sa.Column(
         "write_access",
         sa.Boolean,
         nullable=False,
-        server_default=expression.false(),
+        server_default=sa.false(),
         doc="If true, group can modify the service",
     ),
     # -----
@@ -161,19 +163,20 @@ services_access_rights = sa.Table(
         ),
         doc="Product Identifier",
     ),
+    # LIFECYCLE ----------------------------
     sa.Column(
         "created",
         sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
+        server_default=sa.func.now(),
         doc="Timestamp of creation",
     ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
         doc="Timestamp on last update",
     ),
     sa.ForeignKeyConstraint(

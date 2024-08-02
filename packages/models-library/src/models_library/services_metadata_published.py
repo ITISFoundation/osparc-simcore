@@ -3,11 +3,11 @@ from typing import Any, ClassVar, Final, TypeAlias
 
 from pydantic import Extra, Field, NonNegativeInt
 
-from .basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
+from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
 from .services_authoring import Author, Badge
-from .services_base import ServiceBase, ServiceKeyVersion
+from .services_base import ServiceBaseDisplay, ServiceKeyVersion
 from .services_constants import ANY_FILETYPE
 from .services_enums import ServiceType
 from .services_io import ServiceInput, ServiceOutput
@@ -87,7 +87,7 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
 }
 
 
-class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
+class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
     """
     Service metadata at publication time
 
@@ -98,13 +98,6 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
     NOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image
     """
 
-    version_display: str | None = Field(
-        None,
-        description="A user-friendly or marketing name for the release."
-        " This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.'"
-        " This name is not used for version comparison but is useful for communication and documentation purposes.",
-    )
-
     release_date: datetime | None = Field(
         None,
         description="A timestamp when the specific version of the service was released."
@@ -112,11 +105,10 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         " A timestamp string should be formatted as YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]",
     )
 
-    integration_version: str | None = Field(
+    integration_version: SemanticVersionStr | None = Field(
         None,
         alias="integration-version",
         description="This version is used to maintain backward compatibility when there are changes in the way a service is integrated into the framework",
-        regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     )
 
     service_type: ServiceType = Field(
@@ -126,7 +118,7 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         examples=["computational"],
     )
 
-    badges: list[Badge] | None = Field(None)
+    badges: list[Badge] | None = Field(None, deprecated=True)
 
     authors: list[Author] = Field(..., min_items=1)
     contact: LowerCaseEmailStr = Field(
@@ -160,6 +152,12 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBase):
         None,
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
+    )
+
+    # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+    image_digest: str | None = Field(
+        None,
+        description="Image manifest digest. Note that this is NOT injected as an image label",
     )
 
     class Config:

@@ -13,62 +13,28 @@ import asyncio
 import logging
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Final, NewType, TypeAlias, cast
+from typing import Final
 
 from fastapi import FastAPI
-from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
-from pydantic import ValidationError
+from simcore_service_catalog.api.dependencies.director import get_director_api
+from simcore_service_catalog.services import manifest
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
+from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ..services import access_rights
 
 _logger = logging.getLogger(__name__)
 
-# NOTE: by PC I tried to unify with models_library.services but there are other inconsistencies so I leave if for another time!
-ServiceKey = NewType("ServiceKey", str)
-ServiceVersion = NewType("ServiceVersion", str)
-ServiceDockerDataMap: TypeAlias = dict[
-    tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-]
-
-
-async def _list_services_in_registry(
-    app: FastAPI,
-) -> ServiceDockerDataMap:
-    client = get_director_api(app)
-    registry_services = cast(list[dict[str, Any]], await client.get("/services"))
-
-    services: ServiceDockerDataMap = {
-        # services w/o associated image
-        (s.key, s.version): s
-        for s in iter_service_docker_data()
-    }
-    for service in registry_services:
-        try:
-            service_data = ServiceMetaDataPublished.parse_obj(service)
-            services[(service_data.key, service_data.version)] = service_data
-
-        except ValidationError:  # noqa: PERF203
-            _logger.warning(
-                "Skipping %s:%s from the catalog of services:",
-                service.get("key"),
-                service.get("version"),
-                exc_info=True,
-            )
-
-    return services
-
 
 async def _list_services_in_database(
     db_engine: AsyncEngine,
-) -> set[tuple[ServiceKey, ServiceVersion]]:
+):
     services_repo = ServicesRepository(db_engine=db_engine)
     return {
         (service.key, service.version)
@@ -117,10 +83,9 @@ async def _create_services_in_database(
             service_access_rights
         )
 
-        service_metadata_dict = service_metadata.dict()
         # set the service in the DB
-        await services_repo.create_service(
-            ServiceMetaDataAtDB(**service_metadata_dict, owner=owner_gid),
+        await services_repo.create_or_update_service(
+            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
             service_access_rights,
         )
 
@@ -130,16 +95,15 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-    ] = await _list_services_in_registry(app)
+    director_api = get_director_api(app)
+    services_in_manifest_map = await manifest.get_services_map(director_api)
 
     services_in_db: set[
         tuple[ServiceKey, ServiceVersion]
     ] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
-    missing_services_in_db = set(services_in_registry.keys()) - services_in_db
+    missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
     if missing_services_in_db:
         _logger.debug(
             "Missing services in db: %s",
@@ -148,7 +112,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
         # update db
         await _create_services_in_database(
-            app, missing_services_in_db, services_in_registry
+            app, missing_services_in_db, services_in_manifest_map
         )
 
 
@@ -177,8 +141,8 @@ async def _ensure_published_templates_accessible(
     missing_services = published_services - available_services
     missing_services_access_rights = [
         ServiceAccessRightsAtDB(
-            key=service[0],
-            version=service[1],
+            key=ServiceKey(service[0]),
+            version=ServiceVersion(service[1]),
             gid=everyone_gid,
             execute_access=True,
             product_name=default_product_name,
@@ -193,20 +157,24 @@ async def _ensure_published_templates_accessible(
         await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
-async def _sync_services_task(app: FastAPI) -> None:
+async def _run_sync_services(app: FastAPI):
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
+    # check that the list of services is in sync with the registry
+    await _ensure_registry_and_database_are_synced(app)
+
+    # check that the published services are available to everyone
+    # (templates are published to GUESTs, so their services must be also accessible)
+    await _ensure_published_templates_accessible(engine, default_product)
+
+
+async def _sync_services_task(app: FastAPI) -> None:
     while app.state.registry_syncer_running:
         try:
             _logger.debug("Syncing services between registry and database...")
 
-            # check that the list of services is in sync with the registry
-            await _ensure_registry_and_database_are_synced(app)
-
-            # check that the published services are available to everyone
-            # (templates are published to GUESTs, so their services must be also accessible)
-            await _ensure_published_templates_accessible(engine, default_product)
+            await _run_sync_services(app)
 
             await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 

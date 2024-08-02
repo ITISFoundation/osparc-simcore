@@ -91,6 +91,67 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 110000,
 
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    forceRatioAfterLoad: function(image, force ="width", maxDimension = null) {
+      image.set({
+        scale: true,
+        allowStretchX: true,
+        allowStretchY: true,
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      const recheckSize = () => {
+        const source = image.getSource();
+        if (source) {
+          const srcWidth = qx.io.ImageLoader.getWidth(source);
+          const srcHeight = qx.io.ImageLoader.getHeight(source);
+          if (srcWidth && srcHeight) {
+            const aspectRatio = srcWidth/srcHeight;
+            switch (force) {
+              case "width": {
+                const newHeight = maxDimension/aspectRatio;
+                image.set({
+                  maxWidth: maxDimension,
+                  maxHeight: parseInt(newHeight)
+                });
+                break;
+              }
+              case "height": {
+                const newWidth = maxDimension*aspectRatio;
+                image.set({
+                  maxHeight: maxDimension,
+                  maxWidth: parseInt(newWidth)
+                });
+                break;
+              }
+            }
+          }
+        }
+      };
+      [
+        "appear",
+        "loaded"
+      ].forEach(eventName => {
+        image.addListener(eventName, () => recheckSize(), this);
+      });
+    },
+
+    /**
+     * @param {qx.ui.basic.Image} image
+     */
+    openImageOnTap: function(image) {
+      const source = image.getSource();
+      if (source) {
+        image.set({
+          cursor: "pointer"
+        });
+        image.addListener("tap", () => window.open(source, "_blank"));
+      }
+    },
+
     getDefaultFont: function() {
       const defaultFont = {
         family: null,
@@ -125,6 +186,22 @@ qx.Class.define("osparc.utils.Utils", {
         }
       };
       qx.bom.element.Animation.animate(domElement, desc);
+    },
+
+    getGridsFirstColumnWidth: function(grid) {
+      let firstColumnWidth = null;
+      const firstElement = grid.getCellWidget(0, 0);
+      const secondElement = grid.getCellWidget(0, 1);
+      if (firstElement && secondElement) {
+        const firstCellBounds = firstElement.getBounds();
+        const secondCellBounds = secondElement.getBounds();
+        if (firstCellBounds && secondCellBounds) {
+          const left1 = firstCellBounds.left;
+          const left2 = secondCellBounds.left;
+          firstColumnWidth = left2 - left1;
+        }
+      }
+      return firstColumnWidth;
     },
 
     makeButtonBlink: function(button, nTimes = 1) {
@@ -206,6 +283,18 @@ qx.Class.define("osparc.utils.Utils", {
       const domElem = elem.getContentElement().getDomElement();
       const checkIsOnScreen = isInViewport(domElem);
       return checkIsOnScreen;
+    },
+
+    growSelectBox: function(selectBox, maxWidth) {
+      let largest = 0;
+      selectBox.getSelectables().forEach(listItem => {
+        largest = Math.max(listItem.getSizeHint().width, largest);
+      });
+      largest += 15;
+      selectBox.set({
+        width: maxWidth ? Math.min(maxWidth, largest) : largest,
+        minWidth: 120
+      });
     },
 
     toTwoDecimals: function(value) {
@@ -456,12 +545,16 @@ qx.Class.define("osparc.utils.Utils", {
       const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
       let msg = "";
       msg += qx.locale.Manager.tr("To use all ");
-      const color = qx.theme.manager.Color.getInstance().resolve("text");
-      msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+      msg += this.createHTMLLink(productName + " features", manualLink);
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
       msg += mailto;
       return msg;
+    },
+
+    createHTMLLink: function(text, link) {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      return `<a href=${link} style='color: ${color}' target='_blank'>${text}</a>`;
     },
 
     getNameFromEmail: function(email) {
@@ -586,7 +679,7 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes, decimals = 2, isDecimalColapsed = true) {
+    bytesToSize: function(bytes, decimals = 2, isDecimalCollapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
       }
@@ -595,7 +688,7 @@ qx.Class.define("osparc.utils.Utils", {
       const dm = decimals < 0 ? 0 : decimals;
 
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return `${isDecimalColapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
+      return `${isDecimalCollapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {

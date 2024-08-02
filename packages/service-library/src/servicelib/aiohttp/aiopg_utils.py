@@ -10,10 +10,10 @@
     SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
+
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
 # TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
-import functools
 import logging
 
 import sqlalchemy as sa
@@ -21,7 +21,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import RetryCallState, retry
+from tenacity import RetryCallState
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -64,9 +64,9 @@ def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):
 
 
 def raise_http_unavailable_error(retry_state: RetryCallState):
-    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop. TIP: obj, query = retry_state.args; obj.app.register_incidents
-
-    exc: DatabaseError = retry_state.outcome.exception()
+    assert retry_state.outcome  # nosec
+    exc = retry_state.outcome.exception()
+    assert exc  # nosec
     # StandardError
     # |__ Warning
     # |__ Error
@@ -102,43 +102,13 @@ class PostgresRetryPolicyUponOperation:
     def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
-        self.kwargs = dict(
-            retry=retry_if_exception_type(DatabaseError),
-            wait=wait_fixed(self.WAIT_SECS),
-            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            after=after_log(logger, logging.WARNING),
-            retry_error_callback=raise_http_unavailable_error,
-        )
-
-
-# alias
-postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation().kwargs
-
-
-def retry_pg_api(func):
-    """Decorator to implement postgres service retry policy and
-    keep global  statistics on service attempt fails
-    """
-    # TODO: temporary. For the time being, use instead postgres_service_retry_policy_kwargs
-    _deco_func = retry(**postgres_service_retry_policy_kwargs)(func)
-    _total_retry_count = 0
-
-    @functools.wraps(func)
-    async def wrapper(*args, **kargs):
-        nonlocal _total_retry_count
-        try:
-            result = await _deco_func(*args, **kargs)
-        finally:
-            stats = _deco_func.retry.statistics
-            _total_retry_count += int(stats.get("attempt_number", 0))
-        return result
-
-    def total_retry_count():
-        return _total_retry_count
-
-    wrapper.retry = _deco_func.retry  # type: ignore[attr-defined]
-    wrapper.total_retry_count = total_retry_count  # type: ignore[attr-defined]
-    return wrapper
+        self.kwargs = {
+            "retry": retry_if_exception_type(DatabaseError),
+            "wait": wait_fixed(self.WAIT_SECS),
+            "stop": stop_after_attempt(self.ATTEMPTS_COUNT),
+            "after": after_log(logger, logging.WARNING),
+            "retry_error_callback": raise_http_unavailable_error,
+        }
 
 
 __all__ = (

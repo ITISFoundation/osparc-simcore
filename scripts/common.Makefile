@@ -48,7 +48,7 @@ VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
 
 # utils
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 IGNORE_DIR=.ignore
 
@@ -162,8 +162,12 @@ ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and t
 		$(CURDIR)/tests
 
 .PHONY: mypy
-mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
-	@$(REPO_BASE_DIR)/scripts/mypy.bash src
+mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
+	@mypy \
+	--config-file=$(REPO_BASE_DIR)/mypy.ini \
+	--show-error-context \
+	--show-traceback \
+	$(CURDIR)/src
 
 
 .PHONY: codestyle

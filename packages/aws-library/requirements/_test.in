@@ -15,6 +15,7 @@ moto[server]
 pint
 pytest
 pytest-asyncio
+pytest-benchmark
 pytest-cov
 pytest-icdiff
 pytest-instafail
@@ -23,3 +24,5 @@ pytest-runner
 pytest-sugar
 python-dotenv
 pyyaml
+types-aioboto3
+types-boto3

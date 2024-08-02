@@ -32,7 +32,6 @@
  * <pre class='javascript'>
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
- *   node.startDynamicService();
  * </pre>
  */
 
@@ -42,25 +41,24 @@ qx.Class.define("osparc.data.model.Node", {
 
   /**
     * @param study {osparc.data.model.Study} Study or Serialized Study Object
-    * @param key {String} key of the service represented by the node
-    * @param version {String} version of the service represented by the node
-    * @param uuid {String} uuid of the service represented by the node (not needed for new Nodes)
+    * @param metadata {Object} service's metadata
+    * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(study, key, version, uuid) {
+  construct: function(study, metadata, nodeId) {
     this.base(arguments);
 
-    this.__metaData = osparc.service.Utils.getMetaData(key, version);
+    this.__metaData = metadata;
     this.setOutputs({});
-
     this.__inputNodes = [];
+    this.__inputsRequired = [];
 
     if (study) {
       this.setStudy(study);
     }
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidV4(),
-      key,
-      version,
+      nodeId: nodeId || osparc.utils.Utils.uuidV4(),
+      key: metadata["key"],
+      version: metadata["version"],
       status: new osparc.data.model.NodeStatus(this)
     });
 
@@ -135,12 +133,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeInputs"
     },
 
-    inputsRequired: {
-      check: "Array",
-      init: [],
-      event: "changeInputsRequired"
-    },
-
     outputs: {
       check: "Object",
       nullable: false,
@@ -201,18 +193,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeOutputConnected"
     },
 
-    loadingPage: {
-      check: "osparc.ui.message.Loading",
-      init: null,
-      nullable: true
-    },
-
-    iFrame: {
-      check: "osparc.widget.PersistentIframe",
-      init: null,
-      nullable: true
-    },
-
     logger: {
       check: "osparc.widget.logger.LoggerView",
       init: null,
@@ -238,59 +218,59 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
-    isFrontend: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/frontend/"));
+    isFrontend: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/frontend/"));
     },
 
-    isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+    isFilePicker: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("file-picker"));
     },
 
-    isParameter: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/parameter/"));
+    isParameter: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/parameter/"));
     },
 
-    isIterator: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
+    isIterator: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/data-iterator/"));
     },
 
-    isProbe: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/iterator-consumer/"));
+    isProbe: function(metadata) {
+      return (metadata && metadata.key && metadata.key.includes("/iterator-consumer/"));
     },
 
-    isDynamic: function(metaData) {
-      return (metaData && metaData.type && metaData.type === "dynamic");
+    isDynamic: function(metadata) {
+      return (metadata && metadata.type && metadata.type === "dynamic");
     },
 
-    isComputational: function(metaData) {
-      return (metaData && metaData.type && metaData.type === "computational");
+    isComputational: function(metadata) {
+      return (metadata && metadata.type && metadata.type === "computational");
     },
 
-    isUpdatable: function(metaData) {
-      return osparc.service.Utils.isUpdatable(metaData);
+    isUpdatable: function(metadata) {
+      return osparc.service.Utils.isUpdatable(metadata);
     },
 
-    isDeprecated: function(metaData) {
-      return osparc.service.Utils.isDeprecated(metaData);
+    isDeprecated: function(metadata) {
+      return osparc.service.Utils.isDeprecated(metadata);
     },
 
-    isRetired: function(metaData) {
-      return osparc.service.Utils.isRetired(metaData);
+    isRetired: function(metadata) {
+      return osparc.service.Utils.isRetired(metadata);
     },
 
-    hasBootModes: function(metaData) {
-      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
-        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
+    hasBootModes: function(metadata) {
+      if (metadata["bootOptions"] && "boot_mode" in metadata["bootOptions"] && "items" in metadata["bootOptions"]["boot_mode"]) {
+        return Object.keys(metadata["bootOptions"]["boot_mode"]["items"]).length;
       }
       return false;
     },
 
-    populateBootModes: function(bootModeSB, nodeMetaData, workbench, nodeId) {
-      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+    populateBootModes: function(bootModeSB, nodeMetadata, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetadata)) {
         return;
       }
 
-      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModesMD = nodeMetadata["bootOptions"]["boot_mode"];
       const sbItems = [];
       bootModeSB.removeAll();
       Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
@@ -312,18 +292,18 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
-    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
-      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+    getBootModesSelectBox: function(nodeMetadata, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetadata)) {
         return null;
       }
 
       const bootModeSB = new qx.ui.form.SelectBox();
-      this.populateBootModes(bootModeSB, nodeMetaData, workbench, nodeId);
+      this.populateBootModes(bootModeSB, nodeMetadata, workbench, nodeId);
       return bootModeSB;
     },
 
-    getMinVisibleInputs: function(metaData) {
-      return ("min-visible-inputs" in metaData) ? metaData["min-visible-inputs"] : null;
+    getMinVisibleInputs: function(metadata) {
+      return ("minVisibleInputs" in metadata) ? metadata["minVisibleInputs"] : null;
     },
 
     getOutput: function(outputs, outputKey) {
@@ -337,12 +317,11 @@ qx.Class.define("osparc.data.model.Node", {
   members: {
     __metaData: null,
     __inputNodes: null,
+    __inputsRequired: null,
     __settingsForm: null,
     __posX: null,
     __posY: null,
-    __unresponsiveRetries: null,
-    __stopRequestingStatus: null,
-    __retriesLeft: null,
+    __iframeHandler: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -407,8 +386,13 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
     },
 
-    __applyNewMetaData: function() {
-      this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
+    __applyNewMetaData: function(newV, oldV) {
+      if (oldV !== null) {
+        const metadata = osparc.service.Store.getMetadata(this.getKey(), this.getVersion());
+        if (metadata) {
+          this.__metaData = metadata;
+        }
+      }
     },
 
     getMetaData: function() {
@@ -454,23 +438,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateWithMetadata: function() {
-      const metaData = this.__metaData;
-      if (metaData) {
-        if (metaData.name) {
-          this.setLabel(metaData.name);
+      const metadata = this.__metaData;
+      if (metadata) {
+        if (metadata.name) {
+          this.setLabel(metadata.name);
         }
-        if (metaData.inputs) {
-          this.setInputs(metaData.inputs);
-          if (Object.keys(metaData.inputs).length) {
-            this.__addSettings(metaData.inputs);
-            this.__addSettingsAccessLevelEditor(metaData.inputs);
+        if (metadata.inputs) {
+          this.setInputs(metadata.inputs);
+          if (Object.keys(metadata.inputs).length) {
+            this.__addSettings(metadata.inputs);
+            this.__addSettingsAccessLevelEditor(metadata.inputs);
           }
           if (this.getPropsForm()) {
             this.getPropsForm().makeInputsDynamic();
           }
         }
-        if (metaData.outputs) {
-          this.setOutputs(metaData.outputs);
+        if (metadata.outputs) {
+          this.setOutputs(metadata.outputs);
         }
       }
     },
@@ -491,9 +475,8 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       this.__initLogger();
-      if (this.isDynamic()) {
-        this.__initIFrame();
-      }
+
+      this.initIframeHandler();
 
       if (this.isParameter()) {
         this.__initParameter();
@@ -536,6 +519,28 @@ qx.Class.define("osparc.data.model.Node", {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
       }
+    },
+
+    initIframeHandler: function() {
+      if (this.isDynamic()) {
+        this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this);
+      }
+    },
+
+    getIframeHandler: function() {
+      return this.__iframeHandler;
+    },
+
+    getIFrame: function() {
+      return this.getIframeHandler() ? this.getIframeHandler().getIFrame() : null;
+    },
+
+    setIFrame: function(iframe) {
+      return this.getIframeHandler() ? this.getIframeHandler().setIFrame(iframe) : null;
+    },
+
+    getLoadingPage: function() {
+      return this.getIframeHandler() ? this.getIframeHandler().getLoadingPage() : null;
     },
 
     __applyPropsForm: function() {
@@ -882,6 +887,16 @@ qx.Class.define("osparc.data.model.Node", {
     },
     // !---- Input Nodes -----
 
+    // ----- Inputs Required -----
+    getInputsRequired: function() {
+      return this.__inputsRequired;
+    },
+
+    setInputsRequired: function(inputsRequired) {
+      this.__inputsRequired = inputsRequired;
+      this.fireEvent("changeInputsRequired");
+    },
+
     toggleInputRequired: function(portId) {
       const inputsRequired = this.getInputsRequired();
       const index = inputsRequired.indexOf(portId);
@@ -891,8 +906,8 @@ qx.Class.define("osparc.data.model.Node", {
         inputsRequired.push(portId);
       }
       this.setInputsRequired(inputsRequired);
-      this.fireEvent("changeInputsRequired");
     },
+    // !---- Inputs Required -----
 
     canNodeStart: function() {
       return this.isDynamic() && ["idle", "failed"].includes(this.getStatus().getInteractive());
@@ -909,7 +924,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "startNode", params)
-        .then(() => this.startDynamicService())
+        .then(() => this.startPollingState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
             osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
@@ -966,97 +981,6 @@ qx.Class.define("osparc.data.model.Node", {
       this.setLogger(new osparc.widget.logger.LoggerView());
     },
 
-    __getLoadingPageHeader: function() {
-      let statusText = this.tr("Starting");
-      const status = this.getStatus().getInteractive();
-      if (status) {
-        statusText = status.charAt(0).toUpperCase() + status.slice(1);
-      }
-      return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
-    },
-
-    __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
-      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
-      loadingPage.set({
-        header: this.__getLoadingPageHeader()
-      });
-
-      const thumbnail = this.getMetaData()["thumbnail"];
-      if (thumbnail) {
-        loadingPage.setLogo(thumbnail);
-      }
-      this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
-
-      const nodeStatus = this.getStatus();
-      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
-      nodeStatus.bind("interactive", sequenceWidget, "visibility", {
-        converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
-      });
-      loadingPage.addExtraWidget(sequenceWidget);
-
-      this.getStatus().addListener("changeInteractive", () => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-        const status = this.getStatus().getInteractive();
-        if (["idle", "failed"].includes(status)) {
-          const startButton = new qx.ui.form.Button().set({
-            label: this.tr("Start"),
-            icon: "@FontAwesome5Solid/play/18",
-            font: "text-18",
-            allowGrowX: false,
-            height: 32
-          });
-          startButton.addListener("execute", () => this.requestStartNode());
-          loadingPage.addWidgetToMessages(startButton);
-        } else {
-          loadingPage.setMessages([]);
-        }
-      }, this);
-      this.setLoadingPage(loadingPage);
-    },
-
-    __initIFrame: function() {
-      this.__initLoadingPage();
-
-      const iframe = new osparc.widget.PersistentIframe();
-      osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNodeId());
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        iframe.setShowToolbar(false);
-      }
-      iframe.addListener("restart", () => this.__restartIFrame(), this);
-      iframe.getDiskUsageIndicator().setCurrentNode(this)
-      this.setIFrame(iframe);
-    },
-
-    __restartIFrame: function() {
-      if (this.getServiceUrl() !== null) {
-        const loadIframe = () => {
-          const status = this.getStatus().getInteractive();
-          // it might have been stopped
-          if (status === "ready") {
-            this.getIFrame().resetSource();
-            this.getIFrame().setSource(this.getServiceUrl());
-          }
-        };
-
-        // restart button pushed
-        if (this.getIFrame().getSource().includes(this.getServiceUrl())) {
-          loadIframe();
-        }
-
-        const loadingPage = this.getLoadingPage();
-        const bounds = loadingPage.getBounds();
-        const domEle = loadingPage.getContentElement().getDomElement();
-        const boundsCR = domEle ? domEle.getBoundingClientRect() : null;
-        if (bounds !== null && boundsCR && boundsCR.width > 0) {
-          loadIframe();
-        } else {
-          // lazy loading
-          loadingPage.addListenerOnce("appear", () => loadIframe(), this);
-        }
-      }
-    },
-
     __initParameter: function() {
       if (this.isParameter() && this.__getOutputData("out_1") === null) {
         const type = osparc.node.ParameterEditor.getParameterOutputType(this);
@@ -1085,7 +1009,9 @@ qx.Class.define("osparc.data.model.Node", {
         node: this,
         portKey
       };
-      this.fireDataEvent("retrieveInputs", data);
+      if (this.isDynamic()) {
+        this.fireDataEvent("retrieveInputs", data);
+      }
     },
 
     retrieveInputs: function(portKey) {
@@ -1148,12 +1074,10 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startDynamicService: function() {
+    startPollingState: function() {
       if (this.isDynamic()) {
-        this.getStatus().getProgressSequence().resetSequence();
-
-        const metaData = this.getMetaData();
-        const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
+        const metadata = this.getMetaData();
+        const msg = "Starting " + metadata.key + ":" + metadata.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
@@ -1161,165 +1085,23 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__unresponsiveRetries = 5;
-        this.__nodeState();
+        this.getIframeHandler().startPolling();
       }
     },
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        this.getStatus().getProgressSequence().resetSequence();
-
-        const metaData = this.getMetaData();
-        const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
+        const metadata = this.getMetaData();
+        const msg = "Stopping " + metadata.key + ":" + metadata.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg,
+          msg,
           level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.__unresponsiveRetries = 5;
-        this.__nodeState(false);
-
-        this.getIFrame().resetSource();
+        this.getIframeHandler().stopIframe();
       }
-    },
-
-    __onNodeState: function(data, starting=true) {
-      const serviceState = data["service_state"];
-      const nodeId = data["service_uuid"];
-      const status = this.getStatus();
-      switch (serviceState) {
-        case "idle": {
-          status.setInteractive(serviceState);
-          if (starting && this.__unresponsiveRetries>0) {
-            // a bit of a hack. We will get rid of it when the backend pushes the states
-            this.__unresponsiveRetries--;
-            const interval = 2000;
-            qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
-          }
-          break;
-        }
-        case "pending": {
-          if (data["service_message"]) {
-            const serviceName = this.getLabel();
-            const serviceMessage = data["service_message"];
-            const msg = `The service "${serviceName}" is waiting for available ` +
-              `resources. Please inform support and provide the following message ` +
-              `in case this does not resolve in a few minutes: "${nodeId}" ` +
-              `reported "${serviceMessage}"`;
-            const msgData = {
-              nodeId: this.getNodeId(),
-              msg: msg,
-              level: "INFO"
-            };
-            this.fireDataEvent("showInLogger", msgData);
-          }
-          status.setInteractive(serviceState);
-          const interval = 10000;
-          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
-          break;
-        }
-        case "stopping":
-        case "unknown":
-        case "starting":
-        case "pulling": {
-          status.setInteractive(serviceState);
-          const interval = 5000;
-          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
-          break;
-        }
-        case "running": {
-          if (nodeId !== this.getNodeId()) {
-            return;
-          }
-          if (!starting) {
-            status.setInteractive("stopping");
-            const interval = 5000;
-            qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
-            break;
-          }
-          const {
-            srvUrl,
-            isDynamicV2
-          } = osparc.utils.Utils.computeServiceUrl(data);
-          this.setDynamicV2(isDynamicV2);
-          if (srvUrl) {
-            this.__retriesLeft = 40;
-            this.__waitForServiceReady(srvUrl);
-          }
-          break;
-        }
-        case "complete":
-          break;
-        case "failed": {
-          status.setInteractive(serviceState);
-          const msg = "Service failed: " + data["service_message"];
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg,
-            level: "ERROR"
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-          return;
-        }
-        default:
-          console.error(serviceState, "service state not supported");
-          break;
-      }
-    },
-
-    __nodeState: function(starting=true) {
-      // Check if study is still there
-      if (this.getStudy() === null || this.__stopRequestingStatus === true) {
-        return;
-      }
-      // Check if node is still there
-      if (this.getWorkbench().getNode(this.getNodeId()) === null) {
-        return;
-      }
-
-      const params = {
-        url: {
-          studyId: this.getStudy().getUuid(),
-          nodeId: this.getNodeId()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getNode", params)
-        .then(data => this.__onNodeState(data, starting))
-        .catch(err => {
-          let errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
-          if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
-            this.getStatus().setInteractive("retired");
-            osparc.FlashMessenger.getInstance().logAs(this.getLabel() + this.tr(" is retired"), "ERROR");
-          }
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: errorMsg,
-            level: "ERROR"
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-          if ("status" in err && err.status === 406) {
-            return;
-          }
-          if (this.__unresponsiveRetries > 0) {
-            const retryMsg = `Retrying (${this.__unresponsiveRetries})`;
-            const retryMsgData = {
-              nodeId: this.getNodeId(),
-              msg: retryMsg,
-              level: "ERROR"
-            };
-            this.fireDataEvent("showInLogger", retryMsgData);
-            this.__unresponsiveRetries--;
-            const interval = Math.floor(Math.random() * 5000) + 3000;
-            setTimeout(() => this.__nodeState(), interval);
-          } else {
-            this.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + this.getLabel(), "ERROR");
-          }
-        });
     },
 
     setNodeProgressSequence: function(progressType, progressReport) {
@@ -1327,65 +1109,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (nodeStatus.getProgressSequence()) {
         nodeStatus.getProgressSequence().addProgressMessage(progressType, progressReport);
       }
-    },
-
-    __waitForServiceReady: function(srvUrl) {
-      this.getStatus().setInteractive("connecting");
-
-      if (this.__retriesLeft === 0) {
-        return;
-      }
-
-      const retry = () => {
-        this.__retriesLeft--;
-
-        // Check if node is still there
-        if (this.getWorkbench().getNode(this.getNodeId()) === null) {
-          return;
-        }
-        const interval = 5000;
-        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
-      };
-
-      // ping for some time until it is really reachable
-      try {
-        if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          console.log("Connecting: about to fetch", srvUrl);
-        }
-        fetch(srvUrl)
-          .then(response => {
-            if (osparc.utils.Utils.isDevelopmentPlatform()) {
-              console.log("Connecting: fetch's response status", response.status);
-            }
-            if (response.status < 400) {
-              this.__serviceReadyIn(srvUrl);
-            } else {
-              console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
-              retry();
-            }
-          })
-          .catch(err => {
-            console.error("Connecting: Error", err);
-            retry();
-          });
-      } catch (error) {
-        console.error(`Connecting: Error while checking ${srvUrl}:`, error);
-        retry();
-      }
-    },
-
-    __serviceReadyIn: function(srvUrl) {
-      this.setServiceUrl(srvUrl);
-      this.getStatus().setInteractive("ready");
-      const msg = "Service ready on " + srvUrl;
-      const msgData = {
-        nodeId: this.getNodeId(),
-        msg,
-        level: "INFO"
-      };
-      this.fireDataEvent("showInLogger", msgData);
-      this.__restartIFrame();
-      this.callRetrieveInputs();
     },
 
     attachHandlersToStartButton: function(startButton) {
@@ -1486,11 +1209,11 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newKey = "simcore/services/frontend/data-iterator/int-range";
-      if (newKey in osparc.service.Utils.servicesCached) {
+      const metadata = osparc.service.Utils.getLatest("simcore/services/frontend/data-iterator/int-range")
+      if (metadata) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
-        this.setKey(newKey);
+        this.setKey(metadata["key"]);
         this.populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);

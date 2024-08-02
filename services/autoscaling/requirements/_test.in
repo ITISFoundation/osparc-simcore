@@ -11,6 +11,7 @@
 --constraint _base.txt
 
 
+types-aiobotocore[ec2,s3,ssm,iam]
 asgi-lifespan
 coverage
 deepdiff
@@ -27,4 +28,6 @@ pytest-mock
 pytest-runner
 python-dotenv
 pytest-icdiff
+pytest-sugar
 respx
+types-PyYAML

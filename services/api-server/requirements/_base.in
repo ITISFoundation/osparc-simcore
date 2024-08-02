@@ -23,6 +23,7 @@ fastapi[all]
 httpx
 orjson
 packaging
+parse
 pydantic[dotenv]
 pyyaml
 tenacity

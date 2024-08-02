@@ -95,49 +95,49 @@
     "id": "credits",
     "name": "Buy Credits",
     "description": "Buy Credits for Personalization",
-    "context": "osparc-test-id=userMenuBtn",
+    "context": "osparc-test-id=creditsIndicatorButton",
     "steps": [{
       "title": "Credits",
-      "text": "In order to run Personalized TI Plans, credits are required.<br>In the next Guided Tour you will learn how to purchase them."
+      "text": "In order to run personalized TI plans, Credits are required. In the next steps you will learn how to purchase them."
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=userMenuBtn",
-        "action": "open"
+        "selector": "osparc-test-id=creditsIndicatorButton",
+        "event": "tap"
       },
-      "anchorEl": "osparc-test-id=userMenuBillingCenterBtn",
-      "text": "From the User Menu you can access the Billing Center.",
+      "anchorEl": "osparc-test-id=creditsNavBarContainer",
+      "title": "Credits Indicator",
+      "text": "By clicking on the Credits indicator, you will you see the number of available Credits. Click the three dots to access the Billing Center.",
       "placement": "left"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=userMenuBillingCenterBtn",
+        "selector": "osparc-test-id=billingCenterButton",
         "action": "execute"
       },
       "anchorEl": "osparc-test-id=walletsList",
-      "title": "Credits Accounts",
-      "text": "This is the list of Credits Accounts you have access to. You have your own Account, but you could also use Credit Accounts that were shared with you.",
+      "title": "Credit Accounts",
+      "text": "This lists the Credit Accounts you have access to. Apart from your own Account, the list also includes Credit Accounts that were shared with you.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=personalWalletsList",
-      "title": "Top-up Credits",
-      "text": "There are two ways to charge credits into your Credit Account: you can set up an Auto-recharge process or go for a One time payment.",
-      "placement": "bottom"
-    }, {
-      "anchorEl": "osparc-test-id=buyCreditsBtn",
-      "title": "One time payment",
-      "text": "For a one-off, non recurring payment. After the payment is made, the available credits will be added to the Credit Account. <br>Also, the Payment Method can be saved for future payments.",
+      "title": "Buy Credits",
+      "text": "There are two ways to add Credits to your Credit Account: you can set up an auto-top-up procedure or make a one-time payment.",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=autorechargeBtn",
-      "title": "Auto-recharge",
-      "text": "Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.<br>Before the auto-recharge function can be activated you need to add your first payment method.",
+      "title": "Auto-Recharge",
+      "text": "Keep your balance running smoothly by automatically setting your Credits to be topped up when it runs low. Before the automated top-up function can be activated, you must add a payment method.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=buyCreditsBtn",
+      "title": "One-Time payment",
+      "text": "You can top up your Credits with a one-off, non-recurring payment. After the payment is made, the new Credits will be added to your Credit Account. The payment method can be saved for future top ups.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=billingCenterWindow",
         "action": "close"
       },
-      "title": "Credits Indicator",
-      "text": "Once the payment is validated, the Credits will be added to the Credit Account. In the User Menu -> Preferences, you will be able to tune the visibility options of the Credits Indicator."
+      "text": "Once the payment is validated, the Credits will be added to your Credit Account and they will be ready to be used."
     }]
   }
 }

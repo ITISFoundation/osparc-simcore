@@ -3,16 +3,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
-    DEVServiceGet,
+    CatalogServiceGet,
+    CatalogServiceUpdate,
     ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
     ServiceOutputGet,
     ServiceOutputKey,
     ServiceResourcesGet,
-    ServiceUpdate,
 )
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog._handlers import (
     ListServiceParams,
@@ -38,7 +39,7 @@ router = APIRouter(
 
 @router.get(
     "/dev/catalog/services/-/latest",
-    response_model=Envelope[list[DEVServiceGet]],
+    response_model=Page[CatalogServiceGet],
 )
 def dev_list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
     pass
@@ -46,7 +47,7 @@ def dev_list_services_latest(_query_params: Annotated[ListServiceParams, Depends
 
 @router.get(
     "/dev/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[DEVServiceGet],
+    response_model=Envelope[CatalogServiceGet],
 )
 def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
     ...
@@ -54,11 +55,11 @@ def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 
 @router.patch(
     "/dev/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[DEVServiceGet],
+    response_model=Envelope[CatalogServiceGet],
 )
 def dev_update_service(
     _path_params: Annotated[ServicePathParams, Depends()],
-    _update: ServiceUpdate,
+    _update: CatalogServiceUpdate,
 ):
     ...
 
@@ -85,7 +86,7 @@ def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 )
 def update_service(
     _path_params: Annotated[ServicePathParams, Depends()],
-    _update: ServiceUpdate,
+    _update: CatalogServiceUpdate,
 ):
     ...
 

@@ -8,7 +8,7 @@ from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

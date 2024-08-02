@@ -45,26 +45,44 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+# simcore-efs-user uid=8006(efs) gid=8006(efs) groups=8006(efs)
+# Currently all simcore services run as user 8004. The Guardian needs to run as a different user 8006.
+# The Guardian has access to the root directory of the EFS distributed file system
+# and can change the file permissions of user 8004 if needed.
 ENV SC_USER_ID=8004 \
   SC_USER_NAME=scu \
+  EFS_USER_ID=8006 \
+  EFS_USER_NAME=efs \
   SC_BUILD_TARGET=base \
   SC_BOOT_MODE=default
 
 RUN adduser \
-  --uid ${SC_USER_ID} \
+  --uid 8004 \
   --disabled-password \
   --gecos "" \
   --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
+  --home /home/scu \
+  scu
 
+RUN adduser \
+  --uid 8006 \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/efs \
+  efs
+
+# we create efs-group which is then used in efs guardian when he is creating a directory for user services.
+RUN groupadd -g 8106 efs-group
+RUN usermod -a -G efs-group efs
+RUN usermod -a -G efs-group scu
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
+  VIRTUAL_ENV=/home/efs/.venv
 
 # Ensures that the python and pip executables used in the image will be
 # those from our virtualenv.
@@ -91,7 +109,7 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.1
+  pip install uv~=0.2
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -149,15 +167,15 @@ ENV SC_BUILD_TARGET=production \
 
 ENV PYTHONOPTIMIZE=TRUE
 
-WORKDIR /home/scu
-# ensure home folder is read/writable for user scu
-RUN chown -R scu /home/scu
+WORKDIR /home/efs
+# ensure home folder is read/writable for user efs
+RUN chown -R efs /home/efs
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
-COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=efs:efs --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/efs-guardian/docker services/efs-guardian/docker
+COPY --chown=efs:efs services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 
@@ -187,7 +205,7 @@ ENV SC_BUILD_TARGET=development \
 
 WORKDIR /devel
 
-RUN chown -R scu:scu "${VIRTUAL_ENV}"
+RUN chown -R efs:efs "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]

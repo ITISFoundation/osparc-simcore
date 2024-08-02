@@ -4,6 +4,12 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+boto3-stubs==1.34.149
+    # via types-boto3
+botocore-stubs==1.34.149
+    # via
+    #   boto3-stubs
+    #   types-botocore
 certifi==2024.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -13,7 +19,7 @@ certifi==2024.2.2
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.5.1
+coverage==7.6.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -24,7 +30,7 @@ exceptiongroup==1.2.0
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==25.0.1
+faker==26.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -49,7 +55,7 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
@@ -57,7 +63,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.0
+pytest==8.2.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -89,7 +95,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   faker
-requests==2.32.2
+requests==2.32.3
     # via -r requirements/_test.in
 respx==0.21.1
     # via -r requirements/_test.in
@@ -109,10 +115,19 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
+types-awscrt==0.21.2
+    # via botocore-stubs
+types-boto3==1.0.2
+    # via -r requirements/_test.in
+types-botocore==1.0.2
+    # via -r requirements/_test.in
+types-s3transfer==0.10.1
+    # via boto3-stubs
 typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   boto3-stubs
 urllib3==2.2.1
     # via
     #   -c requirements/../../../requirements/constraints.txt

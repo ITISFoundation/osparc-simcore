@@ -1,23 +1,30 @@
 import asyncio
 import functools
 import logging
+import urllib.parse
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from models_library.services_metadata_published import ServiceMetaDataPublished
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from starlette import status
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
+
+from ..exceptions.errors import DirectorUnresponsiveError
 
 _logger = logging.getLogger(__name__)
 
 MINUTE = 60
 
-director_startup_retry_policy = {
+_director_startup_retry_policy: dict[str, Any] = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
@@ -28,47 +35,7 @@ director_startup_retry_policy = {
 }
 
 
-class UnresponsiveServiceError(RuntimeError):
-    pass
-
-
-async def setup_director(app: FastAPI) -> None:
-    if settings := app.state.settings.CATALOG_DIRECTOR:
-        # init client-api
-        _logger.debug("Setup director at %s ...", f"{settings.base_url=}")
-        client = DirectorApi(base_url=settings.base_url, app=app)
-
-        # check that the director is accessible
-        try:
-            async for attempt in AsyncRetrying(**director_startup_retry_policy):
-                with attempt:
-                    if not await client.is_responsive():
-                        msg = "Director-v0 is not responsive"
-                        raise UnresponsiveServiceError(msg)
-
-                    _logger.info(
-                        "Connection to director-v0 succeded [%s]",
-                        json_dumps(attempt.retry_state.retry_object.statistics),
-                    )
-        except UnresponsiveServiceError:
-            await client.close()
-            raise
-
-        app.state.director_api = client
-
-
-async def close_director(app: FastAPI) -> None:
-    client: DirectorApi | None
-    if client := app.state.director_api:
-        await client.close()
-
-    _logger.debug("Director client closed successfully")
-
-
-# DIRECTOR API CLASS ---------------------------------------------
-
-
-def safe_request(
+def _return_data_or_raise_error(
     request_func: Callable[..., Awaitable[httpx.Response]]
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
@@ -149,25 +116,68 @@ class DirectorApi:
     async def close(self):
         await self.client.aclose()
 
-    # OPERATIONS
-    # TODO: policy to retry if NetworkError/timeout?
-    # TODO: add ping to healthcheck
+    #
+    # Low level API
+    #
 
-    @safe_request
+    @_return_data_or_raise_error
     async def get(self, path: str) -> httpx.Response:
         # temp solution: default timeout increased to 20"
         return await self.client.get(path, timeout=20.0)
 
-    @safe_request
-    async def put(self, path: str, body: dict) -> httpx.Response:
-        return await self.client.put(path, json=body)
+    #
+    # High level API
+    #
 
     async def is_responsive(self) -> bool:
         try:
             _logger.debug("checking director-v0 is responsive")
             health_check_path: str = "/"
-            result = await self.client.head(health_check_path, timeout=1.0)
-            result.raise_for_status()
+            response = await self.client.head(health_check_path, timeout=1.0)
+            response.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False
+
+    async def get_service(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceMetaDataPublished:
+        data = await self.get(
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        )
+        # NOTE: the fact that it returns a list of one element is a defect of the director API
+        assert isinstance(data, list)  # nosec
+        assert len(data) == 1  # nosec
+        return ServiceMetaDataPublished.parse_obj(data[0])
+
+
+async def setup_director(app: FastAPI) -> None:
+    if settings := app.state.settings.CATALOG_DIRECTOR:
+        with log_context(
+            _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
+        ):
+
+            client = DirectorApi(base_url=settings.base_url, app=app)
+
+            async for attempt in AsyncRetrying(**_director_startup_retry_policy):
+                with attempt:
+                    if not await client.is_responsive():
+                        with suppress(Exception):
+                            await client.close()
+                        raise DirectorUnresponsiveError
+
+                _logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
+
+            # set when connected
+            app.state.director_api = client
+
+
+async def close_director(app: FastAPI) -> None:
+    client: DirectorApi | None
+    if client := app.state.director_api:
+        await client.close()
+
+    _logger.debug("Director client closed successfully")

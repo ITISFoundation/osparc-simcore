@@ -327,7 +327,7 @@ async def get_task_instance_restriction(
         for constraint in service_placement_constraints:
             if constraint.startswith(node_label_to_find):
                 return parse_obj_as(
-                    InstanceTypeType, constraint.removeprefix(node_label_to_find)
+                    InstanceTypeType, constraint.removeprefix(node_label_to_find)  # type: ignore[arg-type]
                 )
 
         return None
@@ -347,8 +347,9 @@ async def compute_node_used_resources(
     service_labels: list[DockerLabelKey] | None = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
-    task_filters = {"node": node.ID}
-    if service_labels:
+    assert node.ID  # nosec
+    task_filters: dict[str, str | list[DockerLabelKey]] = {"node": node.ID}
+    if service_labels is not None:
         task_filters |= {"label": service_labels}
     all_tasks_on_node = parse_obj_as(
         list[Task],
@@ -435,15 +436,12 @@ _DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 _CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
 
 
-def get_docker_pull_images_on_start_bash_command(
+def write_compose_file_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
-    if not docker_tags:
-        return ""
-
     compose = {
         "services": {
-            f"pre-pull-image-{n}": {"image": image_tag}
+            f"{image_tag.split('/')[-1].replace(':','-')}": {"image": image_tag}
             for n, image_tag in enumerate(docker_tags)
         },
     }
@@ -451,6 +449,15 @@ def get_docker_pull_images_on_start_bash_command(
     write_compose_file_cmd = " ".join(
         ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
     )
+    return write_compose_file_cmd
+
+
+def get_docker_pull_images_on_start_bash_command(
+    docker_tags: list[DockerGenericTag],
+) -> str:
+    if not docker_tags:
+        return ""
+
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
@@ -465,7 +472,7 @@ def get_docker_pull_images_on_start_bash_command(
     docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
-            write_compose_file_cmd,
+            write_compose_file_command(docker_tags),
             write_docker_compose_pull_script_cmd,
             make_docker_compose_script_executable,
             docker_compose_pull_cmd,
@@ -497,8 +504,8 @@ async def find_node_with_name(
     if not list_of_nodes:
         return None
     # note that there might be several nodes with a common_prefixed name. so now we want exact matching
-    list_of_nodes = parse_obj_as(list[Node], list_of_nodes)
-    for node in list_of_nodes:
+    parsed_list_of_nodes = parse_obj_as(list[Node], list_of_nodes)
+    for node in parsed_list_of_nodes:
         assert node.Description  # nosec
         if node.Description.Hostname == name:
             return node
@@ -611,10 +618,9 @@ async def set_node_osparc_ready(
 def get_node_last_readyness_update(node: Node) -> datetime.datetime:
     assert node.Spec  # nosec
     assert node.Spec.Labels  # nosec
-    return cast(
-        datetime.datetime,
-        arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
-    )  # mypy
+    return arrow.get(
+        node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
+    ).datetime
 
 
 async def set_node_found_empty(
@@ -643,10 +649,7 @@ async def get_node_empty_since(node: Node) -> datetime.datetime | None:
     assert node.Spec.Labels  # nosec
     if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
         return None
-    return cast(
-        datetime.datetime,
-        arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime,
-    )  # mypy
+    return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 
 async def set_node_begin_termination_process(
@@ -670,12 +673,9 @@ def get_node_termination_started_since(node: Node) -> datetime.datetime | None:
     assert node.Spec.Labels  # nosec
     if _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in node.Spec.Labels:
         return None
-    return cast(
-        datetime.datetime,
-        arrow.get(
-            node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
-        ).datetime,
-    )  # mypy
+    return arrow.get(
+        node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
+    ).datetime
 
 
 async def attach_node(

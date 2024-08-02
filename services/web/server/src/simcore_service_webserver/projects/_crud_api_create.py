@@ -355,7 +355,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
 
     except ProjectInvalidRightsError as exc:
-        raise web.HTTPUnauthorized from exc
+        raise web.HTTPForbidden from exc
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
         if project_uuid := new_project.get("uuid"):

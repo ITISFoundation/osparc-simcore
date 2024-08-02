@@ -9,7 +9,7 @@ from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
 from pydantic.errors import PydanticErrorMixin
 from tenacity import RetryCallState
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -57,7 +57,7 @@ class UnexpectedStatusError(BaseHttpClientError):
 
 def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
-    pool = client._transport._pool  # noqa: SLF001
+    pool = client._transport._pool  # type: ignore[attr-defined] # noqa: SLF001
     _logger.warning(
         "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
@@ -147,12 +147,15 @@ def retry_on_errors(
                     reraise=True,
                 ):
                     with attempt:
-                        r: Response = await request_func(zelf, *args, **kwargs)
-                        return r
+                        return await request_func(zelf, *args, **kwargs)
             except HTTPError as e:
                 if isinstance(e, PoolTimeout):
                     _log_pool_status(zelf.client, "pool timeout")
                 raise ClientHttpError(error=e) from e
+
+            # NOTE: this satisfies mypy, both exceptions from retrial are HTTPError
+            msg = "Unexpected error!"
+            raise NotImplementedError(msg)
 
         return request_wrapper
 

@@ -581,8 +581,7 @@
           "name": {
             "type": "string",
             "title": "Name",
-            "description": "Name of the author",
-            "example": "Jim Knopf"
+            "description": "Name of the author"
           },
           "email": {
             "type": "string",
@@ -592,8 +591,7 @@
           },
           "affiliation": {
             "type": "string",
-            "title": "Affiliation",
-            "description": "Affiliation of the author"
+            "title": "Affiliation"
           }
         },
         "type": "object",
@@ -633,7 +631,12 @@
           "image",
           "url"
         ],
-        "title": "Badge"
+        "title": "Badge",
+        "example": {
+          "name": "osparc.io",
+          "image": "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation",
+          "url": "https://itisfoundation.github.io/"
+        }
       },
       "BaseMeta": {
         "properties": {
@@ -2067,11 +2070,16 @@
             "title": "Description",
             "description": "human readable description of the purpose of the node"
           },
+          "version_display": {
+            "type": "string",
+            "title": "Version Display",
+            "description": "A user-friendly or marketing name for the release. This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This name is not used for version comparison but is useful for communication and documentation purposes."
+          },
           "deprecated": {
             "type": "string",
             "format": "date-time",
             "title": "Deprecated",
-            "description": "If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)"
+            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as dprecated;If now>=deprecated, the service is retired"
           },
           "classifiers": {
             "items": {
@@ -2105,11 +2113,6 @@
             "title": "Version",
             "description": "service version number"
           },
-          "version_display": {
-            "type": "string",
-            "title": "Version Display",
-            "description": "A user-friendly or marketing name for the release. This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' This name is not used for version comparison but is useful for communication and documentation purposes."
-          },
           "release_date": {
             "type": "string",
             "format": "date-time",
@@ -2135,7 +2138,8 @@
               "$ref": "#/components/schemas/Badge"
             },
             "type": "array",
-            "title": "Badges"
+            "title": "Badges",
+            "deprecated": true
           },
           "authors": {
             "items": {
@@ -2186,6 +2190,11 @@
             "title": "Progress Regexp",
             "description": "regexp pattern for detecting computational service's progress"
           },
+          "image_digest": {
+            "type": "string",
+            "title": "Image Digest",
+            "description": "Image manifest digest. Note that this is NOT injected as an image label"
+          },
           "owner": {
             "type": "string",
             "format": "email",
@@ -2205,43 +2214,7 @@
           "outputs"
         ],
         "title": "ServiceGet",
-        "description": "Service metadata at publication time\n\n- read-only (can only be changed overwriting the image labels in the registry)\n- base metaddata\n- injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image",
-        "example": {
-          "name": "File Picker",
-          "description": "description",
-          "classifiers": [],
-          "quality": {},
-          "accessRights": {
-            "1": {
-              "execute_access": true,
-              "write_access": false
-            },
-            "4": {
-              "execute_access": true,
-              "write_access": true
-            }
-          },
-          "key": "simcore/services/frontend/file-picker",
-          "version": "1.0.0",
-          "type": "dynamic",
-          "authors": [
-            {
-              "name": "Red Pandas",
-              "email": "redpandas@wonderland.com"
-            }
-          ],
-          "contact": "redpandas@wonderland.com",
-          "inputs": {},
-          "outputs": {
-            "outFile": {
-              "displayOrder": 0,
-              "label": "File",
-              "description": "Chosen File",
-              "type": "data:*/*"
-            }
-          },
-          "owner": "redpandas@wonderland.com"
-        }
+        "description": "Service metadata at publication time\n\n- read-only (can only be changed overwriting the image labels in the registry)\n- base metaddata\n- injected in the image labels\n\nNOTE: This model is serialized in .osparc/metadata.yml and in the labels of the docker image"
       },
       "ServiceGroupAccessRights": {
         "properties": {
@@ -2577,11 +2550,15 @@
             "type": "string",
             "title": "Description"
           },
+          "version_display": {
+            "type": "string",
+            "title": "Version Display"
+          },
           "deprecated": {
             "type": "string",
             "format": "date-time",
             "title": "Deprecated",
-            "description": "If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)"
+            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as dprecated;If now>=deprecated, the service is retired"
           },
           "classifiers": {
             "items": {

@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable
 import aiodocker
 import pytest
 from faker import Faker
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

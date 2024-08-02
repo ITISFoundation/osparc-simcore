@@ -16,13 +16,13 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.s3 import S3Settings
-from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from . import sts
 from ._meta import API_VTAG
+from .dsm import get_dsm_provider
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -30,6 +30,7 @@ from .models import (
     SimcoreS3FoldersParams,
     StorageQueryParamsBase,
 )
+from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +41,9 @@ routes = RouteTableDef()
 async def get_or_create_temporary_s3_access(request: web.Request) -> web.Response:
     # NOTE: the name of the method is not accurate, these are not temporary at all
     # it returns the credentials of the s3 backend!
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     _logger.debug(
         "received call to get_or_create_temporary_s3_access with %s",
         f"{query_params=}",
@@ -62,13 +65,18 @@ async def _copy_folders_from_project(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
     )
-    await dsm.deep_copy_project_simcore_s3(
-        query_params.user_id,
-        body.source,
-        body.destination,
-        body.nodes_map,
-        task_progress=task_progress,
-    )
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"copying {body.source['uuid']} -> {body.destination['uuid']}",
+    ):
+        await dsm.deep_copy_project_simcore_s3(
+            query_params.user_id,
+            body.source,
+            body.destination,
+            body.nodes_map,
+            task_progress=task_progress,
+        )
 
     raise web.HTTPCreated(
         text=json_dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
@@ -77,7 +85,9 @@ async def _copy_folders_from_project(
 
 @routes.post(f"/{API_VTAG}/simcore-s3/folders", name="copy_folders_from_project")
 async def copy_folders_from_project(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     body = await parse_request_body_as(FoldersBody, request)
     _logger.debug(
         "received call to create_folders_from_project with %s",
@@ -85,7 +95,7 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
     )
     return await start_long_running_task(
         request,
-        _copy_folders_from_project,
+        _copy_folders_from_project,  # type: ignore[arg-type]
         task_context={},
         app=request.app,
         query_params=query_params,
@@ -97,7 +107,9 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
     f"/{API_VTAG}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project"
 )
 async def delete_folders_of_project(request: web.Request) -> NoReturn:
-    query_params = parse_request_query_parameters_as(DeleteFolderQueryParams, request)
+    query_params: DeleteFolderQueryParams = parse_request_query_parameters_as(
+        DeleteFolderQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(SimcoreS3FoldersParams, request)
     _logger.debug(
         "received call to delete_folders_of_project with %s",
@@ -119,7 +131,9 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
 
 @routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
 async def search_files(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
+    query_params: SearchFilesQueryParams = parse_request_query_parameters_as(
+        SearchFilesQueryParams, request
+    )
 
     _logger.debug(
         "received call to search_files with %s",

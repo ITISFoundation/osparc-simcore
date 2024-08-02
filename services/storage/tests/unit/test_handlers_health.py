@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 
 import simcore_service_storage._meta
@@ -11,7 +12,7 @@ from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_storage.handlers_health import HealthCheck
-from simcore_service_storage.s3_client import StorageS3Client
+from types_aiobotocore_s3 import S3Client
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -26,8 +27,10 @@ async def test_health_check(client: TestClient):
     assert not error
 
     app_health = HealthCheck.parse_obj(data)
-    assert app_health.name == simcore_service_storage._meta.PROJECT_NAME
-    assert app_health.version == str(simcore_service_storage._meta.VERSION)
+    assert app_health.name == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
+    assert app_health.version == str(
+        simcore_service_storage._meta.VERSION
+    )  # noqa: SLF001
 
 
 async def test_health_status(client: TestClient):
@@ -39,8 +42,12 @@ async def test_health_status(client: TestClient):
     assert not error
 
     app_status_check = AppStatusCheck.parse_obj(data)
-    assert app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME
-    assert app_status_check.version == str(simcore_service_storage._meta.VERSION)
+    assert (
+        app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME
+    )  # noqa: SLF001
+    assert app_status_check.version == str(
+        simcore_service_storage._meta.VERSION
+    )  # noqa: SLF001
     assert len(app_status_check.services) == 2
     assert "postgres" in app_status_check.services
     assert "healthy" in app_status_check.services["postgres"]
@@ -52,8 +59,8 @@ async def test_health_status(client: TestClient):
 
 async def test_bad_health_status_if_bucket_missing(
     client: TestClient,
-    storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    s3_client: S3Client,
 ):
     assert client.app
     url = client.app.router["get_status"].url_for()
@@ -64,7 +71,7 @@ async def test_bad_health_status_if_bucket_missing(
     app_status_check = AppStatusCheck.parse_obj(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"
     # now delete the bucket
-    await storage_s3_client.client.delete_bucket(Bucket=storage_s3_bucket)
+    await s3_client.delete_bucket(Bucket=storage_s3_bucket)
     # check again the health
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)

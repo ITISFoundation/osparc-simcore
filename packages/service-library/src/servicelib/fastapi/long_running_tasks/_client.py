@@ -8,7 +8,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
 from tenacity import RetryCallState
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -40,11 +40,7 @@ def _before_sleep_log(
         if retry_state.outcome.failed:
             ex = retry_state.outcome.exception()
             verb, value = "raised", f"{ex.__class__.__name__}: {ex}"
-
-            if exc_info:
-                local_exc_info = retry_state.outcome.exception()
-            else:
-                local_exc_info = False
+            local_exc_info = exc_info
         else:
             verb, value = "returned", retry_state.outcome.result()
             local_exc_info = False  # exc_info does not apply when no exception

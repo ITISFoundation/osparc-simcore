@@ -1,13 +1,14 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, ClassVar, Union, cast
+from typing import Any, ClassVar, TypeAlias, Union
 
 from models_library.basic_regex import MIME_TYPE_RE, PROPERTY_KEY_RE
 from models_library.generics import DictModel
 from pydantic import (
     AnyUrl,
     BaseModel,
+    ConstrainedStr,
     Extra,
     Field,
     StrictBool,
@@ -15,7 +16,6 @@ from pydantic import (
     StrictInt,
     StrictStr,
 )
-from pydantic.types import constr
 
 TaskCancelEventName = "cancel_event_{}"
 
@@ -81,8 +81,11 @@ class FileUrl(BaseModel):
         }
 
 
-PortKey = constr(regex=PROPERTY_KEY_RE)
-PortValue = Union[
+class PortKey(ConstrainedStr):
+    regex = PROPERTY_KEY_RE
+
+
+PortValue: TypeAlias = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
@@ -95,7 +98,7 @@ PortValue = Union[
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -109,7 +112,7 @@ class TaskInputData(DictModel[PortKey, PortValue]):
         }
 
 
-PortSchemaValue = Union[PortSchema, FilePortSchema]
+PortSchemaValue: TypeAlias = Union[PortSchema, FilePortSchema]
 
 
 class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
@@ -119,7 +122,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
     # does not work well in that case. For that reason, the schema is
     # sent as a json-schema instead of with a dynamically-created model class
     #
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -171,10 +174,9 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
                 msg = f"Could not locate '{output_key}' in {output_data_file}"
                 raise ValueError(msg)
 
-        # NOTE: this cast is necessary to make mypy happy
-        return cast(TaskOutputData, cls.parse_obj(data))
+        return cls.parse_obj(data)
 
-    class Config(DictModel.Config):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {

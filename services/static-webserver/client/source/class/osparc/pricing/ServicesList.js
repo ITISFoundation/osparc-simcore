@@ -78,18 +78,29 @@ qx.Class.define("osparc.pricing.ServicesList", {
     },
 
     __populateList: function(services) {
-      const sList = [];
+      // before accessing the metadata in a sync way, we need to bring them to the cache
+      const metadataPromises = [];
       services.forEach(service => {
-        const serviceKey = service["serviceKey"];
-        const serviceVersion = service["serviceVersion"];
-        const serviceMetaData = osparc.service.Utils.getMetaData(serviceKey, serviceVersion);
-        if (serviceMetaData) {
-          sList.push(qx.data.marshal.Json.createModel(serviceMetaData));
-        }
+        const key = service["serviceKey"];
+        const version = service["serviceVersion"];
+        metadataPromises.push(osparc.service.Store.getService(key, version));
       });
+      Promise.all(metadataPromises)
+        .then(() => {
+          const sList = [];
+          services.forEach(service => {
+            const key = service["serviceKey"];
+            const version = service["serviceVersion"];
+            const serviceMetadata = osparc.service.Store.getMetadata(key, version);
+            if (serviceMetadata) {
+              sList.push(new osparc.data.model.Service(serviceMetadata));
+            }
+          });
 
-      const servicesList = this.getChildControl("services-list");
-      servicesList.setModel(new qx.data.Array(sList));
+          const servicesList = this.getChildControl("services-list");
+          servicesList.setModel(new qx.data.Array(sList));
+        })
+        .catch(err => console.error(err));
     },
 
     __openAddServiceToPlan: function() {
@@ -97,7 +108,6 @@ qx.Class.define("osparc.pricing.ServicesList", {
       srvCat.addListener("addService", e => {
         const data = e.getData();
         const service = data.service;
-        console.log(service);
         const params = {
           url: {
             pricingPlanId: this.getPricingPlanId()

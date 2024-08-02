@@ -24,7 +24,10 @@ async def get_service_status(
     app: FastAPI, *, node_id: NodeID
 ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    return await director_v2_client.get_status(node_id)
+    response: NodeGet | DynamicServiceGet | NodeGetIdle = (
+        await director_v2_client.get_status(node_id)
+    )
+    return response
 
 
 @router.expose()
@@ -32,10 +35,11 @@ async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    result = await director_v2_client.run_dynamic_service(dynamic_service_start)
-
+    response: NodeGet | DynamicServiceGet = (
+        await director_v2_client.run_dynamic_service(dynamic_service_start)
+    )
     await set_request_as_running(app, dynamic_service_start)
-    return result
+    return response
 
 
 @router.expose(
@@ -49,12 +53,13 @@ async def stop_dynamic_service(
 ) -> NodeGet | DynamicServiceGet:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
-    result = await director_v2_client.stop_dynamic_service(
-        node_id=dynamic_service_stop.node_id,
-        simcore_user_agent=dynamic_service_stop.simcore_user_agent,
-        save_state=dynamic_service_stop.save_state,
-        timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+    response: NodeGet | DynamicServiceGet = (
+        await director_v2_client.stop_dynamic_service(
+            node_id=dynamic_service_stop.node_id,
+            simcore_user_agent=dynamic_service_stop.simcore_user_agent,
+            save_state=dynamic_service_stop.save_state,
+            timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+        )
     )
-
     await set_request_as_stopped(app, dynamic_service_stop=dynamic_service_stop)
-    return result
+    return response

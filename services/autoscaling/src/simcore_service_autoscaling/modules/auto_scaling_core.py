@@ -3,7 +3,6 @@ import collections
 import dataclasses
 import datetime
 import itertools
-import json
 import logging
 from typing import Final, cast
 
@@ -16,7 +15,6 @@ from aws_library.ec2.models import (
     Resources,
 )
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils_formatting import timedelta_as_minute_second
@@ -44,6 +42,7 @@ from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
 )
+from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
 from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -79,6 +78,12 @@ async def _analyze_current_cluster(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
+    )
+
+    buffer_ec2_instances = await get_ec2_client(app).get_instances(
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        state_names=["stopped"],
     )
 
     attached_ec2s, pending_ec2s = await associate_ec2_instances_with_nodes(
@@ -136,26 +141,14 @@ async def _analyze_current_cluster(
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
+        buffer_ec2s=[
+            NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
+        ],
         terminating_nodes=terminating_nodes,
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    cluster_state = jsonable_encoder(
-        cluster,
-        include={
-            "active_nodes": True,
-            "pending_nodes": True,
-            "drained_nodes": "available_resources",
-            "reserve_drained_nodes": True,
-            "pending_ec2s": "ec2_instance",
-            "broken_ec2s": "ec2_instance",
-            "terminating_nodes": "ec2_instance",
-        },
-    )
-    _logger.info(
-        "current state: %s",
-        f"{json.dumps(cluster_state, indent=2)}",
-    )
+    _logger.info("current state: %s", f"{cluster!r}")
     return cluster
 
 
@@ -261,7 +254,7 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(  # type: ignore
+        cast(
             set[InstanceTypeType],
             set(
                 app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
@@ -629,10 +622,7 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    new_instance_tags = (
-        auto_scaling_mode.get_ec2_tags(app)
-        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
-    )
+    new_instance_tags = auto_scaling_mode.get_ec2_tags(app)
     capped_needed_machines = {}
     try:
         capped_needed_machines = await _cap_needed_instances(
@@ -666,7 +656,7 @@ async def _start_instances(
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
                     subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
-                    iam_instance_profile="",
+                    iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
                 number_of_instances=instance_num,
@@ -900,7 +890,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     instances_to_terminate = [
         i
         for i in cluster.terminating_nodes
-        if (now - utils_docker.get_node_termination_started_since(i.node))
+        if (now - (utils_docker.get_node_termination_started_since(i.node) or now))
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION
     ]
     terminated_instance_ids = []

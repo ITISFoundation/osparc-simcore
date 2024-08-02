@@ -52,7 +52,10 @@ async def test_root_get(client, api_version_prefix):
 def _check_services(created_services, services, schema_version="v1"):
     assert len(created_services) == len(services)
 
-    created_service_descriptions = [x["service_description"] for x in created_services]
+    created_service_descriptions = [
+        (x["service_description"]["key"], x["service_description"]["version"])
+        for x in created_services
+    ]
 
     json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
     assert json_schema_path.exists() == True
@@ -60,8 +63,12 @@ def _check_services(created_services, services, schema_version="v1"):
         service_schema = json.load(file_pt)
 
     for service in services:
+        service.pop("image_digest")
         if schema_version == "v1":
-            assert created_service_descriptions.count(service) == 1
+            assert (
+                created_service_descriptions.count((service["key"], service["version"]))
+                == 1
+            )
         json_schema_validator.validate_instance_object(service, service_schema)
 
 
@@ -76,7 +83,9 @@ async def test_services_get(docker_registry, client, push_services, api_version_
     _check_services([], services)
 
     # some services
-    created_services = await push_services(3, 2)
+    created_services = await push_services(
+        number_of_computational_services=3, number_of_interactive_services=2
+    )
     web_response = await client.get(f"/{api_version_prefix}/services")
     assert web_response.status == 200
     assert web_response.content_type == "application/json"

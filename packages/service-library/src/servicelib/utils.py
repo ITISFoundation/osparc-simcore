@@ -9,11 +9,18 @@ import asyncio
 import logging
 import os
 import socket
-from collections.abc import Awaitable, Coroutine, Generator, Iterable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    Awaitable,
+    Coroutine,
+    Generator,
+    Iterable,
+)
 from pathlib import Path
-from typing import Any, AsyncGenerator, AsyncIterable, Final, TypeVar, cast
+from typing import Any, Final, Literal, TypeVar, cast, overload
 
-import toolz
+import toolz  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 
 _logger = logging.getLogger(__name__)
@@ -278,13 +285,35 @@ async def _wrapped(
         return index, exc
 
 
+@overload
+async def limited_gather(
+    *awaitables: Awaitable[T],
+    reraise: Literal[True] = True,
+    log: logging.Logger = _DEFAULT_LOGGER,
+    limit: int = _DEFAULT_LIMITED_CONCURRENCY,
+    tasks_group_prefix: str | None = None,
+) -> list[T]:
+    ...
+
+
+@overload
+async def limited_gather(
+    *awaitables: Awaitable[T],
+    reraise: Literal[False] = False,
+    log: logging.Logger = _DEFAULT_LOGGER,
+    limit: int = _DEFAULT_LIMITED_CONCURRENCY,
+    tasks_group_prefix: str | None = None,
+) -> list[T | BaseException]:
+    ...
+
+
 async def limited_gather(
     *awaitables: Awaitable[T],
     reraise: bool = True,
     log: logging.Logger = _DEFAULT_LOGGER,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> list[T | BaseException | None]:
+) -> list[T] | list[T | BaseException]:
     """runs all the awaitables using the limited concurrency and returns them in the same order
 
     Arguments:
@@ -311,13 +340,14 @@ async def limited_gather(
         for index, awaitable in enumerate(awaitables)
     ]
 
-    results: list[T | BaseException | None] = [None] * len(indexed_awaitables)
+    interim_results: list[T | BaseException | None] = [None] * len(indexed_awaitables)
     async for future in limited_as_completed(
         indexed_awaitables,
         limit=limit,
         tasks_group_prefix=tasks_group_prefix or _DEFAULT_GATHER_TASKS_GROUP_PREFIX,
     ):
         index, result = await future
-        results[index] = result
+        interim_results[index] = result
 
-    return results
+    # NOTE: None is already contained in T
+    return cast(list[T | BaseException], interim_results)

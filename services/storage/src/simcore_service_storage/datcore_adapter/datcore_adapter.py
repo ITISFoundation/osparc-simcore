@@ -6,11 +6,12 @@ from typing import Any, TypeVar, cast
 
 import aiohttp
 from aiohttp import web
+from aiohttp.client import ClientSession
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from servicelib.aiohttp.client_session import ClientSession, get_client_session
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
 from ..constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS

@@ -1,11 +1,12 @@
 """ RESTful API for simcore_service_storage
 
 """
+
 import logging
 from pathlib import Path
 
 from aiohttp import web
-from aiohttp_swagger import setup_swagger
+from aiohttp_swagger import setup_swagger  # type: ignore[import-untyped]
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.rest_utils import (
     get_named_routes_as_message,
