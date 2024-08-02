@@ -76,9 +76,11 @@ async def get_redis_client_sdk(
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
     @asynccontextmanager
-    async def _(database: RedisDatabase) -> AsyncIterator[RedisClientSDK]:
+    async def _(
+        database: RedisDatabase, decode_response: bool = True  # noqa: FBT002
+    ) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
-        client = RedisClientSDK(redis_resources_dns)
+        client = RedisClientSDK(redis_resources_dns, decode_responses=decode_response)
         assert client
         assert client.redis_dsn == redis_resources_dns
         await client.setup()
