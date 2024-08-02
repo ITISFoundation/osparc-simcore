@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
       const accessRights = this.getAccessRights();
       if (
         ("getRead" in accessRights && accessRights.getRead()) ||
-        ("getExecute_access" in accessRights && accessRights.getExecute_access())
+        ("getExecute" in accessRights && accessRights.getExecute())
       ) {
         const button = this.getChildControl("info-button");
         button.addListener("execute", () => this.fireDataEvent("openMoreInfo", {

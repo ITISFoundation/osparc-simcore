@@ -23,3 +23,5 @@ pytest-sugar
 python-dotenv
 pyyaml
 yarl
+types-jsonschema
+types-PyYAML

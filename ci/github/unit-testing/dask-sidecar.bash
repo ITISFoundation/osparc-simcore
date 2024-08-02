@@ -24,6 +24,9 @@ test() {
 }
 
 typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  uv pip install mypy
   pushd services/dask-sidecar
   make mypy
   popd

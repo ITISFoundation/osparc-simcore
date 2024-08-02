@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import cast
 
 from models_library.products import ProductName
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
@@ -57,8 +56,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("INVITATIONS_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
 
 class MinimalApplicationSettings(_BaseApplicationSettings):

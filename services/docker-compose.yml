@@ -136,7 +136,7 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
@@ -390,7 +390,7 @@ services:
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "inv-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -406,7 +406,7 @@ services:
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "pay-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -764,7 +764,6 @@ services:
 
     networks: *webserver_networks
 
-
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -803,6 +802,7 @@ services:
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
       WEBSERVER_EMAIL: ${WB_DB_EL_EMAIL}
       WEBSERVER_EXPORTER: ${WB_DB_EL_EXPORTER}
+      WEBSERVER_FOLDERS: ${WB_DB_EL_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_DB_EL_FRONTEND}
       WEBSERVER_GARBAGE_COLLECTOR: ${WB_DB_EL_GARBAGE_COLLECTOR}
       WEBSERVER_GROUPS: ${WB_DB_EL_GROUPS}
@@ -900,6 +900,7 @@ services:
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
       WEBSERVER_EMAIL: ${WB_GC_EMAIL}
       WEBSERVER_EXPORTER: ${WB_GC_EXPORTER}
+      WEBSERVER_FOLDERS: ${WB_GC_FOLDERS}
       WEBSERVER_FRONTEND: ${WB_GC_FRONTEND}
       WEBSERVER_GROUPS: ${WB_GC_GROUPS}
       WEBSERVER_INVITATIONS: ${WB_GC_INVITATIONS}
@@ -1005,7 +1006,7 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       BF_API_KEY: ${BF_API_KEY}
       BF_API_SECRET: ${BF_API_SECRET}
@@ -1214,12 +1215,6 @@ services:
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services
-    #healthcheck:
-    #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
-    #  interval: 3s
-    #  timeout: 1s
-    #  retries: 3
-    #  start_period: 20s
 
 
 volumes:

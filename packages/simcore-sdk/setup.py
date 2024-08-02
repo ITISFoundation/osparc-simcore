@@ -34,6 +34,7 @@ SETUP = {
     "name": "simcore-sdk",
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "packages": find_packages(where="src"),
+    "package_data": {"": ["py.typed"]},
     "package_dir": {"": "src"},
     "python_requires": ">=3.6",
     "install_requires": INSTALL_REQUIREMENTS,

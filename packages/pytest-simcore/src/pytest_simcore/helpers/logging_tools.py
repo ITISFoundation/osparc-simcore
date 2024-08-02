@@ -28,8 +28,9 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
 
 
 class DynamicIndentFormatter(logging.Formatter):
-    indent_char: str = "\t"
-    _indent_level: int = 0
+    indent_char: str = "    "
+    _cls_indent_level: int = 0
+    _instance_indent_level: int = 0
 
     def __init__(self, fmt=None, datefmt=None, style="%"):
         dynamic_fmt = fmt or "%(asctime)s %(levelname)s %(message)s"
@@ -38,18 +39,24 @@ class DynamicIndentFormatter(logging.Formatter):
 
     def format(self, record) -> str:
         original_message = record.msg
-        record.msg = f"{self.indent_char * self._indent_level}{original_message}"
+        record.msg = f"{self.indent_char * self._cls_indent_level}{self.indent_char * self._instance_indent_level}{original_message}"
         result = super().format(record)
         record.msg = original_message
         return result
 
     @classmethod
-    def increase_indent(cls) -> None:
-        cls._indent_level += 1
+    def cls_increase_indent(cls) -> None:
+        cls._cls_indent_level += 1
 
     @classmethod
-    def decrease_indent(cls) -> None:
-        cls._indent_level = max(0, cls._indent_level - 1)
+    def cls_decrease_indent(cls) -> None:
+        cls._cls_indent_level = max(0, cls._cls_indent_level - 1)
+
+    def increase_indent(self) -> None:
+        self._instance_indent_level += 1
+
+    def decrease_indent(self) -> None:
+        self._instance_indent_level = max(0, self._instance_indent_level - 1)
 
     @classmethod
     def setup(cls, logger: logging.Logger) -> None:
@@ -80,6 +87,31 @@ LogMessageStr: TypeAlias = str
 
 
 @contextmanager
+def _increased_logger_indent(logger: logging.Logger) -> Iterator[None]:
+    try:
+        if formatter := next(
+            (
+                h.formatter
+                for h in logger.handlers
+                if isinstance(h.formatter, DynamicIndentFormatter)
+            ),
+            None,
+        ):
+            formatter.increase_indent()
+        yield
+    finally:
+        if formatter := next(
+            (
+                h.formatter
+                for h in logger.handlers
+                if isinstance(h.formatter, DynamicIndentFormatter)
+            ),
+            None,
+        ):
+            formatter.decrease_indent()
+
+
+@contextmanager
 def log_context(
     level: LogLevelInt,
     msg: LogMessageStr | tuple | ContextMessages,
@@ -103,11 +135,11 @@ def log_context(
 
     started_time = datetime.datetime.now(tz=datetime.timezone.utc)
     try:
-        DynamicIndentFormatter.increase_indent()
+        DynamicIndentFormatter.cls_increase_indent()
 
         logger.log(level, ctx_msg.starting, *args, **kwargs)
-
-        yield SimpleNamespace(logger=logger, messages=ctx_msg)
+        with _increased_logger_indent(logger):
+            yield SimpleNamespace(logger=logger, messages=ctx_msg)
         elapsed_time = datetime.datetime.now(tz=datetime.timezone.utc) - started_time
         done_message = (
             f"{ctx_msg.done} ({_timedelta_as_minute_second_ms(elapsed_time)})"
@@ -132,4 +164,4 @@ def log_context(
         raise
 
     finally:
-        DynamicIndentFormatter.decrease_indent()
+        DynamicIndentFormatter.cls_decrease_indent()

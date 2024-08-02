@@ -2,7 +2,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Any, Final
+from typing import Final
 
 import aio_pika
 from pydantic import NonNegativeInt
@@ -31,9 +31,14 @@ _DELAYED_EXCHANGE_NAME: Final[str] = "delayed_{exchange_name}"
 
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     count: int = 0
+    if (x_death := message.headers.get(_HEADER_X_DEATH, [])) and (
+        isinstance(x_death, list)
+        and x_death
+        and isinstance(x_death[0], dict)
+        and "count" in x_death[0]
+    ):
 
-    x_death: list[dict[str, Any]] = message.headers.get(_HEADER_X_DEATH, [])
-    if x_death:
+        assert isinstance(x_death[0]["count"], int)  # nosec
         count = x_death[0]["count"]
 
     return count
@@ -129,7 +134,7 @@ class RabbitMQClient(RabbitMQClientBase):
     async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
-            channel = await connection.channel()
+            channel: aio_pika.abc.AbstractChannel = await connection.channel()
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
@@ -187,9 +192,11 @@ class RabbitMQClient(RabbitMQClientBase):
 
             exchange = await channel.declare_exchange(
                 exchange_name,
-                aio_pika.ExchangeType.FANOUT
-                if topics is None
-                else aio_pika.ExchangeType.TOPIC,
+                (
+                    aio_pika.ExchangeType.FANOUT
+                    if topics is None
+                    else aio_pika.ExchangeType.TOPIC
+                ),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
@@ -313,9 +320,11 @@ class RabbitMQClient(RabbitMQClientBase):
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.declare_exchange(
                 exchange_name,
-                aio_pika.ExchangeType.FANOUT
-                if topic is None
-                else aio_pika.ExchangeType.TOPIC,
+                (
+                    aio_pika.ExchangeType.FANOUT
+                    if topic is None
+                    else aio_pika.ExchangeType.TOPIC
+                ),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )

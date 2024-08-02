@@ -1,4 +1,6 @@
+import functools
 import logging
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
@@ -11,6 +13,7 @@ from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
@@ -27,8 +30,30 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
+def _profile_rpc_call(coro):
+    @functools.wraps(coro)
+    async def _wrapper(app: FastAPI, **kwargs):
+        profile_enabled = (
+            (settings := getattr(app.state, "settings", None))
+            and settings.CATALOG_PROFILING
+            and _logger.isEnabledFor(logging.INFO)
+        )
+        if profile_enabled:
+            with Profiler() as profiler:
+                result = await coro(app, **kwargs)
+            profiler_output = profiler.output_text(unicode=True, color=False)
+            _logger.info("[PROFILING]: %s", profiler_output)
+            return result
+
+        # bypasses w/o profiling
+        return await coro(app, **kwargs)
+
+    return _wrapper
+
+
 @router.expose(reraise_if_error_type=(CatalogForbiddenError,))
 @log_decorator(_logger, level=logging.DEBUG)
+@_profile_rpc_call
 async def list_services_paginated(
     app: FastAPI,
     *,
@@ -51,16 +76,20 @@ async def list_services_paginated(
     assert len(items) <= total_count  # nosec
     assert len(items) <= limit  # nosec
 
-    return PageRpcServicesGetV2.create(
-        items,
-        total=total_count,
-        limit=limit,
-        offset=offset,
+    return cast(
+        PageRpcServicesGetV2,
+        PageRpcServicesGetV2.create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        ),
     )
 
 
 @router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
 @log_decorator(_logger, level=logging.DEBUG)
+@_profile_rpc_call
 async def get_service(
     app: FastAPI,
     *,
@@ -115,3 +144,25 @@ async def update_service(
     assert service.version == service_version  # nosec
 
     return service
+
+
+@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
+@log_decorator(_logger, level=logging.DEBUG)
+async def check_for_service(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    """Checks whether service exists and can be accessed, otherwise it raise"""
+    assert app.state.engine  # nosec
+
+    await services_api.check_for_service(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )

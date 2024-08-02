@@ -13,10 +13,10 @@ from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
+    CatalogServiceUpdate,
     ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
-    ServiceUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -36,7 +36,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required
@@ -78,7 +77,6 @@ class ListServiceParams(PageQueryParameters):
     f"{VTAG_DEV}/catalog/services/-/latest",
     name="dev_list_services_latest",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
@@ -115,7 +113,6 @@ async def dev_list_services_latest(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_get_service",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
@@ -142,14 +139,15 @@ async def dev_get_service(request: Request):
     f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
     name="dev_update_service",
 )
-@requires_dev_feature_enabled
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    update: ServiceUpdate = await parse_request_body_as(ServiceUpdate, request)
+    update: CatalogServiceUpdate = await parse_request_body_as(
+        CatalogServiceUpdate, request
+    )
 
     assert request_ctx  # nosec
     assert path_params  # nosec
@@ -220,7 +218,7 @@ async def update_service(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update_data: dict[str, Any] = await request.json(loads=json_loads)
 
-    assert parse_obj_as(ServiceUpdate, update_data) is not None  # nosec
+    assert parse_obj_as(CatalogServiceUpdate, update_data) is not None  # nosec
 
     # Evaluate and return validated model
     data = await _api.update_service(

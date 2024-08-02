@@ -1,6 +1,5 @@
 import datetime
 from functools import cached_property
-from typing import cast
 
 from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
@@ -51,8 +50,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @validator("DYNAMIC_SCHEDULER__LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
 
 class ApplicationSettings(_BaseApplicationSettings):

@@ -79,9 +79,15 @@ qx.Class.define("osparc.Application", {
       // to provide our own message here
       window.addEventListener("beforeunload", e => {
         const downloadLinkTracker = osparc.DownloadLinkTracker.getInstance();
-        // The downloadLinkTracker uses an external link for downloading files.
-        // When it starts (click), triggers an unload event. This condition avoids the false positive
-        if (!downloadLinkTracker.isDownloading() && webSocket.isConnected()) {
+        if (
+          // The downloadLinkTracker uses an external link for downloading files.
+          // When it starts (click), triggers an unload event. This condition avoids the false positive
+          !downloadLinkTracker.isDownloading() &&
+          // allow reloading in login page
+          webSocket.isConnected() &&
+          // allow reloading in dashboard
+          osparc.store.Store.getInstance().getCurrentStudy()
+        ) {
           // Cancel the event as stated by the standard.
           e.preventDefault();
           // Chrome requires returnValue to be set.

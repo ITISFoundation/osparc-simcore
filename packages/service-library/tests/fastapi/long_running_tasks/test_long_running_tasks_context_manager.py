@@ -167,7 +167,7 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     received = ()
 
     async def progress_update(
-        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+        message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
     ) -> None:
         nonlocal counter
         nonlocal received
@@ -185,12 +185,14 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
         assert received == ("", None)
 
     for _ in range(repeat):
-        await progress_updater.update(mock_task_id, percent=0.0)
+        await progress_updater.update(mock_task_id, percent=ProgressPercent(0.0))
         assert counter == 2
         assert received == ("", 0.0)
 
     for _ in range(repeat):
-        await progress_updater.update(mock_task_id, percent=1.0, message="done")
+        await progress_updater.update(
+            mock_task_id, percent=ProgressPercent(1.0), message="done"
+        )
         assert counter == 3
         assert received == ("done", 1.0)
 

@@ -48,7 +48,7 @@ class DirectorV2Client(
             return DynamicServiceGet.parse_obj(dict_response)
         except UnexpectedStatusError as e:
             if (
-                e.response.status_code  # pylint:disable=no-member # type: ignore
+                e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
                 == status.HTTP_404_NOT_FOUND
             ):
                 return NodeGetIdle.from_node_id(node_id)
@@ -83,14 +83,14 @@ class DirectorV2Client(
             )
         except UnexpectedStatusError as e:
             if (
-                e.response.status_code  # pylint:disable=no-member # type: ignore
+                e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
                 == status.HTTP_409_CONFLICT
             ):
                 raise ServiceWaitingForManualInterventionError(
                     node_id=node_id
                 ) from None
             if (
-                e.response.status_code  # pylint:disable=no-member # type: ignore
+                e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
                 == status.HTTP_404_NOT_FOUND
             ):
                 raise ServiceWasNotFoundError(node_id=node_id) from None

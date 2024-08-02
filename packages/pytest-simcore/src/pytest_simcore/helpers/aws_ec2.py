@@ -1,9 +1,11 @@
 import base64
 from typing import Sequence
 
+from models_library.docker import DockerGenericTag
+from models_library.utils.json_serialization import json_dumps
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef, TagTypeDef
 
 
 async def assert_autoscaled_computational_ec2_instances(
@@ -63,6 +65,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
+    expected_pre_pulled_images: list[DockerGenericTag] | None,
     instance_filters: Sequence[FilterTypeDef] | None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
@@ -77,6 +80,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
             "io.simcore.autoscaling.buffer_machine",
             *expected_additional_tag_keys,
         ],
+        expected_pre_pulled_images=expected_pre_pulled_images,
         expected_user_data=[],
         instance_filters=instance_filters,
     )
@@ -91,6 +95,7 @@ async def assert_ec2_instances(
     expected_instance_state: InstanceStateNameType,
     expected_instance_tag_keys: list[str],
     expected_user_data: list[str],
+    expected_pre_pulled_images: list[DockerGenericTag] | None = None,
     instance_filters: Sequence[FilterTypeDef] | None = None,
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
@@ -112,8 +117,27 @@ async def assert_ec2_instances(
                 "Name",
             }
             instance_tag_keys = {tag["Key"] for tag in instance["Tags"] if "Key" in tag}
-
             assert instance_tag_keys == expected_tag_keys
+
+            if expected_pre_pulled_images is None:
+                assert (
+                    "io.simcore.autoscaling.pre_pulled_images" not in instance_tag_keys
+                )
+            else:
+                assert "io.simcore.autoscaling.pre_pulled_images" in instance_tag_keys
+
+                def _by_pre_pull_image(ec2_tag: TagTypeDef) -> bool:
+                    assert "Key" in ec2_tag
+                    return ec2_tag["Key"] == "io.simcore.autoscaling.pre_pulled_images"
+
+                instance_pre_pulled_images_aws_tag = next(
+                    iter(filter(_by_pre_pull_image, instance["Tags"]))
+                )
+                assert "Value" in instance_pre_pulled_images_aws_tag
+                assert (
+                    instance_pre_pulled_images_aws_tag["Value"]
+                    == f"{json_dumps(expected_pre_pulled_images)}"
+                )
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]

@@ -7,7 +7,7 @@ from typing import cast
 import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
@@ -194,17 +194,15 @@ class SimcoreEC2API:
             _logger.info("instances %s exists now.", instance_ids)
 
             # get the private IPs
-            instances = await self.client.describe_instances(InstanceIds=instance_ids)
+            described_instances = await self.client.describe_instances(
+                InstanceIds=instance_ids
+            )
             instance_datas = [
                 EC2InstanceData(
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
-                    aws_public_ip=(
-                        instance["PublicIpAddress"]
-                        if "PublicIpAddress" in instance
-                        else None
-                    ),
+                    aws_public_ip=instance.get("PublicIpAddress", None),
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
                     tags=parse_obj_as(
@@ -212,7 +210,7 @@ class SimcoreEC2API:
                     ),
                     resources=instance_config.type.resources,
                 )
-                for instance in instances["Reservations"][0]["Instances"]
+                for instance in described_instances["Reservations"][0]["Instances"]
             ]
             _logger.info(
                 "%s is available, happy computing!!",
@@ -264,11 +262,7 @@ class SimcoreEC2API:
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
-                        aws_public_ip=(
-                            instance["PublicIpAddress"]
-                            if "PublicIpAddress" in instance
-                            else None
-                        ),
+                        aws_public_ip=instance.get("PublicIpAddress", None),
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
                         resources=ec2_instance_types[0].resources,

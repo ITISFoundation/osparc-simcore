@@ -22,7 +22,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
     QUICK_START: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
-        tutorial: () => new osparc.product.quickStart.ti.Slides()
+        tutorial: () => new osparc.product.quickStart.tis.Slides()
       },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",

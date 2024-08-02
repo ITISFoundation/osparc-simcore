@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 
 MINUTE = 60
 
-_director_startup_retry_policy = {
+_director_startup_retry_policy: dict[str, Any] = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #

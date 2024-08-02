@@ -457,7 +457,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         btn.setFetching(true);
         if (osparc.utils.Resources.isService(this.__resourceData)) {
           const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
-          osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, "quality", newQuality)
+          osparc.service.Store.patchServiceData(serviceDataCopy, "quality", newQuality)
             .then(() => {
               this.__initResourceData(serviceDataCopy);
               this.fireDataEvent("updateQuality", serviceDataCopy);
