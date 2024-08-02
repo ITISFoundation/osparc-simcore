@@ -4,6 +4,7 @@ from models_library.api_schemas_storage import LinkType as FileLinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import exceptions
@@ -23,7 +24,8 @@ async def ports(
     *,
     db_manager: DBManager | None = None,
     r_clone_settings: RCloneSettings | None = None,
-    io_log_redirect_cb: LogRedirectCB | None = None
+    io_log_redirect_cb: LogRedirectCB | None = None,
+    aws_s3_cli_settings: AwsS3CliSettings | None = None
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
@@ -39,6 +41,7 @@ async def ports(
         auto_update=True,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
+        aws_s3_cli_settings=aws_s3_cli_settings,
     )
 
 
