@@ -230,13 +230,6 @@ class RedisManagerDBConfig:
     health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
 
 
-@dataclass(frozen=True)
-class RedisManagerDBConfig:
-    database: RedisDatabase
-    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
-    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
-
-
 @dataclass
 class RedisClientsManager:
     """
