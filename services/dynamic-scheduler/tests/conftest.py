@@ -4,6 +4,7 @@
 import string
 from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Final
 
 import pytest
 import simcore_service_dynamic_scheduler
@@ -13,7 +14,6 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -77,29 +77,38 @@ def app_environment(
     )
 
 
+_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.application"
+
+
 @pytest.fixture
 def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_rabbitmq")
-    mocker.patch(f"{base_path}.setup_rpc_api_routes")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_rabbitmq")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_rpc_api_routes")
 
 
 @pytest.fixture
 def disable_redis_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_redis")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_redis")
 
 
 @pytest.fixture
 def disable_service_tracker_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_service_tracker")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_service_tracker")
 
 
 @pytest.fixture
 def disable_deferred_manager_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_deferred_manager")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_deferred_manager")
+
+
+@pytest.fixture
+def disable_notifier_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_notifier")
+
+
+@pytest.fixture
+def disable_status_monitor_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_status_monitor")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10

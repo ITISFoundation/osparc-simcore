@@ -21,7 +21,6 @@ class MockHealth:
 
 @pytest.fixture
 def mock_rabbitmq_clients(
-    disable_rabbitmq_setup: None,
     mocker: MockerFixture,
     rabbit_client_ok: bool,
     rabbit_rpc_server_ok: bool,
@@ -39,8 +38,6 @@ def mock_rabbitmq_clients(
 
 @pytest.fixture
 def mock_redis_client(
-    disable_redis_setup: None,
-    disable_service_tracker_setup: None,
     mocker: MockerFixture,
     redis_client_ok: bool,
 ) -> None:
@@ -55,7 +52,6 @@ def mock_redis_client(
 def app_environment(
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
-    disable_deferred_manager_setup: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
