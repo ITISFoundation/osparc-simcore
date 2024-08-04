@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.quickStart.ti.MoreInformation", {
+qx.Class.define("osparc.product.quickStart.tis.MoreInformation", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.product.quickStart.ti.MoreInformation", {
 
   members: {
     _populateCard: function() {
-      osparc.product.quickStart.ti.Slides.footerLinks().forEach(footerItem => {
+      osparc.product.quickStart.tis.Slides.footerLinks().forEach(footerItem => {
         this._add(footerItem);
       });
     }

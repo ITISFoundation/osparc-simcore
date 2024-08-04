@@ -1,6 +1,5 @@
 import datetime
 from functools import cached_property
-from typing import cast
 
 from models_library.basic_types import BootModeEnum
 from pydantic import Field, PositiveInt, validator
@@ -61,14 +60,13 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     @cached_property
-    def LOG_LEVEL(self) -> LogLevel:
+    def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
     @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
 
 class MinimalApplicationSettings(_BaseApplicationSettings):

@@ -5,7 +5,8 @@ from pprint import pformat
 from typing import Any
 
 import pydantic
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
+from models_library.utils.json_serialization import json_dumps
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.r_clone import RCloneSettings
@@ -145,7 +146,7 @@ async def dump(nodeports: Nodeports) -> None:
     )
 
     # convert to DB
-    port_cfg = {
+    port_cfg: dict[str, Any] = {
         "schema": {"inputs": {}, "outputs": {}},
         "inputs": {},
         "outputs": {},
@@ -164,14 +165,14 @@ async def dump(nodeports: Nodeports) -> None:
             # pylint: disable=protected-access
             if (
                 port_values["value"] is not None
-                and not getattr(nodeports, f"internal_{port_type}")[
+                and not getattr(nodeports, f"internal_{port_type}")[  # noqa: SLF001
                     port_key
                 ]._used_default_value
             ):
                 port_cfg[port_type][port_key] = port_values["value"]
 
     await nodeports.db_manager.write_ports_configuration(
-        json.dumps(port_cfg),
+        json_dumps(port_cfg),
         nodeports.project_id,
         nodeports.node_uuid,
     )

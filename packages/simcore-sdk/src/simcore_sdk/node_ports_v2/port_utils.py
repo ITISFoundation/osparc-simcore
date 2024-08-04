@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
-from models_library.basic_types import SHA256Str
+from models_library.basic_types import IDStr, SHA256Str
+from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
@@ -31,7 +32,7 @@ async def get_value_link_from_port_link(
 ) -> ItemValue | None:
     log.debug("Getting value link %s", value)
     # create a node ports for the other node
-    other_nodeports = await node_port_creator(value.node_uuid)
+    other_nodeports = await node_port_creator(f"{value.node_uuid}")
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value link", other_nodeports)
 
@@ -44,14 +45,14 @@ async def get_value_link_from_port_link(
 async def get_value_from_link(
     key: str,
     value: PortLink,
-    file_to_key_map: dict[str, str] | None,
+    file_to_key_map: dict[FileName, ServicePortKey] | None,
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
     *,
     progress_bar: ProgressBarData | None,
 ) -> ItemConcreteValue | None:
     log.debug("Getting value %s", value)
     # create a node ports for the other node
-    other_nodeports = await node_port_creator(value.node_uuid)
+    other_nodeports = await node_port_creator(f"{value.node_uuid}")
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value", other_nodeports)
 
@@ -183,7 +184,7 @@ async def delete_target_link(
 async def pull_file_from_store(
     user_id: UserID,
     key: str,
-    file_to_key_map: dict[str, str] | None,
+    file_to_key_map: dict[FileName, ServicePortKey] | None,
     value: FileLink,
     io_log_redirect_cb: LogRedirectCB | None,
     r_clone_settings: RCloneSettings | None,
@@ -201,7 +202,7 @@ async def pull_file_from_store(
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        or ProgressBarData(num_steps=1, description=IDStr("pulling file")),
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -257,7 +258,7 @@ async def push_file_to_store(
 
 async def pull_file_from_download_link(
     key: str,
-    file_to_key_map: dict[str, str] | None,
+    file_to_key_map: dict[FileName, ServicePortKey] | None,
     value: DownloadLink,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData | None,
@@ -275,7 +276,7 @@ async def pull_file_from_download_link(
         local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, description="pulling file"),
+        or ProgressBarData(num_steps=1, description=IDStr("pulling file")),
     )
 
     # if a file alias is present use it to rename the file accordingly

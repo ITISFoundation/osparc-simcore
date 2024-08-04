@@ -1274,7 +1274,7 @@ qx.Class.define("osparc.data.Resources", {
           params["url"] = {};
         }
         params["url"]["offset"] = offset;
-        params["url"]["limit"] = 40;
+        params["url"]["limit"] = 20;
         const endpoint = "getPage";
         const options = {
           resolveWResponse: true

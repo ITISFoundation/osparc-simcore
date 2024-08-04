@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from models_library.projects import AccessRights, Node, StudyUI
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink

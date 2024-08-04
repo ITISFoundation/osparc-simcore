@@ -2,13 +2,17 @@ import asyncio
 import json
 import logging
 from collections import deque
+from collections.abc import AsyncGenerator, Mapping
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple, cast
+from typing import Any, Final, NamedTuple, cast
 
 import aiodocker
 from aiodocker import Docker
-from dask_gateway_server.backends.db_base import Cluster, DBBackendBase
+from dask_gateway_server.backends.db_base import (  # type: ignore[import-untyped]
+    Cluster,
+    DBBackendBase,
+)
 from yarl import URL
 
 from .errors import NoHostFoundError
@@ -274,7 +278,7 @@ async def start_service(
         )
         raise
     except asyncio.CancelledError:
-        logger.warn("Service creation was cancelled")
+        logger.warning("Service creation was cancelled")
         raise
 
 
@@ -376,7 +380,7 @@ async def get_next_empty_node_hostname(
     docker_client: Docker, cluster: Cluster
 ) -> Hostname:
     current_count = getattr(get_next_empty_node_hostname, "counter", -1) + 1
-    setattr(get_next_empty_node_hostname, "counter", current_count)
+    setattr(get_next_empty_node_hostname, "counter", current_count)  # noqa: B010
 
     cluster_nodes = deque(await docker_client.nodes.list())
     current_worker_services = await docker_client.services.list(

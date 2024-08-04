@@ -70,7 +70,7 @@ class FileLocation(BaseModel):
         }
 
 
-FileLocationArray = ListModel[FileLocation]
+FileLocationArray: TypeAlias = ListModel[FileLocation]
 
 
 # /locations/{location_id}/datasets

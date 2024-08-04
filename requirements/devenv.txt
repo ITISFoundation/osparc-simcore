@@ -25,6 +25,9 @@ pip-tools
 # version manager
 bump2version
 
+# static type checker for Python that aims to combine the benefits of dynamic (or "duck") typing and static typing
+mypy
+
 # SEE `make pylint`
 pylint
 

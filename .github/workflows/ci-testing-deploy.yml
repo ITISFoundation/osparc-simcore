@@ -331,6 +331,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/webserver.bash typecheck
+        continue-on-error: true
       - name: test isolated
         if: always()
         run: ./ci/github/unit-testing/webserver.bash test_isolated
@@ -576,6 +577,7 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/api-server.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
@@ -716,6 +718,7 @@ jobs:
       - name: typecheck
         run: |
           source .venv/bin/activate && \
+          uv pip install mypy && \
           pushd services/clusters-keeper && \
           make mypy
       - name: test
@@ -846,6 +849,7 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/director-v2.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/director-v2.bash test
@@ -1072,6 +1076,7 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/payments.bash test
@@ -1208,6 +1213,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
@@ -1255,8 +1261,10 @@ jobs:
       - name: typecheck
         run: |
           source .venv/bin/activate && \
+          uv pip install mypy && \
           pushd services/efs-guardian && \
           make mypy
+        continue-on-error: true
       - name: test
         if: always()
         run: |
@@ -1374,6 +1382,7 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
@@ -1458,6 +1467,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
+        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test

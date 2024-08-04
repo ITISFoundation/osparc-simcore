@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
@@ -75,11 +76,14 @@ async def list_services_paginated(
     assert len(items) <= total_count  # nosec
     assert len(items) <= limit  # nosec
 
-    return PageRpcServicesGetV2.create(
-        items,
-        total=total_count,
-        limit=limit,
-        offset=offset,
+    return cast(
+        PageRpcServicesGetV2,
+        PageRpcServicesGetV2.create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        ),
     )
 
 

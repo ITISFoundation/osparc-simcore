@@ -30,3 +30,4 @@ python-dotenv
 pytest-icdiff
 pytest-sugar
 respx
+types-PyYAML

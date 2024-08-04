@@ -74,7 +74,7 @@ def _parse_and_validate_arguments(
         msg = "Can only set config_section or config_enabled but not both"
         raise ValueError(msg)
 
-    section = config_section or module_name.split(".")[-1]
+    section: str | None = config_section or module_name.split(".")[-1]
     if config_enabled is None:
         config_enabled = f"{section}.enabled"
     else:

@@ -23,7 +23,7 @@ class TaskProgress(BaseModel):
 
     task_id: TaskId | None = Field(default=None)
     message: ProgressMessage = Field(default="")
-    percent: ProgressPercent = Field(default=0.0)  # type: ignore[assignment]
+    percent: ProgressPercent = Field(default=0.0)
 
     @validate_arguments
     def update(

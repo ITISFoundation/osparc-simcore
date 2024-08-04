@@ -16,7 +16,7 @@ def enable(
     takes ``slow_duration_secs`` seconds or more to run.
     """
     # pylint: disable=protected-access
-    from aiodebug.logging_compat import get_logger
+    from aiodebug.logging_compat import get_logger  # type: ignore[import-untyped]
 
     aio_debug_logger = get_logger(__name__)
     _run = asyncio.events.Handle._run  # noqa: SLF001
