@@ -5,7 +5,9 @@ import logging
 
 from aiohttp import web
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPSpanExporterHTTP,
+)
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -28,12 +30,12 @@ def setup_tracing(
     tracer_provider = trace.get_tracer_provider()
 
     # Configure the OTLP exporter
-    otlp_exporter = OTLPSpanExporter(
-        endpoint=f"{otel_collector_endpoint}:{otel_collector_port}",  # Adjust this to your OTLP collector endpoint
-        insecure=True,
+    otlp_exporter = OTLPSpanExporterHTTP(
+        endpoint=f"{otel_collector_endpoint}:{otel_collector_port}/v1/traces",  # Adjust this to your OTLP collector endpoint
     )
 
     # Add the span processor to the tracer provider
     span_processor = BatchSpanProcessor(otlp_exporter)
     tracer_provider.add_span_processor(span_processor)
     AioHttpClientInstrumentor().instrument()
+    return True

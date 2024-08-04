@@ -3,16 +3,18 @@ receivers:
     protocols:
       grpc:
         endpoint: "0.0.0.0:4317"  # Default endpoint for OTLP over gRPC
+      http:
+        endpoint: 0.0.0.0:4318 # Default endpoint for OTLP over HTTP
 exporters:
-  otlp:
-    endpoint: jaeger:14250  # Adjust to your Jaeger endpoint
-    tls:
-      insecure: true
+  otlphttp:
+    endpoint: jaeger:4318  # Adjust to your Jaeger endpoint
+  debug:
+    verbosity: detailed
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      exporters: [otlphttp,debug]
 processors:
   batch:
     timeout: 5s

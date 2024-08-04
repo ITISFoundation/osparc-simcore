@@ -1,4 +1,4 @@
-from pydantic import AnyUrl, Field, parse_obj_as
+from pydantic import AnyUrl, Field
 
 from .base import BaseCustomSettings
 
@@ -6,9 +6,11 @@ UNDEFINED_CLIENT_NAME = "undefined-tracing-client-name"
 
 
 class TracingSettings(BaseCustomSettings):
-    TRACING_OBSERVABILITY_BACKEND_ENDPOINT: AnyUrl = Field(
-        default=parse_obj_as(AnyUrl, "http://jaeger:9411"),
-        description="Zipkin compatible endpoint",
+    TRACING_OTEL_COLLECTOR_ENDPOINT: AnyUrl = Field(
+        description="Otel compatible collector endpoint"
+    )
+    TRACING_OTEL_COLLECTOR_PORT: int = Field(
+        description="Otel compatible collector port"
     )
     TRACING_CLIENT_NAME: str = Field(
         default=UNDEFINED_CLIENT_NAME,

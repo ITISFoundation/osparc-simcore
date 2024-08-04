@@ -50,7 +50,7 @@ def create(settings: Settings) -> web.Application:
     app[APP_CONFIG_KEY] = settings
 
     if settings.STORAGE_TRACING:
-        setup_tracing(
+        setup_tracing(  # TODO DK
             app,
             service_name="simcore_service_storage",
             host=settings.STORAGE_HOST,

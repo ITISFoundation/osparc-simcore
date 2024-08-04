@@ -11,6 +11,7 @@ attrs
 jsonschema
 openapi-core
 opentelemetry-instrumentation-aiohttp-client
+opentelemetry-exporter-otlp
 opentelemetry-sdk
 prometheus_client
 werkzeug

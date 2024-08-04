@@ -22,6 +22,7 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
 )
 def setup_app_tracing(app: web.Application):
     settings: TracingSettings = get_plugin_settings(app)
+    #
 
     service_name = settings.TRACING_CLIENT_NAME
     if service_name == UNDEFINED_CLIENT_NAME:
@@ -31,5 +32,5 @@ def setup_app_tracing(app: web.Application):
         app,
         service_name=service_name,
         otel_collector_endpoint=settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
-        otel_collector_port=settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
+        otel_collector_port=settings.TRACING_OTEL_COLLECTOR_PORT,
     )

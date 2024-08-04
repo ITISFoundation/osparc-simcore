@@ -1,4 +1,6 @@
-aiohttp==3.9.5
+aiohappyeyeballs==2.3.4
+    # via aiohttp
+aiohttp==3.10.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -12,7 +14,7 @@ async-timeout==4.0.3
     # via
     #   aiohttp
     #   aiopg
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   -r requirements/_aiohttp.in
     #   aiohttp
@@ -29,13 +31,21 @@ charset-normalizer==3.3.2
 deprecated==1.2.14
     # via
     #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-semantic-conventions
 frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
+googleapis-common-protos==1.63.2
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.0.3
     # via sqlalchemy
+grpcio==1.65.4
+    # via opentelemetry-exporter-otlp-proto-grpc
 idna==3.7
     # via
     #   requests
@@ -78,16 +88,36 @@ openapi-spec-validator==0.7.1
     # via openapi-core
 opentelemetry-api==1.26.0
     # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
+opentelemetry-exporter-otlp==1.26.0
+    # via -r requirements/_aiohttp.in
+opentelemetry-exporter-otlp-proto-common==1.26.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-grpc==1.26.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http==1.26.0
+    # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.47b0
     # via opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-client==0.47b0
     # via -r requirements/_aiohttp.in
+opentelemetry-proto==1.26.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-sdk==1.26.0
-    # via -r requirements/_aiohttp.in
+    # via
+    #   -r requirements/_aiohttp.in
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.47b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
@@ -100,6 +130,10 @@ pathable==0.4.3
     # via jsonschema-path
 prometheus-client==0.20.0
     # via -r requirements/_aiohttp.in
+protobuf==4.25.4
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
 psycopg2-binary==2.9.9
     # via
     #   aiopg
@@ -117,20 +151,22 @@ referencing==0.29.3
     #   jsonschema-path
     #   jsonschema-specifications
 requests==2.32.3
-    # via jsonschema-path
+    # via
+    #   jsonschema-path
+    #   opentelemetry-exporter-otlp-proto-http
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.19.1
     # via
     #   jsonschema
     #   referencing
-setuptools==71.1.0
+setuptools==72.1.0
     # via opentelemetry-instrumentation
 six==1.16.0
     # via
     #   isodate
     #   rfc3339-validator
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
