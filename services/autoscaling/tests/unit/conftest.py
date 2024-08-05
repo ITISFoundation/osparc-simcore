@@ -816,7 +816,7 @@ def patch_ec2_client_start_aws_instances_min_number_of_instances(
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
     it difficult to test scaling to multiple of machines. this should help"""
-    original_fct = SimcoreEC2API.start_aws_instance
+    original_fct = SimcoreEC2API.launch_aws_instance
 
     async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
         new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}

@@ -642,7 +642,7 @@ async def _start_instances(
 
     results = await asyncio.gather(
         *[
-            ec2_client.start_aws_instance(
+            ec2_client.launch_aws_instance(
                 EC2InstanceConfig(
                     type=instance_type,
                     tags=new_instance_tags,
