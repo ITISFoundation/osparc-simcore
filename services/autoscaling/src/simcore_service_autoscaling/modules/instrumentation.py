@@ -83,7 +83,7 @@ class ClusterMetrics:
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._pending_ec2s = Gauge(
+        self._buffer_ec2s = Gauge(
             "buffer_ec2s",
             "Number of buffer EC2 instance prepared, stopped and ready to to be activated",
             labelnames=EC2_INSTANCE_LABELS,
