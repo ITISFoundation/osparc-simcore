@@ -2,12 +2,14 @@
 """
 
 from functools import cached_property
+from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
-from models_library.basic_types import PortInt, VersionTag
+from models_library.basic_types import VersionTag
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import PortInt
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
 from yarl import URL
 
@@ -20,7 +22,7 @@ _HOUR = 60 * _MINUTE
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_HOST: str = "director-v2"
     DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = "v2"
+    DIRECTOR_V2_VTAG: VersionTag = VersionTag("v2")
 
     @cached_property
     def base_url(self) -> URL:
@@ -68,4 +70,4 @@ def get_plugin_settings(app: web.Application) -> DirectorV2Settings:
 
 
 def get_client_session(app: web.Application) -> ClientSession:
-    return app[APP_CLIENT_SESSION_KEY]
+    return cast(ClientSession, app[APP_CLIENT_SESSION_KEY])
