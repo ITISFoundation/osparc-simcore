@@ -1,6 +1,9 @@
+import functools
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Final, cast
+from typing import Any, Concatenate, Final, ParamSpec, TypeVar, cast
 
+from aws_library.ec2.client import SimcoreEC2API
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Counter, Gauge
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -183,6 +186,48 @@ class AutoscalingInstrumentation(MetricsBase):
 
     def instance_terminated(self, instance_type: str) -> None:
         self._terminated_instances.labels(instance_type=instance_type).inc()
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+Self = TypeVar("Self", bound="SimcoreEC2API")
+
+
+def _instrumented_method(
+    metrics_handler: Callable[[], None]
+) -> Callable[
+    [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
+]:
+    def decorator(
+        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
+    ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
+        @functools.wraps(func)
+        async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
+            result = await func(self, *args, **kwargs)
+            metrics_handler()
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def instrument_ec2_client_methods(
+    app: FastAPI, ec2_client: SimcoreEC2API
+) -> SimcoreEC2API:
+    autoscaling_instrumentation = get_instrumentation(app)
+    methods_to_instrument = [
+        ("launch_aws_instance", autoscaling_instrumentation.instance_launched),
+        ("stop_instances", autoscaling_instrumentation.instance_stopped),
+        ("terminate_instances", autoscaling_instrumentation.instance_terminated),
+    ]
+    for method_name, metrics_handler in methods_to_instrument:
+        method = getattr(ec2_client, method_name, None)
+        if method:
+            decorated_method = _instrumented_method(metrics_handler)(method)
+            setattr(ec2_client, method_name, decorated_method)
+    return ec2_client
 
 
 def setup(app: FastAPI) -> None:
