@@ -87,14 +87,14 @@ services:
     environment:
       - >-
         REDIS_HOSTS=
-        resources:${REDIS_HOST}:${REDIS_PORT}:0,
-        locks:${REDIS_HOST}:${REDIS_PORT}:1,
-        validation_codes:${REDIS_HOST}:${REDIS_PORT}:2,
-        scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3,
-        user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,
-        announcements:${REDIS_HOST}:${REDIS_PORT}:5,
-        distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6,
-        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7
+        resources:${REDIS_HOST}:${REDIS_PORT}:0:${REDIS_PASSWORD},
+        locks:${REDIS_HOST}:${REDIS_PORT}:1:${REDIS_PASSWORD},
+        validation_codes:${REDIS_HOST}:${REDIS_PORT}:2:${REDIS_PASSWORD},
+        scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3:${REDIS_PASSWORD},
+        user_notifications:${REDIS_HOST}:${REDIS_PORT}:4:${REDIS_PASSWORD},
+        announcements:${REDIS_HOST}:${REDIS_PORT}:5:${REDIS_PASSWORD},
+        distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6:${REDIS_PASSWORD},
+        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"
