@@ -2,7 +2,7 @@
 """
 
 import logging
-from typing import Awaitable
+from typing import Awaitable, Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -13,7 +13,7 @@ from ._models import Announcement
 
 _logger = logging.getLogger(__name__)
 
-_PUBLIC_ANNOUNCEMENTS_REDIS_KEY: str = "public"
+_PUBLIC_ANNOUNCEMENTS_REDIS_KEY: Final[str] = "public"
 #
 # At this moment `announcements` are manually stored in redis db 6  w/o guarantees
 # Here we validate them and log a big-fat error if there is something wrong

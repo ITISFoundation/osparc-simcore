@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -16,7 +17,7 @@ from ..rabbitmq import get_rabbitmq_client
 _logger = logging.getLogger(__name__)
 
 
-_SUBSCRIBABLE_EXCHANGES: list[type[RabbitMessageBase]] = [
+_SUBSCRIBABLE_EXCHANGES: Final[list[type[RabbitMessageBase]]] = [
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
