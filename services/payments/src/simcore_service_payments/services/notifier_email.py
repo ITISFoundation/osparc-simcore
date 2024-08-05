@@ -212,6 +212,8 @@ async def _create_user_email(
             attachment = MIMEApplication(pdf_response.content, Name=_file_name)
             attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
             msg.attach(attachment)
+        else:
+            _logger.error("No match find for email attachment. This should not happen.")
 
     return msg
 

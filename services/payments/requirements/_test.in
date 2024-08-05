@@ -27,6 +27,6 @@ python-dotenv
 python-socketio[asyncio_client]
 respx
 sqlalchemy[mypy]
-types-aiofiles # missing mypy stubs
-types-PyYAML # missing mypy stubs
-types-python-jose # missing mypy stubs
+types-aiofiles
+types-PyYAML
+types-python-jose
