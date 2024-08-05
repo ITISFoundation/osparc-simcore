@@ -34,7 +34,7 @@ from .utils import compose_user_data
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass()
 class SimcoreEC2API:
     client: EC2Client
     session: aioboto3.Session

@@ -204,11 +204,11 @@ def _instrumented_ec2_client_method(
     Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
 ]:
     def decorator(
-        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
-    ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
+        func: Callable[P, Coroutine[Any, Any, R]]
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(func)
-        async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
-            result = await func(self, *args, **kwargs)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            result = await func(*args, **kwargs)
             if instance_type_from_method_arguments:
                 for instance_type in instance_type_from_method_arguments(
                     *args, **kwargs
