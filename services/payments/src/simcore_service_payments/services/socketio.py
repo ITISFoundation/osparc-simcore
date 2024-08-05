@@ -1,6 +1,6 @@
 import logging
 
-import socketio
+import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from settings_library.rabbit import RabbitSettings
