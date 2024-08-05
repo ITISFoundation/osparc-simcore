@@ -721,8 +721,7 @@ qx.Class.define("osparc.data.model.Node", {
               }
             });
             hasOutputs = true;
-          }
-          else {
+          } else {
             this.setOutputs({
               ...this.getOutputs(),
               [outputKey]: {
