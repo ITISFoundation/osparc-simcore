@@ -685,12 +685,12 @@ async def _start_instances(
             if has_instrumentation(app):
                 instrumentation = get_instrumentation(app)
                 for instance_data in r:
-                    instrumentation.instance_started(instance_data.type)
+                    instrumentation.instance_launched(instance_data.type)
         else:
             new_pending_instances.append(r)
             if has_instrumentation(app):
                 instrumentation = get_instrumentation(app)
-                instrumentation.instance_started(r.type)
+                instrumentation.instance_launched(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"

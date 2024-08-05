@@ -27,8 +27,7 @@ def _update_gauge(
 
 
 @dataclass(slots=True, kw_only=True)
-class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attributes
-    registry: CollectorRegistry
+class ClusterInstrumentation:
     subsystem: str
     _active_nodes: Gauge = field(init=False)
     _pending_nodes: Gauge = field(init=False)
@@ -39,9 +38,7 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
     _buffer_ec2s: Gauge = field(init=False)
     _disconnected_nodes: Gauge = field(init=False)
     _terminating_nodes: Gauge = field(init=False)
-    # _terminated_instances: Gauge = field(init=False)
-    _launched_instances: Counter = field(init=False)
-    _terminated_instances: Counter = field(init=False)
+    _terminated_instances: Gauge = field(init=False)
 
     def __post_init__(self) -> None:
         self._active_nodes = Gauge(
@@ -79,15 +76,84 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
+        self._broken_ec2s = Gauge(
+            "broken_ec2s",
+            "Number of EC2 instance that failed joining the cluster",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
+        self._pending_ec2s = Gauge(
+            "buffer_ec2s",
+            "Number of buffer EC2 instance prepared, stopped and ready to to be activated",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
         self._disconnected_nodes = Gauge(
             "disconnected_nodes",
             "Number of docker node not backed by a running EC2 instance",
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
+        self._terminating_nodes = Gauge(
+            "terminating_nodes",
+            "Number of EC2-backed docker nodes that started the termination process",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
+        self._terminated_instances = Gauge(
+            "terminated_instances",
+            "Number of EC2 instances that were terminated (they are typically visible 1 hour)",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
+
+    def update_from_cluster(self, cluster: Cluster) -> None:
+        _update_gauge(self._active_nodes, cluster.active_nodes)
+        _update_gauge(self._pending_nodes, cluster.pending_nodes)
+        _update_gauge(self._drained_nodes, cluster.drained_nodes)
+        _update_gauge(self._reserve_drained_nodes, cluster.reserve_drained_nodes)
+        _update_gauge(self._pending_ec2s, cluster.pending_ec2s)
+        _update_gauge(self._broken_ec2s, cluster.broken_ec2s)
+        _update_gauge(self._buffer_ec2s, cluster.buffer_ec2s)
+        self._disconnected_nodes.set(len(cluster.disconnected_nodes))
+        _update_gauge(self._terminating_nodes, cluster.terminating_nodes)
+        _update_gauge(self._terminated_instances, cluster.terminated_instances)
+
+
+@dataclass(slots=True, kw_only=True)
+class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attributes
+    registry: CollectorRegistry
+    subsystem: str
+
+    _cluster_instrumentation: ClusterInstrumentation = field(init=False)
+    _launched_instances: Counter = field(init=False)
+    _started_instances: Counter = field(init=False)
+    _stopped_instances: Counter = field(init=False)
+    _terminated_instances: Counter = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._cluster_instrumentation = ClusterInstrumentation(subsystem=self.subsystem)
         self._launched_instances = Counter(
+            "launched_instances_total",
+            "Number of EC2 instances that were launched",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
+        self._started_instances = Counter(
             "started_instances_total",
             "Number of EC2 instances that were started",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+        )
+        self._stopped_instances = Counter(
+            "stopped_instances_total",
+            "Number of EC2 instances that were stopped",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
@@ -100,16 +166,14 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
             subsystem=self.subsystem,
         )
 
-    def update_from_cluster(self, cluster: Cluster) -> None:
-        _update_gauge(self._active_nodes, cluster.active_nodes)
-        _update_gauge(self._pending_nodes, cluster.pending_nodes)
-        _update_gauge(self._drained_nodes, cluster.drained_nodes)
-        _update_gauge(self._reserve_drained_nodes, cluster.reserve_drained_nodes)
-        _update_gauge(self._pending_ec2s, cluster.pending_ec2s)
-        self._disconnected_nodes.set(len(cluster.disconnected_nodes))
-
     def instance_started(self, instance_type: str) -> None:
+        self._started_instances.labels(instance_type=instance_type).inc()
+
+    def instance_launched(self, instance_type: str) -> None:
         self._launched_instances.labels(instance_type=instance_type).inc()
+
+    def instance_stopped(self, instance_type: str) -> None:
+        self._stopped_instances.labels(instance_type=instance_type).inc()
 
     def instance_terminated(self, instance_type: str) -> None:
         self._terminated_instances.labels(instance_type=instance_type).inc()
