@@ -1,7 +1,7 @@
 import functools
 from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass, field
-from typing import Any, Concatenate, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, ParamSpec, TypeVar, cast
 
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import EC2InstanceData
@@ -191,7 +191,6 @@ class AutoscalingInstrumentation(MetricsBase):
 
 P = ParamSpec("P")
 R = TypeVar("R")
-Self = TypeVar("Self", bound="SimcoreEC2API")
 
 
 def _instrumented_ec2_client_method(
@@ -200,8 +199,8 @@ def _instrumented_ec2_client_method(
     instance_type_from_method_arguments: Callable[..., list[str]] | None,
     instance_type_from_method_return: Callable[..., list[str]] | None,
 ) -> Callable[
-    [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
-    Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
+    [Callable[P, Coroutine[Any, Any, R]]],
+    Callable[P, Coroutine[Any, Any, R]],
 ]:
     def decorator(
         func: Callable[P, Coroutine[Any, Any, R]]
