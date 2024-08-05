@@ -507,6 +507,9 @@ services:
       - "4318:4318"  # OTLP HTTP receiver
     networks:
       - default
+    environment:
+      TRACING_OTEL_COLLECTOR_BATCH_SIZE: ${TRACING_OTEL_COLLECTOR_BATCH_SIZE}
+      TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE}
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
