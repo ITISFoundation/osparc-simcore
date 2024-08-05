@@ -33,10 +33,14 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
     _active_nodes: Gauge = field(init=False)
     _pending_nodes: Gauge = field(init=False)
     _drained_nodes: Gauge = field(init=False)
-    _buffer_drained_nodes: Gauge = field(init=False)
+    _reserve_drained_nodes: Gauge = field(init=False)
     _pending_ec2s: Gauge = field(init=False)
+    _broken_ec2s: Gauge = field(init=False)
+    _buffer_ec2s: Gauge = field(init=False)
     _disconnected_nodes: Gauge = field(init=False)
-    _started_instances: Counter = field(init=False)
+    _terminating_nodes: Gauge = field(init=False)
+    # _terminated_instances: Gauge = field(init=False)
+    _launched_instances: Counter = field(init=False)
     _terminated_instances: Counter = field(init=False)
 
     def __post_init__(self) -> None:
@@ -61,7 +65,7 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._buffer_drained_nodes = Gauge(
+        self._reserve_drained_nodes = Gauge(
             "buffer_drained_nodes",
             "Number of EC2-backed docker nodes which are drained and in buffer/reserve",
             labelnames=EC2_INSTANCE_LABELS,
@@ -81,7 +85,7 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._started_instances = Counter(
+        self._launched_instances = Counter(
             "started_instances_total",
             "Number of EC2 instances that were started",
             labelnames=EC2_INSTANCE_LABELS,
@@ -100,12 +104,12 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
         _update_gauge(self._active_nodes, cluster.active_nodes)
         _update_gauge(self._pending_nodes, cluster.pending_nodes)
         _update_gauge(self._drained_nodes, cluster.drained_nodes)
-        _update_gauge(self._buffer_drained_nodes, cluster.reserve_drained_nodes)
+        _update_gauge(self._reserve_drained_nodes, cluster.reserve_drained_nodes)
         _update_gauge(self._pending_ec2s, cluster.pending_ec2s)
         self._disconnected_nodes.set(len(cluster.disconnected_nodes))
 
     def instance_started(self, instance_type: str) -> None:
-        self._started_instances.labels(instance_type=instance_type).inc()
+        self._launched_instances.labels(instance_type=instance_type).inc()
 
     def instance_terminated(self, instance_type: str) -> None:
         self._terminated_instances.labels(instance_type=instance_type).inc()
