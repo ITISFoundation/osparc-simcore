@@ -27,8 +27,12 @@ def _update_gauge(
 
 
 @dataclass(slots=True, kw_only=True)
-class ClusterMetrics:
+class MetricsBase:
     subsystem: str
+
+
+@dataclass(slots=True, kw_only=True)
+class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attributes
     _active_nodes: Gauge = field(init=False)
     _pending_nodes: Gauge = field(init=False)
     _drained_nodes: Gauge = field(init=False)
@@ -125,9 +129,8 @@ class ClusterMetrics:
 
 
 @dataclass(slots=True, kw_only=True)
-class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attributes
+class AutoscalingInstrumentation(MetricsBase):
     registry: CollectorRegistry
-    subsystem: str
 
     _cluster_metrics: ClusterMetrics = field(init=False)
     _launched_instances: Counter = field(init=False)
