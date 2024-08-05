@@ -1,3 +1,5 @@
+from typing import Any
+
 from openpyxl.comments import Comment as PyXLComment
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.styles.borders import BORDER_MEDIUM, BORDER_THIN
@@ -67,9 +69,9 @@ class Backgrounds:
 class BorderWithStyle(BaseXLSXCellData):
     """Base for creating custom borders"""
 
-    def __init__(self, *borders_sides, border_style: str, color: str):
+    def __init__(self, *borders_sides: Any, border_style: str, color: str):
         side = Side(border_style=border_style, color=color)
-        super().__init__(border=Border(**{x: side for x in borders_sides}))
+        super().__init__(border=Border(**{x: side for x in borders_sides}))  # type: ignore[arg-type]
 
 
 def _all_borders() -> list[str]:

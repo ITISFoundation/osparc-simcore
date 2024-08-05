@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -25,7 +27,7 @@ _DEFAULT_THUMBNAILS = {
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None
+    owner: GroupID | None  # type: ignore[assignment]
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
@@ -41,7 +43,7 @@ class ClusterCreate(BaseCluster):
         return v
 
     class Config(BaseCluster.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -75,13 +77,13 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None
+    name: str | None  # type: ignore[assignment]
     description: str | None
-    type: ClusterType | None
-    owner: GroupID | None
+    type: ClusterType | None  # type: ignore[assignment]
+    owner: GroupID | None  # type: ignore[assignment]
     thumbnail: HttpUrl | None
-    endpoint: AnyUrl | None
-    authentication: ExternalClusterAuthentication | None
-    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(
+    endpoint: AnyUrl | None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None  # type: ignore[assignment]
+    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
         alias="accessRights"
     )
