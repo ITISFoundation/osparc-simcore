@@ -928,7 +928,11 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         cluster,
         drained_nodes=still_drained_nodes,
         terminating_nodes=cluster.terminating_nodes + new_terminating_instances,
-        terminated_instances=cluster.terminated_instances + instances_to_terminate,
+        terminated_instances=cluster.terminated_instances
+        + [
+            NonAssociatedInstance(ec2_instance=i.ec2_instance)
+            for i in instances_to_terminate
+        ],
     )
 
 
