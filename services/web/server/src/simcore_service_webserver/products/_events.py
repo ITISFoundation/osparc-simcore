@@ -48,7 +48,7 @@ async def auto_create_products_groups(app: web.Application) -> None:
 
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
-            product_name = row.name
+            product_name = row.name  # type: ignore[attr-defined]
             product_group_id = await get_or_create_product_group(
                 connection, product_name
             )
@@ -78,14 +78,14 @@ async def load_products_on_startup(app: web.Application):
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
             try:
-                name = row.name
+                name = row.name  # type: ignore[attr-defined]
 
                 payments = await get_product_payment_fields(
-                    connection, product_name=row.name
+                    connection, product_name=row.name  # type: ignore[attr-defined]
                 )
 
                 app_products[name] = Product(
-                    **dict(row.items()),
+                    **dict(row.items()),  # type: ignore[attr-defined]
                     is_payment_enabled=payments.enabled,
                     credits_per_usd=payments.credits_per_usd,
                 )

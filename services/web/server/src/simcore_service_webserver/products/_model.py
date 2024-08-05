@@ -143,9 +143,12 @@ class Product(BaseModel):
                     },
                     # defaults from sqlalchemy table
                     **{
-                        str(c.name): c.server_default.arg
+                        str(c.name): c.server_default.arg  # type:ignore[union-attr]
                         for c in products.columns
-                        if c.server_default and isinstance(c.server_default.arg, str)
+                        if c.server_default
+                        and isinstance(
+                            c.server_default.arg, str  # type:ignore[union-attr]
+                        )
                     },
                 },
                 # Example of data in the dabase with a url set with blanks
