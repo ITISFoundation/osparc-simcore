@@ -188,7 +188,7 @@ def _get_file_size_and_manage_symlink(path: Path) -> ByteSize:
 
         textfile_path = path.parent / _name
         textfile_path.write_text(target_path)
-        return ByteSize(0)
+        return ByteSize(textfile_path.stat().st_size)
     return ByteSize(path.stat().st_size)
 
 
