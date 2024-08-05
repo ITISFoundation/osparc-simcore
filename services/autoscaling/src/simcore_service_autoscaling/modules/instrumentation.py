@@ -218,7 +218,7 @@ def instrument_ec2_client_methods(
 ) -> SimcoreEC2API:
     autoscaling_instrumentation = get_instrumentation(app)
     methods_to_instrument = [
-        ("launch_aws_instance", autoscaling_instrumentation.instance_launched),
+        ("launch_instances", autoscaling_instrumentation.instance_launched),
         ("stop_instances", autoscaling_instrumentation.instance_stopped),
         ("terminate_instances", autoscaling_instrumentation.instance_terminated),
     ]

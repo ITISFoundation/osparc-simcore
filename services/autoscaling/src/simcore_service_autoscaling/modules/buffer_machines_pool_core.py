@@ -211,7 +211,7 @@ async def _add_remove_buffer_instances(
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_type]
         )
-        await ec2_client.launch_aws_instance(
+        await ec2_client.launch_instances(
             EC2InstanceConfig(
                 type=EC2InstanceType(
                     name=ec2_type,

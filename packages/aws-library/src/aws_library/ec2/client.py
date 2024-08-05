@@ -108,7 +108,7 @@ class SimcoreEC2API:
                 raise EC2InstanceTypeInvalidError from exc
             raise EC2RuntimeError from exc  # pragma: no cover
 
-    async def launch_aws_instance(
+    async def launch_instances(
         self,
         instance_config: EC2InstanceConfig,
         *,

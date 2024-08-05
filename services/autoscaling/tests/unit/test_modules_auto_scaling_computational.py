@@ -153,13 +153,13 @@ def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
-def mock_launch_aws_instance(
+def mock_launch_instances(
     mocker: MockerFixture,
     aws_instance_private_dns: str,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.launch_aws_instance",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.launch_instances",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
@@ -182,7 +182,7 @@ async def test_cluster_scaling_with_no_tasks_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    mock_launch_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     dask_spec_local_cluster: distributed.SpecCluster,
@@ -190,7 +190,7 @@ async def test_cluster_scaling_with_no_tasks_does_nothing(
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
     )
-    mock_launch_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -205,7 +205,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    mock_launch_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     dask_spec_local_cluster: distributed.SpecCluster,
@@ -217,7 +217,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
     )
-    mock_launch_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -792,21 +792,21 @@ def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResourc
 
 
 @pytest.fixture
-def patch_ec2_client_launch_aws_instances_min_number_of_instances(
+def patch_ec2_client_launch_instancess_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
     it difficult to test scaling to multiple of machines. this should help"""
-    original_fct = SimcoreEC2API.launch_aws_instance
+    original_fct = SimcoreEC2API.launch_instances
 
     async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
         new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
-        print(f"patching launch_aws_instance with: {new_kwargs}")
+        print(f"patching launch_instances with: {new_kwargs}")
         return await original_fct(*args, **new_kwargs)
 
     return mocker.patch.object(
         SimcoreEC2API,
-        "launch_aws_instance",
+        "launch_instances",
         autospec=True,
         side_effect=_change_parameters,
     )
@@ -827,7 +827,7 @@ def patch_ec2_client_launch_aws_instances_min_number_of_instances(
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_launch_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -889,7 +889,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -977,7 +977,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
 
 
 async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
