@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from models_library.api_schemas__common.errors import DefaultApiError
 
 assert DefaultApiError  # nosec

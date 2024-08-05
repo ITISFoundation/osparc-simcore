@@ -8,6 +8,7 @@
 import logging
 import uuid
 from decimal import Decimal
+from typing import cast
 
 import arrow
 from models_library.api_schemas_payments.errors import (
@@ -21,6 +22,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.basic_types import AmountDecimal, IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
@@ -77,12 +79,12 @@ async def init_one_time_payment(
 
     init: PaymentInitiated = await gateway.init_payment(
         payment=InitPayment(
-            amount_dollars=amount_dollars,
-            credits=target_credits,
-            user_name=user_name,
+            amount_dollars=AmountDecimal(amount_dollars),
+            credits=AmountDecimal(target_credits),
+            user_name=IDStr(user_name),
             user_email=user_email,
             user_address=user_address,
-            wallet_name=wallet_name,
+            wallet_name=IDStr(wallet_name),
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             stripe_tax_exempt_value=(
@@ -110,8 +112,8 @@ async def init_one_time_payment(
     assert payment_id == init.payment_id  # nosec
 
     return WalletPaymentInitiated(
-        payment_id=f"{payment_id}",
-        payment_form_url=f"{submission_link}",
+        payment_id=PaymentID(f"{payment_id}"),
+        payment_form_url=cast(HttpUrl, f"{submission_link}"),
     )
 
 
@@ -244,12 +246,12 @@ async def pay_with_payment_method(  # noqa: PLR0913
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
         payment=InitPayment(
-            amount_dollars=amount_dollars,
-            credits=target_credits,
-            user_name=user_name,
+            amount_dollars=AmountDecimal(amount_dollars),
+            credits=AmountDecimal(target_credits),
+            user_name=IDStr(user_name),
             user_email=user_email,
             user_address=user_address,
-            wallet_name=wallet_name,
+            wallet_name=IDStr(wallet_name),
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             stripe_tax_exempt_value=(
@@ -269,7 +271,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     ):
         with attempt:
             payment_id = await repo_transactions.insert_init_payment_transaction(
-                ack.payment_id or f"{uuid.uuid4()}",
+                ack.payment_id or PaymentID(f"{uuid.uuid4()}"),
                 price_dollars=amount_dollars,
                 osparc_credits=target_credits,
                 product_name=product_name,

@@ -83,8 +83,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @validator("EFS_GUARDIAN_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
