@@ -1027,7 +1027,7 @@ async def _autoscale_cluster(
 async def _notify_autoscaling_status(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> None:
-    # inform on rabbit about status
+
     monitored_instances = list(
         itertools.chain(
             cluster.active_nodes, cluster.drained_nodes, cluster.reserve_drained_nodes
@@ -1045,9 +1045,11 @@ async def _notify_autoscaling_status(
                 ),
             )
         )
+        # inform on rabbitMQ about status
         await post_autoscaling_status_message(
             app, cluster, total_resources, used_resources
         )
+        # prometheus instrumentation
         if has_instrumentation(app):
             get_instrumentation(app).update_from_cluster(cluster)
 
