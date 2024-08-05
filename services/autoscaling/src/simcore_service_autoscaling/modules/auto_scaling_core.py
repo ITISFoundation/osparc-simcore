@@ -180,10 +180,6 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
             _logger, logging.WARNING, msg="terminate broken EC2 instances"
         ):
             await get_ec2_client(app).terminate_instances(broken_instances)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for i in cluster.broken_ec2s:
-                    instrumentation.instance_terminated(i.ec2_instance.type)
 
     return dataclasses.replace(
         cluster,
@@ -684,15 +680,8 @@ async def _start_instances(
             last_issue = f"{r}"
         elif isinstance(r, list):
             new_pending_instances.extend(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for instance_data in r:
-                    instrumentation.instance_launched(instance_data.type)
         else:
             new_pending_instances.append(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                instrumentation.instance_launched(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -906,12 +895,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
                 [i.ec2_instance for i in instances_to_terminate]
             )
 
-        if has_instrumentation(app):
-            instrumentation = get_instrumentation(app)
-            for i in instances_to_terminate:
-                instrumentation.instance_terminated(i.ec2_instance.type)
         # since these nodes are being terminated, remove them from the swarm
-
         await utils_docker.remove_nodes(
             get_docker_client(app),
             nodes=[i.node for i in instances_to_terminate],
