@@ -137,11 +137,11 @@ class VersionControlRepository(BaseRepository):
         )
         for tag in found:
             if workcopy_project_id := parse_workcopy_project_tag_name(tag.name):
-                return str(workcopy_project_id)
+                return ProjectIDStr(workcopy_project_id)
 
         repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
         assert repo  # nosec
-        return repo.project_uuid
+        return ProjectIDStr(repo.project_uuid)
 
     async def _update_state(
         self, repo_id: int, conn: SAConnection
