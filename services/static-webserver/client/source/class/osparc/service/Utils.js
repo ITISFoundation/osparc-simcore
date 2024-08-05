@@ -173,6 +173,11 @@ qx.Class.define("osparc.service.Utils", {
             version: canUpdateTo["version"]
           }
         }
+        // that version itself is the latest compatible
+        return {
+          key,
+          version
+        }
       }
       return null;
     },
