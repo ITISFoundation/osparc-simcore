@@ -16,6 +16,7 @@ from datetime import datetime
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from asyncpg import Record
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, parse_obj_as
 from redis.exceptions import LockNotOwnedError
@@ -111,7 +112,7 @@ async def create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    usr = {}
+    usr: dict | Record = {}
     try:
         async with redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
@@ -223,5 +224,5 @@ async def ensure_authentication(
         await remember_identity(
             request,
             response,
-            user_email=user.email,
+            user_email=LowerCaseEmailStr(user.email),
         )

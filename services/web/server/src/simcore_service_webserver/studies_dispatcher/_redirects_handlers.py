@@ -72,15 +72,15 @@ def _create_redirect_response_to_error_page(
 
 
 def _create_service_info_from(service: ValidService) -> ServiceInfo:
-    values_map = dict(
-        key=service.key,
-        version=service.version,
-        label=service.title,
-        is_guest_allowed=service.is_public,
-    )
+    values_map = {
+        "key": service.key,
+        "version": service.version,
+        "label": service.title,
+        "is_guest_allowed": service.is_public,
+    }
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
-    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)  # type: ignore
+    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
 
 
 def _handle_errors_with_error_page(handler: Handler):
@@ -224,7 +224,7 @@ async def get_redirection_to_viewer(request: web.Request):
     NOTE: Can be set as login_required programatically with STUDIES_ACCESS_ANONYMOUS_ALLOWED env var.
     """
     query_params: RedirectionQueryParams = parse_request_query_parameters_as(
-        RedirectionQueryParams, request
+        RedirectionQueryParams, request  # type:ignore[arg-type]
     )
     _logger.debug("Requesting viewer %s [%s]", query_params, type(query_params))
 
