@@ -30,7 +30,6 @@ from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
-from .registry import setup_registry
 from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
@@ -180,8 +179,6 @@ def create_app():
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
-
-    setup_registry(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
