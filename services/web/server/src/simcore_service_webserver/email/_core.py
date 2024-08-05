@@ -66,13 +66,14 @@ async def _do_send_mail(
         finally:
             await smtp.quit()
     else:
-        async with _create_smtp_client(settings) as smtp:
+        aio_smtp = _create_smtp_client(settings)
+        async with aio_smtp:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Login email server ...")
-                await smtp.login(
+                await aio_smtp.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
-            await smtp.send_message(message)
+            await aio_smtp.send_message(message)
 
 
 MIMEMessage = Union[MIMEText, MIMEMultipart]
@@ -107,6 +108,9 @@ class SMTPServerInfo(TypedDict):
 async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServerInfo:
     """Raises SMTPException if cannot connect otherwise settings"""
     async with _create_smtp_client(settings) as smtp:
+        assert smtp.hostname  # nosec
+        assert smtp.port  # nosec
+        assert smtp.timeout  # nosec
         return SMTPServerInfo(
             hostname=smtp.hostname,
             port=smtp.port,
