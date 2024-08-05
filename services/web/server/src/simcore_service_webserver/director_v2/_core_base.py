@@ -10,7 +10,7 @@ director-v2 rest API common functionality includes
 
 import asyncio
 import logging
-from typing import Any, Union
+from typing import Any, TypeAlias
 
 import aiohttp
 from aiohttp import ClientSession, ClientTimeout, web
@@ -29,25 +29,25 @@ log = logging.getLogger(__name__)
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
-DEFAULT_RETRY_POLICY = dict(
-    wait=wait_random(0, 1),
-    stop=stop_after_attempt(2),
-    reraise=True,
-    before_sleep=before_sleep_log(log, logging.WARNING),
-)
+DEFAULT_RETRY_POLICY: dict[str, Any] = {
+    "wait": wait_random(0, 1),
+    "stop": stop_after_attempt(2),
+    "reraise": True,
+    "before_sleep": before_sleep_log(log, logging.WARNING),
+}
 
 
-DataType = dict[str, Any]
-DataBody = Union[DataType, list[DataType], None]
+DataType: TypeAlias = dict[str, Any]
+DataBody: TypeAlias = DataType | list[DataType] | None
 
 
 _StatusToExceptionMapping = dict[int, tuple[type[DirectorServiceError], dict[str, Any]]]
 
 
 def _get_exception_from(
-    status_code: int, on_error: _StatusToExceptionMapping, reason: str, url: URL
+    status_code: int, on_error: _StatusToExceptionMapping | None, reason: str, url: URL
 ):
-    if status_code in on_error:
+    if on_error and status_code in on_error:
         exc, exc_ctx = on_error[status_code]
         return exc(**exc_ctx, status=status_code, reason=reason)
     # default

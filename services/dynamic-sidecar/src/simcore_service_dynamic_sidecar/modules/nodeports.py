@@ -85,6 +85,7 @@ async def upload_outputs(
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
+        aws_s3_cli_settings=None,
     )
 
     # let's gather the tasks
@@ -267,6 +268,7 @@ async def download_target_ports(
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
+        aws_s3_cli_settings=None,
     )
 
     # let's gather all the data

@@ -1,6 +1,5 @@
 import datetime
 import logging
-from abc import abstractmethod
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
@@ -8,13 +7,9 @@ from pydantic import BaseModel, ByteSize, Field, parse_raw_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
+from ._utils import BaseLogParser
+
 _logger = logging.getLogger(__name__)
-
-
-class BaseRCloneLogParser:
-    @abstractmethod
-    async def __call__(self, logs: str) -> None:
-        ...
 
 
 class _RCloneSyncMessageBase(BaseModel):
@@ -52,7 +47,7 @@ _RCloneSyncMessages = Union[  # noqa: UP007
 ]
 
 
-class SyncProgressLogParser(BaseRCloneLogParser):
+class SyncProgressLogParser(BaseLogParser):
     """
     log processor that only yields and progress updates detected in the logs.
 
@@ -91,12 +86,12 @@ class SyncProgressLogParser(BaseRCloneLogParser):
                 await self.progress_bar.set_(rclone_message.stats.bytes)
 
 
-class DebugLogParser(BaseRCloneLogParser):
+class DebugLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("|>>>| %s |", logs)
 
 
-class CommandResultCaptureParser(BaseRCloneLogParser):
+class CommandResultCaptureParser(BaseLogParser):
     def __init__(self) -> None:
         super().__init__()
         self._logs: list[str] = []
