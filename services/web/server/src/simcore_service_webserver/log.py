@@ -1,9 +1,10 @@
 """ Configuration and utilities for service logging
 
 """
+
 import logging
 
-from aiodebug import log_slow_callbacks
+from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
 from aiohttp.log import access_logger
 from servicelib.logging_utils import config_all_loggers
 
