@@ -1,5 +1,6 @@
-import logging
 import json
+import logging
+from typing import Awaitable
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -38,8 +39,11 @@ async def _get_user_notifications(
     redis_client: aioredis.Redis, user_id: int, product_name: str
 ) -> list[UserNotification]:
     """returns a list of notifications where the latest notification is at index 0"""
-    raw_notifications: list[str] = await redis_client.lrange(
+    lrange = redis_client.lrange(
         get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
+    )
+    raw_notifications: list[str] = (
+        await lrange if isinstance(lrange, Awaitable) else lrange
     )
     notifications = [json.loads(x) for x in raw_notifications]
     # Make it backwards compatible
@@ -47,7 +51,7 @@ async def _get_user_notifications(
         if "product" not in n:
             n["product"] = "UNDEFINED"
     # Filter by product
-    included =  [product_name, "UNDEFINED"]
+    included = [product_name, "UNDEFINED"]
     filtered_notifications = [n for n in notifications if n["product"] in included]
     return [UserNotification.parse_obj(x) for x in filtered_notifications]
 
@@ -59,7 +63,9 @@ async def list_user_notifications(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = UsersRequestContext.parse_obj(request)
     product_name = get_product_name(request)
-    notifications = await _get_user_notifications(redis_client, req_ctx.user_id, product_name)
+    notifications = await _get_user_notifications(
+        redis_client, req_ctx.user_id, product_name
+    )
     return envelope_json_response(notifications)
 
 
@@ -100,13 +106,17 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 
     # NOTE: only the user's notifications can be patched
     key = get_notification_key(req_ctx.user_id)
+    lrange = redis_client.lrange(key, 0, -1)
     all_user_notifications: list[UserNotification] = [
-        UserNotification.parse_raw(x) for x in await redis_client.lrange(key, 0, -1)
+        UserNotification.parse_raw(x)
+        for x in (await lrange if isinstance(lrange, Awaitable) else lrange)
     ]
     for k, user_notification in enumerate(all_user_notifications):
         if req_path_params.notification_id == user_notification.id:
             user_notification.read = body.read
-            await redis_client.lset(key, k, user_notification.json())
+            lset = redis_client.lset(key, k, user_notification.json())
+            if isinstance(lset, Awaitable):
+                await lset
             raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

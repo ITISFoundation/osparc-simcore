@@ -67,7 +67,7 @@ async def _convert_to_node_update_event(
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
         parse_raw_as(ProgressRabbitMessageNode | ProgressRabbitMessageProject, data)
-    )
+    )  # type: ignore[arg-type]
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
         message = WebSocketProjectProgress.from_rabbit_message(
