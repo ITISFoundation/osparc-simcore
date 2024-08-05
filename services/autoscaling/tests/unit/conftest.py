@@ -811,7 +811,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def patch_ec2_client_start_aws_instances_min_number_of_instances(
+def patch_ec2_client_launch_aws_instances_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
@@ -820,12 +820,12 @@ def patch_ec2_client_start_aws_instances_min_number_of_instances(
 
     async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
         new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
-        print(f"patching start_aws_instance with: {new_kwargs}")
+        print(f"patching launch_aws_instance with: {new_kwargs}")
         return await original_fct(*args, **new_kwargs)
 
     return mocker.patch.object(
         SimcoreEC2API,
-        "start_aws_instance",
+        "launch_aws_instance",
         autospec=True,
         side_effect=_change_parameters,
     )

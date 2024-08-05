@@ -185,7 +185,7 @@ async def _assert_instances_in_ec2(
             assert instance["State"]["Name"] == expected_state
 
 
-async def test_start_aws_instance(
+async def test_launch_aws_instance(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     ec2_instance_config: EC2InstanceConfig,
@@ -226,7 +226,7 @@ async def test_start_aws_instance(
 
 
 @pytest.mark.parametrize("max_num_instances", [13])
-async def test_start_aws_instance_is_limited_in_number_of_instances(
+async def test_launch_aws_instance_is_limited_in_number_of_instances(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     ec2_instance_config: EC2InstanceConfig,
