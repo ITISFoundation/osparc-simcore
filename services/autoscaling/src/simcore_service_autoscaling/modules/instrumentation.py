@@ -27,7 +27,7 @@ def _update_gauge(
 
 
 @dataclass(slots=True, kw_only=True)
-class ClusterInstrumentation:
+class ClusterMetrics:
     subsystem: str
     _active_nodes: Gauge = field(init=False)
     _pending_nodes: Gauge = field(init=False)
@@ -129,14 +129,14 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
     registry: CollectorRegistry
     subsystem: str
 
-    _cluster_instrumentation: ClusterInstrumentation = field(init=False)
+    _cluster_metrics: ClusterMetrics = field(init=False)
     _launched_instances: Counter = field(init=False)
     _started_instances: Counter = field(init=False)
     _stopped_instances: Counter = field(init=False)
     _terminated_instances: Counter = field(init=False)
 
     def __post_init__(self) -> None:
-        self._cluster_instrumentation = ClusterInstrumentation(subsystem=self.subsystem)
+        self._cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
         self._launched_instances = Counter(
             "launched_instances_total",
             "Number of EC2 instances that were launched",
@@ -165,6 +165,9 @@ class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attribute
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
+
+    def update_from_cluster(self, cluster: Cluster) -> None:
+        self._cluster_metrics.update_from_cluster(cluster)
 
     def instance_started(self, instance_type: str) -> None:
         self._started_instances.labels(instance_type=instance_type).inc()

@@ -145,7 +145,9 @@ async def _analyze_current_cluster(
             NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
-        terminated_instances=terminated_ec2_instances,
+        terminated_instances=[
+            NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
+        ],
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
     _logger.info("current state: %s", f"{cluster!r}")
@@ -186,7 +188,7 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     return dataclasses.replace(
         cluster,
         broken_ec2s=[],
-        terminated_instances=cluster.terminated_instances + broken_instances,
+        terminated_instances=cluster.terminated_instances + cluster.broken_ec2s,
     )
 
 
@@ -926,8 +928,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         cluster,
         drained_nodes=still_drained_nodes,
         terminating_nodes=cluster.terminating_nodes + new_terminating_instances,
-        terminated_instances=cluster.terminated_instances
-        + [i.ec2_instance for i in instances_to_terminate],
+        terminated_instances=cluster.terminated_instances + instances_to_terminate,
     )
 
 
