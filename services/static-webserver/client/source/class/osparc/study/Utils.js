@@ -109,9 +109,6 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
-        if (!version) {
-          version = osparc.service.Utils.getLatest(key);
-        }
         osparc.service.Store.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
