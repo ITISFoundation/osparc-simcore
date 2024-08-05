@@ -1,9 +1,10 @@
 import functools
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass, field
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, cast
 
 from aws_library.ec2.client import SimcoreEC2API
+from aws_library.ec2.models import EC2InstanceData
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Counter, Gauge
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -193,8 +194,11 @@ R = TypeVar("R")
 Self = TypeVar("Self", bound="SimcoreEC2API")
 
 
-def _instrumented_method(
-    metrics_handler: Callable[[], None]
+def _instrumented_ec2_client_method(
+    metrics_handler: Callable[[str], None],
+    *,
+    instance_type_from_method_arguments: Callable[..., list[str]] | None,
+    instance_type_from_method_return: Callable[..., list[str]] | None,
 ) -> Callable[
     [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
@@ -205,7 +209,14 @@ def _instrumented_method(
         @functools.wraps(func)
         async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
             result = await func(self, *args, **kwargs)
-            metrics_handler()
+            if instance_type_from_method_arguments:
+                for instance_type in instance_type_from_method_arguments(
+                    *args, **kwargs
+                ):
+                    metrics_handler(instance_type)
+            elif instance_type_from_method_return:
+                for instance_type in instance_type_from_method_return(result):
+                    metrics_handler(instance_type)
             return result
 
         return wrapper
@@ -213,20 +224,62 @@ def _instrumented_method(
     return decorator
 
 
+def _get_instance_type_from_launch_instances_return_value(
+    instance_datas: list[EC2InstanceData],
+) -> list[str]:
+    return [i.type for i in instance_datas]
+
+
+def _get_instance_type_from_stop_instances_args(
+    instance_datas: Iterable[EC2InstanceData],
+) -> list[str]:
+    return [i.type for i in instance_datas]
+
+
+def _get_instance_type_from_terminate_instances_args(
+    instance_datas: Iterable[EC2InstanceData],
+) -> list[str]:
+    return [i.type for i in instance_datas]
+
+
 def instrument_ec2_client_methods(
     app: FastAPI, ec2_client: SimcoreEC2API
 ) -> SimcoreEC2API:
     autoscaling_instrumentation = get_instrumentation(app)
     methods_to_instrument = [
-        ("launch_instances", autoscaling_instrumentation.instance_launched),
-        ("stop_instances", autoscaling_instrumentation.instance_stopped),
-        ("terminate_instances", autoscaling_instrumentation.instance_terminated),
+        (
+            "launch_instances",
+            autoscaling_instrumentation.instance_launched,
+            None,
+            _get_instance_type_from_launch_instances_return_value,
+        ),
+        (
+            "stop_instances",
+            autoscaling_instrumentation.instance_stopped,
+            _get_instance_type_from_stop_instances_args,
+            None,
+        ),
+        (
+            "terminate_instances",
+            autoscaling_instrumentation.instance_terminated,
+            _get_instance_type_from_terminate_instances_args,
+            None,
+        ),
     ]
-    for method_name, metrics_handler in methods_to_instrument:
+    for (
+        method_name,
+        metrics_handler,
+        instance_types_from_args,
+        instance_types_from_return,
+    ) in methods_to_instrument:
         method = getattr(ec2_client, method_name, None)
-        if method:
-            decorated_method = _instrumented_method(metrics_handler)(method)
-            setattr(ec2_client, method_name, decorated_method)
+        assert method is not None  # nosec
+        decorated_method = _instrumented_ec2_client_method(
+            metrics_handler,
+            instance_type_from_method_arguments=instance_types_from_args,
+            instance_type_from_method_return=instance_types_from_return,
+        )(method)
+        setattr(ec2_client, method_name, decorated_method)
     return ec2_client
 
 
