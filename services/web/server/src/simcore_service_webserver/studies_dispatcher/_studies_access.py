@@ -284,7 +284,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     )
 
     # Get or create a valid USER
-    if user is None:
+    if not user:
         try:
             _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
             user = await create_temporary_guest_user(request)
