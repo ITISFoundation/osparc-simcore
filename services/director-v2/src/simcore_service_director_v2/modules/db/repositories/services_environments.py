@@ -2,8 +2,8 @@ from typing import Literal
 
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
+from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 from simcore_postgres_database.utils_services_environments import (
-    VENDOR_SECRET_PREFIX,
     VendorSecret,
     get_vendor_secrets,
 )
