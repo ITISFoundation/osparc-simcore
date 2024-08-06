@@ -8,8 +8,8 @@ import typer
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.projects import NodeIDStr, ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
 from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as

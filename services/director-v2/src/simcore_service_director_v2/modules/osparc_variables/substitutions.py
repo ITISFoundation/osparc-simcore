@@ -1,10 +1,11 @@
 """ Substitution of osparc variables and secrets
 
 """
+
 import functools
 import logging
 from copy import deepcopy
-from typing import Any, Final
+from typing import Any, Final, TypeVar
 
 from fastapi import FastAPI
 from models_library.osparc_variable_identifier import (
@@ -35,17 +36,19 @@ from ._user import request_user_email, request_user_role
 
 _logger = logging.getLogger(__name__)
 
+TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
+
 
 async def substitute_vendor_secrets_in_model(
     app: FastAPI,
-    model: BaseModel,
+    model: TBaseModel,
     *,
     safe: bool = True,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: ProductName,
-) -> BaseModel:
-    result: BaseModel = model
+) -> TBaseModel:
+    result: TBaseModel = model
     try:
         with log_context(_logger, logging.DEBUG, "substitute_vendor_secrets_in_model"):
             # checks before to avoid unnecessary calls to pg
@@ -171,15 +174,15 @@ def auto_inject_environments(
 
 async def resolve_and_substitute_session_variables_in_model(
     app: FastAPI,
-    model: BaseModel,
+    model: TBaseModel,
     *,
     safe: bool = True,
     user_id: UserID,
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-) -> BaseModel:
-    result: BaseModel = model
+) -> TBaseModel:
+    result: TBaseModel = model
     try:
         with log_context(
             _logger, logging.DEBUG, "resolve_and_substitute_session_variables_in_model"

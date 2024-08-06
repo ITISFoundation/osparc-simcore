@@ -47,8 +47,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 class _ComputationStarted(BaseModel):
@@ -112,9 +112,9 @@ async def start_computation(request: web.Request) -> web.Response:
             "start_pipeline": True,
             "subgraph": list(subgraph),  # sets are not natively json serializable
             "force_restart": force_restart,
-            "cluster_id": None
-            if group_properties.use_on_demand_clusters
-            else cluster_id,
+            "cluster_id": (
+                None if group_properties.use_on_demand_clusters else cluster_id
+            ),
             "simcore_user_agent": simcore_user_agent,
             "use_on_demand_clusters": group_properties.use_on_demand_clusters,
             "wallet_info": wallet_info,

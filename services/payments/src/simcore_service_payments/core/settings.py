@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import cast
 
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
@@ -51,8 +50,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @validator("PAYMENTS_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
-        # NOTE: mypy is not happy without the cast
-        return cast(str, cls.validate_log_level(value))
+        return cls.validate_log_level(value)
 
 
 class ApplicationSettings(_BaseApplicationSettings):

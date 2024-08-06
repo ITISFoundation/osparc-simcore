@@ -6,10 +6,8 @@
 
 import asyncio
 import logging
-from collections.abc import MutableMapping
-from typing import Any
 
-from aiohttp import ClientSession, client_exceptions
+from aiohttp import ClientSession, client_exceptions, web
 from pydantic import HttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
@@ -43,6 +41,7 @@ class SciCrunch:
     def __init__(self, client: ClientSession, settings: SciCrunchSettings):
         self.settings = settings
         self.client = client
+        assert self.settings.SCICRUNCH_API_BASE_URL.host  # nosec
         self.base_url = URL.build(
             scheme=self.settings.SCICRUNCH_API_BASE_URL.scheme,
             host=self.settings.SCICRUNCH_API_BASE_URL.host,
@@ -59,7 +58,7 @@ class SciCrunch:
 
     @classmethod
     def acquire_instance(
-        cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
+        cls, app: web.Application, settings: SciCrunchSettings
     ) -> "SciCrunch":
         """Returns single instance for the application and stores it"""
         obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
@@ -69,7 +68,7 @@ class SciCrunch:
         return obj
 
     @classmethod
-    def get_instance(cls, app: MutableMapping[str, Any]) -> "SciCrunch":
+    def get_instance(cls, app: web.Application) -> "SciCrunch":
         obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             raise ScicrunchConfigError(

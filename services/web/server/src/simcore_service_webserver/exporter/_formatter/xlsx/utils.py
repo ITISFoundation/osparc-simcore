@@ -8,7 +8,7 @@ T = TypeVar("T")
 
 
 def ensure_correct_instance(
-    template_data: BaseModel, class_to_check_against: type[T]
+    template_data: BaseModel | None, class_to_check_against: type[T]
 ) -> T:
     if not isinstance(template_data, class_to_check_against):
         msg = (

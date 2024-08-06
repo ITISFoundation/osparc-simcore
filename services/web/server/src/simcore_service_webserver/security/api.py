@@ -1,10 +1,13 @@
+# mypy: disable-error-code=truthy-function
+
 """ API for security subsystem.
 
 
 NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
 
-import aiohttp_security.api
+
+import aiohttp_security.api  # type: ignore[import-untyped]
 import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
@@ -39,7 +42,7 @@ async def check_user_authorized(request: web.Request) -> UserID:
 
     """
     # NOTE: Same as aiohttp_security.api.check_authorized
-    user_id = await aiohttp_security.api.authorized_userid(request)
+    user_id: UserID | None = await aiohttp_security.api.authorized_userid(request)
     if user_id is None:
         raise web.HTTPUnauthorized
     return user_id
