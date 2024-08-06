@@ -403,6 +403,46 @@ async def _check_folder_and_access(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
+    gids: set[_GroupID],
+    *,
+    permissions: _FolderPermissions,
+    enforece_all_permissions: bool,
+) -> _ResolvedAccessRights:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+    """
+    resolved_access_rights: _ResolvedAccessRights | None = None
+    last_exception: Exception | None = None
+    for gid in gids:
+        try:
+            resolved_access_rights = await _check_folder_access(
+                connection,
+                product_name,
+                folder_id,
+                gid,
+                permissions=permissions,
+                enforece_all_permissions=enforece_all_permissions,
+            )
+        except FolderAccessError as e:  # noqa: PERF203
+            last_exception = e
+
+    if resolved_access_rights is None:
+        if last_exception:
+            raise last_exception
+
+        msg = "unexpected error"
+        raise RuntimeError(msg)
+
+    return resolved_access_rights
+
+
+async def _check_folder_access(
+    connection: SAConnection,
+    product_name: _ProductName,
+    folder_id: _FolderID,
     gid: _GroupID,
     *,
     permissions: _FolderPermissions,
@@ -460,8 +500,7 @@ async def folder_create(
     connection: SAConnection,
     product_name: _ProductName,
     name: str,
-    gid: _GroupID,
-    *,
+    gid: _GroupID,  # shared_via_gid TO WORK
     description: str = "",
     parent: _FolderID | None = None,
     required_permissions: _FolderPermissions = _requires(  # noqa: B008
@@ -503,10 +542,14 @@ async def folder_create(
                 connection,
                 product_name,
                 folder_id=parent,
-                gid=gid,
+                gids={gid},
                 permissions=required_permissions,
                 enforece_all_permissions=False,
             )
+        # TODO: add test to emulate Shared with Z43 and Osparc and not with MD
+        #    ->  MD_gid tries to create a folder inside this one -> should fail?
+        # TODO: use a set to check permissions on the parent
+        # "random" pick user between all grops it has access to
 
         # folder entry can now be inserted
         try:
@@ -543,7 +586,7 @@ async def folder_share_or_update_permissions(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    sharing_gid: _GroupID,
+    sharing_gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
     *,
     recipient_gid: _GroupID,
     recipient_role: FolderAccessRole,
@@ -563,7 +606,7 @@ async def folder_share_or_update_permissions(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=sharing_gid,
+            gids={sharing_gid},
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -594,7 +637,7 @@ async def folder_update(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
     *,
     name: str | None = None,
     description: str | None = None,
@@ -613,7 +656,7 @@ async def folder_update(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids={gid},
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -638,7 +681,7 @@ async def folder_delete(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
     *,
     required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.DELETE_FOLDER
@@ -657,7 +700,7 @@ async def folder_delete(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids={gid},
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -686,7 +729,7 @@ async def folder_move(
     connection: SAConnection,
     product_name: _ProductName,
     source_folder_id: _FolderID,
-    gid: _GroupID,
+    gid: _GroupID,  # this also can work with set[_GroupID]
     *,
     destination_folder_id: _FolderID | None,
     required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
@@ -708,7 +751,7 @@ async def folder_move(
             connection,
             product_name,
             folder_id=source_folder_id,
-            gid=gid,
+            gids={gid},
             permissions=required_permissions_source,
             enforece_all_permissions=False,
         )
@@ -717,6 +760,7 @@ async def folder_move(
         group_type: GroupType | None = await connection.scalar(
             sa.select([groups.c.type]).where(groups.c.gid == source_access_gid)
         )
+        # Might drop primary check
         if group_type is None or group_type != GroupType.PRIMARY:
             raise CannotMoveFolderSharedViaNonPrimaryGroupError(
                 group_type=group_type, gid=source_access_gid
@@ -726,7 +770,7 @@ async def folder_move(
                 connection,
                 product_name,
                 folder_id=destination_folder_id,
-                gid=gid,
+                gids={gid},
                 permissions=required_permissions_destination,
                 enforece_all_permissions=False,
             )
@@ -748,7 +792,7 @@ async def folder_add_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -767,7 +811,7 @@ async def folder_add_project(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids={gid},
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -797,7 +841,7 @@ async def folder_remove_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -815,7 +859,7 @@ async def folder_remove_project(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids={gid},
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -848,6 +892,7 @@ async def folder_list(
     results: list[FolderEntry] = []
 
     async with connection.begin():
+        # these two fields will not be required anly longer
         access_via_gid: _GroupID = gid
         access_via_folder_id: _FolderID | None = None
 
@@ -857,7 +902,7 @@ async def folder_list(
                 connection,
                 product_name,
                 folder_id=folder_id,
-                gid=gid,
+                gids={gid},
                 permissions=required_permissions,
                 enforece_all_permissions=False,
             )
@@ -865,6 +910,7 @@ async def folder_list(
             access_via_folder_id = resolved_access_rights.folder_id
 
         subquery_my_access_rights = (
+            # somehow apply max on columns
             sa.select(
                 sa.func.jsonb_build_object(
                     "read",
@@ -923,7 +969,7 @@ async def folder_list(
                 else folders_access_rights.c.traversal_parent_id == folder_id
             )
             .where(
-                folders_access_rights.c.gid == access_via_gid
+                folders_access_rights.c.gid == access_via_gid  # use In???
                 if folder_id is None
                 else True
             )
@@ -934,6 +980,7 @@ async def folder_list(
                 if folder_id is None
                 else True
             )
+            # todo add a group_by
             .offset(offset)
             .limit(limit)
         )
