@@ -13,7 +13,6 @@ import logging
 import os
 from logging.config import fileConfig
 from pathlib import Path
-from turtle import update
 
 import alembic.command
 import click
