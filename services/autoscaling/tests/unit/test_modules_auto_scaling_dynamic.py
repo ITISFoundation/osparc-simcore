@@ -7,7 +7,7 @@
 
 import asyncio
 import datetime
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -59,6 +59,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
 )
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 
 @pytest.fixture
@@ -380,9 +381,10 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
     scale_up_params: _ScaleUpParams,
+    instance_type_filters: Sequence[FilterTypeDef],
 ):
     # we have nothing running now
-    all_instances = await ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
 
     assert (
@@ -426,6 +428,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -537,6 +540,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
     assert len(instances) == scale_up_params.expected_num_instances
     assert "PrivateDnsName" in instances[0]
@@ -600,6 +604,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
 
     # check rabbit messages were sent
@@ -627,6 +632,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
     # the node shall be waiting before draining
     mock_docker_set_node_availability.assert_not_called()
@@ -697,6 +703,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
 
     # we artifically set the node to drain
@@ -727,6 +734,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
 
     # now changing the last update timepoint will trigger the node removal process
@@ -745,6 +753,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
@@ -778,6 +787,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="terminated",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
     )
 
 
@@ -843,6 +853,7 @@ async def test_cluster_scaling_up_and_down(
     async_docker_client: aiodocker.Docker,
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
     scale_up_params: _ScaleUpParams,
 ):
     await _test_cluster_scaling_up_and_down(
@@ -865,6 +876,101 @@ async def test_cluster_scaling_up_and_down(
         with_drain_nodes_labelled=with_drain_nodes_labelled,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
         scale_up_params=scale_up_params,
+        instance_type_filters=instance_type_filters,
+    )
+
+
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined",
+        ),
+        # pytest.param(
+        #     _ScaleUpParams(
+        #         imposed_instance_type="t2.xlarge",
+        #         service_resources=Resources(cpus=4, ram=parse_obj_as(ByteSize, "4Gib")),
+        #         num_services=1,
+        #         expected_instance_type="t2.xlarge",
+        #         expected_num_instances=1,
+        #     ),
+        #     id="Explicitely ask for t2.xlarge",
+        # ),
+        # pytest.param(
+        #     _ScaleUpParams(
+        #         imposed_instance_type="r5n.8xlarge",
+        #         service_resources=Resources(
+        #             cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+        #         ),
+        #         num_services=1,
+        #         expected_instance_type="r5n.8xlarge",
+        #         expected_num_instances=1,
+        #     ),
+        #     id="Explicitely ask for r5n.8xlarge",
+        # ),
+    ],
+)
+async def test_cluster_scaling_up_and_down_against_aws(
+    skip_if_external_envfile_dict: None,
+    with_labelize_drain_nodes: EnvVarsDict,
+    docker_swarm: None,
+    disabled_rabbitmq: None,
+    disable_dynamic_service_background_task: None,
+    mocked_redis_server: None,
+    external_envfile_dict: EnvVarsDict,
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    ec2_client: EC2Client,
+    mock_docker_tag_node: mock.Mock,
+    fake_node: Node,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    mocker: MockerFixture,
+    async_docker_client: aiodocker.Docker,
+    with_drain_nodes_labelled: bool,
+    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+    scale_up_params: _ScaleUpParams,
+):
+    await _test_cluster_scaling_up_and_down(
+        service_monitored_labels=service_monitored_labels,
+        osparc_docker_label_keys=osparc_docker_label_keys,
+        app_settings=app_settings,
+        initialized_app=initialized_app,
+        create_service=create_service,
+        task_template=task_template,
+        create_task_reservations=create_task_reservations,
+        ec2_client=ec2_client,
+        mock_docker_tag_node=mock_docker_tag_node,
+        fake_node=fake_node,
+        mock_rabbitmq_post_message=mock_rabbitmq_post_message,
+        mock_find_node_with_name_returns_fake_node=mock_find_node_with_name_returns_fake_node,
+        mock_docker_set_node_availability=mock_docker_set_node_availability,
+        mock_compute_node_used_resources=mock_compute_node_used_resources,
+        mocker=mocker,
+        async_docker_client=async_docker_client,
+        with_drain_nodes_labelled=with_drain_nodes_labelled,
+        ec2_instance_custom_tags=ec2_instance_custom_tags,
+        scale_up_params=scale_up_params,
+        instance_type_filters=instance_type_filters,
     )
 
 
