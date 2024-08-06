@@ -22,20 +22,26 @@ def _version_callback(value: bool) -> None:  # noqa: FBT001
 @app.callback()
 def main(
     ctx: typer.Context,
-    registry_name: Annotated[
-        str,
-        typer.Option(
-            "--REGISTRY_NAME",
-            help="image registry name. Full url or prefix used as prefix in an image name",
-        ),
-    ] = None,  # type: ignore[assignment]
-    compose_version: Annotated[
-        str,
-        typer.Option(
-            "--COMPOSE_VERSION",
-            help="version used for docker compose specification",
-        ),
-    ] = None,  # type: ignore[assignment]
+    registry_name: (
+        Annotated[
+            str,
+            typer.Option(
+                "--REGISTRY_NAME",
+                help="image registry name. Full url or prefix used as prefix in an image name",
+            ),
+        ]
+        | None
+    ) = None,
+    compose_version: (
+        Annotated[
+            str,
+            typer.Option(
+                "--COMPOSE_VERSION",
+                help="version used for docker compose specification",
+            ),
+        ]
+        | None
+    ) = None,
     version: Annotated[  # noqa: FBT002
         bool,
         typer.Option(
