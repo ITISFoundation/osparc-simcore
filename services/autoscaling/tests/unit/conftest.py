@@ -8,7 +8,7 @@ import datetime
 import json
 import logging
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final, cast, get_args
@@ -79,7 +79,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
@@ -166,25 +165,6 @@ def ec2_instance_custom_tags(
     if external_envfile_dict:
         return json.loads(external_envfile_dict["EC2_INSTANCES_CUSTOM_TAGS"])
     return {"osparc-tag": faker.text(max_nb_chars=80), "pytest": faker.pystr()}
-
-
-@pytest.fixture
-def instance_type_filters(
-    ec2_instance_custom_tags: dict[str, str],
-) -> Sequence[FilterTypeDef]:
-    return [
-        *[
-            FilterTypeDef(
-                Name="tag-key",
-                Values=[tag_key],
-            )
-            for tag_key in ec2_instance_custom_tags
-        ],
-        FilterTypeDef(
-            Name="instance-state-name",
-            Values=["pending", "running", "stopped"],
-        ),
-    ]
 
 
 @pytest.fixture
@@ -699,7 +679,7 @@ async def _assert_wait_for_service_state(
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
             ctx.logger.info(
                 "%s",
-                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds",
             )
 
         await _()

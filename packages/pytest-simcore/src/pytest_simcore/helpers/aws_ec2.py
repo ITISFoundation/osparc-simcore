@@ -143,7 +143,10 @@ async def assert_ec2_instances(
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
-            assert instance_private_dns_name.endswith(".ec2.internal")
+            if expected_instance_state in ["shutting-down", "terminated"]:
+                assert not instance_private_dns_name
+            else:
+                assert instance_private_dns_name.endswith(".ec2.internal")
             assert "State" in instance
             state = instance["State"]
             assert "Name" in state
