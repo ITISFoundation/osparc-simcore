@@ -13,6 +13,7 @@ from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.profiler_middleware import profiling_middleware
 from servicelib.aiohttp.tracing import setup_tracing
+from settings_library.tracing import TracingSettings
 
 from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
 from .db import setup_db
@@ -48,16 +49,17 @@ def create(settings: Settings) -> web.Application:
 
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
-
-    if settings.STORAGE_TRACING:
-        setup_tracing(  # TODO DK
-            app,
-            service_name="simcore_service_storage",
-            host=settings.STORAGE_HOST,
-            port=settings.STORAGE_PORT,
-            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_OBSERVABILITY_BACKEND_ENDPOINT}",
-            skip_routes=None,
-        )
+    # Tracing
+    tracing_settings: TracingSettings = app[APP_CONFIG_KEY].STORAGE_TRACING
+    assert tracing_settings, "setup_settings not called?"  # nosec
+    assert isinstance(tracing_settings, TracingSettings)  # nosec
+    service_name = "simcore_service_storage"
+    setup_tracing(
+        app,
+        service_name=service_name,
+        otel_collector_endpoint=tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
+        otel_collector_port=tracing_settings.TRACING_OTEL_COLLECTOR_PORT,
+    )
 
     setup_db(app)
     setup_s3(app)

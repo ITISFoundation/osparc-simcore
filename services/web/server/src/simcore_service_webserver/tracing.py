@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import setup_tracing
-from settings_library.tracing import UNDEFINED_CLIENT_NAME, TracingSettings
+from settings_library.tracing import TracingSettings
 
 from ._constants import APP_SETTINGS_KEY
 
@@ -22,12 +22,7 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
 )
 def setup_app_tracing(app: web.Application):
     settings: TracingSettings = get_plugin_settings(app)
-    #
-
-    service_name = settings.TRACING_CLIENT_NAME
-    if service_name == UNDEFINED_CLIENT_NAME:
-        service_name = "simcore_service_webserver"
-
+    service_name = "simcore_service_webserver"
     return setup_tracing(
         app,
         service_name=service_name,

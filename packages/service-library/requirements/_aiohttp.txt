@@ -1,6 +1,6 @@
 aiohappyeyeballs==2.3.4
     # via aiohttp
-aiohttp==3.10.0
+aiohttp==3.10.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -92,6 +92,7 @@ opentelemetry-api==1.26.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-exporter-otlp==1.26.0
@@ -105,8 +106,12 @@ opentelemetry-exporter-otlp-proto-grpc==1.26.0
 opentelemetry-exporter-otlp-proto-http==1.26.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.47b0
-    # via opentelemetry-instrumentation-aiohttp-client
+    # via
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
 opentelemetry-instrumentation-aiohttp-client==0.47b0
+    # via -r requirements/_aiohttp.in
+opentelemetry-instrumentation-aiohttp-server==0.47b0
     # via -r requirements/_aiohttp.in
 opentelemetry-proto==1.26.0
     # via
@@ -121,9 +126,12 @@ opentelemetry-sdk==1.26.0
 opentelemetry-semantic-conventions==0.47b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-sdk
 opentelemetry-util-http==0.47b0
-    # via opentelemetry-instrumentation-aiohttp-client
+    # via
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
 parse==1.20.2
     # via openapi-core
 pathable==0.4.3
@@ -189,6 +197,7 @@ wrapt==1.16.0
     #   deprecated
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
 yarl==1.9.4
     # via aiohttp
 zipp==3.19.2

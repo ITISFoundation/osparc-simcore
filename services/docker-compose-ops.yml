@@ -33,7 +33,7 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.47
     networks:
-      - default
+      - simcore_default
     ports:
       - "16686:16686"  # Jaeger UI
       - "14268:14268"  # Jaeger HTTP Thrift
@@ -109,8 +109,8 @@ volumes:
 
 networks:
   simcore_default:
-    name: ${SWARM_STACK_NAME:-simcore}_default
+    name: ${SWARM_STACK_NAME}_default
     external: true
   interactive_services_subnet:
-    name: ${SWARM_STACK_NAME:-simcore}_interactive_services_subnet
+    name: ${SWARM_STACK_NAME}_interactive_services_subnet
     external: true
