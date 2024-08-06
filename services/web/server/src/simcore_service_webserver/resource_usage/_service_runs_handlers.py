@@ -3,6 +3,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    OsparcCreditsAggregatedByServicePage,
     ServiceRunPage,
 )
 from models_library.resource_tracker import ServiceResourceUsagesFilters
@@ -159,6 +160,44 @@ async def list_resource_usage_services(request: web.Request):
             chunk=services.items,
             request_url=request.url,
             total=services.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(
+    f"/{VTAG}/services/-/usage", name="get_osparc_credits_aggregated_by_service"
+)
+@login_required
+@permission_required("resource-usage.read")
+@_handle_resource_usage_exceptions
+async def list_resource_usage_services(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(
+        _ListServicesResourceUsagesQueryParamsWithPagination, request
+    )
+
+    aggregated_services: OsparcCreditsAggregatedByServicePage = (
+        await api.get_osparc_credits_aggregated_by_service_page(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            wallet_id=query_params.wallet_id,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
+    )
+
+    page = Page[dict[str, Any]].parse_obj(
+        paginate_data(
+            chunk=aggregated_services.items,
+            request_url=request.url,
+            total=aggregated_services.total,
             limit=query_params.limit,
             offset=query_params.offset,
         )

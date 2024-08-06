@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import shortuuid
 from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    OsparcCreditsAggregatedByServiceGet,
+    OsparcCreditsAggregatedByServicePage,
     ServiceRunGet,
     ServiceRunPage,
 )
@@ -177,3 +179,47 @@ async def export_service_runs(
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
     )
     return generated_url
+
+
+async def get_osparc_credits_aggregated_by_service_page(
+    user_id: UserID,
+    product_name: ProductName,
+    resource_tracker_repo: ResourceTrackerRepository,
+    wallet_id: WalletID | None = None,
+    access_all_wallet_usage: bool = False,
+    limit: int = 20,
+    offset: int = 0,
+) -> OsparcCreditsAggregatedByServicePage:
+    current_datetime = datetime.now(tz=timezone.utc)
+    one_month_ago = current_datetime - timedelta(days=30)
+
+    total_output_list_db: PositiveInt = (
+        await resource_tracker_repo.total_osparc_credits_aggregated_by_service(
+            product_name=product_name,
+            user_id=user_id if access_all_wallet_usage is False else None,
+            wallet_id=wallet_id,
+            started_from=one_month_ago,
+            started_until=None,
+        )
+    )
+    output_list_db = (
+        await resource_tracker_repo.get_osparc_credits_aggregated_by_service(
+            product_name=product_name,
+            user_id=user_id if access_all_wallet_usage is False else None,
+            wallet_id=wallet_id,
+            offset=offset,
+            limit=limit,
+            started_from=one_month_ago,
+            started_until=None,
+        )
+    )
+    output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
+    for item in output_list_db:
+        output_api_model.append(
+            OsparcCreditsAggregatedByServiceGet.construct(
+                osparc_credits=item.osparc_credits,
+                service_key=item.service_key,
+            )
+        )
+
+    return OsparcCreditsAggregatedByServicePage(output_api_model, total_output_list_db)

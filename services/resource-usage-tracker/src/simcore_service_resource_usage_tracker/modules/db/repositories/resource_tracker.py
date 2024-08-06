@@ -63,6 +63,7 @@ from ....models.resource_tracker_pricing_plans import (
 from ....models.resource_tracker_pricing_unit_costs import PricingUnitCostsDB
 from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
+    OsparcCreditsAggregatedByServiceKeyDB,
     ServiceRunCreate,
     ServiceRunDB,
     ServiceRunForCheckDB,
@@ -308,6 +309,137 @@ class ResourceTrackerRepository(
             result = await conn.execute(query)
 
         return [ServiceRunWithCreditsDB.from_orm(row) for row in result.fetchall()]
+
+    async def get_osparc_credits_aggregated_by_service(
+        self,
+        product_name: ProductName,
+        *,
+        user_id: UserID | None,
+        wallet_id: WalletID | None,
+        offset: int,
+        limit: int,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+    ) -> list[OsparcCreditsAggregatedByServiceKeyDB]:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_service_runs.c.service_key,
+                    sa.func.SUM(
+                        resource_tracker_credit_transactions.c.osparc_credits
+                    ).label("osparc_credits"),
+                )
+                .select_from(
+                    resource_tracker_service_runs.join(
+                        resource_tracker_credit_transactions,
+                        (
+                            resource_tracker_service_runs.c.product_name
+                            == resource_tracker_credit_transactions.c.product_name
+                        )
+                        & (
+                            resource_tracker_service_runs.c.service_run_id
+                            == resource_tracker_credit_transactions.c.service_run_id
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(
+                    (resource_tracker_service_runs.c.product_name == product_name)
+                    & (
+                        resource_tracker_credit_transactions.c.transaction_status
+                        == CreditTransactionStatus.BILLED
+                    )
+                )
+                .group_by(resource_tracker_service_runs.c.service_key)
+                .offset(offset)
+                .limit(limit)
+            )
+
+            if user_id:
+                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            if wallet_id:
+                query = query.where(
+                    resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if started_from:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            # Default ordering
+            query = query.order_by(resource_tracker_service_runs.c.service_key.asc())
+
+            result = await conn.execute(query)
+
+        return [
+            OsparcCreditsAggregatedByServiceKeyDB.from_orm(row)
+            for row in result.fetchall()
+        ]
+
+    async def total_osparc_credits_aggregated_by_service(
+        self,
+        product_name: ProductName,
+        *,
+        user_id: UserID | None,
+        wallet_id: WalletID | None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+    ) -> PositiveInt:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    sa.select(sa.func.count()),
+                )
+                .select_from(
+                    resource_tracker_service_runs.join(
+                        resource_tracker_credit_transactions,
+                        (
+                            resource_tracker_service_runs.c.product_name
+                            == resource_tracker_credit_transactions.c.product_name
+                        )
+                        & (
+                            resource_tracker_service_runs.c.service_run_id
+                            == resource_tracker_credit_transactions.c.service_run_id
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(
+                    (resource_tracker_service_runs.c.product_name == product_name)
+                    & (
+                        resource_tracker_credit_transactions.c.transaction_status
+                        == CreditTransactionStatus.BILLED
+                    )
+                )
+                .group_by(resource_tracker_service_runs.c.service_key)
+            )
+
+            if user_id:
+                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            if wallet_id:
+                query = query.where(
+                    resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if started_from:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            result = await conn.execute(query)
+        row = result.first()
+        return cast(PositiveInt, row[0]) if row else 0
 
     async def export_service_runs_table_to_s3(
         self,
