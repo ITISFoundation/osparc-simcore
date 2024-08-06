@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -20,8 +20,10 @@ from pydantic import (
     parse_obj_as,
 )
 from pydantic.errors import PydanticErrorMixin
+from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql.elements import ColumnElement
+from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
+from sqlalchemy.sql.elements import ColumnElement, Label
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
@@ -283,12 +285,6 @@ class FolderEntry(BaseModel):
     modified: datetime = Field(alias="access_modified")
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
-
-    access_via_gid: _GroupID = Field(
-        ...,
-        description="used to compute my_access_rights, should be used by the frotned",
-    )
-    gid: _GroupID = Field(..., description="actual gid of this entry")
 
     class Config:
         orm_mode = True
@@ -871,11 +867,104 @@ async def folder_remove_project(
         )
 
 
+_LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
+    folders.c.id,
+    folders.c.name,
+    folders.c.description,
+    folders.c.created_by,
+    # access_rights
+    (
+        sa.select(
+            sa.func.jsonb_object_agg(
+                folders_access_rights.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    folders_access_rights.c.read,
+                    "write",
+                    folders_access_rights.c.write,
+                    "delete",
+                    folders_access_rights.c.delete,
+                ),
+            ).label("access_rights"),
+        )
+        .where(folders_access_rights.c.folder_id == folders.c.id)
+        .correlate(folders)
+        .scalar_subquery()
+    ).label("access_rights"),
+    # my_access_rights
+    func.json_build_object(
+        "read",
+        func.max(folders_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN),
+        "write",
+        func.max(folders_access_rights.c.write.cast(INTEGER)).cast(BOOLEAN),
+        "delete",
+        func.max(folders_access_rights.c.delete.cast(INTEGER)).cast(BOOLEAN),
+    ).label("my_access_rights"),
+    # access_created
+    func.max(folders_access_rights.c.created).label("access_created"),
+    # access_modified
+    func.max(folders_access_rights.c.modified).label("access_modified"),
+)
+
+
+async def _list_root_folder_children(
+    connection: SAConnection,
+    product_name: _ProductName,
+    gids: set[_GroupID],
+    *,
+    offset: NonNegativeInt,
+    limit: NonNegativeInt,
+    required_permissions: _FolderPermissions,
+) -> list[FolderEntry]:
+    results: list[FolderEntry] = []
+    async with connection.begin():
+        query = (
+            sa.select(*_LIST_SELECT_FIELDS)
+            .join(
+                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
+            )
+            .where(folders.c.product_name == product_name)
+            .where(folders_access_rights.c.traversal_parent_id.is_(None))
+            .where(folders_access_rights.c.gid.in_(gids))
+            .where(
+                _get_and_calsue_with_only_true_entries(
+                    required_permissions, folders_access_rights
+                )
+            )
+            .group_by(
+                folders.c.id,
+                folders.c.name,
+                folders.c.description,
+                folders.c.created_by,
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        async for entry in connection.execute(query):
+            results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
+
+        return results
+
+
+async def _list_folder_children(
+    connection: SAConnection,
+    product_name: _ProductName,
+    folder_id: _FolderID,
+    gids: set[_GroupID],
+    *,
+    offset: NonNegativeInt,
+    limit: NonNegativeInt,
+    required_permissions: _FolderPermissions,
+) -> list[FolderEntry]:
+    return []
+
+
 async def folder_list(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID | None,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
@@ -887,105 +976,24 @@ async def folder_list(
         FolderNotSharedWithGidError
         InsufficientPermissionsError
     """
-    # NOTE: when `folder_id is None` list the root folder of `gid`
+    # NOTE: when `folder_id is None` list the root folder of the `gids`
 
-    results: list[FolderEntry] = []
-
-    async with connection.begin():
-        # these two fields will not be required anly longer
-        access_via_gid: _GroupID = gid
-        access_via_folder_id: _FolderID | None = None
-
-        if folder_id:
-            # this one provides the set of access rights
-            resolved_access_rights = await _check_folder_and_access(
-                connection,
-                product_name,
-                folder_id=folder_id,
-                gids={gid},
-                permissions=required_permissions,
-                enforece_all_permissions=False,
-            )
-            access_via_gid = resolved_access_rights.gid
-            access_via_folder_id = resolved_access_rights.folder_id
-
-        subquery_my_access_rights = (
-            # somehow apply max on columns
-            sa.select(
-                sa.func.jsonb_build_object(
-                    "read",
-                    folders_access_rights.c.read,
-                    "write",
-                    folders_access_rights.c.write,
-                    "delete",
-                    folders_access_rights.c.delete,
-                ).label("my_access_rights"),
-            )
-            .where(
-                folders_access_rights.c.folder_id == access_via_folder_id
-                if access_via_gid and access_via_folder_id
-                else folders_access_rights.c.folder_id == folders.c.id
-            )
-            .where(folders_access_rights.c.gid == access_via_gid)
-            .correlate(folders)
-            .scalar_subquery()
+    if folder_id is None:
+        return await _list_root_folder_children(
+            connection,
+            product_name,
+            gids,
+            offset=offset,
+            limit=limit,
+            required_permissions=required_permissions,
         )
 
-        subquery_access_rights = (
-            sa.select(
-                sa.func.jsonb_object_agg(
-                    folders_access_rights.c.gid,
-                    sa.func.jsonb_build_object(
-                        "read",
-                        folders_access_rights.c.read,
-                        "write",
-                        folders_access_rights.c.write,
-                        "delete",
-                        folders_access_rights.c.delete,
-                    ),
-                ).label("access_rights"),
-            )
-            .where(folders_access_rights.c.folder_id == folders.c.id)
-            .correlate(folders)
-            .scalar_subquery()
-        )
-
-        query = (
-            sa.select(
-                folders,
-                folders_access_rights,
-                folders_access_rights.c.created.label("access_created"),
-                folders_access_rights.c.modified.label("access_modified"),
-                sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
-                subquery_my_access_rights.label("my_access_rights"),
-                subquery_access_rights.label("access_rights"),
-            )
-            .join(
-                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
-            )
-            .where(
-                folders_access_rights.c.traversal_parent_id.is_(None)
-                if folder_id is None
-                else folders_access_rights.c.traversal_parent_id == folder_id
-            )
-            .where(
-                folders_access_rights.c.gid == access_via_gid  # use In???
-                if folder_id is None
-                else True
-            )
-            .where(
-                _get_and_calsue_with_only_true_entries(
-                    required_permissions, folders_access_rights
-                )
-                if folder_id is None
-                else True
-            )
-            # todo add a group_by
-            .offset(offset)
-            .limit(limit)
-        )
-
-        async for entry in connection.execute(query):
-            results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
-
-    return results
+    return await _list_folder_children(
+        connection,
+        product_name,
+        folder_id,
+        gids,
+        offset=offset,
+        limit=limit,
+        required_permissions=required_permissions,
+    )
