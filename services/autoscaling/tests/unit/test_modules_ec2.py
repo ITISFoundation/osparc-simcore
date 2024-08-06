@@ -4,7 +4,6 @@
 # pylint: disable=protected-access
 
 from collections.abc import Callable
-from os import name
 from typing import TypedDict
 
 import pytest
