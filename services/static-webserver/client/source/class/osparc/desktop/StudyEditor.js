@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
-          this.__studyDataInBackend = studyData;
+          this.__setStudyDataInBackend(studyData);
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -253,6 +253,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => this._hideLoadingPage());
 
       this.__updatingStudy = 0;
+    },
+
+    __setStudyDataInBackend: function(studyData) {
+      this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
     },
 
     __attachSocketEventHandlers: function() {
@@ -758,9 +762,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         updatePromise = this.getStudy().updateStudy(newObj);
       }
       return updatePromise
-        .then(studyData => {
-          this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
-        })
+        .then(studyData => this.__setStudyDataInBackend(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
