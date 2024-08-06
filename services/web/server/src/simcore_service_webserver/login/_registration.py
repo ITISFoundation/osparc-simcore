@@ -74,8 +74,8 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: ConfirmationAction
-    data: Json[  # type:ignore[type-arg]
-        InvitationData  # pylint: disable=unsubscriptable-object
+    data: Json[  # type:ignore[type-arg] # pylint: disable=unsubscriptable-object
+        InvitationData
     ]
 
     @validator("action", pre=True)
