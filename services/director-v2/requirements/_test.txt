@@ -198,6 +198,7 @@ numpy==1.26.4
     #   bokeh
     #   contourpy
     #   pandas
+    #   types-networkx
 packaging==24.0
     # via
     #   -c requirements/_base.txt
@@ -320,6 +321,12 @@ tornado==6.4
     #   distributed
 traitlets==5.14.3
     # via dask-gateway-server
+types-networkx==3.2.1.20240703
+    # via -r requirements/_test.in
+types-psycopg2==2.9.21.20240417
+    # via -r requirements/_test.in
+types-pyyaml==6.0.12.20240724
+    # via -r requirements/_test.in
 typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt

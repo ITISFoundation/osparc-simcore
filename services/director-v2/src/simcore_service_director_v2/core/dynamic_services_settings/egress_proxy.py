@@ -26,6 +26,6 @@ class EgressProxySettings(BaseCustomSettings):
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        default=EnvoyLogLevel.ERROR,  # type: ignore
+        default=EnvoyLogLevel.ERROR,
         description="log level for envoy proxy service",
     )

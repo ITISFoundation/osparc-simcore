@@ -14,7 +14,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID

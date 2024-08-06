@@ -1,5 +1,5 @@
 from aiodocker.exceptions import DockerError
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from pydantic.errors import PydanticErrorMixin
 
 from ...core.errors import DirectorError
