@@ -47,13 +47,13 @@ from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 def with_ec2_instance_allowed_types_env(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
         {
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                jsonable_encoder(ec2_instances_allowed_types)
+                jsonable_encoder(ec2_instances_allowed_types_with_only_1_buffered)
             ),
         },
     )
@@ -90,7 +90,7 @@ async def test_if_send_command_is_mocked_by_moto(
     minimal_configuration: None,
     initialized_app: FastAPI,
     ec2_client: EC2Client,
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     buffer_count: int,
 ):
     all_instances = await ec2_client.describe_instances()
@@ -104,7 +104,9 @@ async def test_if_send_command_is_mocked_by_moto(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state="running",
         expected_additional_tag_keys=[],
         expected_pre_pulled_images=[],
@@ -254,7 +256,7 @@ async def test_monitor_buffer_machines(
     ec2_client: EC2Client,
     buffer_count: int,
     pre_pull_images: list[DockerGenericTag],
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     mock_wait_for_has_instance_completed_cloud_init: mock.Mock | None,
@@ -266,7 +268,7 @@ async def test_monitor_buffer_machines(
         initialized_app=initialized_app,
         buffer_count=buffer_count,
         pre_pulled_images=pre_pull_images,
-        ec2_instances_allowed_types=ec2_instances_allowed_types,
+        ec2_instances_allowed_types=ec2_instances_allowed_types_with_only_1_buffered,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
         run_against_moto=True,
     )
@@ -384,7 +386,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
@@ -397,7 +399,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     # have too many machines of accepted type
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
-        next(iter(list(ec2_instances_allowed_types))),
+        next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
         expected_buffer_params.instance_state_name,
         [],
     )
@@ -405,7 +407,9 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -422,7 +426,9 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -438,7 +444,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     ec2_client: EC2Client,
     buffer_count: int,
     pre_pull_images: list[DockerGenericTag],
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
@@ -453,7 +459,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     ), "this test relies on pre-pulled images being filled with more than 1 image"
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
-        next(iter(list(ec2_instances_allowed_types))),
+        next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
         "stopped",
         pre_pull_images[:-1],
     )
@@ -461,7 +467,9 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state="stopped",
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -478,7 +486,9 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,  # NOTE: these are not pre-pulled yet, just started
@@ -488,10 +498,10 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
 
 @pytest.fixture
 def unneeded_instance_type(
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
 ) -> InstanceTypeType:
-    random_type = next(iter(ec2_instances_allowed_types))
-    while random_type in ec2_instances_allowed_types:
+    random_type = next(iter(ec2_instances_allowed_types_with_only_1_buffered))
+    while random_type in ec2_instances_allowed_types_with_only_1_buffered:
         random_type = random.choice(InstanceTypeType.__args__)  # noqa: S311
     return random_type
 
@@ -511,7 +521,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
@@ -548,7 +558,9 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(iter(ec2_instances_allowed_types)),
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -558,7 +570,9 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
 
 @pytest.fixture
 def buffer_count(
-    ec2_instances_allowed_types: dict[InstanceTypeType, EC2InstanceBootSpecific],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[
+        InstanceTypeType, EC2InstanceBootSpecific
+    ],
 ) -> int:
     def _by_buffer_count(
         instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
@@ -566,7 +580,7 @@ def buffer_count(
         _, boot_specific = instance_type_and_settings
         return boot_specific.buffer_count > 0
 
-    allowed_ec2_types = ec2_instances_allowed_types
+    allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
     allowed_ec2_types_with_buffer_defined = dict(
         filter(_by_buffer_count, allowed_ec2_types.items())
     )
@@ -579,9 +593,9 @@ def buffer_count(
 
 @pytest.fixture
 def pre_pull_images(
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any]
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any]
 ) -> list[DockerGenericTag]:
-    allowed_ec2_types = ec2_instances_allowed_types
+    allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
     allowed_ec2_types_with_pre_pull_images_defined = dict(
         filter(
             lambda instance_type_and_settings: instance_type_and_settings[
@@ -610,7 +624,7 @@ async def test_monitor_buffer_machines_against_aws(
     ec2_client: EC2Client,
     buffer_count: int,
     pre_pull_images: list[DockerGenericTag],
-    ec2_instances_allowed_types: dict[InstanceTypeType, Any],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
     instance_type_filters: Sequence[FilterTypeDef],
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
@@ -621,7 +635,7 @@ async def test_monitor_buffer_machines_against_aws(
         initialized_app=initialized_app,
         buffer_count=buffer_count,
         pre_pulled_images=pre_pull_images,
-        ec2_instances_allowed_types=ec2_instances_allowed_types,
+        ec2_instances_allowed_types=ec2_instances_allowed_types_with_only_1_buffered,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
         run_against_moto=False,
     )
