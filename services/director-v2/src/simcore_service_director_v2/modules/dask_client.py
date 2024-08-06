@@ -474,6 +474,8 @@ class DaskClient:
                         "".join(traceback.format_exception(exception)),
                     )
                     running_states.append(DaskClientTaskState.ERRED)
+            elif dask_status is None:
+                running_states.append(DaskClientTaskState.LOST)
             else:
                 running_states.append(
                     _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP.get(
