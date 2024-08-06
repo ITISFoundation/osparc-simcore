@@ -224,19 +224,7 @@ def _instrumented_ec2_client_method(
     return decorator
 
 
-def _get_instance_type_from_launch_instances_return_value(
-    instance_datas: list[EC2InstanceData],
-) -> list[str]:
-    return [i.type for i in instance_datas]
-
-
-def _get_instance_type_from_stop_instances_args(
-    instance_datas: Iterable[EC2InstanceData],
-) -> list[str]:
-    return [i.type for i in instance_datas]
-
-
-def _get_instance_type_from_terminate_instances_args(
+def _instance_type_from_instance_datas(
     instance_datas: Iterable[EC2InstanceData],
 ) -> list[str]:
     return [i.type for i in instance_datas]
@@ -251,18 +239,18 @@ def instrument_ec2_client_methods(
             "launch_instances",
             autoscaling_instrumentation.instance_launched,
             None,
-            _get_instance_type_from_launch_instances_return_value,
+            _instance_type_from_instance_datas,
         ),
         (
             "stop_instances",
             autoscaling_instrumentation.instance_stopped,
-            _get_instance_type_from_stop_instances_args,
+            _instance_type_from_instance_datas,
             None,
         ),
         (
             "terminate_instances",
             autoscaling_instrumentation.instance_terminated,
-            _get_instance_type_from_terminate_instances_args,
+            _instance_type_from_instance_datas,
             None,
         ),
     ]
