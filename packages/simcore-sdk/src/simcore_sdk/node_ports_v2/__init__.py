@@ -28,7 +28,7 @@ async def ports(
     aws_s3_cli_settings: AwsS3CliSettings | None = None
 ) -> Nodeports:
     log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
-    # FIXME: warning every dbmanager create a new db engine!
+    # NOTE: warning every dbmanager create a new db engine!
     if db_manager is None:  # NOTE: keeps backwards compatibility
         log.debug("no db manager provided, creating one...")
         db_manager = DBManager()
@@ -45,4 +45,11 @@ async def ports(
     )
 
 
-__all__ = ("ports", "exceptions", "Port", "FileLinkType")
+__all__ = (
+    "DBManager",
+    "exceptions",
+    "FileLinkType",
+    "Nodeports",
+    "Port",
+    "ports",
+)

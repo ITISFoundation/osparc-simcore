@@ -7,8 +7,9 @@ from typing import Final, Generic, TypeVar
 from pydantic import NonNegativeInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDK, RedisDatabase
+from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
+from settings_library.redis import RedisDatabase
 
 _logger = logging.getLogger(__name__)
 

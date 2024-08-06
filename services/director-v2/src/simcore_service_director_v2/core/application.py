@@ -152,7 +152,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
+        dynamic_services.setup(app)
 
     dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER

@@ -60,7 +60,7 @@ async def _track_and_display(
         task = progress.add_task("...", total=1.0, visible=True)
 
         async def _debug_progress_callback(
-            message: ProgressMessage, percent: ProgressPercent, _: TaskId
+            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
             progress.update(task, completed=percent, description=message, visible=True)
 
