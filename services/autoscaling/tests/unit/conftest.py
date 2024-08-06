@@ -216,7 +216,7 @@ def external_ec2_instances_allowed_types(
 
 
 @pytest.fixture
-def ec2_instances_allowed_types(
+def ec2_instances_allowed_types_with_only_1_buffered(
     faker: Faker,
     fake_pre_pull_images: list[DockerGenericTag],
     external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
