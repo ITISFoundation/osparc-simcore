@@ -120,7 +120,7 @@ def _get_environment_variables(
 
     storage_config = _get_storage_config(app_settings)
 
-    envs = {
+    envs: dict[str, str] = {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -137,7 +137,7 @@ def _get_environment_variables(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
-        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings,
+        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings or "null",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
@@ -434,18 +434,18 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    standard_simcore_docker_labels: dict[DockerLabelKey, str] = (
-        StandardSimcoreDockerLabels(
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            product_name=scheduler_data.product_name,
-            simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=ByteSize(0),  # this should get overwritten
-            cpu_limit=0,  # this should get overwritten
-        ).to_simcore_runtime_docker_labels()
-    )
+    standard_simcore_docker_labels: dict[
+        DockerLabelKey, str
+    ] = StandardSimcoreDockerLabels(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        memory_limit=ByteSize(0),  # this should get overwritten
+        cpu_limit=0,  # this should get overwritten
+    ).to_simcore_runtime_docker_labels()
 
     service_labels: dict[str, str] = (
         {
@@ -478,7 +478,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[str, DockerPlacementConstraint] = (
+    placement_substitutions: dict[
+        str, DockerPlacementConstraint
+    ] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
