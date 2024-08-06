@@ -286,7 +286,7 @@ class FolderEntry(BaseModel):
 
     access_via_gid: _GroupID = Field(
         ...,
-        description="used to compute my_access_rights, should be used by the frotned",
+        description="used to compute my_access_rights, should be used by the fronted",
     )
     gid: _GroupID = Field(..., description="actual gid of this entry")
 
@@ -598,7 +598,7 @@ async def folder_update(
     *,
     name: str | None = None,
     description: str | None = None,
-    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+    _required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.UPDATE_FOLDER
     ),
 ) -> None:
@@ -614,7 +614,7 @@ async def folder_update(
             product_name,
             folder_id=folder_id,
             gid=gid,
-            permissions=required_permissions,
+            permissions=_required_permissions,
             enforece_all_permissions=False,
         )
 
@@ -640,7 +640,7 @@ async def folder_delete(
     folder_id: _FolderID,
     gid: _GroupID,
     *,
-    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+    _required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.DELETE_FOLDER
     ),
 ) -> None:
@@ -658,7 +658,7 @@ async def folder_delete(
             product_name,
             folder_id=folder_id,
             gid=gid,
-            permissions=required_permissions,
+            permissions=_required_permissions,
             enforece_all_permissions=False,
         )
 
@@ -835,7 +835,7 @@ async def folder_list(
     *,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
-    required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
+    _required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
 ) -> list[FolderEntry]:
     """
     Raises:
@@ -858,7 +858,7 @@ async def folder_list(
                 product_name,
                 folder_id=folder_id,
                 gid=gid,
-                permissions=required_permissions,
+                permissions=_required_permissions,
                 enforece_all_permissions=False,
             )
             access_via_gid = resolved_access_rights.gid
@@ -929,7 +929,7 @@ async def folder_list(
             )
             .where(
                 _get_and_calsue_with_only_true_entries(
-                    required_permissions, folders_access_rights
+                    _required_permissions, folders_access_rights
                 )
                 if folder_id is None
                 else True

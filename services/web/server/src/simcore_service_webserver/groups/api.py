@@ -13,14 +13,26 @@ from ._utils import AccessRightsDict
 from .exceptions import GroupsError
 
 
-async def list_user_groups(
+async def list_user_groups_with_read_access(
     app: web.Application, user_id: UserID
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     """
     Returns the user primary group, standard groups and the all group
     """
+    # NOTE: Careful! It seems we are filtering out groups, such as Product Groups,
+    # because they do not have read access. I believe this was done because the frontend did not want to display them.
     async with get_database_engine(app).acquire() as conn:
-        return await _db.get_all_user_groups(conn, user_id=user_id)
+        return await _db.get_all_user_groups_with_read_access(conn, user_id=user_id)
+
+
+async def list_all_user_groups(app: web.Application, user_id: UserID) -> list[Group]:
+    """
+    Return all user groups
+    """
+    async with get_database_engine(app).acquire() as conn:
+        groups_db = await _db.get_all_user_groups(conn, user_id=user_id)
+
+    return [Group.construct(**group.dict()) for group in groups_db]
 
 
 async def get_user_group(

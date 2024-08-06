@@ -6,6 +6,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
+from pydantic import parse_obj_as
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -66,7 +67,7 @@ async def get_user_from_email(conn: SAConnection, email: str) -> RowProxy:
 #
 
 
-async def get_all_user_groups(
+async def get_all_user_groups_with_read_access(
     conn: SAConnection, user_id: UserID
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     """
@@ -100,6 +101,21 @@ async def get_all_user_groups(
                 user_groups.append(convert_groups_db_to_schema(row))
 
     return (primary_group, user_groups, all_group)
+
+
+async def get_all_user_groups(conn: SAConnection, user_id: UserID) -> list[GroupAtDB]:
+    """
+    Returns all user groups
+    """
+    result = await conn.execute(
+        sa.select(groups)
+        .select_from(
+            user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+        )
+        .where(user_to_groups.c.uid == user_id)
+    )
+    rows = await result.fetchall() or []
+    return [parse_obj_as(GroupAtDB, row) for row in rows]
 
 
 async def get_user_group(
