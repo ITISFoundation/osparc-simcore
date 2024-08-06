@@ -1,13 +1,15 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import PositiveFloat, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
+from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -30,7 +32,9 @@ from ._events_utils import get_director_v0_client
 _logger = logging.getLogger(__name__)
 
 
-async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
+async def create_user_services(  # pylint: disable=too-many-statements
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
     _logger.debug(
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
@@ -107,10 +111,8 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     )
 
     async def progress_create_containers(
-        message: str, percent: PositiveFloat, task_id: TaskId
+        message: str, percent: ProgressPercent | None, task_id: TaskId
     ) -> None:
-        # TODO: detect when images are pulling and change the status
-        # of the service to pulling
         _logger.debug("%s: %.2f %s", task_id, percent, message)
 
     # data from project
@@ -134,6 +136,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     if scheduler_data.wallet_info:
         wallet_id = scheduler_data.wallet_info.wallet_id
         wallet_name = scheduler_data.wallet_info.wallet_name
+        assert scheduler_data.pricing_info  # nosec
         pricing_plan_id = scheduler_data.pricing_info.pricing_plan_id
         pricing_unit_id = scheduler_data.pricing_info.pricing_unit_id
         pricing_unit_cost_id = scheduler_data.pricing_info.pricing_unit_cost_id
@@ -171,28 +174,32 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     # The entrypoint container name was now computed
     # continue starting the proxy
 
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(
-            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
-        ),
-        wait=wait_fixed(1),
-        retry_error_cls=EntrypointContainerNotFoundError,
-        before_sleep=before_sleep_log(_logger, logging.WARNING),
-    ):
-        with attempt:
-            if scheduler_data.dynamic_sidecar.service_removal_state.was_removed:
-                # the service was removed while waiting for the operation to finish
-                _logger.warning(
-                    "Stopping `get_entrypoint_container_name` operation. "
-                    "Will no try to start the service."
-                )
-                return
+    try:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(
+                dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
+            ),
+            wait=wait_fixed(1),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
+        ):
+            with attempt:
+                if scheduler_data.dynamic_sidecar.service_removal_state.was_removed:
+                    # the service was removed while waiting for the operation to finish
+                    _logger.warning(
+                        "Stopping `get_entrypoint_container_name` operation. "
+                        "Will no try to start the service."
+                    )
+                    return
 
-            entrypoint_container = await sidecars_client.get_entrypoint_container_name(
-                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
-                dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            )
-            _logger.info("Fetched container entrypoint name %s", entrypoint_container)
+                entrypoint_container = await sidecars_client.get_entrypoint_container_name(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                )
+                _logger.info(
+                    "Fetched container entrypoint name %s", entrypoint_container
+                )
+    except RetryError as err:
+        raise EntrypointContainerNotFoundError from err
 
     await sidecars_client.configure_proxy(
         proxy_endpoint=scheduler_data.get_proxy_endpoint,

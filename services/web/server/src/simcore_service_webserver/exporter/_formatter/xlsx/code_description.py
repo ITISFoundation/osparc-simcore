@@ -129,14 +129,11 @@ class CodeDescriptionParams(BaseModel):
 
 
 def _include_ports_from_this_service(service_key: ServiceKey) -> bool:
-    return cast(
-        bool,
-        service_key.startswith(
-            (
-                "simcore/services/frontend/parameter/",
-                "simcore/services/frontend/iterator-consumer/probe/",
-            )
-        ),
+    return service_key.startswith(
+        (
+            "simcore/services/frontend/parameter/",
+            "simcore/services/frontend/iterator-consumer/probe/",
+        )
     )
 
 
@@ -723,7 +720,7 @@ class SheetCodeDescriptionV2(BaseXLSXSheet):
     cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = []
 
     def assemble_data_for_template(
-        self, template_data: BaseModel
+        self, template_data: BaseModel | None
     ) -> list[tuple[str, BaseXLSXCellData]]:
         code_description_params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams

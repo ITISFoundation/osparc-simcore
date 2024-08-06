@@ -3,14 +3,13 @@ import logging
 from collections import deque
 from typing import Any, cast
 
-from models_library.basic_types import PortInt
-from models_library.boot_options import BootOption, EnvVarKey
+from models_library.basic_types import EnvVarKey, PortInt
+from models_library.boot_options import BootOption
 from models_library.docker import (
     DockerPlacementConstraint,
     to_simcore_runtime_docker_label_key,
 )
 from models_library.service_settings_labels import (
-    ComposeSpecLabelDict,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
@@ -23,6 +22,7 @@ from models_library.services_resources import (
     MEMORY_1GB,
     ServiceResourcesDict,
 )
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.docker_compose import (
     MATCH_IMAGE_END,
     MATCH_IMAGE_START,
@@ -132,12 +132,9 @@ def update_service_params_from_settings(
                 create_service_params["task_template"]["Resources"].update(param.value)
 
         # placement constraints
-        elif param.name == "constraints":  # python-API compatible
-            create_service_params["task_template"]["Placement"][
-                "Constraints"
-            ] += param.value
-
-        elif param.setting_type == "Constraints":  # REST-API compatible
+        elif (
+            param.name == "constraints" or param.setting_type == "Constraints"
+        ):  # python-API compatible
             create_service_params["task_template"]["Placement"][
                 "Constraints"
             ] += param.value
@@ -219,13 +216,11 @@ async def _extract_osparc_involved_service_labels(
     # maps form image_name to compose_spec key
     reverse_mapping: dict[str, str] = {_default_key: DEFAULT_SINGLE_SERVICE_NAME}
 
-    def remap_to_compose_spec_key() -> dict[str, str]:
+    def remap_to_compose_spec_key() -> dict[str, SimcoreServiceLabels]:
         # remaps from image_name as key to compose_spec key
         return {reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()}
 
-    compose_spec: ComposeSpecLabelDict | None = cast(
-        ComposeSpecLabelDict, service_labels.compose_spec
-    )
+    compose_spec = service_labels.compose_spec
     if compose_spec is None:
         return remap_to_compose_spec_key()
 
@@ -437,7 +432,9 @@ def _assemble_env_vars_for_boot_options(
 
 
 async def get_labels_for_involved_services(
-    director_v0_client: DirectorV0Client, service_key: str, service_tag: str
+    director_v0_client: DirectorV0Client,
+    service_key: ServiceKey,
+    service_tag: ServiceVersion,
 ) -> dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
@@ -466,8 +463,8 @@ async def get_labels_for_involved_services(
 async def merge_settings_before_use(
     director_v0_client: DirectorV0Client,
     *,
-    service_key: str,
-    service_tag: str,
+    service_key: ServiceKey,
+    service_tag: ServiceVersion,
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
     placement_substitutions: dict[str, DockerPlacementConstraint],
@@ -478,7 +475,7 @@ async def merge_settings_before_use(
         service_tag=service_tag,
     )
 
-    settings: deque[SimcoreServiceSettingLabelEntry] = deque()  # TODO: fix typing here
+    settings: deque[SimcoreServiceSettingLabelEntry] = deque()
 
     boot_options_settings_env_vars: SimcoreServiceSettingsLabel | None = None
     # search for boot options first and inject to all containers

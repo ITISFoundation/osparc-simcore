@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 import logging
 from collections.abc import AsyncGenerator, Callable
 from typing import Annotated, cast

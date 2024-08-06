@@ -16,6 +16,7 @@ This resource can also be read or deleted using
 
 """
 import logging
+from typing import cast
 
 import arrow
 from models_library.api_schemas_webserver.wallets import (
@@ -26,7 +27,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr
+from pydantic import EmailStr, HttpUrl
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 
 from ..db.payments_methods_repo import PaymentsMethodsRepo
@@ -73,7 +74,7 @@ async def init_creation_of_payment_method(
     return PaymentMethodInitiated(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
-        payment_method_form_url=f"{form_link}",
+        payment_method_form_url=cast(HttpUrl, f"{form_link}"),
     )
 
 

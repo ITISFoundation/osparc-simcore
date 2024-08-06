@@ -2,13 +2,13 @@ import contextlib
 import datetime
 import logging
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import arrow
 import networkx as nx
 from models_library.projects import NodesDict
-from models_library.projects_nodes import NodeID, NodeState
-from models_library.projects_nodes_io import NodeIDStr, PortLink
+from models_library.projects_nodes import NodeState
+from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
@@ -26,7 +26,7 @@ kNODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
-    dag_graph = nx.DiGraph()
+    dag_graph: nx.DiGraph = nx.DiGraph()
     for node_id, node in workbench.items():
         assert node.state  # nosec
         dag_graph.add_node(
@@ -50,7 +50,7 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
 
 
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
-    dag_graph = nx.DiGraph()
+    dag_graph: nx.DiGraph = nx.DiGraph()
     for task in tasks:
         dag_graph.add_node(
             f"{task.node_id}",
@@ -179,7 +179,7 @@ async def create_minimal_computational_graph_based_on_selection(
             ):
                 minimal_nodes_selection.add(f"{node}")
 
-    return complete_dag.subgraph(minimal_nodes_selection)
+    return cast(nx.DiGraph, complete_dag.subgraph(minimal_nodes_selection))
 
 
 def compute_pipeline_started_timestamp(
@@ -191,7 +191,7 @@ def compute_pipeline_started_timestamp(
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
     TOMORROW = arrow.utcnow().shift(days=1).datetime
-    pipeline_started_at = min(
+    pipeline_started_at: datetime.datetime | None = min(
         node_id_to_comp_task[node_id].start or TOMORROW
         for node_id in pipeline_dag.nodes
     )
@@ -209,7 +209,7 @@ def compute_pipeline_stopped_timestamp(
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
     TOMORROW = arrow.utcnow().shift(days=1).datetime
-    pipeline_stopped_at = max(
+    pipeline_stopped_at: datetime.datetime | None = max(
         node_id_to_comp_task[node_id].end or TOMORROW for node_id in pipeline_dag.nodes
     )
     if pipeline_stopped_at == TOMORROW:
@@ -242,8 +242,9 @@ async def compute_pipeline_details(
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
+
         pipeline_progress = sum(
-            node_id_to_comp_task[node_id].progress / len(pipeline_dag.nodes)
+            (node_id_to_comp_task[node_id].progress or 0) / len(pipeline_dag.nodes)
             for node_id in pipeline_dag.nodes
             if node_id_to_comp_task[node_id].progress is not None
         )
@@ -257,9 +258,11 @@ async def compute_pipeline_details(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=node_id_to_comp_task[node_id].state,
-                progress=node_id_to_comp_task[node_id].progress
-                if node_id_to_comp_task[node_id].progress is not None
-                else None,
+                progress=(
+                    node_id_to_comp_task[node_id].progress
+                    if node_id_to_comp_task[node_id].progress is not None
+                    else None
+                ),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL

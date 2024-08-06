@@ -5,6 +5,7 @@ Revises: 69957302b7ee
 Create Date: 2023-01-14 21:12:56.182870+00:00
 
 """
+
 import json
 
 import sqlalchemy as sa
@@ -40,7 +41,7 @@ def upgrade():
         "products",
         "login_settings",
         server_default=sa.text("'{}'::jsonb"),
-        existing_server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),
+        existing_server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),  # type: ignore[arg-type]
     )
 
 
@@ -67,6 +68,6 @@ def downgrade():
         "products",
         "login_settings",
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
-        existing_server_default=sa.text("'{}'::jsonb"),
+        existing_server_default=sa.text("'{}'::jsonb"),  # type: ignore[arg-type]
         server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),
     )

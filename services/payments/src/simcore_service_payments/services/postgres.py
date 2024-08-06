@@ -1,4 +1,5 @@
 import time
+from datetime import timedelta
 
 from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
@@ -21,7 +22,8 @@ async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
         # test
         async with engine.connect():
             ...
-        return IsResponsive(elapsed=time.time() - tic)
+        elapsed_time = time.time() - tic
+        return IsResponsive(elapsed=timedelta(seconds=elapsed_time))
     except SQLAlchemyError as err:
         return IsNonResponsive(reason=f"{err}")
 

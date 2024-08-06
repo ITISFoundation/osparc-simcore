@@ -849,7 +849,6 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/director-v2.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/director-v2.bash test
@@ -1076,7 +1075,6 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/payments.bash test
@@ -1264,7 +1262,6 @@ jobs:
           uv pip install mypy && \
           pushd services/efs-guardian && \
           make mypy
-        continue-on-error: true
       - name: test
         if: always()
         run: |
@@ -1382,7 +1379,6 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
