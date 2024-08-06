@@ -1,9 +1,8 @@
 from logging.config import fileConfig
 
 from alembic import context
+from simcore_postgres_database.settings import target_metadatas
 from sqlalchemy import engine_from_config, pool
-
-from ..settings import target_metadatas
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
