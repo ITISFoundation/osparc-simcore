@@ -135,9 +135,7 @@ def init_config(
     template: Annotated[
         str, typer.Option(help="Github repo or path to the template")
     ] = _COOKIECUTTER_GITHUB_URL,
-    checkout: Annotated[
-        str | None, typer.Option(help="Branch if different from main")
-    ] = None,
+    checkout: Annotated[str, typer.Option(help="Branch if different from main")] = None,  # type: ignore[assignment]
 ):
     """runs cookie-cutter"""
     from cookiecutter.main import cookiecutter  # type: ignore[import-untyped]
