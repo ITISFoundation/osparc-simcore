@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
+)
+from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
@@ -12,6 +14,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
@@ -118,7 +121,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         return await self.scheduler.get_stack_status(node_uuid)
 
     async def retrieve_service_inputs(
-        self, node_uuid: NodeID, port_keys: list[str]
+        self, node_uuid: NodeID, port_keys: list[ServicePortKey]
     ) -> RetrieveDataOutEnveloped:
         return await self.scheduler.retrieve_service_inputs(node_uuid, port_keys)
 
@@ -144,7 +147,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         await self.scheduler.free_reserved_disk_space(node_id)
 
 
-async def setup_scheduler(app: FastAPI):
+async def setup_scheduler(app: FastAPI) -> None:
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
@@ -156,7 +159,7 @@ async def setup_scheduler(app: FastAPI):
     await scheduler.start()
 
 
-async def shutdown_scheduler(app: FastAPI):
+async def shutdown_scheduler(app: FastAPI) -> None:
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
@@ -165,6 +168,7 @@ async def shutdown_scheduler(app: FastAPI):
         return
 
     scheduler: DynamicSidecarsScheduler | None = app.state.dynamic_sidecar_scheduler
+    assert scheduler is not None  # nosec
     await scheduler.shutdown()
 
 

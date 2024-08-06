@@ -118,7 +118,7 @@ class DaskClientsPool:
             ComputationalSchedulerChangedError,
         ):
             # cleanup and re-raise
-            if dask_client := self._cluster_to_client_map.pop(cluster.endpoint, None):
+            if dask_client := self._cluster_to_client_map.pop(cluster.endpoint, None):  # type: ignore[arg-type] # https://github.com/python/mypy/issues/10152
                 await dask_client.delete()
             raise
 

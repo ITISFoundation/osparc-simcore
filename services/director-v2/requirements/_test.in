@@ -29,7 +29,9 @@ pytest-runner
 pytest-xdist
 respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
-
+types-networkx
+types-psycopg2
+types-PyYAML
 # NOTE: What test client to use for fastapi-based apps?
 #
 # fastapi comes with a default test client: fatapi.testclient.TestClient (SEE https://fastapi.tiangolo.com/tutorial/testing/)

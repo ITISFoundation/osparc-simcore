@@ -5,6 +5,7 @@ Revises: d67672189ce1
 Create Date: 2020-10-12 08:38:40.807576+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -87,7 +88,7 @@ def upgrade():
         FAILED: "FAILED",
     }
     [
-        op.execute(
+        op.execute(  # type: ignore[func-returns-value] # no reason to change now
             sa.DDL(
                 f"""
 UPDATE comp_pipeline
@@ -99,7 +100,7 @@ WHERE comp_pipeline.deprecated_state = '{old}'
         for old, new in migration_map.items()
     ]
     [
-        op.execute(
+        op.execute(  # type: ignore[func-returns-value] # no reason to change now
             sa.DDL(
                 f"""
 UPDATE comp_tasks
@@ -146,7 +147,7 @@ def downgrade():
         "FAILED": FAILED,
     }
     [
-        op.execute(
+        op.execute(  # type: ignore[func-returns-value] # no reason to change now
             sa.DDL(
                 f"""
 UPDATE comp_pipeline
@@ -158,7 +159,7 @@ WHERE comp_pipeline.deprecated_state = '{old}'
         for old, new in migration_map.items()
     ]
     [
-        op.execute(
+        op.execute(  # type: ignore[func-returns-value] # no reason to change now
             sa.DDL(
                 f"""
 UPDATE comp_tasks
