@@ -16,7 +16,6 @@ from unittest import mock
 import pytest
 import tenacity
 from aws_library.ec2 import AWSTagKey, EC2InstanceBootSpecific
-from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
@@ -28,10 +27,7 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_autoscaling.core.settings import (
-    ApplicationSettings,
-    EC2InstancesSettings,
-)
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
@@ -45,19 +41,6 @@ from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
-
-
-@pytest.fixture
-def fake_pre_pull_images() -> list[DockerGenericTag]:
-    return parse_obj_as(
-        list[DockerGenericTag],
-        [
-            "nginx:latest",
-            "itisfoundation/my-very-nice-service:latest",
-            "simcore/services/dynamic/another-nice-one:2.4.5",
-            "asd",
-        ],
-    )
 
 
 @pytest.fixture
@@ -156,6 +139,7 @@ async def _test_monitor_buffer_machines(
     pre_pulled_images: list[DockerGenericTag],
     ec2_instances_allowed_types: dict[InstanceTypeType, Any],
     ec2_instance_custom_tags: dict[str, str],
+    run_against_moto: bool,
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
@@ -174,7 +158,7 @@ async def _test_monitor_buffer_machines(
 
             @tenacity.retry(
                 wait=tenacity.wait_fixed(5),
-                stop=tenacity.stop_after_delay(120),
+                stop=tenacity.stop_after_delay(5 if run_against_moto else 120),
                 retry=tenacity.retry_if_exception_type(AssertionError),
                 reraise=True,
                 before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
@@ -201,7 +185,7 @@ async def _test_monitor_buffer_machines(
 
         @tenacity.retry(
             wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(120),
+            stop=tenacity.stop_after_delay(5 if run_against_moto else 120),
             retry=tenacity.retry_if_exception_type(AssertionError),
             reraise=True,
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
@@ -236,7 +220,9 @@ async def _test_monitor_buffer_machines(
 
         @tenacity.retry(
             wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(datetime.timedelta(minutes=10)),
+            stop=tenacity.stop_after_delay(
+                5 if run_against_moto else datetime.timedelta(minutes=10)
+            ),
             retry=tenacity.retry_if_exception_type(AssertionError),
             reraise=True,
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
@@ -282,6 +268,7 @@ async def test_monitor_buffer_machines(
         pre_pulled_images=pre_pull_images,
         ec2_instances_allowed_types=ec2_instances_allowed_types,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
+        run_against_moto=True,
     )
 
 
@@ -570,74 +557,6 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
 
 
 @pytest.fixture
-def ec2_instances_allowed_types(
-    faker: Faker,
-    fake_pre_pull_images: list[DockerGenericTag],
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
-) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
-    if not external_ec2_instances_allowed_types:
-        return {
-            "t2.micro": EC2InstanceBootSpecific(
-                ami_id=faker.pystr(),
-                pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=1, max_value=10),
-            )
-        }
-
-    allowed_ec2_types = external_ec2_instances_allowed_types
-    allowed_ec2_types_with_buffer_defined = dict(
-        filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].buffer_count
-            > 0,
-            allowed_ec2_types.items(),
-        )
-    )
-    assert (
-        allowed_ec2_types_with_buffer_defined
-    ), "one type with buffer is needed for the tests!"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
-    return {
-        parse_obj_as(InstanceTypeType, k): v
-        for k, v in allowed_ec2_types_with_buffer_defined.items()
-    }
-
-
-@pytest.fixture
-def instance_type_filters(
-    ec2_instance_custom_tags: dict[str, str],
-) -> Sequence[FilterTypeDef]:
-    return [
-        *[
-            FilterTypeDef(
-                Name="tag-key",
-                Values=[tag_key],
-            )
-            for tag_key in ec2_instance_custom_tags
-        ],
-        FilterTypeDef(
-            Name="instance-state-name",
-            Values=["pending", "running", "stopped"],
-        ),
-    ]
-
-
-@pytest.fixture
-def external_ec2_instances_allowed_types(
-    external_envfile_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None | dict[str, EC2InstanceBootSpecific]:
-    if not external_envfile_dict:
-        return None
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(patch, {**external_envfile_dict})
-        settings = EC2InstancesSettings.create_from_envs()
-    return settings.EC2_INSTANCES_ALLOWED_TYPES
-
-
-@pytest.fixture
 def buffer_count(
     ec2_instances_allowed_types: dict[InstanceTypeType, EC2InstanceBootSpecific],
 ) -> int:
@@ -682,21 +601,6 @@ def pre_pull_images(
     return []
 
 
-@pytest.fixture
-def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
-    if not external_envfile_dict:
-        pytest.skip("Skipping test since external-envfile is not set")
-
-
-def _skip_test_if_not_using_external_envfile(
-    external_envfile_dict: EnvVarsDict,
-) -> None:
-    if not external_envfile_dict:
-        pytest.skip(
-            "This test is only for use directly with AWS server, please define --external-envfile"
-        )
-
-
 async def test_monitor_buffer_machines_against_aws(
     skip_if_external_envfile_dict: None,
     disable_buffers_pool_background_task: None,
@@ -711,8 +615,6 @@ async def test_monitor_buffer_machines_against_aws(
     ec2_instance_custom_tags: dict[str, str],
     initialized_app: FastAPI,
 ):
-    _skip_test_if_not_using_external_envfile(external_envfile_dict)
-
     await _test_monitor_buffer_machines(
         ec2_client=ec2_client,
         instance_type_filters=instance_type_filters,
@@ -721,4 +623,5 @@ async def test_monitor_buffer_machines_against_aws(
         pre_pulled_images=pre_pull_images,
         ec2_instances_allowed_types=ec2_instances_allowed_types,
         ec2_instance_custom_tags=ec2_instance_custom_tags,
+        run_against_moto=False,
     )

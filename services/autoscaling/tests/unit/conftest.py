@@ -7,7 +7,7 @@ import dataclasses
 import datetime
 import json
 import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final, cast, get_args
@@ -31,7 +31,11 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import (
+    DockerGenericTag,
+    DockerLabelKey,
+    StandardSimcoreDockerLabels,
+)
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
@@ -58,6 +62,7 @@ from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
     AutoscalingEC2Settings,
+    EC2InstancesSettings,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import (
@@ -77,6 +82,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
@@ -163,6 +169,87 @@ def ec2_instance_custom_tags(
     if external_envfile_dict:
         return json.loads(external_envfile_dict["EC2_INSTANCES_CUSTOM_TAGS"])
     return {"osparc-tag": faker.text(max_nb_chars=80), "pytest": faker.pystr()}
+
+
+@pytest.fixture
+def instance_type_filters(
+    ec2_instance_custom_tags: dict[str, str],
+) -> Sequence[FilterTypeDef]:
+    return [
+        *[
+            FilterTypeDef(
+                Name="tag-key",
+                Values=[tag_key],
+            )
+            for tag_key in ec2_instance_custom_tags
+        ],
+        FilterTypeDef(
+            Name="instance-state-name",
+            Values=["pending", "running", "stopped"],
+        ),
+    ]
+
+
+@pytest.fixture
+def fake_pre_pull_images() -> list[DockerGenericTag]:
+    return parse_obj_as(
+        list[DockerGenericTag],
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ],
+    )
+
+
+@pytest.fixture
+def external_ec2_instances_allowed_types(
+    external_envfile_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None | dict[str, EC2InstanceBootSpecific]:
+    if not external_envfile_dict:
+        return None
+    with monkeypatch.context() as patch:
+        setenvs_from_dict(patch, {**external_envfile_dict})
+        settings = EC2InstancesSettings.create_from_envs()
+    return settings.EC2_INSTANCES_ALLOWED_TYPES
+
+
+@pytest.fixture
+def ec2_instances_allowed_types(
+    faker: Faker,
+    fake_pre_pull_images: list[DockerGenericTag],
+    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
+    if not external_ec2_instances_allowed_types:
+        return {
+            "t2.micro": EC2InstanceBootSpecific(
+                ami_id=faker.pystr(),
+                pre_pull_images=fake_pre_pull_images,
+                buffer_count=faker.pyint(min_value=1, max_value=10),
+            )
+        }
+
+    allowed_ec2_types = external_ec2_instances_allowed_types
+    allowed_ec2_types_with_buffer_defined = dict(
+        filter(
+            lambda instance_type_and_settings: instance_type_and_settings[
+                1
+            ].buffer_count
+            > 0,
+            allowed_ec2_types.items(),
+        )
+    )
+    assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
+    return {
+        parse_obj_as(InstanceTypeType, k): v
+        for k, v in allowed_ec2_types_with_buffer_defined.items()
+    }
 
 
 @pytest.fixture
