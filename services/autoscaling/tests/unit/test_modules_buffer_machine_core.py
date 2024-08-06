@@ -183,6 +183,25 @@ def mock_wait_for_has_instance_completed_cloud_init(
     )
 
 
+@pytest.fixture
+def instance_type_filters(
+    ec2_instance_custom_tags: dict[str, str],
+) -> Sequence[FilterTypeDef]:
+    return [
+        *[
+            FilterTypeDef(
+                Name="tag-key",
+                Values=[tag_key],
+            )
+            for tag_key in ec2_instance_custom_tags
+        ],
+        FilterTypeDef(
+            Name="instance-state-name",
+            Values=["pending", "running", "stopped"],
+        ),
+    ]
+
+
 async def _test_monitor_buffer_machines(
     *,
     ec2_client: EC2Client,
