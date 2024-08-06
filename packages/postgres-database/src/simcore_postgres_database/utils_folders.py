@@ -422,7 +422,8 @@ async def _check_folder_and_access(
                 permissions=permissions,
                 enforece_all_permissions=enforece_all_permissions,
             )
-        except FolderAccessError as e:  # noqa: PERF203
+            break
+        except FolderAccessError as e:
             last_exception = e
 
     if resolved_access_rights is None:
@@ -867,11 +868,14 @@ async def folder_remove_project(
         )
 
 
-_LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
+_LIST_GROUP_BY_FIELDS: Final[tuple[Column, ...]] = (
     folders.c.id,
     folders.c.name,
     folders.c.description,
     folders.c.created_by,
+)
+_LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
+    *_LIST_GROUP_BY_FIELDS,
     # access_rights
     (
         sa.select(
@@ -907,59 +911,6 @@ _LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
 )
 
 
-async def _list_root_folder_children(
-    connection: SAConnection,
-    product_name: _ProductName,
-    gids: set[_GroupID],
-    *,
-    offset: NonNegativeInt,
-    limit: NonNegativeInt,
-    required_permissions: _FolderPermissions,
-) -> list[FolderEntry]:
-    results: list[FolderEntry] = []
-    async with connection.begin():
-        query = (
-            sa.select(*_LIST_SELECT_FIELDS)
-            .join(
-                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
-            )
-            .where(folders.c.product_name == product_name)
-            .where(folders_access_rights.c.traversal_parent_id.is_(None))
-            .where(folders_access_rights.c.gid.in_(gids))
-            .where(
-                _get_and_calsue_with_only_true_entries(
-                    required_permissions, folders_access_rights
-                )
-            )
-            .group_by(
-                folders.c.id,
-                folders.c.name,
-                folders.c.description,
-                folders.c.created_by,
-            )
-            .offset(offset)
-            .limit(limit)
-        )
-
-        async for entry in connection.execute(query):
-            results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
-
-        return results
-
-
-async def _list_folder_children(
-    connection: SAConnection,
-    product_name: _ProductName,
-    folder_id: _FolderID,
-    gids: set[_GroupID],
-    *,
-    offset: NonNegativeInt,
-    limit: NonNegativeInt,
-    required_permissions: _FolderPermissions,
-) -> list[FolderEntry]:
-    return []
-
-
 async def folder_list(
     connection: SAConnection,
     product_name: _ProductName,
@@ -978,22 +929,39 @@ async def folder_list(
     """
     # NOTE: when `folder_id is None` list the root folder of the `gids`
 
-    if folder_id is None:
-        return await _list_root_folder_children(
+    if folder_id is not None:
+        await _check_folder_and_access(
             connection,
             product_name,
-            gids,
-            offset=offset,
-            limit=limit,
-            required_permissions=required_permissions,
+            folder_id=folder_id,
+            gids=gids,
+            permissions=required_permissions,
+            enforece_all_permissions=False,
         )
 
-    return await _list_folder_children(
-        connection,
-        product_name,
-        folder_id,
-        gids,
-        offset=offset,
-        limit=limit,
-        required_permissions=required_permissions,
+    results: list[FolderEntry] = []
+
+    query = (
+        sa.select(*_LIST_SELECT_FIELDS)
+        .join(folders_access_rights, folders.c.id == folders_access_rights.c.folder_id)
+        .where(folders.c.product_name == product_name)
+        .where(
+            folders_access_rights.c.traversal_parent_id.is_(None)
+            if folder_id is None
+            else folders_access_rights.c.traversal_parent_id == folder_id
+        )
+        .where(folders_access_rights.c.gid.in_(gids))
+        .where(
+            _get_and_calsue_with_only_true_entries(
+                required_permissions, folders_access_rights
+            )
+        )
+        .group_by(*_LIST_GROUP_BY_FIELDS)
+        .offset(offset)
+        .limit(limit)
     )
+
+    async for entry in connection.execute(query):
+        results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
+
+    return results
