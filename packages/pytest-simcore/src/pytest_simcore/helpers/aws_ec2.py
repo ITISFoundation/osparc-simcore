@@ -143,9 +143,8 @@ async def assert_ec2_instances(
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
-            if expected_instance_state in ["shutting-down", "terminated"]:
-                assert not instance_private_dns_name
-            else:
+            if expected_instance_state not in ["terminated"]:
+                # NOTE: moto behaves here differently than AWS by still returning an IP which does not really make sense
                 assert instance_private_dns_name.endswith(".ec2.internal")
             assert "State" in instance
             state = instance["State"]
