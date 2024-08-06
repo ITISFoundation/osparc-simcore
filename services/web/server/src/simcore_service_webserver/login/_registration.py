@@ -74,7 +74,9 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: ConfirmationAction
-    data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
+    data: Json[  # type:ignore[type-arg]
+        InvitationData  # pylint: disable=unsubscriptable-object
+    ]
 
     @validator("action", pre=True)
     @classmethod
@@ -276,9 +278,8 @@ async def check_and_consume_invitation(
     # database-type invitations
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation_data: InvitationData = _InvitationValidator.parse_obj(
-                confirmation_token
-            ).data
+            validated = _InvitationValidator.parse_obj(confirmation_token)
+            invitation_data: InvitationData = validated.data  # type: ignore[assignment]
             return invitation_data
 
         except ValidationError as err:
