@@ -1,6 +1,7 @@
 """ command line interface for migration
 
 """
+
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
 
@@ -12,6 +13,7 @@ import logging
 import os
 from logging.config import fileConfig
 from pathlib import Path
+from turtle import update
 
 import alembic.command
 import click
@@ -159,14 +161,16 @@ def clean():
 @main.command()
 def upgrade_and_close():
     """Used in migration service program to discover, upgrade and close"""
-
+    assert discover.callback  # nosec
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
             if not discover.callback():
                 raise PostgresNotFoundError
 
     try:
+        assert info.callback  # nosec
         info.callback()
+        assert upgrade.callback  # nosec
         upgrade.callback(revision="head")
         info.callback()
     except Exception:  # pylint: disable=broad-except
