@@ -8,6 +8,7 @@ from typing import Any
 
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_regex import PROPERTY_KEY_RE
+from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
@@ -248,7 +249,7 @@ class Port(BaseServiceIOModel):
                     key=self.key,
                     value=self.value,
                     file_to_key_map=self.file_to_key_map,
-                    node_port_creator=self._node_ports._node_ports_creator_cb,
+                    node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
                     progress_bar=progress_bar,
                 )
                 value = other_port_concretevalue
@@ -263,6 +264,7 @@ class Port(BaseServiceIOModel):
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     progress_bar=progress_bar,
+                    aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
                 )
 
             elif isinstance(self.value, DownloadLink):
@@ -338,6 +340,7 @@ class Port(BaseServiceIOModel):
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     file_base_path=base_path,
                     progress_bar=progress_bar,
+                    aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
                 )
             else:
                 new_value = converted_value
@@ -366,7 +369,7 @@ class Port(BaseServiceIOModel):
             new_concrete_value=new_value,
             **set_kwargs,
             progress_bar=progress_bar
-            or ProgressBarData(num_steps=1, description="set"),
+            or ProgressBarData(num_steps=1, description=IDStr("set")),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
 
@@ -397,7 +400,7 @@ class Port(BaseServiceIOModel):
                 new_item_value
             )
             self.value_concrete = None
-            self.value = new_concrete_value
+            self.value = new_concrete_value  # type: ignore[assignment]
 
         self.value_item = None
         self.value_concrete = None

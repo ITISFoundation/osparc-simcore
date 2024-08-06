@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
@@ -9,6 +10,7 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import filemanager
@@ -23,7 +25,7 @@ def __create_s3_object_key(
     project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
+    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")  # type: ignore[arg-type]
 
 
 def __get_s3_name(path: Path, *, is_archive: bool) -> str:
@@ -40,6 +42,7 @@ async def _push_directory(
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
     with log_context(
@@ -55,6 +58,7 @@ async def _push_directory(
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
             exclude_patterns=exclude_patterns,
+            aws_s3_cli_settings=aws_s3_cli_settings,
         )
 
 
@@ -67,6 +71,7 @@ async def _pull_directory(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
     save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
@@ -83,6 +88,7 @@ async def _pull_directory(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=aws_s3_cli_settings,
         )
 
 
@@ -97,7 +103,7 @@ async def _pull_legacy_archive(
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
     async with progress_bar.sub_progress(
-        steps=2, description=f"pulling {destination_path.name}"
+        steps=2, description=IDStr(f"pulling {destination_path.name}")
     ) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
@@ -115,6 +121,7 @@ async def _pull_legacy_archive(
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=None,
                 progress_bar=sub_prog,
+                aws_s3_cli_settings=None,
             )
             _logger.info("completed pull of %s.", destination_path)
 
@@ -194,6 +201,7 @@ async def push(
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
@@ -206,6 +214,7 @@ async def push(
         exclude_patterns=exclude_patterns,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
+        aws_s3_cli_settings=aws_s3_cli_settings,
     )
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
@@ -235,6 +244,7 @@ async def pull(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
+    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     """restores the state folder"""
 
@@ -273,6 +283,7 @@ async def pull(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=aws_s3_cli_settings,
         )
         return
 

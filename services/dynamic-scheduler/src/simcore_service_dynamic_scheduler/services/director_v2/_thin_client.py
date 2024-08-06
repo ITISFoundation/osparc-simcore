@@ -1,4 +1,5 @@
 import datetime
+from typing import cast
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
@@ -95,11 +96,14 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         ) -> Response:
             headers = {X_SIMCORE_USER_AGENT: simcore_user_agent}
 
-            return await self.client.delete(
-                f"dynamic_services/{node_id}?can_save={f'{save_state}'.lower()}",
-                headers=headers,
-                timeout=timeout.total_seconds(),
-                follow_redirects=True,
+            return cast(
+                Response,
+                await self.client.delete(
+                    f"dynamic_services/{node_id}?can_save={f'{save_state}'.lower()}",
+                    headers=headers,
+                    timeout=timeout.total_seconds(),
+                    follow_redirects=True,
+                ),
             )
 
         return await _(self)

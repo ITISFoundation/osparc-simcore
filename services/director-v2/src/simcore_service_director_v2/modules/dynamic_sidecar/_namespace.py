@@ -1,4 +1,4 @@
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 
 from ...constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 

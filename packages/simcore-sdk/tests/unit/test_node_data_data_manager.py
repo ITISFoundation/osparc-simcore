@@ -103,6 +103,7 @@ async def test_push_folder(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
+            aws_s3_cli_settings=None,
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
@@ -116,6 +117,7 @@ async def test_push_folder(
         user_id=user_id,
         progress_bar=progress_bar,
         exclude_patterns=None,
+        aws_s3_cli_settings=None,
     )
 
 
@@ -151,6 +153,7 @@ async def test_push_file(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
+            aws_s3_cli_settings=None,
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_not_called()
@@ -164,6 +167,7 @@ async def test_push_file(
         user_id=user_id,
         progress_bar=progress_bar,
         exclude_patterns=None,
+        aws_s3_cli_settings=None,
     )
     mock_filemanager.reset_mock()
 
@@ -237,6 +241,7 @@ async def test_pull_legacy_archive(
         io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=None,
         progress_bar=progress_bar._children[0],  # noqa: SLF001
+        aws_s3_cli_settings=None,
     )
 
     matchs, mismatchs, errors = cmpfiles(
@@ -281,6 +286,7 @@ async def test_pull_directory(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=None,
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_filemanager.download_path_from_s3.assert_called_once_with(
@@ -292,4 +298,5 @@ async def test_pull_directory(
         io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
+        aws_s3_cli_settings=None,
     )

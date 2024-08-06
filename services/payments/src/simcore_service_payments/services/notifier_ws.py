@@ -1,19 +1,17 @@
 import logging
 
-import socketio
+import socketio  # type: ignore[import-untyped]
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
     SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 
 from ..db.payment_users_repo import PaymentsUsersRepo
+from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +27,7 @@ class WebSocketProvider(NotificationProvider):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
     ):
         if payment.completed_at is None:
             msg = "Incomplete payment"

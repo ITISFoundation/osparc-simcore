@@ -141,8 +141,8 @@ async def _ensure_published_templates_accessible(
     missing_services = published_services - available_services
     missing_services_access_rights = [
         ServiceAccessRightsAtDB(
-            key=service[0],
-            version=service[1],
+            key=ServiceKey(service[0]),
+            version=ServiceVersion(service[1]),
             gid=everyone_gid,
             execute_access=True,
             product_name=default_product_name,

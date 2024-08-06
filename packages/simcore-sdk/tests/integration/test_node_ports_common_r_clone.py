@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 import filecmp
 import os
 import re
@@ -41,18 +40,37 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
 @pytest.fixture
-async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
+async def cleanup_bucket_after_test(
+    r_clone_settings: RCloneSettings,
+) -> AsyncIterator[None]:
     session = aioboto3.Session(
         aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
     )
-    async with session.resource(
-        "s3",
-        endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
-    ) as s_3:
-        bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        s3_objects = [_ async for _ in bucket.objects.all()]
-        await asyncio.gather(*[o.delete() for o in s3_objects])
+
+    yield
+
+    async with session.client("s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT) as s3_client:  # type: ignore
+        # List all object versions
+        paginator = s3_client.get_paginator("list_object_versions")
+        async for page in paginator.paginate(
+            Bucket=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME
+        ):
+            # Prepare delete markers and versions for deletion
+            delete_markers = page.get("DeleteMarkers", [])
+            versions = page.get("Versions", [])
+
+            objects_to_delete = [
+                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                for obj in delete_markers + versions
+            ]
+
+            # Perform deletion
+            if objects_to_delete:
+                await s3_client.delete_objects(
+                    Bucket=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
+                    Delete={"Objects": objects_to_delete, "Quiet": True},
+                )
 
 
 def _fake_s3_link(r_clone_settings: RCloneSettings, s3_object: str) -> AnyUrl:

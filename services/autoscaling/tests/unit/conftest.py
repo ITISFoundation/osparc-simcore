@@ -735,6 +735,7 @@ def cluster() -> Callable[..., Cluster]:
                 reserve_drained_nodes=[],
                 pending_ec2s=[],
                 broken_ec2s=[],
+                buffer_ec2s=[],
                 disconnected_nodes=[],
                 terminating_nodes=[],
                 terminated_instances=[],

@@ -5,9 +5,11 @@ from pprint import pformat
 from typing import Any
 
 import pydantic
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
+from models_library.utils.json_serialization import json_dumps
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
@@ -37,6 +39,7 @@ async def load(
     io_log_redirect_cb: LogRedirectCB | None,
     auto_update: bool = False,
     r_clone_settings: RCloneSettings | None = None,
+    aws_s3_cli_settings: AwsS3CliSettings | None = None,
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
@@ -98,6 +101,7 @@ async def load(
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
+        aws_s3_cli_settings=aws_s3_cli_settings,
     )
     log.debug(
         "created node_ports_v2 object %s",
@@ -145,7 +149,7 @@ async def dump(nodeports: Nodeports) -> None:
     )
 
     # convert to DB
-    port_cfg = {
+    port_cfg: dict[str, Any] = {
         "schema": {"inputs": {}, "outputs": {}},
         "inputs": {},
         "outputs": {},
@@ -164,14 +168,14 @@ async def dump(nodeports: Nodeports) -> None:
             # pylint: disable=protected-access
             if (
                 port_values["value"] is not None
-                and not getattr(nodeports, f"internal_{port_type}")[
+                and not getattr(nodeports, f"internal_{port_type}")[  # noqa: SLF001
                     port_key
                 ]._used_default_value
             ):
                 port_cfg[port_type][port_key] = port_values["value"]
 
     await nodeports.db_manager.write_ports_configuration(
-        json.dumps(port_cfg),
+        json_dumps(port_cfg),
         nodeports.project_id,
         nodeports.node_uuid,
     )

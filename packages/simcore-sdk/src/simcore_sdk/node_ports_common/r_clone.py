@@ -8,8 +8,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
+from models_library.basic_types import IDStr
 from pydantic import AnyUrl, BaseModel, ByteSize
 from pydantic.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
@@ -17,8 +18,8 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
+from ._utils import BaseLogParser
 from .r_clone_utils import (
-    BaseRCloneLogParser,
     CommandResultCaptureParser,
     DebugLogParser,
     SyncProgressLogParser,
@@ -55,9 +56,7 @@ async def _config_file(config: str) -> AsyncIterator[str]:
         yield f.name
 
 
-async def _read_stream(
-    stream: StreamReader, r_clone_log_parsers: list[BaseRCloneLogParser]
-):
+async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogParser]):
     while True:
         line: bytes = await stream.readline()
         if line:
@@ -71,7 +70,7 @@ async def _read_stream(
 
 async def _async_r_clone_command(
     *cmd: str,
-    r_clone_log_parsers: list[BaseRCloneLogParser] | None = None,
+    r_clone_log_parsers: list[BaseLogParser] | None = None,
     cwd: str | None = None,
 ) -> str:
     str_cmd = " ".join(cmd)
@@ -224,9 +223,9 @@ async def _sync_sources(
         async with progress_bar.sub_progress(
             steps=folder_size,
             progress_unit="Byte",
-            description=f"transferring {local_dir.name}",
+            description=IDStr(f"transferring {local_dir.name}"),
         ) as sub_progress:
-            r_clone_log_parsers: list[BaseRCloneLogParser] = (
+            r_clone_log_parsers: list[BaseLogParser] = (
                 [DebugLogParser()] if debug_logs else []
             )
             r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))

@@ -1,5 +1,6 @@
 import logging
-from typing import AsyncGenerator, Callable, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import TypeVar, cast
 
 from aiopg.sa import Engine
 from fastapi import Depends
@@ -14,7 +15,7 @@ RepoType = TypeVar("RepoType", bound=BaseRepository)
 
 
 def _get_db_engine(request: Request) -> Engine:
-    return request.app.state.engine
+    return cast(Engine, request.app.state.engine)
 
 
 def get_base_repository(engine: Engine, repo_type: type[RepoType]) -> RepoType:

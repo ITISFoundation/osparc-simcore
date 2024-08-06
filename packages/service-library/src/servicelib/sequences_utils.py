@@ -2,7 +2,7 @@ import itertools
 from collections.abc import Generator, Iterable
 from typing import TypeVar
 
-import toolz
+import toolz  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 
 T = TypeVar("T")

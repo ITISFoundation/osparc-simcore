@@ -2,6 +2,7 @@
 
 
 """
+
 import logging
 import urllib.parse
 from dataclasses import dataclass
@@ -10,12 +11,12 @@ from typing import Any, cast
 import httpx
 import yarl
 from fastapi import FastAPI, HTTPException, status
-from models_library.api_schemas_directorv2.dynamic_services import (
+from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import UserID

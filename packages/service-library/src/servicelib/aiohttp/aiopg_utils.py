@@ -10,6 +10,7 @@
     SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
+
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
 # TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
@@ -63,9 +64,9 @@ def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):
 
 
 def raise_http_unavailable_error(retry_state: RetryCallState):
-    # TODO: mark incident on db to determine the quality of service. E.g. next time we do not stop. TIP: obj, query = retry_state.args; obj.app.register_incidents
-
-    exc: DatabaseError = retry_state.outcome.exception()
+    assert retry_state.outcome  # nosec
+    exc = retry_state.outcome.exception()
+    assert exc  # nosec
     # StandardError
     # |__ Warning
     # |__ Error
@@ -101,13 +102,13 @@ class PostgresRetryPolicyUponOperation:
     def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
-        self.kwargs = dict(
-            retry=retry_if_exception_type(DatabaseError),
-            wait=wait_fixed(self.WAIT_SECS),
-            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            after=after_log(logger, logging.WARNING),
-            retry_error_callback=raise_http_unavailable_error,
-        )
+        self.kwargs = {
+            "retry": retry_if_exception_type(DatabaseError),
+            "wait": wait_fixed(self.WAIT_SECS),
+            "stop": stop_after_attempt(self.ATTEMPTS_COUNT),
+            "after": after_log(logger, logging.WARNING),
+            "retry_error_callback": raise_http_unavailable_error,
+        }
 
 
 __all__ = (

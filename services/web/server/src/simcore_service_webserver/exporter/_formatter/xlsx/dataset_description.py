@@ -37,7 +37,7 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
     cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = []
 
     def assemble_data_for_template(
-        self, template_data: BaseModel
+        self, template_data: BaseModel | None
     ) -> list[tuple[str, BaseXLSXCellData]]:
         static_cells: list[tuple[str, BaseXLSXCellData]] = [
             (

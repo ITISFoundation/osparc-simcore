@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Coroutine
 
 from models_library.api_schemas_storage import LinkType
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
@@ -10,6 +11,7 @@ from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
@@ -42,6 +44,7 @@ class Nodeports(BaseModel):
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
     io_log_redirect_cb: LogRedirectCB | None
+    aws_s3_cli_settings: AwsS3CliSettings | None = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -149,7 +152,7 @@ class Nodeports(BaseModel):
         """
         tasks = []
         async with progress_bar.sub_progress(
-            steps=len(port_values.items()), description="set multiple"
+            steps=len(port_values.items()), description=IDStr("set multiple")
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
                 # pylint: disable=protected-access

@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
-from simcore_postgres_database.utils_aiosqlalchemy import (
+from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
     get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
