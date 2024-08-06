@@ -8,6 +8,9 @@
 
 fastapi
 httpx
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-otlp
+opentelemetry-sdk
 prometheus-client
 prometheus-fastapi-instrumentator
 uvicorn

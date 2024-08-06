@@ -28,6 +28,7 @@ from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.ssm import SSMSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -270,6 +271,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="If true, drained nodes"
         " are maintained as active (in the docker terminology) "
         "but a docker node label named osparc-services-ready is attached",
+    )
+    AUTOSCALING_TRACING: TracingSettings = Field(
+        auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 
     @cached_property

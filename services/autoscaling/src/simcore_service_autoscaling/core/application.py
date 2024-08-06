@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 
 from .._meta import (
     API_VERSION,
@@ -68,6 +69,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     setup_auto_scaler_background_task(app)
     setup_buffer_machines_pool_task(app)
+    if app.state.settings.AUTOSCALING_TRACING:
+        setup_opentelemtry_instrumentation(
+            app, app.state.settings.AUTOSCALING_TRACING, "simcore_service_autoscaling"
+        )
 
     # ERROR HANDLERS
 

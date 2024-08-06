@@ -22,7 +22,7 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
 )
 def setup_app_tracing(app: web.Application):
     settings: TracingSettings = get_plugin_settings(app)
-    service_name = "simcore_service_webserver"
+    service_name = "simcore_service_webserver"  # To-Do: Flavors of webserver
     return setup_tracing(
         app,
         service_name=service_name,

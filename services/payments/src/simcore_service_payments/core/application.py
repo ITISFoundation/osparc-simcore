@@ -3,6 +3,7 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 
 from .._meta import (
     API_VERSION,
@@ -68,6 +69,10 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
+    if app.state.settings.PAYMENTS_TRACING:
+        setup_opentelemtry_instrumentation(
+            app, app.state.settings.PAYMENTS_TRACING, "simcore_service_payments"
+        )
 
     # ERROR HANDLERS
     # ... add here ...

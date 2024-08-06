@@ -5,6 +5,7 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -53,6 +54,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     if app.state.settings.RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
+    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
+        setup_opentelemtry_instrumentation(
+            app,
+            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
+            "simcore_service_resource_usage_tracker",
+        )
 
     # ERROR HANDLERS
     app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)

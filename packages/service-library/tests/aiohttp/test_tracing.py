@@ -61,7 +61,7 @@ def client(
     resource = app.router["skip"]
     routes_in_a_resource = list(resource)
 
-    setup_tracing(
+    setup_tracing(  # TODO DK
         app,
         service_name=f"{__name__}.client",
         host="127.0.0.1",

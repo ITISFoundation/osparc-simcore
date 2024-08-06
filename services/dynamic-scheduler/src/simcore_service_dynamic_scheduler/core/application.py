@@ -4,6 +4,7 @@ from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 
 from .._meta import (
     API_VERSION,
@@ -45,6 +46,12 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if app.state.settings.DYNAMIC_SCHEDULER_PROFILING:
         app.add_middleware(ProfilerMiddleware)
+    if app.state.settings.DYNAMIC_SCHEDULER_TRACING:
+        setup_opentelemtry_instrumentation(
+            app,
+            app.state.settings.DYNAMIC_SCHEDULER_TRACING,
+            "simcore_service_dynamic_scheduler",
+        )
 
     # PLUGINS SETUP
 
