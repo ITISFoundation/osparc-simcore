@@ -1,7 +1,5 @@
 import logging
-from collections.abc import Callable, Coroutine
 from contextlib import AsyncExitStack
-from typing import Any
 
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
@@ -42,7 +40,6 @@ async def export_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
     assert project_uuid  # nosec
-    delete_tmp_dir: Callable[[], Coroutine[Any, Any, None]] | None = None
     try:
         async with AsyncExitStack() as tmp_dir_stack, lock_project(
             request.app,
