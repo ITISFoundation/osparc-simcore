@@ -257,6 +257,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __setStudyDataInBackend: function(studyData) {
       this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+
+      // remove the runHash, this.__studyDataInBackend is only used for diff comparison and the frontend doesn't keep it
+      Object.keys(this.__studyDataInBackend["workbench"]).forEach(nodeId => {
+        if ("runHash" in this.__studyDataInBackend["workbench"][nodeId]) {
+          delete this.__studyDataInBackend["workbench"][nodeId]["runHash"];
+        }
+      });
     },
 
     __attachSocketEventHandlers: function() {
