@@ -1581,7 +1581,6 @@ async def test_add_remove_project_in_folder(
 
 class ExpectedValues(NamedTuple):
     id: _FolderID
-    access_via_gid: _GroupID
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
@@ -1589,7 +1588,6 @@ class ExpectedValues(NamedTuple):
         return hash(
             (
                 self.id,
-                self.access_via_gid,
                 self.my_access_rights,
                 tuple(sorted(self.access_rights.items())),
             )
@@ -1600,7 +1598,6 @@ class ExpectedValues(NamedTuple):
             return False
         return (
             self.id == other.id
-            and self.access_via_gid == other.access_via_gid
             and self.my_access_rights == other.my_access_rights
             and self.access_rights == other.access_rights
         )
@@ -1612,7 +1609,6 @@ def _assert_expected_entries(
     for folder_entry in folders:
         expected_values = ExpectedValues(
             folder_entry.id,
-            folder_entry.access_via_gid,
             folder_entry.my_access_rights,
             folder_entry.access_rights,
         )
@@ -1627,13 +1623,13 @@ async def _list_folder_as(
     connection: SAConnection,
     default_product_name: _ProductName,
     folder_id: _FolderID | None,
-    gid: _GroupID,
+    gids: set[_GroupID],
     offset: NonNegativeInt = ALL_IN_ONE_PAGE_OFFSET,
     limit: NonNegativeInt = ALL_IN_ONE_PAGE_LIMIT,
 ) -> list[FolderEntry]:
 
     return await folder_list(
-        connection, default_product_name, folder_id, gid, offset=offset, limit=limit
+        connection, default_product_name, folder_id, gids, offset=offset, limit=limit
     )
 
 
@@ -1748,11 +1744,12 @@ async def test_folder_list(
     for listing_gid in (gid_owner, gid_editor, gid_viewer):
         # list `root` for gid
         _assert_expected_entries(
-            await _list_folder_as(connection, default_product_name, None, listing_gid),
+            await _list_folder_as(
+                connection, default_product_name, None, {listing_gid}
+            ),
             expected={
                 ExpectedValues(
                     folder_id_owner_folder,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {
                         gid_owner: OWNER_PERMISSIONS,
@@ -1766,12 +1763,11 @@ async def test_folder_list(
         # list `owner_folder` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_owner_folder, listing_gid
+                connection, default_product_name, folder_id_owner_folder, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     fx,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {gid_owner: OWNER_PERMISSIONS},
                 )
@@ -1781,12 +1777,11 @@ async def test_folder_list(
         # list `f10` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f10, listing_gid
+                connection, default_product_name, folder_id_f10, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     sub_fx,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {gid_owner: OWNER_PERMISSIONS},
                 )
@@ -1797,26 +1792,26 @@ async def test_folder_list(
     # 2. lisit all levels for `gid_no_access`
     # can always be ran but should not list any entry
     _assert_expected_entries(
-        await _list_folder_as(connection, default_product_name, None, gid_no_access),
+        await _list_folder_as(connection, default_product_name, None, {gid_no_access}),
         expected=set(),
     )
     # there are insusficient permissions
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(InsufficientPermissionsError):
             await _list_folder_as(
-                connection, default_product_name, folder_id_to_check, gid_no_access
+                connection, default_product_name, folder_id_to_check, {gid_no_access}
             )
 
     # 3. lisit all levels for `gid_not_shared``
     # can always list the contets of the "root" folder for a gid
     _assert_expected_entries(
-        await _list_folder_as(connection, default_product_name, None, gid_not_shared),
+        await _list_folder_as(connection, default_product_name, None, {gid_not_shared}),
         expected=set(),
     )
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(FolderNotSharedWithGidError):
             await _list_folder_as(
-                connection, default_product_name, folder_id_to_check, gid_not_shared
+                connection, default_product_name, folder_id_to_check, {gid_not_shared}
             )
 
     # 4. list with pagination
@@ -1828,7 +1823,7 @@ async def test_folder_list(
             connection,
             default_product_name,
             folder_id_owner_folder,
-            gid_owner,
+            {gid_owner},
             offset=offset,
             limit=limit,
         ):
@@ -1838,7 +1833,7 @@ async def test_folder_list(
                 break
 
         one_shot_query = await _list_folder_as(
-            connection, default_product_name, folder_id_owner_folder, gid_owner
+            connection, default_product_name, folder_id_owner_folder, {gid_owner}
         )
 
         assert len(found_folders) == len(one_shot_query)
@@ -1903,11 +1898,12 @@ async def test_folder_list_shared_with_different_permissions(
     for listing_gid in (gid_owner_a, gid_owner_b, gid_owner_c):
         # list `root` for gid
         _assert_expected_entries(
-            await _list_folder_as(connection, default_product_name, None, listing_gid),
+            await _list_folder_as(
+                connection, default_product_name, None, {listing_gid}
+            ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_a,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_a: OWNER_PERMISSIONS,
@@ -1920,12 +1916,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_a` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_a, listing_gid
+                connection, default_product_name, folder_id_f_owner_a, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_b,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {gid_owner_b: OWNER_PERMISSIONS},
                 ),
@@ -1934,12 +1929,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_b` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_b, listing_gid
+                connection, default_product_name, folder_id_f_owner_b, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_c,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_c: OWNER_PERMISSIONS,
@@ -1951,12 +1945,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_c` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_c, listing_gid
+                connection, default_product_name, folder_id_f_owner_c, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_sub_owner_c,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_c: OWNER_PERMISSIONS,
@@ -1964,7 +1957,6 @@ async def test_folder_list_shared_with_different_permissions(
                 ),
                 ExpectedValues(
                     folder_id_f_owner_level_2,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_level_2: OWNER_PERMISSIONS,
@@ -1977,12 +1969,11 @@ async def test_folder_list_shared_with_different_permissions(
     # list `f_owner_c` for `gid_owner_level_2`
     _assert_expected_entries(
         await _list_folder_as(
-            connection, default_product_name, None, gid_owner_level_2
+            connection, default_product_name, None, {gid_owner_level_2}
         ),
         expected={
             ExpectedValues(
                 folder_id_f_owner_c,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_c: OWNER_PERMISSIONS,
@@ -1994,12 +1985,11 @@ async def test_folder_list_shared_with_different_permissions(
     # list `root` for `gid_owner_level_2`
     _assert_expected_entries(
         await _list_folder_as(
-            connection, default_product_name, folder_id_f_owner_c, gid_owner_level_2
+            connection, default_product_name, folder_id_f_owner_c, {gid_owner_level_2}
         ),
         expected={
             ExpectedValues(
                 folder_id_f_sub_owner_c,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_c: OWNER_PERMISSIONS,
@@ -2007,7 +1997,6 @@ async def test_folder_list_shared_with_different_permissions(
             ),
             ExpectedValues(
                 folder_id_f_owner_level_2,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_level_2: OWNER_PERMISSIONS,
@@ -2015,3 +2004,69 @@ async def test_folder_list_shared_with_different_permissions(
             ),
         },
     )
+
+
+async def test_folder_list_multiple_entries_via_different_groups(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+):
+    #######
+    # SETUP
+    #######
+
+    (gid_z43, gid_osparc, gid_user) = get_unique_gids(3)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="f1",
+                gid=gid_user,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                    gid_osparc: FolderAccessRole.OWNER,
+                },
+            ),
+            MkFolder(
+                name="f2",
+                gid=gid_z43,
+                shared_with={
+                    gid_osparc: FolderAccessRole.OWNER,
+                },
+            ),
+            MkFolder(
+                name="f3",
+                gid=gid_osparc,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                },
+            ),
+        }
+    )
+
+    folder_id_f1 = folder_ids["f1"]
+    folder_id_f2 = folder_ids["f2"]
+    folder_id_f3 = folder_ids["f3"]
+
+    entries_z43 = await _list_folder_as(
+        connection, default_product_name, None, {gid_z43}
+    )
+
+    assert len(entries_z43) == 3
+    entries_osparc = await _list_folder_as(
+        connection, default_product_name, None, {gid_osparc}
+    )
+    assert len(entries_osparc) == 3
+    entries_user = await _list_folder_as(
+        connection, default_product_name, None, {gid_user}
+    )
+    assert len(entries_user) == 1
+
+    entries_all_groups = await _list_folder_as(
+        connection, default_product_name, None, {gid_z43, gid_osparc, gid_user}
+    )
+    assert len(entries_all_groups) == 3
+
+    assert False
+    # TODO: continue this one
