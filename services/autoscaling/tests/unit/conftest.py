@@ -31,11 +31,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import (
-    DockerGenericTag,
-    DockerLabelKey,
-    StandardSimcoreDockerLabels,
-)
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
@@ -191,19 +187,6 @@ def instance_type_filters(
 
 
 @pytest.fixture
-def fake_pre_pull_images() -> list[DockerGenericTag]:
-    return parse_obj_as(
-        list[DockerGenericTag],
-        [
-            "nginx:latest",
-            "itisfoundation/my-very-nice-service:latest",
-            "simcore/services/dynamic/another-nice-one:2.4.5",
-            "asd",
-        ],
-    )
-
-
-@pytest.fixture
 def external_ec2_instances_allowed_types(
     external_envfile_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> None | dict[str, EC2InstanceBootSpecific]:
@@ -213,43 +196,6 @@ def external_ec2_instances_allowed_types(
         setenvs_from_dict(patch, {**external_envfile_dict})
         settings = EC2InstancesSettings.create_from_envs()
     return settings.EC2_INSTANCES_ALLOWED_TYPES
-
-
-@pytest.fixture
-def ec2_instances_allowed_types_with_only_1_buffered(
-    faker: Faker,
-    fake_pre_pull_images: list[DockerGenericTag],
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
-) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
-    if not external_ec2_instances_allowed_types:
-        return {
-            "t2.micro": EC2InstanceBootSpecific(
-                ami_id=faker.pystr(),
-                pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=1, max_value=10),
-            )
-        }
-
-    allowed_ec2_types = external_ec2_instances_allowed_types
-    allowed_ec2_types_with_buffer_defined = dict(
-        filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].buffer_count
-            > 0,
-            allowed_ec2_types.items(),
-        )
-    )
-    assert (
-        allowed_ec2_types_with_buffer_defined
-    ), "one type with buffer is needed for the tests!"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
-    return {
-        parse_obj_as(InstanceTypeType, k): v
-        for k, v in allowed_ec2_types_with_buffer_defined.items()
-    }
 
 
 @pytest.fixture
