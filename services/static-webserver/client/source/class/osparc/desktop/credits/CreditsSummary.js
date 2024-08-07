@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.Grow());
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
       appearance: "floating-menu",
@@ -40,7 +40,17 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
   },
 
   statics: {
-    WIDTH: 200
+    WIDTH: 200,
+    TIME_RANGES: [{
+      key: 1,
+      label: "Today"
+    }, {
+      key: 7,
+      label: "Last week"
+    }, {
+      key: 30,
+      label: "Last month"
+    }]
   },
 
   members: {
@@ -53,6 +63,9 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           break;
         case "credits-indicator": {
           control = new osparc.desktop.credits.CreditsIndicator();
+          if (osparc.utils.Utils.isDevelopmentPlatform()) {
+            control.getChildControl("credits-bar").exclude();
+          }
           const store = osparc.store.Store.getInstance();
           store.bind("contextWallet", control, "wallet");
           const topLayout = this.getChildControl("top-layout");
@@ -85,6 +98,14 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           topLayout.add(control);
           break;
         }
+        case "time-range-sb": {
+          control = new qx.ui.form.SelectBox();
+          this.self().TIME_RANGES.forEach(tr => {
+            const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
+            control.add(trItem);
+          });
+          this._add(control);
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -99,6 +120,13 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     __buildLayout: function() {
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        this.__buildConsumptionSummary();
+      }
+    },
+
+    __buildConsumptionSummary: function() {
+      this.getChildControl("time-range-sb");
     }
   }
 });
