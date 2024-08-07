@@ -134,6 +134,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        this.self().WIDTH = 400;
         this.__buildConsumptionSummary();
       }
     },

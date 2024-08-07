@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
   extend: osparc.ui.list.ListItem,
 
-  construct: function() {
+  construct: function(serviceKey, credits, percentage) {
     this.base(arguments);
 
     const layout = this._getLayout();
@@ -27,22 +27,19 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     layout.setColumnFlex(this.self().GRID.ICON.column, 0);
     layout.setColumnFlex(this.self().GRID.NAME.column, 1);
     layout.setColumnFlex(this.self().GRID.CREDITS.column, 0);
-  },
 
-  properties: {
-    service: {
-      check: "Object",
-      init: null,
-      nullable: true,
-      apply: "__applyService"
-    },
-
-    credits: {
-      check: "Number",
-      init: null,
-      nullable: true,
-      apply: "__applyCredits"
+    const icon = this.getChildControl("icon");
+    const name = this.getChildControl("title");
+    const serviceMetadata = osparc.service.Utils.getLatest(serviceKey);
+    if (serviceMetadata) {
+      icon.setSource(serviceMetadata["thumbnail"]);
+      name.setValue(serviceMetadata["name"]);
+    } else {
+      const serviceName = serviceKey.split("/").pop()
+      name.setValue(serviceName);
     }
+    this.getChildControl("percentage").setValue(percentage);
+    this.getChildControl("credits").setValue(credits + " used");
   },
 
   statics: {
@@ -74,80 +71,43 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "card-holder-name":
+        case "icon": {
+          control = new osparc.ui.basic.Thumbnail(null, 30, 30).set({
+            minHeight: 30,
+            minWidth: 30
+          });
+          control.getChildControl("image").set({
+            anonymous: true
+          });
+          this._add(control, this.self().GRID.ICON);
+          break;
+        }
+        case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-12",
+            alignY: "middle",
+            maxWidth: 200,
+            allowGrowX: true,
+            rich: true,
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.NAME
-          });
+          this._add(control, this.self().GRID.NAME);
           break;
-        case "card-type":
+        case "percentage":
+          control = new qx.ui.indicator.ProgressBar().set({
+            height: 10
+          });
+          this._add(control, this.self().GRID.PERCENTAGE);
+          break;
+        case "credits":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle"
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.TYPE
-          });
-          break;
-        case "card-number-masked":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14"
-          });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.MASKED_NUMBER
-          });
-          break;
-        case "expiration-date":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14"
-          });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.EXPIRATION_DATE
-          });
-          break;
-        case "details-button":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/info/14"
-          });
-          control.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.INFO_BUTTON
-          });
-          break;
-        case "delete-button":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/trash/14"
-          });
-          control.addListener("execute", () => this.__deletePressed());
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID.DELETE_BUTTON
-          });
+          this._add(control, this.self().GRID.CREDITS);
           break;
       }
 
       return control || this.base(arguments, id);
-    },
-
-    __deletePressed: function() {
-      const msg = this.tr("Are you sure you want to delete the Payment Method?");
-      const win = new osparc.ui.window.Confirmation(msg).set({
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete"
-      });
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          this.fireDataEvent("deletePaymentMethod", this.getKey());
-        }
-      });
     }
   }
 });

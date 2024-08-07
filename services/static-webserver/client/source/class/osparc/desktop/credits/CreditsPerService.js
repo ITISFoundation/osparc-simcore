@@ -38,6 +38,19 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
   members: {
     __populateList: function(nDays) {
       this._removeAll();
+
+      [{
+        service: "simcore/services/comp/itis/sleeper",
+        credits: 140,
+        percentage: 70
+      }, {
+        service: "simcore/services/dynamic/sim4life-8-0-0-dy",
+        credits: 60,
+        percentage: 30
+      }].forEach(entry => {
+        const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(entry.service, entry.credits, entry.percentage);
+        this._add(uiEntry);
+      });
     }
   }
 });
