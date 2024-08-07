@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           this._add(control);
           break;
         case "services-consumption":
-          control = new qx.ui.form.List();
+          control = new osparc.desktop.credits.CreditsPerService();
           this._add(control);
           break;
       }
@@ -140,7 +140,14 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
 
     __buildConsumptionSummary: function() {
       const timeRangeSB = this.getChildControl("time-range-sb");
-      this.getChildControl("services-consumption");
+      const servicesConsumption = this.getChildControl("services-consumption");
+
+      timeRangeSB.addListener("changeSelection", e => {
+        const selection = e.getData();
+        if (selection.length) {
+          servicesConsumption.setDaysRange(selection[0].getModel());
+        }
+      });
     }
   }
 });
