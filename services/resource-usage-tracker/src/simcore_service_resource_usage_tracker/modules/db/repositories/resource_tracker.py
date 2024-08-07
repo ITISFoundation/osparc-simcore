@@ -393,9 +393,7 @@ class ResourceTrackerRepository(
     ) -> PositiveInt:
         async with self.db_engine.begin() as conn:
             query = (
-                sa.select(
-                    sa.select(sa.func.count()),
-                )
+                    sa.select(sa.func.count())
                 .select_from(
                     resource_tracker_service_runs.join(
                         resource_tracker_credit_transactions,

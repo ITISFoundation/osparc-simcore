@@ -45,6 +45,6 @@ class OsparcCreditsAggregatedByServiceGet(BaseModel):
     service_key: ServiceKey
 
 
-class OsparcCreditsAggregatedByServicePage(NamedTuple):
+class OsparcCreditsAggregatedUsagesPage(NamedTuple):
     items: list[OsparcCreditsAggregatedByServiceGet]
     total: PositiveInt

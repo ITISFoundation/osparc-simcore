@@ -5,7 +5,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
-    OsparcCreditsAggregatedByServicePage,
+    OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
 from models_library.products import ProductName
@@ -17,6 +17,8 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
     ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.services import ServiceKey, ServiceVersion
@@ -97,20 +99,24 @@ async def export_service_runs(
 
 
 @router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
-async def get_osparc_credits_aggregated_by_service_page(
+async def get_osparc_credits_aggregated_usages_page(
     app: FastAPI,
     *,
     user_id: UserID,
     product_name: ProductName,
+    aggregated_by: ServicesAggregatedUsagesType,
+    time_period: ServicesAggregatedUsagesTimePeriod,
     limit: int = 20,
     offset: int = 0,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-) -> OsparcCreditsAggregatedByServicePage:
-    return await service_runs.get_osparc_credits_aggregated_by_service_page(
+) -> OsparcCreditsAggregatedUsagesPage:
+    return await service_runs.get_osparc_credits_aggregated_usages_page(
         user_id=user_id,
         product_name=product_name,
         resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        aggregated_by=aggregated_by,
+        time_period=time_period,
         limit=limit,
         offset=offset,
         wallet_id=wallet_id,

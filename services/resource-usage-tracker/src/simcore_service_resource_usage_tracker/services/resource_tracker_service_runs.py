@@ -4,13 +4,13 @@ import shortuuid
 from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
-    OsparcCreditsAggregatedByServicePage,
+    OsparcCreditsAggregatedUsagesPage,
     ServiceRunGet,
     ServiceRunPage,
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.resource_tracker import ServiceResourceUsagesFilters, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -181,17 +181,21 @@ async def export_service_runs(
     return generated_url
 
 
-async def get_osparc_credits_aggregated_by_service_page(
+async def get_osparc_credits_aggregated_usages_page(
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
+    aggregated_by: ServicesAggregatedUsagesType,
+    time_period: ServicesAggregatedUsagesTimePeriod,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
     limit: int = 20,
     offset: int = 0,
-) -> OsparcCreditsAggregatedByServicePage:
+) -> OsparcCreditsAggregatedUsagesPage:
     current_datetime = datetime.now(tz=timezone.utc)
-    one_month_ago = current_datetime - timedelta(days=30)
+    one_month_ago = current_datetime - timedelta(days=time_period.value)
+
+    assert aggregated_by == ServicesAggregatedUsagesType.services  # nosec
 
     total_output_list_db: PositiveInt = (
         await resource_tracker_repo.total_osparc_credits_aggregated_by_service(
@@ -222,4 +226,4 @@ async def get_osparc_credits_aggregated_by_service_page(
             )
         )
 
-    return OsparcCreditsAggregatedByServicePage(output_api_model, total_output_list_db)
+    return OsparcCreditsAggregatedUsagesPage(output_api_model, total_output_list_db)
