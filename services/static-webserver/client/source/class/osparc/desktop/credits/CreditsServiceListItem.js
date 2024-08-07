@@ -22,8 +22,8 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     this.base(arguments);
 
     const layout = this._getLayout();
-    layout.setSpacingX(10);
-    layout.setSpacingY(0);
+    layout.setSpacingX(12);
+    layout.setSpacingY(4);
     layout.setColumnFlex(this.self().GRID.ICON.column, 0);
     layout.setColumnFlex(this.self().GRID.NAME.column, 1);
     layout.setColumnFlex(this.self().GRID.CREDITS.column, 0);
@@ -92,11 +92,16 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
           break;
         case "percentage":
           control = new qx.ui.indicator.ProgressBar().set({
-            backgroundColor: "strong-main",
-            textColor: "green",
+            backgroundColor: "transparent",
             maxHeight: 8,
             margin: 0,
             padding: 0
+          });
+          control.getChildControl("progress").set({
+            backgroundColor: "strong-main"
+          });
+          control.getContentElement().setStyles({
+            "border-radius": "2px"
           });
           this._add(control, this.self().GRID.PERCENTAGE);
           break;

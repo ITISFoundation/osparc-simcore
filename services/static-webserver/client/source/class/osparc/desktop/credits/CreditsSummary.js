@@ -106,7 +106,11 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           break;
         }
         case "time-range-sb":
-          control = new qx.ui.form.SelectBox();
+          control = new qx.ui.form.SelectBox().set({
+            allowGrowX: false,
+            alignX: "center",
+            backgroundColor: "transparent"
+          });
           this.self().TIME_RANGES.forEach(tr => {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);
@@ -133,7 +137,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        this.self().WIDTH = 400;
+        this.self().WIDTH = 300;
         this.__buildConsumptionSummary();
       }
 
