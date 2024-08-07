@@ -207,7 +207,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         }
       });
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (this.__canIWrite()) {
         extraInfo.splice(i++, 0, {
           label: this.tr("Service Integration Version"),
           view: this.__createIntegrationVersion(),
