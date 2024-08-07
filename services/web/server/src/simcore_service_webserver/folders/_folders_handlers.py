@@ -25,7 +25,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -93,7 +92,6 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("folder.create")
 @handle_folders_exceptions
@@ -110,7 +108,7 @@ async def create_folder(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response({"folder_id": folder_id}, web.HTTPCreated)
+    return envelope_json_response({"folderId": folder_id}, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/folders", name="list_folders")
@@ -174,7 +172,7 @@ async def replace_folder(request: web.Request):
         description=body_params.description,
         product_name=req_ctx.product_name,
     )
-    web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.delete(

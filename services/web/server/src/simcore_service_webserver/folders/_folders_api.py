@@ -83,9 +83,12 @@ async def list_folders(
             created_at=folder.created,
             modified_at=folder.modified,
             owner=folder.owner,
-            my_access_rights=parse_obj_as(AccessRights, folder.my_access_rights),
+            my_access_rights=parse_obj_as(
+                AccessRights, folder.my_access_rights.to_dict()
+            ),
             access_rights=parse_obj_as(
-                dict[GroupID, AccessRights], folder.access_rights
+                dict[GroupID, AccessRights],
+                {key: value.to_dict() for key, value in folder.access_rights.items()},
             ),
         )
         for folder in folder_list_db

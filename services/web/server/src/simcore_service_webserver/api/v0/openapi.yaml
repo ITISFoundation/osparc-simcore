@@ -3459,7 +3459,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6500,14 +6500,13 @@ components:
           type: string
         description:
           title: Description
-          maxLength: 100
-          minLength: 1
           type: string
         parentFolderId:
           title: Parentfolderid
           exclusiveMinimum: true
           type: integer
           minimum: 0
+      additionalProperties: false
     CreatePricingPlanBodyParams:
       title: CreatePricingPlanBodyParams
       required:
@@ -10363,9 +10362,8 @@ components:
           type: string
         description:
           title: Description
-          maxLength: 100
-          minLength: 1
           type: string
+      additionalProperties: false
     PutWalletBodyParams:
       title: PutWalletBodyParams
       required:

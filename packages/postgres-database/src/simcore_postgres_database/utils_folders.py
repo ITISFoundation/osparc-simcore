@@ -625,7 +625,7 @@ async def folder_update(
         values: dict[str, str] = {}
         if name:
             values["name"] = name
-        if description:
+        if description is not None:  # Can be empty string
             values["description"] = description
 
         # update entry
