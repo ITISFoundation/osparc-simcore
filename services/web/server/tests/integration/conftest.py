@@ -32,7 +32,7 @@ from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -181,7 +181,9 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture
 async def primary_group(client, logged_user: UserInfoDict) -> dict[str, str]:
-    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    primary_group, _, _ = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return primary_group
 
 
@@ -222,7 +224,9 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        _, standard_groups, _ = await list_user_groups_with_read_access(
+            client.app, logged_user["id"]
+        )
 
         yield standard_groups
 
@@ -235,7 +239,9 @@ async def standard_groups(
 
 @pytest.fixture
 async def all_group(client, logged_user) -> dict[str, str]:
-    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return all_group
 
 
