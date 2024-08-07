@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.CreditsNavBarContainer", {
+qx.Class.define("osparc.desktop.credits.CreditsSummary", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

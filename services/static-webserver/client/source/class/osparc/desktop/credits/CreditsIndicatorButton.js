@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
       height: 24
     });
 
-    this.__creditsContainer = new osparc.desktop.credits.CreditsNavBarContainer();
+    this.__creditsContainer = new osparc.desktop.credits.CreditsSummary();
     this.__creditsContainer.exclude();
 
     this.addListener("tap", this.__buttonTapped, this);
