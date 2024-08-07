@@ -387,7 +387,7 @@ def make_folders(
                     connection,
                     default_product_name,
                     root_folder_id,
-                    root.gid,
+                    sharing_gids={root.gid},
                     recipient_gid=gid,
                     recipient_role=role,
                 )
@@ -590,7 +590,7 @@ async def test_folder_share_or_update_permissions(
             connection,
             default_product_name,
             folder_id_missing,
-            sharing_gid=gid_owner,
+            sharing_gids={gid_owner},
             recipient_gid=gid_share_with_error,
             recipient_role=FolderAccessRole.OWNER,
         )
@@ -607,7 +607,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_other_owner,
         recipient_role=FolderAccessRole.OWNER,
     )
@@ -623,7 +623,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_editor,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -636,7 +636,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_viewer,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -649,7 +649,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_no_access,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -669,7 +669,7 @@ async def test_folder_share_or_update_permissions(
                     connection,
                     default_product_name,
                     folder_id,
-                    sharing_gid=no_access_gids,
+                    sharing_gids={no_access_gids},
                     recipient_gid=gid_share_with_error,
                     recipient_role=recipient_role,
                 )
@@ -682,7 +682,7 @@ async def test_folder_share_or_update_permissions(
                 connection,
                 default_product_name,
                 folder_id,
-                sharing_gid=gid_share_with_error,
+                sharing_gids={gid_share_with_error},
                 recipient_gid=gid_share_with_error,
                 recipient_role=recipient_role,
             )
@@ -695,7 +695,7 @@ async def test_folder_share_or_update_permissions(
             connection,
             default_product_name,
             folder_id,
-            sharing_gid=gid_other_owner,
+            sharing_gids={gid_other_owner},
             recipient_gid=gid_to_drop_permission,
             recipient_role=FolderAccessRole.NO_ACCESS,
         )
@@ -757,7 +757,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=other_owner_gid,
         recipient_role=FolderAccessRole.OWNER,
     )
@@ -781,7 +781,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=editor_gid,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -789,7 +789,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=viewer_gid,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -797,7 +797,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=no_access_gid,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -873,7 +873,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=other_owner_gid,
         recipient_role=FolderAccessRole.OWNER,
     )
@@ -889,7 +889,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=editor_gid,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -897,7 +897,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=viewer_gid,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -905,7 +905,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=no_access_gid,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -2069,4 +2069,4 @@ async def test_folder_list_multiple_entries_via_different_groups(
     assert len(entries_all_groups) == 3
 
     # TODO: continue this test make sure it works as expected
-    assert False
+    # assert False

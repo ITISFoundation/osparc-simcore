@@ -583,7 +583,7 @@ async def folder_share_or_update_permissions(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    sharing_gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
+    sharing_gids: set[_GroupID],
     *,
     recipient_gid: _GroupID,
     recipient_role: FolderAccessRole,
@@ -603,7 +603,7 @@ async def folder_share_or_update_permissions(
             connection,
             product_name,
             folder_id=folder_id,
-            gids={sharing_gid},
+            gids=sharing_gids,
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
