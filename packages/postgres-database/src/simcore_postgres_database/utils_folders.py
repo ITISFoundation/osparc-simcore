@@ -10,7 +10,6 @@ from typing import Any, ClassVar, Final, TypeAlias
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from psycopg2.errors import ForeignKeyViolation
 from pydantic import (
     BaseModel,
     ConstrainedStr,
@@ -109,8 +108,8 @@ class CouldNotCreateFolderError(BaseCreateFolderError):
     msg_template = "Could not create folder='{folder}' and parent='{parent}'"
 
 
-class GroupIdDoesNotExistError(BaseCreateFolderError):
-    msg_template = "Provided group id '{gid}' does not exist "
+class GroupIDsDoNotExistError(BaseCreateFolderError):
+    msg_template = "Any of the folloing gids='{gids}' do not exist"
 
 
 class RootFolderRequiresAtLeastOnePrimaryGroupError(BaseCreateFolderError):
@@ -574,11 +573,21 @@ async def folder_create(
             permissions_gid = resolved_access_rights.gid
 
         if permissions_gid is None:
-            primary_gid: _GroupID | None = await connection.scalar(
-                sa.select([groups.c.gid])
-                .where(groups.c.gid.in_(gids))
-                .where(groups.c.type == GroupType.PRIMARY)
-            )
+            groups_results: list[RowProxy] | None = await (
+                await connection.execute(
+                    sa.select([groups.c.gid, groups.c.type]).where(
+                        groups.c.gid.in_(gids)
+                    )
+                )
+            ).fetchall()
+
+            if not groups_results:
+                raise GroupIDsDoNotExistError(gids=gids)
+
+            primary_gid: _GroupID | None = None
+            for group in groups_results:
+                if group["type"] == GroupType.PRIMARY:
+                    primary_gid = group["gid"]
             if primary_gid is None:
                 raise RootFolderRequiresAtLeastOnePrimaryGroupError(
                     parent=parent, gids=gids
@@ -587,32 +596,29 @@ async def folder_create(
             permissions_gid = primary_gid
 
         # folder entry can now be inserted
-        try:
-            folder_id = await connection.scalar(
-                sa.insert(folders)
-                .values(
-                    name=name,
-                    description=description,
-                    created_by=permissions_gid,
-                    product_name=product_name,
-                )
-                .returning(folders.c.id)
+        folder_id = await connection.scalar(
+            sa.insert(folders)
+            .values(
+                name=name,
+                description=description,
+                created_by=permissions_gid,
+                product_name=product_name,
             )
+            .returning(folders.c.id)
+        )
 
-            if not folder_id:
-                raise CouldNotCreateFolderError(folder=name, parent=parent)
+        if not folder_id:
+            raise CouldNotCreateFolderError(folder=name, parent=parent)
 
-            await connection.execute(
-                sa.insert(folders_access_rights).values(
-                    folder_id=folder_id,
-                    gid=permissions_gid,
-                    traversal_parent_id=parent,
-                    original_parent_id=parent,
-                    **OWNER_PERMISSIONS.to_dict(),
-                )
+        await connection.execute(
+            sa.insert(folders_access_rights).values(
+                folder_id=folder_id,
+                gid=permissions_gid,
+                traversal_parent_id=parent,
+                original_parent_id=parent,
+                **OWNER_PERMISSIONS.to_dict(),
             )
-        except ForeignKeyViolation as e:
-            raise GroupIdDoesNotExistError(gid=permissions_gid) from e
+        )
 
         return _FolderID(folder_id)
 

@@ -32,6 +32,7 @@ from simcore_postgres_database.utils_folders import (
     FolderEntry,
     FolderNotFoundError,
     FolderNotSharedWithGidError,
+    GroupIDsDoNotExistError,
     InsufficientPermissionsError,
     InvalidFolderNameError,
     RootFolderRequiresAtLeastOnePrimaryGroupError,
@@ -424,8 +425,8 @@ async def test_folder_create(
         # 1. when GID is missing no entries should be present
         missing_gid = 10202023302
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
-        # with pytest.raises(GroupIdDoesNotExistError):
-        #     await folder_create(connection, product_name, "f1", {missing_gid})
+        with pytest.raises(GroupIDsDoNotExistError):
+            await folder_create(connection, product_name, "f1", {missing_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 2. create a folder and a subfolder of the same name
