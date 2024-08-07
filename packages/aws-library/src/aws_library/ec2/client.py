@@ -34,7 +34,7 @@ from .utils import compose_user_data
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass()
 class SimcoreEC2API:
     client: EC2Client
     session: aioboto3.Session
@@ -108,7 +108,7 @@ class SimcoreEC2API:
                 raise EC2InstanceTypeInvalidError from exc
             raise EC2RuntimeError from exc  # pragma: no cover
 
-    async def start_aws_instance(
+    async def launch_instances(
         self,
         instance_config: EC2InstanceConfig,
         *,
@@ -116,7 +116,7 @@ class SimcoreEC2API:
         number_of_instances: PositiveInt,
         max_total_number_of_instances: PositiveInt = 10,
     ) -> list[EC2InstanceData]:
-        """starts EC2 instances
+        """launch new EC2 instance(s)
 
         Arguments:
             instance_config -- The EC2 instance configuration
