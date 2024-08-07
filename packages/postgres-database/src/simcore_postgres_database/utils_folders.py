@@ -726,7 +726,7 @@ async def folder_move(
     connection: SAConnection,
     product_name: _ProductName,
     source_folder_id: _FolderID,
-    gid: _GroupID,  # this also can work with set[_GroupID]
+    gids: set[_GroupID],
     *,
     destination_folder_id: _FolderID | None,
     required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
@@ -748,7 +748,7 @@ async def folder_move(
             connection,
             product_name,
             folder_id=source_folder_id,
-            gids={gid},
+            gids=gids,
             permissions=required_permissions_source,
             enforece_all_permissions=False,
         )
@@ -767,7 +767,7 @@ async def folder_move(
                 connection,
                 product_name,
                 folder_id=destination_folder_id,
-                gids={gid},
+                gids=gids,
                 permissions=required_permissions_destination,
                 enforece_all_permissions=False,
             )
@@ -778,7 +778,7 @@ async def folder_move(
             .where(
                 sa.and_(
                     folders_access_rights.c.folder_id == source_folder_id,
-                    folders_access_rights.c.gid == gid,
+                    folders_access_rights.c.gid.in_(gids),
                 )
             )
             .values(traversal_parent_id=destination_folder_id)

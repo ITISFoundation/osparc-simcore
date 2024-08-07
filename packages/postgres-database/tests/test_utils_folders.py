@@ -1138,7 +1138,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 source,
-                gid,
+                {gid},
                 destination_folder_id=destination,
             )
 
@@ -1150,7 +1150,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 source,
-                gid,
+                {gid},
                 destination_folder_id=destination,
             )
 
@@ -1187,7 +1187,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             source,
-            gid,
+            {gid},
             destination_folder_id=destination,
         )
 
@@ -1200,7 +1200,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             source,
-            gid,
+            {gid},
             destination_folder_id=source_parent,
         )
 
@@ -1296,7 +1296,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             to_move_folder_id,
-            to_move_gid,
+            {to_move_gid},
             destination_folder_id=None,
         )
 
@@ -1314,7 +1314,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 to_move_folder_id,
-                to_move_gid,
+                {to_move_gid},
                 destination_folder_id=None,
             )
 
@@ -1324,7 +1324,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 folder_id_not_shared,
-                to_move_gid,
+                {to_move_gid},
                 destination_folder_id=None,
             )
 
@@ -1378,7 +1378,7 @@ async def test_move_only_owners_can_move(
                 connection,
                 default_product_name,
                 folder_id_to_move,
-                gid,
+                {gid},
                 destination_folder_id=destination_folder_id,
             )
 
@@ -1397,7 +1397,7 @@ async def test_move_only_owners_can_move(
             connection,
             default_product_name,
             folder_id_to_move,
-            gid_not_shared,
+            {gid_not_shared},
             destination_folder_id=folder_id_target_not_shared,
         )
 
@@ -1406,7 +1406,7 @@ async def test_move_only_owners_can_move(
         connection,
         default_product_name,
         folder_id_to_move,
-        gid_owner,
+        {gid_owner},
         destination_folder_id=folder_id_target_owner,
     )
 
