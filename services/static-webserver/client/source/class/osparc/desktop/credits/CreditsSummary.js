@@ -28,7 +28,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
       padding: 8,
       maxWidth: this.self().WIDTH
     });
-    osparc.utils.Utils.setIdToWidget(this, "creditsNavBarContainer");
+    osparc.utils.Utils.setIdToWidget(this, "creditsSummary");
 
     const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
