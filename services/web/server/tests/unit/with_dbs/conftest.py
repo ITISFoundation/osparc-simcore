@@ -63,7 +63,7 @@ from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy import exc as sql_exceptions
@@ -601,7 +601,9 @@ async def primary_group(
     logged_user: UserInfoDict,
 ) -> dict[str, Any]:
     assert client.app
-    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    primary_group, _, _ = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return primary_group
 
 
@@ -658,7 +660,9 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        _, std_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        _, std_groups, _ = await list_user_groups_with_read_access(
+            client.app, logged_user["id"]
+        )
 
         yield std_groups
 
@@ -673,7 +677,9 @@ async def all_group(
     logged_user: UserInfoDict,
 ) -> dict[str, str]:
     assert client.app
-    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return all_group
 
 
