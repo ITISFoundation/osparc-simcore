@@ -70,13 +70,13 @@ def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
-def mock_start_aws_instance(
+def mock_launch_instances(
     mocker: MockerFixture,
     aws_instance_private_dns: str,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.start_aws_instance",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.launch_instances",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
@@ -211,14 +211,14 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    mock_start_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    mock_start_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
@@ -226,7 +226,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
 
 
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
-    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
@@ -325,7 +325,7 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
-    mock_start_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
@@ -341,7 +341,7 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    mock_start_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
@@ -898,7 +898,7 @@ async def test_cluster_scaling_up_and_down(
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
