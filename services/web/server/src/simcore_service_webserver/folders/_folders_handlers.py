@@ -10,7 +10,7 @@ from models_library.api_schemas_webserver.folders import (
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
@@ -66,13 +66,7 @@ class FoldersPathParams(StrictRequestParams):
     folder_id: FolderID
 
 
-class FoldersMandarotyQueryParams(StrictRequestParams):
-    access_via_gid: GroupID
-
-
-class FolderListWithJsonStrQueryParams(
-    PageQueryParameters, FoldersMandarotyQueryParams
-):
+class FolderListWithJsonStrQueryParams(PageQueryParameters):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field="name", direction=OrderDirection.DESC),
         description="Order by field (name|description) and direction (asc|desc). The default sorting order is ascending.",
@@ -106,14 +100,10 @@ class FolderListWithJsonStrQueryParams(
 async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
-    query_params = parse_request_query_parameters_as(
-        FoldersMandarotyQueryParams, request
-    )
 
-    folder_id: FolderID = await _folders_api.create_folder_via_access_gid(
+    folder_id: FolderID = await _folders_api.create_folder(
         request.app,
         user_id=req_ctx.user_id,
-        access_via_gid=query_params.access_via_gid,
         folder_name=body_params.name,
         description=body_params.description,
         parent_folder_id=body_params.parent_folder_id,
@@ -133,11 +123,10 @@ async def list_folders(request: web.Request):
         FolderListWithJsonStrQueryParams, request
     )
 
-    folders: list[FolderGet] = await _folders_api.list_folders_via_access_gid(
+    folders: list[FolderGet] = await _folders_api.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        access_via_gid=query_params.access_via_gid,
         folder_id=query_params.folder_id,
         offset=query_params.offset,
         limit=query_params.limit,
@@ -154,14 +143,10 @@ async def list_folders(request: web.Request):
 async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        FoldersMandarotyQueryParams, request
-    )
 
-    folder: FolderGet = await _folders_api.get_folder_via_access_gid(
+    folder: FolderGet = await _folders_api.get_folder(
         app=request.app,
         folder_id=path_params.folder_id,
-        access_via_gid=query_params.access_via_gid,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
@@ -180,14 +165,10 @@ async def replace_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(PutFolderBodyParams, request)
-    query_params = parse_request_query_parameters_as(
-        FoldersMandarotyQueryParams, request
-    )
 
-    await _folders_api.update_folder_via_access_gid(
+    await _folders_api.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
-        access_via_gid=query_params.access_via_gid,
         folder_id=path_params.folder_id,
         name=body_params.name,
         description=body_params.description,
@@ -206,14 +187,10 @@ async def replace_folder(request: web.Request):
 async def delete_folder_group(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        FoldersMandarotyQueryParams, request
-    )
 
-    await _folders_api.delete_folder_via_access_gid(
+    await _folders_api.delete_folder(
         app=request.app,
         user_id=req_ctx.user_id,
-        access_via_gid=query_params.access_via_gid,
         folder_id=path_params.folder_id,
         product_name=req_ctx.product_name,
     )
