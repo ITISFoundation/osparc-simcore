@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.service.CreditsServiceListItem", {
+qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
   extend: osparc.ui.list.ListItem,
 
   construct: function() {
