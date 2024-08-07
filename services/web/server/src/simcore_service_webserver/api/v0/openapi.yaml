@@ -2892,6 +2892,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
+  /v0/projects/{project_id}/folders/{folder_id}:
+    put:
+      tags:
+      - projects
+      - folders
+      summary: Move project to the folder
+      operationId: replace_project_folder
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -3467,7 +3493,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':

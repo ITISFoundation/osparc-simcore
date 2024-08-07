@@ -135,4 +135,3 @@ async def delete_folder(
             folder_id=folder_id,
             gid=user["primary_gid"],
         )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
