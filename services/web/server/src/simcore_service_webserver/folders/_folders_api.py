@@ -135,27 +135,4 @@ async def delete_folder(
             folder_id=folder_id,
             gid=user["primary_gid"],
         )
-
-
-# async def upsert_project_to_folder(
-#     app: web.Application,
-#     user_id: UserID,
-#     folder_id: FolderID,
-#     project_uuid: ProjectID,
-#     product_name: ProductName,
-# ):
-#     user = await get_user(app, user_id=user_id)
-
-#     engine: Engine = app[APP_DB_ENGINE_KEY]
-#     async with engine.acquire() as connection:
-
-#         try:
-#             # NOTE: folder permissions are checked inside the function
-#             await folders_db.folder_add_project(
-#                 connection,
-#                 product_name=product_name,
-#                 folder_id=folder_id,
-#                 gid=user["primary_gid"],
-#                 project_uuid=project_uuid,
-#             )
-#         except folders_db.ProjectAlreadyExistsInFolderError:
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

@@ -21,6 +21,7 @@ from pydantic import (
 )
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.elements import ColumnElement
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
@@ -188,6 +189,19 @@ class _BasePermissions:
     UPDATE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     DELETE_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
     REMOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _make_permissions(d=True)
+
+    _MOVE_PROJECT_FROM_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
+        d=True,
+        description="apply to folder where the project is",
+    )
+    _MOVE_PROJECT_FROM_FOLDER_DESTINATION: ClassVar[
+        _FolderPermissions
+    ] = _make_permissions(
+        w=True, description="apply on the folder receiving the project"
+    )
+    MOVE_PROJECT_FROM_FOLDER: ClassVar[_FolderPermissions] = _or_dicts_list(
+        [_MOVE_PROJECT_FROM_FOLDER_SOURCE, _MOVE_PROJECT_FROM_FOLDER_DESTINATION]
+    )
 
     _MOVE_FOLDER_SOURCE: ClassVar[_FolderPermissions] = _make_permissions(
         d=True,
@@ -791,6 +805,104 @@ async def folder_add_project(
                 folder_id=folder_id, project_uuid=project_uuid
             )
         )
+
+
+async def folder_move_project(
+    connection: SAConnection,
+    product_name: _ProductName,
+    source_folder_id: _FolderID,
+    gid: _GroupID,
+    *,
+    project_uuid: _ProjectID,
+    destination_folder_id: _FolderID | None,
+    _required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions._MOVE_PROJECT_FROM_FOLDER_SOURCE  # pylint:disable=protected-access # noqa: SLF001
+    ),
+    _required_permissions_destination: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions._MOVE_PROJECT_FROM_FOLDER_DESTINATION  # pylint:disable=protected-access # noqa: SLF001
+    ),
+) -> None:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        CannotMoveFolderSharedViaNonPrimaryGroupError:
+    """
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            product_name,
+            folder_id=source_folder_id,
+            gid=gid,
+            permissions=_required_permissions_source,
+            enforece_all_permissions=False,
+        )
+
+    if destination_folder_id is None:
+        # NOTE: As the project is moved to the root directory we will just remove it from the folders_to_projects table
+        await folder_remove_project(
+            connection,
+            product_name,
+            folder_id=source_folder_id,
+            gid=gid,
+            project_uuid=project_uuid,
+        )
+        return
+
+    async with connection.begin():
+        await _check_folder_and_access(
+            connection,
+            product_name,
+            folder_id=destination_folder_id,
+            gid=gid,
+            permissions=_required_permissions_destination,
+            enforece_all_permissions=False,
+        )
+
+        insert_stmt = pg_insert(folders_to_projects).values(
+            project_uuid=f"{project_uuid}",
+            folder_id=destination_folder_id,
+            created=sa.func.now(),
+            modified=sa.func.now(),
+        )
+        on_update_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                folders_to_projects.c.project_uuid,
+            ],
+            set_={
+                "project_uuid": f"{project_uuid}",
+                "wallet_id": insert_stmt.excluded.wallet_id,
+                "modified": sa.func.now(),
+            },
+        )
+        await connection.execute(on_update_stmt)
+
+
+async def get_project_folder_without_check(
+    connection: SAConnection,
+    *,
+    project_uuid: _ProjectID,
+) -> _FolderID | None:
+    """
+    This is temporary, until we discuss how to proceed. In first version we assume there is only one unique project uuid
+    in the folders_to_projects table.
+
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        CannotMoveFolderSharedViaNonPrimaryGroupError:
+    """
+    async with connection.begin():
+        folder_id = await connection.execute(
+            folders_to_projects.select(folders_to_projects.c.folder_id).where(
+                folders_to_projects.c.project_uuid == project_uuid
+            )
+        )
+        if folder_id:
+            return _FolderID(folder_id[0])
+        return None
 
 
 async def folder_remove_project(
