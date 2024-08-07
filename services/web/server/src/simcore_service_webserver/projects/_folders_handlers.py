@@ -57,7 +57,7 @@ class _ProjectsFoldersPathParams(BaseModel):
     name="replace_project_folder",
 )
 @login_required
-@permission_required("project.access_rights.update")
+@permission_required("project.folders.*")
 @_handle_projects_folders_exceptions
 async def replace_project_folder(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)

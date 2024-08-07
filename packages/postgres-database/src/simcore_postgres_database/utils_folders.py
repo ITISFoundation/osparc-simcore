@@ -540,7 +540,7 @@ async def folder_create(
             await connection.execute(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
-                    gid=gid,  # <-- MD: this can be also Osparc group ID if it was shared with me as an owner
+                    gid=gid,
                     traversal_parent_id=parent,
                     original_parent_id=parent,
                     **OWNER_PERMISSIONS.to_dict(),
