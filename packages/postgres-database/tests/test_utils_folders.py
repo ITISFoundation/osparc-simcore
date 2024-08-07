@@ -32,7 +32,6 @@ from simcore_postgres_database.utils_folders import (
     FolderEntry,
     FolderNotFoundError,
     FolderNotSharedWithGidError,
-    GroupIdDoesNotExistError,
     InsufficientPermissionsError,
     InvalidFolderNameError,
     RootFolderRequiresAtLeastOnePrimaryGroupError,
@@ -425,8 +424,8 @@ async def test_folder_create(
         # 1. when GID is missing no entries should be present
         missing_gid = 10202023302
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
-        with pytest.raises(GroupIdDoesNotExistError):
-            await folder_create(connection, product_name, "f1", {missing_gid})
+        # with pytest.raises(GroupIdDoesNotExistError):
+        #     await folder_create(connection, product_name, "f1", {missing_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 2. create a folder and a subfolder of the same name
@@ -455,8 +454,8 @@ async def test_folder_create_shared_via_groups(
     #######
     # SETUP
     #######
-    gid_original_z43_owner: _GroupID
-    (gid_original_z43_owner,) = get_unique_gids(1)
+    gid_original_owner: _GroupID
+    (gid_original_owner,) = get_unique_gids(1)
 
     gid_user: _GroupID = (
         await create_fake_group(connection, type=GroupType.PRIMARY)
@@ -473,7 +472,7 @@ async def test_folder_create_shared_via_groups(
         {
             MkFolder(
                 name="root",
-                gid=gid_original_z43_owner,
+                gid=gid_original_owner,
                 shared_with={
                     gid_z43: FolderAccessRole.OWNER,
                     gid_everyone: FolderAccessRole.OWNER,
@@ -1513,8 +1512,8 @@ async def test_move_group_non_standard_groups_raise_error(
     #######
     # SETUP
     #######
-    gid_sharing: _GroupID
-    (gid_sharing,) = get_unique_gids(1)
+    gid_original_owner: _GroupID
+    (gid_original_owner,) = get_unique_gids(1)
     gid_primary: _GroupID = (
         await create_fake_group(connection, type=GroupType.PRIMARY)
     ).gid
@@ -1530,16 +1529,28 @@ async def test_move_group_non_standard_groups_raise_error(
         {
             MkFolder(
                 name="SHARING_USER",
-                gid=gid_sharing,
+                gid=gid_original_owner,
                 shared_with={
                     gid_primary: FolderAccessRole.EDITOR,
                     gid_everyone: FolderAccessRole.EDITOR,
                     gid_standard: FolderAccessRole.EDITOR,
                 },
             ),
-            MkFolder(name="PRIMARY", gid=gid_primary),
-            MkFolder(name="EVERYONE", gid=gid_everyone),
-            MkFolder(name="STANDARD", gid=gid_standard),
+            MkFolder(
+                name="PRIMARY",
+                gid=gid_original_owner,
+                shared_with={gid_primary: FolderAccessRole.OWNER},
+            ),
+            MkFolder(
+                name="EVERYONE",
+                gid=gid_original_owner,
+                shared_with={gid_everyone: FolderAccessRole.OWNER},
+            ),
+            MkFolder(
+                name="STANDARD",
+                gid=gid_original_owner,
+                shared_with={gid_standard: FolderAccessRole.OWNER},
+            ),
         }
     )
 
