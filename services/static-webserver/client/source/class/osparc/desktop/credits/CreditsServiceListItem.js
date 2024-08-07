@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
 
     const layout = this._getLayout();
     layout.setSpacingX(10);
-    layout.setSpacingY(5);
+    layout.setSpacingY(0);
     layout.setColumnFlex(this.self().GRID.ICON.column, 0);
     layout.setColumnFlex(this.self().GRID.NAME.column, 1);
     layout.setColumnFlex(this.self().GRID.CREDITS.column, 0);
@@ -35,10 +35,13 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       icon.setSource(serviceMetadata["thumbnail"]);
       name.setValue(serviceMetadata["name"]);
     } else {
-      const serviceName = serviceKey.split("/").pop()
+      const serviceName = serviceKey.split("/").pop();
       name.setValue(serviceName);
     }
-    this.getChildControl("percentage").setValue(percentage);
+    this.getChildControl("percentage").set({
+      maximum: 100,
+      value: percentage
+    });
     this.getChildControl("credits").setValue(credits + " used");
   },
 
@@ -51,13 +54,11 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       },
       NAME: {
         column: 1,
-        row: 0,
-        rowSpan: 1
+        row: 0
       },
       PERCENTAGE: {
         column: 1,
-        row: 1,
-        rowSpan: 1
+        row: 1
       },
       CREDITS: {
         column: 2,
@@ -72,12 +73,9 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, 30, 30).set({
-            minHeight: 30,
-            minWidth: 30
-          });
-          control.getChildControl("image").set({
-            anonymous: true
+          control = new osparc.ui.basic.Thumbnail(null, 32, 32).set({
+            minHeight: 32,
+            minWidth: 32
           });
           this._add(control, this.self().GRID.ICON);
           break;
@@ -94,7 +92,11 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
           break;
         case "percentage":
           control = new qx.ui.indicator.ProgressBar().set({
-            height: 10
+            backgroundColor: "strong-main",
+            textColor: "green",
+            maxHeight: 8,
+            margin: 0,
+            padding: 0
           });
           this._add(control, this.self().GRID.PERCENTAGE);
           break;
