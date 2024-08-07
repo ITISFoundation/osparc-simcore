@@ -75,9 +75,21 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
+types-docker==7.1.0.20240806
+    # via -r requirements/_test.in
+types-psycopg2==2.9.21.20240417
+    # via -r requirements/_test.in
+types-requests==2.32.0.20240712
+    # via types-docker
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   mypy
     #   sqlalchemy2-stubs
+urllib3==2.2.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_migration.txt
+    #   types-docker
+    #   types-requests

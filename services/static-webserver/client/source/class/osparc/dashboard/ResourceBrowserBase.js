@@ -155,28 +155,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    sortStudyList: function(studyList, sortValue) {
-      const sortByProperty = function(prop) {
-        return function(a, b) {
-          const x = a.toString().toLowerCase();
-          const y = b.toString().toLowerCase();
-          if (prop === "lastChangeDate") {
-            return new Date(y[prop]) - new Date(x[prop]);
-          }
-          if (typeof x[prop] == "number") {
-            return x[prop] - y[prop];
-          }
-          if (x[prop] < y[prop]) {
-            return -1;
-          } else if (x[prop] > y[prop]) {
-            return 1;
-          }
-          return 0;
-        };
-      };
-      studyList.sort(sortByProperty(sortValue || "name"));
-    },
-
     isCardNewItem: function(card) {
       return (card instanceof osparc.dashboard.GridButtonNew || card instanceof osparc.dashboard.ListButtonNew);
     },
@@ -273,6 +251,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
+      resourcesContainer.addListener("folderSelected", e => this._folderSelected(e.getData()));
+      resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
       this._addToLayout(resourcesContainer);
     },
 
@@ -467,6 +447,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _folderSelected: function(folderId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _deleteFolderRequested: function(folderId) {
+      throw new Error("Abstract method called!");
+    },
+
     _getOpenMenuButton: function(resourceData) {
       const openButton = new qx.ui.menu.Button(this.tr("Open"));
       openButton.openResource = true;
@@ -524,7 +512,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
     },
@@ -536,7 +524,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."));
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesome5Solid/tags/12");
       tagsButton.addListener("tap", () => card.openTags(), this);
       return tagsButton;
     }

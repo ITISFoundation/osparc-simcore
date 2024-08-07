@@ -5,6 +5,7 @@ Revises: e15cc5042999
 Create Date: 2022-08-24 13:33:30.104287+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -22,7 +23,7 @@ def upgrade():
         "issues_login_url",
         existing_type=sa.VARCHAR(),
         nullable=True,
-        existing_server_default=sa.text(
+        existing_server_default=sa.text(  # type: ignore[arg-type]
             "'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"
         ),
     )
@@ -31,7 +32,7 @@ def upgrade():
         "issues_new_url",
         existing_type=sa.VARCHAR(),
         nullable=True,
-        existing_server_default=sa.text(
+        existing_server_default=sa.text(  # type: ignore[arg-type]
             "'https://github.com/ITISFoundation/osparc-simcore/issues/new'::character varying"
         ),
     )
@@ -45,7 +46,7 @@ def downgrade():
         "issues_new_url",
         existing_type=sa.VARCHAR(),
         nullable=False,
-        existing_server_default=sa.text(
+        existing_server_default=sa.text(  # type: ignore[arg-type]
             "'https://github.com/ITISFoundation/osparc-simcore/issues/new'::character varying"
         ),
     )
@@ -54,7 +55,7 @@ def downgrade():
         "issues_login_url",
         existing_type=sa.VARCHAR(),
         nullable=False,
-        existing_server_default=sa.text(
+        existing_server_default=sa.text(  # type: ignore[arg-type]
             "'https://github.com/ITISFoundation/osparc-simcore/issues'::character varying"
         ),
     )

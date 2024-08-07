@@ -6,11 +6,12 @@
         - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
         - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
+
 # pylint: disable=no-value-for-parameter
 
 import functools
 import operator
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -246,7 +247,7 @@ class BaseOrm(Generic[RowUId]):
 
         query, is_scalar = self._append_returning(returning_cols, query)
         if is_scalar:
-            return await self._conn.scalar(query)
+            return cast(RowUId, await self._conn.scalar(query))
 
         result: ResultProxy = await self._conn.execute(query)
         row: RowProxy | None = await result.first()
@@ -261,7 +262,7 @@ class BaseOrm(Generic[RowUId]):
 
         query, is_scalar = self._append_returning(returning_cols, query)
         if is_scalar:
-            return await self._conn.scalar(query)
+            return cast(RowUId, await self._conn.scalar(query))
 
         result: ResultProxy = await self._conn.execute(query)
         row: RowProxy | None = await result.first()

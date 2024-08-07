@@ -2,7 +2,6 @@
     i.e. models.users main table and all its relations
 """
 
-
 import re
 import secrets
 import string
@@ -152,7 +151,8 @@ class UsersRepo:
             )
             .where(users.c.id == user_id)
         )
-        return await result.fetchone()
+        value: RowProxy | None = await result.fetchone()
+        return value
 
     @staticmethod
     async def get_role(conn: SAConnection, user_id: int) -> UserRole:

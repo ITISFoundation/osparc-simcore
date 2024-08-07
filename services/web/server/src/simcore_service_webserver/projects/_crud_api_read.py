@@ -8,6 +8,7 @@ Read operations are list, get
 from aiohttp import web
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
+from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
@@ -55,6 +56,7 @@ async def list_projects(
     limit: int,
     search: str | None,
     order_by: OrderBy,
+    folder_id: FolderID | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
@@ -73,6 +75,7 @@ async def list_projects(
         include_hidden=show_hidden,
         search=search,
         order_by=order_by,
+        folder_id=folder_id,
     )
 
     projects: list[ProjectDict] = await logged_gather(
