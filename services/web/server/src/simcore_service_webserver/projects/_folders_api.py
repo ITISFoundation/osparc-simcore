@@ -22,7 +22,7 @@ async def replace_project_folder(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    folder_id: FolderID,
+    folder_id: FolderID | None,
     product_name: ProductName,
 ) -> None:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
@@ -46,6 +46,7 @@ async def replace_project_folder(
             project_uuid=project_id,
         )
         if _source_folder_id is None:
+            assert folder_id is not None  # nosec
             # NOTE: folder permissions are checked inside the function
             await folders_db.folder_add_project(
                 connection,

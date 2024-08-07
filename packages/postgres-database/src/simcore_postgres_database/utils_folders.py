@@ -21,7 +21,6 @@ from pydantic import (
 )
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.elements import ColumnElement
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
@@ -791,7 +790,7 @@ async def folder_add_project(
             await connection.execute(
                 folders_to_projects.select()
                 .where(folders_to_projects.c.folder_id == folder_id)
-                .where(folders_to_projects.c.project_uuid == project_uuid)
+                .where(folders_to_projects.c.project_uuid == f"{project_uuid}")
             )
         ).fetchone()
         if project_in_folder_entry:
@@ -802,7 +801,7 @@ async def folder_add_project(
         # finally add project to folder
         await connection.execute(
             folders_to_projects.insert().values(
-                folder_id=folder_id, project_uuid=project_uuid
+                folder_id=folder_id, project_uuid=f"{project_uuid}"
             )
         )
 
@@ -860,23 +859,16 @@ async def folder_move_project(
             enforece_all_permissions=False,
         )
 
-        insert_stmt = pg_insert(folders_to_projects).values(
-            project_uuid=f"{project_uuid}",
-            folder_id=destination_folder_id,
-            created=sa.func.now(),
-            modified=sa.func.now(),
+        await connection.execute(
+            folders_to_projects.delete()
+            .where(folders_to_projects.c.folder_id == source_folder_id)
+            .where(folders_to_projects.c.project_uuid == f"{project_uuid}")
         )
-        on_update_stmt = insert_stmt.on_conflict_do_update(
-            index_elements=[
-                folders_to_projects.c.project_uuid,
-            ],
-            set_={
-                "project_uuid": f"{project_uuid}",
-                "wallet_id": insert_stmt.excluded.wallet_id,
-                "modified": sa.func.now(),
-            },
+        await connection.execute(
+            folders_to_projects.insert().values(
+                folder_id=destination_folder_id, project_uuid=f"{project_uuid}"
+            )
         )
-        await connection.execute(on_update_stmt)
 
 
 async def get_project_folder_without_check(
@@ -895,13 +887,13 @@ async def get_project_folder_without_check(
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
-        folder_id = await connection.execute(
-            folders_to_projects.select(folders_to_projects.c.folder_id).where(
-                folders_to_projects.c.project_uuid == project_uuid
+        folder_id = await connection.scalar(
+            sa.select(folders_to_projects.c.folder_id).where(
+                folders_to_projects.c.project_uuid == f"{project_uuid}"
             )
         )
         if folder_id:
-            return _FolderID(folder_id[0])
+            return _FolderID(folder_id)
         return None
 
 
@@ -935,7 +927,7 @@ async def folder_remove_project(
         await connection.execute(
             folders_to_projects.delete()
             .where(folders_to_projects.c.folder_id == folder_id)
-            .where(folders_to_projects.c.project_uuid == project_uuid)
+            .where(folders_to_projects.c.project_uuid == f"{project_uuid}")
         )
 
 

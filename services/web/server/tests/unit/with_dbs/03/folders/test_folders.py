@@ -85,8 +85,6 @@ async def test_sub_folders_full_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    # wallets_clean_db: AsyncIterator[None],
-    # mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
     assert client.app
 
@@ -151,3 +149,53 @@ async def test_sub_folders_full_workflow(
     assert data[0]["name"] == "My sub sub folder"
     assert data[0]["description"] == "Custom sub sub folder description"
     assert data[0]["parentFolderId"] == subfolder_folder["folderId"]
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_project_folder_movement_full_workflow(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+):
+    assert client.app
+
+    # create a new folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path, json={"name": "My first folder", "description": "Custom description"}
+    )
+    root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # add project to the folder
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id=f"{root_folder['folderId']}", project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.put(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # create a sub folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My sub folder",
+            "description": "Custom sub folder description",
+            "parentFolderId": root_folder["folderId"],
+        },
+    )
+    sub_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # move project to the sub folder
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id=f"{sub_folder['folderId']}", project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.put(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # move project to the root directory
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id="null", project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.put(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
