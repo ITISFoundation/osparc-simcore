@@ -52,6 +52,7 @@ FoldersError
         * ParentFolderIsNotWritableError
         * CouldNotCreateFolderError
         * GroupIdDoesNotExistError
+        * RootFolderRequiresAtLeastOnePrimaryGroupError
     * BaseMoveFolderError
         * CannotMoveFolderSharedViaNonPrimaryGroupError
     * BaseAddProjectError
@@ -97,7 +98,7 @@ class BaseCreateFolderError(FoldersError):
 
 
 class FolderAlreadyExistsError(BaseCreateFolderError):
-    msg_template = "A folder='{folder}' with parent='{parent}' for group='{gid}' in product_name={product_name} already exists"
+    msg_template = "A folder='{folder}' with parent='{parent}' for gids='{gids}' in product_name={product_name} already exists"
 
 
 class ParentFolderIsNotWritableError(BaseCreateFolderError):
@@ -110,6 +111,13 @@ class CouldNotCreateFolderError(BaseCreateFolderError):
 
 class GroupIdDoesNotExistError(BaseCreateFolderError):
     msg_template = "Provided group id '{gid}' does not exist "
+
+
+class RootFolderRequiresAtLeastOnePrimaryGroupError(BaseCreateFolderError):
+    msg_template = (
+        "parent={parent} is None (please check) and gids={gids} did not contain a PRIMARY group. "
+        "Cannot create a folder isnide the 'root' directory."
+    )
 
 
 class BaseMoveFolderError(FoldersError):
@@ -512,7 +520,7 @@ async def folder_create(
     connection: SAConnection,
     product_name: _ProductName,
     name: str,
-    gid: _GroupID,  # shared_via_gid TO WORK
+    gids: set[_GroupID],
     description: str = "",
     parent: _FolderID | None = None,
     required_permissions: _FolderPermissions = _requires(  # noqa: B008
@@ -528,6 +536,7 @@ async def folder_create(
         FolderAlreadyExistsError
         CouldNotCreateFolderError
         GroupIdDoesNotExistError
+        RootFolderRequiresAtLeastOnePrimaryGroupError
     """
     parse_obj_as(FolderName, name)
 
@@ -546,23 +555,36 @@ async def folder_create(
         )
         if entry_exists:
             raise FolderAlreadyExistsError(
-                product_name=product_name, folder=name, parent=parent, gid=gid
+                product_name=product_name, folder=name, parent=parent, gids=gids
             )
 
+        # `permissions_gid` is compted as follows:
+        # - `folder has a parent?` taken from the resolved access rights of the parent folder
+        # - `is root folder, a.k.a. no parent?` taken from the user's primary group
+        permissions_gid: _GroupID | None = None
         if parent:
-            # check if parent has permissions
-            await _check_folder_and_access(
+            resolved_access_rights = await _check_folder_and_access(
                 connection,
                 product_name,
                 folder_id=parent,
-                gids={gid},
+                gids=gids,
                 permissions=required_permissions,
                 enforece_all_permissions=False,
             )
-        # TODO: add test to emulate Shared with Z43 and Osparc and not with MD
-        #    ->  MD_gid tries to create a folder inside this one -> should fail?
-        # TODO: use a set to check permissions on the parent
-        # "random" pick user between all grops it has access to
+            permissions_gid = resolved_access_rights.gid
+
+        if permissions_gid is None:
+            primary_gid: _GroupID | None = await connection.scalar(
+                sa.select([groups.c.gid])
+                .where(groups.c.gid.in_(gids))
+                .where(groups.c.type == GroupType.PRIMARY)
+            )
+            if primary_gid is None:
+                raise RootFolderRequiresAtLeastOnePrimaryGroupError(
+                    parent=parent, gids=gids
+                )
+
+            permissions_gid = primary_gid
 
         # folder entry can now be inserted
         try:
@@ -571,7 +593,7 @@ async def folder_create(
                 .values(
                     name=name,
                     description=description,
-                    created_by=gid,
+                    created_by=permissions_gid,
                     product_name=product_name,
                 )
                 .returning(folders.c.id)
@@ -583,14 +605,14 @@ async def folder_create(
             await connection.execute(
                 sa.insert(folders_access_rights).values(
                     folder_id=folder_id,
-                    gid=gid,
+                    gid=permissions_gid,
                     traversal_parent_id=parent,
                     original_parent_id=parent,
                     **OWNER_PERMISSIONS.to_dict(),
                 )
             )
         except ForeignKeyViolation as e:
-            raise GroupIdDoesNotExistError(gid=gid) from e
+            raise GroupIdDoesNotExistError(gid=permissions_gid) from e
 
         return _FolderID(folder_id)
 

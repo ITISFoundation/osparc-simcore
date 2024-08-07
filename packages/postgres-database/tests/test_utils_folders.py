@@ -3,7 +3,6 @@
 # pylint:disable=unused-variable
 
 import itertools
-import secrets
 from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from typing import NamedTuple
@@ -36,6 +35,7 @@ from simcore_postgres_database.utils_folders import (
     GroupIdDoesNotExistError,
     InsufficientPermissionsError,
     InvalidFolderNameError,
+    RootFolderRequiresAtLeastOnePrimaryGroupError,
     _FolderID,
     _FolderPermissions,
     _get_and_calsue_with_only_true_entries,
@@ -377,7 +377,7 @@ def make_folders(
                 connection,
                 default_product_name,
                 root.name,
-                root.gid,
+                {root.gid},
                 description=root.description,
                 parent=parent,
             )
@@ -426,23 +426,115 @@ async def test_folder_create(
         missing_gid = 10202023302
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
         with pytest.raises(GroupIdDoesNotExistError):
-            await folder_create(connection, product_name, "f1", missing_gid)
+            await folder_create(connection, product_name, "f1", {missing_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 2. create a folder and a subfolder of the same name
-        f1_folder_id = await folder_create(connection, product_name, "f1", owner_gid)
+        f1_folder_id = await folder_create(connection, product_name, "f1", {owner_gid})
         expected_folder_count += 1
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
         await folder_create(
-            connection, product_name, "f1", owner_gid, parent=f1_folder_id
+            connection, product_name, "f1", {owner_gid}, parent=f1_folder_id
         )
         expected_folder_count += 1
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 3. inserting already existing folder fails
         with pytest.raises(FolderAlreadyExistsError):
-            await folder_create(connection, product_name, "f1", owner_gid)
+            await folder_create(connection, product_name, "f1", {owner_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
+
+
+async def test_folder_create_shared_via_groups(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+):
+    #######
+    # SETUP
+    #######
+    gid_original_z43_owner: _GroupID
+    (gid_original_z43_owner,) = get_unique_gids(1)
+
+    gid_user: _GroupID = (
+        await create_fake_group(connection, type=GroupType.PRIMARY)
+    ).gid
+    gid_everyone: _GroupID | None = await connection.scalar(
+        sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
+    )
+    assert gid_everyone
+    gid_z43: _GroupID = (
+        await create_fake_group(connection, type=GroupType.STANDARD)
+    ).gid
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="root",
+                gid=gid_original_z43_owner,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                    gid_everyone: FolderAccessRole.OWNER,
+                },
+            ),
+        }
+    )
+
+    folder_id_root = folder_ids["root"]
+
+    #######
+    # TESTS
+    #######
+
+    async def _assert(folder_id: _FolderID, gids: set[_GroupID]) -> None:
+        result = await connection.execute(
+            folders_access_rights.select()
+            .where(folders_access_rights.c.folder_id == folder_id)
+            .where(folders_access_rights.c.gid.in_(gids))
+        )
+        rows = await result.fetchall()
+        assert rows is not None
+        assert len(rows) == 1
+
+    # 1. can create when using one gid with permissions
+    folder_id_f1 = await folder_create(
+        connection,
+        default_product_name,
+        "f1",
+        {gid_z43, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert(folder_id_f1, {gid_z43})
+
+    folder_id_f2 = await folder_create(
+        connection,
+        default_product_name,
+        "f2",
+        {gid_everyone, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert(folder_id_f2, {gid_everyone})
+
+    # 2. can create new folder when using both gids with permissions
+    folder_id_f3 = await folder_create(
+        connection,
+        default_product_name,
+        "f3",
+        {gid_z43, gid_everyone, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert(folder_id_f3, {gid_everyone, gid_z43})
+
+    # 3. cannot create a root folder without a primary group
+    with pytest.raises(RootFolderRequiresAtLeastOnePrimaryGroupError):
+        await folder_create(
+            connection,
+            default_product_name,
+            "folder_in_root",
+            {gid_z43, gid_everyone},
+        )
 
 
 async def test__get_resolved_access_rights(
@@ -597,7 +689,7 @@ async def test_folder_share_or_update_permissions(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. share existing folder with all possible roles
-    folder_id = await folder_create(connection, default_product_name, "f1", gid_owner)
+    folder_id = await folder_create(connection, default_product_name, "f1", {gid_owner})
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_folder_permissions(
         connection, folder_id=folder_id, gid=gid_owner, role=FolderAccessRole.OWNER
@@ -731,7 +823,7 @@ async def test_folder_update(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner updates created fodler
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
@@ -859,14 +951,14 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner deletes folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_delete(connection, default_product_name, folder_id, {owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
     # 3. other owners can delete the folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
@@ -882,7 +974,7 @@ async def test_folder_delete(
     await _assert_folder_entires(connection, folder_count=0)
 
     # 4. non owner users cannot delete the folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
@@ -964,12 +1056,12 @@ async def test_folder_delete_nested_folders(
         folder_id_root_folder = folder_ids["root_folder"]
         await _assert_folder_entires(connection, folder_count=1, access_rights_count=6)
 
-        GIDS_WITH_CREATE_PERMISSIONS: tuple[_GroupID, ...] = (
+        GIDS_WITH_CREATE_PERMISSIONS: set[_GroupID] = {
             gid_owner_a,
             gid_owner_b,
             gid_editor_a,
             gid_editor_b,
-        )
+        }
 
         previous_folder_id = folder_id_root_folder
         for i in range(100):
@@ -977,7 +1069,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 f"f{i}",
-                secrets.choice(GIDS_WITH_CREATE_PERMISSIONS),
+                GIDS_WITH_CREATE_PERMISSIONS,
                 parent=previous_folder_id,
             )
         await _assert_folder_entires(
