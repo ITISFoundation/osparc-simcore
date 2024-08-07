@@ -3,7 +3,6 @@
 # pylint:disable=unused-variable
 
 import itertools
-import secrets
 from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from typing import NamedTuple
@@ -33,9 +32,10 @@ from simcore_postgres_database.utils_folders import (
     FolderEntry,
     FolderNotFoundError,
     FolderNotSharedWithGidError,
-    GroupIdDoesNotExistError,
+    GroupIDsDoNotExistError,
     InsufficientPermissionsError,
     InvalidFolderNameError,
+    RootFolderRequiresAtLeastOnePrimaryGroupError,
     _FolderID,
     _FolderPermissions,
     _get_and_calsue_with_only_true_entries,
@@ -238,6 +238,19 @@ async def _assert_folder_entires(
     await _query_table(folders_access_rights, access_rights_count or folder_count)
 
 
+async def _assert_folderpermissions_exists(
+    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+) -> None:
+    result = await connection.execute(
+        folders_access_rights.select()
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid.in_(gids))
+    )
+    rows = await result.fetchall()
+    assert rows is not None
+    assert len(rows) == 1
+
+
 async def _assert_folder_permissions(
     connection: SAConnection,
     *,
@@ -377,7 +390,7 @@ def make_folders(
                 connection,
                 default_product_name,
                 root.name,
-                root.gid,
+                {root.gid},
                 description=root.description,
                 parent=parent,
             )
@@ -387,7 +400,7 @@ def make_folders(
                     connection,
                     default_product_name,
                     root_folder_id,
-                    root.gid,
+                    sharing_gids={root.gid},
                     recipient_gid=gid,
                     recipient_role=role,
                 )
@@ -425,24 +438,108 @@ async def test_folder_create(
         # 1. when GID is missing no entries should be present
         missing_gid = 10202023302
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
-        with pytest.raises(GroupIdDoesNotExistError):
-            await folder_create(connection, product_name, "f1", missing_gid)
+        with pytest.raises(GroupIDsDoNotExistError):
+            await folder_create(connection, product_name, "f1", {missing_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 2. create a folder and a subfolder of the same name
-        f1_folder_id = await folder_create(connection, product_name, "f1", owner_gid)
+        f1_folder_id = await folder_create(connection, product_name, "f1", {owner_gid})
         expected_folder_count += 1
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
         await folder_create(
-            connection, product_name, "f1", owner_gid, parent=f1_folder_id
+            connection, product_name, "f1", {owner_gid}, parent=f1_folder_id
         )
         expected_folder_count += 1
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
         # 3. inserting already existing folder fails
         with pytest.raises(FolderAlreadyExistsError):
-            await folder_create(connection, product_name, "f1", owner_gid)
+            await folder_create(connection, product_name, "f1", {owner_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
+
+
+async def test_folder_create_shared_via_groups(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+):
+    #######
+    # SETUP
+    #######
+    gid_original_owner: _GroupID
+    (gid_original_owner,) = get_unique_gids(1)
+
+    gid_user: _GroupID = (
+        await create_fake_group(connection, type=GroupType.PRIMARY)
+    ).gid
+    gid_everyone: _GroupID | None = await connection.scalar(
+        sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
+    )
+    assert gid_everyone
+    gid_z43: _GroupID = (
+        await create_fake_group(connection, type=GroupType.STANDARD)
+    ).gid
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="root",
+                gid=gid_original_owner,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                    gid_everyone: FolderAccessRole.OWNER,
+                },
+            ),
+        }
+    )
+
+    folder_id_root = folder_ids["root"]
+
+    #######
+    # TESTS
+    #######
+
+    # 1. can create when using one gid with permissions
+    folder_id_f1 = await folder_create(
+        connection,
+        default_product_name,
+        "f1",
+        {gid_z43, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert_folderpermissions_exists(connection, folder_id_f1, {gid_z43})
+
+    folder_id_f2 = await folder_create(
+        connection,
+        default_product_name,
+        "f2",
+        {gid_everyone, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert_folderpermissions_exists(connection, folder_id_f2, {gid_everyone})
+
+    # 2. can create new folder when using both gids with permissions
+    folder_id_f3 = await folder_create(
+        connection,
+        default_product_name,
+        "f3",
+        {gid_z43, gid_everyone, gid_user},
+        parent=folder_id_root,
+    )
+    await _assert_folderpermissions_exists(
+        connection, folder_id_f3, {gid_everyone, gid_z43}
+    )
+
+    # 3. cannot create a root folder without a primary group
+    with pytest.raises(RootFolderRequiresAtLeastOnePrimaryGroupError):
+        await folder_create(
+            connection,
+            default_product_name,
+            "folder_in_root",
+            {gid_z43, gid_everyone},
+        )
 
 
 async def test__get_resolved_access_rights(
@@ -590,14 +687,14 @@ async def test_folder_share_or_update_permissions(
             connection,
             default_product_name,
             folder_id_missing,
-            sharing_gid=gid_owner,
+            sharing_gids={gid_owner},
             recipient_gid=gid_share_with_error,
             recipient_role=FolderAccessRole.OWNER,
         )
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. share existing folder with all possible roles
-    folder_id = await folder_create(connection, default_product_name, "f1", gid_owner)
+    folder_id = await folder_create(connection, default_product_name, "f1", {gid_owner})
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_folder_permissions(
         connection, folder_id=folder_id, gid=gid_owner, role=FolderAccessRole.OWNER
@@ -607,7 +704,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_other_owner,
         recipient_role=FolderAccessRole.OWNER,
     )
@@ -623,7 +720,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_editor,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -636,7 +733,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_viewer,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -649,7 +746,7 @@ async def test_folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=gid_owner,
+        sharing_gids={gid_owner},
         recipient_gid=gid_no_access,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -669,7 +766,7 @@ async def test_folder_share_or_update_permissions(
                     connection,
                     default_product_name,
                     folder_id,
-                    sharing_gid=no_access_gids,
+                    sharing_gids={no_access_gids},
                     recipient_gid=gid_share_with_error,
                     recipient_role=recipient_role,
                 )
@@ -682,7 +779,7 @@ async def test_folder_share_or_update_permissions(
                 connection,
                 default_product_name,
                 folder_id,
-                sharing_gid=gid_share_with_error,
+                sharing_gids={gid_share_with_error},
                 recipient_gid=gid_share_with_error,
                 recipient_role=recipient_role,
             )
@@ -695,7 +792,7 @@ async def test_folder_share_or_update_permissions(
             connection,
             default_product_name,
             folder_id,
-            sharing_gid=gid_other_owner,
+            sharing_gids={gid_other_owner},
             recipient_gid=gid_to_drop_permission,
             recipient_role=FolderAccessRole.NO_ACCESS,
         )
@@ -726,17 +823,17 @@ async def test_folder_update(
     missing_folder_id = 1231321332
     with pytest.raises(FolderNotFoundError):
         await folder_update(
-            connection, default_product_name, missing_folder_id, owner_gid
+            connection, default_product_name, missing_folder_id, {owner_gid}
         )
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner updates created fodler
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
     # nothing changes
-    await folder_update(connection, default_product_name, folder_id, owner_gid)
+    await folder_update(connection, default_product_name, folder_id, {owner_gid})
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
     # both changed
@@ -744,7 +841,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        owner_gid,
+        {owner_gid},
         name="new_folder",
         description="new_desc",
     )
@@ -757,7 +854,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=other_owner_gid,
         recipient_role=FolderAccessRole.OWNER,
     )
@@ -765,7 +862,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        owner_gid,
+        {owner_gid},
         name="another_owner_name",
         description="another_owner_description",
     )
@@ -781,7 +878,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=editor_gid,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -789,7 +886,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=viewer_gid,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -797,7 +894,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=no_access_gid,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -808,7 +905,7 @@ async def test_folder_update(
                 connection,
                 default_product_name,
                 folder_id,
-                target_user_gid,
+                {target_user_gid},
                 name="error_name",
                 description="error_description",
             )
@@ -824,7 +921,7 @@ async def test_folder_update(
             connection,
             default_product_name,
             folder_id,
-            share_with_error_gid,
+            {share_with_error_gid},
             name="error_name",
             description="error_description",
         )
@@ -854,42 +951,42 @@ async def test_folder_delete(
     missing_folder_id = 1231321332
     with pytest.raises(FolderNotFoundError):
         await folder_delete(
-            connection, default_product_name, missing_folder_id, owner_gid
+            connection, default_product_name, missing_folder_id, {owner_gid}
         )
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. owner deletes folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
-    await folder_delete(connection, default_product_name, folder_id, owner_gid)
+    await folder_delete(connection, default_product_name, folder_id, {owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
     # 3. other owners can delete the folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=other_owner_gid,
         recipient_role=FolderAccessRole.OWNER,
     )
 
-    await folder_delete(connection, default_product_name, folder_id, other_owner_gid)
+    await folder_delete(connection, default_product_name, folder_id, {other_owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
     # 4. non owner users cannot delete the folder
-    folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
+    folder_id = await folder_create(connection, default_product_name, "f1", {owner_gid})
     await _assert_folder_entires(connection, folder_count=1)
 
     await folder_share_or_update_permissions(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=editor_gid,
         recipient_role=FolderAccessRole.EDITOR,
     )
@@ -897,7 +994,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=viewer_gid,
         recipient_role=FolderAccessRole.VIEWER,
     )
@@ -905,7 +1002,7 @@ async def test_folder_delete(
         connection,
         default_product_name,
         folder_id,
-        sharing_gid=owner_gid,
+        sharing_gids={owner_gid},
         recipient_gid=no_access_gid,
         recipient_role=FolderAccessRole.NO_ACCESS,
     )
@@ -914,12 +1011,12 @@ async def test_folder_delete(
     for non_owner_gid in (editor_gid, viewer_gid, no_access_gid):
         with pytest.raises(InsufficientPermissionsError):
             await folder_delete(
-                connection, default_product_name, folder_id, non_owner_gid
+                connection, default_product_name, folder_id, {non_owner_gid}
             )
 
     with pytest.raises(FolderNotSharedWithGidError):
         await folder_delete(
-            connection, default_product_name, folder_id, share_with_error_gid
+            connection, default_product_name, folder_id, {share_with_error_gid}
         )
 
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
@@ -964,12 +1061,12 @@ async def test_folder_delete_nested_folders(
         folder_id_root_folder = folder_ids["root_folder"]
         await _assert_folder_entires(connection, folder_count=1, access_rights_count=6)
 
-        GIDS_WITH_CREATE_PERMISSIONS: tuple[_GroupID, ...] = (
+        GIDS_WITH_CREATE_PERMISSIONS: set[_GroupID] = {
             gid_owner_a,
             gid_owner_b,
             gid_editor_a,
             gid_editor_b,
-        )
+        }
 
         previous_folder_id = folder_id_root_folder
         for i in range(100):
@@ -977,7 +1074,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 f"f{i}",
-                secrets.choice(GIDS_WITH_CREATE_PERMISSIONS),
+                GIDS_WITH_CREATE_PERMISSIONS,
                 parent=previous_folder_id,
             )
         await _assert_folder_entires(
@@ -992,14 +1089,14 @@ async def test_folder_delete_nested_folders(
     # 1. delete via `gid_owner_a`
     folder_id_root_folder = await _setup_folders()
     await folder_delete(
-        connection, default_product_name, folder_id_root_folder, gid_owner_a
+        connection, default_product_name, folder_id_root_folder, {gid_owner_a}
     )
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. delete via shared with `gid_owner_b`
     folder_id_root_folder = await _setup_folders()
     await folder_delete(
-        connection, default_product_name, folder_id_root_folder, gid_owner_b
+        connection, default_product_name, folder_id_root_folder, {gid_owner_b}
     )
     await _assert_folder_entires(connection, folder_count=0)
 
@@ -1011,7 +1108,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 folder_id_root_folder,
-                no_permissions_gid,
+                {no_permissions_gid},
             )
     for no_permissions_gid in (gid_not_shared,):
         with pytest.raises(FolderNotSharedWithGidError):
@@ -1019,7 +1116,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 folder_id_root_folder,
-                no_permissions_gid,
+                {no_permissions_gid},
             )
     await _assert_folder_entires(connection, folder_count=101, access_rights_count=106)
 
@@ -1138,7 +1235,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 source,
-                gid,
+                {gid},
                 destination_folder_id=destination,
             )
 
@@ -1150,7 +1247,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 source,
-                gid,
+                {gid},
                 destination_folder_id=destination,
             )
 
@@ -1187,7 +1284,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             source,
-            gid,
+            {gid},
             destination_folder_id=destination,
         )
 
@@ -1200,7 +1297,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             source,
-            gid,
+            {gid},
             destination_folder_id=source_parent,
         )
 
@@ -1296,7 +1393,7 @@ async def test_folder_move(
             connection,
             default_product_name,
             to_move_folder_id,
-            to_move_gid,
+            {to_move_gid},
             destination_folder_id=None,
         )
 
@@ -1314,7 +1411,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 to_move_folder_id,
-                to_move_gid,
+                {to_move_gid},
                 destination_folder_id=None,
             )
 
@@ -1324,7 +1421,7 @@ async def test_folder_move(
                 connection,
                 default_product_name,
                 folder_id_not_shared,
-                to_move_gid,
+                {to_move_gid},
                 destination_folder_id=None,
             )
 
@@ -1378,7 +1475,7 @@ async def test_move_only_owners_can_move(
                 connection,
                 default_product_name,
                 folder_id_to_move,
-                gid,
+                {gid},
                 destination_folder_id=destination_folder_id,
             )
 
@@ -1397,7 +1494,7 @@ async def test_move_only_owners_can_move(
             connection,
             default_product_name,
             folder_id_to_move,
-            gid_not_shared,
+            {gid_not_shared},
             destination_folder_id=folder_id_target_not_shared,
         )
 
@@ -1406,7 +1503,7 @@ async def test_move_only_owners_can_move(
         connection,
         default_product_name,
         folder_id_to_move,
-        gid_owner,
+        {gid_owner},
         destination_folder_id=folder_id_target_owner,
     )
 
@@ -1421,28 +1518,45 @@ async def test_move_group_non_standard_groups_raise_error(
     #######
     # SETUP
     #######
-    (gid_sharing,) = get_unique_gids(1)
-    gid_primary = (await create_fake_group(connection, type=GroupType.PRIMARY)).gid
-    gid_everyone = await connection.scalar(
+    gid_original_owner: _GroupID
+    (gid_original_owner,) = get_unique_gids(1)
+    gid_primary: _GroupID = (
+        await create_fake_group(connection, type=GroupType.PRIMARY)
+    ).gid
+    gid_everyone: _GroupID | None = await connection.scalar(
         sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
     )
     assert gid_everyone
-    gid_standard = (await create_fake_group(connection, type=GroupType.STANDARD)).gid
+    gid_standard: _GroupID = (
+        await create_fake_group(connection, type=GroupType.STANDARD)
+    ).gid
 
     folder_ids = await make_folders(
         {
             MkFolder(
                 name="SHARING_USER",
-                gid=gid_sharing,
+                gid=gid_original_owner,
                 shared_with={
                     gid_primary: FolderAccessRole.EDITOR,
                     gid_everyone: FolderAccessRole.EDITOR,
                     gid_standard: FolderAccessRole.EDITOR,
                 },
             ),
-            MkFolder(name="PRIMARY", gid=gid_primary),
-            MkFolder(name="EVERYONE", gid=gid_everyone),
-            MkFolder(name="STANDARD", gid=gid_standard),
+            MkFolder(
+                name="PRIMARY",
+                gid=gid_original_owner,
+                shared_with={gid_primary: FolderAccessRole.OWNER},
+            ),
+            MkFolder(
+                name="EVERYONE",
+                gid=gid_original_owner,
+                shared_with={gid_everyone: FolderAccessRole.OWNER},
+            ),
+            MkFolder(
+                name="STANDARD",
+                gid=gid_original_owner,
+                shared_with={gid_standard: FolderAccessRole.OWNER},
+            ),
         }
     )
 
@@ -1460,7 +1574,7 @@ async def test_move_group_non_standard_groups_raise_error(
             connection,
             default_product_name,
             folder_id_everyone,
-            gid_everyone,
+            {gid_everyone},
             destination_folder_id=folder_id_sharing_user,
         )
     assert "EVERYONE" in f"{exc.value}"
@@ -1470,7 +1584,7 @@ async def test_move_group_non_standard_groups_raise_error(
             connection,
             default_product_name,
             folder_id_standard,
-            gid_standard,
+            {gid_standard},
             destination_folder_id=folder_id_sharing_user,
         )
     assert "STANDARD" in f"{exc.value}"
@@ -1480,7 +1594,7 @@ async def test_move_group_non_standard_groups_raise_error(
         connection,
         default_product_name,
         folder_id_primary,
-        gid_primary,
+        {gid_primary},
         destination_folder_id=folder_id_sharing_user,
     )
 
@@ -1533,7 +1647,7 @@ async def test_add_remove_project_in_folder(
             connection,
             default_product_name,
             folder_id_f1,
-            gid,
+            {gid},
             project_uuid=project_uuid,
         )
         assert await _is_project_present(connection, folder_id_f1, project_uuid) is True
@@ -1543,7 +1657,7 @@ async def test_add_remove_project_in_folder(
             connection,
             default_product_name,
             folder_id_f1,
-            gid,
+            {gid},
             project_uuid=project_uuid,
         )
         assert (
@@ -1581,7 +1695,6 @@ async def test_add_remove_project_in_folder(
 
 class ExpectedValues(NamedTuple):
     id: _FolderID
-    access_via_gid: _GroupID
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
@@ -1589,7 +1702,6 @@ class ExpectedValues(NamedTuple):
         return hash(
             (
                 self.id,
-                self.access_via_gid,
                 self.my_access_rights,
                 tuple(sorted(self.access_rights.items())),
             )
@@ -1600,7 +1712,6 @@ class ExpectedValues(NamedTuple):
             return False
         return (
             self.id == other.id
-            and self.access_via_gid == other.access_via_gid
             and self.my_access_rights == other.my_access_rights
             and self.access_rights == other.access_rights
         )
@@ -1612,7 +1723,6 @@ def _assert_expected_entries(
     for folder_entry in folders:
         expected_values = ExpectedValues(
             folder_entry.id,
-            folder_entry.access_via_gid,
             folder_entry.my_access_rights,
             folder_entry.access_rights,
         )
@@ -1627,13 +1737,13 @@ async def _list_folder_as(
     connection: SAConnection,
     default_product_name: _ProductName,
     folder_id: _FolderID | None,
-    gid: _GroupID,
+    gids: set[_GroupID],
     offset: NonNegativeInt = ALL_IN_ONE_PAGE_OFFSET,
     limit: NonNegativeInt = ALL_IN_ONE_PAGE_LIMIT,
 ) -> list[FolderEntry]:
 
     return await folder_list(
-        connection, default_product_name, folder_id, gid, offset=offset, limit=limit
+        connection, default_product_name, folder_id, gids, offset=offset, limit=limit
     )
 
 
@@ -1748,11 +1858,12 @@ async def test_folder_list(
     for listing_gid in (gid_owner, gid_editor, gid_viewer):
         # list `root` for gid
         _assert_expected_entries(
-            await _list_folder_as(connection, default_product_name, None, listing_gid),
+            await _list_folder_as(
+                connection, default_product_name, None, {listing_gid}
+            ),
             expected={
                 ExpectedValues(
                     folder_id_owner_folder,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {
                         gid_owner: OWNER_PERMISSIONS,
@@ -1766,12 +1877,11 @@ async def test_folder_list(
         # list `owner_folder` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_owner_folder, listing_gid
+                connection, default_product_name, folder_id_owner_folder, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     fx,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {gid_owner: OWNER_PERMISSIONS},
                 )
@@ -1781,12 +1891,11 @@ async def test_folder_list(
         # list `f10` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f10, listing_gid
+                connection, default_product_name, folder_id_f10, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     sub_fx,
-                    listing_gid,
                     ACCESS_RIGHTS_BY_GID[listing_gid],
                     {gid_owner: OWNER_PERMISSIONS},
                 )
@@ -1797,26 +1906,26 @@ async def test_folder_list(
     # 2. lisit all levels for `gid_no_access`
     # can always be ran but should not list any entry
     _assert_expected_entries(
-        await _list_folder_as(connection, default_product_name, None, gid_no_access),
+        await _list_folder_as(connection, default_product_name, None, {gid_no_access}),
         expected=set(),
     )
     # there are insusficient permissions
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(InsufficientPermissionsError):
             await _list_folder_as(
-                connection, default_product_name, folder_id_to_check, gid_no_access
+                connection, default_product_name, folder_id_to_check, {gid_no_access}
             )
 
     # 3. lisit all levels for `gid_not_shared``
     # can always list the contets of the "root" folder for a gid
     _assert_expected_entries(
-        await _list_folder_as(connection, default_product_name, None, gid_not_shared),
+        await _list_folder_as(connection, default_product_name, None, {gid_not_shared}),
         expected=set(),
     )
     for folder_id_to_check in ALL_FOLDERS_AND_SUBFOLDERS:
         with pytest.raises(FolderNotSharedWithGidError):
             await _list_folder_as(
-                connection, default_product_name, folder_id_to_check, gid_not_shared
+                connection, default_product_name, folder_id_to_check, {gid_not_shared}
             )
 
     # 4. list with pagination
@@ -1828,7 +1937,7 @@ async def test_folder_list(
             connection,
             default_product_name,
             folder_id_owner_folder,
-            gid_owner,
+            {gid_owner},
             offset=offset,
             limit=limit,
         ):
@@ -1838,7 +1947,7 @@ async def test_folder_list(
                 break
 
         one_shot_query = await _list_folder_as(
-            connection, default_product_name, folder_id_owner_folder, gid_owner
+            connection, default_product_name, folder_id_owner_folder, {gid_owner}
         )
 
         assert len(found_folders) == len(one_shot_query)
@@ -1903,11 +2012,12 @@ async def test_folder_list_shared_with_different_permissions(
     for listing_gid in (gid_owner_a, gid_owner_b, gid_owner_c):
         # list `root` for gid
         _assert_expected_entries(
-            await _list_folder_as(connection, default_product_name, None, listing_gid),
+            await _list_folder_as(
+                connection, default_product_name, None, {listing_gid}
+            ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_a,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_a: OWNER_PERMISSIONS,
@@ -1920,12 +2030,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_a` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_a, listing_gid
+                connection, default_product_name, folder_id_f_owner_a, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_b,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {gid_owner_b: OWNER_PERMISSIONS},
                 ),
@@ -1934,12 +2043,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_b` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_b, listing_gid
+                connection, default_product_name, folder_id_f_owner_b, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_owner_c,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_c: OWNER_PERMISSIONS,
@@ -1951,12 +2059,11 @@ async def test_folder_list_shared_with_different_permissions(
         # list `f_owner_c` for gid
         _assert_expected_entries(
             await _list_folder_as(
-                connection, default_product_name, folder_id_f_owner_c, listing_gid
+                connection, default_product_name, folder_id_f_owner_c, {listing_gid}
             ),
             expected={
                 ExpectedValues(
                     folder_id_f_sub_owner_c,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_c: OWNER_PERMISSIONS,
@@ -1964,7 +2071,6 @@ async def test_folder_list_shared_with_different_permissions(
                 ),
                 ExpectedValues(
                     folder_id_f_owner_level_2,
-                    listing_gid,
                     OWNER_PERMISSIONS,
                     {
                         gid_owner_level_2: OWNER_PERMISSIONS,
@@ -1977,12 +2083,11 @@ async def test_folder_list_shared_with_different_permissions(
     # list `f_owner_c` for `gid_owner_level_2`
     _assert_expected_entries(
         await _list_folder_as(
-            connection, default_product_name, None, gid_owner_level_2
+            connection, default_product_name, None, {gid_owner_level_2}
         ),
         expected={
             ExpectedValues(
                 folder_id_f_owner_c,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_c: OWNER_PERMISSIONS,
@@ -1994,12 +2099,11 @@ async def test_folder_list_shared_with_different_permissions(
     # list `root` for `gid_owner_level_2`
     _assert_expected_entries(
         await _list_folder_as(
-            connection, default_product_name, folder_id_f_owner_c, gid_owner_level_2
+            connection, default_product_name, folder_id_f_owner_c, {gid_owner_level_2}
         ),
         expected={
             ExpectedValues(
                 folder_id_f_sub_owner_c,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_c: OWNER_PERMISSIONS,
@@ -2007,7 +2111,6 @@ async def test_folder_list_shared_with_different_permissions(
             ),
             ExpectedValues(
                 folder_id_f_owner_level_2,
-                gid_owner_level_2,
                 OWNER_PERMISSIONS,
                 {
                     gid_owner_level_2: OWNER_PERMISSIONS,
@@ -2015,3 +2118,66 @@ async def test_folder_list_shared_with_different_permissions(
             ),
         },
     )
+
+
+async def test_folder_list_in_root_with_different_groups_avoids_duplicate_entries(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+):
+    #######
+    # SETUP
+    #######
+
+    (gid_z43, gid_osparc, gid_user) = get_unique_gids(3)
+
+    await make_folders(
+        {
+            MkFolder(
+                name="f1",
+                gid=gid_user,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                    gid_osparc: FolderAccessRole.OWNER,
+                },
+            ),
+            MkFolder(
+                name="f2",
+                gid=gid_z43,
+                shared_with={
+                    gid_osparc: FolderAccessRole.OWNER,
+                },
+            ),
+            MkFolder(
+                name="f3",
+                gid=gid_osparc,
+                shared_with={
+                    gid_z43: FolderAccessRole.OWNER,
+                },
+            ),
+        }
+    )
+
+    #######
+    # TESTS
+    #######
+
+    # 1. gid_z43 and gid_osparc see all folders
+    for gid_all_folders in (gid_z43, gid_osparc):
+        entries_z43 = await _list_folder_as(
+            connection, default_product_name, None, {gid_all_folders}
+        )
+        assert len(entries_z43) == 3
+
+    # 2. gid_user only sees it's own folder
+    entries_user = await _list_folder_as(
+        connection, default_product_name, None, {gid_user}
+    )
+    assert len(entries_user) == 1
+
+    # 3. all gids see all fodlers
+    entries_all_groups = await _list_folder_as(
+        connection, default_product_name, None, {gid_z43, gid_osparc, gid_user}
+    )
+    assert len(entries_all_groups) == 3
