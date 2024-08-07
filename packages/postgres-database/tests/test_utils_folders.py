@@ -854,7 +854,7 @@ async def test_folder_delete(
     missing_folder_id = 1231321332
     with pytest.raises(FolderNotFoundError):
         await folder_delete(
-            connection, default_product_name, missing_folder_id, owner_gid
+            connection, default_product_name, missing_folder_id, {owner_gid}
         )
     await _assert_folder_entires(connection, folder_count=0)
 
@@ -862,7 +862,7 @@ async def test_folder_delete(
     folder_id = await folder_create(connection, default_product_name, "f1", owner_gid)
     await _assert_folder_entires(connection, folder_count=1)
 
-    await folder_delete(connection, default_product_name, folder_id, owner_gid)
+    await folder_delete(connection, default_product_name, folder_id, {owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
     # 3. other owners can delete the folder
@@ -878,7 +878,7 @@ async def test_folder_delete(
         recipient_role=FolderAccessRole.OWNER,
     )
 
-    await folder_delete(connection, default_product_name, folder_id, other_owner_gid)
+    await folder_delete(connection, default_product_name, folder_id, {other_owner_gid})
     await _assert_folder_entires(connection, folder_count=0)
 
     # 4. non owner users cannot delete the folder
@@ -914,12 +914,12 @@ async def test_folder_delete(
     for non_owner_gid in (editor_gid, viewer_gid, no_access_gid):
         with pytest.raises(InsufficientPermissionsError):
             await folder_delete(
-                connection, default_product_name, folder_id, non_owner_gid
+                connection, default_product_name, folder_id, {non_owner_gid}
             )
 
     with pytest.raises(FolderNotSharedWithGidError):
         await folder_delete(
-            connection, default_product_name, folder_id, share_with_error_gid
+            connection, default_product_name, folder_id, {share_with_error_gid}
         )
 
     await _assert_folder_entires(connection, folder_count=1, access_rights_count=4)
@@ -992,14 +992,14 @@ async def test_folder_delete_nested_folders(
     # 1. delete via `gid_owner_a`
     folder_id_root_folder = await _setup_folders()
     await folder_delete(
-        connection, default_product_name, folder_id_root_folder, gid_owner_a
+        connection, default_product_name, folder_id_root_folder, {gid_owner_a}
     )
     await _assert_folder_entires(connection, folder_count=0)
 
     # 2. delete via shared with `gid_owner_b`
     folder_id_root_folder = await _setup_folders()
     await folder_delete(
-        connection, default_product_name, folder_id_root_folder, gid_owner_b
+        connection, default_product_name, folder_id_root_folder, {gid_owner_b}
     )
     await _assert_folder_entires(connection, folder_count=0)
 
@@ -1011,7 +1011,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 folder_id_root_folder,
-                no_permissions_gid,
+                {no_permissions_gid},
             )
     for no_permissions_gid in (gid_not_shared,):
         with pytest.raises(FolderNotSharedWithGidError):
@@ -1019,7 +1019,7 @@ async def test_folder_delete_nested_folders(
                 connection,
                 default_product_name,
                 folder_id_root_folder,
-                no_permissions_gid,
+                {no_permissions_gid},
             )
     await _assert_folder_entires(connection, folder_count=101, access_rights_count=106)
 

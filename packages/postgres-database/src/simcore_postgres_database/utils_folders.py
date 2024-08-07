@@ -678,7 +678,7 @@ async def folder_delete(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
+    gids: set[_GroupID],
     *,
     required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.DELETE_FOLDER
@@ -697,7 +697,7 @@ async def folder_delete(
             connection,
             product_name,
             folder_id=folder_id,
-            gids={gid},
+            gids=gids,
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -715,7 +715,7 @@ async def folder_delete(
 
     # first remove all childeren
     for child_folder_id in childern_folder_ids:
-        await folder_delete(connection, product_name, child_folder_id, gid)
+        await folder_delete(connection, product_name, child_folder_id, gids)
 
     # as a last step remove the folder per se
     async with connection.begin():
