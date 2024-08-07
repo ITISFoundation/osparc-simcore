@@ -634,7 +634,7 @@ async def folder_update(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
+    gids: set[_GroupID],
     *,
     name: str | None = None,
     description: str | None = None,
@@ -653,7 +653,7 @@ async def folder_update(
             connection,
             product_name,
             folder_id=folder_id,
-            gids={gid},
+            gids=gids,
             permissions=required_permissions,
             enforece_all_permissions=False,
         )

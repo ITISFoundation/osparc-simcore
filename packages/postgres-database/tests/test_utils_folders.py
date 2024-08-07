@@ -726,7 +726,7 @@ async def test_folder_update(
     missing_folder_id = 1231321332
     with pytest.raises(FolderNotFoundError):
         await folder_update(
-            connection, default_product_name, missing_folder_id, owner_gid
+            connection, default_product_name, missing_folder_id, {owner_gid}
         )
     await _assert_folder_entires(connection, folder_count=0)
 
@@ -736,7 +736,7 @@ async def test_folder_update(
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
     # nothing changes
-    await folder_update(connection, default_product_name, folder_id, owner_gid)
+    await folder_update(connection, default_product_name, folder_id, {owner_gid})
     await _assert_name_and_description(connection, folder_id, name="f1", description="")
 
     # both changed
@@ -744,7 +744,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        owner_gid,
+        {owner_gid},
         name="new_folder",
         description="new_desc",
     )
@@ -765,7 +765,7 @@ async def test_folder_update(
         connection,
         default_product_name,
         folder_id,
-        owner_gid,
+        {owner_gid},
         name="another_owner_name",
         description="another_owner_description",
     )
@@ -808,7 +808,7 @@ async def test_folder_update(
                 connection,
                 default_product_name,
                 folder_id,
-                target_user_gid,
+                {target_user_gid},
                 name="error_name",
                 description="error_description",
             )
@@ -824,7 +824,7 @@ async def test_folder_update(
             connection,
             default_product_name,
             folder_id,
-            share_with_error_gid,
+            {share_with_error_gid},
             name="error_name",
             description="error_description",
         )
