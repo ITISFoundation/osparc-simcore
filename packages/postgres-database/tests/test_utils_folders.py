@@ -2120,7 +2120,7 @@ async def test_folder_list_shared_with_different_permissions(
     )
 
 
-async def test_folder_list_multiple_entries_via_different_groups(
+async def test_folder_list_in_root_with_different_groups_avoids_duplicate_entries(
     connection: SAConnection,
     default_product_name: _ProductName,
     get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
@@ -2132,7 +2132,7 @@ async def test_folder_list_multiple_entries_via_different_groups(
 
     (gid_z43, gid_osparc, gid_user) = get_unique_gids(3)
 
-    folder_ids = await make_folders(
+    await make_folders(
         {
             MkFolder(
                 name="f1",
@@ -2159,32 +2159,25 @@ async def test_folder_list_multiple_entries_via_different_groups(
         }
     )
 
-    folder_id_f1 = folder_ids["f1"]
-    folder_id_f2 = folder_ids["f2"]
-    folder_id_f3 = folder_ids["f3"]
-
-    entries_z43 = await _list_folder_as(
-        connection, default_product_name, None, {gid_z43}
-    )
-
     #######
     # TESTS
     #######
 
-    assert len(entries_z43) == 3
-    entries_osparc = await _list_folder_as(
-        connection, default_product_name, None, {gid_osparc}
-    )
-    assert len(entries_osparc) == 3
+    # 1. gid_z43 and gid_osparc see all folders
+    for gid_all_folders in (gid_z43, gid_osparc):
+        entries_z43 = await _list_folder_as(
+            connection, default_product_name, None, {gid_all_folders}
+        )
+        assert len(entries_z43) == 3
+
+    # 2. gid_user only sees it's own folder
     entries_user = await _list_folder_as(
         connection, default_product_name, None, {gid_user}
     )
     assert len(entries_user) == 1
 
+    # 3. all gids see all fodlers
     entries_all_groups = await _list_folder_as(
         connection, default_product_name, None, {gid_z43, gid_osparc, gid_user}
     )
     assert len(entries_all_groups) == 3
-
-    # TODO: continue this test make sure it works as expected
-    # assert False
