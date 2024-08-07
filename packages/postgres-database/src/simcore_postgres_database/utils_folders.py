@@ -46,6 +46,7 @@ FoldersError
         * FolderNotFoundError
         * FolderNotSharedWithGidError
         * InsufficientPermissionsError
+        * UnexpectedFolderAccessError
     * BaseCreateFolderError
         * FolderAlreadyExistsError
         * ParentFolderIsNotWritableError
@@ -82,6 +83,13 @@ class FolderNotSharedWithGidError(FolderAccessError):
 
 class InsufficientPermissionsError(FolderAccessError):
     msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
+
+
+class UnexpectedFolderAccessError(FoldersError):
+    msg_template = (
+        "Unexpected None value for resolved_access_rights={resolved_access_rights} and last_exception={last_exception}."
+        "Called with: product_name={product_name}, folder_id={folder_id}, gids={gids}"
+    )
 
 
 class BaseCreateFolderError(FoldersError):
@@ -409,6 +417,7 @@ async def _check_folder_and_access(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     resolved_access_rights: _ResolvedAccessRights | None = None
     last_exception: Exception | None = None
@@ -430,8 +439,13 @@ async def _check_folder_and_access(
         if last_exception:
             raise last_exception
 
-        msg = "unexpected error"
-        raise RuntimeError(msg)
+        raise UnexpectedFolderAccessError(
+            resolved_access_rights=resolved_access_rights,
+            last_exception=last_exception,
+            product_name=product_name,
+            folder_id=folder_id,
+            gids=gids,
+        )
 
     return resolved_access_rights
 
@@ -450,6 +464,7 @@ async def _check_folder_access(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     folder_entry: int | None = await connection.scalar(
         sa.select([folders.c.id])
@@ -509,6 +524,7 @@ async def folder_create(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
         FolderAlreadyExistsError
         CouldNotCreateFolderError
         GroupIdDoesNotExistError
@@ -596,6 +612,7 @@ async def folder_share_or_update_permissions(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
     async with connection.begin():
@@ -647,6 +664,7 @@ async def folder_update(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     async with connection.begin():
         await _check_folder_and_access(
@@ -689,6 +707,7 @@ async def folder_delete(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     childern_folder_ids: list[_FolderID] = []
 
@@ -741,6 +760,7 @@ async def folder_move(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
@@ -801,6 +821,7 @@ async def folder_add_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
         ProjectAlreadyExistsInFolderError
     """
     async with connection.begin():
@@ -850,6 +871,7 @@ async def folder_remove_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     async with connection.begin():
         await _check_folder_and_access(
@@ -926,6 +948,7 @@ async def folder_list(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        UnexpectedFolderAccessError
     """
     # NOTE: when `folder_id is None` list the root folder of the `gids`
 
