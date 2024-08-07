@@ -30,37 +30,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     });
     osparc.utils.Utils.setIdToWidget(this, "creditsSummary");
 
-    const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-    const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
-    const store = osparc.store.Store.getInstance();
-    store.bind("contextWallet", creditsIndicator, "wallet");
-    layout.add(creditsIndicator, {
-      flex: 1
-    });
-
-    const buttonSize = 26;
-    const billingCenterButton = new qx.ui.form.Button().set({
-      appearance: "form-button-outlined",
-      width: buttonSize,
-      height: buttonSize,
-      alignX: "center",
-      alignY: "middle",
-      center: true,
-      icon: "@FontAwesome5Solid/ellipsis-v/12"
-    });
-    // make it circular
-    billingCenterButton.getContentElement().setStyles({
-      "border-radius": `${buttonSize / 2}px`
-    });
-    billingCenterButton.addListener("execute", () => {
-      osparc.desktop.credits.BillingCenterWindow.openWindow();
-      this.exclude();
-    });
-    osparc.utils.Utils.setIdToWidget(billingCenterButton, "billingCenterButton");
-    layout.add(billingCenterButton);
-
-    this._add(layout);
+    this.__buildLayout();
 
     const root = qx.core.Init.getApplication().getRoot();
     root.add(this, {
@@ -74,11 +44,61 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "top-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          this._add(control);
+          break;
+        case "credits-indicator": {
+          control = new osparc.desktop.credits.CreditsIndicator();
+          const store = osparc.store.Store.getInstance();
+          store.bind("contextWallet", control, "wallet");
+          const topLayout = this.getChildControl("top-layout");
+          topLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "billing-center-button": {
+          const buttonSize = 26;
+          control = new qx.ui.form.Button().set({
+            appearance: "form-button-outlined",
+            width: buttonSize,
+            height: buttonSize,
+            alignX: "center",
+            alignY: "middle",
+            center: true,
+            icon: "@FontAwesome5Solid/ellipsis-v/12"
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${buttonSize / 2}px`
+          });
+          control.addListener("execute", () => {
+            osparc.desktop.credits.BillingCenterWindow.openWindow();
+            this.exclude();
+          });
+          osparc.utils.Utils.setIdToWidget(control, "billingCenterButton");
+          const topLayout = this.getChildControl("top-layout");
+          topLayout.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     setPosition: function(x, y) {
       this.setLayoutProperties({
         left: x - this.self().WIDTH,
         top: y
       });
+    },
+
+    __buildLayout: function() {
+      this.getChildControl("credits-indicator");
+      this.getChildControl("billing-center-button");
     }
   }
 });
