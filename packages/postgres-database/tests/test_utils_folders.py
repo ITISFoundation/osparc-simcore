@@ -1421,13 +1421,18 @@ async def test_move_group_non_standard_groups_raise_error(
     #######
     # SETUP
     #######
+    gid_sharing: _GroupID
     (gid_sharing,) = get_unique_gids(1)
-    gid_primary = (await create_fake_group(connection, type=GroupType.PRIMARY)).gid
-    gid_everyone = await connection.scalar(
+    gid_primary: _GroupID = (
+        await create_fake_group(connection, type=GroupType.PRIMARY)
+    ).gid
+    gid_everyone: _GroupID | None = await connection.scalar(
         sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
     )
     assert gid_everyone
-    gid_standard = (await create_fake_group(connection, type=GroupType.STANDARD)).gid
+    gid_standard: _GroupID = (
+        await create_fake_group(connection, type=GroupType.STANDARD)
+    ).gid
 
     folder_ids = await make_folders(
         {
@@ -1460,7 +1465,7 @@ async def test_move_group_non_standard_groups_raise_error(
             connection,
             default_product_name,
             folder_id_everyone,
-            gid_everyone,
+            {gid_everyone},
             destination_folder_id=folder_id_sharing_user,
         )
     assert "EVERYONE" in f"{exc.value}"
@@ -1470,7 +1475,7 @@ async def test_move_group_non_standard_groups_raise_error(
             connection,
             default_product_name,
             folder_id_standard,
-            gid_standard,
+            {gid_standard},
             destination_folder_id=folder_id_sharing_user,
         )
     assert "STANDARD" in f"{exc.value}"
@@ -1480,7 +1485,7 @@ async def test_move_group_non_standard_groups_raise_error(
         connection,
         default_product_name,
         folder_id_primary,
-        gid_primary,
+        {gid_primary},
         destination_folder_id=folder_id_sharing_user,
     )
 
@@ -1533,7 +1538,7 @@ async def test_add_remove_project_in_folder(
             connection,
             default_product_name,
             folder_id_f1,
-            gid,
+            {gid},
             project_uuid=project_uuid,
         )
         assert await _is_project_present(connection, folder_id_f1, project_uuid) is True
@@ -1543,7 +1548,7 @@ async def test_add_remove_project_in_folder(
             connection,
             default_product_name,
             folder_id_f1,
-            gid,
+            {gid},
             project_uuid=project_uuid,
         )
         assert (

@@ -789,7 +789,7 @@ async def folder_add_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
+    gids: set[_GroupID],
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -808,7 +808,7 @@ async def folder_add_project(
             connection,
             product_name,
             folder_id=folder_id,
-            gids={gid},
+            gids=gids,
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
@@ -838,7 +838,7 @@ async def folder_remove_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,  # set[_GroupID] -> set of all group ids no need to pass in the sahred_via_gid
+    gids: set[_GroupID],
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -856,7 +856,7 @@ async def folder_remove_project(
             connection,
             product_name,
             folder_id=folder_id,
-            gids={gid},
+            gids=gids,
             permissions=required_permissions,
             enforece_all_permissions=False,
         )
