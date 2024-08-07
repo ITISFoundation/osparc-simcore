@@ -40,6 +40,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
   },
 
   statics: {
+    BILLING_CENTER_BUTTON_SIZE: 26,
     WIDTH: 200,
     TIME_RANGES: [{
       key: 1,
@@ -61,6 +62,13 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this._add(control);
           break;
+        case "top-left-spacer": {
+          const buttonSize = this.self().BILLING_CENTER_BUTTON_SIZE;
+          control = new qx.ui.core.Spacer(buttonSize, buttonSize);
+          const topLayout = this.getChildControl("top-layout");
+          topLayout.add(control);
+          break;
+        }
         case "credits-indicator": {
           control = new osparc.desktop.credits.CreditsIndicator();
           if (osparc.utils.Utils.isDevelopmentPlatform()) {
@@ -75,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           break;
         }
         case "billing-center-button": {
-          const buttonSize = 26;
+          const buttonSize = this.self().BILLING_CENTER_BUTTON_SIZE;
           control = new qx.ui.form.Button().set({
             appearance: "form-button-outlined",
             width: buttonSize,
@@ -98,14 +106,18 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           topLayout.add(control);
           break;
         }
-        case "time-range-sb": {
+        case "time-range-sb":
           control = new qx.ui.form.SelectBox();
           this.self().TIME_RANGES.forEach(tr => {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);
           });
           this._add(control);
-        }
+          break;
+        case "services-consumption":
+          control = new qx.ui.form.List();
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -118,6 +130,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("top-left-spacer");
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
@@ -126,7 +139,8 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     },
 
     __buildConsumptionSummary: function() {
-      this.getChildControl("time-range-sb");
+      const timeRangeSB = this.getChildControl("time-range-sb");
+      this.getChildControl("services-consumption");
     }
   }
 });
