@@ -13,19 +13,6 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
-# @pytest.fixture
-# def mock_rut_sum_total_available_credits_in_the_wallet(
-#     mocker: MockerFixture,
-# ) -> mock.Mock:
-#     # NOTE: PC->MD should rather use aioresponse to mock RUT responses
-#     return mocker.patch(
-#         "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
-#         autospec=True,
-#         return_value=WalletTotalCredits(
-#             wallet_id=1, available_osparc_credits=Decimal(10.2)
-#         ),
-#     )
-
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_folders_full_workflow(
@@ -33,8 +20,6 @@ async def test_folders_full_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    # wallets_clean_db: AsyncIterator[None],
-    # mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
     assert client.app
 
