@@ -238,6 +238,19 @@ async def _assert_folder_entires(
     await _query_table(folders_access_rights, access_rights_count or folder_count)
 
 
+async def _assert_folderpermissions_exists(
+    connection: SAConnection, folder_id: _FolderID, gids: set[_GroupID]
+) -> None:
+    result = await connection.execute(
+        folders_access_rights.select()
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid.in_(gids))
+    )
+    rows = await result.fetchall()
+    assert rows is not None
+    assert len(rows) == 1
+
+
 async def _assert_folder_permissions(
     connection: SAConnection,
     *,
@@ -488,16 +501,6 @@ async def test_folder_create_shared_via_groups(
     # TESTS
     #######
 
-    async def _assert(folder_id: _FolderID, gids: set[_GroupID]) -> None:
-        result = await connection.execute(
-            folders_access_rights.select()
-            .where(folders_access_rights.c.folder_id == folder_id)
-            .where(folders_access_rights.c.gid.in_(gids))
-        )
-        rows = await result.fetchall()
-        assert rows is not None
-        assert len(rows) == 1
-
     # 1. can create when using one gid with permissions
     folder_id_f1 = await folder_create(
         connection,
@@ -506,7 +509,7 @@ async def test_folder_create_shared_via_groups(
         {gid_z43, gid_user},
         parent=folder_id_root,
     )
-    await _assert(folder_id_f1, {gid_z43})
+    await _assert_folderpermissions_exists(connection, folder_id_f1, {gid_z43})
 
     folder_id_f2 = await folder_create(
         connection,
@@ -515,7 +518,7 @@ async def test_folder_create_shared_via_groups(
         {gid_everyone, gid_user},
         parent=folder_id_root,
     )
-    await _assert(folder_id_f2, {gid_everyone})
+    await _assert_folderpermissions_exists(connection, folder_id_f2, {gid_everyone})
 
     # 2. can create new folder when using both gids with permissions
     folder_id_f3 = await folder_create(
@@ -525,7 +528,9 @@ async def test_folder_create_shared_via_groups(
         {gid_z43, gid_everyone, gid_user},
         parent=folder_id_root,
     )
-    await _assert(folder_id_f3, {gid_everyone, gid_z43})
+    await _assert_folderpermissions_exists(
+        connection, folder_id_f3, {gid_everyone, gid_z43}
+    )
 
     # 3. cannot create a root folder without a primary group
     with pytest.raises(RootFolderRequiresAtLeastOnePrimaryGroupError):
@@ -2161,6 +2166,10 @@ async def test_folder_list_multiple_entries_via_different_groups(
     entries_z43 = await _list_folder_as(
         connection, default_product_name, None, {gid_z43}
     )
+
+    #######
+    # TESTS
+    #######
 
     assert len(entries_z43) == 3
     entries_osparc = await _list_folder_as(
