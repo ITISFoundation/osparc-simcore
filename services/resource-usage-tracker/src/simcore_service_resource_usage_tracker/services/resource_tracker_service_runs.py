@@ -201,15 +201,6 @@ async def get_osparc_credits_aggregated_usages_page(
 
     assert aggregated_by == ServicesAggregatedUsagesType.services  # nosec
 
-    # total_output_list_db: PositiveInt = (
-    #     await resource_tracker_repo.total_osparc_credits_aggregated_by_service(
-    #         product_name=product_name,
-    #         user_id=user_id if access_all_wallet_usage is False else None,
-    #         wallet_id=wallet_id,
-    #         started_from=started_from,
-    #         started_until=None,
-    #     )
-    # )
     (
         count_output_list_db,
         output_list_db,

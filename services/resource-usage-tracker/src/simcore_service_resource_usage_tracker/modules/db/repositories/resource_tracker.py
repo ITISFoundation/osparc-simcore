@@ -394,64 +394,6 @@ class ResourceTrackerRepository(
             ],
         )
 
-    # async def total_osparc_credits_aggregated_by_service(
-    #     self,
-    #     product_name: ProductName,
-    #     *,
-    #     user_id: UserID | None,
-    #     wallet_id: WalletID,
-    #     started_from: datetime | None = None,
-    #     started_until: datetime | None = None,
-    # ) -> PositiveInt:
-    #     async with self.db_engine.begin() as conn:
-    #         query = (
-    #             sa.select(sa.func.count())
-    #             .select_from(
-    #                 resource_tracker_service_runs.join(
-    #                     resource_tracker_credit_transactions,
-    #                     (
-    #                         resource_tracker_service_runs.c.product_name
-    #                         == resource_tracker_credit_transactions.c.product_name
-    #                     )
-    #                     & (
-    #                         resource_tracker_service_runs.c.service_run_id
-    #                         == resource_tracker_credit_transactions.c.service_run_id
-    #                     ),
-    #                     isouter=True,
-    #                 )
-    #             )
-    #             .where(
-    #                 (resource_tracker_service_runs.c.product_name == product_name)
-    #                 & (
-    #                     resource_tracker_credit_transactions.c.transaction_status
-    #                     == CreditTransactionStatus.BILLED
-    #                 )
-    #                 & (
-    #                     resource_tracker_credit_transactions.c.transaction_classification
-    #                     == CreditClassification.DEDUCT_SERVICE_RUN
-    #                 )
-    #                 & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
-    #             )
-    #             .group_by(resource_tracker_service_runs.c.service_key)
-    #         )
-
-    #         if user_id:
-    #             query = query.where(resource_tracker_service_runs.c.user_id == user_id)
-    #         if started_from:
-    #             query = query.where(
-    #                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
-    #                 >= started_from.date()
-    #             )
-    #         if started_until:
-    #             query = query.where(
-    #                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
-    #                 <= started_until.date()
-    #             )
-
-    #         result = await conn.execute(query)
-    #     row = result.first()
-    #     return cast(PositiveInt, row[0]) if row else 0
-
     async def export_service_runs_table_to_s3(
         self,
         product_name: ProductName,
