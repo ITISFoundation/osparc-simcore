@@ -497,6 +497,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
+      const currentFolderId = this.getCurrentFolderId();
+      if (currentFolderId) {
+        params.url["folder_id"] = currentFolderId;
+        if (params.url.orderBy) {
+          return osparc.data.Resources.fetch("studies", "getPageSortBySearchFolder", params, undefined, options);
+        } else if (params.url.search) {
+          return osparc.data.Resources.fetch("studies", "getPageFilterSearchFolder", params, undefined, options);
+        }
+        return osparc.data.Resources.fetch("studies", "getPageFolder", params, undefined, options);
+      }
+
       if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
       } else if (params.url.search) {
@@ -521,6 +532,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const options = {
         resolveWResponse: true
       };
+
+      const currentFolderId = this.getCurrentFolderId();
+      if (currentFolderId) {
+        params.url["folder_id"] = currentFolderId;
+        return osparc.data.Resources.fetch("studies", "getPageFilterSearchFolder", params, undefined, options);
+      }
+
       return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
     },
 
@@ -540,6 +558,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const options = {
         resolveWResponse: true
       };
+
+      const currentFolderId = this.getCurrentFolderId();
+      if (currentFolderId) {
+        params.url["folder_id"] = currentFolderId;
+        return osparc.data.Resources.fetch("studies", "getPageSortBySearchFolder", params, undefined, options);
+      }
+
       return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
     },
 
