@@ -267,6 +267,7 @@ jobs:
     # in PR calls this step is anyway skipped
     needs: changes
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
