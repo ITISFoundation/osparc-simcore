@@ -28,7 +28,6 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
@@ -182,9 +181,7 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            await (await ports.outputs)[cast(ServicePortKey, port_key)].set_value(
-                value_to_transfer
-            )
+            await (await ports.outputs)[port_key].set_value(value_to_transfer)
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
