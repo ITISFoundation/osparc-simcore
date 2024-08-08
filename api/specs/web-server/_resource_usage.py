@@ -26,7 +26,12 @@ from models_library.api_schemas_webserver.resource_usage import (
     UpdatePricingUnitBodyParams,
 )
 from models_library.generics import Envelope
-from models_library.resource_tracker import PricingPlanId, PricingUnitId, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
+from models_library.resource_tracker import (
+    PricingPlanId,
+    PricingUnitId,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.wallets import WalletID
 from pydantic import Json, NonNegativeInt
@@ -40,9 +45,9 @@ from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
 )
 from simcore_service_webserver.resource_usage._service_runs_handlers import (
     ORDER_BY_DESCRIPTION,
+    _ListServicesAggregatedUsagesQueryParams,
     _ListServicesResourceUsagesQueryParams,
     _ListServicesResourceUsagesQueryParamsWithPagination,
-    _ListServicesAggregatedUsagesQueryParams
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}")
@@ -95,7 +100,7 @@ assert_handler_signature_against_model(
 async def list_osparc_credits_aggregated_usages(
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
-    wallet_id: Annotated[WalletID | None, Query] = None,
+    wallet_id: Annotated[WalletID, Query],
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ):

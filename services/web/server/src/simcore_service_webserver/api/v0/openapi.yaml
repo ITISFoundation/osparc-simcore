@@ -3752,7 +3752,7 @@ paths:
           $ref: '#/components/schemas/ServicesAggregatedUsagesTimePeriod'
         name: time_period
         in: query
-      - required: false
+      - required: true
         schema:
           title: Wallet Id
           exclusiveMinimum: true
