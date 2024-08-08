@@ -10,7 +10,11 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceResourceUsagesFilters, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -42,7 +46,7 @@ async def list_service_runs(
         started_from = filters.started_at.from_
         started_until = filters.started_at.until
 
-    # Situation when we want to see all usage of a specific user
+    # Situation when we want to see all usage of a specific user (ex. for Non billable product)
     if wallet_id is None and access_all_wallet_usage is False:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
             product_name,
@@ -187,35 +191,36 @@ async def get_osparc_credits_aggregated_usages_page(
     resource_tracker_repo: ResourceTrackerRepository,
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
-    wallet_id: WalletID | None = None,
+    wallet_id: WalletID,
     access_all_wallet_usage: bool = False,
     limit: int = 20,
     offset: int = 0,
 ) -> OsparcCreditsAggregatedUsagesPage:
     current_datetime = datetime.now(tz=timezone.utc)
-    one_month_ago = current_datetime - timedelta(days=time_period.value)
+    started_from = current_datetime - timedelta(days=time_period.value)
 
     assert aggregated_by == ServicesAggregatedUsagesType.services  # nosec
 
-    total_output_list_db: PositiveInt = (
-        await resource_tracker_repo.total_osparc_credits_aggregated_by_service(
-            product_name=product_name,
-            user_id=user_id if access_all_wallet_usage is False else None,
-            wallet_id=wallet_id,
-            started_from=one_month_ago,
-            started_until=None,
-        )
-    )
-    output_list_db = (
-        await resource_tracker_repo.get_osparc_credits_aggregated_by_service(
-            product_name=product_name,
-            user_id=user_id if access_all_wallet_usage is False else None,
-            wallet_id=wallet_id,
-            offset=offset,
-            limit=limit,
-            started_from=one_month_ago,
-            started_until=None,
-        )
+    # total_output_list_db: PositiveInt = (
+    #     await resource_tracker_repo.total_osparc_credits_aggregated_by_service(
+    #         product_name=product_name,
+    #         user_id=user_id if access_all_wallet_usage is False else None,
+    #         wallet_id=wallet_id,
+    #         started_from=started_from,
+    #         started_until=None,
+    #     )
+    # )
+    (
+        count_output_list_db,
+        output_list_db,
+    ) = await resource_tracker_repo.get_osparc_credits_aggregated_by_service(
+        product_name=product_name,
+        user_id=user_id if access_all_wallet_usage is False else None,
+        wallet_id=wallet_id,
+        offset=offset,
+        limit=limit,
+        started_from=started_from,
+        started_until=None,
     )
     output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
     for item in output_list_db:
@@ -226,4 +231,4 @@ async def get_osparc_credits_aggregated_usages_page(
             )
         )
 
-    return OsparcCreditsAggregatedUsagesPage(output_api_model, total_output_list_db)
+    return OsparcCreditsAggregatedUsagesPage(output_api_model, count_output_list_db)

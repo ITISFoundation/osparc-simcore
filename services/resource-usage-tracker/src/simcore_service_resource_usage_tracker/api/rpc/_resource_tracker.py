@@ -108,7 +108,7 @@ async def get_osparc_credits_aggregated_usages_page(
     time_period: ServicesAggregatedUsagesTimePeriod,
     limit: int = 20,
     offset: int = 0,
-    wallet_id: WalletID | None = None,
+    wallet_id: WalletID,
     access_all_wallet_usage: bool = False,
 ) -> OsparcCreditsAggregatedUsagesPage:
     return await service_runs.get_osparc_credits_aggregated_usages_page(

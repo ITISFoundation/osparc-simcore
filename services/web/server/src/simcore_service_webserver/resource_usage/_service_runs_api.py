@@ -5,7 +5,11 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.api_schemas_webserver.wallets import WalletGetPermissions
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceResourceUsagesFilters, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -53,7 +57,7 @@ async def get_osparc_credits_aggregated_usages_page(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-    wallet_id: WalletID | None,
+    wallet_id: WalletID,
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
     offset: int,

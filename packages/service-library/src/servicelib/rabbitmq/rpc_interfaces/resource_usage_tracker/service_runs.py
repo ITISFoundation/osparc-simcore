@@ -10,7 +10,11 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.resource_tracker import ServiceResourceUsagesFilters, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -65,7 +69,7 @@ async def get_osparc_credits_aggregated_usages_page(
     time_period: ServicesAggregatedUsagesTimePeriod,
     limit: int = 20,
     offset: int = 0,
-    wallet_id: WalletID | None = None,
+    wallet_id: WalletID,
     access_all_wallet_usage: bool = False,
 ) -> OsparcCreditsAggregatedUsagesPage:
     result = await rabbitmq_rpc_client.request(

@@ -10,6 +10,7 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    CreditClassification,
     CreditTransactionId,
     CreditTransactionStatus,
     PricingPlanCreate,
@@ -315,14 +316,14 @@ class ResourceTrackerRepository(
         product_name: ProductName,
         *,
         user_id: UserID | None,
-        wallet_id: WalletID | None,
+        wallet_id: WalletID,
         offset: int,
         limit: int,
         started_from: datetime | None = None,
         started_until: datetime | None = None,
-    ) -> list[OsparcCreditsAggregatedByServiceKeyDB]:
+    ) -> tuple[int, list[OsparcCreditsAggregatedByServiceKeyDB]]:
         async with self.db_engine.begin() as conn:
-            query = (
+            base_query = (
                 sa.select(
                     resource_tracker_service_runs.c.service_key,
                     sa.func.SUM(
@@ -349,95 +350,107 @@ class ResourceTrackerRepository(
                         resource_tracker_credit_transactions.c.transaction_status
                         == CreditTransactionStatus.BILLED
                     )
+                    & (
+                        resource_tracker_credit_transactions.c.transaction_classification
+                        == CreditClassification.DEDUCT_SERVICE_RUN
+                    )
+                    & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
                 )
                 .group_by(resource_tracker_service_runs.c.service_key)
+            )
+
+            if user_id:
+                base_query = base_query.where(
+                    resource_tracker_service_runs.c.user_id == user_id
+                )
+            if started_from:
+                base_query = base_query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                base_query = base_query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            subquery = base_query.subquery()
+            count_query = sa.select(sa.func.count()).select_from(subquery)
+            count_result = await conn.execute(count_query)
+
+            # Default ordering and pagination
+            list_query = (
+                base_query.order_by(resource_tracker_service_runs.c.service_key.asc())
                 .offset(offset)
                 .limit(limit)
             )
+            list_result = await conn.execute(list_query)
 
-            if user_id:
-                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
-            if wallet_id:
-                query = query.where(
-                    resource_tracker_service_runs.c.wallet_id == wallet_id
-                )
-            if started_from:
-                query = query.where(
-                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                    >= started_from.date()
-                )
-            if started_until:
-                query = query.where(
-                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                    <= started_until.date()
-                )
+        return (
+            cast(int, count_result.scalar()),
+            [
+                OsparcCreditsAggregatedByServiceKeyDB.from_orm(row)
+                for row in list_result.fetchall()
+            ],
+        )
 
-            # Default ordering
-            query = query.order_by(resource_tracker_service_runs.c.service_key.asc())
+    # async def total_osparc_credits_aggregated_by_service(
+    #     self,
+    #     product_name: ProductName,
+    #     *,
+    #     user_id: UserID | None,
+    #     wallet_id: WalletID,
+    #     started_from: datetime | None = None,
+    #     started_until: datetime | None = None,
+    # ) -> PositiveInt:
+    #     async with self.db_engine.begin() as conn:
+    #         query = (
+    #             sa.select(sa.func.count())
+    #             .select_from(
+    #                 resource_tracker_service_runs.join(
+    #                     resource_tracker_credit_transactions,
+    #                     (
+    #                         resource_tracker_service_runs.c.product_name
+    #                         == resource_tracker_credit_transactions.c.product_name
+    #                     )
+    #                     & (
+    #                         resource_tracker_service_runs.c.service_run_id
+    #                         == resource_tracker_credit_transactions.c.service_run_id
+    #                     ),
+    #                     isouter=True,
+    #                 )
+    #             )
+    #             .where(
+    #                 (resource_tracker_service_runs.c.product_name == product_name)
+    #                 & (
+    #                     resource_tracker_credit_transactions.c.transaction_status
+    #                     == CreditTransactionStatus.BILLED
+    #                 )
+    #                 & (
+    #                     resource_tracker_credit_transactions.c.transaction_classification
+    #                     == CreditClassification.DEDUCT_SERVICE_RUN
+    #                 )
+    #                 & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
+    #             )
+    #             .group_by(resource_tracker_service_runs.c.service_key)
+    #         )
 
-            result = await conn.execute(query)
+    #         if user_id:
+    #             query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+    #         if started_from:
+    #             query = query.where(
+    #                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
+    #                 >= started_from.date()
+    #             )
+    #         if started_until:
+    #             query = query.where(
+    #                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
+    #                 <= started_until.date()
+    #             )
 
-        return [
-            OsparcCreditsAggregatedByServiceKeyDB.from_orm(row)
-            for row in result.fetchall()
-        ]
-
-    async def total_osparc_credits_aggregated_by_service(
-        self,
-        product_name: ProductName,
-        *,
-        user_id: UserID | None,
-        wallet_id: WalletID | None,
-        started_from: datetime | None = None,
-        started_until: datetime | None = None,
-    ) -> PositiveInt:
-        async with self.db_engine.begin() as conn:
-            query = (
-                    sa.select(sa.func.count())
-                .select_from(
-                    resource_tracker_service_runs.join(
-                        resource_tracker_credit_transactions,
-                        (
-                            resource_tracker_service_runs.c.product_name
-                            == resource_tracker_credit_transactions.c.product_name
-                        )
-                        & (
-                            resource_tracker_service_runs.c.service_run_id
-                            == resource_tracker_credit_transactions.c.service_run_id
-                        ),
-                        isouter=True,
-                    )
-                )
-                .where(
-                    (resource_tracker_service_runs.c.product_name == product_name)
-                    & (
-                        resource_tracker_credit_transactions.c.transaction_status
-                        == CreditTransactionStatus.BILLED
-                    )
-                )
-                .group_by(resource_tracker_service_runs.c.service_key)
-            )
-
-            if user_id:
-                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
-            if wallet_id:
-                query = query.where(
-                    resource_tracker_service_runs.c.wallet_id == wallet_id
-                )
-            if started_from:
-                query = query.where(
-                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                    >= started_from.date()
-                )
-            if started_until:
-                query = query.where(
-                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
-                    <= started_until.date()
-                )
-
-            result = await conn.execute(query)
-        row = result.first()
-        return cast(PositiveInt, row[0]) if row else 0
+    #         result = await conn.execute(query)
+    #     row = result.first()
+    #     return cast(PositiveInt, row[0]) if row else 0
 
     async def export_service_runs_table_to_s3(
         self,
