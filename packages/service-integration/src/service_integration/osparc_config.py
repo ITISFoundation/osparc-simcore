@@ -30,6 +30,7 @@ from models_library.services_regex import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
 )
+from models_library.services_types import ServiceKey
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
     from_labels,
@@ -144,7 +145,7 @@ class MetadataConfig(ServiceMetaDataPublished):
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            service_path = service_path.replace("/", ".")
+            service_path = ServiceKey(service_path.replace("/", "."))
 
         service_version = self.version
         return f"{registry_prefix}{service_path}:{service_version}"
@@ -215,7 +216,7 @@ class RuntimeConfig(BaseModel):
     paths_mapping: PathMappingsLabel | None = None
 
     user_preferences_path: Path | None = None
-    boot_options: BootOptions = None
+    boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None
 
     containers_allowed_outgoing_permit_list: dict[str, list[NATRule]] | None = None
