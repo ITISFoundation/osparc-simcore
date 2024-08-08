@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
 
   statics: {
     BILLING_CENTER_BUTTON_SIZE: 26,
-    WIDTH: 200,
+    WIDTH: 300,
     TIME_RANGES: [{
       key: 1,
       label: "Today"
@@ -134,10 +134,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
       this.getChildControl("top-left-spacer");
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        this.self().WIDTH = 300;
-        this.__buildConsumptionSummary();
-      }
+      this.__buildConsumptionSummary();
 
       this.set({
         maxWidth: this.self().WIDTH

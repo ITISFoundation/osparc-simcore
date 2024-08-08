@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     const name = this.getChildControl("title");
     const serviceMetadata = osparc.service.Utils.getLatest(serviceKey);
     if (serviceMetadata) {
-      icon.setSource(serviceMetadata["thumbnail"]);
+      icon.setSource(serviceMetadata["thumbnail"] ? serviceMetadata["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_ICON);
       name.setValue(serviceMetadata["name"]);
     } else {
       icon.setSource(osparc.dashboard.CardBase.PRODUCT_ICON);
