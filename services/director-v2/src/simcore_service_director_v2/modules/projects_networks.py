@@ -21,7 +21,7 @@ from pydantic import ValidationError, parse_obj_as
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ..core.errors import ProjectNotFoundError
+from ..core.errors import ProjectNetworkNotFoundError
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.director_v0 import DirectorV0Client
@@ -247,9 +247,9 @@ async def update_from_workbench(
                 project_id=project_id
             )
         )
-    except ProjectNotFoundError:
+    except ProjectNetworkNotFoundError:
         existing_projects_networks = ProjectsNetworks.parse_obj(
-            dict(project_uuid=project_id, networks_with_aliases={})
+            {"project_uuid": project_id, "networks_with_aliases": {}}
         )
 
     existing_networks_with_aliases = existing_projects_networks.networks_with_aliases
