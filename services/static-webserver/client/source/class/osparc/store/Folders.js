@@ -164,10 +164,8 @@ qx.Class.define("osparc.store.Folders", {
         promise
           .then(foldersData => {
             foldersData.forEach(folderData => {
-              if (folderData.parentFolderId === folderId) {
-                const folder = new osparc.data.model.Folder(folderData);
-                this.__addToCache(folder);
-              }
+              const folder = new osparc.data.model.Folder(folderData);
+              this.__addToCache(folder);
             });
             resolve();
           })
@@ -176,36 +174,30 @@ qx.Class.define("osparc.store.Folders", {
 
     postFolder: function(name, description, parentId = null) {
       return new Promise(resolve => {
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         const newFolderData = {
-          folderId: Math.floor(Math.random() * 1000),
           parentFolderId: parentId,
           name: name,
           description: description || "",
-          owner: myGroupId,
-          createdAt: new Date().toString(),
-          lastModified: new Date().toString(),
-          myAccessRights: {
-            read: true,
-            write: true,
-            delete: true
-          },
-          accessRights: {},
         };
-        newFolderData["accessRights"][myGroupId] = {
-          read: true,
-          write: true,
-          delete: true
+        const params = {
+          data: newFolderData
         };
-        const newFolder = new osparc.data.model.Folder(newFolderData);
-        this.__addToCache(newFolder);
-        resolve(newFolder)
+        osparc.data.Resources.getInstance().fetch("folders", "post", params)
+          .then(resp => {
+            const foldersStore = osparc.store.Folders.getInstance();
+            const folderId = resp["folderId"];
+            foldersStore.fetchFolders(parentId)
+              .then(() => {
+                const newFolder = foldersStore.getFolder(folderId);
+                resolve(newFolder);
+              });
+          });
       });
     },
 
     deleteFolder: function(folderId) {
       return new Promise((resolve, reject) => {
-        const idx = this.foldersCached.findIndex(f => f.getId() === folderId);
+        const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
         if (idx > -1) {
           this.foldersCached.splice(idx, 1);
           resolve();
@@ -288,11 +280,11 @@ qx.Class.define("osparc.store.Folders", {
     },
 
     getFolder: function(folderId = null) {
-      return this.foldersCached.find(f => f.getId() === folderId);
+      return this.foldersCached.find(f => f.getFolderId() === folderId);
     },
 
     __addToCache: function(folder) {
-      const found = this.foldersCached.find(f => f.getId() === folder.getId());
+      const found = this.foldersCached.find(f => f.getFolderId() === folder.getFolderId());
       if (!found) {
         this.foldersCached.push(folder);
       }

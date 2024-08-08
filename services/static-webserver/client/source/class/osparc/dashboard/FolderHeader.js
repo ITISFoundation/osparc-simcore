@@ -117,7 +117,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       } else {
         folderButton = new qx.ui.form.Button(this.tr("Home"), "@FontAwesome5Solid/home/14");
       }
-      folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getId() : null), this);
+      folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       folderButton.set({
         backgroundColor: "transparent",
         textColor: "text",
