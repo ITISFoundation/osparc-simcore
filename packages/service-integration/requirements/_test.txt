@@ -1,3 +1,7 @@
+attrs==23.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   referencing
 coverage==7.6.0
     # via
     #   -r requirements/_test.in
@@ -34,6 +38,14 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
+referencing==0.35.1
+    # via
+    #   -c requirements/_base.txt
+    #   types-jsonschema
+rpds-py==0.19.0
+    # via
+    #   -c requirements/_base.txt
+    #   referencing
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
@@ -41,3 +53,17 @@ tomli==2.0.1
     #   -c requirements/_base.txt
     #   coverage
     #   pytest
+types-docker==7.1.0.20240720
+    # via -r requirements/_test.in
+types-jsonschema==4.23.0.20240712
+    # via -r requirements/_test.in
+types-pyyaml==6.0.12.20240724
+    # via -r requirements/_test.in
+types-requests==2.32.0.20240712
+    # via types-docker
+urllib3==2.2.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   types-docker
+    #   types-requests

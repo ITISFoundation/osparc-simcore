@@ -241,7 +241,16 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("subtitle-icon");
-        this._evaluateShareIcon(shareIcon, value);
+        shareIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this.openAccessRights();
+        }, this);
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
+
+        if (this.isResourceType("study")) {
+          this._setStudyPermissions(value);
+        }
       }
     },
 

@@ -106,6 +106,14 @@ class ServiceRunWithCreditsDB(ServiceRunDB):
         orm_mode = True
 
 
+class OsparcCreditsAggregatedByServiceKeyDB(BaseModel):
+    osparc_credits: Decimal
+    service_key: ServiceKey
+
+    class Config:
+        orm_mode = True
+
+
 class ServiceRunForCheckDB(BaseModel):
     service_run_id: ServiceRunId
     last_heartbeat_at: datetime

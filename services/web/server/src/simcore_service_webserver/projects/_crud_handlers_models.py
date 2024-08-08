@@ -6,6 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
+from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -90,6 +91,10 @@ class ProjectListParams(PageQueryParameters):
         description="Multi column full text search",
         max_length=100,
         example="My Project",
+    )
+    folder_id: FolderID | None = Field(
+        default=None,
+        description="Filter projects in specific folder. Default filtering is a root directory.",
     )
 
     @validator("search", pre=True)
