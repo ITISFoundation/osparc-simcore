@@ -1102,16 +1102,8 @@ async def folder_get(
             .join(
                 folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
             )
-            .where(
-                folders_access_rights.c.traversal_parent_id.is_(None)
-                if folder_id is None
-                else folders_access_rights.c.traversal_parent_id == folder_id
-            )
-            .where(
-                folders_access_rights.c.gid.in_([access_via_gid])
-                if folder_id is None
-                else True
-            )
+            .where(folders_access_rights.c.folder_id == folder_id)
+            .where(folders_access_rights.c.gid.in_([access_via_gid]))
             .where(
                 _get_and_calsue_with_only_true_entries(
                     required_permissions, folders_access_rights
