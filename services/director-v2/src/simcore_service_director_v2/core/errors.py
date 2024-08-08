@@ -92,6 +92,14 @@ class ProjectNotFoundError(DirectorError):
         self.project_id = project_id
 
 
+class ProjectNetworkNotFoundError(DirectorError):
+    """Project not found error"""
+
+    def __init__(self, project_id: ProjectID):
+        super().__init__(f"no networks forund for project {project_id}")
+        self.project_id = project_id
+
+
 class PricingPlanUnitNotFoundError(DirectorError):
     """Pricing plan unit not found error"""
 
