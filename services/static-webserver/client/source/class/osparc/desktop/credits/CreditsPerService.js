@@ -79,6 +79,11 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
               const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.percentage);
               this._add(uiEntry);
             });
+          } else {
+            const nothingFound = new qx.ui.basic.Label(this.tr("No usage found")).set({
+              font: "text-14"
+            });
+            this._add(nothingFound);
           }
         });
     }
