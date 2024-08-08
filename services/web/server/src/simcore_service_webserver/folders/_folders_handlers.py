@@ -90,6 +90,13 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     class Config:
         extra = Extra.forbid
 
+    @validator("folder_id", pre=True, always=True)
+    @classmethod
+    def convert_null_to_none(cls, v):
+        if v is None or v == "null" or v == "none":
+            return None
+        return v
+
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
 @login_required

@@ -16,6 +16,7 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
+from ..application_settings import get_application_settings
 from ..catalog.client import get_services_for_user_in_product
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -59,6 +60,7 @@ async def list_projects(
     folder_id: FolderID | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
+    settings = get_application_settings(app)
     db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -68,6 +70,7 @@ async def list_projects(
     db_projects, db_project_types, total_number_projects = await db.list_projects(
         user_id=user_id,
         product_name=product_name,
+        settings=settings,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
         filter_by_services=user_available_services,
         offset=offset,
