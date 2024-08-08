@@ -419,6 +419,12 @@ async def _assign_tasks_to_current_cluster(
                 task_required_ec2_instance=required_ec2,
                 task_required_resources=required_resources,
             ),
+            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
+                task,
+                instances=cluster.buffer_ec2s,
+                task_required_ec2_instance=required_ec2,
+                task_required_resources=required_resources,
+            ),
         ]
 
         if any(
@@ -431,7 +437,7 @@ async def _assign_tasks_to_current_cluster(
 
     if unassigned_tasks:
         _logger.info(
-            "the current cluster should cope with %s tasks, %s are unnassigned/queued tasks",
+            "the current cluster should cope with %s tasks, %s are unnassigned/queued tasks and will need new EC2s",
             len(tasks) - len(unassigned_tasks),
             len(unassigned_tasks),
         )
