@@ -926,20 +926,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: minStudyData
       };
       osparc.study.Utils.createStudyAndPoll(params)
-        .then(studyData => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params2 = {
-              url: {
-                "studyId": studyData["uuid"]
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyData["uuid"], openCB, cancelCB, isStudyCreation);
-        })
+        .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -954,20 +941,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
       osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage)
-        .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params = {
-              url: {
-                "studyId": studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params, studyId);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
+        .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -979,25 +953,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
-        .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params, studyId);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
+        .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
+    },
+
+    __startStudyAfterCreating: function(studyId) {
+      const openCB = () => this._hideLoadingPage();
+      const cancelCB = () => {
+        this._hideLoadingPage();
+        const params = {
+          url: {
+            studyId
+          }
+        };
+        osparc.data.Resources.fetch("studies", "delete", params, studyId);
+      };
+      const isStudyCreation = true;
+      this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
     _updateStudyData: function(studyData) {
