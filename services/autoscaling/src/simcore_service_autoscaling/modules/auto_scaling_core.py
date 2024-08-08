@@ -611,7 +611,7 @@ async def _cap_needed_instances(
     return capped_needed_instances
 
 
-async def _start_instances(
+async def _launch_instances(
     app: FastAPI,
     needed_instances: dict[EC2InstanceType, int],
     tasks: list,
@@ -722,7 +722,7 @@ async def _scale_up_cluster(
             "service is pending due to missing resources, scaling up cluster now...",
             level=logging.INFO,
         )
-        new_pending_instances = await _start_instances(
+        new_pending_instances = await _launch_instances(
             app, needed_ec2_instances, unassigned_tasks, auto_scaling_mode
         )
         cluster.pending_ec2s.extend(
