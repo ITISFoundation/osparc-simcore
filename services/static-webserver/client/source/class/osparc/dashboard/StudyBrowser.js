@@ -389,7 +389,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __applyCurrentFolderId: function(currentFolderId) {
       osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-        .then(() => this.__reloadFolders());
+        .then(() => {
+          // this.__resetStudiesList();
+          this.__reloadResources();
+        });
     },
 
     _folderUpdated: function() {
