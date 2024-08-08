@@ -66,14 +66,13 @@ async def _do_send_mail(
         finally:
             await smtp.quit()
     else:
-        aio_smtp = _create_smtp_client(settings)
-        async with aio_smtp:
+        async with _create_smtp_client(settings) as aio_smtp:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Login email server ...")
                 await aio_smtp.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
-            await aio_smtp.send_message(message)
+            await aio_smtp.send_message(message)  # type: ignore[attr-defined]
 
 
 MIMEMessage = Union[MIMEText, MIMEMultipart]
