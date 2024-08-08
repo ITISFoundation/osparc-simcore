@@ -921,7 +921,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this._resourcesList);
       minStudyData["name"] = title;
       minStudyData["description"] = "";
-      this.__createStudy(minStudyData, null);
+      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
+      const params = {
+        data: minStudyData
+      };
+      osparc.study.Utils.createStudyAndPoll(params)
+        .then(studyData => {
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params2 = {
+              url: {
+                "studyId": studyData["uuid"]
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
+          };
+          const isStudyCreation = true;
+          this._startStudyById(studyData["uuid"], openCB, cancelCB, isStudyCreation);
+        })
+        .catch(err => {
+          this._hideLoadingPage();
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
     },
 
     __newPlanBtnClicked: function(templateData, newStudyName) {
@@ -969,34 +992,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
-        .catch(err => {
-          this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
-        });
-    },
-
-    __createStudy: function(minStudyData) {
-      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
-
-      const params = {
-        data: minStudyData
-      };
-      osparc.study.Utils.createStudyAndPoll(params)
-        .then(studyData => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params2 = {
-              url: {
-                "studyId": studyData["uuid"]
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyData["uuid"], openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
           this._hideLoadingPage();
