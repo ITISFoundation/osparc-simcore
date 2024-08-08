@@ -12,6 +12,7 @@ from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
+from typing import Any
 
 import docker
 import jsonschema
@@ -145,7 +146,7 @@ def docker_container(
     # run the container (this may take some time)
     container: Container | None = None
     try:
-        volumes = {
+        volumes: dict[str, Any] = {
             host_folders[folder]: {
                 "bind": container_variables[f"{str(folder).upper()}_FOLDER"]
             }
@@ -182,14 +183,16 @@ def docker_container(
             "The container stopped with exit code {}\n\n\ncommand:\n {}, \n\n\nlog:\n{}".format(
                 exc.exit_status,
                 exc.command,
-                pformat(
-                    (container.logs(timestamps=True, tail=1000).decode("UTF-8")).split(
-                        "\n"
-                    ),
-                    width=200,
-                )
-                if container
-                else "",
+                (
+                    pformat(
+                        (
+                            container.logs(timestamps=True, tail=1000).decode("UTF-8")
+                        ).split("\n"),
+                        width=200,
+                    )
+                    if container
+                    else ""
+                ),
             )
         )
     finally:

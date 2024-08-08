@@ -35,6 +35,7 @@ openapi_modules = [
         "_projects_comments",
         "_projects_crud",
         "_projects_groups",
+        "_projects_folders",
         "_projects_metadata",
         "_projects_nodes",
         "_projects_ports",
