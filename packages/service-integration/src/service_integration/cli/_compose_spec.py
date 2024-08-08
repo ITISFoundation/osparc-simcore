@@ -191,7 +191,7 @@ def create_compose(
     compose_spec_dict = {}
 
     assert ctx.parent  # nosec
-    settings: AppSettings = ctx.parent.settings
+    settings: AppSettings = ctx.parent.settings  # type: ignore[attr-defined] # pylint:disable=no-member
 
     for n, config_name in enumerate(configs_kwargs_map):
         nth_compose_spec = create_docker_compose_image_spec(
