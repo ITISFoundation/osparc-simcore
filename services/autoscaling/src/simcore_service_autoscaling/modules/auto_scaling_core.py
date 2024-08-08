@@ -333,6 +333,14 @@ async def _activate_drained_nodes(
     )
 
 
+async def _start_buffer_instances(
+    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+) -> Cluster:
+    instances_to_start = [i for i in cluster.buffer_ec2s if i.assigned_tasks]
+
+    return cluster
+
+
 def _try_assign_task_to_ec2_instance(
     task,
     *,
@@ -990,6 +998,8 @@ async def _autoscale_cluster(
     )
     # 2. try to activate drained nodes to cover some of the tasks
     cluster = await _activate_drained_nodes(app, cluster, auto_scaling_mode)
+
+    cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
 
     # let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
