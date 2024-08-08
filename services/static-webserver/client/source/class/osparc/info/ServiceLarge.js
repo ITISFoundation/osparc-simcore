@@ -203,7 +203,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         }
       });
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isTester() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
         extraInfo.push({
           label: this.tr("INTEGRATION VERSION"),
           view: this.__createIntegrationVersion(),
