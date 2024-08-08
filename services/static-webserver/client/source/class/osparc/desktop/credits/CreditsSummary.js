@@ -70,9 +70,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
         }
         case "credits-indicator": {
           control = new osparc.desktop.credits.CreditsIndicator();
-          if (osparc.utils.Utils.isDevelopmentPlatform()) {
-            control.getChildControl("credits-bar").exclude();
-          }
+          control.getChildControl("credits-bar").exclude();
           const store = osparc.store.Store.getInstance();
           store.bind("contextWallet", control, "wallet");
           const topLayout = this.getChildControl("top-layout");

@@ -38,6 +38,13 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
   members: {
     __populateList: function(nDays) {
       this._removeAll();
+
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (!contextWallet) {
+        return;
+      }
+      const walletId = contextWallet.getWalletId();
       const loadingImage = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
         alignX: "center",
         padding: 6
@@ -45,21 +52,35 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
       loadingImage.getContentElement().addClass("rotate");
       this._add(loadingImage);
 
-      setTimeout(() => {
-        this._removeAll();
-        [{
-          service: "simcore/services/comp/itis/sleeper",
-          credits: nDays*30,
-          percentage: 66
-        }, {
-          service: "simcore/services/dynamic/sim4life-8-0-0-dy",
-          credits: nDays*20,
-          percentage: 33
-        }].forEach(entry => {
-          const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(entry.service, entry.credits, entry.percentage);
-          this._add(uiEntry);
+      const params = {
+        "url": {
+          walletId,
+          "timePeriod": nDays
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getUsagePerService", params)
+        .then(entries => {
+          this._removeAll();
+          if (entries) {
+            let totalCredits = 0;
+            entries.forEach(entry => totalCredits+= entry["osparc_credits"]);
+            let datas = [];
+            entries.forEach(entry => {
+              datas.push({
+                service: entry["service_key"],
+                credits: -1*entry["osparc_credits"],
+                percentage: 100*entry["osparc_credits"]/totalCredits,
+              });
+            });
+            datas.sort((a, b) => a.percentage > b.percentage);
+            // top 5 services
+            datas = datas.slice(0, 5);
+            datas.forEach(data => {
+              const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.percentage);
+              this._add(uiEntry);
+            });
+          }
         });
-      }, 1000);
     }
   }
 });
