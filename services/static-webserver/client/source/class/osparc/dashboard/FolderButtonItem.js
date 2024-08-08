@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.set({
         cardKey: "folder-" + folder.getId()
       });
-      folder.bind("id", this, "folderId");
+      folder.bind("folderId", this, "folderId");
       folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("description", this, "description");

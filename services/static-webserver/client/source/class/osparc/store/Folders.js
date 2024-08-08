@@ -29,8 +29,8 @@ qx.Class.define("osparc.store.Folders", {
 
   statics: {
     FOLDER_DATA_INIT: [{
-      id: 1,
-      parentFolder: null,
+      folderId: 1,
+      parentFolderId: null,
       name: "Folder 1",
       description: "Description Folder One",
       owner: 3,
@@ -49,8 +49,8 @@ qx.Class.define("osparc.store.Folders", {
         }
       },
     }, {
-      id: 2,
-      parentFolder: null,
+      folderId: 2,
+      parentFolderId: null,
       name: "Folder 2",
       description: "Description Folder Two",
       owner: 3,
@@ -74,8 +74,8 @@ qx.Class.define("osparc.store.Folders", {
         }
       },
     }, {
-      id: 3,
-      parentFolder: 1,
+      folderId: 3,
+      parentFolderId: 1,
       name: "Folder 3",
       description: "Description Folder Three",
       owner: 3,
@@ -94,8 +94,8 @@ qx.Class.define("osparc.store.Folders", {
         }
       }
     }, {
-      id: 4,
-      parentFolder: null,
+      folderId: 4,
+      parentFolderId: null,
       name: "Folder 4",
       description: "Description Folder Four",
       owner: 3,
@@ -119,8 +119,8 @@ qx.Class.define("osparc.store.Folders", {
         }
       }
     }, {
-      id: 5,
-      parentFolder: null,
+      folderId: 5,
+      parentFolderId: null,
       name: "Folder 5",
       description: "Description Folder Five",
       owner: 3,
@@ -152,7 +152,7 @@ qx.Class.define("osparc.store.Folders", {
     fetchFolders: function(parentId = null) {
       return new Promise(resolve => {
         this.self().FOLDER_DATA_INIT.forEach(folderData => {
-          if (folderData.parentFolder === parentId) {
+          if (folderData.parentFolderId === parentId) {
             const folder = new osparc.data.model.Folder(folderData);
             this.__addToCache(folder);
           }
@@ -165,8 +165,8 @@ qx.Class.define("osparc.store.Folders", {
       return new Promise(resolve => {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         const newFolderData = {
-          id: Math.floor(Math.random() * 1000),
-          parentFolder: parentId,
+          folderId: Math.floor(Math.random() * 1000),
+          parentFolderId: parentId,
           name: name,
           description: description || "",
           owner: myGroupId,
