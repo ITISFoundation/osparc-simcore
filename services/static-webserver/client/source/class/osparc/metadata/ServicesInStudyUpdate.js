@@ -203,8 +203,10 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           // updatable
           osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
             .then(latestMetadata => {
-              let label = node["key"] === latestMetadata["key"] ? "" : latestMetadata["name"];
-              label += ":" + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+              let label = osparc.service.Utils.extractVersionDisplay(latestMetadata)
+              if (node["key"] !== latestMetadata["key"]) {
+                label = latestMetadata["name"] + ":" + label;
+              }
               compatibleVersionLabel.setValue(label);
             })
             .catch(err => console.error(err));
