@@ -276,6 +276,10 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/inactivity"
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/folders/{folderId}"
           }
         }
       },
@@ -290,6 +294,28 @@ qx.Class.define("osparc.data.Resources", {
           addComment: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/comments"
+          }
+        }
+      },
+      "folders": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/folders?offset={offset}&limit={limit}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/folders"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/folders/{folderId}"
           }
         }
       },
