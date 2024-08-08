@@ -1463,7 +1463,6 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test
