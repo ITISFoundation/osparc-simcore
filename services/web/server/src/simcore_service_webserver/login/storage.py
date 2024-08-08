@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 from aiohttp import web
 from servicelib.utils_secrets import generate_passcode
@@ -47,9 +47,10 @@ class AsyncpgStorage:
     # CRUD user
     #
 
-    async def get_user(self, with_data) -> dict:
+    async def get_user(self, with_data) -> dict | None:
         async with self.pool.acquire() as conn:
-            return dict(await _sql.find_one(conn, self.user_tbl, with_data))
+            result: Any | None = await _sql.find_one(conn, self.user_tbl, with_data)
+            return None if result is None else dict(result)
 
     async def create_user(self, data: dict) -> dict:
         async with self.pool.acquire() as conn:
