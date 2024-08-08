@@ -17,6 +17,7 @@ from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.services_types import ServicePortKey
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -31,7 +32,6 @@ from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
-from simcore_sdk.node_ports_v2.types import PortKey
 
 from ..core.settings import ApplicationSettings, get_settings
 
@@ -93,7 +93,9 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    ports_values: dict[PortKey, tuple[ItemConcreteValue | None, SetKWargs | None]] = {}
+    ports_values: dict[
+        ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
+    ] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set = [
         port_value

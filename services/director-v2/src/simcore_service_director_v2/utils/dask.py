@@ -28,6 +28,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
@@ -39,7 +40,6 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
-from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 from ..constants import UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
@@ -182,7 +182,7 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            await (await ports.outputs)[cast(PortKey, port_key)].set_value(
+            await (await ports.outputs)[cast(ServicePortKey, port_key)].set_value(
                 value_to_transfer
             )
         except ValidationError as err:
