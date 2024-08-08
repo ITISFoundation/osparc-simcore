@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
                 percentage: 100*entry["osparc_credits"]/totalCredits,
               });
             });
-            datas.sort((a, b) => a.percentage > b.percentage);
+            datas.sort((a, b) => b.percentage - a.percentage);
             // top 5 services
             datas = datas.slice(0, 5);
             datas.forEach(data => {
