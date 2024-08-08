@@ -962,6 +962,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudyAfterCreating: function(studyId) {
+      if (this.getCurrentFolderId()) {
+        const params = {
+          url: {
+            studyId,
+            folderId: this.getCurrentFolderId()
+          }
+        }
+        osparc.data.Resources.fetch("studies", "moveToFolder", params);
+      }
       const openCB = () => this._hideLoadingPage();
       const cancelCB = () => {
         this._hideLoadingPage();
