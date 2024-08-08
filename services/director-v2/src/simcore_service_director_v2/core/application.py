@@ -39,6 +39,7 @@ from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
     PipelineNotFoundError,
+    ProjectNetworkNotFoundError,
     ProjectNotFoundError,
 )
 from .events import on_shutdown, on_startup
@@ -55,6 +56,12 @@ def _set_exception_handlers(app: FastAPI):
         ProjectNotFoundError,
         make_http_error_handler_for_exception(
             status.HTTP_404_NOT_FOUND, ProjectNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        ProjectNetworkNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, ProjectNetworkNotFoundError
         ),
     )
     app.add_exception_handler(

@@ -12,6 +12,7 @@
 NOTE: Some of the code below is duplicated in the studies_dispatcher!
 SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/3977
 """
+
 import functools
 import logging
 from functools import lru_cache
@@ -26,6 +27,9 @@ from servicelib.error_codes import create_error_code
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
+from ..director_v2._core_dynamic_services import (
+    update_dynamic_service_networks_in_project,
+)
 from ..products.api import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -184,6 +188,7 @@ async def copy_study_to_account(
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
+        await update_dynamic_service_networks_in_project(request.app, project["uuid"])
 
     return project_uuid
 

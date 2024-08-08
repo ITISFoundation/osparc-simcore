@@ -145,7 +145,9 @@ async def _analyze_current_cluster(
             NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
-        terminated_instances=terminated_ec2_instances,
+        terminated_instances=[
+            NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
+        ],
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
     _logger.info("current state: %s", f"{cluster!r}")
@@ -178,15 +180,11 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
             _logger, logging.WARNING, msg="terminate broken EC2 instances"
         ):
             await get_ec2_client(app).terminate_instances(broken_instances)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for i in cluster.broken_ec2s:
-                    instrumentation.instance_terminated(i.ec2_instance.type)
 
     return dataclasses.replace(
         cluster,
         broken_ec2s=[],
-        terminated_instances=cluster.terminated_instances + broken_instances,
+        terminated_instances=cluster.terminated_instances + cluster.broken_ec2s,
     )
 
 
@@ -640,7 +638,7 @@ async def _start_instances(
 
     results = await asyncio.gather(
         *[
-            ec2_client.start_aws_instance(
+            ec2_client.launch_instances(
                 EC2InstanceConfig(
                     type=instance_type,
                     tags=new_instance_tags,
@@ -682,15 +680,8 @@ async def _start_instances(
             last_issue = f"{r}"
         elif isinstance(r, list):
             new_pending_instances.extend(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for instance_data in r:
-                    instrumentation.instance_started(instance_data.type)
         else:
             new_pending_instances.append(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                instrumentation.instance_started(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -904,12 +895,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
                 [i.ec2_instance for i in instances_to_terminate]
             )
 
-        if has_instrumentation(app):
-            instrumentation = get_instrumentation(app)
-            for i in instances_to_terminate:
-                instrumentation.instance_terminated(i.ec2_instance.type)
         # since these nodes are being terminated, remove them from the swarm
-
         await utils_docker.remove_nodes(
             get_docker_client(app),
             nodes=[i.node for i in instances_to_terminate],
@@ -927,7 +913,10 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         drained_nodes=still_drained_nodes,
         terminating_nodes=cluster.terminating_nodes + new_terminating_instances,
         terminated_instances=cluster.terminated_instances
-        + [i.ec2_instance for i in instances_to_terminate],
+        + [
+            NonAssociatedInstance(ec2_instance=i.ec2_instance)
+            for i in instances_to_terminate
+        ],
     )
 
 
@@ -1038,7 +1027,7 @@ async def _autoscale_cluster(
 async def _notify_autoscaling_status(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> None:
-    # inform on rabbit about status
+
     monitored_instances = list(
         itertools.chain(
             cluster.active_nodes, cluster.drained_nodes, cluster.reserve_drained_nodes
@@ -1056,9 +1045,11 @@ async def _notify_autoscaling_status(
                 ),
             )
         )
+        # inform on rabbitMQ about status
         await post_autoscaling_status_message(
             app, cluster, total_resources, used_resources
         )
+        # prometheus instrumentation
         if has_instrumentation(app):
             get_instrumentation(app).update_from_cluster(cluster)
 
