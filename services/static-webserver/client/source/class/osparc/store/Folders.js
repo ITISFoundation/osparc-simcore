@@ -114,6 +114,8 @@ qx.Class.define("osparc.store.Folders", {
               }
             });
             folder.setLastModified(new Date());
+            this.__deleteFromCache(folderId);
+            this.__addToCache(folder);
             resolve();
           })
           .catch(err => reject(err));
@@ -184,7 +186,7 @@ qx.Class.define("osparc.store.Folders", {
     __addToCache: function(folder) {
       const found = this.foldersCached.find(f => f.getFolderId() === folder.getFolderId());
       if (!found) {
-        this.foldersCached.push(folder);
+        this.foldersCached.unshift(folder);
       }
     },
 

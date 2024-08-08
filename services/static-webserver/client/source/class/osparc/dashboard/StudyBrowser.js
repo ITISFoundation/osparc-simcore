@@ -392,6 +392,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders());
     },
 
+    _folderUpdated: function() {
+      this.__reloadFolders();
+    },
+
     _deleteFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().deleteFolder(folderId)
         .then(() => this.__reloadFolders())

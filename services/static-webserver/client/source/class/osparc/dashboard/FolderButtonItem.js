@@ -44,6 +44,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
   events: {
     "folderSelected": "qx.event.type.Data",
+    "folderUpdated": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data"
   },
 
@@ -203,10 +204,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
               "description": newDescription
             };
             osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
-              .then(() => folder.set({
-                name: newName,
-                description: newDescription
-              }))
+              .then(() => {
+                folder.set({
+                  name: newName,
+                  description: newDescription
+                });
+                this.fireDataEvent("folderUpdated", folder.getFolderId());
+              })
               .catch(err => console.error(err));
             win.close();
           });

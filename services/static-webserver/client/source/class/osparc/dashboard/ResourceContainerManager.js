@@ -77,6 +77,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data",
     "folderSelected": "qx.event.type.Data",
+    "folderUpdated": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
   },
 
@@ -239,6 +240,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       card.subscribeToFilterGroup("searchBarFilter");
       [
         "folderSelected",
+        "folderUpdated",
         "deleteFolderRequested",
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;
