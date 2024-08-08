@@ -359,6 +359,10 @@ qx.Class.define("osparc.data.Resources", {
           getWithWallet2: {
             method: "GET",
             url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
+          },
+          getUsagePerService: {
+            method: "GET",
+            url: statics.API + "/services/-/aggregated-usages?wallet_id={walletId}&aggregated_by=services&time_period={timePeriod}"
           }
         }
       },
