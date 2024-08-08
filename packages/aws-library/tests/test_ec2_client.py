@@ -5,6 +5,7 @@
 
 import random
 from collections.abc import AsyncIterator, Callable
+from dataclasses import fields
 from typing import cast, get_args
 
 import botocore.exceptions
@@ -343,7 +344,7 @@ async def test_get_instances(
             assert not instance_received
 
 
-async def test_stop_instances(
+async def test_stop_start_instances(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     faker: Faker,
@@ -388,6 +389,25 @@ async def test_stop_instances(
         expected_tags=ec2_instance_config.tags,
         expected_state="stopped",
     )
+
+    # start the instances now
+    started_instances = await simcore_ec2_api.start_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # the public IPs change when the instances are stopped and started
+    for s, c in zip(started_instances, created_instances, strict=True):
+        # the rest shall be the same
+        for f in fields(EC2InstanceData):
+            if f.name == "aws_public_ip":
+                assert getattr(s, f.name) != getattr(c, f.name)
+            else:
+                assert getattr(s, f.name) == getattr(c, f.name)
 
 
 async def test_terminate_instance(
