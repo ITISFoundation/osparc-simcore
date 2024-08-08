@@ -8,16 +8,19 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict, Union
+from typing import Any, Final, NamedTuple, TypeAlias, TypedDict
 
 import aiosmtplib
 from aiohttp import web
 from aiohttp_jinja2 import render_string
+from pydantic import NonNegativeInt
 from settings_library.email import EmailProtocol, SMTPSettings
 
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+_DEFAULT_SMTP_PORT: Final[NonNegativeInt] = 587
 
 
 def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
@@ -38,7 +41,7 @@ async def _do_send_mail(
 
     _logger.debug("Email configuration %s", settings.json(indent=1))
 
-    if settings.SMTP_PORT == 587:
+    if settings.SMTP_PORT == _DEFAULT_SMTP_PORT:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
         try:
             smtp = _create_smtp_client(settings)
@@ -75,7 +78,7 @@ async def _do_send_mail(
             await smtp2.send_message(message)  # type: ignore[attr-defined]
 
 
-MIMEMessage = Union[MIMEText, MIMEMultipart]
+MIMEMessage: TypeAlias = MIMEText | MIMEMultipart
 
 
 def _compose_mime(
