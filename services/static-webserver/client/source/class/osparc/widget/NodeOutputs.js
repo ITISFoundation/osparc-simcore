@@ -98,6 +98,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     __populateGrid: function() {
       this.__gridLayout.removeAll();
 
+      const outputs = this.getNode().getOutputs();
       const ports = this.getPorts();
       const portKeys = Object.keys(ports);
       for (let i=0; i<portKeys.length; i++) {
@@ -131,7 +132,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           column: this.self().POS.ICON
         });
 
-        const value = port.value || null;
+        const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
         this.__valueToGrid(value, i);
 
         const unit = new qx.ui.basic.Label(port.unitShort || "");

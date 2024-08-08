@@ -3493,7 +3493,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3704,6 +3704,55 @@ paths:
         name: filters
         in: query
       - required: false
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          type: integer
+          default: 20
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/services/-/aggregated-usages:
+    get:
+      tags:
+      - usage
+      summary: Used credits based on aggregate by type, currently supported `services`.
+        (user and product are taken from context, optionally wallet_id parameter might
+        be provided).
+      operationId: list_osparc_credits_aggregated_usages
+      parameters:
+      - required: true
+        schema:
+          $ref: '#/components/schemas/ServicesAggregatedUsagesType'
+        name: aggregated_by
+        in: query
+      - required: true
+        schema:
+          $ref: '#/components/schemas/ServicesAggregatedUsagesTimePeriod'
+        name: time_period
+        in: query
+      - required: true
         schema:
           title: Wallet Id
           exclusiveMinimum: true
@@ -11151,6 +11200,20 @@ components:
       - dynamic
       - frontend
       - backend
+      type: string
+      description: An enumeration.
+    ServicesAggregatedUsagesTimePeriod:
+      title: ServicesAggregatedUsagesTimePeriod
+      enum:
+      - 1
+      - 7
+      - 30
+      type: integer
+      description: An enumeration.
+    ServicesAggregatedUsagesType:
+      title: ServicesAggregatedUsagesType
+      enum:
+      - services
       type: string
       description: An enumeration.
     SimCoreFileLink:
