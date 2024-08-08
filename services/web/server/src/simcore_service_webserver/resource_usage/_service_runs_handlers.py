@@ -3,14 +3,20 @@ from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
-from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     Page,
+    PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
@@ -126,6 +132,15 @@ class _ListServicesResourceUsagesQueryParamsWithPagination(
         extra = Extra.forbid
 
 
+class _ListServicesAggregatedUsagesQueryParams(PageQueryParameters):
+    aggregated_by: ServicesAggregatedUsagesType
+    time_period: ServicesAggregatedUsagesTimePeriod
+    wallet_id: WalletID
+
+    class Config:
+        extra = Extra.forbid
+
+
 #
 # API handlers
 #
@@ -159,6 +174,47 @@ async def list_resource_usage_services(request: web.Request):
             chunk=services.items,
             request_url=request.url,
             total=services.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(
+    f"/{VTAG}/services/-/aggregated-usages",
+    name="list_osparc_credits_aggregated_usages",
+)
+@login_required
+@permission_required("resource-usage.read")
+@_handle_resource_usage_exceptions
+async def list_osparc_credits_aggregated_usages(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(
+        _ListServicesAggregatedUsagesQueryParams, request
+    )
+
+    aggregated_services: OsparcCreditsAggregatedUsagesPage = (
+        await api.get_osparc_credits_aggregated_usages_page(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            wallet_id=query_params.wallet_id,
+            aggregated_by=query_params.aggregated_by,
+            time_period=query_params.time_period,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
+    )
+
+    page = Page[dict[str, Any]].parse_obj(
+        paginate_data(
+            chunk=aggregated_services.items,
+            request_url=request.url,
+            total=aggregated_services.total,
             limit=query_params.limit,
             offset=query_params.offset,
         )

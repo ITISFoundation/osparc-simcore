@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from enum import auto
+from enum import IntEnum, auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
 from pydantic import (
@@ -283,3 +283,13 @@ class PricingUnitWithCostUpdate(BaseModel):
                 },
             ]
         }
+
+
+class ServicesAggregatedUsagesType(StrAutoEnum):
+    services = "services"
+
+
+class ServicesAggregatedUsagesTimePeriod(IntEnum):
+    ONE_DAY = 1
+    ONE_WEEK = 7
+    ONE_MONTH = 30
