@@ -198,14 +198,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           folderEditor.addListener("updateFolder", () => {
             const newName = folderEditor.getLabel();
             const newDescription = folderEditor.getDescription();
-            const promises = [];
-            if (newName !== folder.getName()) {
-              promises.push(osparc.data.model.Folder.patchFolder(this.getFolderId(), "name", newName));
-            }
-            if (newDescription !== folder.getDescription()) {
-              promises.push(osparc.data.model.Folder.patchFolder(this.getFolderId(), "description", newDescription));
-            }
-            Promise.all(promises)
+            const updateData = {
+              "name": newName,
+              "description": newDescription
+            };
+            osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
               .then(() => folder.set({
                 name: newName,
                 description: newDescription

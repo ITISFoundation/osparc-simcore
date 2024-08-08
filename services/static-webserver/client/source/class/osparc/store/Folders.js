@@ -85,9 +85,7 @@ qx.Class.define("osparc.store.Folders", {
         };
         osparc.data.Resources.getInstance().fetch("folders", "delete", params)
           .then(() => {
-            const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
-            if (idx > -1) {
-              this.foldersCached.splice(idx, 1);
+            if (this.__deleteFromCache(folderId)) {
               resolve();
             } else {
               reject();
@@ -97,18 +95,28 @@ qx.Class.define("osparc.store.Folders", {
       });
     },
 
-    patchFolder: function(folderId, propKey, value) {
+    putFolder: function(folderId, updateData) {
       return new Promise((resolve, reject) => {
-        const folder = this.getFolder(folderId);
-        const upKey = qx.lang.String.firstUp(propKey);
-        const setter = "set" + upKey;
-        if (folder && setter in folder) {
-          folder[setter](value);
-          folder.setLastModified(new Date());
-          resolve();
-        } else {
-          reject();
-        }
+        const params = {
+          "url": {
+            folderId
+          },
+          data: updateData
+        };
+        osparc.data.Resources.getInstance().fetch("folders", "update", params)
+          .then(() => {
+            const folder = this.getFolder(folderId);
+            Object.keys(updateData).forEach(propKey => {
+              const upKey = qx.lang.String.firstUp(propKey);
+              const setter = "set" + upKey;
+              if (folder && setter in folder) {
+                folder[setter](updateData[propKey]);
+              }
+            });
+            folder.setLastModified(new Date());
+            resolve();
+          })
+          .catch(err => reject(err));
       });
     },
 
@@ -178,6 +186,15 @@ qx.Class.define("osparc.store.Folders", {
       if (!found) {
         this.foldersCached.push(folder);
       }
+    },
+
+    __deleteFromCache: function(folderId) {
+      const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
+      if (idx > -1) {
+        this.foldersCached.splice(idx, 1);
+        return true;
+      }
+      return false;
     }
   }
 });
