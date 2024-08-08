@@ -93,7 +93,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     @validator("folder_id", pre=True, always=True)
     @classmethod
     def convert_null_to_none(cls, v):
-        if v is None or v == "null" or v == "none":
+        if v is None or v in ["null", "none"]:
             return None
         return v
 
