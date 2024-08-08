@@ -78,13 +78,22 @@ qx.Class.define("osparc.store.Folders", {
 
     deleteFolder: function(folderId) {
       return new Promise((resolve, reject) => {
-        const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
-        if (idx > -1) {
-          this.foldersCached.splice(idx, 1);
-          resolve();
-        } else {
-          reject();
-        }
+        const params = {
+          "url": {
+            folderId
+          }
+        };
+        osparc.data.Resources.getInstance().fetch("folders", "delete", params)
+          .then(() => {
+            const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
+            if (idx > -1) {
+              this.foldersCached.splice(idx, 1);
+              resolve();
+            } else {
+              reject();
+            }
+          })
+          .catch(err => reject(err));
       });
     },
 
