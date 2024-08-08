@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
       osparc.data.Resources.fetch("resourceUsage", "getUsagePerService", params)
         .then(entries => {
           this._removeAll();
-          if (entries) {
+          if (entries && entries.length) {
             let totalCredits = 0;
             entries.forEach(entry => totalCredits+= entry["osparc_credits"]);
             let datas = [];
