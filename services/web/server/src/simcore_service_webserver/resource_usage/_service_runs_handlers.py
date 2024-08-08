@@ -6,8 +6,11 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
-from enum import Enum
-from models_library.resource_tracker import ServiceResourceUsagesFilters, ServicesAggregatedUsagesTimePeriod, ServicesAggregatedUsagesType
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -182,7 +185,8 @@ async def list_resource_usage_services(request: web.Request):
 
 
 @routes.get(
-    f"/{VTAG}/services/-/aggregated-usages", name="list_osparc_credits_aggregated_usages"
+    f"/{VTAG}/services/-/aggregated-usages",
+    name="list_osparc_credits_aggregated_usages",
 )
 @login_required
 @permission_required("resource-usage.read")
