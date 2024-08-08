@@ -35,6 +35,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       icon.setSource(serviceMetadata["thumbnail"]);
       name.setValue(serviceMetadata["name"]);
     } else {
+      icon.setSource(osparc.dashboard.CardBase.PRODUCT_ICON);
       const serviceName = serviceKey.split("/").pop();
       name.setValue(serviceName);
     }
