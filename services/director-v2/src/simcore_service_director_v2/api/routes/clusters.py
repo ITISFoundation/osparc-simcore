@@ -2,7 +2,7 @@ import logging
 from asyncio.log import logger
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.api_schemas_directorv2.clusters import (
     ClusterCreate,

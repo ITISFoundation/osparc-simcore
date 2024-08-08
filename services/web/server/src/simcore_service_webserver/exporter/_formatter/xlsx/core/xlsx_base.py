@@ -163,13 +163,14 @@ class BaseXLSXSheet:
     # pylint: disable=no-self-use
     # pylint: disable=unused-argument
     def assemble_data_for_template(
-        self, template_data: BaseModel
+        self, template_data: BaseModel | None
     ) -> list[tuple[str, BaseXLSXCellData]]:
         """
         Expected to be implemented by the user.
         Used to populate the sheet before applying the
         static part of the template.
         """
+        _ = template_data
         return []
 
 
@@ -236,7 +237,7 @@ class BaseXLSXDocument:
     def _assemble_workbook(
         self,
         sheets_entries: Generator[tuple[str, Any], None, None],
-        template_data: BaseModel,
+        template_data: BaseModel | None,
     ) -> Workbook:
         workbook = Workbook()
 
@@ -248,12 +249,13 @@ class BaseXLSXDocument:
 
             single_cells_cell_styles: dict[str, BaseXLSXCellData] = {}
 
-            all_cells = []
+            all_cells: list[tuple[str, BaseXLSXCellData]] = []
             data_cells = sheet_data.assemble_data_for_template(template_data)
 
             if data_cells:
                 all_cells.extend(data_cells)
-            all_cells.extend(sheet_data.cell_styles)
+            if sheet_data.cell_styles:
+                all_cells.extend(sheet_data.cell_styles)
 
             for cell_address, entry in all_cells:
                 if ":" in cell_address:
@@ -292,13 +294,13 @@ class BaseXLSXDocument:
 
         return workbook
 
-    def _generate_document(self, template_data: BaseModel) -> Workbook:
+    def _generate_document(self, template_data: BaseModel | None) -> Workbook:
         return self._assemble_workbook(self._get_sheets(), template_data)
 
     def document_path(self, base_path: Path) -> Path:
         return base_path / Path(self.file_name)
 
-    def save_document(self, base_path: Path, template_data: BaseModel) -> None:
+    def save_document(self, base_path: Path, template_data: BaseModel | None) -> None:
         workbook = self._generate_document(template_data)
         destination_path = self.document_path(base_path)
         workbook.save(destination_path)

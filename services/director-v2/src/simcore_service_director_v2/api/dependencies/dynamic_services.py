@@ -1,10 +1,11 @@
 import logging
+from typing import Annotated
 
 from fastapi import Depends, Request
-from models_library.api_schemas_directorv2.dynamic_services import (
+from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from servicelib.logging_utils import log_decorator
 from starlette.datastructures import URL
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 @log_decorator(logger=logger)
 async def get_service_base_url(
     node_uuid: NodeID,
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
 ) -> URL:
     # get the service details
     service_details: RunningDynamicServiceDetails = (

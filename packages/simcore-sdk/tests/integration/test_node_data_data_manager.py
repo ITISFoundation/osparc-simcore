@@ -19,6 +19,7 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
+from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common import filemanager
@@ -152,6 +153,7 @@ async def test_valid_upload_download(
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
@@ -164,6 +166,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(1.0)  # noqa: SLF001
 
@@ -179,6 +182,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2.0)  # noqa: SLF001
 
@@ -195,6 +199,7 @@ async def test_valid_upload_download_saved_to(
     node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
     r_clone_settings: RCloneSettings,
+    aws_s3_cli_settings: AwsS3CliSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
@@ -207,6 +212,7 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
+            aws_s3_cli_settings=None,
         )
         # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -226,6 +232,7 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=None,
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 

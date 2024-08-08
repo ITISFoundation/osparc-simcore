@@ -88,7 +88,7 @@ async def update_payment_transaction_state(
         msg = f"cannot update state with {completion_state=} since it is already initiated"
         raise ValueError(msg)
 
-    optional = {}
+    optional: dict[str, str | None] = {}
     if state_message:
         optional["state_message"] = state_message
 
@@ -132,7 +132,7 @@ async def update_payment_transaction_state(
         )
         row = await result.first()
         assert row, "execute above should have caught this"  # nosec
-
+        assert isinstance(row, RowProxy)  # nosec
         return row
 
 

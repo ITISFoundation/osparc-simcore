@@ -4,6 +4,7 @@ Implements OAuth2 with Password and Bearer (w/ JWT tokens)
 """
 
 from datetime import timedelta
+from typing import TypedDict
 
 import arrow
 from fastapi import HTTPException, status
@@ -64,7 +65,13 @@ def decode_access_token(token: str, settings: ApplicationSettings) -> str | None
     return username
 
 
-_credencial_401_unauthorized_exception_kwargs = {
+class _HTTPExceptionKwargs(TypedDict):
+    status_code: int
+    detail: str
+    headers: dict
+
+
+_credencial_401_unauthorized_exception_kwargs: _HTTPExceptionKwargs = {
     "status_code": status.HTTP_401_UNAUTHORIZED,
     "detail": "Invalid authentication credentials",
     "headers": {"WWW-Authenticate": "Bearer"},
