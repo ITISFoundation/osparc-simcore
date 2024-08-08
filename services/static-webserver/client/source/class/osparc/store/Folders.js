@@ -23,8 +23,6 @@ qx.Class.define("osparc.store.Folders", {
     this.base(arguments);
 
     this.foldersCached = [];
-
-    this.fetchFolders();
   },
 
   statics: {
@@ -149,15 +147,30 @@ qx.Class.define("osparc.store.Folders", {
   members: {
     foldersCached: null,
 
-    fetchFolders: function(parentId = null) {
+    fetchFolders: function(folderId = null) {
       return new Promise(resolve => {
-        this.self().FOLDER_DATA_INIT.forEach(folderData => {
-          if (folderData.parentFolderId === parentId) {
-            const folder = new osparc.data.model.Folder(folderData);
-            this.__addToCache(folder);
-          }
-        });
-        resolve();
+        let promise = null;
+        if (folderId) {
+          const params = {
+            "url": {
+              folderId
+            }
+          };
+          // osparc.data.Resources.getInstance().getAllPages("folders", params)
+          promise = osparc.data.Resources.getInstance().fetch("folders", "getWithinFolder", params);
+        } else {
+          promise = osparc.data.Resources.getInstance().fetch("folders", "getRootFolders");
+        }
+        promise
+          .then(foldersData => {
+            foldersData.forEach(folderData => {
+              if (folderData.parentFolderId === folderId) {
+                const folder = new osparc.data.model.Folder(folderData);
+                this.__addToCache(folder);
+              }
+            });
+            resolve();
+          })
       });
     },
 

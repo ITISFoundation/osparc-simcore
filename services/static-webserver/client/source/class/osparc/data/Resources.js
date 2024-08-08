@@ -303,7 +303,15 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?offset={offset}&limit={limit}"
+            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+          },
+          getRootFolders: {
+            method: "GET",
+            url: statics.API + "/folders"
+          },
+          getWithinFolder: {
+            method: "GET",
+            url: statics.API + "/folders?folder_id={folderId}"
           },
           post: {
             method: "POST",

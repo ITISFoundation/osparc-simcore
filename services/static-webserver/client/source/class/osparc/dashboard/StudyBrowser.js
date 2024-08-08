@@ -184,7 +184,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (nStudies === 0) {
             Promise.all([
               osparc.store.Store.getInstance().getTemplates(),
-              osparc.service.Store.getServicesLatest()
+              osparc.service.Store.getServicesLatest(),
+              osparc.store.Folders.getInstance().fetchFolders(),
             ]).then(values => {
               const templates = values[0];
               const services = values[1];
