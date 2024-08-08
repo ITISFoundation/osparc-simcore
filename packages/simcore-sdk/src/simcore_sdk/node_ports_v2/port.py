@@ -9,6 +9,7 @@ from typing import Any
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
+from models_library.services_types import ServicePortKey
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
@@ -28,7 +29,6 @@ from .links import (
     PortLink,
 )
 from .port_validation import validate_port_content
-from .types import PortKey
 
 log = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class SetKWargs:
 
 
 class Port(BaseServiceIOModel):
-    key: PortKey
+    key: ServicePortKey
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 

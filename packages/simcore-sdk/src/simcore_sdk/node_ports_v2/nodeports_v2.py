@@ -7,6 +7,7 @@ from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
@@ -22,7 +23,6 @@ from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
-from .types import PortKey
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class Nodeports(BaseModel):
         return self.internal_outputs
 
     async def get_value_link(
-        self, item_key: PortKey, *, file_link_type: LinkType
+        self, item_key: ServicePortKey, *, file_link_type: LinkType
     ) -> ItemValue | None:
         try:
             return await (await self.inputs)[item_key].get_value(
@@ -91,7 +91,7 @@ class Nodeports(BaseModel):
         )
 
     async def get(
-        self, item_key: PortKey, progress_bar: ProgressBarData | None = None
+        self, item_key: ServicePortKey, progress_bar: ProgressBarData | None = None
     ) -> ItemConcreteValue | None:
         try:
             return await (await self.inputs)[item_key].get(progress_bar)
@@ -101,7 +101,9 @@ class Nodeports(BaseModel):
         # if this fails it will raise an exception
         return await (await self.outputs)[item_key].get(progress_bar)
 
-    async def set(self, item_key: PortKey, item_value: ItemConcreteValue) -> None:
+    async def set(
+        self, item_key: ServicePortKey, item_value: ItemConcreteValue
+    ) -> None:
         # first try to set the inputs.
         try:
             the_updated_inputs = await self.inputs
@@ -141,7 +143,9 @@ class Nodeports(BaseModel):
 
     async def set_multiple(
         self,
-        port_values: dict[PortKey, tuple[ItemConcreteValue | None, SetKWargs | None]],
+        port_values: dict[
+            ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
+        ],
         *,
         progress_bar: ProgressBarData,
     ) -> None:
