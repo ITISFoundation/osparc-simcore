@@ -54,8 +54,6 @@ FoldersError
         * CannotMoveFolderSharedViaNonPrimaryGroupError
     * BaseAddProjectError
         * ProjectAlreadyExistsInFolderError
-    * BaseFolderGet
-        * FolderNotFoundError
 """
 
 
@@ -72,9 +70,7 @@ class FolderAccessError(FoldersError):
 
 
 class FolderNotFoundError(FolderAccessError):
-    msg_template = (
-        "no entry found for folder_id={folder_id} and product_name={product_name}"
-    )
+    msg_template = "no entry found for folder_id={folder_id}, gid={gid} and product_name={product_name}"
 
 
 class FolderNotSharedWithGidError(FolderAccessError):
@@ -123,14 +119,6 @@ class ProjectAlreadyExistsInFolderError(BaseAddProjectError):
     msg_template = (
         "project_id={project_uuid} in folder_id={folder_id} is already present"
     )
-
-
-class BaseFolderGet(FoldersError):
-    pass
-
-
-class FolderNotFoundError(BaseFolderGet):
-    msg_template = "no entry found for folder_id={folder_id} and gid={gid}"
 
 
 ###
@@ -445,7 +433,9 @@ async def _check_folder_and_access(
         .where(folders.c.product_name == product_name)
     )
     if not folder_entry:
-        raise FolderNotFoundError(folder_id=folder_id, product_name=product_name)
+        raise FolderNotFoundError(
+            folder_id=folder_id, gid=gid, product_name=product_name
+        )
 
     # check if folder was shared
     resolved_access_rights_without_permissions = await _get_resolved_access_rights(
@@ -1118,6 +1108,8 @@ async def folder_get(
         ).fetchone()
 
     if query_result is None:
-        raise FolderNotFoundError(folder_id=folder_id, gid=gid)
+        raise FolderNotFoundError(
+            folder_id=folder_id, gid=gid, product_name=product_name
+        )
 
     return FolderEntry.from_orm(query_result)

@@ -2066,6 +2066,7 @@ async def test_folder_get(
     # TESTS
     #######
 
+    # 1. query exsisting directories
     for folder_id_to_list in (
         None,
         folder_id_owner_folder,
@@ -2082,3 +2083,21 @@ async def test_folder_get(
                 connection, default_product_name, entry.id, entry.access_via_gid
             )
             assert entry == queried_folder
+
+    # 2. query via gid_not_shared
+    with pytest.raises(FolderNotSharedWithGidError):
+        await folder_get(
+            connection, default_product_name, folder_id_owner_folder, gid_not_shared
+        )
+
+    # 3. query with missing folder_id
+    missing_folder_id = 12312313123
+    for gid_to_test in (
+        gid_owner,
+        gid_other_owner,
+        gid_not_shared,
+    ):
+        with pytest.raises(FolderNotFoundError):
+            await folder_get(
+                connection, default_product_name, missing_folder_id, gid_to_test
+            )
