@@ -1,6 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
-from typing import Final
+from typing import Final, cast
 
 from aiohttp import web
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
@@ -85,12 +85,12 @@ def setup_rabbitmq(app: web.Application) -> None:
 
 
 def get_rabbitmq_rpc_client(app: web.Application) -> RabbitMQRPCClient:
-    return app[_RPC_CLIENT_KEY]
+    return cast(RabbitMQRPCClient, app[_RPC_CLIENT_KEY])
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
-    return app[APP_RABBITMQ_CLIENT_KEY]
+    return cast(RabbitMQClient, app[APP_RABBITMQ_CLIENT_KEY])
 
 
 def get_rabbitmq_rpc_server(app: web.Application) -> RabbitMQRPCClient:
-    return app[APP_RABBITMQ_RPC_SERVER_KEY]
+    return cast(RabbitMQRPCClient, app[APP_RABBITMQ_RPC_SERVER_KEY])

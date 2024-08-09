@@ -49,7 +49,7 @@ async def _setup_login_storage_ctx(app: web.Application):
     assert APP_LOGIN_STORAGE_KEY not in app  # nosec
     settings: PostgresSettings = get_db_plugin_settings(app)
 
-    pool: asyncpg.pool.Pool = await asyncpg.create_pool(
+    pool: asyncpg.pool.Pool = await asyncpg.create_pool(  # type: ignore[assignment]
         dsn=settings.dsn_with_query,
         min_size=settings.POSTGRES_MINSIZE,
         max_size=settings.POSTGRES_MAXSIZE,

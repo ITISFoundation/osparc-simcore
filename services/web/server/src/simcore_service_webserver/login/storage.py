@@ -48,11 +48,14 @@ class AsyncpgStorage:
     # CRUD user
     #
 
-    async def get_user(self, with_data) -> asyncpg.Record:
+    async def get_user(self, with_data) -> dict | None:
         async with self.pool.acquire() as conn:
-            return await _sql.find_one(conn, self.user_tbl, with_data)
+            result: asyncpg.Record | None = await _sql.find_one(
+                conn, self.user_tbl, with_data
+            )
+            return None if result is None else dict(result)
 
-    async def create_user(self, data: dict) -> asyncpg.Record:
+    async def create_user(self, data: dict) -> dict:
         async with self.pool.acquire() as conn:
             user_id = await _sql.insert(conn, self.user_tbl, data)
             new_user = await _sql.find_one(conn, self.user_tbl, {"id": user_id})
@@ -63,11 +66,11 @@ class AsyncpgStorage:
             )
         return data
 
-    async def update_user(self, user, updates) -> asyncpg.Record:
+    async def update_user(self, user, updates) -> None:
         async with self.pool.acquire() as conn:
             await _sql.update(conn, self.user_tbl, {"id": user["id"]}, updates)
 
-    async def delete_user(self, user):
+    async def delete_user(self, user) -> None:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
@@ -136,6 +139,6 @@ class AsyncpgStorage:
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
-    storage: AsyncpgStorage = app.get(APP_LOGIN_STORAGE_KEY)
+    storage: AsyncpgStorage | None = app.get(APP_LOGIN_STORAGE_KEY)
     assert storage, "login plugin was not initialized"  # nosec
     return storage

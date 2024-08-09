@@ -71,8 +71,10 @@ def _parse_extra_credits_in_usd_or_none(
     confirmation: ConfirmationTokenDict,
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
-        invitation = InvitationData.parse_raw(confirmation.get("data", "EMPTY"))
-        return invitation.extra_credits_in_usd
+        confirmation_data: str | None = confirmation.get("data", "EMPTY")
+        if confirmation_data:
+            invitation = InvitationData.parse_raw(confirmation_data)
+            return invitation.extra_credits_in_usd
     return None
 
 

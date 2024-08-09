@@ -263,7 +263,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
     # Checks USER
-    user = None
+    user: dict | None = None
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)

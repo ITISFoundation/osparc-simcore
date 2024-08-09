@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 import logging
 from pathlib import Path
 

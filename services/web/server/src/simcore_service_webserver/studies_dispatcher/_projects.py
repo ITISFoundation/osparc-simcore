@@ -11,9 +11,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
-from models_library.projects import AccessRights, Project, ProjectID
-from models_library.projects_nodes import Node, NodeID
-from models_library.projects_nodes_io import DownloadLink, PortLink
+from models_library.projects import Project, ProjectID
+from models_library.projects_access import AccessRights
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, parse_obj_as

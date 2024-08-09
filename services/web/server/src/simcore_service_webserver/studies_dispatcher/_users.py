@@ -65,7 +65,7 @@ async def get_authorized_user(request: web.Request) -> dict:
     return {}
 
 
-async def create_temporary_guest_user(request: web.Request):
+async def create_temporary_guest_user(request: web.Request) -> dict:
     """Creates a guest user with a random name and
 
     Raises:
@@ -111,7 +111,7 @@ async def create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    usr = {}
+    usr: dict = {}
     try:
         async with redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
@@ -223,5 +223,5 @@ async def ensure_authentication(
         await remember_identity(
             request,
             response,
-            user_email=user.email,
+            user_email=LowerCaseEmailStr(user.email),
         )
