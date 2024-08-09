@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, cast
 
 from types_aiobotocore_ec2.type_defs import InstanceTypeDef
 
-from .models import EC2InstanceData, EC2Tags
+from ._models import EC2InstanceData, EC2Tags
 
 if TYPE_CHECKING:
-    from .client import SimcoreEC2API
+    from ._client import SimcoreEC2API
 
 
 def compose_user_data(docker_join_bash_command: str) -> str:
