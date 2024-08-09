@@ -15,6 +15,7 @@ from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
+from ._error_handler import ec2_exception_handler
 from .errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
@@ -67,6 +68,7 @@ class SimcoreEC2API:
         return False
 
     @cached(noself=True)
+    @ec2_exception_handler(_logger)
     async def get_ec2_instance_capabilities(
         self,
         instance_type_names: set[InstanceTypeType],
@@ -107,6 +109,7 @@ class SimcoreEC2API:
                 raise EC2InstanceTypeInvalidError from exc
             raise EC2RuntimeError from exc  # pragma: no cover
 
+    @ec2_exception_handler(_logger)
     async def launch_instances(
         self,
         instance_config: EC2InstanceConfig,
@@ -207,6 +210,7 @@ class SimcoreEC2API:
             )
             return instance_datas
 
+    @ec2_exception_handler(_logger)
     async def get_instances(
         self,
         *,
@@ -257,6 +261,7 @@ class SimcoreEC2API:
         )
         return all_instances
 
+    @ec2_exception_handler(_logger)
     async def start_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> list[EC2InstanceData]:
@@ -302,6 +307,7 @@ class SimcoreEC2API:
                 raise EC2InstanceNotFoundError from exc
             raise  # pragma: no cover
 
+    @ec2_exception_handler(_logger)
     async def stop_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
         """Stops running instances.
         Stopping an already stopped instance will do nothing.
@@ -329,6 +335,7 @@ class SimcoreEC2API:
                 raise EC2InstanceNotFoundError from exc
             raise  # pragma: no cover
 
+    @ec2_exception_handler(_logger)
     async def terminate_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> None:
