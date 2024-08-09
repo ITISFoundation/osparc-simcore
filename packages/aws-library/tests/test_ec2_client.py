@@ -457,6 +457,16 @@ async def test_terminate_instance(
     )
 
 
+async def test_start_instance_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.start_instances([fake_ec2_instance_data()])
+
+
 async def test_stop_instance_not_existing_raises(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
