@@ -180,6 +180,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "users": {"enabled": app_settings.WEBSERVER_USERS is not None},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
+        "folders": {"enabled": app_settings.WEBSERVER_FOLDERS},
     }
 
 
@@ -323,6 +324,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         "WEBSERVER_USERS",
         "WEBSERVER_VERSION_CONTROL",
         "WEBSERVER_WALLETS",
+        "WEBSERVER_FOLDERS",
     ):
         section_name = settings_name.replace("WEBSERVER_", "").lower()
         if section := cfg.get(section_name):
