@@ -61,11 +61,10 @@ class SimcoreEC2API:
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
-        try:
+        with contextlib.suppress(Exception):
             await self.client.describe_account_attributes()
             return True
-        except Exception:  # pylint: disable=broad-except
-            return False
+        return False
 
     @cached(noself=True)
     async def get_ec2_instance_capabilities(
