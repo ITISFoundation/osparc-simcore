@@ -27,7 +27,7 @@ isort==5.13.2
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.11.0
+mypy==1.11.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -62,13 +62,13 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.5.6
+ruff==0.5.7
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==72.1.0
     # via pip-tools

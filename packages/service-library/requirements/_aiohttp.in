@@ -14,5 +14,7 @@ opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-server
 opentelemetry-exporter-otlp
 opentelemetry-sdk
+opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-requests
 prometheus_client
 werkzeug

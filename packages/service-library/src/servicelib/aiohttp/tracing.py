@@ -10,6 +10,8 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 )
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor
+from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -50,3 +52,5 @@ def setup_tracing(
     # Instrument aiohttp server and client
     AioHttpServerInstrumentor().instrument()
     AioHttpClientInstrumentor().instrument()
+    AiopgInstrumentor().instrument()
+    RequestsInstrumentor().instrument()
