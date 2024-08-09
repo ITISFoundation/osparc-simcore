@@ -276,36 +276,28 @@ class SimcoreEC2API:
         Returns:
             the started instance datas with their respective IPs
         """
-        try:
-            instance_ids = [i.id for i in instance_datas]
-            with log_context(
-                _logger,
-                logging.INFO,
-                msg=f"starting instances {instance_ids}",
-            ):
-                await self.client.start_instances(InstanceIds=instance_ids)
-                # wait for the instance to be in a pending state
-                # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
-                waiter = self.client.get_waiter("instance_exists")
-                await waiter.wait(InstanceIds=instance_ids)
-                _logger.info("instances %s exists now.", instance_ids)
-                # NOTE: waiting for pending ensure we get all the IPs back
-                aws_instances = await self.client.describe_instances(
-                    InstanceIds=instance_ids
-                )
-                assert len(aws_instances["Reservations"]) == 1  # nosec
-                assert "Instances" in aws_instances["Reservations"][0]  # nosec
-                return [
-                    await ec2_instance_data_from_aws_instance(self, i)
-                    for i in aws_instances["Reservations"][0]["Instances"]
-                ]
-        except botocore.exceptions.ClientError as exc:
-            if (
-                exc.response.get("Error", {}).get("Code", "")
-                == "InvalidInstanceID.NotFound"
-            ):
-                raise EC2InstanceNotFoundError from exc
-            raise  # pragma: no cover
+        instance_ids = [i.id for i in instance_datas]
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"starting instances {instance_ids}",
+        ):
+            await self.client.start_instances(InstanceIds=instance_ids)
+            # wait for the instance to be in a pending state
+            # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+            waiter = self.client.get_waiter("instance_exists")
+            await waiter.wait(InstanceIds=instance_ids)
+            _logger.info("instances %s exists now.", instance_ids)
+            # NOTE: waiting for pending ensure we get all the IPs back
+            aws_instances = await self.client.describe_instances(
+                InstanceIds=instance_ids
+            )
+            assert len(aws_instances["Reservations"]) == 1  # nosec
+            assert "Instances" in aws_instances["Reservations"][0]  # nosec
+            return [
+                await ec2_instance_data_from_aws_instance(self, i)
+                for i in aws_instances["Reservations"][0]["Instances"]
+            ]
 
     @ec2_exception_handler(_logger)
     async def stop_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
@@ -318,43 +310,25 @@ class SimcoreEC2API:
         Raises:
             EC2InstanceNotFoundError: any of the instance_datas are not found
         """
-        try:
-            with log_context(
-                _logger,
-                logging.INFO,
-                msg=f"stopping instances {[i.id for i in instance_datas]}",
-            ):
-                await self.client.stop_instances(
-                    InstanceIds=[i.id for i in instance_datas]
-                )
-        except botocore.exceptions.ClientError as exc:
-            if (
-                exc.response.get("Error", {}).get("Code", "")
-                == "InvalidInstanceID.NotFound"
-            ):
-                raise EC2InstanceNotFoundError from exc
-            raise  # pragma: no cover
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"stopping instances {[i.id for i in instance_datas]}",
+        ):
+            await self.client.stop_instances(InstanceIds=[i.id for i in instance_datas])
 
     @ec2_exception_handler(_logger)
     async def terminate_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> None:
-        try:
-            with log_context(
-                _logger,
-                logging.INFO,
-                msg=f"terminating instances {[i.id for i in instance_datas]}",
-            ):
-                await self.client.terminate_instances(
-                    InstanceIds=[i.id for i in instance_datas]
-                )
-        except botocore.exceptions.ClientError as exc:
-            if (
-                exc.response.get("Error", {}).get("Code", "")
-                == "InvalidInstanceID.NotFound"
-            ):
-                raise EC2InstanceNotFoundError from exc
-            raise  # pragma: no cover
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"terminating instances {[i.id for i in instance_datas]}",
+        ):
+            await self.client.terminate_instances(
+                InstanceIds=[i.id for i in instance_datas]
+            )
 
     async def set_instances_tags(
         self, instances: Sequence[EC2InstanceData], *, tags: EC2Tags
