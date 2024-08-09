@@ -133,6 +133,20 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&order_by={orderBy}"
           },
+          getPageFolder: {
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
+          },
+          getPageFilterSearchFolder: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}&folder_id={folderId}"
+          },
+          getPageSortBySearchFolder: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&order_by={orderBy}&folder_id={folderId}"
+          },
           getOne: {
             useCache: false,
             method: "GET",
@@ -276,6 +290,10 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/inactivity"
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/folders/{folderId}"
           }
         }
       },
@@ -290,6 +308,40 @@ qx.Class.define("osparc.data.Resources", {
           addComment: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/comments"
+          }
+        }
+      },
+      "folders": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+          },
+          getRootFolders: {
+            method: "GET",
+            url: statics.API + "/folders"
+          },
+          getWithinFolder: {
+            method: "GET",
+            url: statics.API + "/folders?folder_id={folderId}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/folders/{folderId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/folders"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/folders/{folderId}"
           }
         }
       },

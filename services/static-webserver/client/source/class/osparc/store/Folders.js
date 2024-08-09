@@ -23,197 +23,102 @@ qx.Class.define("osparc.store.Folders", {
     this.base(arguments);
 
     this.foldersCached = [];
-
-    this.fetchFolders();
-  },
-
-  statics: {
-    FOLDER_DATA_INIT: [{
-      id: 1,
-      parentFolder: null,
-      name: "Folder 1",
-      description: "Description Folder One",
-      owner: 3,
-      createdAt: "2024-07-11T06:28:28.527Z",
-      lastModified: "2024-07-13T06:28:28.527Z",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: true
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: true
-        }
-      },
-    }, {
-      id: 2,
-      parentFolder: null,
-      name: "Folder 2",
-      description: "Description Folder Two",
-      owner: 3,
-      createdAt: "2024-07-13T06:28:28.527Z",
-      lastModified: "2024-07-15T06:28:28.527Z",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: true
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: true
-        },
-        9: {
-          read: true,
-          write: true,
-          delete: false
-        }
-      },
-    }, {
-      id: 3,
-      parentFolder: 1,
-      name: "Folder 3",
-      description: "Description Folder Three",
-      owner: 3,
-      createdAt: "2024-07-16T06:28:28.527Z",
-      lastModified: "2024-07-17T06:28:28.527Z",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: true
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: true
-        }
-      }
-    }, {
-      id: 4,
-      parentFolder: null,
-      name: "Folder 4",
-      description: "Description Folder Four",
-      owner: 3,
-      createdAt: "2024-07-17T06:28:28.527Z",
-      lastModified: "2024-07-18T06:28:28.527Z",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: false
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: false
-        },
-        9: {
-          read: true,
-          write: true,
-          delete: true
-        }
-      }
-    }, {
-      id: 5,
-      parentFolder: null,
-      name: "Folder 5",
-      description: "Description Folder Five",
-      owner: 3,
-      createdAt: "2024-07-18T06:28:28.527Z",
-      lastModified: "2024-07-18T07:28:28.527Z",
-      myAccessRights: {
-        read: true,
-        write: false,
-        delete: false
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: false,
-          delete: false
-        },
-        9: {
-          read: true,
-          write: true,
-          delete: true
-        }
-      },
-    }]
   },
 
   members: {
     foldersCached: null,
 
-    fetchFolders: function(parentId = null) {
+    fetchFolders: function(folderId = null) {
       return new Promise(resolve => {
-        this.self().FOLDER_DATA_INIT.forEach(folderData => {
-          if (folderData.parentFolder === parentId) {
-            const folder = new osparc.data.model.Folder(folderData);
-            this.__addToCache(folder);
-          }
-        });
-        resolve();
+        let promise = null;
+        if (folderId) {
+          const params = {
+            "url": {
+              folderId
+            }
+          };
+          // osparc.data.Resources.getInstance().getAllPages("folders", params)
+          promise = osparc.data.Resources.getInstance().fetch("folders", "getWithinFolder", params);
+        } else {
+          promise = osparc.data.Resources.getInstance().fetch("folders", "getRootFolders");
+        }
+        promise
+          .then(foldersData => {
+            foldersData.forEach(folderData => {
+              const folder = new osparc.data.model.Folder(folderData);
+              this.__addToCache(folder);
+            });
+            resolve();
+          })
       });
     },
 
     postFolder: function(name, description, parentId = null) {
       return new Promise(resolve => {
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         const newFolderData = {
-          id: Math.floor(Math.random() * 1000),
-          parentFolder: parentId,
+          parentFolderId: parentId,
           name: name,
           description: description || "",
-          owner: myGroupId,
-          createdAt: new Date().toString(),
-          lastModified: new Date().toString(),
-          myAccessRights: {
-            read: true,
-            write: true,
-            delete: true
-          },
-          accessRights: {},
         };
-        newFolderData["accessRights"][myGroupId] = {
-          read: true,
-          write: true,
-          delete: true
+        const params = {
+          data: newFolderData
         };
-        const newFolder = new osparc.data.model.Folder(newFolderData);
-        this.__addToCache(newFolder);
-        resolve(newFolder)
+        osparc.data.Resources.getInstance().fetch("folders", "post", params)
+          .then(resp => {
+            const foldersStore = osparc.store.Folders.getInstance();
+            const folderId = resp["folderId"];
+            foldersStore.fetchFolders(parentId)
+              .then(() => {
+                const newFolder = foldersStore.getFolder(folderId);
+                resolve(newFolder);
+              });
+          });
       });
     },
 
     deleteFolder: function(folderId) {
       return new Promise((resolve, reject) => {
-        const idx = this.foldersCached.findIndex(f => f.getId() === folderId);
-        if (idx > -1) {
-          this.foldersCached.splice(idx, 1);
-          resolve();
-        } else {
-          reject();
-        }
+        const params = {
+          "url": {
+            folderId
+          }
+        };
+        osparc.data.Resources.getInstance().fetch("folders", "delete", params)
+          .then(() => {
+            if (this.__deleteFromCache(folderId)) {
+              resolve();
+            } else {
+              reject();
+            }
+          })
+          .catch(err => reject(err));
       });
     },
 
-    patchFolder: function(folderId, propKey, value) {
+    putFolder: function(folderId, updateData) {
       return new Promise((resolve, reject) => {
-        const folder = this.getFolder(folderId);
-        const upKey = qx.lang.String.firstUp(propKey);
-        const setter = "set" + upKey;
-        if (folder && setter in folder) {
-          folder[setter](value);
-          folder.setLastModified(new Date());
-          resolve();
-        } else {
-          reject();
-        }
+        const params = {
+          "url": {
+            folderId
+          },
+          data: updateData
+        };
+        osparc.data.Resources.getInstance().fetch("folders", "update", params)
+          .then(() => {
+            const folder = this.getFolder(folderId);
+            Object.keys(updateData).forEach(propKey => {
+              const upKey = qx.lang.String.firstUp(propKey);
+              const setter = "set" + upKey;
+              if (folder && setter in folder) {
+                folder[setter](updateData[propKey]);
+              }
+            });
+            folder.setLastModified(new Date());
+            this.__deleteFromCache(folderId);
+            this.__addToCache(folder);
+            resolve();
+          })
+          .catch(err => reject(err));
       });
     },
 
@@ -275,14 +180,23 @@ qx.Class.define("osparc.store.Folders", {
     },
 
     getFolder: function(folderId = null) {
-      return this.foldersCached.find(f => f.getId() === folderId);
+      return this.foldersCached.find(f => f.getFolderId() === folderId);
     },
 
     __addToCache: function(folder) {
-      const found = this.foldersCached.find(f => f.getId() === folder.getId());
+      const found = this.foldersCached.find(f => f.getFolderId() === folder.getFolderId());
       if (!found) {
-        this.foldersCached.push(folder);
+        this.foldersCached.unshift(folder);
       }
+    },
+
+    __deleteFromCache: function(folderId) {
+      const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
+      if (idx > -1) {
+        this.foldersCached.splice(idx, 1);
+        return true;
+      }
+      return false;
     }
   }
 });
