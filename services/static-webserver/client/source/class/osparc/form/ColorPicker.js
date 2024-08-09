@@ -49,7 +49,7 @@ qx.Class.define("osparc.form.ColorPicker", {
           break;
         case "color-input":
           control = new qx.ui.form.TextField().set({
-            width: 60,
+            width: 80,
             required: true
           });
           this.bind("color", control, "value");

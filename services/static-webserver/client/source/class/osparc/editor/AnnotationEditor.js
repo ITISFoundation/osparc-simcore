@@ -52,14 +52,14 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
   },
 
   members: {
-    __addColor: function() {
+    __addColor: function(row) {
       this._add(new qx.ui.basic.Label(this.tr("Color")), {
-        row: 0,
+        row,
         column: 0
       });
       const colorPicker = new osparc.form.ColorPicker();
       this._add(colorPicker, {
-        row: 0,
+        row,
         column: 1
       });
       return colorPicker;
@@ -73,13 +73,6 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       }
 
       let row = 0;
-      if (["text", "rect"].includes(annotation.getType())) {
-        const colorPicker = this.__addColor();
-        annotation.bind("color", colorPicker, "color");
-        colorPicker.bind("color", annotation, "color");
-        row++;
-      }
-
       const attrs = annotation.getAttributes();
       if (annotation.getType() === "text") {
         this._add(new qx.ui.basic.Label(this.tr("Text")), {
@@ -111,6 +104,13 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         row++;
       }
 
+      if (["text", "rect"].includes(annotation.getType())) {
+        const colorPicker = this.__addColor(row);
+        annotation.bind("color", colorPicker, "color");
+        colorPicker.bind("color", annotation, "color");
+        row++;
+      }
+
       if (annotation.getType() === "text") {
         this._add(new qx.ui.basic.Label(this.tr("Size")), {
           row,
@@ -135,7 +135,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         return;
       }
 
-      const colorPicker = this.__addColor();
+      const colorPicker = this.__addColor(0);
       marker.bind("color", colorPicker, "color");
       colorPicker.bind("color", marker, "color");
 
