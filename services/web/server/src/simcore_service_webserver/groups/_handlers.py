@@ -78,7 +78,7 @@ async def list_groups(request: web.Request):
 
     product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
-    primary_group, user_groups, all_group = await api.list_user_groups(
+    primary_group, user_groups, all_group = await api.list_user_groups_with_read_access(
         request.app, user_id
     )
 

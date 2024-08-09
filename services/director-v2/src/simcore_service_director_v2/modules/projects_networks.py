@@ -21,7 +21,7 @@ from pydantic import ValidationError, parse_obj_as
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ..core.errors import ProjectNotFoundError
+from ..core.errors import ProjectNetworkNotFoundError
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.director_v0 import DirectorV0Client
@@ -40,7 +40,7 @@ class _ToAdd(NamedTuple):
     project_id: ProjectID
     node_id: NodeIDStr
     network_name: str
-    network_alias: str
+    network_alias: DockerNetworkAlias
 
 
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
@@ -105,7 +105,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # if alias is different remove the network
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}
+            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             # node does not exist
@@ -146,7 +146,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # all aliases which are different or missing should be added
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}
+            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             existing_alias = existing_node_ids_and_aliases.get(node_id)
@@ -222,7 +222,9 @@ async def _get_networks_with_aliases_for_default_network(
             await rabbitmq_client.publish(message.channel_name, message)
             continue
 
-        new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias
+        new_networks_with_aliases[default_network][
+            NodeIDStr(f"{node_uuid}")
+        ] = network_alias
 
     return new_networks_with_aliases
 
@@ -245,9 +247,9 @@ async def update_from_workbench(
                 project_id=project_id
             )
         )
-    except ProjectNotFoundError:
+    except ProjectNetworkNotFoundError:
         existing_projects_networks = ProjectsNetworks.parse_obj(
-            dict(project_uuid=project_id, networks_with_aliases={})
+            {"project_uuid": project_id, "networks_with_aliases": {}}
         )
 
     existing_networks_with_aliases = existing_projects_networks.networks_with_aliases

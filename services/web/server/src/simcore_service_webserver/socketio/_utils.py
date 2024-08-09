@@ -4,7 +4,7 @@ from types import ModuleType
 from typing import Any, Awaitable, Callable
 
 from aiohttp import web
-from socketio import AsyncServer
+from socketio import AsyncServer  # type: ignore[import-untyped]
 
 APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
 APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"

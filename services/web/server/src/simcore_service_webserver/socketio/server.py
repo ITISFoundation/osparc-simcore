@@ -1,10 +1,11 @@
+# mypy: disable-error-code=truthy-function
 import logging
 from collections.abc import AsyncIterator
 
 from aiohttp import web
 from models_library.utils.json_serialization import JsonNamespace
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
-from socketio import AsyncAioPikaManager, AsyncServer
+from socketio import AsyncAioPikaManager, AsyncServer  # type: ignore[import-untyped]
 
 from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 from . import _handlers

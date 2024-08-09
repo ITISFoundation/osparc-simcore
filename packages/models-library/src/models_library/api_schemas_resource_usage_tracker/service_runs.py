@@ -38,3 +38,13 @@ class ServiceRunGet(BaseModel):
 class ServiceRunPage(NamedTuple):
     items: list[ServiceRunGet]
     total: PositiveInt
+
+
+class OsparcCreditsAggregatedByServiceGet(BaseModel):
+    osparc_credits: Decimal
+    service_key: ServiceKey
+
+
+class OsparcCreditsAggregatedUsagesPage(NamedTuple):
+    items: list[OsparcCreditsAggregatedByServiceGet]
+    total: PositiveInt

@@ -276,15 +276,19 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
 
-        # ensure file is deleted first in case it already exists
-        await self.delete_file(
-            user_id=user_id,
-            file_id=file_id,
-            # NOTE: bypassing check since the project access rights don't play well
-            # with collaborators
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
-            enforce_access_rights=False,
-        )
+        if (
+            not is_directory
+        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone/aws s3 cli).
+            # ensure file is deleted first in case it already exists
+            # https://github.com/ITISFoundation/osparc-simcore/pull/5108
+            await self.delete_file(
+                user_id=user_id,
+                file_id=file_id,
+                # NOTE: bypassing check since the project access rights don't play well
+                # with collaborators
+                # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+                enforce_access_rights=False,
+            )
         async with self.engine.acquire() as conn:
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(

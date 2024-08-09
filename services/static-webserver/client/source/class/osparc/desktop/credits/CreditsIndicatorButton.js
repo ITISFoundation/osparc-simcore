@@ -33,9 +33,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
       height: 24
     });
 
-    this.__creditsContainer = new osparc.desktop.credits.CreditsNavBarContainer();
-    this.__creditsContainer.exclude();
-
     this.addListener("tap", this.__buttonTapped, this);
   },
 
@@ -53,6 +50,11 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     __showCreditsContainer: function() {
+      if (!this.__creditsContainer) {
+        this.__creditsContainer = new osparc.desktop.credits.CreditsSummary();
+        this.__creditsContainer.exclude();
+      }
+
       const tapListener = event => {
         // In case a notification was tapped propagate the event so it can be handled by the NotificationUI
         if (osparc.utils.Utils.isMouseOnElement(this.__creditsContainer, event)) {

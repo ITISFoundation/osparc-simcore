@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
@@ -33,6 +34,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.folders import folders_to_projects
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -330,6 +332,7 @@ class ProjectDBAPI(BaseProjectDB):
         order_by: OrderBy = OrderBy(
             field="last_change_date", direction=OrderDirection.DESC
         ),
+        folder_id: FolderID | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         assert (
             order_by.field in projects.columns
@@ -362,9 +365,9 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_to_products.c.product_name,
                 )
                 .select_from(
-                    projects.join(projects_to_products, isouter=True).join(
-                        access_rights_subquery, isouter=True
-                    )
+                    projects.join(projects_to_products, isouter=True)
+                    .join(access_rights_subquery, isouter=True)
+                    .join(folders_to_projects, isouter=True)
                 )
                 .where(
                     (
@@ -392,6 +395,11 @@ class ProjectDBAPI(BaseProjectDB):
                         (projects_to_products.c.product_name == product_name)
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
+                    )
+                    & (
+                        (folders_to_projects.c.folder_id == f"{folder_id}")
+                        if folder_id
+                        else (folders_to_projects.c.folder_id.is_(None))
                     )
                 )
             )
