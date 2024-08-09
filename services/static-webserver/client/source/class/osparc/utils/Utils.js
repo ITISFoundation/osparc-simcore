@@ -679,6 +679,14 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
+    namedColorToHex: function(namedColor) {
+      if (qx.util.ExtendedColor.isExtendedColor(namedColor)) {
+        const rgb = qx.util.ExtendedColor.toRgb(namedColor);
+        return qx.util.ColorUtil.rgbToHexString(rgb);
+      }
+      return "#888888";
+    },
+
     bytesToSize: function(bytes, decimals = 2, isDecimalCollapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
