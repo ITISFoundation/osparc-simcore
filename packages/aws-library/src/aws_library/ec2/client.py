@@ -214,6 +214,18 @@ class SimcoreEC2API:
         tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,
     ) -> list[EC2InstanceData]:
+        """returns the instances matching the given criteria
+
+        Arguments:
+            key_names -- filter the instances by key names
+            tags -- filter instances by key and their values
+
+        Keyword Arguments:
+            state_names -- filters the instances by state (pending, running, etc...) (default: {None})
+
+        Returns:
+            the instances found
+        """
         # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
         # NOTE2: AND is done by repeating Name=instance-state-name,Values=pending Name=instance-state-name,Values=running
         if state_names is None:
@@ -248,6 +260,17 @@ class SimcoreEC2API:
     async def start_instances(
         self, instance_datas: Iterable[EC2InstanceData]
     ) -> list[EC2InstanceData]:
+        """starts stopped instances. Will return once the started instances are pending so that their IPs are available.
+
+        Arguments:
+            instance_datas -- the instances to start
+
+        Raises:
+            EC2InstanceNotFoundError: if some of the instance_datas are not found
+
+        Returns:
+            the started instance datas with their respective IPs
+        """
         try:
             instance_ids = [i.id for i in instance_datas]
             with log_context(
@@ -280,6 +303,15 @@ class SimcoreEC2API:
             raise  # pragma: no cover
 
     async def stop_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
+        """Stops running instances.
+        Stopping an already stopped instance will do nothing.
+
+        Arguments:
+            instance_datas -- the instances to stop
+
+        Raises:
+            EC2InstanceNotFoundError: any of the instance_datas are not found
+        """
         try:
             with log_context(
                 _logger,
