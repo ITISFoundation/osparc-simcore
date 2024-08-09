@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           topLayout.add(control);
           break;
         }
-        case "time-range-sb":
+        case "time-range-sb": {
           control = new qx.ui.form.SelectBox().set({
             allowGrowX: false,
             alignX: "center",
@@ -113,8 +113,14 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);
           });
+          // default one week
+          const found = control.getSelectables().find(trItem => trItem.getModel() === 7);
+          if (found) {
+            control.setSelection([found]);
+          }
           this._add(control);
           break;
+        }
         case "services-consumption":
           control = new osparc.desktop.credits.CreditsPerService();
           this._add(control);
