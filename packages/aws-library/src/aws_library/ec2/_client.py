@@ -16,13 +16,13 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 from ._error_handler import ec2_exception_handler
-from .errors import (
+from ._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2RuntimeError,
     EC2TooManyInstancesError,
 )
-from .models import (
+from ._models import (
     AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,
@@ -30,7 +30,7 @@ from .models import (
     EC2Tags,
     Resources,
 )
-from .utils import compose_user_data, ec2_instance_data_from_aws_instance
+from ._utils import compose_user_data, ec2_instance_data_from_aws_instance
 
 _logger = logging.getLogger(__name__)
 

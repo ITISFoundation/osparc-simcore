@@ -10,13 +10,13 @@ from typing import cast, get_args
 
 import botocore.exceptions
 import pytest
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.errors import (
+from aws_library.ec2._client import SimcoreEC2API
+from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2TooManyInstancesError,
 )
-from aws_library.ec2.models import (
+from aws_library.ec2._models import (
     AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from botocore import exceptions as botocore_exc
 
-from .errors import (
+from ._errors import (
     EC2AccessError,
     EC2NotConnectedError,
     EC2RuntimeError,
@@ -15,7 +15,7 @@ from .errors import (
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
     # allowing for circular imports only for them (mypy, pylance, ruff)
-    from .client import SimcoreEC2API
+    from ._client import SimcoreEC2API
 
 
 P = ParamSpec("P")
