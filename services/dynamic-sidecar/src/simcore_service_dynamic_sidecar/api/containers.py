@@ -106,7 +106,6 @@ async def get_containers_activity(
 
     container_name = inactivity_command.service
 
-    inactivity_response: str | None = None
     try:
         inactivity_response = await run_command_in_container(
             shared_store.original_to_container_names[inactivity_command.service],

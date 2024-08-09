@@ -3,12 +3,12 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar, TypeAlias, Union
 
-from models_library.basic_regex import MIME_TYPE_RE, PROPERTY_KEY_RE
+from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
+from models_library.services_types import ServicePortKey
 from pydantic import (
     AnyUrl,
     BaseModel,
-    ConstrainedStr,
     Extra,
     Field,
     StrictBool,
@@ -81,10 +81,6 @@ class FileUrl(BaseModel):
         }
 
 
-class PortKey(ConstrainedStr):
-    regex = PROPERTY_KEY_RE
-
-
 PortValue: TypeAlias = Union[
     StrictBool,
     StrictInt,
@@ -97,7 +93,7 @@ PortValue: TypeAlias = Union[
 ]
 
 
-class TaskInputData(DictModel[PortKey, PortValue]):
+class TaskInputData(DictModel[ServicePortKey, PortValue]):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -115,7 +111,7 @@ class TaskInputData(DictModel[PortKey, PortValue]):
 PortSchemaValue: TypeAlias = Union[PortSchema, FilePortSchema]
 
 
-class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
+class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
     #
     # NOTE: Expected output data is only determined at runtime. A possibility
     # would be to create pydantic models dynamically but dask serialization
@@ -144,7 +140,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
         }
 
 
-class TaskOutputData(DictModel[PortKey, PortValue]):
+class TaskOutputData(DictModel[ServicePortKey, PortValue]):
     @classmethod
     def from_task_output(
         cls, schema: TaskOutputDataSchema, output_folder: Path, output_file_ext: str

@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import aioprocessing
-from aioprocessing.queues import AioQueue
+import aioprocessing  # type: ignore[import-untyped]
+from aioprocessing.queues import AioQueue  # type: ignore[import-untyped]
 from fastapi import FastAPI
 
 from ..mounted_fs import MountedVolumes

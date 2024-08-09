@@ -6,7 +6,7 @@ from asyncio import CancelledError, Queue, Task, create_task
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final, TypeAlias
 
 from pydantic import (
     ByteSize,
@@ -22,7 +22,7 @@ from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 from ._directory_utils import get_directory_total_size
 from ._manager import OutputsManager
 
-PortEvent = Optional[str]
+PortEvent: TypeAlias = str | None
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ _500_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "500mib")
 
 class BaseDelayPolicy(ABC):
     def get_min_interval(self) -> NonNegativeFloat:  # pylint:disable=no-self-use
-        return DEFAULT_OBSERVER_TIMEOUT  # type: ignore
+        return DEFAULT_OBSERVER_TIMEOUT
 
     @abstractmethod
     def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:

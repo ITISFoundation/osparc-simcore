@@ -7,9 +7,9 @@ from pprint import pformat
 from typing import Any
 
 from models_library.api_schemas_storage import LinkType
-from models_library.basic_regex import PROPERTY_KEY_RE
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
+from models_library.services_types import ServicePortKey
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
@@ -68,7 +68,7 @@ class SetKWargs:
 
 
 class Port(BaseServiceIOModel):
-    key: str = Field(..., regex=PROPERTY_KEY_RE)
+    key: ServicePortKey
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 

@@ -11,9 +11,9 @@ from threading import Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
 
-import aioprocessing
-from aioprocessing.process import AioProcess
-from aioprocessing.queues import AioQueue
+import aioprocessing  # type: ignore [import-untyped]
+from aioprocessing.process import AioProcess  # type: ignore [import-untyped]
+from aioprocessing.queues import AioQueue  # type: ignore [import-untyped]
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
