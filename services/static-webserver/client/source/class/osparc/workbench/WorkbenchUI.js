@@ -1260,7 +1260,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         },
         drawText: {
           "text": "\uf040", // pencil
-          "action": () => this.startAnnotationsText()
+          "action": () => {
+            const pointerPos = this.__pointerEventToWorkbenchPos(e);
+            this.startAnnotationsText(pointerPos);
+          }
         },
         drawRect: {
           "text": "\uf044", // brush with rect
@@ -1577,11 +1580,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__toolHint.setValue(this.tr("Draw a rectangle"));
     },
 
-    startAnnotationsText: function() {
+    startAnnotationsText: function(workbenchPos) {
       this.__annotatingNote = false;
       this.__annotatingText = true;
       this.__annotatingRect = false;
-      this.__toolHint.setValue(this.tr("Pick the position"));
+      if (workbenchPos) {
+        this.__annotationInitPos = workbenchPos;
+        this.__mouseUp();
+      } else {
+        this.__toolHint.setValue(this.tr("Pick the position"));
+      }
     },
 
     __openNodeRenamer: function(nodeId) {
