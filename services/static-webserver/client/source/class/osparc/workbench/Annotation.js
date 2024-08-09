@@ -33,10 +33,14 @@ qx.Class.define("osparc.workbench.Annotation", {
     if (id === undefined) {
       id = osparc.utils.Utils.uuidV4();
     }
+    let color = "color" in data ? data.color : this.getColor();
+    if (color && color[0] !== "#") {
+      color = osparc.utils.Utils.namedColorToHex(color);
+    }
     this.set({
       id,
       type: data.type,
-      color: "color" in data ? data.color : this.getColor(),
+      color,
       attributes: data.attributes
     });
   },
