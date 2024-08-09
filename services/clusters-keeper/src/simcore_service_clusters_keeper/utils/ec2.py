@@ -1,4 +1,3 @@
-from textwrap import dedent
 from typing import Final
 
 from aws_library.ec2.models import AWSTagKey, AWSTagValue, EC2Tags
@@ -69,15 +68,4 @@ def ec2_instances_for_user_wallet_filter(
         _minimal_identification_tag(app_settings)
         | {AWSTagKey("user_id"): AWSTagValue(f"{user_id}")}
         | {AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}")}
-    )
-
-
-def compose_user_data(bash_command: str) -> str:
-    return dedent(
-        f"""\
-#!/bin/bash
-echo "started user data bash script"
-{bash_command}
-echo "completed user data bash script"
-"""
     )

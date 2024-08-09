@@ -6,7 +6,6 @@ import json
 import logging
 from collections import OrderedDict
 from collections.abc import Callable
-from textwrap import dedent
 
 from aws_library.ec2.models import (
     AWSTagKey,
@@ -58,15 +57,6 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
     } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
-
-
-def compose_user_data(docker_join_bash_command: str) -> str:
-    return dedent(
-        f"""\
-#!/bin/bash
-{docker_join_bash_command}
-"""
-    )
 
 
 def closest_instance_policy(
