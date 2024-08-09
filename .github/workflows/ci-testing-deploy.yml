@@ -267,6 +267,7 @@ jobs:
     # in PR calls this step is anyway skipped
     needs: changes
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -849,7 +850,6 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/director-v2.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/director-v2.bash test
@@ -1380,7 +1380,6 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
@@ -1465,7 +1464,6 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test

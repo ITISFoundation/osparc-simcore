@@ -230,8 +230,10 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
         const serviceMetadata = osparc.service.Utils.getLatest(key);
-        const service = new osparc.data.model.Service(serviceMetadata);
-        groupedServicesList.push(service);
+        if (serviceMetadata) {
+          const service = new osparc.data.model.Service(serviceMetadata);
+          groupedServicesList.push(service);
+        }
       }
 
       this.__serviceList.setModel(new qx.data.Array(groupedServicesList));

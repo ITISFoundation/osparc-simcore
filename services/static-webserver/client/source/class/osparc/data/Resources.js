@@ -293,16 +293,6 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "studyPreviews": {
-        useCache: true,
-        idField: "uuid",
-        endpoints: {
-          getPreviews: {
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/nodes/-/preview"
-          }
-        }
-      },
       "resourceUsage": {
         useCache: false,
         endpoints: {
@@ -317,6 +307,10 @@ qx.Class.define("osparc.data.Resources", {
           getWithWallet2: {
             method: "GET",
             url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
+          },
+          getUsagePerService: {
+            method: "GET",
+            url: statics.API + "/services/-/aggregated-usages?wallet_id={walletId}&aggregated_by=services&time_period={timePeriod}"
           }
         }
       },

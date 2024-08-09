@@ -11,11 +11,9 @@
 qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
-  construct: function(layout) {
-    if (layout === undefined) {
-      const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      layout = new qx.ui.layout.Flow(spacing, spacing);
-    }
+  construct: function() {
+    const spacing = osparc.dashboard.GridButtonBase.SPACING;
+    const layout = new qx.ui.layout.Flow(spacing, spacing);
     this.base(arguments, layout);
   },
 

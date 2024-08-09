@@ -5,10 +5,11 @@
     - Activates middlewares
 
 """
+
 import logging
 
 from aiohttp import web
-from aiohttp_swagger import setup_swagger
+from aiohttp_swagger import setup_swagger  # type: ignore[import-untyped]
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
