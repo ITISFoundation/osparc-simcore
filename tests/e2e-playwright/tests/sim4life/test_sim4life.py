@@ -21,6 +21,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     SOCKETIO_MESSAGE_PREFIX,
+    ServiceType,
     SocketIOEvent,
     decode_socketio_42_message,
     wait_for_service_running,
@@ -109,13 +110,22 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
 
 def test_sim4life(
     page: Page,
+    create_project_from_service_dashboard: Callable[
+        [ServiceType, str, str | None], dict[str, Any]
+    ],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    plus_button_test_id: str,
+    service_key: str,
+    use_plus_button: bool,
     autoscaled: bool,
     check_videostreaming: bool,
 ):
-    project_data = create_project_from_new_button(plus_button_test_id)
+    if use_plus_button:
+        project_data = create_project_from_new_button(service_key)
+    else:
+        project_data = create_project_from_service_dashboard(
+            ServiceType.DYNAMIC, service_key, None
+        )
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
         project_data["workbench"], dict
