@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 
 import arrow
 import pytest
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2 import EC2InstanceData
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID

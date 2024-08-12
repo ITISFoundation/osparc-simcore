@@ -1,4 +1,4 @@
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2 import EC2InstanceData
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID

@@ -2,14 +2,14 @@ import logging
 from collections.abc import Iterable
 
 import arrow
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     AWSTagKey,
     AWSTagValue,
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
+    SimcoreEC2API,
 )
 from fastapi import FastAPI
 from models_library.users import UserID
