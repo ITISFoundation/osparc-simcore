@@ -1049,7 +1049,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (shareButton) {
           menu.add(shareButton);
         }
+      }
 
+      if (writeAccess) {
         const tagsButton = this._getTagsMenuButton(card);
         if (tagsButton) {
           menu.add(tagsButton);
@@ -1062,6 +1064,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         const billingsSettingsButton = this.__getBillingMenuButton(card);
         menu.add(billingsSettingsButton);
+      }
+
+      if (writeAccess && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        const moveToFolderButton = this.__getMoveToFolderMenuButton(studyData);
+        if (moveToFolderButton) {
+          menu.add(moveToFolderButton);
+        }
       }
 
       if (deleteAccess) {
@@ -1140,6 +1149,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = osparc.utils.Utils.capitalize(this.tr("Billing Settings..."));
       const studyBillingSettingsButton = new qx.ui.menu.Button(text);
       studyBillingSettingsButton.addListener("tap", () => card.openBilling(), this);
+      return studyBillingSettingsButton;
+    },
+
+    __getMoveToFolderMenuButton: function(studyData) {
+      const text = osparc.utils.Utils.capitalize(this.tr("Move to Folder..."));
+      const studyBillingSettingsButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
+      studyBillingSettingsButton.addListener("tap", () => {
+        if (Object.keys(studyData["accessRights"]).length > 1) {
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Shared projects can't be moved yet"), "WARNING");
+        } else {
+          const title = this.tr("Move") + " " + studyData["name"];
+          const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId());
+          const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
+          moveStudyToFolder.addListener("moveToFolder", e => {
+            win.close();
+            const folderId = e.getData();
+            this.__updateThumbnail(studyData, folderId);
+          }, this);
+          moveStudyToFolder.addListener("cancel", () => win.close());
+        }
+      }, this);
       return studyBillingSettingsButton;
     },
 
