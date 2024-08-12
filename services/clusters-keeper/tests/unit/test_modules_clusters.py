@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Callable
 import arrow
 import pytest
 from aws_library.ec2 import EC2InstanceData
+from aws_library.ec2._errors import EC2InstanceNotFoundError
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -17,7 +18,6 @@ from models_library.wallets import WalletID
 from parse import Result, search
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper._meta import VERSION as APP_VERSION
-from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
     get_application_settings,
@@ -155,7 +155,7 @@ async def test_get_cluster_raises_if_not_found(
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    with pytest.raises(Ec2InstanceNotFoundError):
+    with pytest.raises(EC2InstanceNotFoundError):
         await get_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
 
 
