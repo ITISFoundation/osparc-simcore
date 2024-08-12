@@ -7,6 +7,7 @@ from botocore import exceptions as botocore_exc
 
 from ._errors import (
     EC2AccessError,
+    EC2InstanceNotFoundError,
     EC2NotConnectedError,
     EC2RuntimeError,
     EC2TimeoutError,
@@ -25,7 +26,7 @@ Self = TypeVar("Self", bound="SimcoreEC2API")
 
 
 def _map_botocore_client_exception(
-    botocore_error: botocore_exc.ClientError, **kwargs
+    botocore_error: botocore_exc.ClientError, *args, **kwargs
 ) -> EC2AccessError:
     status_code = int(
         botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
@@ -33,7 +34,12 @@ def _map_botocore_client_exception(
     )
     operation_name = botocore_error.operation_name
     match status_code, operation_name:
-
+        case 400, "StartInstances":
+            return EC2InstanceNotFoundError()
+        case 400, "StopInstances":
+            return EC2InstanceNotFoundError()
+        case 400, "TerminateInstances":
+            return EC2InstanceNotFoundError()
         case _:
             return EC2AccessError(
                 operation_name=operation_name,
@@ -61,7 +67,7 @@ def ec2_exception_handler(
             try:
                 return await func(self, *args, **kwargs)
             except botocore_exc.ClientError as exc:
-                raise _map_botocore_client_exception(exc, **kwargs) from exc
+                raise _map_botocore_client_exception(exc, *args, **kwargs) from exc
             except botocore_exc.WaiterError as exc:
                 raise EC2TimeoutError(details=f"{exc}") from exc
             except botocore_exc.EndpointConnectionError as exc:
