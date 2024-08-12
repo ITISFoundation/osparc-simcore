@@ -43,7 +43,7 @@ certifi==2024.2.2
     #   requests
 charset-normalizer==3.3.2
     # via requests
-coverage==7.6.0
+coverage==7.6.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
@@ -51,7 +51,7 @@ exceptiongroup==1.2.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-faker==26.0.0
+faker==26.3.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -81,7 +81,7 @@ multidict==6.0.5
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.10.1
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -91,13 +91,13 @@ packaging==24.0
     #   pytest
 pluggy==1.5.0
     # via pytest
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -138,13 +138,11 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-aiobotocore-s3==2.13.1
+types-aiobotocore-s3==2.13.2
     # via -r requirements/_test.in
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
-types-psutil==6.0.0.20240621
-    # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240311
+types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
 typing-extensions==4.11.0
     # via
