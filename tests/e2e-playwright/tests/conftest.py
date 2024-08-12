@@ -490,7 +490,9 @@ def find_and_start_service_in_dashboard(
 @pytest.fixture
 def create_project_from_new_button(
     start_study_from_plus_button: Callable[[str], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool], dict[str, Any]
+    ],
 ) -> Callable[[str], dict[str, Any]]:
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
