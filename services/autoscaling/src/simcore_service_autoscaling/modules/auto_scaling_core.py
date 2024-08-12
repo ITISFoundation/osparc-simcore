@@ -73,6 +73,7 @@ async def _analyze_current_cluster(
     existing_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
+        state_names=["pending", "running"],
     )
 
     terminated_ec2_instances = await get_ec2_client(app).get_instances(
@@ -333,12 +334,23 @@ async def _activate_drained_nodes(
     )
 
 
-async def _start_buffer_instances(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
-) -> Cluster:
-    instances_to_start = [i for i in cluster.buffer_ec2s if i.assigned_tasks]
+async def _start_buffer_instances(app: FastAPI, cluster: Cluster) -> Cluster:
+    instances_to_start = [
+        i.ec2_instance for i in cluster.buffer_ec2s if i.assigned_tasks
+    ]
+    started_instances = await get_ec2_client(app).start_instances(instances_to_start)
+    started_instance_ids = [i.id for i in started_instances]
 
-    return cluster
+    return dataclasses.replace(
+        cluster,
+        buffer_ecs=[
+            i
+            for i in cluster.buffer_ec2s
+            if i.ec2_instance.id not in started_instance_ids
+        ],
+        pending_ec2s=cluster.pending_ec2s
+        + [NonAssociatedInstance(ec2_instance=i) for i in started_instances],
+    )
 
 
 def _try_assign_task_to_ec2_instance(
@@ -999,9 +1011,10 @@ async def _autoscale_cluster(
     # 2. try to activate drained nodes to cover some of the tasks
     cluster = await _activate_drained_nodes(app, cluster, auto_scaling_mode)
 
-    cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
+    # 3. start buffer instances to cover the remaining tasks
+    cluster = await _start_buffer_instances(app, cluster)
 
-    # let's check if there are still pending tasks or if the reserve was used
+    # 4. let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if queued_or_missing_instance_tasks or (
