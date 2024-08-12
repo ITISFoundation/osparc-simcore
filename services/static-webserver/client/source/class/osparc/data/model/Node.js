@@ -1094,7 +1094,11 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.getIframeHandler().startPolling();
+        if (this.getIframeHandler()) {
+          this.getIframeHandler().startPolling();
+        } else {
+          console.error(this.getLabel() + " iframe handler not ready");
+        }
       }
     },
 

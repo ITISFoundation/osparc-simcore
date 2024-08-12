@@ -60,6 +60,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           this.__iFrameChanged();
 
           this.__attachSocketEventHandlers();
+        } else {
+          console.error(node.getLabel() + " iframe handler not ready");
         }
       })
       .catch(err => console.error(err));
