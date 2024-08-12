@@ -29,6 +29,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       font: "text-14"
     });
 
+    this.__initTree();
     this.__populateTree();
   },
 
@@ -69,7 +70,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   members: {
-    __populateTree: function() {
+    __initTree: function() {
       this.setDelegate({
         createItem: () => new osparc.dashboard.FolderTreeItem(),
         bindItem: (c, item, id) => {
@@ -82,6 +83,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
           const openButton = item.getChildControl("open");
           openButton.addListener("tap", () => {
+            this.__fetchChildren(item);
           });
         },
         sorter: (a, b) => {
@@ -96,16 +98,33 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
           return aName - bName;
         }
       });
+    },
 
+    __populateTree: function() {
       const rootFolder = {
         folderId: null,
         name: "Home",
         children: []
       };
-      const root = qx.data.marshal.Json.createModel(rootFolder, true);
-      this.setModel(root);
+      const rootModel = qx.data.marshal.Json.createModel(rootFolder, true);
+      this.setModel(rootModel);
 
-      this.self().addLoadingChild(this.getModel());
+      this.__fetchChildren(rootModel);
+    },
+
+    __fetchChildren: function(parentModel) {
+      this.self().addLoadingChild(parentModel);
+
+      const folderId = parentModel.getModel();
+      osparc.store.Folders.getInstance().fetchFolders(folderId)
+        .then(folders => {
+          this.self().removeLoadingChild(parentModel);
+          folders.forEach(folder => {
+            const folderData = folder.serialize();
+            folderData["children"] = [];
+            parent.getChildren().append(qx.data.marshal.Json.createModel(folderData));
+          });
+        });
     },
 
     __applyCurrentFolderId: function() {

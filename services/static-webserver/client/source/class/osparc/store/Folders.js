@@ -44,11 +44,13 @@ qx.Class.define("osparc.store.Folders", {
         }
         promise
           .then(foldersData => {
+            const folders = [];
             foldersData.forEach(folderData => {
               const folder = new osparc.data.model.Folder(folderData);
               this.__addToCache(folder);
+              folders.push(folder);
             });
-            resolve();
+            resolve(folders);
           })
       });
     },
