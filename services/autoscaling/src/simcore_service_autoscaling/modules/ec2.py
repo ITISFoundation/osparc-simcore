@@ -1,7 +1,7 @@
 import logging
 from typing import cast
 
-from aws_library.ec2.client import SimcoreEC2API
+from aws_library.ec2 import SimcoreEC2API
 from fastapi import FastAPI
 from settings_library.ec2 import EC2Settings
 from tenacity.asyncio import AsyncRetrying

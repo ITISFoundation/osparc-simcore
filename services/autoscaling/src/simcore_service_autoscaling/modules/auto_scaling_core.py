@@ -7,7 +7,7 @@ import logging
 from typing import Final, cast
 
 import arrow
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
