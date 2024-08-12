@@ -75,9 +75,9 @@ def _hash_inputs(
     return f"{service['key']}/{service['version']}/{input_key}"
 
 
-def _conditional_cached(*args, **kwargs):
+def _cachetools_cached(*args, **kwargs):
     def decorator(func):
-        if os.getenv("AIOCACHE_DISABLE", "0") == "0":
+        if os.getenv("CACHETOOLS_DISABLE", "0") == "0":
             return cachetools.cached(*args, **kwargs)(func)
         _logger.warning("cachetools disabled")
         return func
@@ -87,7 +87,7 @@ def _conditional_cached(*args, **kwargs):
 
 class ServiceInputGetFactory:
     @staticmethod
-    @_conditional_cached(
+    @_cachetools_cached(
         cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_inputs
     )
     def from_catalog_service_api_model(
@@ -121,7 +121,7 @@ def _hash_outputs(
 
 class ServiceOutputGetFactory:
     @staticmethod
-    @_conditional_cached(
+    @_cachetools_cached(
         cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_outputs
     )
     def from_catalog_service_api_model(
