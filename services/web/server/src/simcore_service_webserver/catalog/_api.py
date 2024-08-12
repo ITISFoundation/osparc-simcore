@@ -302,14 +302,12 @@ async def list_service_outputs(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-
-    outputs = []
-    for output_key in service["outputs"]:
-        service_output = ServiceOutputGetFactory.from_catalog_service_api_model(
-            service, output_key, None
+    return [
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key, ureg=None
         )
-        outputs.append(service_output)
-    return outputs
+        for output_key in service["outputs"]
+    ]
 
 
 async def get_service_output(
@@ -321,11 +319,9 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output: ServiceOutputGet = (
-        ServiceOutputGetFactory.from_catalog_service_api_model(service, output_key)
+    return await ServiceOutputGetFactory.from_catalog_service_api_model(
+        service=service, output_key=output_key
     )
-
-    return service_output
 
 
 async def get_compatible_outputs_given_target_input(
