@@ -218,12 +218,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         });
         menu.add(editButton);
 
-        /*
-        // disabled for now
         const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
         shareButton.addListener("execute", () => this.__openShareWith(), this);
         menu.add(shareButton);
-        */
 
         menu.addSeparator();
 
@@ -264,10 +261,15 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __openShareWith: function() {
-      const title = this.tr("Share Folder");
-      const permissionsView = new osparc.share.CollaboratorsFolder(this.getFolder());
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title);
-      permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getFolder().getAccessRights()), this);
+      const disableShare = true;
+      if (disableShare) {
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Not yet implemented"), "WARNING");
+      } else {
+        const title = this.tr("Share Folder");
+        const permissionsView = new osparc.share.CollaboratorsFolder(this.getFolder());
+        osparc.ui.window.Window.popUpInWindow(permissionsView, title);
+        permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getFolder().getAccessRights()), this);
+      }
     },
 
     __deleteStudyRequested: function() {
