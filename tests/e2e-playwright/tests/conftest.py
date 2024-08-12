@@ -459,9 +459,8 @@ def start_study_from_plus_button(
 ) -> Callable[[str], None]:
     def _(plus_button_test_id: str) -> None:
         with log_context(
-            logging.INFO, f"Finding plus button {plus_button_test_id=} in study browser"
+            logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
         ):
-            page.get_by_test_id("studiesTabBtn").click()
             page.get_by_test_id(plus_button_test_id).click()
 
     return _
@@ -491,12 +490,14 @@ def find_and_start_service_in_dashboard(
 @pytest.fixture
 def create_project_from_new_button(
     start_study_from_plus_button: Callable[[str], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool], dict[str, Any]
+    ],
 ) -> Callable[[str], dict[str, Any]]:
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, False)
 
     return _
 

@@ -136,22 +136,28 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		if [ "$$VIDEOSTREAM" = "y" ]; then \
 			echo "--check-videostreaming" >> $@; \
 		fi; \
+		read -p "Do you want to use the plus button (NOTE: if yes then pass the osparc-test-ID of the plus button in the service key) ? [y/n]: " PLUS_BUTTON; \
+		if [ "$$PLUS_BUTTON" = "y" ]; then \
+			echo "--use-plus-button" >> $@; \
+		fi; \
+		read -p "Enter the service key: " SERVICE_KEY; \
+		echo "--service-key=$$SERVICE_KEY" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
 	fi
 
 # Run the tests
-test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE)
+test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE) ## run sleepers test and cache settings
 	@$(call run_test, $(SLEEPERS_INPUT_FILE), tests/sleepers/test_sleepers.py)
 
-test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE)
+test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE) ## run s4l test and cache settings
 	@$(call run_test_on_chrome, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
 
-test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE)
+test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run jupyterlab test and cache settings
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
 
-test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE)
+test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE) ## run classic tip test and cache settings
 	$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
 
 # Define the common test running function
