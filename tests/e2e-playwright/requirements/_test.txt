@@ -14,7 +14,7 @@ email-validator==2.2.0
     # via pydantic
 exceptiongroup==1.2.2
     # via pytest
-faker==26.0.0
+faker==26.3.0
     # via -r requirements/_test.in
 greenlet==3.0.3
     # via playwright
@@ -32,7 +32,7 @@ packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
-playwright==1.45.0
+playwright==1.46.0
     # via pytest-playwright
 pluggy==1.5.0
     # via pytest
@@ -42,7 +42,7 @@ pydantic-core==2.20.1
     # via pydantic
 pyee==11.1.0
     # via playwright
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   pytest-base-url
     #   pytest-html
@@ -70,7 +70,7 @@ python-dateutil==2.9.0.post0
     #   faker
 python-slugify==8.0.4
     # via pytest-playwright
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via -r requirements/_test.in
 requests==2.32.3
     # via
@@ -78,7 +78,7 @@ requests==2.32.3
     #   pytest-base-url
 six==1.16.0
     # via python-dateutil
-tenacity==8.5.0
+tenacity==9.0.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
