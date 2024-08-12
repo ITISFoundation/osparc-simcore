@@ -21,6 +21,6 @@ pytest-runner
 pytest-sugar
 python-dotenv
 pyyaml
-tenacity
 sqlalchemy[mypy]
+tenacity
 types-aiofiles
