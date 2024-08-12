@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
 
-    const folders = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const folders = this.__foldersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     const folderHeader = this.__folderHeader = new osparc.dashboard.FolderHeader();
     folders.add(folderHeader);
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
@@ -104,6 +104,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   members: {
     __foldersList: null,
     __resourcesList: null,
+    __foldersLayout: null,
     __folderHeader: null,
     __foldersContainer: null,
     __nonGroupedContainer: null,
@@ -262,6 +263,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadCards: function(listId) {
       this.__cleanAll();
+      this._add(this.__foldersLayout);
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
