@@ -218,9 +218,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         });
         menu.add(editButton);
 
+        /*
+        // disabled for now
         const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
         shareButton.addListener("execute", () => this.__openShareWith(), this);
         menu.add(shareButton);
+        */
 
         menu.addSeparator();
 
