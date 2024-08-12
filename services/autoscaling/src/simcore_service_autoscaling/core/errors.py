@@ -14,8 +14,18 @@ class ConfigurationError(AutoscalingRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
-class Ec2InstanceInvalidError(AutoscalingRuntimeError):
-    msg_template: str = "Invalid EC2 defined: {msg}"
+class TaskRequiresUnauthorizedEC2InstanceTypeError(AutoscalingRuntimeError):
+    msg_template: str = (
+        "Task {task} requires unauthorized {instance_type}. "
+        "TIP: check task required instance type or allow the instance type in autoscaling service settings"
+    )
+
+
+class TaskRequirementsAboveRequiredEC2InstanceTypeError(AutoscalingRuntimeError):
+    msg_template: str = (
+        "Task {task} requires {instance_type} but requires {resources}. "
+        "TIP: Ensure task resources requirements fit required instance type available resources."
+    )
 
 
 class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
