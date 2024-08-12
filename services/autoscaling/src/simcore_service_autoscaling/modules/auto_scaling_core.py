@@ -14,18 +14,19 @@ from aws_library.ec2 import (
     EC2Tags,
     Resources,
 )
-from aws_library.ec2._errors import (
-    EC2InstanceNotFoundError,
-    EC2InstanceTypeInvalidError,
-    EC2TooManyInstancesError,
-)
+from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..core.errors import Ec2InvalidDnsNameError
+from ..core.errors import (
+    Ec2InvalidDnsNameError,
+    TaskBestFittingInstanceNotFoundError,
+    TaskRequirementsAboveRequiredEC2InstanceTypeError,
+    TaskRequiresUnauthorizedEC2InstanceTypeError,
+)
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..models import (
     AssignedTasksToInstanceType,
@@ -497,13 +498,12 @@ async def _find_needed_instances(
                             - task_required_resources,
                         )
                     )
-            except EC2InstanceNotFoundError:
-                _logger.exception(
-                    "Task %s needs more resources than any EC2 instance "
-                    "can provide with the current configuration. Please check!",
-                    f"{task}",
-                )
-            except EC2InstanceTypeInvalidError:
+            except TaskBestFittingInstanceNotFoundError:
+                _logger.exception("Task %s needs more resources: ", f"{task}")
+            except (
+                TaskRequirementsAboveRequiredEC2InstanceTypeError,
+                TaskRequiresUnauthorizedEC2InstanceTypeError,
+            ):
                 _logger.exception("Unexpected error:")
 
     _logger.info(

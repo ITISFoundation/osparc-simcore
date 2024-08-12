@@ -28,6 +28,13 @@ class TaskRequirementsAboveRequiredEC2InstanceTypeError(AutoscalingRuntimeError)
     )
 
 
+class TaskBestFittingInstanceNotFoundError(AutoscalingRuntimeError):
+    msg_template: str = (
+        "Task requires {resources} but no instance type fits the requirements. "
+        "TIP: Ensure task resources requirements fit available instance types."
+    )
+
+
 class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
     msg_template: str = "Invalid EC2 private DNS name {aws_private_dns_name}"
 

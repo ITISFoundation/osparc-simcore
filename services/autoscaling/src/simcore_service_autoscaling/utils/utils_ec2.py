@@ -9,10 +9,9 @@ from collections.abc import Callable
 from textwrap import dedent
 
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
-from aws_library.ec2._errors import EC2InstanceNotFoundError
 
 from .._meta import VERSION
-from ..core.errors import ConfigurationError
+from ..core.errors import ConfigurationError, TaskBestFittingInstanceNotFoundError
 from ..core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -105,7 +104,6 @@ def find_best_fitting_ec2_instance(
 
     score, instance = next(iter(score_to_ec2_candidate.items()))
     if score == 0:
-        raise EC2InstanceNotFoundError(
-            needed_resources=resources, msg="no adequate EC2 instance found!"
-        )
+        raise TaskBestFittingInstanceNotFoundError(needed_resources=resources)
+
     return instance
