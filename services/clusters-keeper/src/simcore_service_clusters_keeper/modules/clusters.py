@@ -11,12 +11,12 @@ from aws_library.ec2 import (
     EC2InstanceType,
     SimcoreEC2API,
 )
+from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.logging_utils import log_context
 
-from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
@@ -127,7 +127,7 @@ async def get_cluster(
     ):
         assert len(instances) == 1  # nosec
         return instances[0]
-    raise Ec2InstanceNotFoundError
+    raise EC2InstanceNotFoundError
 
 
 async def get_cluster_workers(
