@@ -338,6 +338,8 @@ async def _start_buffer_instances(app: FastAPI, cluster: Cluster) -> Cluster:
     instances_to_start = [
         i.ec2_instance for i in cluster.buffer_ec2s if i.assigned_tasks
     ]
+    if not instances_to_start:
+        return cluster
     started_instances = await get_ec2_client(app).start_instances(instances_to_start)
     started_instance_ids = [i.id for i in started_instances]
 
