@@ -712,7 +712,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (outputs) {
         let hasOutputs = false;
         Object.keys(this.getOutputs()).forEach(outputKey => {
-          if (Object.hasOwn(outputs, outputKey)) {
+          if (outputKey in outputs) {
             this.setOutputs({
               ...this.getOutputs(),
               [outputKey]: {
