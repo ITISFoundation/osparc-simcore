@@ -1,7 +1,15 @@
-from pydantic.errors import PydanticErrorMixin
+# pylint: disable=too-many-ancestors
+from typing import Any
+
+from models_library.errors_classes import OsparcErrorMixin
 
 
-class EC2RuntimeError(PydanticErrorMixin, RuntimeError):
+class EC2BaseError(OsparcErrorMixin, Exception):
+    def __init__(self, **ctx: Any) -> None:
+        super().__init__(**ctx)
+
+
+class EC2RuntimeError(EC2BaseError, RuntimeError):
     msg_template: str = "EC2 client unexpected error"
 
 

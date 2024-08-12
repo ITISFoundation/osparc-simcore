@@ -11,7 +11,7 @@ from textwrap import dedent
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 
 from .._meta import VERSION
-from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
+from ..core.errors import ConfigurationError
 from ..core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)

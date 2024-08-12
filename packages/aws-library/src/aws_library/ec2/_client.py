@@ -19,7 +19,6 @@ from ._error_handler import ec2_exception_handler
 from ._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
-    EC2RuntimeError,
     EC2TooManyInstancesError,
 )
 from ._models import (
@@ -107,7 +106,6 @@ class SimcoreEC2API:
         except botocore.exceptions.ClientError as exc:
             if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
                 raise EC2InstanceTypeInvalidError from exc
-            raise EC2RuntimeError from exc  # pragma: no cover
 
     @ec2_exception_handler(_logger)
     async def launch_instances(
