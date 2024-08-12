@@ -142,16 +142,16 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	fi
 
 # Run the tests
-test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE)
+test-sleepers-anywhere: _check_venv_active $(SLEEPERS_INPUT_FILE) ## run sleepers test and cache settings
 	@$(call run_test, $(SLEEPERS_INPUT_FILE), tests/sleepers/test_sleepers.py)
 
-test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE)
+test-s4l-anywhere: _check_venv_active $(S4L_INPUT_FILE) ## run s4l test and cache settings
 	@$(call run_test_on_chrome, $(S4L_INPUT_FILE), tests/sim4life/test_sim4life.py)
 
-test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE)
+test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run jupyterlab test and cache settings
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
 
-test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE)
+test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE) ## run classic tip test and cache settings
 	$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
 
 # Define the common test running function
