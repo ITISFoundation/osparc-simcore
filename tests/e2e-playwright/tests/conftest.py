@@ -459,9 +459,8 @@ def start_study_from_plus_button(
 ) -> Callable[[str], None]:
     def _(plus_button_test_id: str) -> None:
         with log_context(
-            logging.INFO, f"Finding plus button {plus_button_test_id=} in study browser"
+            logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
         ):
-            page.get_by_test_id("studiesTabBtn").click()
             page.get_by_test_id(plus_button_test_id).click()
 
     return _
