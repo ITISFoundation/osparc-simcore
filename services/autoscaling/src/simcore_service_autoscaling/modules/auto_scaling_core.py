@@ -626,7 +626,7 @@ async def _start_instances(
         capped_needed_machines = await _cap_needed_instances(
             app, needed_instances, new_instance_tags
         )
-    except Ec2TooManyInstancesError:
+    except EC2TooManyInstancesError:
         await auto_scaling_mode.log_message_from_tasks(
             app,
             tasks,
@@ -668,7 +668,7 @@ async def _start_instances(
     last_issue = ""
     new_pending_instances: list[EC2InstanceData] = []
     for r in results:
-        if isinstance(r, Ec2TooManyInstancesError):
+        if isinstance(r, EC2TooManyInstancesError):
             await auto_scaling_mode.log_message_from_tasks(
                 app,
                 tasks,
