@@ -495,7 +495,7 @@ def create_project_from_new_button(
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, False)
 
     return _
 

@@ -131,11 +131,16 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
-		echo "--service-key=sim4life-8-0-0-dy" >> $@; \
 		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
 		if [ "$$VIDEOSTREAM" = "y" ]; then \
 			echo "--check-videostreaming" >> $@; \
 		fi; \
+		read -p "Do you want to use the plus button (NOTE: if yes then pass the osparc-test-ID of the plus button in the service key) ? [y/n]: " PLUS_BUTTON; \
+		if [ "$$PLUS_BUTTON" = "y" ]; then \
+			echo "--use-plus-button" >> $@; \
+		fi; \
+		read -p "Enter the service key: " SERVICE_KEY; \
+		echo "--service-key=$$SERVICE_KEY" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
