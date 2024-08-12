@@ -16,11 +16,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 from ._error_handler import ec2_exception_handler
-from ._errors import (
-    EC2InstanceNotFoundError,
-    EC2InstanceTypeInvalidError,
-    EC2TooManyInstancesError,
-)
+from ._errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
 from ._models import (
     AWSTagKey,
     EC2InstanceConfig,
@@ -82,30 +78,24 @@ class SimcoreEC2API:
             ClustersKeeperRuntimeError: unexpected error communicating with EC2
 
         """
-        try:
-            instance_types = await self.client.describe_instance_types(
-                InstanceTypes=list(instance_type_names)
-            )
-            list_instances: list[EC2InstanceType] = []
-            for instance in instance_types.get("InstanceTypes", []):
-                with contextlib.suppress(KeyError):
-                    list_instances.append(
-                        EC2InstanceType(
-                            name=instance["InstanceType"],
-                            resources=Resources(
-                                cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                                ram=ByteSize(
-                                    int(instance["MemoryInfo"]["SizeInMiB"])
-                                    * 1024
-                                    * 1024
-                                ),
+        instance_types = await self.client.describe_instance_types(
+            InstanceTypes=list(instance_type_names)
+        )
+        list_instances: list[EC2InstanceType] = []
+        for instance in instance_types.get("InstanceTypes", []):
+            with contextlib.suppress(KeyError):
+                list_instances.append(
+                    EC2InstanceType(
+                        name=instance["InstanceType"],
+                        resources=Resources(
+                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                            ram=ByteSize(
+                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
                             ),
-                        )
+                        ),
                     )
-            return list_instances
-        except botocore.exceptions.ClientError as exc:
-            if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
-                raise EC2InstanceTypeInvalidError from exc
+                )
+        return list_instances
 
     @ec2_exception_handler(_logger)
     async def launch_instances(
@@ -328,6 +318,7 @@ class SimcoreEC2API:
                 InstanceIds=[i.id for i in instance_datas]
             )
 
+    @ec2_exception_handler(_logger)
     async def set_instances_tags(
         self, instances: Sequence[EC2InstanceData], *, tags: EC2Tags
     ) -> None:
@@ -349,6 +340,7 @@ class SimcoreEC2API:
                 raise EC2InstanceNotFoundError from exc
             raise  # pragma: no cover
 
+    @ec2_exception_handler(_logger)
     async def remove_instances_tags(
         self, instances: Sequence[EC2InstanceData], *, tag_keys: Iterable[AWSTagKey]
     ) -> None:

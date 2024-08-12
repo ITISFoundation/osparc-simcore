@@ -138,7 +138,9 @@ async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
     faker: Faker,
 ):
     with pytest.raises(EC2InstanceTypeInvalidError):
-        await simcore_ec2_api.get_ec2_instance_capabilities(set(faker.pystr()))
+        await simcore_ec2_api.get_ec2_instance_capabilities(
+            faker.pyset(allowed_types=(str,))
+        )
 
 
 @pytest.fixture(params=_ec2_allowed_types())

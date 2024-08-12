@@ -8,6 +8,7 @@ from botocore import exceptions as botocore_exc
 from ._errors import (
     EC2AccessError,
     EC2InstanceNotFoundError,
+    EC2InstanceTypeInvalidError,
     EC2NotConnectedError,
     EC2RuntimeError,
     EC2TimeoutError,
@@ -42,6 +43,8 @@ def _map_botocore_client_exception(
             return EC2InstanceNotFoundError()
         case 400, "TerminateInstances":
             return EC2InstanceNotFoundError()
+        case 400, "DescribeInstanceTypes":
+            return EC2InstanceTypeInvalidError()
         case _:
             return EC2AccessError(
                 operation_name=operation_name,
