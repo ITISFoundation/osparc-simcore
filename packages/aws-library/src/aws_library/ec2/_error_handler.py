@@ -26,7 +26,9 @@ Self = TypeVar("Self", bound="SimcoreEC2API")
 
 
 def _map_botocore_client_exception(
-    botocore_error: botocore_exc.ClientError, *args, **kwargs
+    botocore_error: botocore_exc.ClientError,
+    *args,  # pylint: disable=unused-argument # noqa: ARG001
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> EC2AccessError:
     status_code = int(
         botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
