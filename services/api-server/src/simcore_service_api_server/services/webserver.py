@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Mapping
 from uuid import UUID
 
 import httpx
@@ -145,7 +145,7 @@ class AuthSession:
         cls,
         app: FastAPI,
         session_cookies: dict,
-        product_header: dict[str, str],
+        product_header: Mapping[str, str],  # SEE httpx._types.HeadersTypes
     ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
