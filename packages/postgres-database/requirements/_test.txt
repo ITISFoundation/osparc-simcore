@@ -4,15 +4,15 @@ async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   aiopg
-attrs==23.2.0
+attrs==24.2.0
     # via pytest-docker
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 exceptiongroup==1.2.2
     # via pytest
-faker==26.0.0
+faker==26.3.0
     # via -r requirements/_test.in
 greenlet==3.0.3
     # via
@@ -21,7 +21,7 @@ greenlet==3.0.3
     #   sqlalchemy
 iniconfig==2.0.0
     # via pytest
-mypy==1.10.1
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -34,14 +34,14 @@ psycopg2-binary==2.9.9
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-instafail
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -55,13 +55,13 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via faker
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

@@ -65,5 +65,5 @@ typing-extensions==4.12.2
     #   fastapi
     #   pydantic
     #   uvicorn
-uvicorn==0.30.1
+uvicorn==0.30.5
     # via -r requirements/_fastapi.in
