@@ -146,8 +146,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadResources: function() {
-      this._resourcesContainer.setResourcesToList([]);
-
       this.__reloadFolders();
       this.__reloadStudies();
     },
@@ -391,7 +389,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __applyCurrentFolderId: function(currentFolderId) {
       osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-        .then(() => this.__reloadResources());
+        .then(() => {
+          this._resourcesContainer.setResourcesToList([]);
+          this._resourcesList = [];
+          this.invalidateStudies();
+
+          this.__reloadResources();
+        });
     },
 
     _folderUpdated: function() {
