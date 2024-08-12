@@ -166,7 +166,7 @@ def create_new_project_for_job(
             currentNodeId=solver_id,
             annotations={},
         ),
-        accessRights={},
+        access_rights={},
     )
 
 
