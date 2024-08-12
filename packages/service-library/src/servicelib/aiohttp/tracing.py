@@ -1,4 +1,4 @@
-""" Adds aiohttp middleware for tracing using zipkin server instrumentation.
+""" Adds aiohttp middleware for tracing using opentelemetry instrumentation.
 
 """
 import logging
