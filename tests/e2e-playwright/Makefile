@@ -131,6 +131,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
+		echo "--plus_button_test_id=startS4LButton" >> $@; \
 		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
 		if [ "$$VIDEOSTREAM" = "y" ]; then \
 			echo "--check-videostreaming" >> $@; \
