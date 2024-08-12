@@ -45,7 +45,7 @@ qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
       let control;
       switch (id) {
         case "current-folder": {
-          const folder = osparc.store.Folders.getFolder(this.__currentFolderId);
+          const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
           const currentFolderName = folder ? folder["name"] : "Home";
           control = new qx.ui.basic.Label(this.tr("Current location: ") + currentFolderName);
           this._add(control);
