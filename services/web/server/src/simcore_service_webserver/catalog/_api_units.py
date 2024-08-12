@@ -37,7 +37,7 @@ def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool
     return can
 
 
-def replace_service_input_outputs(
+async def replace_service_input_outputs(
     service: dict[str, Any],
     *,
     unit_registry: UnitRegistry | None = None,
@@ -47,16 +47,16 @@ def replace_service_input_outputs(
     # This is a fast solution until proper models are available for the web API
     for input_key in service["inputs"]:
         new_input: ServiceInputGet = (
-            ServiceInputGetFactory.from_catalog_service_api_model(
-                service, input_key, unit_registry
+            await ServiceInputGetFactory.from_catalog_service_api_model(
+                service=service, input_key=input_key, ureg=unit_registry
             )
         )
         service["inputs"][input_key] = new_input.dict(**export_options)
 
     for output_key in service["outputs"]:
         new_output: ServiceOutputGet = (
-            ServiceOutputGetFactory.from_catalog_service_api_model(
-                service, output_key, unit_registry
+            await ServiceOutputGetFactory.from_catalog_service_api_model(
+                service=service, output_key=output_key, ureg=unit_registry
             )
         )
         service["outputs"][output_key] = new_output.dict(**export_options)

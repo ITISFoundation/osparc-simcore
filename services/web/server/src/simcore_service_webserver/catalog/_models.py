@@ -1,9 +1,8 @@
 import logging
-import os
 from dataclasses import dataclass
 from typing import Any, Final
 
-import cachetools
+from aiocache import cached
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -55,15 +54,9 @@ def get_html_formatted_unit(
 # Transforms from catalog api models -> webserver api models
 #
 
-
-# Caching:  https://cachetools.readthedocs.io/en/latest/index.html#cachetools.TTLCache
-# - the least recently used items will be discarded first to make space when necessary.
-#
-
-_CACHE_MAXSIZE: Final = int(
-    os.getenv("CACHETOOLS_CACHE_MAXSIZE", "100")
-)  # number of items  i.e. ServiceInputGet/ServiceOutputGet instances
-_CACHE_TTL: Final = int(os.getenv("CACHETOOLS_CACHE_TTL_SECS", "60"))  # secs
+_SECOND = 1  # in seconds
+_MINUTE = 60 * _SECOND
+_CACHE_TTL: Final = 1 * _MINUTE
 
 
 def _hash_inputs(
@@ -75,22 +68,14 @@ def _hash_inputs(
     return f"{service['key']}/{service['version']}/{input_key}"
 
 
-def _cachetools_cached(*args, **kwargs):
-    def decorator(func):
-        if os.getenv("CACHETOOLS_DISABLE", "0") == "0":
-            return cachetools.cached(*args, **kwargs)(func)
-        _logger.warning("cachetools disabled")
-        return func
-
-    return decorator
-
-
 class ServiceInputGetFactory:
     @staticmethod
-    @_cachetools_cached(
-        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_inputs
+    @cached(
+        ttl=_CACHE_TTL,
+        key_builder=_hash_inputs,
     )
-    def from_catalog_service_api_model(
+    async def from_catalog_service_api_model(
+        *,
         service: dict[str, Any],
         input_key: ServiceInputKey,
         ureg: UnitRegistry | None = None,
@@ -121,10 +106,12 @@ def _hash_outputs(
 
 class ServiceOutputGetFactory:
     @staticmethod
-    @_cachetools_cached(
-        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_outputs
+    @cached(
+        ttl=_CACHE_TTL,
+        key_builder=_hash_outputs,
     )
-    def from_catalog_service_api_model(
+    async def from_catalog_service_api_model(
+        *,
         service: dict[str, Any],
         output_key: ServiceOutputKey,
         ureg: UnitRegistry | None = None,
