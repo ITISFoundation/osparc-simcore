@@ -413,7 +413,6 @@ async def test_number_of_db_calls_on_handlers_of_auth_decorators(
     assert is_user_in_product_name_dbmock.call_count == 1
 
 
-@pytest.mark.skipif(True, reason="Skipping test during local execution")
 async def test_time_overhead_on_handlers_of_auth_decorators(
     client: TestClient,
     session_initialized: None,
