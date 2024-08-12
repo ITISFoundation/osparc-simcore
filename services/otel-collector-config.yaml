@@ -2,7 +2,7 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: "0.0.0.0:4317"  # Default endpoint for OTLP over gRPC
+        endpoint: 0.0.0.0:4317  # Default endpoint for OTLP over gRPC
       http:
         endpoint: 0.0.0.0:4318 # Default endpoint for OTLP over HTTP
 exporters:
@@ -19,8 +19,8 @@ service:
     logs:
       level: "debug"
 processors:
-  #batch:
-  #  timeout: 5s
-  #  send_batch_size: ${TRACING_OTEL_COLLECTOR_BATCH_SIZE}
+  batch:
+    timeout: 5s
+    send_batch_size: ${TRACING_OTEL_COLLECTOR_BATCH_SIZE}
   probabilistic_sampler:
     sampling_percentage: ${TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE}
