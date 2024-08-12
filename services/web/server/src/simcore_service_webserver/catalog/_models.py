@@ -53,7 +53,9 @@ def get_html_formatted_unit(
 #
 # Transforms from catalog api models -> webserver api models
 #
-
+# Uses aiocache (async) instead of cachetools (sync) in order to handle concurrency better
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/6169
+#
 _SECOND = 1  # in seconds
 _MINUTE = 60 * _SECOND
 _CACHE_TTL: Final = 1 * _MINUTE
@@ -114,8 +116,7 @@ class ServiceOutputGetFactory:
     ) -> ServiceOutputGet:
         data = service["outputs"][output_key]
         # NOTE: prunes invalid field that might have remained in database
-        if "defaultValue" in data:
-            data.pop("defaultValue")
+        data.pop("defaultValue", None)
 
         # NOTE: this call must be validated if port property type is "ref_contentSchema"
         port = ServiceOutputGet(key_id=output_key, **data)
