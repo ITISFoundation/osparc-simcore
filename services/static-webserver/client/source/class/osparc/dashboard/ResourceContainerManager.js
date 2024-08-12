@@ -36,8 +36,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
     folders.add(foldersContainer);
     this._add(folders);
-    // Only visible in master until it's connected to the backend
-    folders.setVisibility(osparc.utils.Utils.isDevelopmentPlatform() ? "visible" : "excluded");
+    folders.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
     const nonGroupedContainer = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
     [
