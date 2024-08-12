@@ -60,10 +60,10 @@ def get_html_formatted_unit(
 # - the least recently used items will be discarded first to make space when necessary.
 #
 
-_CACHE_MAXSIZE: Final = (
-    1000  # number of items  i.e. ServiceInputGet/ServiceOutputGet insteances
-)
-_CACHE_TTL: Final = 60 * 60  # secs
+_CACHE_MAXSIZE: Final = int(
+    os.getenv("CACHETOOLS_CACHE_MAXSIZE", "100")
+)  # number of items  i.e. ServiceInputGet/ServiceOutputGet instances
+_CACHE_TTL: Final = int(os.getenv("CACHETOOLS_CACHE_TTL_SECS", "60"))  # secs
 
 
 def _hash_inputs(
