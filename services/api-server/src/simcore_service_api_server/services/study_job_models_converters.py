@@ -11,8 +11,8 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
 )
 from models_library.projects import DateTimeStr
-from models_library.projects_nodes import InputID, NodeID
-from models_library.projects_nodes_io import LinkToFileTypes, SimcoreS3FileID
+from models_library.projects_nodes import InputID
+from models_library.projects_nodes_io import LinkToFileTypes, NodeID, SimcoreS3FileID
 from pydantic import parse_obj_as
 
 from ..models.domain.projects import InputTypes, SimCoreFileLink

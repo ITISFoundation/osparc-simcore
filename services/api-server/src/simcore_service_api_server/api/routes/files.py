@@ -17,8 +17,8 @@ from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
-    UploadableFileObject,
     UploadedFile,
     UploadedFolder,
     abort_upload,

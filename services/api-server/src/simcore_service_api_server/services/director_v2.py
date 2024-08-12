@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as

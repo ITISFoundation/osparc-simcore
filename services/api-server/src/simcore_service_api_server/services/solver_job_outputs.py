@@ -3,8 +3,7 @@ from typing import TypeAlias
 
 import aiopg
 from models_library.projects import ProjectID, ProjectIDStr
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import BaseFileLink, NodeIDStr
+from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
 from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
