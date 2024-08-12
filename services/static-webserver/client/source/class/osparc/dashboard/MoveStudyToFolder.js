@@ -27,9 +27,18 @@ qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.getChildControl("current-folder");
-    this.getChildControl("folders-tree");
+    const foldersTree = this.getChildControl("folders-tree");
     this.getChildControl("cancel-btn");
-    this.getChildControl("move-btn");
+    const moveButton = this.getChildControl("move-btn");
+
+    moveButton.setEnabled(false)
+    foldersTree.addListener("selectionChanged", e => {
+      const folderId = e.getData();
+      moveButton.setEnabled();
+      moveButton.addListenerOnce("execute", () => {
+        this.fireDataEvent("moveToFolder", folderId);
+      });
+    });
   },
 
   events: {
