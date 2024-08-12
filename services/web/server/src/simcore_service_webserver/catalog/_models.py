@@ -59,13 +59,11 @@ _MINUTE = 60 * _SECOND
 _CACHE_TTL: Final = 1 * _MINUTE
 
 
-def _hash_inputs(
-    service: dict[str, Any],
-    input_key: str,
-    *args,  # noqa: ARG001 # pylint: disable=unused-argument
-    **kwargs,  # noqa: ARG001 # pylint: disable=unused-argument
-):
-    return f"{service['key']}/{service['version']}/{input_key}"
+def _hash_inputs(_f, *_args, **kw):
+    assert _f.__name__  # nosec
+    assert not _args  # nosec
+    service: dict[str, Any] = kw["service"]
+    return f"ServiceInputGetFactory_{service['key']}_{service['version']}_{kw['input_key']}"
 
 
 class ServiceInputGetFactory:
@@ -95,13 +93,11 @@ class ServiceInputGetFactory:
         return port
 
 
-def _hash_outputs(
-    service: dict[str, Any],
-    output_key: str,
-    *args,  # noqa: ARG001 # pylint: disable=unused-argument
-    **kwargs,  # noqa: ARG001 # pylint: disable=unused-argument
-):
-    return f"{service['key']}/{service['version']}/{output_key}"
+def _hash_outputs(_f, *_args, **kw):
+    assert _f.__name__  # nosec
+    assert not _args  # nosec
+    service: dict[str, Any] = kw["service"]
+    return f"ServiceOutputGetFactory_{service['key']}/{service['version']}/{kw['output_key']}"
 
 
 class ServiceOutputGetFactory:
