@@ -249,7 +249,7 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    with pytest.raises(Ec2InstanceNotFoundError):
+    with pytest.raises(EC2InstanceNotFoundError):
         await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
 
 
