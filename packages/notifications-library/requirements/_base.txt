@@ -1,6 +1,6 @@
 aiofiles==24.1.0
     # via -r requirements/_base.in
-aiosmtplib==3.0.1
+aiosmtplib==3.0.2
     # via -r requirements/_base.in
 alembic==1.13.2
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -10,7 +10,7 @@ async-timeout==4.0.3
     # via asyncpg
 asyncpg==0.29.0
     # via sqlalchemy
-attrs==23.2.0
+attrs==24.2.0
     # via
     #   jsonschema
     #   referencing
@@ -54,7 +54,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.0.5
     # via yarl
-orjson==3.10.6
+orjson==3.10.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -84,7 +84,7 @@ rich==13.7.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.19.0
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -92,7 +92,7 @@ shellingham==1.5.4
     # via typer
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
