@@ -559,13 +559,13 @@ qx.Class.define("osparc.store.Store", {
           .then(values => {
             const orgs = values[0]; // array
             const members = values[1]; // object
-            const productEveryone = values[2]; // number
+            const productEveryone = values[2]; // entry
             const potentialCollaborators = {};
             orgs.forEach(org => {
               if (org["accessRights"]["read"]) {
                 // maybe because of migration script, some users have access to the product everyone group
                 // rely on the includeProductEveryone argument to exclude it if necessary
-                if (org["gid"] === productEveryone && !includeProductEveryone) {
+                if (org["gid"] === productEveryone["gid"] && !includeProductEveryone) {
                   return;
                 }
                 org["collabType"] = 1;
