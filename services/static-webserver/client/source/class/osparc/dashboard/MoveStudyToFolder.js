@@ -82,10 +82,6 @@ qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
           control = new qx.ui.form.Button(this.tr("Move")).set({
             appearance: "form-button"
           });
-          control.addListener("execute", () => {
-            const folderId = this.getChildControl("url-field");
-            this.fireDataEvent("moveToFolder", folderId);
-          }, this);
           buttons.add(control);
           break;
         }
