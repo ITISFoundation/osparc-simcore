@@ -106,8 +106,8 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
               folderId: folder.getFolderId(),
               name: folder.getName(),
               children: []
-            }
-            const folderModel = qx.data.marshal.Json.createModel(folderData);
+            };
+            const folderModel = qx.data.marshal.Json.createModel(folderData, true);
             this.self().addLoadingChild(folderModel);
             parentModel.getChildren().append(folderModel);
           });
