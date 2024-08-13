@@ -123,8 +123,10 @@ class SimcoreSSMAPI:
                 }
             ],
         )
-        assert response["InstanceInformationList"]  # nosec
-        if response["InstanceInformationList"]:
+        if (
+            "InstanceInformationList" in response
+            and response["InstanceInformationList"]
+        ):
             assert len(response["InstanceInformationList"]) == 1  # nosec
             assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
             return bool(
