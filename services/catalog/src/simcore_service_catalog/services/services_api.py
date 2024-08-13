@@ -273,8 +273,8 @@ async def update_service(
                 key=service_key,
                 version=service_version,
                 gid=gid,
-                execute_access=rights.execute_access,
-                write_access=rights.write_access,
+                execute_access=rights.execute,
+                write_access=rights.write,
                 product_name=product_name,
             )
             for gid, rights in update.access_rights.items()
