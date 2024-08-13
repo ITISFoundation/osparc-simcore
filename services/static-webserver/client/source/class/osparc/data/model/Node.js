@@ -712,7 +712,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (outputs) {
         let hasOutputs = false;
         Object.keys(this.getOutputs()).forEach(outputKey => {
-          if (Object.hasOwn(outputs, outputKey)) {
+          if (outputKey in outputs) {
             this.setOutputs({
               ...this.getOutputs(),
               [outputKey]: {
@@ -1094,7 +1094,11 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.getIframeHandler().startPolling();
+        if (this.getIframeHandler()) {
+          this.getIframeHandler().startPolling();
+        } else {
+          console.error(this.getLabel() + " iframe handler not ready");
+        }
       }
     },
 

@@ -45,7 +45,6 @@ def replace_service_input_outputs(
 ):
     """Thin wrapper to replace i/o ports in returned service model"""
     # This is a fast solution until proper models are available for the web API
-
     for input_key in service["inputs"]:
         new_input: ServiceInputGet = (
             ServiceInputGetFactory.from_catalog_service_api_model(

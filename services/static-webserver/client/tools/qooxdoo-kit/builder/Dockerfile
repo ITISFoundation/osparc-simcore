@@ -59,7 +59,7 @@ RUN \
   python3 ./scripts/post-compile.py
 
 
-FROM joseluisq/static-web-server:1.16.0-alpine as server-base
+FROM joseluisq/static-web-server:2.32.1-alpine as server-base
 
 LABEL org.opencontainers.image.authors="GitHK, odeimaiz"
 

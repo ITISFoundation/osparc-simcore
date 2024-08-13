@@ -229,8 +229,8 @@ qx.Class.define("osparc.service.Utils", {
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
     isUpdatable: function(metadata) {
-      const latestCompatibleMetadata = this.getLatestCompatible(metadata["key"], metadata["version"]);
-      return latestCompatibleMetadata && (metadata["key"] !== latestCompatibleMetadata["key"] || metadata["version"] !== latestCompatibleMetadata["version"]);
+      const latestCompatible = this.getLatestCompatible(metadata["key"], metadata["version"]);
+      return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
     },
 
     isDeprecated: function(metadata) {
