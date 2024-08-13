@@ -25,7 +25,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    let studyData = null;
     const params = {
       url: {
         studyId
@@ -33,15 +32,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       data: osparc.utils.Utils.getClientSessionID()
     };
     osparc.data.Resources.fetch("studies", "open", params)
-      .then(resp => {
-        studyData = resp;
-        if (studyData["workbench"] && nodeId in studyData["workbench"]) {
-          const nodeData = studyData["workbench"][nodeId];
-          return osparc.service.Store.getService(nodeData.key, nodeData.version)
-        }
-        throw new Error("Node data not found in Study");
-      })
-      .then(metadata => {
+      .then(studyData => {
         // create study
         const study = new osparc.data.model.Study(studyData);
         this.setStudy(study);
