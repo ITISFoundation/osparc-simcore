@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
-from ..services_access import ServiceAccessRights
+from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsV2
 from ..services_authoring import Author
 from ..services_enums import ServiceType
 from ..services_history import ServiceRelease
@@ -203,15 +203,6 @@ class ServiceGet(
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
         }
-
-
-class ServiceGroupAccessRightsV2(BaseModel):
-    execute: bool = False
-    write: bool = False
-
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
 
 
 class ServiceGetV2(BaseModel):
