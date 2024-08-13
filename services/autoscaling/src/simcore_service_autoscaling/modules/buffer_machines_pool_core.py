@@ -59,6 +59,37 @@ _PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
 _logger = logging.getLogger(__name__)
 
 
+async def _analyze_running_instance_state(
+    app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
+):
+    ssm_client = get_ssm_client(app)
+
+    if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+        buffer_pool.pulling_instances.add(instance)
+    elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+        try:
+            if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
+                if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    instance.type
+                ].pre_pull_images:
+                    buffer_pool.waiting_to_pull_instances.add(instance)
+                else:
+                    buffer_pool.waiting_to_stop_instances.add(instance)
+            else:
+                buffer_pool.pending_instances.add(instance)
+        except (
+            SSMCommandExecutionResultError,
+            SSMCommandExecutionTimeoutError,
+        ):
+            _logger.exception(
+                "Unnexpected error when checking EC2 cloud initialization completion!. "
+                "The machine will be terminated. TIP: check the initialization phase for errors."
+            )
+            buffer_pool.broken_instances.add(instance)
+
+
 async def _analyse_current_state(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> BufferPoolManager:
@@ -88,41 +119,12 @@ async def _analyse_current_state(
                     instance
                 )
             case "running":
-                ssm_client = get_ssm_client(app)
-                if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
-                    buffers_manager.buffer_pools[instance.type].pulling_instances.add(
-                        instance
-                    )
-                elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
-                    try:
-                        if await ssm_client.wait_for_has_instance_completed_cloud_init(
-                            instance.id
-                        ):
-                            if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                                instance.type
-                            ].pre_pull_images:
-                                buffers_manager.buffer_pools[
-                                    instance.type
-                                ].waiting_to_pull_instances.add(instance)
-                            else:
-                                buffers_manager.buffer_pools[
-                                    instance.type
-                                ].waiting_to_stop_instances.add(instance)
-                        else:
-                            buffers_manager.buffer_pools[
-                                instance.type
-                            ].pending_instances.add(instance)
-                    except (
-                        SSMCommandExecutionResultError,
-                        SSMCommandExecutionTimeoutError,
-                    ):
-                        _logger.exception(
-                            "Unnexpected error when checking EC2 cloud initialization completion!. "
-                            "The machine will be terminated. TIP: check the initialization phase for errors."
-                        )
-                        buffers_manager.buffer_pools[
-                            instance.type
-                        ].broken_instances.add(instance)
+                await _analyze_running_instance_state(
+                    app,
+                    buffer_pool=buffers_manager.buffer_pools[instance.type],
+                    instance=instance,
+                )
+
     _logger.info("Current buffer pools: %s", f"{buffers_manager}")
     return buffers_manager
 
