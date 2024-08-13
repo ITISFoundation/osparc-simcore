@@ -198,9 +198,10 @@ async def _terminate_broken_instances(
     termineatable_instances = set()
     for pool in buffers_manager.buffer_pools.values():
         termineatable_instances.update(pool.broken_instances)
-    await ec2_client.terminate_instances(termineatable_instances)
-    for instance in termineatable_instances:
-        buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    if termineatable_instances:
+        await ec2_client.terminate_instances(termineatable_instances)
+        for instance in termineatable_instances:
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
     return buffers_manager
 
 
