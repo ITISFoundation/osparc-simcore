@@ -19,6 +19,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -479,3 +480,40 @@ async def test_list_projects_for_specific_folder_id(
     _assert_response_data(
         data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
     )
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    # disable the garbage collector
+    monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
+    return app_environment | {"WEBSERVER_FOLDERS": "0"}
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_projects_with_disabled_project_folders_plugin(
+    client: TestClient,
+    app_environment: EnvVarsDict,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner,
+    mock_catalog_api_get_services_for_user_in_product,
+    setup_folders_db,
+):
+    """
+    As the WEBSERVER_FOLDERS plugin is turned off, the project listing
+    should behave the same way as before, and therefore list all the projects
+    in the root directory, essentially ignoring the folders_to_projects table.
+    """
+    base_url = client.app.router["list_projects"].url_for()
+    assert f"{base_url}" == f"/{api_version_prefix}/projects"
+
+    resp = await client.get(base_url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(data, 1, 0, 1, "/v0/projects?offset=0&limit=20", 1)
