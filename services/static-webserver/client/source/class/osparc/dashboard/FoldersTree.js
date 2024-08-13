@@ -38,26 +38,14 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   statics: {
-    getLoadingData: function() {
-      return {
+    addLoadingChild: function(parentModel) {
+      const loadingModel = qx.data.marshal.Json.createModel({
         label: "Loading...",
         children: [],
         icon: "@FontAwesome5Solid/circle-notch/12"
-      };
-    },
-
-    addLoadingChild: function(parent) {
-      const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
-      parent.getChildren().append(loadingModel);
-    },
-
-    removeLoadingChild: function(parent) {
-      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
-        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
-          parent.getChildren().toArray()
-            .splice(i, 1);
-        }
-      }
+      }, true);
+      parentModel.getChildren().removeAll();
+      parentModel.getChildren().append(loadingModel);
     }
   },
 
@@ -77,6 +65,8 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
           openButton.addListener("tap", () => {
             this.__fetchChildren(item);
           });
+          // OM remove this
+          item.addListener("dbltap", () => this.__fetchChildren(item), this);
         },
         sorter: (a, b) => {
           const aLabel = a.getLabel();
@@ -101,22 +91,24 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       const rootModel = qx.data.marshal.Json.createModel(rootFolder, true);
       this.setModel(rootModel);
 
-      this.self().addLoadingChild(rootModel);
       this.__fetchChildren(rootModel);
     },
 
     __fetchChildren: function(parentModel) {
-      const folderId = parentModel.getFolderId();
+      this.self().addLoadingChild(parentModel);
+
+      const folderId = parentModel.getFolderId ? parentModel.getFolderId() : parentModel.getModel();
       osparc.store.Folders.getInstance().fetchFolders(folderId)
         .then(folders => {
-          this.self().removeLoadingChild(parentModel);
+          parentModel.getChildren().removeAll();
           folders.forEach(folder => {
             const folderData = {
               folderId: folder.getFolderId(),
               name: folder.getName(),
-              children: [this.self().getLoadingData()]
+              children: []
             }
             const folderModel = qx.data.marshal.Json.createModel(folderData);
+            this.self().addLoadingChild(folderModel);
             parentModel.getChildren().append(folderModel);
           });
         });
