@@ -116,7 +116,8 @@ async def create_study_job(
     )
 
     await webserver_api.patch_project(
-        project_id=job.id, patch_params=ProjectPatch(name=job.name)
+        project_id=job.id,
+        patch_params=ProjectPatch(name=job.name),  # type: ignore[arg-type]
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)

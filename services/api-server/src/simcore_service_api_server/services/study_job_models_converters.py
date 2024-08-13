@@ -106,7 +106,9 @@ async def create_job_outputs_from_project_outputs(
             and isinstance(value, dict)
             and {"store", "path"}.issubset(value.keys())
         ):
-            assert parse_obj_as(LinkToFileTypes, value) is not None  # nosec
+            assert (
+                parse_obj_as(LinkToFileTypes, value) is not None
+            )  # nosec # type: ignore[arg-type]
 
             path = value["path"]
             file_id: UUID = File.create_id(*path.split("/"))

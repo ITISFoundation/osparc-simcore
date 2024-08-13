@@ -86,14 +86,16 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
         assert parse_obj_as(InputID, name) == name  # nosec
-        assert parse_obj_as(InputTypes, value) == value  # nosec
+        assert (
+            parse_obj_as(InputTypes, value) == value
+        )  # nosec # type: ignore[arg-type]
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
             _api, file_id, filename = value.path.split("/")
             assert _api == "api"  # nosec
             input_values[name] = File(
-                id=file_id,
+                id=file_id,  # type: ignore[arg-type]
                 filename=filename,
                 e_tag=value.e_tag,
             )
@@ -135,8 +137,8 @@ def create_new_project_for_job(
     )
 
     solver_service = Node(
-        key=solver.id,
-        version=solver.version,
+        key=solver.id,  # type: ignore[arg-type]
+        version=solver.version,  # type: ignore[arg-type]
         label=solver.title,
         inputs=solver_inputs,
         inputsUnits={},
@@ -151,11 +153,11 @@ def create_new_project_for_job(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
-        thumbnail="https://via.placeholder.com/170x120.png",
-        workbench={solver_id: solver_service},
+        thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
+        workbench={solver_id: solver_service},  # type: ignore[dict-item]
         ui=StudyUI(
             workbench={
-                f"{solver_id}": {
+                f"{solver_id}": {  # type: ignore[arg-type]
                     "position": {
                         "x": 633,
                         "y": 229,
@@ -163,7 +165,7 @@ def create_new_project_for_job(
                 },
             },
             slideshow={},
-            currentNodeId=solver_id,
+            currentNodeId=solver_id,  # type: ignore[arg-type]
             annotations={},
         ),
         access_rights={},
@@ -202,9 +204,9 @@ def create_job_from_project(
 
     job = Job(
         id=job_id,
-        name=project.name,
+        name=project.name,  # type: ignore[arg-type]
         inputs_checksum=job_inputs.compute_checksum(),
-        created_at=project.creation_date,
+        created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_name,  # type: ignore
         url=url_for(
             "get_job",
