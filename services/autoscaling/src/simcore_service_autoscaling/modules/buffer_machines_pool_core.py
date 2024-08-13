@@ -84,16 +84,14 @@ async def _analyse_current_state(
                     instance
                 )
             case "running":
+                ssm_client = get_ssm_client(app)
                 if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
                     buffers_manager.buffer_pools[instance.type].pulling_instances.add(
                         instance
                     )
-
-                elif await get_ssm_client(app).is_instance_connected_to_ssm_server(
+                elif await ssm_client.is_instance_connected_to_ssm_server(
                     instance.id
-                ) and await get_ssm_client(
-                    app
-                ).wait_for_has_instance_completed_cloud_init(
+                ) and await ssm_client.wait_for_has_instance_completed_cloud_init(
                     instance.id
                 ):
                     if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
