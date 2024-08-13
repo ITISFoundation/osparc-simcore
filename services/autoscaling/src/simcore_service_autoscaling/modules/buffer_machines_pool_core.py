@@ -26,7 +26,10 @@ from aws_library.ec2 import (
     EC2InstanceType,
     Resources,
 )
-from aws_library.ssm import SSMCommandExecutionResultError
+from aws_library.ssm import (
+    SSMCommandExecutionResultError,
+    SSMCommandExecutionTimeoutError,
+)
 from fastapi import FastAPI
 from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import NonNegativeInt, parse_obj_as
@@ -109,7 +112,10 @@ async def _analyse_current_state(
                             buffers_manager.buffer_pools[
                                 instance.type
                             ].pending_instances.add(instance)
-                    except SSMCommandExecutionResultError:
+                    except (
+                        SSMCommandExecutionResultError,
+                        SSMCommandExecutionTimeoutError,
+                    ):
                         _logger.exception(
                             "Unnexpected error when checking EC2 cloud initialization completion!. "
                             "The machine will be terminated. TIP: check the initialization phase for errors."
