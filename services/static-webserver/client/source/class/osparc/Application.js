@@ -54,6 +54,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
       this.__updateTabName();
       this.__updateFavicon();
+      this.__updateMetaTags();
 
       if (qx.core.Environment.get("product.name") === "s4lengine") {
         const view = new osparc.auth.BlurredLoginPageS4LEngineering();
@@ -226,6 +227,144 @@ qx.Class.define("osparc.Application", {
       link.href = "";
       osparc.product.Utils.getFaviconUrl()
         .then(url => link.href = url);
+    },
+    
+    __updateMetaTags: function() {
+      // Update title and meta tags
+      const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
+      const backgroundColor = qx.theme.manager.Color.getInstance().resolve("primary-background-color");
+      
+      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      const tileColorMeta = document.querySelector('meta[name="msapplication-TileColor"]');
+      const maskIconMeta = document.querySelector('meta[name="mask-icon"]');
+
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute("content", productColor);
+      }
+      if (tileColorMeta) {
+        tileColorMeta.setAttribute("content", productColor);
+      }
+      if (maskIconMeta) {
+        maskIconMeta.setAttribute("color", productColor);
+      }
+      
+      // Update manifest
+      this.__updateManifest(productColor, backgroundColor);
+      
+      // Update browserconfig
+      this.__updateBrowserConfig(productColor);
+    },
+    
+    __updateManifest: function(themeColor, backgroundColor) {
+      const productName = osparc.product.Utils.getProductName();
+      let manifestLink = document.querySelector('link[rel="manifest"]');
+      
+      // Array of promises to resolve icon URLs
+      const iconUrls = [
+        osparc.product.Utils.getManifestIconUrl("android-icon-36x36.png"),
+        osparc.product.Utils.getManifestIconUrl("android-icon-48x48.png"),
+        osparc.product.Utils.getManifestIconUrl("android-icon-72x72.png"),
+        osparc.product.Utils.getManifestIconUrl("android-icon-96x96.png"),
+        osparc.product.Utils.getManifestIconUrl("android-icon-144x144.png"),
+        osparc.product.Utils.getManifestIconUrl("android-icon-192x192.png")
+      ];
+      
+      // Wait for all icon URLs to be resolved
+      Promise.all(iconUrls)
+        .then(resolvedUrls => {
+          // Create the manifest data object with resolved URLs
+          const manifestData = {
+            short_name: productName,
+            name: productName,
+            icons: [
+              {
+                src: resolvedUrls[0],
+                sizes: "36x36",
+                type: "image/png",
+                density: "0.75"
+              },
+              {
+                src: resolvedUrls[1],
+                sizes: "48x48",
+                type: "image/png",
+                density: "1.0"
+              },
+              {
+                src: resolvedUrls[2],
+                sizes: "72x72",
+                type: "image/png",
+                density: "1.5"
+              },
+              {
+                src: resolvedUrls[3],
+                sizes: "96x96",
+                type: "image/png",
+                density: "2.0"
+              },
+              {
+                src: resolvedUrls[4],
+                sizes: "144x144",
+                type: "image/png",
+                density: "3.0"
+              },
+              {
+                src: resolvedUrls[5],
+                sizes: "192x192",
+                type: "image/png",
+                density: "4.0"
+              }
+            ],
+            display: "standalone",
+            theme_color: themeColor,
+            background_color: backgroundColor
+          };
+          
+          const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+          const manifestURL = URL.createObjectURL(blob);
+          
+          // Create or update the manifest link in the document head
+          if (!manifestLink) {
+            manifestLink = document.createElement('link');
+            manifestLink.setAttribute('rel', 'manifest');
+            document.head.appendChild(manifestLink);
+          }
+          manifestLink.setAttribute('href', manifestURL);
+        })
+        .catch(error => {
+          console.error("Failed to resolve icon URLs:", error);
+        });
+    },
+    
+    // Method to dynamically update the browserconfig
+    __updateBrowserConfig: function(tileColor) {
+      // Resolve the icon URL asynchronously
+      osparc.product.Utils.getManifestIconUrl("ms-icon-150x150.png")
+        .then(msTileIcon => {
+          const browserconfigData = `<?xml version="1.0" encoding="utf-8"?>
+      <browserconfig>
+        <msapplication>
+          <tile>
+            <square150x150logo src="${msTileIcon}"/>
+            <TileColor>${tileColor}</TileColor>
+          </tile>
+        </msapplication>
+      </browserconfig>`;
+          
+          const blob = new Blob([browserconfigData], { type: 'application/xml' });
+          const browserconfigURL = URL.createObjectURL(blob);
+          
+          // Check if the meta tag exists, create it if not
+          let browserConfigLink = document.querySelector('meta[name="msapplication-config"]');
+          if (!browserConfigLink) {
+            browserConfigLink = document.createElement('meta');
+            browserConfigLink.setAttribute('name', 'msapplication-config');
+            document.head.appendChild(browserConfigLink);
+          }
+          browserConfigLink.setAttribute('content', browserconfigURL);
+        })
+        .catch(error => {
+          console.error("Failed to resolve msTileIcon URL:", error);
+        });
     },
 
     __startupChecks: function() {

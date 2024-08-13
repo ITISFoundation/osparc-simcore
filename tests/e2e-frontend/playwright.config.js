@@ -28,7 +28,7 @@ module.exports = defineConfig({
     /* Emulation Options */
     // oSPARC min: HD 1280x720
     viewport: {
-      width: 1280,
+      width: 1180,
       height: 720
     },
 
