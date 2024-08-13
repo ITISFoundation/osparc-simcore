@@ -99,17 +99,18 @@ async def _analyze_current_cluster(
 
     # started buffer instance shall be asked to join the cluster once they are running
     ssm_client = get_ssm_client(app)
-    started_buffer_ec2s = [
+    if started_buffer_ec2s := [
         i
         for i in pending_ec2s
         if is_buffer_machine(i.tags)
         and await ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
         and await ssm_client.is_instance_connected_to_ssm_server(i.id)
-    ]
-    await ssm_client.send_command(
-        (i.id for i in started_buffer_ec2s),
-        await utils_docker.get_docker_swarm_join_bash_command(),
-    )
+    ]:
+        await ssm_client.send_command(
+            [i.id for i in started_buffer_ec2s],
+            command=await utils_docker.get_docker_swarm_join_bash_command(),
+            command_name="docker swarm join",
+        )
 
     # analyse pending ec2s, check if they are pending since too long
     now = arrow.utcnow().datetime
