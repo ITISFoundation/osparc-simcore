@@ -332,6 +332,6 @@ class ServiceUpdateV2(BaseModel):
         allow_population_by_field_name = True
 
 
-assert set(ServiceUpdateV2.__fields__.keys()).issubset(  # nosec
+assert set(ServiceUpdateV2.__fields__.keys()) - set(  # nosec
     ServiceGetV2.__fields__.keys()
-)
+) == {"deprecated"}
