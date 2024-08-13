@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from typing import cast
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -120,6 +121,7 @@ async def list_folders(
             gid=user["primary_gid"],
             offset=offset,
             limit=limit,
+            order_by=cast(folders_db.OrderByDict, order_by.dict()),
         )
     return [
         FolderGet(

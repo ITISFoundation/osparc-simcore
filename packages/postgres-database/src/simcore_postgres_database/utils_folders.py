@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Final, TypeAlias
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.rest_ordering import OrderDirection
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import (
     BaseModel,
@@ -20,6 +21,7 @@ from pydantic import (
     parse_obj_as,
 )
 from pydantic.errors import PydanticErrorMixin
+from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import ScalarSelect
@@ -986,6 +988,9 @@ async def folder_list(
     *,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
+    order_by: OrderByDict = OrderByDict(
+        field="modified", direction=OrderDirection.DESC
+    ),
     _required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
 ) -> list[FolderEntry]:
     """
@@ -1015,7 +1020,7 @@ async def folder_list(
             access_via_gid = resolved_access_rights.gid
             access_via_folder_id = resolved_access_rights.folder_id
 
-        query = (
+        base_query = (
             sa.select(
                 folders,
                 folders_access_rights,
@@ -1047,11 +1052,25 @@ async def folder_list(
                 if folder_id is None
                 else True
             )
-            .offset(offset)
-            .limit(limit)
         )
 
-        async for entry in connection.execute(query):
+        # Select total count from base_query
+        subquery = base_query.subquery()
+        count_query = sa.select(sa.func.count()).select_from(subquery)
+        count_result = await connection.execute(count_query)
+
+        # Ordering and pagination
+        if order_by["direction"] == OrderDirection.ASC:
+            list_query = base_query.order_by(
+                sa.asc(getattr(folders.c, order_by["field"]))
+            )
+        else:
+            list_query = base_query.order_by(
+                sa.desc(getattr(folders.c, order_by["field"]))
+            )
+        list_query = list_query.offset(offset).limit(limit)
+
+        async for entry in connection.execute(list_query):
             results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
     return results
@@ -1113,3 +1132,6 @@ async def folder_get(
         )
 
     return FolderEntry.from_orm(query_result)
+
+
+__all__ = ["OrderByDict"]

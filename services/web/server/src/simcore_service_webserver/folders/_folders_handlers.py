@@ -68,8 +68,8 @@ class FoldersPathParams(StrictRequestParams):
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="name", direction=OrderDirection.DESC),
-        description="Order by field (name|description) and direction (asc|desc). The default sorting order is ascending.",
+        default=OrderBy(field="modified", direction=OrderDirection.DESC),
+        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',
         alias="order_by",
     )
@@ -82,10 +82,13 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
+            "modified_at",
             "name",
             "description",
         }:
             raise ValueError(f"We do not support ordering by provided field {v.field}")
+        if v.field == "modified_at":
+            v.field = "modified"
         return v
 
     class Config:
