@@ -193,8 +193,8 @@ class SimcoreEC2API:
                 for i in described_instances["Reservations"][0]["Instances"]
             ]
             _logger.info(
-                "%s is pending now, happy computing!!",
-                f"{instance_datas=}",
+                "%s are pending now",
+                f"{instance_ids=}",
             )
             return instance_datas
 
