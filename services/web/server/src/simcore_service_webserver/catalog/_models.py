@@ -1,3 +1,5 @@
+import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Final
 
@@ -10,6 +12,8 @@ from models_library.api_schemas_webserver.catalog import (
 )
 from models_library.services import BaseServiceIOModel
 from pint import PintError, UnitRegistry
+
+_logger = logging.getLogger(__name__)
 
 
 def get_unit_name(port: BaseServiceIOModel) -> str | None:
@@ -56,10 +60,10 @@ def get_html_formatted_unit(
 # - the least recently used items will be discarded first to make space when necessary.
 #
 
-_CACHE_MAXSIZE: Final = (
-    100  # number of items  i.e. ServiceInputGet/ServiceOutputGet insteances
-)
-_CACHE_TTL: Final = 60  # secs
+_CACHE_MAXSIZE: Final = int(
+    os.getenv("CACHETOOLS_CACHE_MAXSIZE", "100")
+)  # number of items  i.e. ServiceInputGet/ServiceOutputGet instances
+_CACHE_TTL: Final = int(os.getenv("CACHETOOLS_CACHE_TTL_SECS", "60"))  # secs
 
 
 def _hash_inputs(
@@ -71,9 +75,19 @@ def _hash_inputs(
     return f"{service['key']}/{service['version']}/{input_key}"
 
 
+def _cachetools_cached(*args, **kwargs):
+    def decorator(func):
+        if os.getenv("CACHETOOLS_DISABLE", "0") == "0":
+            return cachetools.cached(*args, **kwargs)(func)
+        _logger.warning("cachetools disabled")
+        return func
+
+    return decorator
+
+
 class ServiceInputGetFactory:
     @staticmethod
-    @cachetools.cached(
+    @_cachetools_cached(
         cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_inputs
     )
     def from_catalog_service_api_model(
@@ -107,7 +121,7 @@ def _hash_outputs(
 
 class ServiceOutputGetFactory:
     @staticmethod
-    @cachetools.cached(
+    @_cachetools_cached(
         cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_outputs
     )
     def from_catalog_service_api_model(
