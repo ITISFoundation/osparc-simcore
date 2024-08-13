@@ -1171,14 +1171,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const folderId = e.getData();
             this.__moveStudyToFolder(studyData["uuid"], folderId)
               .then(() => {
-                this._resourcesContainer.setResourcesToList([]);
-                this._resourcesList = [];
-                this.invalidateStudies();
-
-                this.__reloadResources()
+                this.__removeFromStudyList(studyData["uuid"]);
               })
               .catch(err => {
-                // OM
+                console.error(err);
+                osparc.FlashMessenger.logAs(err.message, "ERROR");
               });
           }, this);
           moveStudyToFolder.addListener("cancel", () => win.close());
@@ -1398,7 +1395,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
-        .then(() => this.__removeFromStudyList(studyData.uuid, false))
+        .then(() => this.__removeFromStudyList(studyData.uuid))
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
