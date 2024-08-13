@@ -105,7 +105,7 @@ async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
 
-    folder_id: FolderID = await _folders_api.create_folder(
+    folder = await _folders_api.create_folder(
         request.app,
         user_id=req_ctx.user_id,
         folder_name=body_params.name,
@@ -114,7 +114,7 @@ async def create_folder(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response({"folderId": folder_id}, web.HTTPCreated)
+    return envelope_json_response(folder, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/folders", name="list_folders")
@@ -170,7 +170,7 @@ async def replace_folder(request: web.Request):
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(PutFolderBodyParams, request)
 
-    await _folders_api.update_folder(
+    folder = await _folders_api.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,
@@ -178,7 +178,7 @@ async def replace_folder(request: web.Request):
         description=body_params.description,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return envelope_json_response(folder)
 
 
 @routes.delete(
