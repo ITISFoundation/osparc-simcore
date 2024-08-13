@@ -150,16 +150,6 @@ qx.Class.define("osparc.product.Utils", {
         .catch(() => fallbackIcon);
     },
 
-    getBrowserConfigUrl: function() {
-      const browserconfigUrl = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${this.getProductName()}/browserconfig.xml`;
-      const fallbackBrowserconfig = `/resource/osparc/${this.getProductName()}/browserconfig.xml`;
-      return new Promise(resolve => {
-        this.__linkExists(browserconfigUrl)
-          .then(() => resolve(browserconfigUrl))
-          .catch(() => resolve(fallbackBrowserconfig))
-      });
-    },
-
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
