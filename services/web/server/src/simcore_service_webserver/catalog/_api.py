@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Iterator
 from typing import Any
@@ -66,8 +65,7 @@ async def _safe_replace_service_input_outputs(
     service: dict[str, Any], unit_registry: UnitRegistry
 ):
     try:
-        await asyncio.to_thread(
-            replace_service_input_outputs,
+        await replace_service_input_outputs(
             service,
             unit_registry=unit_registry,
             **RESPONSE_MODEL_POLICY,
@@ -133,8 +131,7 @@ async def dev_get_service(
     )
 
     data = jsonable_encoder(service, exclude_unset=True)
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         data,
         unit_registry=unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -163,8 +160,7 @@ async def dev_update_service(
     )
 
     data = jsonable_encoder(service, exclude_unset=True)
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         data,
         unit_registry=unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -194,8 +190,7 @@ async def get_service(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         service,
         unit_registry=ctx.unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -217,8 +212,7 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         service,
         unit_registry=ctx.unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -232,13 +226,12 @@ async def list_service_inputs(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    inputs = []
-    for input_key in service["inputs"]:
-        service_input: ServiceInputGet = (
-            ServiceInputGetFactory.from_catalog_service_api_model(service, input_key)
+    return [
+        await ServiceInputGetFactory.from_catalog_service_api_model(
+            service=service, input_key=input_key
         )
-        inputs.append(service_input)
-    return inputs
+        for input_key in service["inputs"]
+    ]
 
 
 async def get_service_input(
@@ -251,7 +244,9 @@ async def get_service_input(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     service_input: ServiceInputGet = (
-        ServiceInputGetFactory.from_catalog_service_api_model(service, input_key)
+        await ServiceInputGetFactory.from_catalog_service_api_model(
+            service=service, input_key=input_key
+        )
     )
 
     return service_input
@@ -307,14 +302,12 @@ async def list_service_outputs(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-
-    outputs = []
-    for output_key in service["outputs"]:
-        service_output = ServiceOutputGetFactory.from_catalog_service_api_model(
-            service, output_key, None
+    return [
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key, ureg=None
         )
-        outputs.append(service_output)
-    return outputs
+        for output_key in service["outputs"]
+    ]
 
 
 async def get_service_output(
@@ -326,11 +319,9 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output: ServiceOutputGet = (
-        ServiceOutputGetFactory.from_catalog_service_api_model(service, output_key)
+    return await ServiceOutputGetFactory.from_catalog_service_api_model(
+        service=service, output_key=output_key
     )
-
-    return service_output
 
 
 async def get_compatible_outputs_given_target_input(
