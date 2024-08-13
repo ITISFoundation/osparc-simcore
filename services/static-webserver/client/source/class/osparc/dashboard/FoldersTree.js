@@ -33,7 +33,9 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     this.set({
       openMode: "dbltap",
       decorator: "no-border",
-      font: "text-14"
+      font: "text-14",
+      showLeafs: true,
+      padding: -10,
     });
 
     this.__initTree();
@@ -46,6 +48,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   statics: {
     getLoadingData: function() {
       return {
+        folderId: -1,
         label: "Loading...",
         children: [],
         icon: "@FontAwesome5Solid/circle-notch/12",
@@ -62,18 +65,19 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
   members: {
     __initTree: function() {
+      const that = this;
       this.setDelegate({
-        createItem: () => new qx.ui.tree.VirtualTreeItem(),
+        createItem: () => new osparc.dashboard.FolderTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("folderId", "model", null, item, id);
           c.bindProperty("", "open", {
-            converter(value, model, source, target) {
+            converter(value, _, __, target) {
               const isOpen = target.isOpen();
               if (isOpen && !value.getLoaded()) {
                 value.setLoaded(true);
                 value.getChildren().removeAll();
-                this.__fetchChildren(value);
+                that.__fetchChildren(value);
               }
               return isOpen;
             }
