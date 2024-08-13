@@ -10,7 +10,7 @@ from functools import lru_cache
 
 import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
-from models_library.projects_nodes import InputID
+from models_library.projects_nodes import InputID, KeyIDStr
 from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
@@ -60,18 +60,19 @@ def create_node_inputs_from_job_inputs(
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore  # nosec
+        assert parse_obj_as(ArgumentTypes, value) == value  # nosec # type: ignore
+        assert parse_obj_as(KeyIDStr, name) is not None  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
-            node_inputs[name] = SimCoreFileLink(
+            node_inputs[KeyIDStr(name)] = SimCoreFileLink(
                 store=0,
                 path=f"api/{value.id}/{value.filename}",  # type: ignore[arg-type]
                 label=value.filename,
                 eTag=value.e_tag,
             )
         else:
-            node_inputs[name] = value
+            node_inputs[KeyIDStr(name)] = value
 
     # TODO: validate Inputs??
 
