@@ -2,7 +2,7 @@
 
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Extra, Field
 
 from .users import GroupID
 from .utils.change_case import snake_to_camel
@@ -25,6 +25,7 @@ class ServiceGroupAccessRightsV2(BaseModel):
     class Config:
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
+        extra = Extra.forbid
 
 
 class ServiceAccessRights(BaseModel):

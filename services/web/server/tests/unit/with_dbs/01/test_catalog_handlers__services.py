@@ -194,7 +194,7 @@ async def test_dev_get_and_patch_service(
         description="bar",
         classifiers=None,
         versionDisplay="Some nice name",
-        access_rights={1: {"execute": True, "write": False}},
+        access_rights={1: {"execute": True, "write": True}},
     )
     response = await client.patch(
         f"{url}", json=jsonable_encoder(update, exclude_unset=True)
