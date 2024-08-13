@@ -31,9 +31,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     this.base(arguments, root, "label", "children");
 
     this.set({
-      openMode: "none",
-      contentPadding: 0,
-      paddingLeft: -10,
+      openMode: "dbltap",
       decorator: "no-border",
       font: "text-14"
     });
