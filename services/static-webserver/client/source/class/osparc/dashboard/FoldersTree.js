@@ -37,23 +37,17 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     "selectionChanged": "qx.event.type.Event" // tap
   },
 
-  properties: {
-    currentFolderId: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeCurrentFolderId",
-      apply: "__applyCurrentFolderId"
-    }
-  },
-
   statics: {
-    addLoadingChild: function(parent) {
-      const loadingModel = qx.data.marshal.Json.createModel({
+    getLoadingData: function() {
+      return {
         label: "Loading...",
         children: [],
         icon: "@FontAwesome5Solid/circle-notch/12"
-      }, true);
+      };
+    },
+
+    addLoadingChild: function(parent) {
+      const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
       parent.getChildren().append(loadingModel);
     },
 
@@ -107,25 +101,25 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       const rootModel = qx.data.marshal.Json.createModel(rootFolder, true);
       this.setModel(rootModel);
 
+      this.self().addLoadingChild(rootModel);
       this.__fetchChildren(rootModel);
     },
 
     __fetchChildren: function(parentModel) {
-      this.self().addLoadingChild(parentModel);
-
       const folderId = parentModel.getFolderId();
       osparc.store.Folders.getInstance().fetchFolders(folderId)
         .then(folders => {
           this.self().removeLoadingChild(parentModel);
           folders.forEach(folder => {
-            const folderData = folder.serialize();
-            folderData["children"] = [];
-            parentModel.getChildren().append(qx.data.marshal.Json.createModel(folderData));
+            const folderData = {
+              folderId: folder.getFolderId(),
+              name: folder.getName(),
+              children: [this.self().getLoadingData()]
+            }
+            const folderModel = qx.data.marshal.Json.createModel(folderData);
+            parentModel.getChildren().append(folderModel);
           });
         });
-    },
-
-    __applyCurrentFolderId: function() {
     }
   }
 });
