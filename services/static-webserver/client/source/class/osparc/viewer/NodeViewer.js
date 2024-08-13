@@ -46,28 +46,35 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         const study = new osparc.data.model.Study(studyData);
         this.setStudy(study);
 
-        // create node
-        const node = new osparc.data.model.Node(study, metadata, nodeId);
-        this.setNode(node);
+        const startPolling = () => {
+          const node = study.getWorkbench().getNode(nodeId);
+          this.setNode(node);
 
-        node.addListener("retrieveInputs", e => {
-          const data = e.getData();
-          const portKey = data["portKey"];
-          node.retrieveInputs(portKey);
-        }, this);
+          node.addListener("retrieveInputs", e => {
+            const data = e.getData();
+            const portKey = data["portKey"];
+            node.retrieveInputs(portKey);
+          }, this);
 
-        node.initIframeHandler();
+          node.initIframeHandler();
 
-        const iframeHandler = node.getIframeHandler();
-        if (iframeHandler) {
-          iframeHandler.startPolling();
-          iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
-          iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
-          this.__iFrameChanged();
+          const iframeHandler = node.getIframeHandler();
+          if (iframeHandler) {
+            iframeHandler.startPolling();
+            iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
+            iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
+            this.__iFrameChanged();
 
-          this.__attachSocketEventHandlers();
+            this.__attachSocketEventHandlers();
+          } else {
+            console.error(node.getLabel() + " iframe handler not ready");
+          }
+        }
+
+        if (study.getWorkbench().isDeserialized()) {
+          startPolling();
         } else {
-          console.error(node.getLabel() + " iframe handler not ready");
+          study.getWorkbench().addListener("changeDeserialized", () => startPolling());
         }
       })
       .catch(err => console.error(err));
