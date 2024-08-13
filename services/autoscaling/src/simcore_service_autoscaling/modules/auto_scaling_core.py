@@ -46,12 +46,14 @@ from ..utils.auto_scaling_core import (
 from ..utils.buffer_machines_pool_core import (
     get_activated_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
+    is_buffer_machine,
 )
 from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
 from .instrumentation import get_instrumentation, has_instrumentation
+from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
 
@@ -93,6 +95,20 @@ async def _analyze_current_cluster(
 
     attached_ec2s, pending_ec2s = await associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
+    )
+
+    # started buffer instance shall be asked to join the cluster once they are running
+    ssm_client = get_ssm_client(app)
+    started_buffer_ec2s = [
+        i
+        for i in pending_ec2s
+        if is_buffer_machine(i.tags)
+        and await ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
+        and await ssm_client.is_instance_connected_to_ssm_server(i.id)
+    ]
+    await ssm_client.send_command(
+        (i.id for i in started_buffer_ec2s),
+        await utils_docker.get_docker_swarm_join_bash_command(),
     )
 
     # analyse pending ec2s, check if they are pending since too long
