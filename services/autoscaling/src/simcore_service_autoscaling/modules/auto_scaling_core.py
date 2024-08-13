@@ -44,8 +44,8 @@ from ..utils.auto_scaling_core import (
     sort_drained_nodes,
 )
 from ..utils.buffer_machines_pool_core import (
-    BUFFER_MACHINE_TAG_KEY,
-    get_buffer_ec2_tags,
+    get_activated_buffer_ec2_tags,
+    get_deactivated_buffer_ec2_tags,
 )
 from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
@@ -87,7 +87,7 @@ async def _analyze_current_cluster(
 
     buffer_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped"],
     )
 
@@ -347,7 +347,7 @@ async def _start_buffer_instances(
         return cluster
     # change the buffer machine to an active one
     await get_ec2_client(app).remove_instances_tags(
-        instances_to_start, tag_keys=(BUFFER_MACHINE_TAG_KEY,)
+        instances_to_start, tag_keys=get_activated_buffer_ec2_tags(app)
     )
     await get_ec2_client(app).set_instances_tags(
         instances_to_start, tags=auto_scaling_mode.get_ec2_tags(app)

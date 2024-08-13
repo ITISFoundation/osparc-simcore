@@ -35,7 +35,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
+from ..utils.buffer_machines_pool_core import get_deactivated_buffer_ec2_tags
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
@@ -64,7 +64,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
 
@@ -217,7 +217,7 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
