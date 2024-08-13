@@ -26,7 +26,13 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     this._setLayout(new qx.ui.layout.VBox());
 
     let studyData = null;
-    this.self().openStudy(studyId)
+    const params = {
+      url: {
+        studyId
+      },
+      data: osparc.utils.Utils.getClientSessionID()
+    };
+    osparc.data.Resources.fetch("studies", "open", params)
       .then(resp => {
         studyData = resp;
         if (studyData["workbench"] && nodeId in studyData["workbench"]) {
@@ -78,18 +84,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       check: "osparc.data.model.Node",
       init: null,
       nullable: false
-    }
-  },
-
-  statics: {
-    openStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      return osparc.data.Resources.fetch("studies", "open", params);
     }
   },
 
