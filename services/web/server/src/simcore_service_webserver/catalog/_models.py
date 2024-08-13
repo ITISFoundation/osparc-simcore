@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Callable, Final
 
 from aiocache import cached
 from models_library.api_schemas_webserver.catalog import (
@@ -61,8 +61,7 @@ _MINUTE = 60 * _SECOND
 _CACHE_TTL: Final = 1 * _MINUTE
 
 
-def _hash_inputs(_f, *_args, **kw):
-    assert _f.__name__  # nosec
+def _hash_inputs(_f: Callable[..., Any], *_args, **kw):
     assert not _args  # nosec
     service: dict[str, Any] = kw["service"]
     return f"ServiceInputGetFactory_{service['key']}_{service['version']}_{kw['input_key']}"
@@ -95,8 +94,7 @@ class ServiceInputGetFactory:
         return port
 
 
-def _hash_outputs(_f, *_args, **kw):
-    assert _f.__name__  # nosec
+def _hash_outputs(_f: Callable[..., Any], *_args, **kw):
     assert not _args  # nosec
     service: dict[str, Any] = kw["service"]
     return f"ServiceOutputGetFactory_{service['key']}/{service['version']}/{kw['output_key']}"
