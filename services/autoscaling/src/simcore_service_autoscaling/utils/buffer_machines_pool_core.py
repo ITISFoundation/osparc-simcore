@@ -20,10 +20,7 @@ _ACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
 def get_activated_buffer_ec2_tags(
     app: FastAPI, auto_scaling_mode: BaseAutoscaling
 ) -> EC2Tags:
-    base_ec2_tags = (
-        auto_scaling_mode.get_ec2_tags(app) | _ACTIVATED_BUFFER_MACHINE_EC2_TAGS
-    )
-    return base_ec2_tags
+    return auto_scaling_mode.get_ec2_tags(app) | _ACTIVATED_BUFFER_MACHINE_EC2_TAGS
 
 
 def get_deactivated_buffer_ec2_tags(
@@ -36,3 +33,7 @@ def get_deactivated_buffer_ec2_tags(
         f"{base_ec2_tags[AWSTagKey('Name')]}-buffer"
     )
     return base_ec2_tags
+
+
+def is_buffer_machine(tags: EC2Tags) -> bool:
+    return bool(_BUFFER_MACHINE_TAG_KEY in tags)
