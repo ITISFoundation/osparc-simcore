@@ -65,7 +65,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         if (study.getWorkbench().isDeserialized()) {
           startPolling();
         } else {
-          study.getWorkbench().addListener("changeDeserialized", () => startPolling());
+          study.getWorkbench().addListener("changeDeserialized", e => {
+            if (e.getData()) {
+              startPolling()
+            }
+          });
         }
       })
       .catch(err => console.error(err));
