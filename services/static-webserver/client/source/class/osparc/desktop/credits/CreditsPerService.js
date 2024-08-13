@@ -22,15 +22,13 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
-
-    this.initDaysRange();
   },
 
   properties: {
     daysRange: {
       check: [1, 7, 30],
       nullable: false,
-      init: 1,
+      init: null,
       apply: "__populateList"
     }
   },
