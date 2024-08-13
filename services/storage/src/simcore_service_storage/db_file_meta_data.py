@@ -64,8 +64,7 @@ async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
     raise FileMetaDataNotFoundError(file_id=file_id)
 
 
-async def list_filter_with_partial_file_id(
-    conn: SAConnection,
+def _list_filter_with_partial_file_id_stmt(
     *,
     user_or_project_filter: UserOrProjectFilter,
     file_id_prefix: str | None,
@@ -74,7 +73,7 @@ async def list_filter_with_partial_file_id(
     only_files: bool,
     limit: int | None = None,
     offset: int | None = None,
-) -> list[FileMetaDataAtDB]:
+):
     conditions = []
 
     # user_or_project_filter
@@ -99,19 +98,36 @@ async def list_filter_with_partial_file_id(
     if sha256_checksum:
         conditions.append(file_meta_data.c.sha256_checksum == sha256_checksum)
 
-    where_clause = sa.and_(*conditions)
-
-    stmt = (
-        sa.select(file_meta_data).where(where_clause)
-        # sorted as oldest first
-        .order_by(file_meta_data.c.created_at.asc())
+    return (
+        sa.select(file_meta_data)
+        .where(sa.and_(*conditions))
+        .order_by(file_meta_data.c.created_at.asc())  # sorted as oldest first
+        .offset(offset)
+        .limit(limit)
     )
 
-    # Apply limit and offset if specified
-    if limit is not None:
-        stmt = stmt.limit(limit)
-    if offset is not None:
-        stmt = stmt.offset(offset)
+
+async def list_filter_with_partial_file_id(
+    conn: SAConnection,
+    *,
+    user_or_project_filter: UserOrProjectFilter,
+    file_id_prefix: str | None,
+    partial_file_id: str | None,
+    sha256_checksum: SHA256Str | None,
+    only_files: bool,
+    limit: int | None = None,
+    offset: int | None = None,
+) -> list[FileMetaDataAtDB]:
+
+    stmt = _list_filter_with_partial_file_id_stmt(
+        user_or_project_filter=user_or_project_filter,
+        file_id_prefix=file_id_prefix,
+        partial_file_id=partial_file_id,
+        sha256_checksum=sha256_checksum,
+        only_files=only_files,
+        limit=limit,
+        offset=offset,
+    )
 
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
