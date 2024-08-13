@@ -103,8 +103,8 @@ async def _analyze_current_cluster(
         i
         for i in pending_ec2s
         if is_buffer_machine(i.tags)
-        and await ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
         and await ssm_client.is_instance_connected_to_ssm_server(i.id)
+        and await ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
     ]:
         await ssm_client.send_command(
             [i.id for i in started_buffer_ec2s],
@@ -925,7 +925,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"begin termination process for {instance.node.Description.Hostname}:{instance.ec2_instance.id}",
+            msg=f"termination process for {instance.node.Description.Hostname}:{instance.ec2_instance.id}",
         ), log_catch(_logger, reraise=False):
             await utils_docker.set_node_begin_termination_process(
                 get_docker_client(app), instance.node
@@ -945,7 +945,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"terminate '{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}'",
+            msg=f"definitely terminate '{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}'",
         ):
             await get_ec2_client(app).terminate_instances(
                 [i.ec2_instance for i in instances_to_terminate]
