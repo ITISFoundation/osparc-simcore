@@ -66,7 +66,7 @@ def create_node_inputs_from_job_inputs(
             # FIXME: ensure this aligns with storage policy
             node_inputs[name] = SimCoreFileLink(
                 store=0,
-                path=f"api/{value.id}/{value.filename}",
+                path=f"api/{value.id}/{value.filename}",  # type: ignore[arg-type]
                 label=value.filename,
                 eTag=value.e_tag,
             )
@@ -86,9 +86,9 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
         assert parse_obj_as(InputID, name) == name  # nosec
-        assert (
-            parse_obj_as(InputTypes, value) == value
-        )  # nosec # type: ignore[arg-type]
+        assert (  # nosec
+            parse_obj_as(InputTypes, value) == value  # type: ignore[arg-type]
+        )
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
@@ -157,7 +157,7 @@ def create_new_project_for_job(
         workbench={solver_id: solver_service},  # type: ignore[dict-item]
         ui=StudyUI(
             workbench={
-                f"{solver_id}": {  # type: ignore[arg-type]
+                f"{solver_id}": {  # type: ignore[dict-item]
                     "position": {
                         "x": 633,
                         "y": 229,

@@ -1,5 +1,5 @@
+import parse
 from fastapi import status
-from parse import compile as parse_compile
 
 from ._base import ApiServerBaseError
 
@@ -12,7 +12,7 @@ class BaseBackEndError(ApiServerBaseError):
 
     @classmethod
     def named_fields(cls) -> set[str]:
-        return set(parse_compile(cls.msg_template).named_fields)
+        return set(parse.compile(cls.msg_template).named_fields)
 
 
 class ListSolversOrStudiesError(BaseBackEndError):
