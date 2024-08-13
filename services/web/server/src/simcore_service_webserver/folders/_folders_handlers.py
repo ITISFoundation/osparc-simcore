@@ -11,6 +11,7 @@ from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
+from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
@@ -90,12 +91,10 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     class Config:
         extra = Extra.forbid
 
-    @validator("folder_id", pre=True, always=True)
-    @classmethod
-    def convert_null_to_none(cls, v):
-        if v is None or v in ["null", "none"]:
-            return None
-        return v
+    # validators
+    _null_or_none_str_to_none_validator = validator(
+        "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")

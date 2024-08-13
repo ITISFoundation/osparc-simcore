@@ -360,21 +360,19 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
+            _join_query = projects.join(projects_to_products, isouter=True).join(
+                access_rights_subquery, isouter=True
+            )
+            if settings.WEBSERVER_FOLDERS:
+                _join_query = _join_query.join(folders_to_projects, isouter=True)
+
             query = (
                 sa.select(
                     *[col for col in projects.columns if col.name != "access_rights"],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                 )
-                .select_from(
-                    projects.join(projects_to_products, isouter=True)
-                    .join(access_rights_subquery, isouter=True)
-                    .join(folders_to_projects, isouter=True)
-                    if settings.WEBSERVER_FOLDERS
-                    else projects.join(projects_to_products, isouter=True).join(
-                        access_rights_subquery, isouter=True
-                    )
-                )
+                .select_from(_join_query)
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
