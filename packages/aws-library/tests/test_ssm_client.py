@@ -11,7 +11,8 @@ import botocore.exceptions
 import pytest
 from aws_library.ssm import (
     SimcoreSSMAPI,
-    SSMCommandExecutionError,
+    SSMCommandExecutionResultError,
+    SSMCommandExecutionTimeoutError,
     SSMInvalidCommandError,
     SSMNotConnectedError,
 )
@@ -167,7 +168,7 @@ async def test_wait_for_has_instance_completed_cloud_init(
         "get_command_invocation",
         side_effect=mock_send_command_timesout,
     )
-    with pytest.raises(SSMCommandExecutionError, match="Timed-out"):
+    with pytest.raises(SSMCommandExecutionTimeoutError, match="Timed-out"):
         await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr())
 
     assert mocked_command_invocation.call_count == _AWS_WAIT_NUM_RETRIES
@@ -183,7 +184,7 @@ async def test_wait_for_has_instance_completed_cloud_init(
         return await original_get_command_invocation(*args, **kwargs)
 
     mocked_command_invocation.side_effect = mock_wait_command_failed
-    with pytest.raises(SSMCommandExecutionError):
+    with pytest.raises(SSMCommandExecutionResultError):
         await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr())
     assert mocked_command_invocation.call_count == 2
 

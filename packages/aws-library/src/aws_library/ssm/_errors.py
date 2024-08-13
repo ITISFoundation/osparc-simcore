@@ -23,8 +23,12 @@ class SSMSendCommandInstancesNotReadyError(SSMAccessError):
     msg_template: str = "Instance not ready to receive commands"
 
 
-class SSMCommandExecutionError(SSMAccessError):
+class SSMCommandExecutionResultError(SSMAccessError):
     msg_template: str = "Command execution error: {details}"
+
+
+class SSMCommandExecutionTimeoutError(SSMAccessError):
+    msg_template: str = "Command execution timed-out: {details}"
 
 
 class SSMInvalidCommandError(SSMAccessError):

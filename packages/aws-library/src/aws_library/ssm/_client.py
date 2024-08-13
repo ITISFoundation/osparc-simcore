@@ -14,7 +14,7 @@ from types_aiobotocore_ssm import SSMClient
 from types_aiobotocore_ssm.literals import CommandStatusType
 
 from ._error_handler import ssm_exception_handler
-from ._errors import SSMCommandExecutionError
+from ._errors import SSMCommandExecutionResultError, SSMCommandExecutionTimeoutError
 
 _logger = logging.getLogger(__name__)
 
@@ -124,7 +124,8 @@ class SimcoreSSMAPI:
             ],
         )
         if (
-            "InstanceInformationList" in response
+            "InstanceInformationList"  # noqa: RUF019 # the key is actually NOT REQUIRED!
+            in response
             and response["InstanceInformationList"]
         ):
             assert len(response["InstanceInformationList"]) == 1  # nosec
@@ -159,11 +160,11 @@ class SimcoreSSMAPI:
             )
         except botocore.exceptions.WaiterError as exc:
             msg = f"Timed-out waiting for {instance_id} to complete cloud-init"
-            raise SSMCommandExecutionError(details=msg) from exc
+            raise SSMCommandExecutionTimeoutError(details=msg) from exc
         response = await self._client.get_command_invocation(
             CommandId=cloud_init_status_command.command_id, InstanceId=instance_id
         )
         if response["Status"] != "Success":
-            raise SSMCommandExecutionError(details=response["StatusDetails"])
+            raise SSMCommandExecutionResultError(details=response["StatusDetails"])
         # check if cloud-init is done
         return bool("status: done" in response["StandardOutputContent"])
