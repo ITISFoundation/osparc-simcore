@@ -43,7 +43,10 @@ from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
 )
-from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
+from ..utils.buffer_machines_pool_core import (
+    BUFFER_MACHINE_TAG_KEY,
+    get_buffer_ec2_tags,
+)
 from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -334,12 +337,21 @@ async def _activate_drained_nodes(
     )
 
 
-async def _start_buffer_instances(app: FastAPI, cluster: Cluster) -> Cluster:
+async def _start_buffer_instances(
+    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+) -> Cluster:
     instances_to_start = [
         i.ec2_instance for i in cluster.buffer_ec2s if i.assigned_tasks
     ]
     if not instances_to_start:
         return cluster
+    # change the buffer machine to an active one
+    await get_ec2_client(app).remove_instances_tags(
+        instances_to_start, tag_keys=(BUFFER_MACHINE_TAG_KEY,)
+    )
+    await get_ec2_client(app).set_instances_tags(
+        instances_to_start, tags=auto_scaling_mode.get_ec2_tags(app)
+    )
     started_instances = await get_ec2_client(app).start_instances(instances_to_start)
     started_instance_ids = [i.id for i in started_instances]
 
