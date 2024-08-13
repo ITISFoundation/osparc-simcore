@@ -346,12 +346,11 @@ async def _start_buffer_instances(
     if not instances_to_start:
         return cluster
     # change the buffer machine to an active one
-    await get_ec2_client(app).remove_instances_tags(
-        instances_to_start, tag_keys=get_activated_buffer_ec2_tags(app)
-    )
     await get_ec2_client(app).set_instances_tags(
-        instances_to_start, tags=auto_scaling_mode.get_ec2_tags(app)
+        instances_to_start,
+        tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
     )
+
     started_instances = await get_ec2_client(app).start_instances(instances_to_start)
     started_instance_ids = [i.id for i in started_instances]
 
