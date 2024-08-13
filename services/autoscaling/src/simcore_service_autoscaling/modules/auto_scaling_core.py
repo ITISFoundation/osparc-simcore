@@ -1026,7 +1026,7 @@ async def _autoscale_cluster(
     cluster = await _activate_drained_nodes(app, cluster, auto_scaling_mode)
 
     # 3. start buffer instances to cover the remaining tasks
-    cluster = await _start_buffer_instances(app, cluster)
+    cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
 
     # 4. let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
