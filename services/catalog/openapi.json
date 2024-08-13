@@ -2079,7 +2079,7 @@
             "type": "string",
             "format": "date-time",
             "title": "Deprecated",
-            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as dprecated;If now>=deprecated, the service is retired"
+            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as deprecated;If now>=deprecated, the service is retired"
           },
           "classifiers": {
             "items": {
@@ -2558,7 +2558,7 @@
             "type": "string",
             "format": "date-time",
             "title": "Deprecated",
-            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as dprecated;If now>=deprecated, the service is retired"
+            "description": "Owner can set the date to retire the service. Three possibilities:If None, the service is marked as `published`;If now<deprecated the service is marked as deprecated;If now>=deprecated, the service is retired"
           },
           "classifiers": {
             "items": {

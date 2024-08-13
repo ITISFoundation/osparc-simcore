@@ -1,13 +1,10 @@
 import logging
 
-from models_library.api_schemas_catalog.services import (
-    ServiceGetV2,
-    ServiceGroupAccessRightsV2,
-    ServiceUpdateV2,
-)
+from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
+from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_enums import ServiceType
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
