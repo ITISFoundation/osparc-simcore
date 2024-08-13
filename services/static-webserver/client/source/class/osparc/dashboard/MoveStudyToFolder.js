@@ -34,10 +34,8 @@ qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
     moveButton.setEnabled(false)
     foldersTree.addListener("selectionChanged", e => {
       const folderId = e.getData();
-      moveButton.setEnabled();
-      moveButton.addListenerOnce("execute", () => {
-        this.fireDataEvent("moveToFolder", folderId);
-      });
+      moveButton.setEnabled(this.__currentFolderId !== folderId);
+      moveButton.addListenerOnce("execute", () => this.fireDataEvent("moveToFolder", folderId));
     });
   },
 
