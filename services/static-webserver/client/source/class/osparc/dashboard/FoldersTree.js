@@ -19,7 +19,16 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    this.base(arguments, null, "label", "children");
+    const rootFolder = {
+      folderId: null,
+      label: "Home",
+      children: [],
+      loaded: true,
+    };
+    const root = qx.data.marshal.Json.createModel(rootFolder, true);
+    this.__fetchChildren(root);
+
+    this.base(arguments, root, "label", "children");
 
     this.set({
       openMode: "none",
@@ -30,7 +39,6 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     });
 
     this.__initTree();
-    this.__populateTree();
   },
 
   events: {
@@ -38,12 +46,17 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   statics: {
-    addLoadingChild: function(parentModel) {
-      const loadingModel = qx.data.marshal.Json.createModel({
+    getLoadingData: function() {
+      return {
         label: "Loading...",
         children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12"
-      }, true);
+        icon: "@FontAwesome5Solid/circle-notch/12",
+        loaded: false,
+      };
+    },
+
+    addLoadingChild: function(parentModel) {
+      const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
       parentModel.getChildren().removeAll();
       parentModel.getChildren().append(loadingModel);
     }
@@ -56,17 +69,20 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("folderId", "model", null, item, id);
-          c.bindProperty("name", "label", null, item, id);
+          c.bindProperty("", "open", {
+            converter(value, model, source, target) {
+              const isOpen = target.isOpen();
+              if (isOpen && !value.getLoaded()) {
+                value.setLoaded(true);
+                value.getChildren().removeAll();
+                this.__fetchChildren(value);
+              }
+              return isOpen;
+            }
+          }, item, id);
         },
         configureItem: item => {
           item.addListener("tap", () => this.fireDataEvent("selectionChanged", item.getModel()), this);
-
-          const openButton = item.getChildControl("open");
-          openButton.addListener("tap", () => {
-            this.__fetchChildren(item);
-          });
-          // OM remove this
-          item.addListener("dbltap", () => this.__fetchChildren(item), this);
         },
         sorter: (a, b) => {
           const aLabel = a.getLabel();
@@ -82,18 +98,6 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       });
     },
 
-    __populateTree: function() {
-      const rootFolder = {
-        folderId: null,
-        name: "Home",
-        children: []
-      };
-      const rootModel = qx.data.marshal.Json.createModel(rootFolder, true);
-      this.setModel(rootModel);
-
-      this.__fetchChildren(rootModel);
-    },
-
     __fetchChildren: function(parentModel) {
       this.self().addLoadingChild(parentModel);
 
@@ -104,8 +108,9 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
           folders.forEach(folder => {
             const folderData = {
               folderId: folder.getFolderId(),
-              name: folder.getName(),
-              children: []
+              label: folder.getName(),
+              children: [this.self().getLoadingData()],
+              loaded: false
             };
             const folderModel = qx.data.marshal.Json.createModel(folderData, true);
             this.self().addLoadingChild(folderModel);
