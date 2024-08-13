@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.web import Request
-from models_library.api_schemas_catalog.services import ServiceUpdate
+from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -156,7 +156,7 @@ async def dev_update_service(
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update=ServiceUpdate.parse_obj(update_data),
+        update=ServiceUpdateV2.parse_obj(update_data),
     )
 
     data = jsonable_encoder(service, exclude_unset=True)

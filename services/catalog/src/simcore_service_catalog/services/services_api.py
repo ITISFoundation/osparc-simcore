@@ -3,7 +3,7 @@ import logging
 from models_library.api_schemas_catalog.services import (
     ServiceGetV2,
     ServiceGroupAccessRightsV2,
-    ServiceUpdate,
+    ServiceUpdateV2,
 )
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
@@ -219,7 +219,7 @@ async def update_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    update: ServiceUpdate,
+    update: ServiceUpdateV2,
 ) -> ServiceGetV2:
 
     if is_function_service(service_key):

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, ClassVar, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
@@ -310,3 +311,23 @@ PageRpcServicesGetV2: TypeAlias = PageRpc[
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
+
+
+class ServiceUpdateV2(BaseModel):
+    name: str | None = None
+    thumbnail: HttpUrl | None = None
+
+    description: str | None = None
+    version_display: str | None = None
+
+    deprecated: datetime | None = None
+
+    classifiers: list[str] | None = None
+    quality: dict[str, Any] = {}
+
+    access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
+
+    class Config:
+        extra = Extra.forbid
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
