@@ -345,7 +345,7 @@ async def _start_buffer_instances(app: FastAPI, cluster: Cluster) -> Cluster:
 
     return dataclasses.replace(
         cluster,
-        buffer_ecs=[
+        buffer_ec2s=[
             i
             for i in cluster.buffer_ec2s
             if i.ec2_instance.id not in started_instance_ids
