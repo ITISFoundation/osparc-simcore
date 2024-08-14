@@ -46,7 +46,7 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     for method in ("GET", "POST", "DELETE"):
         mocked_directorv2_service_api_base.request(
             method,
-            path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
+            path__regex=r"/v2/computations/",
         ).respond(status_code=status.HTTP_404_NOT_FOUND)
 
     #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/service_errors_utils.py", line 116, in service_exception_handler
