@@ -479,4 +479,3 @@ async def test_list_projects_for_specific_folder_id(
     _assert_response_data(
         data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
     )
-    
