@@ -263,6 +263,6 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         }
 
 
-class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
+class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdateV2):
     class Config(InputSchema.Config):
         ...
