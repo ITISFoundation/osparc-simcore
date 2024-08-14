@@ -507,9 +507,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const currentFolderId = this.getCurrentFolderId();
       params.url.folderId = currentFolderId;
       if (params.url.orderBy) {
-        return osparc.data.Resources.fetch("studies", "getPageSortBySearchFolder", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageFolderSortBy", params, undefined, options);
       } else if (params.url.search) {
-        return osparc.data.Resources.fetch("studies", "getPageFilterSearchFolder", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageFolderSearch", params, undefined, options);
       }
       return osparc.data.Resources.fetch("studies", "getPageFolder", params, undefined, options);
     },
@@ -533,7 +533,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const currentFolderId = this.getCurrentFolderId();
       params.url.folderId = currentFolderId;
-      return osparc.data.Resources.fetch("studies", "getPageFilterSearchFolder", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPageFolderSearch", params, undefined, options);
     },
 
     __getSortedByNextRequest: function() {
@@ -555,7 +555,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const currentFolderId = this.getCurrentFolderId();
       params.url.folderId = currentFolderId;
-      return osparc.data.Resources.fetch("studies", "getPageSortBySearchFolder", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPageFolderSortBy", params, undefined, options);
     },
 
     invalidateStudies: function() {
