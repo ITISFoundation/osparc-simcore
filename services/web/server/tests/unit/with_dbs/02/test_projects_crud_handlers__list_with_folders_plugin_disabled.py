@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-statements
 
-from collections import UserDict
 from pathlib import Path
 from typing import Iterator
 
@@ -86,7 +85,6 @@ def app_environment(
 async def test_list_projects_with_disabled_project_folders_plugin(
     client: TestClient,
     app_environment: EnvVarsDict,
-    logged_user: UserDict,
     expected: ExpectedResponse,
     fake_project: ProjectDict,
     tests_data_dir: Path,
