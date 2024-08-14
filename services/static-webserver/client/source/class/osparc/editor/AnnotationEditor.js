@@ -124,8 +124,6 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         });
         row++;
       }
-
-      this.__makeItModal();
     },
 
     __applyMarker: function(marker) {
@@ -138,11 +136,9 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       const colorPicker = this.__addColor(0);
       marker.bind("color", colorPicker, "color");
       colorPicker.bind("color", marker, "color");
-
-      this.__makeItModal();
     },
 
-    __makeItModal: function() {
+    makeItModal: function() {
       this.show();
 
       const showHint = () => this.show();

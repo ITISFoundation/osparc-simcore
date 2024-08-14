@@ -1183,6 +1183,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const annotation = this.__getAnnotation(newID);
         this.__setSelectedAnnotations([annotation]);
         this.__annotationEditor.setAnnotation(annotation);
+        this.__annotationEditor.makeItModal();
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1614,6 +1615,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const marker = node.getMarker();
         if (marker) {
           this.__annotationEditor.setMarker(marker);
+          this.__annotationEditor.makeItModal();
         }
       }
     },
