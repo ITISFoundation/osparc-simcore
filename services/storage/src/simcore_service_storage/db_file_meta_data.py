@@ -76,17 +76,18 @@ def _list_filter_with_partial_file_id_stmt(
 ):
     conditions = []
 
-    # user_or_project_filter
+    # Ownership check.Disabled if
     user_id = user_or_project_filter.user_id
-    project_ids = user_or_project_filter.project_ids
-    conditions.append(
-        sa.or_(
-            file_meta_data.c.user_id == f"{user_id}" if user_id else True,
-            file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
-            if project_ids
-            else True,
+    if user_id is not None:
+        project_ids = user_or_project_filter.project_ids
+        conditions.append(
+            sa.or_(
+                file_meta_data.c.user_id == f"{user_id}",
+                file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
+                if project_ids
+                else False,
+            )
         )
-    )
 
     # Optional filters
     if file_id_prefix:
