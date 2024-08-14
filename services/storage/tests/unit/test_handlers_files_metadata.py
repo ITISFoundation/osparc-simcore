@@ -38,6 +38,11 @@ async def test_get_files_metadata(
         .with_query(user_id=f"{user_id}")
     )
 
+    # TODO: test values for
+    # expand_dirs
+    # uuid_filter
+    # project_id
+
     # this should return an empty list
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
@@ -48,29 +53,41 @@ async def test_get_files_metadata(
     # now add some stuff there
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")
-    files_owned_by_us = []
-    for _ in range(NUM_FILES):
-        files_owned_by_us.append(await upload_file(file_size, faker.file_name()))
+    files_owned_by_us = [
+        await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
+    ]
+    assert files_owned_by_us
+
     # we should find these files now
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == NUM_FILES
+
+    # checks project_id filter!
+    response = await client.get(f"{url.update_query(project_id=str(project_id))}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    assert len(list_fmds) == (NUM_FILES)
+
     # create some more files but with a base common name
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")
-    files_with_common_name = []
-    for _ in range(NUM_FILES):
-        files_with_common_name.append(
-            await upload_file(file_size, f"common_name-{faker.file_name()}")
-        )
+    files_with_common_name = [
+        await upload_file(file_size, f"common_name-{faker.file_name()}")
+        for _ in range(NUM_FILES)
+    ]
+    assert files_with_common_name
+
     # we should find these files now
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == (2 * NUM_FILES)
+
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
     data, error = await assert_status(response, status.HTTP_200_OK)
