@@ -169,6 +169,10 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
     },
 
     makeItModal: function() {
+      this.set({
+        padding: 10
+      });
+
       this.show();
 
       const showHint = () => this.show();
