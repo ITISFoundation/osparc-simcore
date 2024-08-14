@@ -8,6 +8,7 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.projects import ProjectID
+from models_library.users import UserID
 from respx import MockRouter
 from settings_library.director_v2 import DirectorV2Settings
 from simcore_service_api_server.exceptions.backend_errors import JobNotFoundError
@@ -29,6 +30,7 @@ def api() -> DirectorV2Api:
 async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     mocked_directorv2_service_api_base: MockRouter,
     project_id: ProjectID,
+    user_id: UserID,
     api: DirectorV2Api,
 ):
     #
@@ -51,7 +53,7 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     #    status_code, detail, headers = _get_http_exception_kwargs(
     #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/service_errors_utils.py", line 66, in _get_http_exception_kwargs
     #    raise exception_type(**detail_kwargs)
-    # simcore_service_api_server.exceptions.backend_errors.JobNotFoundError: <exception str() failed>
+    # simcore_service_api_server.exceptions.backend_errors.JobNotFoundError: <exception str() failed>  <-- !!!!!!!!!
     #
     # File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/handlers/_handlers_backend_errors.py", line 12, in backend_error_handler
     #     return create_error_json_response(f"{exc}", status_code=exc.status_code)
@@ -60,10 +62,10 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     #
 
     with pytest.raises(JobNotFoundError, match=f"{project_id}"):
-        await api.get_computation(user_id=42, project_id=project_id)
+        await api.get_computation(user_id=user_id, project_id=project_id)
 
     with pytest.raises(JobNotFoundError, match=f"{project_id}"):
-        await api.stop_computation(user_id=42, project_id=project_id)
+        await api.stop_computation(user_id=user_id, project_id=project_id)
 
     with pytest.raises(JobNotFoundError, match=f"{project_id}"):
-        await api.delete_computation(user_id=42, project_id=project_id)
+        await api.delete_computation(user_id=user_id, project_id=project_id)
