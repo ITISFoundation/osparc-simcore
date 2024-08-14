@@ -37,6 +37,7 @@ qx.Class.define("osparc.store.Folders", {
               folderId
             }
           };
+          // OM: MD will fix this
           // osparc.data.Resources.getInstance().getAllPages("folders", params)
           promise = osparc.data.Resources.getInstance().fetch("folders", "getWithinFolder", params);
         } else {
@@ -67,6 +68,7 @@ qx.Class.define("osparc.store.Folders", {
         };
         osparc.data.Resources.getInstance().fetch("folders", "post", params)
           .then(resp => {
+            // OM: MD will fix this
             const foldersStore = osparc.store.Folders.getInstance();
             const folderId = resp["folderId"];
             foldersStore.fetchFolders(parentId)

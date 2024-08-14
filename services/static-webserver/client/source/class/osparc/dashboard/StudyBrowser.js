@@ -315,6 +315,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
 
+      // OM: MD will fix this
       const sortByValueBE = this.getOrderBy().field;
       let sortByValue = null;
       switch (sortByValueBE) {
@@ -514,6 +515,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return osparc.data.Resources.fetch("studies", "getPageFolder", params, undefined, options);
       }
 
+      // OM: MD will fix this
       if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
       } else if (params.url.search) {
@@ -545,6 +547,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return osparc.data.Resources.fetch("studies", "getPageFilterSearchFolder", params, undefined, options);
       }
 
+      // OM: MD will fix this
       return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
     },
 
@@ -571,6 +574,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return osparc.data.Resources.fetch("studies", "getPageSortBySearchFolder", params, undefined, options);
       }
 
+      // OM: MD will fix this
       return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
     },
 
