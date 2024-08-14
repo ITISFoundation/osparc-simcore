@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, Final, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -992,7 +992,7 @@ async def folder_list(
         field="modified", direction=OrderDirection.DESC
     ),
     _required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
-) -> list[FolderEntry]:
+) -> tuple[int, list[FolderEntry]]:
     """
     Raises:
         FolderNotFoundError
@@ -1073,7 +1073,7 @@ async def folder_list(
         async for entry in connection.execute(list_query):
             results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
-    return results
+    return cast(int, count_result.scalar()), results
 
 
 async def folder_get(

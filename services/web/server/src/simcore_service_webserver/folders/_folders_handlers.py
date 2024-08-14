@@ -5,11 +5,13 @@ from aiohttp import web
 from models_library.api_schemas_webserver.folders import (
     CreateFolderBodyParams,
     FolderGet,
+    FolderGetPage,
     PutFolderBodyParams,
 )
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import PageQueryParameters
+from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import Extra, Field, Json, parse_obj_as, validator
@@ -23,6 +25,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -130,7 +133,7 @@ async def list_folders(request: web.Request):
         FolderListWithJsonStrQueryParams, request
     )
 
-    folders: list[FolderGet] = await _folders_api.list_folders(
+    folders: FolderGetPage = await _folders_api.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -140,7 +143,19 @@ async def list_folders(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
-    return envelope_json_response(folders)
+    page = Page[dict[str, Any]].parse_obj(
+        paginate_data(
+            chunk=folders.items,
+            request_url=request.url,
+            total=folders.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")

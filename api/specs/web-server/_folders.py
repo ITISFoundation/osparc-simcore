@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_webserver.folders import (
     CreateFolderBodyParams,
     FolderGet,
+    FolderGetPage,
     PutFolderBodyParams,
 )
 from models_library.generics import Envelope
@@ -47,17 +48,17 @@ async def create_folder(_body: CreateFolderBodyParams):
 
 @router.get(
     "/folders",
-    response_model=Envelope[list[FolderGet]],
+    response_model=Envelope[FolderGetPage],
 )
 async def list_folders(
     params: Annotated[PageQueryParameters, Depends()],
     order_by: Annotated[
         Json,
         Query(
-            description="Order by field (name|description) and direction (asc|desc). The default sorting order is ascending.",
+            description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
             example='{"field": "name", "direction": "desc"}',
         ),
-    ] = '{"field": "name", "direction": "desc"}',
+    ] = '{"field": "modified_at", "direction": "desc"}',
 ):
     ...
 

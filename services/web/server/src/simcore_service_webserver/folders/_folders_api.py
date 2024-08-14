@@ -5,7 +5,7 @@ from typing import cast
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
-from models_library.api_schemas_webserver.folders import FolderGet
+from models_library.api_schemas_webserver.folders import FolderGet, FolderGetPage
 from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects_access import AccessRights
@@ -108,13 +108,13 @@ async def list_folders(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> list[FolderGet]:
+) -> FolderGetPage:
     user = await get_user(app, user_id=user_id)
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
         # NOTE: folder permissions are checked inside the function
-        folder_list_db: list[folders_db.FolderEntry] = await folders_db.folder_list(
+        total_count, folder_list_db = await folders_db.folder_list(
             connection,
             product_name=product_name,
             folder_id=folder_id,
@@ -123,25 +123,31 @@ async def list_folders(
             limit=limit,
             order_by=cast(folders_db.OrderByDict, order_by.dict()),
         )
-    return [
-        FolderGet(
-            folder_id=folder.id,
-            parent_folder_id=folder.parent_folder,
-            name=folder.name,
-            description=folder.description,
-            created_at=folder.created,
-            modified_at=folder.modified,
-            owner=folder.owner,
-            my_access_rights=parse_obj_as(
-                AccessRights, folder.my_access_rights.to_dict()
-            ),
-            access_rights=parse_obj_as(
-                dict[GroupID, AccessRights],
-                {key: value.to_dict() for key, value in folder.access_rights.items()},
-            ),
-        )
-        for folder in folder_list_db
-    ]
+    return FolderGetPage(
+        items=[
+            FolderGet(
+                folder_id=folder.id,
+                parent_folder_id=folder.parent_folder,
+                name=folder.name,
+                description=folder.description,
+                created_at=folder.created,
+                modified_at=folder.modified,
+                owner=folder.owner,
+                my_access_rights=parse_obj_as(
+                    AccessRights, folder.my_access_rights.to_dict()
+                ),
+                access_rights=parse_obj_as(
+                    dict[GroupID, AccessRights],
+                    {
+                        key: value.to_dict()
+                        for key, value in folder.access_rights.items()
+                    },
+                ),
+            )
+            for folder in folder_list_db
+        ],
+        total=total_count,
+    )
 
 
 async def update_folder(
