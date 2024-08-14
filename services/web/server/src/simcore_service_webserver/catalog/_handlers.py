@@ -85,7 +85,7 @@ async def list_services_latest(request: Request):
         ListServiceParams, request
     )
 
-    page_items, page_meta = await _api.dev_list_latest_services(
+    page_items, page_meta = await _api.list_latest_services(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -124,7 +124,7 @@ async def get_service(request: Request):
     assert request_ctx  # nosec
     assert path_params  # nosec
 
-    service = await _api.dev_get_service(
+    service = await _api.get_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -154,7 +154,7 @@ async def update_service(request: Request):
     assert path_params  # nosec
     assert update  # nosec
 
-    updated = await _api.dev_update_service(
+    updated = await _api.update_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,

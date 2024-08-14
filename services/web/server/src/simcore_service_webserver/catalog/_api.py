@@ -87,7 +87,7 @@ async def _safe_replace_service_input_outputs(
 # IMPLEMENTATION --------------------------------------------------------------------------------
 
 
-async def dev_list_latest_services(
+async def list_latest_services(
     app: web.Application,
     *,
     user_id: UserID,
@@ -112,7 +112,7 @@ async def dev_list_latest_services(
     return page_data, page.meta
 
 
-async def dev_get_service(
+async def get_service_v2(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -139,7 +139,7 @@ async def dev_get_service(
     return data
 
 
-async def dev_update_service(
+async def update_service_v2(
     app: web.Application,
     *,
     product_name: ProductName,
