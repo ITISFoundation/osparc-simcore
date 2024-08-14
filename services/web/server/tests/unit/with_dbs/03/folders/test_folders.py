@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.folders import FolderGet
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -35,14 +36,19 @@ async def test_folders_full_workflow(
         url.path, json={"name": "My first folder", "description": "Custom description"}
     )
     added_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert FolderGet.parse_obj(added_folder)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
     assert len(data) == 1
     assert data[0]["name"] == "My first folder"
     assert data[0]["description"] == "Custom description"
+    assert meta["count"] == 1
+    assert links
 
     # update a folder
     url = client.app.router["replace_folder"].url_for(
@@ -55,7 +61,8 @@ async def test_folders_full_workflow(
             "description": "",
         },
     )
-    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert FolderGet.parse_obj(data)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()

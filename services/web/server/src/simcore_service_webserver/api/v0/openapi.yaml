@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.5
+  version: 0.41.0
 servers:
 - url: ''
   description: webserver
@@ -1296,14 +1296,14 @@ paths:
       summary: List Folders
       operationId: list_folders
       parameters:
-      - description: Order by field (name|description) and direction (asc|desc). The
-          default sorting order is ascending.
+      - description: Order by field (modified_at|name|description) and direction (asc|desc).
+          The default sorting order is ascending.
         required: false
         schema:
           title: Order By
-          description: Order by field (name|description) and direction (asc|desc).
-            The default sorting order is ascending.
-          default: '{"field": "name", "direction": "desc"}'
+          description: Order by field (modified_at|name|description) and direction
+            (asc|desc). The default sorting order is ascending.
+          default: '{"field": "modified_at", "direction": "desc"}'
         example: '{"field": "name", "direction": "desc"}'
         name: order_by
         in: query
@@ -1349,7 +1349,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
   /v0/folders/{folder_id}:
     get:
       tags:
@@ -1414,12 +1414,8 @@ paths:
         name: folder_id
         in: path
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGet_'
   /v0/folders/{folder_id}/groups/{group_id}:
     put:
       tags:
@@ -3493,7 +3489,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6008,8 +6004,8 @@ components:
         quality: {}
         accessRights:
           '1':
-            execute_access: true
-            write_access: false
+            execute: true
+            write: false
         key: simcore/services/comp/itis/sleeper
         version: 2.2.1
         version_display: 2 Xtreme
@@ -6070,12 +6066,6 @@ components:
       title: CatalogServiceUpdate
       type: object
       properties:
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceGroupAccessRights'
-          description: service access rights per group id
         name:
           title: Name
           type: string
@@ -6094,9 +6084,6 @@ components:
         deprecated:
           title: Deprecated
           type: string
-          description: Owner can set the date to retire the service. Three possibilities:If
-            None, the service is marked as `published`;If now<deprecated the service
-            is marked as deprecated;If now>=deprecated, the service is retired
           format: date-time
         classifiers:
           title: Classifiers
@@ -6107,63 +6094,11 @@ components:
           title: Quality
           type: object
           default: {}
-      example:
         accessRights:
-          1:
-            execute_access: false
-            write_access: false
-          2:
-            execute_access: true
-            write_access: true
-          44:
-            execute_access: false
-            write_access: false
-        name: My Human Readable Service Name
-        description: An interesting service that does something
-        classifiers:
-        - RRID:SCR_018997
-        - RRID:SCR_019001
-        quality:
-          tsr:
-            r01:
-              level: 3
-              references: ''
-            r02:
-              level: 2
-              references: ''
-            r03:
-              level: 0
-              references: ''
-            r04:
-              level: 0
-              references: ''
-            r05:
-              level: 2
-              references: ''
-            r06:
-              level: 0
-              references: ''
-            r07:
-              level: 0
-              references: ''
-            r08:
-              level: 1
-              references: ''
-            r09:
-              level: 0
-              references: ''
-            r10:
-              level: 0
-              references: ''
-          enabled: true
-          annotations:
-            vandv: ''
-            purpose: ''
-            standards: ''
-            limitations: ''
-            documentation: ''
-            certificationLink: ''
-            certificationStatus: Uncertified
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -10849,6 +10784,7 @@ components:
           title: Write
           type: boolean
           default: false
+      additionalProperties: false
     ServiceInputGet:
       title: ServiceInputGet
       required:

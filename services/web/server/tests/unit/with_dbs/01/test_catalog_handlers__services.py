@@ -194,6 +194,7 @@ async def test_dev_get_and_patch_service(
         description="bar",
         classifiers=None,
         versionDisplay="Some nice name",
+        accessRights={1: {"execute": True, "write": True}},
     )
     response = await client.patch(
         f"{url}", json=jsonable_encoder(update, exclude_unset=True)
@@ -205,9 +206,10 @@ async def test_dev_get_and_patch_service(
     model = parse_obj_as(CatalogServiceGet, data)
     assert model.key == service_key
     assert model.version == service_version
-    assert model.name == "foo"
-    assert model.description == "bar"
-    assert model.version_display == "Some nice name"
+    assert model.name == update.name
+    assert model.description == update.description
+    assert model.version_display == update.version_display
+    assert model.access_rights == update.access_rights
 
     assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
     assert mocked_rpc_catalog_service_api["update_service"].call_count == 1

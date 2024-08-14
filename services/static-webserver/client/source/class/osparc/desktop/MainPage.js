@@ -364,23 +364,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    closeStudy: function(studyId) {
-      if (studyId === undefined) {
-        if (this.__studyEditor && this.__studyEditor.getStudy()) {
-          studyId = this.__studyEditor.getStudy().getUuid();
-        } else {
-          return;
-        }
-      }
-      const params = {
-        url: {
-          "studyId": studyId
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params);
-    },
-
     __getStudyEditor: function() {
       if (this.__studyEditor) {
         return this.__studyEditor;
