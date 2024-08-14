@@ -24,10 +24,10 @@ qx.Class.define("osparc.dashboard.FolderTreeItem", {
       // this.addOpenButton();
       const openButton = this.getChildControl("open");
       openButton.addListener("changeOpen", () => {
-        console.log("changeOpen");
+        console.log("changeOpen", this);
       }, this);
       openButton.addListener("changeVisibility", e => {
-        console.log("changeVisibility", e.getData());
+        console.log("changeVisibility", e.getData(), this);
         openButton.show();
       }, this);
       this._add(openButton);

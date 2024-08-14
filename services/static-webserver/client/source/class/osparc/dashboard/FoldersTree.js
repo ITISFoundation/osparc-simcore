@@ -77,6 +77,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
               if (isOpen && !value.getLoaded()) {
                 value.setLoaded(true);
                 value.getChildren().removeAll();
+                // eslint-disable-next-line no-underscore-dangle
                 that.__fetchChildren(value);
               }
               return isOpen;
