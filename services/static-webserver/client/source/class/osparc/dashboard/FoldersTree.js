@@ -19,12 +19,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    const rootFolder = {
-      folderId: null,
-      label: "Home",
-      children: [],
-      loaded: true,
-    };
+    const rootFolder = this.self().createNewEntry(null);
     const root = qx.data.marshal.Json.createModel(rootFolder, true);
     this.__fetchChildren(root);
 
@@ -46,6 +41,17 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   statics: {
+    createNewEntry: function(folder) {
+      return {
+        folderId: folder ? folder.getFolderId() : null,
+        label: folder ? folder.getName() : "Home",
+        children: [
+          this.self().getLoadingData()
+        ],
+        loaded: false,
+      };
+    },
+
     getLoadingData: function() {
       return {
         folderId: -1,
@@ -58,8 +64,16 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
     addLoadingChild: function(parentModel) {
       const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
-      parentModel.getChildren().removeAll();
       parentModel.getChildren().append(loadingModel);
+    },
+
+    removeLoadingChild: function(parent) {
+      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
+        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
+          parent.getChildren().toArray()
+            .splice(i, 1);
+        }
+      }
     }
   },
 
@@ -75,8 +89,6 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
             converter(value, _, __, target) {
               const isOpen = target.isOpen();
               if (isOpen && !value.getLoaded()) {
-                value.setLoaded(true);
-                value.getChildren().removeAll();
                 // eslint-disable-next-line no-underscore-dangle
                 that.__fetchChildren(value);
               }
@@ -102,21 +114,15 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     },
 
     __fetchChildren: function(parentModel) {
-      this.self().addLoadingChild(parentModel);
+      parentModel.setLoaded(true);
 
       const folderId = parentModel.getFolderId ? parentModel.getFolderId() : parentModel.getModel();
       osparc.store.Folders.getInstance().fetchFolders(folderId)
         .then(folders => {
-          parentModel.getChildren().removeAll();
+          this.self().removeLoadingChild(parentModel);
           folders.forEach(folder => {
-            const folderData = {
-              folderId: folder.getFolderId(),
-              label: folder.getName(),
-              children: [this.self().getLoadingData()],
-              loaded: false
-            };
+            const folderData = this.self().createNewEntry(folder);
             const folderModel = qx.data.marshal.Json.createModel(folderData, true);
-            this.self().addLoadingChild(folderModel);
             parentModel.getChildren().append(folderModel);
           });
         })
