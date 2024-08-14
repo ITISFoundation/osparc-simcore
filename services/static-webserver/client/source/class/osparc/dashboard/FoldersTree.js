@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       decorator: "no-border",
       font: "text-14",
       showLeafs: true,
-      padding: -10,
+      paddingLeft: -10,
     });
 
     this.__initTree();
@@ -68,10 +68,9 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     },
 
     removeLoadingChild: function(parent) {
-      for (let i = parent.getChildren().length - 1; i >= 0; i--) {
+      for (let i = parent.getChildren().getLength() - 1; i >= 0; i--) {
         if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
-          parent.getChildren().toArray()
-            .splice(i, 1);
+          parent.getChildren().splice(i, 1);
         }
       }
     }
