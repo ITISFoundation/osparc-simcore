@@ -38,11 +38,6 @@ async def test_get_files_metadata(
         .with_query(user_id=f"{user_id}")
     )
 
-    # TODO: test values for
-    # expand_dirs
-    # uuid_filter
-    # project_id
-
     # this should return an empty list
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
