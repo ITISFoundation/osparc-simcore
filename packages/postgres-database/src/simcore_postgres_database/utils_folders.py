@@ -1052,6 +1052,7 @@ async def folder_list(
                 if folder_id is None
                 else True
             )
+            .where(folders.c.product_name == product_name)
         )
 
         # Select total count from base_query
@@ -1121,6 +1122,7 @@ async def folder_get(
                 if folder_id is None
                 else True
             )
+            .where(folders.c.product_name == product_name)
         )
 
         query_result: RowProxy | None = await (
