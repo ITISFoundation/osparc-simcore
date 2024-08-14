@@ -53,7 +53,6 @@ qx.Class.define("osparc.Application", {
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
       this.__updateTabName();
-      this.__updateFavicon();
       this.__updateMetaTags();
 
       if (qx.core.Environment.get("product.name") === "s4lengine") {
@@ -217,48 +216,120 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __updateFavicon: function() {
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        document.getElementsByTagName("head")[0].appendChild(link);
-      }
-      link.href = "";
-      osparc.product.Utils.getFaviconUrl()
-        .then(url => link.href = url);
-    },
-    
     __updateMetaTags: function() {
       // Update title and meta tags
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
       const backgroundColor = qx.theme.manager.Color.getInstance().resolve("primary-background-color");
-      
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      const tileColorMeta = document.querySelector('meta[name="msapplication-TileColor"]');
-      const maskIconMeta = document.querySelector('meta[name="mask-icon"]');
+
+      const themeColorMeta = document.querySelector("meta[name='theme-color']");
+      const tileColorMeta = document.querySelector("meta[name='msapplication-TileColor']");
+      const tileImageMeta = document.querySelector("meta[name='msapplication-TileImage']");
+      const maskIconMeta = document.querySelector("meta[name='mask-icon']");
 
       if (themeColorMeta) {
         themeColorMeta.setAttribute("content", productColor);
       }
-      if (tileColorMeta) {
-        tileColorMeta.setAttribute("content", productColor);
+
+      if (tileColorMeta && tileImageMeta) {
+        const maskIcon = osparc.product.Utils.getManifestIconUrl("ms-icon-150x150.png")
+        Promise.resolve(maskIcon)
+          .then(resolvedUrl => {
+            // Create the manifest data object with resolved URLs
+            tileColorMeta.setAttribute("content", productColor);
+            tileImageMeta.setAttribute("content", resolvedUrl);
+          })
+          .catch(error => {
+            console.error("Failed to resolve icon URLs:", error);
+          });
       }
       if (maskIconMeta) {
-        maskIconMeta.setAttribute("color", productColor);
+        const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.svg")
+        Promise.resolve(maskIcon)
+          .then(resolvedUrl => {
+            // Create the manifest data object with resolved URLs
+            maskIconMeta.setAttribute("color", productColor);
+            maskIconMeta.setAttribute("href", resolvedUrl);
+          })
+          .catch(error => {
+            console.error("Failed to resolve icon URLs:", error);
+          });
       }
-      
+
+      // Update app icons
+      this.__updateAppIcons();
+
       // Update manifest
       this.__updateManifest(productColor, backgroundColor);
-      
+
       // Update browserconfig
       this.__updateBrowserConfig(productColor);
     },
-    
+
+    __updateAppIcons: function() {
+      // Array of promises to resolve icon URLs for Apple Touch Icons
+      const appleIconUrls = [
+        osparc.product.Utils.getManifestIconUrl("apple-icon-57x57.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-60x60.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-72x72.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-76x76.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-114x114.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-120x120.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-144x144.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-152x152.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-180x180.png")
+      ];
+
+      // Array of promises to resolve icon URLs for Favicons
+      const favIconUrls = [
+        osparc.product.Utils.getManifestIconUrl("android-icon-192x192.png"),
+        osparc.product.Utils.getManifestIconUrl("favicon-32x32.png"),
+        osparc.product.Utils.getManifestIconUrl("favicon-96x96.png"),
+        osparc.product.Utils.getManifestIconUrl("favicon-16x16.png")
+      ];
+
+      // Wait for all icon URLs to be resolved
+      Promise.all([...appleIconUrls, ...favIconUrls])
+        .then(resolvedUrls => {
+          const appleResolvedUrls = resolvedUrls.slice(0, appleIconUrls.length);
+          const favResolvedUrls = resolvedUrls.slice(appleIconUrls.length);
+
+          // Remove existing Apple Touch Icons and Favicons
+          document.querySelectorAll("link[rel='apple-touch-icon'], link[rel='icon']").forEach(link => link.remove());
+
+          // Create and insert new Apple Touch Icon links
+          const appleIconSizes = [
+            "57x57", "60x60", "72x72", "76x76", "114x114", "120x120", "144x144", "152x152", "180x180"
+          ];
+          appleResolvedUrls.forEach((url, index) => {
+            let link = document.createElement("link");
+            link.setAttribute("rel", "apple-touch-icon");
+            link.setAttribute("sizes", appleIconSizes[index]);
+            link.setAttribute("href", url);
+            document.head.appendChild(link);
+          });
+
+          // Create and insert new Favicon links
+          const favIconSizes = [
+            "192x192", "32x32", "96x96", "16x16"
+          ];
+          favResolvedUrls.forEach((url, index) => {
+            let link = document.createElement("link");
+            link.setAttribute("rel", "icon");
+            link.setAttribute("type", "image/png");
+            link.setAttribute("sizes", favIconSizes[index]);
+            link.setAttribute("href", url);
+            document.head.appendChild(link);
+          });
+        })
+        .catch(error => {
+          console.error("Failed to resolve icon URLs:", error);
+        });
+    },
+
     __updateManifest: function(themeColor, backgroundColor) {
       const productName = osparc.product.Utils.getProductName();
-      let manifestLink = document.querySelector('link[rel="manifest"]');
-      
+      let manifestLink = document.querySelector("link[rel='manifest']");
+
       // Array of promises to resolve icon URLs
       const iconUrls = [
         osparc.product.Utils.getManifestIconUrl("android-icon-36x36.png"),
@@ -268,13 +339,13 @@ qx.Class.define("osparc.Application", {
         osparc.product.Utils.getManifestIconUrl("android-icon-144x144.png"),
         osparc.product.Utils.getManifestIconUrl("android-icon-192x192.png")
       ];
-      
+
       // Wait for all icon URLs to be resolved
       Promise.all(iconUrls)
         .then(resolvedUrls => {
           // Create the manifest data object with resolved URLs
           const manifestData = {
-            short_name: productName,
+            shortName: productName,
             name: productName,
             icons: [
               {
@@ -315,26 +386,26 @@ qx.Class.define("osparc.Application", {
               }
             ],
             display: "standalone",
-            theme_color: themeColor,
-            background_color: backgroundColor
+            themeColor: themeColor,
+            backgroundColor: backgroundColor
           };
-          
-          const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+
+          const blob = new Blob([JSON.stringify(manifestData)], { type: "application/json" });
           const manifestURL = URL.createObjectURL(blob);
-          
+
           // Create or update the manifest link in the document head
           if (!manifestLink) {
-            manifestLink = document.createElement('link');
-            manifestLink.setAttribute('rel', 'manifest');
+            manifestLink = document.createElement("link");
+            manifestLink.setAttribute("rel", "manifest");
             document.head.appendChild(manifestLink);
           }
-          manifestLink.setAttribute('href', manifestURL);
+          manifestLink.setAttribute("href", manifestURL);
         })
         .catch(error => {
           console.error("Failed to resolve icon URLs:", error);
         });
     },
-    
+
     // Method to dynamically update the browserconfig
     __updateBrowserConfig: function(tileColor) {
       // Resolve the icon URL asynchronously
@@ -349,18 +420,18 @@ qx.Class.define("osparc.Application", {
           </tile>
         </msapplication>
       </browserconfig>`;
-          
-          const blob = new Blob([browserconfigData], { type: 'application/xml' });
+
+          const blob = new Blob([browserconfigData], { type: "application/xml" });
           const browserconfigURL = URL.createObjectURL(blob);
-          
+
           // Check if the meta tag exists, create it if not
-          let browserConfigLink = document.querySelector('meta[name="msapplication-config"]');
+          let browserConfigLink = document.querySelector("meta[name='msapplication-config']");
           if (!browserConfigLink) {
-            browserConfigLink = document.createElement('meta');
-            browserConfigLink.setAttribute('name', 'msapplication-config');
+            browserConfigLink = document.createElement("meta");
+            browserConfigLink.setAttribute("name", "msapplication-config");
             document.head.appendChild(browserConfigLink);
           }
-          browserConfigLink.setAttribute('content', browserconfigURL);
+          browserConfigLink.setAttribute("content", browserconfigURL);
         })
         .catch(error => {
           console.error("Failed to resolve msTileIcon URL:", error);

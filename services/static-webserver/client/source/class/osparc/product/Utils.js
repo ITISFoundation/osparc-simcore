@@ -131,20 +131,10 @@ qx.Class.define("osparc.product.Utils", {
       });
     },
 
-    getFaviconUrl: function() {
-      const pngUrl = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
-      const fallbackIcon = "/resource/osparc/favicon-"+this.getProductName()+".png";
-      return new Promise(resolve => {
-        this.__linkExists(pngUrl)
-          .then(() => resolve(pngUrl))
-          .catch(() => resolve(fallbackIcon))
-      });
-    },
-
     getManifestIconUrl: function(icon) {
-      const productName = osparc.product.Utils.getProductName();
+      const productName = this.isS4LProduct() ? "s4l" : osparc.product.Utils.getProductName();
       const iconPath = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${productName}/icons/${icon}`;
-      const fallbackIcon = "/resource/osparc/favicon-" + this.getProductName() + ".png";
+      const fallbackIcon = `/resource/osparc/${productName}/favicon-96x96.png`;
       return this.__linkExists(iconPath)
         .then(() => iconPath)
         .catch(() => fallbackIcon);
