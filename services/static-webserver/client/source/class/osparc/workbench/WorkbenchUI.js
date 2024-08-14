@@ -141,6 +141,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __annotationInitPos: null,
     __selectedAnnotations: null,
     __annotationEditor: null,
+    __annotationLastColor: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => this.__reloadCurrentModel(), this);
@@ -1190,6 +1191,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const annotationEditor = this.__getAnnotationEditorView();
         annotationEditor.setAnnotation(annotation);
         annotationEditor.makeItModal();
+        annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1883,15 +1885,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
       if ([null, undefined].includes(this.__rectAnnotationRepr)) {
-        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, osparc.workbench.Annotation.DEFAULT_COLOR);
+        const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
+        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, color);
       } else {
         osparc.wrapper.Svg.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
     },
 
     __consolidateAnnotation: function(type, initPos, annotation) {
+      const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
         type,
+        color,
         attributes: {}
       };
       if (type === "rect") {
@@ -1924,7 +1929,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       } else if (type === "text") {
         const tempAnnotation = new osparc.workbench.Annotation(null, {
           type: "text",
-          color: osparc.workbench.Annotation.DEFAULT_COLOR,
+          color,
           attributes: {
             text: "",
             fontSize: 12
@@ -1932,6 +1937,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         });
         const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
         annotationEditor.addButtons();
+        tempAnnotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
         annotationEditor.addListener("appear", () => {
           const textField = annotationEditor.getChildControl("text-field");
           textField.focus();
