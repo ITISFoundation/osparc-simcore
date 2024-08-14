@@ -45,10 +45,25 @@ async def test_folders_full_workflow(
         resp, status.HTTP_200_OK, include_meta=True, include_links=True
     )
     assert len(data) == 1
+    assert data[0]["folderId"] == added_folder["folderId"]
     assert data[0]["name"] == "My first folder"
     assert data[0]["description"] == "Custom description"
+    assert data[0]["myAccessRights"]
+    assert data[0]["accessRights"]
     assert meta["count"] == 1
     assert links
+
+    # get a user folder
+    url = client.app.router["get_folder"].url_for(
+        folder_id=f"{added_folder['folderId']}"
+    )
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["folderId"] == added_folder["folderId"]
+    assert data["name"] == "My first folder"
+    assert data["description"] == "Custom description"
+    assert data["myAccessRights"]
+    assert data["accessRights"]
 
     # update a folder
     url = client.app.router["replace_folder"].url_for(
@@ -71,6 +86,8 @@ async def test_folders_full_workflow(
     assert len(data) == 1
     assert data[0]["name"] == "My Second folder"
     assert data[0]["description"] == ""
+    assert data[0]["myAccessRights"]
+    assert data[0]["accessRights"]
 
     # delete a folder
     url = client.app.router["delete_folder"].url_for(

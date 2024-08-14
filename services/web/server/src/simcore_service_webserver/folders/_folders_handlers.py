@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.folders import (
@@ -144,7 +143,7 @@ async def list_folders(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
-    page = Page[dict[str, Any]].parse_obj(
+    page = Page[FolderGet].parse_obj(
         paginate_data(
             chunk=folders.items,
             request_url=request.url,
