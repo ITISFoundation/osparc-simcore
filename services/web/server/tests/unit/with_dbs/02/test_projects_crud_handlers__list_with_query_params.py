@@ -486,7 +486,7 @@ async def test_list_projects_for_specific_folder_id(
 def app_environment(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
-    # disable the garbage collector
+    # disable the webserver folders plugin
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     return app_environment | {"WEBSERVER_FOLDERS": "0"}
 
