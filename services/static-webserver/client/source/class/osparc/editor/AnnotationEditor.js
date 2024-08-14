@@ -33,7 +33,8 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
 
   events: {
     "addAnnotation": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event"
+    "cancel": "qx.event.type.Event",
+    "close": "qx.event.type.Event",
   },
 
   properties: {
@@ -175,20 +176,23 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
 
       this.show();
 
-      const showHint = () => this.show();
-      const hideHint = () => this.exclude();
+      const showEditor = () => this.show();
+      const hideEditor = () => {
+        this.fireEvent("close");
+        this.exclude();
+      };
       const tapListener = event => {
         if (osparc.utils.Utils.isMouseOnElement(this, event)) {
           return;
         }
-        hideHint();
+        hideEditor();
         this.set({
           annotation: null,
           marker: null
         });
         document.removeEventListener("mousedown", tapListener);
       };
-      showHint();
+      showEditor();
       document.addEventListener("mousedown", tapListener);
     }
   }
