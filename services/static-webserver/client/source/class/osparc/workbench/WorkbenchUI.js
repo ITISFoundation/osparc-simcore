@@ -1925,11 +1925,17 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         });
         const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
         annotationEditor.addButtons();
+        annotationEditor.addListener("appear", () => {
+          const textField = annotationEditor.getChildControl("text-field");
+          textField.focus();
+          textField.activate();
+        });
         const win = osparc.ui.window.Window.popUpInWindow(annotationEditor, "Add Text Annotation", 220, 135).set({
           clickAwayClose: true,
           showClose: true
         });
         annotationEditor.addListener("addAnnotation", () => {
+          win.close();
           const form = annotationEditor.getForm();
           serializeData.attributes.text = form.getItem("text").getValue();
           serializeData.attributes.color = form.getItem("color").getValue();
