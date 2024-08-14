@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.folders import (
     FolderGet,
     PutFolderBodyParams,
 )
-from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import Json
@@ -39,7 +38,7 @@ router = APIRouter(
 
 @router.post(
     "/folders",
-    response_model=Envelope[WalletGet],
+    response_model=Envelope[FolderGet],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_folder(_body: CreateFolderBodyParams):
@@ -55,10 +54,10 @@ async def list_folders(
     order_by: Annotated[
         Json,
         Query(
-            description="Order by field (name|description) and direction (asc|desc). The default sorting order is ascending.",
+            description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
             example='{"field": "name", "direction": "desc"}',
         ),
-    ] = '{"field": "name", "direction": "desc"}',
+    ] = '{"field": "modified_at", "direction": "desc"}',
 ):
     ...
 
@@ -83,7 +82,7 @@ async def replace_folder(
 
 @router.delete(
     "/folders/{folder_id}",
-    response_model=Envelope[FolderGet],
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_folder(_path: Annotated[FoldersPathParams, Depends()]):
     ...

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, Final, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -20,12 +20,14 @@ from pydantic import (
     parse_obj_as,
 )
 from pydantic.errors import PydanticErrorMixin
+from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import ScalarSelect
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
+from .utils_ordering import OrderDirection
 
 _ProductName: TypeAlias = str
 _ProjectID: TypeAlias = uuid.UUID
@@ -986,8 +988,11 @@ async def folder_list(
     *,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
+    order_by: OrderByDict = OrderByDict(
+        field="modified", direction=OrderDirection.DESC
+    ),
     _required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
-) -> list[FolderEntry]:
+) -> tuple[int, list[FolderEntry]]:
     """
     Raises:
         FolderNotFoundError
@@ -1015,7 +1020,7 @@ async def folder_list(
             access_via_gid = resolved_access_rights.gid
             access_via_folder_id = resolved_access_rights.folder_id
 
-        query = (
+        base_query = (
             sa.select(
                 folders,
                 folders_access_rights,
@@ -1047,14 +1052,30 @@ async def folder_list(
                 if folder_id is None
                 else True
             )
-            .offset(offset)
-            .limit(limit)
+            .where(folders.c.product_name == product_name)
         )
 
-        async for entry in connection.execute(query):
+        # Select total count from base_query
+        subquery = base_query.subquery()
+        count_query = sa.select(sa.func.count()).select_from(subquery)
+        count_result = await connection.execute(count_query)
+        total_count = await count_result.scalar()
+
+        # Ordering and pagination
+        if order_by["direction"] == OrderDirection.ASC:
+            list_query = base_query.order_by(
+                sa.asc(getattr(folders.c, order_by["field"]))
+            )
+        else:
+            list_query = base_query.order_by(
+                sa.desc(getattr(folders.c, order_by["field"]))
+            )
+        list_query = list_query.offset(offset).limit(limit)
+
+        async for entry in connection.execute(list_query):
             results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
-    return results
+    return cast(int, total_count), results
 
 
 async def folder_get(
@@ -1101,6 +1122,7 @@ async def folder_get(
                 if folder_id is None
                 else True
             )
+            .where(folders.c.product_name == product_name)
         )
 
         query_result: RowProxy | None = await (
@@ -1113,3 +1135,6 @@ async def folder_get(
         )
 
     return FolderEntry.from_orm(query_result)
+
+
+__all__ = ["OrderByDict"]

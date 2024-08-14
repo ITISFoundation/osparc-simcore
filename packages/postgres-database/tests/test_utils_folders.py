@@ -1633,9 +1633,10 @@ async def _list_folder_as(
     limit: NonNegativeInt = ALL_IN_ONE_PAGE_LIMIT,
 ) -> list[FolderEntry]:
 
-    return await folder_list(
+    total_count, folders_db = await folder_list(
         connection, default_product_name, folder_id, gid, offset=offset, limit=limit
     )
+    return folders_db
 
 
 async def test_folder_list(
