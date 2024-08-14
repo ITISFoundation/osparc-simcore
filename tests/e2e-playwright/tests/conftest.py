@@ -454,6 +454,19 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
+def start_study_from_plus_button(
+    page: Page,
+) -> Callable[[str], None]:
+    def _(plus_button_test_id: str) -> None:
+        with log_context(
+            logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
+        ):
+            page.get_by_test_id(plus_button_test_id).click()
+
+    return _
+
+
+@pytest.fixture
 def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
@@ -470,6 +483,21 @@ def find_and_start_service_in_dashboard(
                 test_id = f"{test_id}/{service_key_prefix}"
             test_id = f"{test_id}/{service_name}"
             page.get_by_test_id(test_id).click()
+
+    return _
+
+
+@pytest.fixture
+def create_project_from_new_button(
+    start_study_from_plus_button: Callable[[str], None],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool], dict[str, Any]
+    ],
+) -> Callable[[str], dict[str, Any]]:
+    def _(plus_button_test_id: str) -> dict[str, Any]:
+        start_study_from_plus_button(plus_button_test_id)
+        expected_states = (RunningState.UNKNOWN,)
+        return create_new_project_and_delete(expected_states, False)
 
     return _
 

@@ -797,7 +797,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      osparc.data.Resources.fetch("studies", "close", params);
+      osparc.data.Resources.fetch("studies", "close", params)
+        .catch(err => console.error(err));
     },
 
     closeEditor: function() {

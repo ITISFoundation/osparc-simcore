@@ -66,6 +66,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       init: null,
       nullable: false,
       event: "changeStudy"
+    },
+
+    deserialized: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeDeserialized"
     }
   },
 
@@ -662,6 +669,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.__deserializeEdges(workbenchInitData);
           workbenchInitData = null;
           workbenchUIInitData = null;
+          this.setDeserialized(true);
         });
     },
 
