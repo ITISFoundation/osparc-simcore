@@ -21,6 +21,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import limited_gather
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.storage_models import projects, users
 
 from ..helpers.utils import get_updated_project
@@ -51,7 +52,13 @@ async def _user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[Use
 
 @pytest.fixture
 async def user_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
-    async with _user_context(aiopg_engine, name="test") as new_user_id:
+    async with _user_context(aiopg_engine, name="test-user") as new_user_id:
+        yield new_user_id
+
+
+@pytest.fixture
+async def other_user_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
+    async with _user_context(aiopg_engine, name="test-other-user") as new_user_id:
         yield new_user_id
 
 
@@ -80,6 +87,52 @@ async def create_project(
     async with aiopg_engine.acquire() as conn:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
+        )
+
+
+@pytest.fixture
+async def create_project_access_rights(
+    aiopg_engine: Engine,
+) -> AsyncIterator[Callable[[ProjectID, UserID, bool, bool, bool], Awaitable[None]]]:
+    _created = []
+
+    async def _creator(
+        project_id: ProjectID, user_id: UserID, read: bool, write: bool, delete: bool
+    ) -> None:
+        async with aiopg_engine.acquire() as conn:
+            result = await conn.execute(
+                project_to_groups.insert()
+                .values(
+                    project_uuid=f"{project_id}",
+                    gid=sa.select(users.c.primary_gid)
+                    .where(users.c.id == f"{user_id}")
+                    .scalar_subquery(),
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+                .returning(sa.literal_column("*"))
+            )
+            row = await result.fetchone()
+            assert row
+            _created.append(
+                (row[project_to_groups.c.project_uuid], row[project_to_groups.c.gid])
+            )
+
+    yield _creator
+
+    # cleanup
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(
+            project_to_groups.delete().where(
+                sa.or_(
+                    *(
+                        (project_to_groups.c.project_uuid == pid)
+                        & (project_to_groups.c.gid == gid)
+                        for pid, gid in _created
+                    )
+                )
+            )
         )
 
 

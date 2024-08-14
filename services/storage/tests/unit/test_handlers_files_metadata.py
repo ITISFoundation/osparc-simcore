@@ -5,8 +5,10 @@
 
 import urllib.parse
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from pathlib import Path
 from random import choice
+from typing import Protocol
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -22,10 +24,24 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+class CreateProjectAccessRightsCallable(Protocol):
+    async def __call__(
+        self,
+        project_id: ProjectID,
+        user_id: UserID,
+        read: bool,
+        write: bool,
+        delete: bool,
+    ) -> None:
+        ...
+
+
 async def test_get_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
     client: TestClient,
     user_id: UserID,
+    other_user_id: UserID,
     location_id: int,
     project_id: ProjectID,
     faker: Faker,
@@ -61,11 +77,22 @@ async def test_get_files_metadata(
     assert len(list_fmds) == NUM_FILES
 
     # checks project_id filter!
-    response = await client.get(f"{url.update_query(project_id=str(project_id))}")
+    await create_project_access_rights(
+        project_id=project_id,
+        user_id=other_user_id,
+        read=True,
+        write=True,
+        delete=True,
+    )
+    response = await client.get(
+        f"{url.update_query(project_id=str(project_id), user_id=other_user_id)}"
+    )
+    previous_data = deepcopy(data)
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == (NUM_FILES)
+    assert previous_data == data
 
     # create some more files but with a base common name
     NUM_FILES = 10
