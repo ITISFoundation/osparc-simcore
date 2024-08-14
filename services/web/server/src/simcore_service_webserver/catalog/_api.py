@@ -1,4 +1,5 @@
 import logging
+import warnings
 from collections.abc import Iterator
 from typing import Any, cast
 
@@ -187,6 +188,13 @@ async def list_services(
 async def get_service(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> dict[str, Any]:
+
+    warnings.warn(
+        "`get_service` is deprecated, use `get_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -204,6 +212,12 @@ async def update_service(
     update_data: dict[str, Any],
     ctx: CatalogRequestContext,
 ):
+    warnings.warn(
+        "`update_service_v2` is deprecated, use `update_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.update_service(
         ctx.app,
         ctx.user_id,
