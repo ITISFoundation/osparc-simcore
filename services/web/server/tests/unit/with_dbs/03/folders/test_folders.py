@@ -41,10 +41,14 @@ async def test_folders_full_workflow(
     # list user folders
     url = client.app.router["list_folders"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
     assert len(data) == 1
     assert data[0]["name"] == "My first folder"
     assert data[0]["description"] == "Custom description"
+    assert meta["count"] == 1
+    assert links
 
     # update a folder
     url = client.app.router["replace_folder"].url_for(

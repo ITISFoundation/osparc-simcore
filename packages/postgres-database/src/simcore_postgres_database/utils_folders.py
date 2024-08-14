@@ -1058,6 +1058,7 @@ async def folder_list(
         subquery = base_query.subquery()
         count_query = sa.select(sa.func.count()).select_from(subquery)
         count_result = await connection.execute(count_query)
+        total_count = await count_result.scalar()
 
         # Ordering and pagination
         if order_by["direction"] == OrderDirection.ASC:
@@ -1073,7 +1074,7 @@ async def folder_list(
         async for entry in connection.execute(list_query):
             results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
-    return cast(int, count_result.scalar()), results
+    return cast(int, total_count), results
 
 
 async def folder_get(
