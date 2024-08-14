@@ -30,20 +30,12 @@ qx.Class.define("osparc.store.Folders", {
 
     fetchFolders: function(folderId = null) {
       return new Promise(resolve => {
-        let promise = null;
-        if (folderId) {
-          const params = {
-            "url": {
-              folderId
-            }
-          };
-          // OM: MD will fix this
-          // osparc.data.Resources.getInstance().getAllPages("folders", params)
-          promise = osparc.data.Resources.getInstance().fetch("folders", "getWithinFolder", params);
-        } else {
-          promise = osparc.data.Resources.getInstance().fetch("folders", "getRootFolders");
-        }
-        promise
+        const params = {
+          "url": {
+            folderId
+          }
+        };
+        osparc.data.Resources.getInstance().getAllPages("folders", params)
           .then(foldersData => {
             const folders = [];
             foldersData.forEach(folderData => {
