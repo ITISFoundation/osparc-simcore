@@ -34,7 +34,7 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     api: DirectorV2Api,
 ):
     #
-    # tests reported OEC:139646582688800
+    # tests reported OEC:139646582688800  (SEE https://monitoring.tip.science/graylog/messages/graylog_33/a2444501-597a-11ef-a116-0242c0a80111)
     #
 
     #   File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/services/director_v2.py", line 135, in get_computation
