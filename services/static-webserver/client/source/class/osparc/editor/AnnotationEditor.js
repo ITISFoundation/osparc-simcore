@@ -16,15 +16,24 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.editor.AnnotationEditor", {
-  extend: qx.ui.form.renderer.Single,
+  extend: qx.ui.core.Widget,
 
   construct: function(annotation) {
-    const form = this.__form = new qx.ui.form.Form();
-    this.base(arguments, form);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    this.__form = new qx.ui.form.Form();
+    this.getChildControl("form-renderer");
 
     if (annotation) {
       this.setAnnotation(annotation);
     }
+  },
+
+  events: {
+    "addAnnotation": "qx.event.type.Event",
+    "cancel": "qx.event.type.Event"
   },
 
   properties: {
@@ -46,9 +55,17 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
   members: {
     __form: null,
 
+    getForm: function() {
+      return this.__form;
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "form-renderer":
+          control = new qx.ui.form.renderer.Single(this.__form);
+          this._add(control);
+          break;
         case "text-field":
           control = new qx.ui.form.TextField();
           this.__form.add(control, "Text", null, "text");
@@ -65,16 +82,39 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
           control = new osparc.form.ColorPicker();
           this.__form.add(control, "Color", null, "color");
           break;
-        case "size":
+        case "font-size":
           control = new qx.ui.form.Spinner();
           this.__form.add(control, "Size", null, "size");
           break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        case "cancel-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text"
+          });
+          control.addListener("execute", () => this.fireEvent("cancel"), this);
+          buttons.add(control);
+          break;
+        }
+        case "add-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Add")).set({
+            appearance: "form-button"
+          });
+          control.addListener("execute", () => this.fireEvent("addAnnotation"), this);
+          buttons.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     __applyAnnotation: function(annotation) {
-      this._removeAll();
       if (annotation === null) {
         return;
       }
@@ -99,7 +139,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       }
 
       if (annotation.getType() === "text") {
-        const fontSizeField = this.getChildControl("size").set({
+        const fontSizeField = this.getChildControl("font-size").set({
           value: attrs.fontSize
         })
         fontSizeField.addListener("changeValue", e => annotation.setFontSize(e.getData()));
@@ -107,7 +147,6 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
     },
 
     __applyMarker: function(marker) {
-      this._removeAll();
       if (marker === null) {
         return;
       }
@@ -115,6 +154,11 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       const colorPicker = this.getChildControl("color-picker");
       marker.bind("color", colorPicker, "color");
       colorPicker.bind("color", marker, "color");
+    },
+
+    addButtons: function() {
+      this.getChildControl("cancel-btn");
+      this.getChildControl("add-btn");
     },
 
     makeItModal: function() {
