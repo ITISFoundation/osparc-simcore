@@ -315,14 +315,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
 
-      // OM: MD will fix this
       const sortByValueBE = this.getOrderBy().field;
       let sortByValue = null;
       switch (sortByValueBE) {
         case "name":
           sortByValue = "name";
           break;
-        case "owner":
+        case "prj_owner":
           sortByValue = "owner";
           break;
         case "creation_date":
