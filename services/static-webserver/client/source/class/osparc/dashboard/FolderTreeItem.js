@@ -27,8 +27,8 @@ qx.Class.define("osparc.dashboard.FolderTreeItem", {
         console.log("changeOpen", this);
       }, this);
       openButton.addListener("changeVisibility", e => {
-        console.log("changeVisibility", e.getData(), this);
-        openButton.show();
+        console.log("changeVisibility", this.getLabel() + e.getData(), this);
+        // openButton.show();
       }, this);
       this._add(openButton);
       this.addIcon();
