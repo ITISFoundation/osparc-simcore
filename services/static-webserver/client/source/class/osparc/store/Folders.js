@@ -29,47 +29,38 @@ qx.Class.define("osparc.store.Folders", {
     foldersCached: null,
 
     fetchFolders: function(folderId = null) {
-      return new Promise(resolve => {
-        const params = {
-          "url": {
-            folderId
-          }
-        };
-        osparc.data.Resources.getInstance().getAllPages("folders", params)
-          .then(foldersData => {
-            const folders = [];
-            foldersData.forEach(folderData => {
-              const folder = new osparc.data.model.Folder(folderData);
-              this.__addToCache(folder);
-              folders.push(folder);
-            });
-            resolve(folders);
-          })
-      });
+      const params = {
+        "url": {
+          folderId
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params)
+        .then(foldersData => {
+          const folders = [];
+          foldersData.forEach(folderData => {
+            const folder = new osparc.data.model.Folder(folderData);
+            this.__addToCache(folder);
+            folders.push(folder);
+          });
+          return folders;
+        });
     },
 
     postFolder: function(name, description, parentId = null) {
-      return new Promise(resolve => {
-        const newFolderData = {
-          parentFolderId: parentId,
-          name: name,
-          description: description || "",
-        };
-        const params = {
-          data: newFolderData
-        };
-        osparc.data.Resources.getInstance().fetch("folders", "post", params)
-          .then(resp => {
-            // OM: MD will fix this
-            const foldersStore = osparc.store.Folders.getInstance();
-            const folderId = resp["folderId"];
-            foldersStore.fetchFolders(parentId)
-              .then(() => {
-                const newFolder = foldersStore.getFolder(folderId);
-                resolve(newFolder);
-              });
-          });
-      });
+      const newFolderData = {
+        parentFolderId: parentId,
+        name: name,
+        description: description || "",
+      };
+      const params = {
+        data: newFolderData
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "post", params)
+        .then(folderData => {
+          const newFolder = new osparc.data.model.Folder(folderData);
+          this.__addToCache(newFolder);
+          return newFolder;
+        });
     },
 
     deleteFolder: function(folderId) {

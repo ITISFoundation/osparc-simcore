@@ -119,7 +119,8 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
             this.self().addLoadingChild(folderModel);
             parentModel.getChildren().append(folderModel);
           });
-        });
+        })
+        .catch(console.error);
     }
   }
 });

@@ -396,7 +396,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.invalidateStudies();
 
           this.__reloadResources();
-        });
+        })
+        .catch(console.error);
     },
 
     _folderUpdated: function() {
