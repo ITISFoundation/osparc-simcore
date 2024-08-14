@@ -103,6 +103,6 @@ class ApplicationSettings(MinimalApplicationSettings):
         min_length=10,
     )
     INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    INVITATIONS_TRACING: TracingSettings = Field(
+    INVITATIONS_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )

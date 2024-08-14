@@ -88,6 +88,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
         _DEFAULT_SERVICE_SPECIFICATIONS
     )
-    CATALOG_TRACING: TracingSettings = Field(
+    CATALOG_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )

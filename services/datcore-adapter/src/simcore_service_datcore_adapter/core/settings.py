@@ -41,7 +41,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    DATCORE_ADAPTER_TRACING: TracingSettings = Field(
+    DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 

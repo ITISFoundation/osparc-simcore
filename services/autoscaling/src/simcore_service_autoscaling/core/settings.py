@@ -272,7 +272,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         " are maintained as active (in the docker terminology) "
         "but a docker node label named osparc-services-ready is attached",
     )
-    AUTOSCALING_TRACING: TracingSettings = Field(
+    AUTOSCALING_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 

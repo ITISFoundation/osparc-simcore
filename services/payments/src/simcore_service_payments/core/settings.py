@@ -114,7 +114,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True, description="settings for service/rabbitmq"
     )
 
-    PAYMENTS_TRACING: TracingSettings = Field(
+    PAYMENTS_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 

@@ -6,9 +6,9 @@ UNDEFINED_CLIENT_NAME = "undefined-tracing-client-name"
 
 
 class TracingSettings(BaseCustomSettings):
-    TRACING_OTEL_COLLECTOR_ENDPOINT: AnyUrl = Field(
+    TRACING_OTEL_COLLECTOR_ENDPOINT: AnyUrl | None = Field(
         description="Otel compatible collector endpoint"
     )
-    TRACING_OTEL_COLLECTOR_PORT: int = Field(
+    TRACING_OTEL_COLLECTOR_PORT: int | None = Field(
         description="Otel compatible collector port"
     )

@@ -50,16 +50,15 @@ def create(settings: Settings) -> web.Application:
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
     # Tracing
-    tracing_settings: TracingSettings = app[APP_CONFIG_KEY].STORAGE_TRACING
-    assert tracing_settings, "setup_settings not called?"  # nosec
-    assert isinstance(tracing_settings, TracingSettings)  # nosec
-    service_name = "simcore_service_storage"
-    setup_tracing(
-        app,
-        service_name=service_name,
-        otel_collector_endpoint=tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
-        otel_collector_port=tracing_settings.TRACING_OTEL_COLLECTOR_PORT,
-    )
+    tracing_settings: TracingSettings | None = app[APP_CONFIG_KEY].STORAGE_TRACING
+    if tracing_settings:
+        service_name = "simcore_service_storage"
+        setup_tracing(
+            app,
+            service_name=service_name,
+            otel_collector_endpoint=tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
+            otel_collector_port=tracing_settings.TRACING_OTEL_COLLECTOR_PORT,
+        )
 
     setup_db(app)
     setup_s3(app)

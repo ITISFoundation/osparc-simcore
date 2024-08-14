@@ -219,7 +219,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         ...,
         description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
     )
-    DIRECTOR_V2_TRACING: TracingSettings = Field(
+    DIRECTOR_V2_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 

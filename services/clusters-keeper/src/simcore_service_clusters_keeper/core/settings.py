@@ -312,7 +312,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="override the dask scheduler 'worker-saturation' field"
         ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
     )
-    CLUSTERS_KEEPER_TRACING: TracingSettings = Field(
+    CLUSTERS_KEEPER_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemtry tracing"
     )
 
