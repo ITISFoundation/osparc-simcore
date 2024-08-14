@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.10.14-buster
+FROM python:3.11.9-buster
 
 RUN curl https://rclone.org/install.sh | bash && \
   rclone --version

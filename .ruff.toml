@@ -47,7 +47,7 @@ ignore = [
   "TRY300", # Checks for return statements in try blocks. SEE https://beta.ruff.rs/docs/rules/try-consider-else/
 ]
 
-target-version = "py310"
+target-version = "py311"
 
 
 [per-file-ignores]
