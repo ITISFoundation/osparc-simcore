@@ -1915,16 +1915,28 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {
-        const title = this.tr("Add Text");
-        const titleEditor = new osparc.widget.Renamer(null, null, title);
-        titleEditor.addListener("labelChanged", e => {
-          titleEditor.close();
-          serializeData.attributes.text = e.getData()["newLabel"];
-          serializeData.attributes.fontSize = 12;
+        const tempAnnotation = new osparc.workbench.Annotation(null, {
+          type: "text",
+          color: osparc.workbench.Annotation.DEFAULT_COLOR,
+          attributes: {
+            text: "",
+            fontSize: 12
+          }
+        });
+        const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
+        annotationEditor.addButtons();
+        const win = osparc.ui.window.Window.popUpInWindow(annotationEditor, "Add Text Annotation", 220, 135).set({
+          clickAwayClose: true,
+          showClose: true
+        });
+        annotationEditor.addListener("addAnnotation", () => {
+          const form = annotationEditor.getForm();
+          serializeData.attributes.text = form.getItem("text").getValue();
+          serializeData.attributes.color = form.getItem("color").getValue();
+          serializeData.attributes.fontSize = form.getItem("size").getValue();
           this.__addAnnotation(serializeData);
         }, this);
-        titleEditor.center();
-        titleEditor.open();
+        win.open();
       }
       return true;
     },
