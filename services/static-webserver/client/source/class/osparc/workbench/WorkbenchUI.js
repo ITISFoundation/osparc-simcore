@@ -197,7 +197,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__addStartHint();
       this.__addToolHint();
       this.__addDeleteItemButton();
-      this.__annotationEditorView();
     },
 
     __addStartHint: function() {
@@ -248,7 +247,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       });
     },
 
-    __annotationEditorView: function() {
+    __getAnnotationEditorView: function() {
+      if (this.__annotationEditor) {
+        this.__workbenchLayer.remove(this.__annotationEditor);
+      }
+
       const annotationEditor = this.__annotationEditor = new osparc.editor.AnnotationEditor().set({
         backgroundColor: "background-main-2",
         visibility: "excluded"
@@ -258,6 +261,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         top: 10,
         right: 10
       });
+
+      return annotationEditor;
     },
 
     __getWorkbench: function() {
@@ -1182,8 +1187,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       } else if (this.__isSelectedItemAnAnnotation()) {
         const annotation = this.__getAnnotation(newID);
         this.__setSelectedAnnotations([annotation]);
-        this.__annotationEditor.setAnnotation(annotation);
-        this.__annotationEditor.makeItModal();
+        const annotationEditor = this.__getAnnotationEditorView();
+        annotationEditor.setAnnotation(annotation);
+        annotationEditor.makeItModal();
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1614,8 +1620,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
         const marker = node.getMarker();
         if (marker) {
-          this.__annotationEditor.setMarker(marker);
-          this.__annotationEditor.makeItModal();
+          const annotationEditor = this.__getAnnotationEditorView();
+          annotationEditor.setMarker(marker);
+          annotationEditor.makeItModal();
         }
       }
     },
