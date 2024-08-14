@@ -1331,7 +1331,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_FolderGetPage_'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
     post:
       tags:
       - folders
@@ -6835,26 +6835,6 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
-    Envelope_FolderGetPage_:
-      title: Envelope[FolderGetPage]
-      type: object
-      properties:
-        data:
-          title: Data
-          maxItems: 2
-          minItems: 2
-          type: array
-          items:
-          - title: Items
-            type: array
-            items:
-              $ref: '#/components/schemas/FolderGet'
-          - title: Total
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-        error:
-          title: Error
     Envelope_FolderGet_:
       title: Envelope[FolderGet]
       type: object
@@ -7408,6 +7388,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClusterGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
@@ -8023,23 +8014,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
-    FolderGetPage:
-      title: FolderGetPage
-      required:
-      - items
-      - total
-      type: object
-      properties:
-        items:
-          title: Items
-          type: array
-          items:
-            $ref: '#/components/schemas/FolderGet'
-        total:
-          title: Total
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
     FolderGroupGet:
       title: FolderGroupGet
       required:

@@ -10,7 +10,6 @@ from typing import Any, ClassVar, Final, TypeAlias, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.rest_ordering import OrderDirection
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import (
     BaseModel,
@@ -28,6 +27,7 @@ from sqlalchemy.sql.selectable import ScalarSelect
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
+from .utils_ordering import OrderDirection
 
 _ProductName: TypeAlias = str
 _ProjectID: TypeAlias = uuid.UUID

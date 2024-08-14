@@ -13,7 +13,6 @@ from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_webserver.folders import (
     CreateFolderBodyParams,
     FolderGet,
-    FolderGetPage,
     PutFolderBodyParams,
 )
 from models_library.generics import Envelope
@@ -48,7 +47,7 @@ async def create_folder(_body: CreateFolderBodyParams):
 
 @router.get(
     "/folders",
-    response_model=Envelope[FolderGetPage],
+    response_model=Envelope[list[FolderGet]],
 )
 async def list_folders(
     params: Annotated[PageQueryParameters, Depends()],
