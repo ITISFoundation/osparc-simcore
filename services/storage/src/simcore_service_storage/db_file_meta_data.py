@@ -74,7 +74,7 @@ def _list_filter_with_partial_file_id_stmt(
     limit: int | None = None,
     offset: int | None = None,
 ):
-    conditions = []
+    conditions: list = []
 
     # Ownership check.Disabled if
     user_id = user_or_project_filter.user_id
