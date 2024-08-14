@@ -159,6 +159,13 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
     addButtons: function() {
       this.getChildControl("cancel-btn");
       this.getChildControl("add-btn");
+
+      // Listen to "Enter" key
+      this.addListener("keypress", keyEvent => {
+        if (keyEvent.getKeyIdentifier() === "Enter") {
+          this.fireEvent("addAnnotation");
+        }
+      }, this);
     },
 
     makeItModal: function() {
