@@ -58,13 +58,13 @@ def _get_http_exception_kwargs(
     service_name: str,
     service_error: httpx.HTTPStatusError,
     http_status_map: HttpStatusMap,
-    **ctx: Any,
+    **exception_ctx: Any,
 ):
     detail: str = ""
     headers: dict[str, str] = {}
 
     if exception_type := http_status_map.get(service_error.response.status_code):
-        raise exception_type(**ctx)
+        raise exception_type(**exception_ctx)
 
     if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
