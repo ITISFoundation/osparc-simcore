@@ -94,7 +94,6 @@ def service_exception_handler(
     http_status_map: HttpStatusMap,
     **endpoint_kwargs,
 ):
-    #
     status_code: int
     detail: str
     headers: dict[str, str] = {}
@@ -145,7 +144,7 @@ def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
         for name, param in signature(func).parameters.items()
         if param.kind == param.KEYWORD_ONLY
     }
-    for _, exc_type in status_map.items():
+    for exc_type in status_map.values():
         _exception_inputs = exc_type.named_fields()
         assert _exception_inputs.issubset(
             _required_kwargs
