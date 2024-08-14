@@ -235,10 +235,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
-        } else if (this.__isSelectedItemAnAnnotation()) {
-          const id = this.__selectedItemId;
-          this.__selectedItemChanged(null);
-          this.__removeAnnotation(id);
         }
       }, this);
 
@@ -257,6 +253,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         backgroundColor: "background-main-2",
         visibility: "excluded"
       });
+      annotationEditor.addDeleteButton();
 
       this.__workbenchLayer.add(annotationEditor, {
         top: 10,
@@ -1191,13 +1188,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const annotationEditor = this.__getAnnotationEditorView();
         annotationEditor.setAnnotation(annotation);
         annotationEditor.makeItModal();
+        annotationEditor.addListener("deleteAnnotation", () => {
+          annotationEditor.exclude();
+          this.__selectedItemChanged(null);
+          this.__removeAnnotation(annotation.getId());
+        }, this);
         annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
       if (this.__deleteItemButton) {
-        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() || this.__isSelectedItemAnAnnotation() ? "visible" : "excluded");
+        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
       }
     },
 
@@ -1703,15 +1705,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
               this.__selectedItemChanged(null);
             }
-            if (this.__isSelectedItemAnAnnotation()) {
-              const selectedAnnotation = this.__getAnnotation(this.__selectedItemId);
-              // Only delete if it's a rectangle, for the other cases the user might be editing the text
-              if (selectedAnnotation.getType() === "rect") {
-                const id = this.__selectedItemId;
-                this.__selectedItemChanged(null);
-                this.__removeAnnotation(id);
-              }
-            }
             break;
           case "Escape":
             this.resetSelection();
@@ -1936,7 +1929,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           }
         });
         const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
-        annotationEditor.addButtons();
+        annotationEditor.addAddButtons();
         tempAnnotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
         annotationEditor.addListener("appear", () => {
           const textField = annotationEditor.getChildControl("text-field");
@@ -1952,6 +1945,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           const form = annotationEditor.getForm();
           serializeData.attributes.text = form.getItem("text").getValue();
           serializeData.attributes.color = form.getItem("color").getValue();
+          serializeData.color = form.getItem("color").getValue();
           serializeData.attributes.fontSize = form.getItem("size").getValue();
           this.__addAnnotation(serializeData);
         }, this);
