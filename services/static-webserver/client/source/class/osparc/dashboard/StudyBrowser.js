@@ -323,7 +323,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           sortByValue = "name";
           break;
         case "owner":
-          sortByValue = "prjOwner";
+          sortByValue = "owner";
           break;
         case "creation_date":
           sortByValue = "createdAt";
