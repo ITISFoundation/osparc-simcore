@@ -45,6 +45,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import GroupID, UserID
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 
 logger = logging.getLogger(__name__)
@@ -152,6 +153,24 @@ async def list_projects_access_rights(
             projects_access_rights[ProjectID(row.uuid)] = AccessRights.all()
 
     return projects_access_rights
+
+
+def _get_project_access_rights_stmt(user_id: UserID, project_id: ProjectID):
+    user_gids = (
+        sa.select(sa.func.array_agg(sa.cast(user_to_groups.c.gid, sa.String)))
+        .where(user_to_groups.c.uid == f"{user_id}")
+        .group_by(user_to_groups.c.uid)
+    )
+
+    return sa.select(projects.c.prj_owner, projects.c.access_rights).where(
+        (projects.c.uuid == f"{project_id}")
+        & (
+            (projects.c.prj_owner == f"{user_id}")
+            | sa.func.jsonb_exists_any(
+                projects.c.access_rights, user_gids.scalar_subquery()
+            )
+        )
+    )
 
 
 async def get_project_access_rights(
