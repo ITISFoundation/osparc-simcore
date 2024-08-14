@@ -34,7 +34,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
   events: {
     "addAnnotation": "qx.event.type.Event",
     "cancel": "qx.event.type.Event",
-    "close": "qx.event.type.Event",
+    "deleteAnnotation": "qx.event.type.Event",
   },
 
   properties: {
@@ -111,6 +111,15 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
           buttons.add(control);
           break;
         }
+        case "delete-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Delete")).set({
+            appearance: "danger-button"
+          });
+          control.addListener("execute", () => this.fireEvent("deleteAnnotation"), this);
+          buttons.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -157,7 +166,11 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       colorPicker.bind("color", marker, "color");
     },
 
-    addButtons: function() {
+    addDeleteButton: function() {
+      this.getChildControl("delete-btn");
+    },
+
+    addAddButtons: function() {
       this.getChildControl("cancel-btn");
       this.getChildControl("add-btn");
 
@@ -177,10 +190,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       this.show();
 
       const showEditor = () => this.show();
-      const hideEditor = () => {
-        this.fireEvent("close");
-        this.exclude();
-      };
+      const hideEditor = () => this.exclude();
       const tapListener = event => {
         if (osparc.utils.Utils.isMouseOnElement(this, event)) {
           return;
