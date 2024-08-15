@@ -62,6 +62,8 @@ tests-integration: ## runs integration tests against local+production images
 		--cov-report=term-missing \
 		--cov-report=xml \
 		--cov=simcore_sdk \
+		--disk-usage \
+		--disk-usage-threshold=20 \
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
