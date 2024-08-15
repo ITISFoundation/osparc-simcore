@@ -19,6 +19,7 @@ import os
 import typer
 from aiohttp import web
 from settings_library.utils_cli import create_settings_command
+from typing_extensions import Annotated
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
@@ -81,7 +82,24 @@ main.command()(
     create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
 )
 
-main.command()(login_cli.invitations)
+
+@main.command()
+def invitations(
+    base_url: str,
+    issuer_email: str,
+    trial_days: Annotated[int | None, typer.Argument()] = None,
+    user_id: int = 1,
+    num_codes: int = 15,
+    code_length: int = 30,
+):
+    login_cli.invitations(
+        base_url=base_url,
+        issuer_email=issuer_email,
+        trial_days=trial_days,
+        user_id=user_id,
+        num_codes=num_codes,
+        code_length=code_length,
+    )
 
 
 @main.command()
