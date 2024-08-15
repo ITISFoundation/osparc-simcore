@@ -30,14 +30,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
 
-    const folders = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const folders = this.__foldersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     const folderHeader = this.__folderHeader = new osparc.dashboard.FolderHeader();
     folders.add(folderHeader);
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
     folders.add(foldersContainer);
     this._add(folders);
-    // Only visible in master until it's connected to the backend
-    folders.setVisibility(osparc.utils.Utils.isDevelopmentPlatform() ? "visible" : "excluded");
+    folders.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
     const nonGroupedContainer = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
     [
@@ -77,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data",
     "folderSelected": "qx.event.type.Data",
+    "folderUpdated": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
   },
 
@@ -103,6 +103,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   members: {
     __foldersList: null,
     __resourcesList: null,
+    __foldersLayout: null,
     __folderHeader: null,
     __foldersContainer: null,
     __nonGroupedContainer: null,
@@ -239,6 +240,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       card.subscribeToFilterGroup("searchBarFilter");
       [
         "folderSelected",
+        "folderUpdated",
         "deleteFolderRequested",
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;
@@ -260,6 +262,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadCards: function(listId) {
       this.__cleanAll();
+      this._add(this.__foldersLayout);
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
