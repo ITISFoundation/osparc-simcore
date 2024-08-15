@@ -155,3 +155,7 @@ class BuildTargetEnum(str, Enum):
     CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
+
+
+class KeyIDStr(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)

@@ -8,13 +8,14 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     TasksOutputs,
     TasksSelection,
 )
+from models_library.basic_types import KeyIDStr
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
     is_probe_service,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes import KeyIDStr, Node, NodeID, OutputsDict
+from models_library.projects_nodes import Node, NodeID, OutputsDict
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,

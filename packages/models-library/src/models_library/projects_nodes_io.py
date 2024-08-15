@@ -8,9 +8,10 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import Any, ClassVar, TypeAlias
 from uuid import UUID
 
+from models_library.basic_types import KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -28,9 +29,6 @@ from .basic_regex import (
     SIMCORE_S3_FILE_ID_RE,
     UUID_RE,
 )
-
-if TYPE_CHECKING:
-    from models_library.projects_nodes import KeyIDStr
 
 NodeID = UUID
 
@@ -107,7 +105,7 @@ class PortLink(BaseModel):
         description="The node to get the port output from",
         alias="nodeUuid",
     )
-    output: "KeyIDStr" = Field(
+    output: KeyIDStr = Field(
         ...,
         description="The port key in the node given by nodeUuid",
         regex=PROPERTY_KEY_RE,
