@@ -115,7 +115,9 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
+    query_params: ProjectCreateParams = parse_request_query_parameters_as(
+        ProjectCreateParams, request
+    )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
         await check_user_permission(request, "project.template.create")
@@ -177,7 +179,7 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
+    query_params: ProjectListWithJsonStrParams = parse_request_query_parameters_as(
         ProjectListWithJsonStrParams, request
     )
 
@@ -226,7 +228,9 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPNotFound: If active project is not found
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectActiveParams, request)
+    query_params: ProjectActiveParams = parse_request_query_parameters_as(
+        ProjectActiveParams, request
+    )
 
     try:
         user_active_projects = []

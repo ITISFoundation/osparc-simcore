@@ -273,7 +273,9 @@ class _ClassifiersQuery(BaseModel):
 async def get_group_classifiers(request: web.Request):
     try:
         path_params = parse_request_path_parameters_as(_GroupsParams, request)
-        query_params = parse_request_query_parameters_as(_ClassifiersQuery, request)
+        query_params: _ClassifiersQuery = parse_request_query_parameters_as(
+            _ClassifiersQuery, request
+        )
 
         repo = GroupClassifierRepository(request.app)
         if not await repo.group_uses_scicrunch(path_params.gid):

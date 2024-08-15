@@ -90,7 +90,9 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     assert req_ctx.product_name  # nosec
 
-    query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
+    query_params: _SearchQueryParams = parse_request_query_parameters_as(
+        _SearchQueryParams, request
+    )
 
     found = await _api.search_users(
         request.app, email_glob=query_params.email, include_products=True

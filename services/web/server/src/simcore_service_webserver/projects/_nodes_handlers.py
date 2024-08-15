@@ -521,7 +521,9 @@ async def get_project_services_access_for_gid(
 ) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params = parse_request_query_parameters_as(_ServicesAccessQuery, request)
+    query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
+        _ServicesAccessQuery, request
+    )
 
     project = await projects_api.get_project_for_user(
         request.app,
