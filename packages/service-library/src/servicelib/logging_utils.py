@@ -12,9 +12,9 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
-from inspect import getframeinfo, stack
+from inspect import getframeinfo, isawaitable, stack
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict
+from typing import Any, Coroutine, ParamSpec, TypeAlias, TypedDict, TypeVar, overload
 
 from .utils_secrets import mask_sensitive_data
 
@@ -169,67 +169,73 @@ def _log_arguments(
     return extra_args
 
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+@overload
 def log_decorator(
-    logger=None, level: int = logging.DEBUG, *, log_traceback: bool = False
+    logger: logging.Logger | None = None, level: int = logging.DEBUG
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    ...
+
+
+@overload
+def log_decorator(
+    logger: logging.Logger | None = None, level: int = logging.DEBUG
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    ...
+
+
+def log_decorator(
+    logger: logging.Logger | None = None, level: int = logging.DEBUG
+) -> (
+    Callable[[Callable[P, R]], Callable[P, R]]
+    | Callable[
+        [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+    ]
 ):
     # Build logger object
     logger_obj = logger or _logger
 
-    def log_decorator_info(func):
+    def decorator(
+        func: Callable[P, R] | Callable[P, Coroutine[Any, Any, R]]
+    ) -> Callable[P, R] | Callable[P, Coroutine[Any, Any, R]]:
+        @functools.wraps(func)
+        async def _async_log_decorator_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
+            with log_catch(logger_obj, reraise=True):
+                assert iscoroutinefunction(func)  # nosec
+                value = await func(*args, **kwargs)
+            # log return value from the function
+            logger_obj.log(
+                level, "Returned: - End function %r", value, extra=extra_args
+            )
+            return value
+
+        @functools.wraps(func)
+        def _sync_log_decorator_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
+            with log_catch(logger_obj, reraise=True):
+                value = func(*args, **kwargs)
+            # log return value from the function
+            logger_obj.log(
+                level, "Returned: - End function %r", value, extra=extra_args
+            )
+            assert not isawaitable(value)  # nosec
+            return value
+
         if iscoroutinefunction(func):
+            return _async_log_decorator_wrapper
+        return _sync_log_decorator_wrapper
 
-            @functools.wraps(func)
-            async def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
-                try:
-                    # log return value from the function
-                    value = await func(*args, **kwargs)
-                    logger_obj.log(
-                        level, "Returned: - End function %r", value, extra=extra_args
-                    )
-                except:
-                    # log exception if occurs in function
-                    logger_obj.log(
-                        level,
-                        "Exception: %s",
-                        extra=extra_args,
-                        exc_info=log_traceback,
-                    )
-                    raise
-                # Return function value
-                return value
-
-        else:
-
-            @functools.wraps(func)
-            def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
-                try:
-                    # log return value from the function
-                    value = func(*args, **kwargs)
-                    logger_obj.log(
-                        level, "Returned: - End function %r", value, extra=extra_args
-                    )
-                except:
-                    # log exception if occurs in function
-                    logger_obj.log(
-                        level,
-                        "Exception: %s",
-                        extra=extra_args,
-                        exc_info=log_traceback,
-                    )
-                    raise
-                # Return function value
-                return value
-
-        # Return the pointer to the function
-        return log_decorator_wrapper
-
-    return log_decorator_info
+    return decorator
 
 
 @contextmanager
-def log_catch(logger: logging.Logger, reraise: bool = True):
+def log_catch(logger: logging.Logger, *, reraise: bool = True):
     try:
         yield
     except asyncio.CancelledError:

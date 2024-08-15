@@ -18,11 +18,10 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
-@pytest.mark.parametrize("log_traceback", [True, False])
 async def test_error_regression_async_def(
-    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
+    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None
 ):
-    @log_decorator(logger, logging.ERROR, log_traceback=log_traceback)
+    @log_decorator(logger, logging.ERROR)
     async def _raising_error() -> None:
         msg = "Raising as expected"
         raise RuntimeError(msg)
@@ -31,10 +30,7 @@ async def test_error_regression_async_def(
 
     await logged_gather(_raising_error(), reraise=False)
 
-    if log_traceback:
-        assert "Traceback" in caplog.text
-    else:
-        assert "Traceback" not in caplog.text
+    assert "Traceback" in caplog.text
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
