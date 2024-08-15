@@ -170,7 +170,7 @@ def create_new_project_for_job(
             currentNodeId=solver_id,  # type: ignore[arg-type]
             annotations={},
         ),
-        access_rights={},
+        accessRights={},  # type: ignore[arg-type]
     )
 
 
