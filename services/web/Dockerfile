@@ -78,7 +78,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential
+  build-essential \
+  libffi-dev
 
 # NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
