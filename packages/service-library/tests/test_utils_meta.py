@@ -8,7 +8,7 @@ def test_meta_module_implementation():
     # This is what is used in _meta.py
 
     info: Final = PackageInfo(package_name="simcore-service-library")
-    __version__: Final[str] = info.__version__
+    __version__: Final[VersionStr] = info.__version__
 
     PROJECT_NAME: Final[str] = info.project_name
     VERSION: Final[Version] = info.version

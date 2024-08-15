@@ -16,7 +16,7 @@ __version__: str = version("simcore-service-efs-guardian")
 
 
 APP_NAME: Final[str] = _current_distribution.metadata["Name"]
-API_VERSION: Final[str] = __version__
+API_VERSION: Final[VersionStr] = __version__
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 RPC_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
