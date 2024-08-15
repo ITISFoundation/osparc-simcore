@@ -15,6 +15,7 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
+from typing import Final
 
 import typer
 from aiohttp import web
@@ -82,12 +83,14 @@ main.command()(
     create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
 )
 
+_NO_TRIAL_DAYS: Final[int] = -1
+
 
 @main.command()
 def invitations(
     base_url: str,
     issuer_email: str,
-    trial_days: Annotated[int | None, typer.Argument()] = None,
+    trial_days: Annotated[int, typer.Argument()] = _NO_TRIAL_DAYS,
     user_id: int = 1,
     num_codes: int = 15,
     code_length: int = 30,
@@ -95,7 +98,7 @@ def invitations(
     login_cli.invitations(
         base_url=base_url,
         issuer_email=issuer_email,
-        trial_days=trial_days,
+        trial_days=trial_days if trial_days != _NO_TRIAL_DAYS else None,
         user_id=user_id,
         num_codes=num_codes,
         code_length=code_length,
