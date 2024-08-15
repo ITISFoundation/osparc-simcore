@@ -39,12 +39,16 @@ class DiskUsagePlugin:
     Warnings are generated if disk usage increases beyond the specified threshold,
     allowing for targeted investigation of resource management
     in specific tests, modules, or the entire test session.
+
+    As example, the CI in gh-actions reported this:
+        XMinioStorageFull: Storage backend has reached its minimum free drive threshold. Please delete a few objects to proceed.
     """
 
     def __init__(self, config):
         self.threshold = config.getoption("--disk-usage-threshold")
 
-    def _get_disk_usage(self):
+    @staticmethod
+    def _get_disk_usage():
         return shutil.disk_usage("/").used
 
     def _log_disk_usage_increase(
