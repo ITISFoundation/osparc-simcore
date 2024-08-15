@@ -41,7 +41,7 @@ class VersionTag(ConstrainedStr):
     regex = re.compile(r"^v\d$")
 
 
-# e.g. '1.23.11' or '2.1.0-rc2'
+# e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 class SemanticVersionStr(ConstrainedStr):
     regex = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 

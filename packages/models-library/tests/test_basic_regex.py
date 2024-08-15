@@ -62,7 +62,7 @@ def assert_match_and_get_capture(
         ("2.1.0-rc2", ("2", ".0", "0", "-rc2", "rc2", None, None, None, None)),
     ],
 )
-def test_VERSION_RE(version_str, expected):
+def test_SIMPLE_VERSION_RE(version_str, expected):
     assert_match_and_get_capture(SIMPLE_VERSION_RE, version_str, expected)
 
 
