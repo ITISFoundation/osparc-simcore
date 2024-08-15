@@ -1,5 +1,6 @@
 from typing import Final
 
+from models_library.basic_types import VersionStr
 from packaging.version import Version
 from servicelib.utils_meta import PackageInfo
 
