@@ -63,7 +63,7 @@ def _handle_cluster_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
 
 
 #

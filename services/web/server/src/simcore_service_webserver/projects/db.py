@@ -926,7 +926,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            return await project_nodes_repo.list(conn)  # type: ignore[no-any-return]
+            return await project_nodes_repo.list(conn)
 
     async def node_id_exists(self, node_id: NodeID) -> bool:
         """Returns True if the node id exists in any of the available projects"""

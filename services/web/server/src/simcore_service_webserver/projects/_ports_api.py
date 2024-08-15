@@ -197,7 +197,7 @@ async def _get_computation_tasks_outputs(
     batch: TasksOutputs = await get_batch_tasks_outputs(
         app, project_id=project_id, selection=selection
     )
-    return batch.nodes_outputs  # type: ignore[no-any-return]
+    return batch.nodes_outputs
 
 
 async def get_project_outputs(
