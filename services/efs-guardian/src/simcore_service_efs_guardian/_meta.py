@@ -7,7 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Final
 
-from models_library.basic_types import VersionTag
+from models_library.basic_types import VersionStr, VersionTag
 from packaging.version import Version
 from pydantic import parse_obj_as
 

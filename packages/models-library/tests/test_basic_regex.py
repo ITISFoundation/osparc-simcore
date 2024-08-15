@@ -19,9 +19,9 @@ from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     SEMANTIC_VERSION_RE_W_NAMED_GROUPS,
+    SIMPLE_VERSION_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
     UUID_RE,
-    VERSION_RE,
 )
 from packaging.version import Version
 
@@ -63,7 +63,7 @@ def assert_match_and_get_capture(
     ],
 )
 def test_VERSION_RE(version_str, expected):
-    assert_match_and_get_capture(VERSION_RE, version_str, expected)
+    assert_match_and_get_capture(SIMPLE_VERSION_RE, version_str, expected)
 
 
 # Many taken from https://regex101.com/r/Ly7O1x/3/

@@ -5,6 +5,8 @@
 from importlib.metadata import distribution, version
 from typing import Final
 
+from models_library.basic_types import VersionStr
+
 current_distribution = distribution("simcore_service_datcore_adapter")
 __version__ = version("simcore_service_datcore_adapter")
 
