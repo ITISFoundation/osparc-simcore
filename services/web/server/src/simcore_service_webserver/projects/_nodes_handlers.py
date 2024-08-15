@@ -569,7 +569,7 @@ async def get_project_services_access_for_gid(
         _, _user_groups, _ = await list_user_groups_with_read_access(
             app=request.app, user_id=_user_id
         )
-        groups_to_compare.update({int(item.get("gid")) for item in _user_groups})
+        groups_to_compare.update({int(item.get("gid", -1)) for item in _user_groups})
         groups_to_compare.add(query_params.for_gid)
     elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
         groups_to_compare = {query_params.for_gid}
