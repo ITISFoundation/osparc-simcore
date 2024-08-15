@@ -62,13 +62,10 @@ tests-integration: ## runs integration tests against local+production images
 		--cov-report=term-missing \
 		--cov-report=xml \
 		--cov=simcore_sdk \
-		--disk-usage \
-		--disk-usage-threshold=20 \
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
 		--keep-docker-up \
-		--log-cli-level=WARNING		\
 		--pdb \
 		--verbose \
 		$(CURDIR)/tests/integration
@@ -78,6 +75,8 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--asyncio-mode=auto \
 		--color=yes \
 		--cov-append \
+		--disk-usage \
+		--disk-usage-threshold=20 \
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
@@ -85,6 +84,7 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--durations=10 \
 		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
+		--log-cli-level=WARNING		\
 		--verbose \
 		-m "not heavy_load" \
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
