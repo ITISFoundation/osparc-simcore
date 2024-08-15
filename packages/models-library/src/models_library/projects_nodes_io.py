@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 from uuid import UUID
 
+from models_library.projects_nodes import KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -107,7 +108,7 @@ class PortLink(BaseModel):
         description="The node to get the port output from",
         alias="nodeUuid",
     )
-    output: str = Field(
+    output: KeyIDStr = Field(
         ...,
         description="The port key in the node given by nodeUuid",
         regex=PROPERTY_KEY_RE,
@@ -183,7 +184,7 @@ class SimCoreFileLink(BaseFileLink):
 
     dataset: str | None = Field(
         default=None,
-        deprecated=True
+        deprecated=True,
         # TODO: Remove with storage refactoring
     )
 

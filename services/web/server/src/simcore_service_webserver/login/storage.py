@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 import asyncpg
 from aiohttp import web
@@ -136,6 +136,6 @@ class AsyncpgStorage:
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
-    storage: AsyncpgStorage = app.get(APP_LOGIN_STORAGE_KEY)
+    storage = cast(AsyncpgStorage, app.get(APP_LOGIN_STORAGE_KEY))
     assert storage, "login plugin was not initialized"  # nosec
     return storage
