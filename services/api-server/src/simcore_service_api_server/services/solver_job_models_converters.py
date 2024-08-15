@@ -60,7 +60,7 @@ def create_node_inputs_from_job_inputs(
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert parse_obj_as(ArgumentTypes, value) == value  # nosec # type: ignore
+        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore # nosec
         assert parse_obj_as(KeyIDStr, name) is not None  # nosec
 
         if isinstance(value, File):
@@ -101,7 +101,8 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
                 e_tag=value.e_tag,
             )
         else:
-            input_values[name] = value
+            # NOTE: JobInputs pydantic model will parse&validate these values
+            input_values[name] = value  # type: ignore [assignment]
 
     return JobInputs(values=input_values)  # raises ValidationError
 

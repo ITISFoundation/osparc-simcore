@@ -1,4 +1,4 @@
-import parse
+import parse  # type: ignore[import-untyped]
 from fastapi import status
 
 from ._base import ApiServerBaseError
