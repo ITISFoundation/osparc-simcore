@@ -107,7 +107,7 @@ class PortLink(BaseModel):
         description="The node to get the port output from",
         alias="nodeUuid",
     )
-    output: KeyIDStr = Field(
+    output: "KeyIDStr" = Field(
         ...,
         description="The port key in the node given by nodeUuid",
         regex=PROPERTY_KEY_RE,
