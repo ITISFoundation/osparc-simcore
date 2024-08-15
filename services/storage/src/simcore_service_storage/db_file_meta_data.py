@@ -76,7 +76,7 @@ def _list_filter_with_partial_file_id_stmt(
 ):
     conditions: list = []
 
-    # Ownership check.Disabled if
+    # Checks access rights (project can be owned or shared)
     user_id = user_or_project_filter.user_id
     if user_id is not None:
         project_ids = user_or_project_filter.project_ids
