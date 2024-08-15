@@ -192,9 +192,6 @@ class DirectorV2Api(BaseServiceClientApi):
 
 
 def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
-    if not settings:
-        settings = DirectorV2Settings()
-
     setup_client_instance(
         app,
         DirectorV2Api,

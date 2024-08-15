@@ -54,7 +54,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
             user_id=user_id,
             limit=limit,
             offset=offset,
-            timeout_s=4 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            timeout_s=10 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(

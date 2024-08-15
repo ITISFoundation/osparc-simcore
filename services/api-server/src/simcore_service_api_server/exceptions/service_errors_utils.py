@@ -58,13 +58,14 @@ def _get_http_exception_kwargs(
     service_name: str,
     service_error: httpx.HTTPStatusError,
     http_status_map: HttpStatusMap,
-    **detail_kwargs: Any,
+    **exception_ctx: Any,
 ):
     detail: str = ""
     headers: dict[str, str] = {}
 
     if exception_type := http_status_map.get(service_error.response.status_code):
-        raise exception_type(**detail_kwargs)
+        raise exception_type(**exception_ctx)
+
     if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -92,9 +93,8 @@ def _get_http_exception_kwargs(
 def service_exception_handler(
     service_name: str,
     http_status_map: HttpStatusMap,
-    **endpoint_kwargs,
+    **context,
 ):
-    #
     status_code: int
     detail: str
     headers: dict[str, str] = {}
@@ -115,7 +115,7 @@ def service_exception_handler(
     except httpx.HTTPStatusError as exc:
 
         status_code, detail, headers = _get_http_exception_kwargs(
-            service_name, exc, http_status_map=http_status_map, **endpoint_kwargs
+            service_name, exc, http_status_map=http_status_map, **context
         )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
@@ -145,7 +145,7 @@ def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
         for name, param in signature(func).parameters.items()
         if param.kind == param.KEYWORD_ONLY
     }
-    for _, exc_type in status_map.items():
+    for exc_type in status_map.values():
         _exception_inputs = exc_type.named_fields()
         assert _exception_inputs.issubset(
             _required_kwargs
