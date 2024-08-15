@@ -1,6 +1,5 @@
 """Defines the different exceptions that may arise in the catalog subpackage"""
 
-
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -31,6 +30,7 @@ class DefaultPricingUnitForServiceNotFoundError(BaseCatalogError):
         self.service_version = service_version
 
 
+# mypy: disable-error-code=truthy-function
 assert CatalogForbiddenError  # nosec
 assert CatalogItemNotFoundError  # nosec
 
