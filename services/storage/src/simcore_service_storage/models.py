@@ -259,7 +259,7 @@ class CopyAsSoftLinkParams(BaseModel):
 
 
 class UserOrProjectFilter(NamedTuple):
-    user_id: UserID | None
+    user_id: UserID | None  # = None disables filter
     project_ids: list[ProjectID]
 
 
