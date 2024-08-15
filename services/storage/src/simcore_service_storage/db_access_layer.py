@@ -47,6 +47,7 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
+from sqlalchemy.sql.selectable import Select
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ async def list_projects_access_rights(
     return projects_access_rights
 
 
-def _get_project_access_rights_stmt(user_id: UserID, project_id: ProjectID):
+def _get_project_access_rights_stmt(user_id: UserID, project_id: ProjectID) -> Select:
     user_gids = (
         sa.select(sa.func.array_agg(sa.cast(user_to_groups.c.gid, sa.String)))
         .where(user_to_groups.c.uid == f"{user_id}")
