@@ -21,18 +21,20 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
   construct: function(annotation) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(5, 5);
-    layout.setColumnAlign(0, "right", "middle");
-    layout.setColumnAlign(1, "left", "middle");
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.set({
-      padding: 10
-    });
+    this.__form = new qx.ui.form.Form();
+    this.getChildControl("form-renderer");
 
     if (annotation) {
       this.setAnnotation(annotation);
     }
+  },
+
+  events: {
+    "addAnnotation": "qx.event.type.Event",
+    "cancel": "qx.event.type.Event",
+    "deleteAnnotation": "qx.event.type.Event",
   },
 
   properties: {
@@ -52,113 +54,155 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
   },
 
   members: {
-    __addColor: function() {
-      this._add(new qx.ui.basic.Label(this.tr("Color")), {
-        row: 0,
-        column: 0
-      });
-      const colorPicker = new osparc.form.ColorPicker();
-      this._add(colorPicker, {
-        row: 0,
-        column: 1
-      });
-      return colorPicker;
+    __form: null,
+
+    getForm: function() {
+      return this.__form;
+    },
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "form-renderer":
+          control = new qx.ui.form.renderer.Single(this.__form);
+          this._add(control);
+          break;
+        case "text-field":
+          control = new qx.ui.form.TextField();
+          this.__form.add(control, "Text", null, "text");
+          break;
+        case "text-area":
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minHeight: 70,
+            maxHeight: 140
+          });
+          this.__form.add(control, "Note", null, "note");
+          break;
+        case "color-picker":
+          control = new osparc.form.ColorPicker();
+          this.__form.add(control, "Color", null, "color");
+          break;
+        case "font-size":
+          control = new qx.ui.form.Spinner();
+          this.__form.add(control, "Size", null, "size");
+          break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        case "cancel-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text"
+          });
+          control.addListener("execute", () => this.fireEvent("cancel"), this);
+          buttons.add(control);
+          break;
+        }
+        case "add-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Add")).set({
+            appearance: "form-button"
+          });
+          control.addListener("execute", () => this.fireEvent("addAnnotation"), this);
+          buttons.add(control);
+          break;
+        }
+        case "delete-btn": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Delete")).set({
+            appearance: "danger-button"
+          });
+          control.addListener("execute", () => this.fireEvent("deleteAnnotation"), this);
+          buttons.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
     },
 
     __applyAnnotation: function(annotation) {
-      this._removeAll();
-
       if (annotation === null) {
         return;
       }
 
-      let row = 0;
-      if (["text", "rect"].includes(annotation.getType())) {
-        const colorPicker = this.__addColor();
-        annotation.bind("color", colorPicker, "color");
-        colorPicker.bind("color", annotation, "color");
-        row++;
-      }
-
       const attrs = annotation.getAttributes();
       if (annotation.getType() === "text") {
-        this._add(new qx.ui.basic.Label(this.tr("Text")), {
-          row,
-          column: 0
+        const textField = this.getChildControl("text-field").set({
+          value: attrs.text
         });
-        const textField = new qx.ui.form.TextField(attrs.text);
         textField.addListener("changeValue", e => annotation.setText(e.getData()));
-        this._add(textField, {
-          row,
-          column: 1
-        });
-        row++;
       } else if (annotation.getType() === "note") {
-        this._add(new qx.ui.basic.Label(this.tr("Note")), {
-          row,
-          column: 0
-        });
-        const textArea = new qx.ui.form.TextArea(attrs.text).set({
-          autoSize: true,
-          minHeight: 70,
-          maxHeight: 140
+        const textArea = this.getChildControl("text-area").set({
+          value: attrs.text
         });
         textArea.addListener("changeValue", e => annotation.setText(e.getData()));
-        this._add(textArea, {
-          row,
-          column: 1
-        });
-        row++;
+      }
+
+      if (["text", "rect"].includes(annotation.getType())) {
+        const colorPicker = this.getChildControl("color-picker");
+        annotation.bind("color", colorPicker, "value");
+        colorPicker.bind("value", annotation, "color");
       }
 
       if (annotation.getType() === "text") {
-        this._add(new qx.ui.basic.Label(this.tr("Size")), {
-          row,
-          column: 0
-        });
-        const fontSizeField = new qx.ui.form.Spinner(attrs.fontSize);
+        const fontSizeField = this.getChildControl("font-size").set({
+          value: attrs.fontSize
+        })
         fontSizeField.addListener("changeValue", e => annotation.setFontSize(e.getData()));
-        this._add(fontSizeField, {
-          row,
-          column: 1
-        });
-        row++;
       }
-
-      this.__makeItModal();
     },
 
     __applyMarker: function(marker) {
-      this._removeAll();
-
       if (marker === null) {
         return;
       }
 
-      const colorPicker = this.__addColor();
+      const colorPicker = this.getChildControl("color-picker");
       marker.bind("color", colorPicker, "color");
       colorPicker.bind("color", marker, "color");
-
-      this.__makeItModal();
     },
 
-    __makeItModal: function() {
+    addDeleteButton: function() {
+      this.getChildControl("delete-btn");
+    },
+
+    addAddButtons: function() {
+      this.getChildControl("cancel-btn");
+      this.getChildControl("add-btn");
+
+      // Listen to "Enter" key
+      this.addListener("keypress", keyEvent => {
+        if (keyEvent.getKeyIdentifier() === "Enter") {
+          this.fireEvent("addAnnotation");
+        }
+      }, this);
+    },
+
+    makeItModal: function() {
+      this.set({
+        padding: 10
+      });
+
       this.show();
 
-      const showHint = () => this.show();
-      const hideHint = () => this.exclude();
+      const showEditor = () => this.show();
+      const hideEditor = () => this.exclude();
       const tapListener = event => {
         if (osparc.utils.Utils.isMouseOnElement(this, event)) {
           return;
         }
-        hideHint();
+        hideEditor();
         this.set({
           annotation: null,
           marker: null
         });
         document.removeEventListener("mousedown", tapListener);
       };
-      showHint();
+      showEditor();
       document.addEventListener("mousedown", tapListener);
     }
   }
