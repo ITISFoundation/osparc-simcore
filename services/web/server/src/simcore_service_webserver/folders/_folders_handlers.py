@@ -5,12 +5,15 @@ from aiohttp import web
 from models_library.api_schemas_webserver.folders import (
     CreateFolderBodyParams,
     FolderGet,
+    FolderGetPage,
     PutFolderBodyParams,
 )
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import PageQueryParameters
+from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
+from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
@@ -22,6 +25,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -67,8 +71,8 @@ class FoldersPathParams(StrictRequestParams):
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="name", direction=OrderDirection.DESC),
-        description="Order by field (name|description) and direction (asc|desc). The default sorting order is ascending.",
+        default=OrderBy(field="modified", direction=OrderDirection.DESC),
+        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',
         alias="order_by",
     )
@@ -81,14 +85,22 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
+            "modified_at",
             "name",
             "description",
         }:
             raise ValueError(f"We do not support ordering by provided field {v.field}")
+        if v.field == "modified_at":
+            v.field = "modified"
         return v
 
     class Config:
         extra = Extra.forbid
+
+    # validators
+    _null_or_none_str_to_none_validator = validator(
+        "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
@@ -99,7 +111,7 @@ async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
 
-    folder_id: FolderID = await _folders_api.create_folder(
+    folder = await _folders_api.create_folder(
         request.app,
         user_id=req_ctx.user_id,
         folder_name=body_params.name,
@@ -108,7 +120,7 @@ async def create_folder(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response({"folderId": folder_id}, web.HTTPCreated)
+    return envelope_json_response(folder, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/folders", name="list_folders")
@@ -121,7 +133,7 @@ async def list_folders(request: web.Request):
         FolderListWithJsonStrQueryParams, request
     )
 
-    folders: list[FolderGet] = await _folders_api.list_folders(
+    folders: FolderGetPage = await _folders_api.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -131,7 +143,19 @@ async def list_folders(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
-    return envelope_json_response(folders)
+    page = Page[FolderGet].parse_obj(
+        paginate_data(
+            chunk=folders.items,
+            request_url=request.url,
+            total=folders.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")
@@ -164,7 +188,7 @@ async def replace_folder(request: web.Request):
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(PutFolderBodyParams, request)
 
-    await _folders_api.update_folder(
+    folder = await _folders_api.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,
@@ -172,7 +196,7 @@ async def replace_folder(request: web.Request):
         description=body_params.description,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return envelope_json_response(folder)
 
 
 @routes.delete(
