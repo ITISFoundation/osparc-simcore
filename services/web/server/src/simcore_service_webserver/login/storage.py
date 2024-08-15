@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 import asyncpg
 from aiohttp import web
@@ -52,7 +52,7 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             return await _sql.find_one(conn, self.user_tbl, with_data)
 
-    async def create_user(self, data: dict) -> asyncpg.Record:
+    async def create_user(self, data: dict[str, Any]) -> asyncpg.Record:
         async with self.pool.acquire() as conn:
             user_id = await _sql.insert(conn, self.user_tbl, data)
             new_user = await _sql.find_one(conn, self.user_tbl, {"id": user_id})
