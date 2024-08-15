@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 from uuid import UUID
 
-from models_library.projects_nodes import KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -31,7 +30,7 @@ from .basic_regex import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from models_library.projects_nodes import KeyIDStr
 
 NodeID = UUID
 
