@@ -3,7 +3,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated, Any, Union, cast
+from typing import Annotated, Any, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
@@ -392,10 +392,7 @@ async def get_job_wallet(
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
-        return cast(
-            WalletGetWithAvailableCredits,
-            await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id),
-        )
+        return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
     return None
 
 
