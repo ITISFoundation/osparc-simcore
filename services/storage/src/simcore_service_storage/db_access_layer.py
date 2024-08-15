@@ -122,6 +122,24 @@ def assemble_array_groups(user_group_ids: list[GroupID]) -> str:
     )
 
 
+access_rights_subquery = (
+    sa.select(
+        project_to_groups.c.project_uuid,
+        sa.func.jsonb_object_agg(
+            project_to_groups.c.gid,
+            sa.func.jsonb_build_object(
+                "read",
+                project_to_groups.c.read,
+                "write",
+                project_to_groups.c.write,
+                "delete",
+                project_to_groups.c.delete,
+            ),
+        ).label("access_rights"),
+    ).group_by(project_to_groups.c.project_uuid)
+).subquery("access_rights_subquery")
+
+
 async def list_projects_access_rights(
     conn: SAConnection, user_id: UserID
 ) -> dict[ProjectID, AccessRights]:
@@ -130,23 +148,6 @@ async def list_projects_access_rights(
     """
 
     user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
-
-    access_rights_subquery = (
-        sa.select(
-            project_to_groups.c.project_uuid,
-            sa.func.jsonb_object_agg(
-                project_to_groups.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    project_to_groups.c.read,
-                    "write",
-                    project_to_groups.c.write,
-                    "delete",
-                    project_to_groups.c.delete,
-                ),
-            ).label("access_rights"),
-        ).group_by(project_to_groups.c.project_uuid)
-    ).subquery("access_rights_subquery")
 
     query = (
         sa.select(
@@ -189,23 +190,6 @@ async def get_project_access_rights(
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
     user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
-
-    access_rights_subquery = (
-        sa.select(
-            project_to_groups.c.project_uuid,
-            sa.func.jsonb_object_agg(
-                project_to_groups.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    project_to_groups.c.read,
-                    "write",
-                    project_to_groups.c.write,
-                    "delete",
-                    project_to_groups.c.delete,
-                ),
-            ).label("access_rights"),
-        ).group_by(project_to_groups.c.project_uuid)
-    ).subquery("access_rights_subquery")
 
     query = (
         sa.select(
