@@ -4,6 +4,7 @@ import shutil
 import pytest
 
 _logger = logging.getLogger(__name__)
+_DEFAULT_THREADHOLD_MB = 512
 
 
 def pytest_addoption(parser):
@@ -15,8 +16,8 @@ def pytest_addoption(parser):
         "--disk-usage-threshold",
         action="store",
         type=float,
-        default=0.0,
-        help="Set the threshold for disk usage increase as a percentage. No warning if increase is below this percentage.",
+        default=_DEFAULT_THREADHOLD_MB,
+        help="Set the threshold for disk usage increase in Megabytes. No warning if increase is below this value. [default={_DEFAULT_THREADHOLD_MB}]",
     )
 
 
@@ -45,7 +46,7 @@ class DiskUsagePlugin:
     """
 
     def __init__(self, config):
-        self.threshold = config.getoption("--disk-usage-threshold")
+        self._threshold_mb = config.getoption("--disk-usage-threshold")
 
     @staticmethod
     def _get_disk_usage():
@@ -56,12 +57,13 @@ class DiskUsagePlugin:
     ):
         if final_usage > initial_usage:
             increase = final_usage - initial_usage
-            increase_percent = (increase / initial_usage) * 100
 
-            if increase_percent >= self.threshold:
-                _logger.warning(
-                    "Disk usage increased by %s bytes during %s.", increase, scope_name
+            if increase >= self._threshold_mb:
+                increase_mb = increase / (1024 * 1024)
+                msg = (
+                    f"Disk usage increased by {increase_mb:.2f} MB during {scope_name}."
                 )
+                _logger.warning(msg)
 
     @pytest.fixture(scope="session", autouse=True)
     def monitor_session_disk_usage(self):
@@ -71,7 +73,7 @@ class DiskUsagePlugin:
         yield
 
         final_usage = self._get_disk_usage()
-        self._log_disk_usage_increase(initial_usage, final_usage, "the session")
+        self._log_disk_usage_increase(initial_usage, final_usage, "this session")
 
     @pytest.fixture(scope="module", autouse=True)
     def monitor_module_disk_usage(self, request):
@@ -83,7 +85,7 @@ class DiskUsagePlugin:
         final_usage = self._get_disk_usage()
         module_name = request.module.__name__
         self._log_disk_usage_increase(
-            initial_usage, final_usage, f"the module {module_name}"
+            initial_usage, final_usage, f"the module '{module_name}'"
         )
 
     @pytest.fixture(autouse=True)
@@ -96,5 +98,5 @@ class DiskUsagePlugin:
         final_usage = self._get_disk_usage()
         test_name = request.node.name
         self._log_disk_usage_increase(
-            initial_usage, final_usage, f"the test {test_name}"
+            initial_usage, final_usage, f"the test '{test_name}'"
         )

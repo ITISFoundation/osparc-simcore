@@ -68,6 +68,7 @@ tests-integration: ## runs integration tests against local+production images
 		--exitfirst \
 		--failed-first \
 		--keep-docker-up \
+		--log-cli-level=WARNING		\
 		--pdb \
 		--verbose \
 		$(CURDIR)/tests/integration
