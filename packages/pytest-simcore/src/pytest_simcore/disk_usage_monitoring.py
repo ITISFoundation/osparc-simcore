@@ -28,6 +28,19 @@ def pytest_configure(config):
 
 
 class DiskUsagePlugin:
+    """
+    The purpose of this plugin is to monitor disk usage during test execution, identifying tests
+    that do not properly clean up resources. This helps prevent potential issues when running
+    continuous integration (CI) pipelines on external systems, such as GitHub Actions.
+
+    The plugin is activated by using the `--disk-usage` option, and
+    it can be configured with a custom threshold using the `--disk-usage-threshold` option.
+
+    Warnings are generated if disk usage increases beyond the specified threshold,
+    allowing for targeted investigation of resource management
+    in specific tests, modules, or the entire test session.
+    """
+
     def __init__(self, config):
         self.threshold = config.getoption("--disk-usage-threshold")
 
