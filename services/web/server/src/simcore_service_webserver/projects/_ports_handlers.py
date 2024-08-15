@@ -14,7 +14,8 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectOutputGet,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
