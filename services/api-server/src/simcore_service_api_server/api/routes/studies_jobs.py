@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -141,11 +142,9 @@ async def create_study_job(
     )
 
     for node_label, file_link in new_project_file_inputs.items():
-        node_id = file_param_nodes[node_label]
-
         await webserver_api.update_node_outputs(
             project_id=project.uuid,
-            node_id=node_id,
+            node_id=UUID(file_param_nodes[node_label]),
             new_node_outputs=NodeOutputs(outputs={"outFile": file_link}),
         )
 
