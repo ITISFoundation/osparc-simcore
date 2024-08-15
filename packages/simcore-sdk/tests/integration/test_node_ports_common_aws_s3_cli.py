@@ -243,6 +243,9 @@ async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[
     await remove_directory(path)
 
 
+@pytest.mark.skip(
+    reason="We disabled the AWS S3 CLI and will use RClone for now; https://github.com/ITISFoundation/osparc-simcore/discussions/5828"
+)
 @pytest.mark.parametrize(
     "file_count, file_size, check_progress",
     [
@@ -343,6 +346,9 @@ def _regression_add_broken_symlink(
     os.symlink(f"{path_does_not_exist_on_fs}", f"{broken_symlink}")
 
 
+@pytest.mark.skip(
+    reason="We disabled the AWS S3 CLI and will use RClone for now; https://github.com/ITISFoundation/osparc-simcore/discussions/5828"
+)
 @pytest.mark.parametrize(
     "changes_callable",
     [
@@ -411,6 +417,9 @@ async def test_overwrite_an_existing_file_and_sync_again(
     )
 
 
+@pytest.mark.skip(
+    reason="We disabled the AWS S3 CLI and will use RClone for now; https://github.com/ITISFoundation/osparc-simcore/discussions/5828"
+)
 async def test_raises_error_if_local_directory_path_is_a_file(
     tmp_path: Path, faker: Faker, cleanup_bucket_after_test: None
 ):
