@@ -155,8 +155,10 @@ routes = web.RouteTableDef()
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesResourceUsagesQueryParamsWithPagination, request
+    query_params: _ListServicesResourceUsagesQueryParamsWithPagination = (
+        parse_request_query_parameters_as(
+            _ListServicesResourceUsagesQueryParamsWithPagination, request
+        )
     )
 
     services: ServiceRunPage = await api.list_usage_services(
@@ -194,8 +196,10 @@ async def list_resource_usage_services(request: web.Request):
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesAggregatedUsagesQueryParams, request
+    query_params: _ListServicesAggregatedUsagesQueryParams = (
+        parse_request_query_parameters_as(
+            _ListServicesAggregatedUsagesQueryParams, request
+        )
     )
 
     aggregated_services: OsparcCreditsAggregatedUsagesPage = (
@@ -232,8 +236,10 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesResourceUsagesQueryParams, request
+    query_params: _ListServicesResourceUsagesQueryParams = (
+        parse_request_query_parameters_as(
+            _ListServicesResourceUsagesQueryParams, request
+        )
     )
     download_url = await api.export_usage_services(
         app=request.app,

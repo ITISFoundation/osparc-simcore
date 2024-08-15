@@ -132,8 +132,10 @@ async def create_project(request: web.Request):
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
+        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = (
+            await parse_request_body_as(
+                ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
+            )
         )
         predefined_project = (
             project_create.dict(
