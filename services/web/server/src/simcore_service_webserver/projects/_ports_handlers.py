@@ -41,7 +41,7 @@ from .models import ProjectDict
 log = logging.getLogger(__name__)
 
 
-def _web_json_response_enveloped(data: Any):
+def _web_json_response_enveloped(data: Any) -> web.Response:
     return web.json_response(
         {
             "data": jsonable_encoder(data),
