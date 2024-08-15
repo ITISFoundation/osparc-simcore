@@ -23,6 +23,7 @@ from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import limited_gather
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.storage_models import projects, users
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..helpers.utils import get_updated_project
 
@@ -194,6 +195,31 @@ def share_with_collaborator(
                 .where(projects.c.uuid == f"{project_id}")
                 .values(access_rights=access_rights)
             )
+
+            # project_to_groups needs to be updated
+            for group_id, permissions in access_rights.items():
+                insert_stmt = pg_insert(project_to_groups).values(
+                    project_uuid=f"{project_id}",
+                    gid=int(group_id),
+                    read=permissions["read"],
+                    write=permissions["write"],
+                    delete=permissions["delete"],
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                )
+                on_update_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=[
+                        project_to_groups.c.project_uuid,
+                        project_to_groups.c.gid,
+                    ],
+                    set_={
+                        "read": insert_stmt.excluded.read,
+                        "write": insert_stmt.excluded.write,
+                        "delete": insert_stmt.excluded.delete,
+                        "modified": sa.func.now(),
+                    },
+                )
+                await conn.execute(on_update_stmt)
 
     return _
 
