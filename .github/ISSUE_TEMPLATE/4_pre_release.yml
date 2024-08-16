@@ -39,6 +39,14 @@ body:
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
       required: true
+  - type: input
+    id: pre_release_date
+    attributes:
+      label: Planned date
+      description: Projected release date for this upcoming version
+      placeholder: ex. Friday, April 23, 1976
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: Did the commit CI suceeded?

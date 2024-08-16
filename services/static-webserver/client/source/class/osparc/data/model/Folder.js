@@ -29,19 +29,20 @@ qx.Class.define("osparc.data.model.Folder", {
     this.base(arguments);
 
     this.set({
-      id: folderData.id,
-      parentId: folderData.parentFolder,
+      folderId: folderData.folderId,
+      parentId: folderData.parentFolderId,
       name: folderData.name,
       description: folderData.description,
       myAccessRights: folderData.myAccessRights,
       accessRights: folderData.accessRights,
+      owner: folderData.owner,
       createdAt: new Date(folderData.createdAt),
-      lastModified: new Date(folderData.lastModified),
+      lastModified: new Date(folderData.modifiedAt),
     });
   },
 
   properties: {
-    id: {
+    folderId: {
       check: "Number",
       nullable: false,
       init: null,
@@ -83,6 +84,13 @@ qx.Class.define("osparc.data.model.Folder", {
       event: "changeAccessRights"
     },
 
+    owner: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeOwner"
+    },
+
     createdAt: {
       check: "Date",
       nullable: true,
@@ -99,8 +107,8 @@ qx.Class.define("osparc.data.model.Folder", {
   },
 
   statics: {
-    patchFolder: function(folderId, propKey, value) {
-      return osparc.store.Folders.getInstance().patchFolder(folderId, propKey, value);
+    putFolder: function(folderId, propKey, value) {
+      return osparc.store.Folders.getInstance().putFolder(folderId, propKey, value);
     },
 
     getProperties: function() {
