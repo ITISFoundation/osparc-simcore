@@ -66,13 +66,14 @@ async def _do_send_mail(
         finally:
             await smtp_on_587_port.quit()
     else:
-        async with _create_smtp_client(settings) as smtp:
+        smtp_client = _create_smtp_client(settings)
+        async with smtp_client:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Login email server ...")
-                await smtp.login(
+                await smtp_client.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
-            await smtp.send_message(message)
+            await smtp_client.send_message(message)
 
 
 MIMEMessage = Union[MIMEText, MIMEMultipart]
