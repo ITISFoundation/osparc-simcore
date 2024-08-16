@@ -24,7 +24,6 @@ from pydantic import (
 
 from .basic_regex import (
     DATCORE_FILE_ID_RE,
-    PROPERTY_KEY_RE,
     SIMCORE_S3_DIRECTORY_ID_RE,
     SIMCORE_S3_FILE_ID_RE,
     UUID_RE,
@@ -108,7 +107,6 @@ class PortLink(BaseModel):
     output: KeyIDStr = Field(
         ...,
         description="The port key in the node given by nodeUuid",
-        regex=PROPERTY_KEY_RE,
     )
 
     class Config:
