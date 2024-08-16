@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any
+from typing import Any, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -99,13 +99,13 @@ ANY_USER = ANY_USER_ID_SENTINEL
 
 
 class ProjectDBAPI(BaseProjectDB):
-    def __init__(self, app: web.Application):
+    def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._engine = app.get(APP_DB_ENGINE_KEY)
+        self._engine = cast(Engine, app.get(APP_DB_ENGINE_KEY))
 
-    def _init_engine(self):
+    def _init_engine(self) -> None:
         # Delays creation of engine because it setup_db does it on_startup
-        self._engine = self._app.get(APP_DB_ENGINE_KEY)
+        self._engine = cast(Engine, self._app.get(APP_DB_ENGINE_KEY))
         if self._engine is None:
             msg = "Database subsystem was not initialized"
             raise ValueError(msg)
@@ -602,9 +602,7 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups: list[RowProxy] = await self._list_user_groups(
-                db_connection, user_id
-            )
+            user_groups = await self._list_user_groups(db_connection, user_id)
             check_project_permissions(current_project, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
