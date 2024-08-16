@@ -1,4 +1,4 @@
-import enum
+from enum import StrEnum, unique
 
 import sqlalchemy as sa
 
@@ -11,8 +11,8 @@ from ._common import (
 from .base import metadata
 
 
-@enum.unique
-class PaymentTransactionState(str, enum.Enum):
+@unique
+class PaymentTransactionState(StrEnum):
     PENDING = "PENDING"  # payment initiated
     SUCCESS = "SUCCESS"  # payment completed with success
     FAILED = "FAILED"  # payment failed
