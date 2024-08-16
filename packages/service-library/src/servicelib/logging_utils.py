@@ -12,9 +12,9 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
-from inspect import getframeinfo, isawaitable, stack
+from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, Coroutine, ParamSpec, TypeAlias, TypedDict, TypeVar, overload
+from typing import Any, TypeAlias, TypedDict, TypeVar
 
 from .utils_secrets import mask_sensitive_data
 
@@ -56,11 +56,11 @@ class CustomFormatter(logging.Formatter):
     2. Overrides 'filename' with the value of 'file_name_override', if it exists.
     """
 
-    def __init__(self, fmt: str, log_format_local_dev_enabled: bool):
+    def __init__(self, fmt: str, *, log_format_local_dev_enabled: bool) -> None:
         super().__init__(fmt)
         self.log_format_local_dev_enabled = log_format_local_dev_enabled
 
-    def format(self, record):
+    def format(self, record) -> str:
         if hasattr(record, "func_name_override"):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
@@ -86,7 +86,7 @@ LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(fun
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers(log_format_local_dev_enabled: bool):
+def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
     """
     Applies common configuration to ALL registered loggers
     """
@@ -102,19 +102,26 @@ def config_all_loggers(log_format_local_dev_enabled: bool):
         fmt = LOCAL_FORMATTING
 
     for logger in loggers:
-        set_logging_handler(logger, fmt, log_format_local_dev_enabled)
+        set_logging_handler(
+            logger, fmt=fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
+        )
 
 
 def set_logging_handler(
     logger: logging.Logger,
+    *,
     fmt: str,
     log_format_local_dev_enabled: bool,
 ) -> None:
     for handler in logger.handlers:
-        handler.setFormatter(CustomFormatter(fmt, log_format_local_dev_enabled))
+        handler.setFormatter(
+            CustomFormatter(
+                fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
+            )
+        )
 
 
-def test_logger_propagation(logger: logging.Logger):
+def test_logger_propagation(logger: logging.Logger) -> None:
     """log propagation and levels can sometimes be daunting to get it right.
 
     This function uses the `logger`` passed as argument to log the same message at different levels
@@ -161,7 +168,9 @@ def _log_arguments(
     #  Before to the function execution, log function details.
     logger_obj.log(
         level,
-        "Arguments: %s - Begin function",
+        "%s:%s(%s) - Begin function",
+        func.__module__.split(".")[-1],
+        func.__name__,
         formatted_arguments,
         extra=extra_args,
     )
@@ -169,67 +178,53 @@ def _log_arguments(
     return extra_args
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-@overload
-def log_decorator(
-    logger: logging.Logger | None = None, level: int = logging.DEBUG
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    ...
-
-
-@overload
-def log_decorator(
-    logger: logging.Logger | None = None, level: int = logging.DEBUG
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
-    ...
-
-
-def log_decorator(
-    logger: logging.Logger | None = None, level: int = logging.DEBUG
-) -> (
-    Callable[[Callable[P, R]], Callable[P, R]]
-    | Callable[
-        [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-    ]
+def _log_return_value(
+    logger_obj: logging.Logger,
+    level: int,
+    func: Callable,
+    result: Any,
+    extra_args: dict[str, str],
 ):
-    # Build logger object
-    logger_obj = logger or _logger
+    logger_obj.log(
+        level,
+        "%s:%s returned %r - End function",
+        func.__module__.split(".")[-1],
+        func.__name__,
+        result,
+        extra=extra_args,
+    )
 
-    def decorator(
-        func: Callable[P, R] | Callable[P, Coroutine[Any, Any, R]]
-    ) -> Callable[P, R] | Callable[P, Coroutine[Any, Any, R]]:
-        @functools.wraps(func)
-        async def _async_log_decorator_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
-            with log_catch(logger_obj, reraise=True):
-                assert iscoroutinefunction(func)  # nosec
-                value = await func(*args, **kwargs)
-            # log return value from the function
-            logger_obj.log(
-                level, "Returned: - End function %r", value, extra=extra_args
-            )
-            return value
 
-        @functools.wraps(func)
-        def _sync_log_decorator_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
-            with log_catch(logger_obj, reraise=True):
-                value = func(*args, **kwargs)
-            # log return value from the function
-            logger_obj.log(
-                level, "Returned: - End function %r", value, extra=extra_args
-            )
-            assert not isawaitable(value)  # nosec
-            return value
+F = TypeVar("F", bound=Callable[..., Any])
 
+
+def log_decorator(
+    logger: logging.Logger | None, level: int = logging.DEBUG
+) -> Callable[[F], F]:
+    the_logger = logger or _logger
+
+    def decorator(func: F) -> F:
         if iscoroutinefunction(func):
-            return _async_log_decorator_wrapper
-        return _sync_log_decorator_wrapper
+
+            @functools.wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                extra_args = _log_arguments(the_logger, level, func, *args, **kwargs)
+                with log_catch(the_logger, reraise=True):
+                    result = await func(*args, **kwargs)
+                _log_return_value(the_logger, level, func, result, extra_args)
+                return result
+
+            return async_wrapper  # type: ignore[return-value] # decorators typing is hard
+
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            extra_args = _log_arguments(the_logger, level, func, *args, **kwargs)
+            with log_catch(the_logger, reraise=True):
+                result = func(*args, **kwargs)
+            _log_return_value(the_logger, level, func, result, extra_args)
+            return result
+
+        return sync_wrapper  # type: ignore[return-value] # decorators typing is hard
 
     return decorator
 
@@ -263,7 +258,7 @@ def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None
     return extra or None
 
 
-def _un_capitalize(s):
+def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
 
@@ -283,15 +278,16 @@ def log_context(
     kwargs: dict[str, Any] = {}
     if extra:
         kwargs["extra"] = extra
-
-    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
+    log_msg = f"Starting {msg} ..."
+    logger.log(level, log_msg, *args, **kwargs)
     yield
     duration = (
         f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )
-    logger.log(level, "Finished " + msg + duration, *args, **kwargs)
+    log_msg = f"Finished {msg}{duration}"
+    logger.log(level, log_msg, *args, **kwargs)
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

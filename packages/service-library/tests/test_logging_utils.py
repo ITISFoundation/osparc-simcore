@@ -1,58 +1,158 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from threading import Thread
 from typing import Any
 
 import pytest
+from faker import Faker
 from servicelib.logging_utils import (
+    LogExtra,
     LogLevelInt,
     LogMessageStr,
     guess_message_log_level,
     log_context,
     log_decorator,
 )
-from servicelib.utils import logged_gather
 
 _logger = logging.getLogger(__name__)
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
 async def test_error_regression_async_def(
-    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None
+    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
 ):
-    @log_decorator(logger, logging.ERROR)
-    async def _raising_error() -> None:
+    @log_decorator(logger, logging.INFO)
+    async def _not_raising_fct(
+        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
+    ) -> int:
+        assert argument1 is not None
+        assert argument2 is not None
+        assert keyword_arg1 is not None
+        assert keyword_arg2 is not None
+        return 0
+
+    @log_decorator(logger, logging.INFO)
+    async def _raising_error(
+        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
+    ) -> None:
+        assert argument1 is not None
+        assert argument2 is not None
+        assert keyword_arg1 is not None
+        assert keyword_arg2 is not None
         msg = "Raising as expected"
         raise RuntimeError(msg)
 
     caplog.clear()
+    argument1 = faker.pyint()
+    argument2 = faker.pystr()
+    key_argument1 = faker.pybool()
+    key_argument2 = faker.pystr()
 
-    await logged_gather(_raising_error(), reraise=False)
+    result = await _not_raising_fct(
+        argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
+    )
+    assert result == 0
+    assert len(caplog.records) == 2
+    info_record = caplog.records[0]
+    assert info_record.levelno == logging.INFO
+    assert (
+        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
+        in info_record.message
+    )
+    return_record = caplog.records[1]
+    assert return_record.levelno == logging.INFO
+    assert not return_record.exc_text
+    assert (
+        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__} returned {result!r}"
+        in return_record.message
+    )
 
-    assert "Traceback" in caplog.text
+    caplog.clear()
+    with pytest.raises(RuntimeError):
+        await _raising_error(
+            argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
+        )
+
+    assert len(caplog.records) == 2
+    info_record = caplog.records[0]
+    assert info_record.levelno == logging.INFO
+    assert (
+        f"{_raising_error.__module__.split('.')[-1]}:{_raising_error.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
+        in info_record.message
+    )
+    error_record = caplog.records[1]
+    assert error_record.levelno == logging.ERROR
+    assert error_record.exc_text
+    assert "Traceback" in error_record.exc_text
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
-@pytest.mark.parametrize("log_traceback", [True, False])
-async def test_error_regression_def(
-    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
+def test_error_regression_sync_def(
+    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
 ):
-    @log_decorator(logger, logging.ERROR, log_traceback=log_traceback)
-    def _raising_error() -> None:
+    @log_decorator(logger, logging.INFO)
+    def _not_raising_fct(
+        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
+    ) -> int:
+        assert argument1 is not None
+        assert argument2 is not None
+        assert keyword_arg1 is not None
+        assert keyword_arg2 is not None
+        return 0
+
+    @log_decorator(logger, logging.INFO)
+    def _raising_error(
+        argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
+    ) -> None:
+        assert argument1 is not None
+        assert argument2 is not None
+        assert keyword_arg1 is not None
+        assert keyword_arg2 is not None
         msg = "Raising as expected"
         raise RuntimeError(msg)
 
     caplog.clear()
+    argument1 = faker.pyint()
+    argument2 = faker.pystr()
+    key_argument1 = faker.pybool()
+    key_argument2 = faker.pystr()
 
-    thread = Thread(target=_raising_error)
-    thread.start()
-    thread.join()
+    result = _not_raising_fct(
+        argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
+    )
+    assert result == 0
+    assert len(caplog.records) == 2
+    info_record = caplog.records[0]
+    assert info_record.levelno == logging.INFO
+    assert (
+        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
+        in info_record.message
+    )
+    return_record = caplog.records[1]
+    assert return_record.levelno == logging.INFO
+    assert not return_record.exc_text
+    assert (
+        f"{_not_raising_fct.__module__.split('.')[-1]}:{_not_raising_fct.__name__} returned {result!r}"
+        in return_record.message
+    )
 
-    if log_traceback:
-        assert "Traceback" in caplog.text
-    else:
-        assert "Traceback" not in caplog.text
+    caplog.clear()
+    with pytest.raises(RuntimeError):
+        _raising_error(
+            argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
+        )
+
+    assert len(caplog.records) == 2
+    info_record = caplog.records[0]
+    assert info_record.levelno == logging.INFO
+    assert (
+        f"{_raising_error.__module__.split('.')[-1]}:{_raising_error.__name__}({argument1!r}, {argument2!r}, keyword_arg1={key_argument1!r}, keyword_arg2={key_argument2!r})"
+        in info_record.message
+    )
+    error_record = caplog.records[1]
+    assert error_record.levelno == logging.ERROR
+    assert error_record.exc_text
+    assert "Traceback" in error_record.exc_text
 
 
 @pytest.mark.parametrize(
@@ -109,7 +209,7 @@ def test_log_context(
     caplog: pytest.LogCaptureFixture,
     msg: str,
     args: tuple[Any, ...],
-    extra: dict[str, Any] | None,
+    extra: LogExtra | None,
 ):
     caplog.clear()
 
