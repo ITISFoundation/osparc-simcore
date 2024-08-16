@@ -251,10 +251,10 @@ async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[
         (2, parse_obj_as(ByteSize, "1mib"), False),
         (1, parse_obj_as(ByteSize, "1Gib"), True),
         pytest.param(
-            (4, parse_obj_as(ByteSize, "500Mib"), True), marks=pytest.mark.heavy_load
+            4, parse_obj_as(ByteSize, "500Mib"), True, marks=pytest.mark.heavy_load
         ),
         pytest.param(
-            (100, parse_obj_as(ByteSize, "20mib"), True), marks=pytest.mark.heavy_load
+            100, parse_obj_as(ByteSize, "20mib"), True, marks=pytest.mark.heavy_load
         ),
     ],
 )
