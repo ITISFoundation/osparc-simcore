@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import AsyncGenerator, NamedTuple
+from typing import AsyncIterator, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -75,7 +75,7 @@ async def get_product_payment_fields(
     )
 
 
-async def iter_products(conn: SAConnection) -> AsyncGenerator[ResultProxy]:
+async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     """Iterates on products sorted by priority i.e. the first is considered the default"""
     async for row in conn.execute(
         sa.select(*_PRODUCTS_COLUMNS).order_by(products.c.priority)
