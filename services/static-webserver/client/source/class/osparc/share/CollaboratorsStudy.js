@@ -262,8 +262,11 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
               const uid = collab["id"];
               if (this._resourceType === "study") {
                 osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else {
-                osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+              } else if (this._resourceType === "template") {
+                // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
+                if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
+                  osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
+                }
               }
             }
           });
