@@ -5,6 +5,7 @@
 
 import functools
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from aiohttp import web
@@ -51,7 +52,9 @@ def _web_json_response_enveloped(data: Any) -> web.Response:
     )
 
 
-def _handle_project_exceptions(handler):
+def _handle_project_exceptions(
+    handler: Callable[[web.Request], Awaitable[web.Response]]
+) -> Callable[[web.Request], Awaitable[web.Response]]:
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.Response:
         try:
