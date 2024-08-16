@@ -15,8 +15,8 @@ from models_library.function_services_catalog.api import (
     is_probe_service,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID, OutputsDict
-from models_library.projects_nodes_io import PortLink
+from models_library.projects_nodes import Node, OutputsDict
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,
     jsonschema_validate_data,

@@ -40,21 +40,21 @@ def _handle_projects_metadata_exceptions(fct: F) -> F:
             return await fct(*args, **kwargs)
 
         except DBProjectNotFoundError as err:
-            raise ProjectNotFoundError(project_uuid=err.project_uuid) from err
+            raise ProjectNotFoundError(project_uuid=err.project_uuid) from err  # type: ignore[attr-defined] # context defined in pydantic error
         except ProjectNodesNodeNotFoundError as err:
             raise NodeNotFoundError(
-                project_uuid=err.project_uuid, node_uuid=err.node_id
+                project_uuid=err.project_uuid, node_uuid=err.node_id  # type: ignore[attr-defined] # context defined in pydantic error
             ) from err
         except ProjectNodesNonUniqueNodeFoundError as err:
             raise ProjectInvalidUsageError from err
         except DBProjectInvalidParentNodeError as err:
             raise ParentNodeNotFoundError(
-                project_uuid=err.project_uuid, node_uuid=err.parent_node_id
+                project_uuid=err.project_uuid, node_uuid=err.parent_node_id  # type: ignore[attr-defined] # context defined in pydantic error
             ) from err
 
         except DBProjectInvalidParentProjectError as err:
             raise ParentProjectNotFoundError(
-                project_uuid=err.parent_project_uuid
+                project_uuid=err.parent_project_uuid  # type: ignore[attr-defined] # context defined in pydantic error
             ) from err
         except DBProjectInvalidAncestorsError as err:
             raise ProjectInvalidUsageError from err

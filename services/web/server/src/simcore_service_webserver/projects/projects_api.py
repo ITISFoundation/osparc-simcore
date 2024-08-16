@@ -36,10 +36,10 @@ from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
+from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, OutputsDict
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
-    Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,

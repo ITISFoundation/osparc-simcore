@@ -26,8 +26,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
 from models_library.projects import Project, ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID

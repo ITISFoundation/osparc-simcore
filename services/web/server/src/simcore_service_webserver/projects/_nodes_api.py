@@ -9,8 +9,8 @@ from aiohttp import web
 from aiohttp.client import ClientError
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
-from models_library.projects_nodes_io import SimCoreFileLink
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
