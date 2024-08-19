@@ -50,7 +50,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -185,7 +185,7 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-psycopg2==2.9.21.20240417
+types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in

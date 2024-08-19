@@ -74,7 +74,7 @@ pyyaml==6.0.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.5.7
+ruff==0.6.1
     # via -r requirements/../../../../requirements/devenv.txt
 setuptools==69.1.1
     # via
@@ -89,7 +89,7 @@ tomli==2.0.1
     #   mypy
     #   pip-tools
     #   pylint
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
 types-cachetools==5.4.0.20240717
     # via -r requirements/_tools.in

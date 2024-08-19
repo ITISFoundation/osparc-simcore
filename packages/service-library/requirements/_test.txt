@@ -1,9 +1,9 @@
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.7
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -60,7 +60,7 @@ exceptiongroup==1.2.2
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -257,7 +257,7 @@ tomli==2.0.1
     #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20240417
+types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
 types-tqdm==4.66.0.20240417
     # via -r requirements/_test.in
