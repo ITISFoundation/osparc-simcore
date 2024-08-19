@@ -3,6 +3,9 @@ from datetime import timedelta
 
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -23,7 +26,7 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         return timedelta(seconds=5)
 
     @classmethod
-    async def start(  # pylint:disable=arguments-differ
+    async def start(  # type:ignore[override] # pylint:disable=arguments-differ
         cls, node_id: NodeID
     ) -> DeferredContext:
         _logger.debug("Getting service status for %s", node_id)
@@ -44,8 +47,10 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         app: FastAPI = context["app"]
         node_id: NodeID = context["node_id"]
 
-        director_v2_client = DirectorV2Client.get_from_app_state(app)
-        service_status = await director_v2_client.get_status(node_id)
+        director_v2_client: DirectorV2Client = DirectorV2Client.get_from_app_state(app)
+        service_status: NodeGet | RunningDynamicServiceDetails | NodeGetIdle = (
+            await director_v2_client.get_status(node_id)
+        )
         _logger.debug(
             "Service status type=%s, %s", type(service_status), service_status
         )

@@ -102,26 +102,30 @@ def _get_current_state(
     """
 
     if isinstance(status, NodeGetIdle):
-        return SchedulerServiceState.IDLE  # type:ignore
+        return SchedulerServiceState.IDLE
 
     service_state: ServiceState = ServiceState(__get_state_str(status))
 
     if requested_sate == UserRequestedState.RUNNING:
         if service_state == ServiceState.RUNNING:
-            return SchedulerServiceState.RUNNING  # type:ignore
+            return SchedulerServiceState.RUNNING
 
-        if ServiceState.PENDING <= service_state <= ServiceState.STARTING:
-            return SchedulerServiceState.STARTING  # type:ignore
+        if (
+            ServiceState.PENDING  # type:ignore[operator]
+            <= service_state
+            <= ServiceState.STARTING
+        ):
+            return SchedulerServiceState.STARTING
 
         if service_state < ServiceState.PENDING or service_state > ServiceState.RUNNING:
-            return SchedulerServiceState.UNEXPECTED_OUTCOME  # type:ignore
+            return SchedulerServiceState.UNEXPECTED_OUTCOME
 
     if requested_sate == UserRequestedState.STOPPED:
-        if service_state >= ServiceState.RUNNING:
-            return SchedulerServiceState.STOPPING  # type:ignore
+        if service_state >= ServiceState.RUNNING:  # type:ignore[operator]
+            return SchedulerServiceState.STOPPING
 
         if service_state < ServiceState.RUNNING:
-            return SchedulerServiceState.UNEXPECTED_OUTCOME  # type:ignore
+            return SchedulerServiceState.UNEXPECTED_OUTCOME
 
     msg = f"Could not determine current_state from: '{requested_sate=}', '{status=}'"
     raise TypeError(msg)

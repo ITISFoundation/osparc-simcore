@@ -1,6 +1,6 @@
 import contextlib
 
-import socketio
+import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
