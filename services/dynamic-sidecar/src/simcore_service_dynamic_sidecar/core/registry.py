@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 import httpx
 from fastapi import FastAPI
@@ -25,7 +26,7 @@ def _get_registry_url(registry_settings: RegistrySettings) -> str:
 
 async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
     async with httpx.AsyncClient(timeout=5) as client:
-        params = {}
+        params: dict[str, Any] = {}
         if registry_settings.REGISTRY_AUTH:
             params["auth"] = (
                 registry_settings.REGISTRY_USER,
