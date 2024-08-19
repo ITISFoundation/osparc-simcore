@@ -14,7 +14,8 @@
 """
 
 import logging
-from typing import TypedDict
+from collections.abc import Awaitable
+from typing import Any, TypedDict
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -49,6 +50,12 @@ class ResourcesDict(TypedDict, total=False):
 
     project_id: UUIDStr
     socket_id: str
+
+
+async def _handle_redis_returns_union_types(result: Any | Awaitable[Any]) -> Any:
+    if isinstance(result, Awaitable):
+        return await result
+    return result
 
 
 class RedisResourceRegistry:
@@ -94,16 +101,20 @@ class RedisResourceRegistry:
     ) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
-        await self.client.hset(hash_key, mapping={field: value})  # type: ignore[misc]
+        await _handle_redis_returns_union_types(
+            self.client.hset(hash_key, mapping={field: value})
+        )
 
     async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
-        fields = await self.client.hgetall(hash_key)
+        fields = await _handle_redis_returns_union_types(self.client.hgetall(hash_key))
         return ResourcesDict(**fields)
 
     async def remove_resource(self, key: UserSessionDict, resource_name: str) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
-        await self.client.hdel(hash_key, resource_name)
+        await _handle_redis_returns_union_types(
+            self.client.hdel(hash_key, resource_name)
+        )
 
     async def find_resources(
         self, key: UserSessionDict, resource_name: str
@@ -112,23 +123,29 @@ class RedisResourceRegistry:
         # the key might only be partialy complete
         partial_hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):
-            if await self.client.hexists(scanned_key, resource_name):
-                key_value = await self.client.hget(scanned_key, resource_name)
+            if await _handle_redis_returns_union_types(
+                self.client.hexists(scanned_key, resource_name)
+            ):
+                key_value = await _handle_redis_returns_union_types(
+                    self.client.hget(scanned_key, resource_name)
+                )
                 if key_value is not None:
                     resources.append(key_value)
         return resources
 
     async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
-        keys: list[UserSessionDict] = []
         if not resource:
-            return keys
+            return []
 
         field, value = resource
-
-        async for hash_key in self.client.scan_iter(match=f"*:{_RESOURCE_SUFFIX}"):
-            if value == await self.client.hget(hash_key, field):
-                keys.append(self._decode_hash_key(hash_key))
-        return keys
+        return [
+            self._decode_hash_key(hash_key)
+            async for hash_key in self.client.scan_iter(match=f"*:{_RESOURCE_SUFFIX}")
+            if value
+            == await _handle_redis_returns_union_types(
+                self.client.hget(hash_key, field)
+            )
+        ]
 
     async def set_key_alive(self, key: UserSessionDict, timeout: int) -> None:
         # setting the timeout to always expire, timeout > 0
