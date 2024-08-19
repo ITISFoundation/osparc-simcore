@@ -731,8 +731,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         visibility: blocked ? "visible" : "excluded"
       });
 
+      // let pointer for IN_USE or UNKNOWN_SERVICE
       this.set({
-        cursor: blocked ? "not-allowed" : "pointer"
+        cursor: blocked === true ? "not-allowed" : "pointer"
       });
 
       [

@@ -420,7 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => {
-          if (card.getBlocked()) {
+          if (card.getBlocked() === true) {
             card.setValue(false);
           } else {
             this.__itemClicked(card, e.getNativeEvent().shiftKey);
