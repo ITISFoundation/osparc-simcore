@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __itemClicked: function(card) {
-      if (!card.isBlocked()) {
+      if (!card.getBlocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
         this._openResourceDetails(templateData);

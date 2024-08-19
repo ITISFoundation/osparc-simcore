@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     __itemSelected: function() {
-      if (this.isBlocked()) {
+      if (this.getBlocked()) {
         this.setValue(false);
         return;
       }
