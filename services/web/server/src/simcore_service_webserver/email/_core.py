@@ -108,6 +108,9 @@ class SMTPServerInfo(TypedDict):
 async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServerInfo:
     """Raises SMTPException if cannot connect otherwise settings"""
     async with _create_smtp_client(settings) as smtp:
+        assert smtp.hostname  # nosec
+        assert smtp.port  # nosec
+        assert smtp.timeout  # nosec
         return SMTPServerInfo(
             hostname=smtp.hostname,
             port=smtp.port,
