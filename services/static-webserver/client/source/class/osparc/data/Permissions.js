@@ -233,7 +233,7 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     // https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1#2405
-    __canRoleDo: function(role, action) {
+    canRoleDo: function(role, action) {
       role = role.toLowerCase();
       // Check if role exists
       const roles = this.self().ROLES_APP;
@@ -250,13 +250,13 @@ qx.Class.define("osparc.data.Permissions", {
         return false;
       }
       // Check child roles until one returns true or all return false
-      return roleObj.inherits.some(childRole => this.__canRoleDo(childRole, action));
+      return roleObj.inherits.some(childRole => this.canRoleDo(childRole, action));
     },
 
     canDo: function(action, showMsg) {
       let canDo = false;
       if (this.getRole()) {
-        canDo = this.__canRoleDo(this.getRole(), action);
+        canDo = this.canRoleDo(this.getRole(), action);
       }
       if (showMsg && !canDo) {
         let msg = "Operation not permitted";
