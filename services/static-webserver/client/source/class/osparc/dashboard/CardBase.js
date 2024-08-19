@@ -349,7 +349,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     state: {
       check: "Object",
       nullable: false,
-      apply: "_applyState"
+      apply: "__applyState"
     },
 
     projectState: {
@@ -600,7 +600,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyState: function(state) {
+    __applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (locked) {
