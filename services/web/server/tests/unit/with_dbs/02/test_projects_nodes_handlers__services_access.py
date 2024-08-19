@@ -225,7 +225,7 @@ async def test_accessible_thanks_to_concrete_group_id(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_not_accessible_for_one_service(
+async def test_accessible_through_product_group(
     client: TestClient,
     user_project: ProjectDict,
     mocker: MockerFixture,
@@ -243,8 +243,8 @@ async def test_not_accessible_for_one_service(
                 gids_with_access_rights={
                     2: {
                         "execute_access": True
-                    },  # <-- Access via Product group with Read=False,Write=False,Delete=False
-                    4: {"execute_access": True},
+                    },  # <-- User has access via product group with Read=False,Write=False,Delete=False
+                    4: {"execute_access": True},  # <-- User is not part of this group
                 },
             ),
             ServiceAccessRightsGet(
@@ -280,6 +280,66 @@ async def test_not_accessible_for_one_service(
     assert data == {
         "gid": for_gid,
         "accessible": True,
+    }
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_accessible_for_one_service(
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
+):
+    for_gid = logged_user["primary_gid"]
+
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        spec=True,
+        side_effect=[
+            ServiceAccessRightsGet(
+                service_key="simcore/services/comp/itis/sleeper",
+                service_version="2.1.4",
+                gids_with_access_rights={
+                    5: {"execute_access": True},  # <-- User is not part of this group
+                    4: {"execute_access": True},  # <-- User is not part of this group
+                },
+            ),
+            ServiceAccessRightsGet(
+                service_key="simcore/services/frontend/parameter/integer",
+                service_version="1.0.0",
+                gids_with_access_rights={
+                    for_gid: {"execute_access": True},
+                    2: {"execute_access": True},
+                },
+            ),
+            ServiceAccessRightsGet(
+                service_key="simcore/services/comp/itis/sleeper",
+                service_version="2.1.5",
+                gids_with_access_rights={for_gid: {"execute_access": True}},
+            ),
+        ],
+    )
+
+    assert client.app
+
+    project_id = user_project["uuid"]
+
+    expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
+
+    resp = await client.get(
+        f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data == {
+        "gid": for_gid,
+        "accessible": False,
+        "inaccessible_services": [
+            {"key": "simcore/services/comp/itis/sleeper", "version": "2.1.4"},
+        ],
     }
 
 
