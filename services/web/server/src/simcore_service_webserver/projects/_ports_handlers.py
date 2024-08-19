@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
     ProjectOutputGet,
 )
+from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
@@ -145,7 +146,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
 
-        workbench[node_id].outputs = {"out_1": input_update.value}
+        workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].dict(
             include={"outputs"}, exclude_unset=True
         )
