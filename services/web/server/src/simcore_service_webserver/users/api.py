@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 """
     This should be the interface other modules should use to get
     information from user module
@@ -318,7 +319,6 @@ async def update_expired_users(engine: Engine) -> list[UserID]:
         return await _db.do_update_expired_users(conn)
 
 
-# mypy: disable-error-code=truthy-function
 assert set_user_as_deleted  # nosec
 assert get_user_credentials  # nosec
 assert get_user_invoice_address  # nosec
