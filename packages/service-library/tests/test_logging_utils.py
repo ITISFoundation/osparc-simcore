@@ -21,6 +21,9 @@ _logger = logging.getLogger(__name__)
 async def test_error_regression_async_def(
     caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
 ):
+    # NOTE: change the log level so that the log is visible
+    caplog.set_level(logging.INFO)
+
     @log_decorator(logger, logging.INFO)
     async def _not_raising_fct(
         argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
@@ -90,6 +93,9 @@ async def test_error_regression_async_def(
 def test_error_regression_sync_def(
     caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
 ):
+    # NOTE: change the log level so that the log is visible
+    caplog.set_level(logging.INFO)
+
     @log_decorator(logger, logging.INFO)
     def _not_raising_fct(
         argument1: int, argument2: str, *, keyword_arg1: bool, keyword_arg2: str
