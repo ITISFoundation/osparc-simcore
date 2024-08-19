@@ -21,7 +21,6 @@ from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.docker_registry import RegistrySettings
-from settings_library.utils_cli import create_json_encoder_wo_secrets
 from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
