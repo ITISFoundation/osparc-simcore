@@ -63,7 +63,7 @@ from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..groups.api import get_group_from_gid, list_user_groups_with_read_access
+from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -565,10 +565,8 @@ async def get_project_services_access_for_gid(
         _user_id = await get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
-        _, _user_groups, _ = await list_user_groups_with_read_access(
-            app=request.app, user_id=_user_id
-        )
-        groups_to_compare.update({int(item.get("gid", -1)) for item in _user_groups})
+        _user_groups = await list_all_user_groups(app=request.app, user_id=_user_id)
+        groups_to_compare.update({group.gid for group in _user_groups})
         groups_to_compare.add(query_params.for_gid)
     elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
         groups_to_compare = {query_params.for_gid}
