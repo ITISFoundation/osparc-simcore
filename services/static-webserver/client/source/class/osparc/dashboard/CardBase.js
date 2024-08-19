@@ -735,21 +735,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       });
 
-      if (this.getMenu() && this.getMenu().getChildren()) {
-        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
-        if (openButton) {
-          openButton.setEnabled(enabled);
-        }
-      }
-
       this.getChildControl("lock-status").set({
         appearance: "form-button-outlined/disabled",
         textColor: "text-disabled",
         opacity: 1.0,
-        visibility: blocked ? "visible" : "excluded"
+        visibility: enabled ? "excluded" : "visible"
       });
 
-      // let pointer for IN_USE or UNKNOWN_SERVICE
+      // let the "pointer" cursor for IN_USE or UNKNOWN_SERVICE
       this.set({
         cursor: blocked === true ? "not-allowed" : "pointer"
       });
@@ -762,6 +755,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const child = this.getChildControl(childName);
         child.setEnabled(enabled);
       });
+
+      this.__evaluateMenuButtons();
+    },
+
+    __evaluateMenuButtons: function() {
+      if (this.getMenu() && this.getMenu().getChildren()) {
+        const enabled = !this.getBlocked();
+        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+        if (openButton) {
+          openButton.setEnabled(enabled);
+        }
+      }
     },
 
     _applyFetching: function(value) {
