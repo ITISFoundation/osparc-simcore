@@ -33,7 +33,7 @@ describe('Calls after logging in', () => {
   }, ourTimeout);
 
   test('Services', async () => {
-    const responseEnv = await utils.fetchReq('catalog/services');
+    const responseEnv = await utils.fetchReq('catalog/services/-/latest');
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
