@@ -295,7 +295,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
     node_outputs = await parse_request_body_as(NodeOutputs, request)
 
     ui_changed_keys = set()
-    ui_changed_keys.add(path_params.node_id)
+    ui_changed_keys.add(f"{path_params.node_id}")
     await nodes_utils.update_node_outputs(
         app=request.app,
         user_id=req_ctx.user_id,
