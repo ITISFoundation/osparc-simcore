@@ -71,9 +71,8 @@ class FoldersPathParams(StrictRequestParams):
 
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
-    order_by: Json[
-        OrderBy
-    ] = Field(  # type: ignore[type-arg] # need pydantic 1.10  # pylint: disable=unsubscriptable-object
+    # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg]
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',

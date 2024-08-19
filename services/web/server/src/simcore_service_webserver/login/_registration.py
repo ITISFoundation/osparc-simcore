@@ -74,9 +74,9 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: ConfirmationAction
-    data: Json[  # type: ignore[type-arg] # pydantic upgrade to 1.10 needed
+    data: Json[  # type: ignore[type-arg] # pydantic upgrade to 1.10 needed # pylint: disable=unsubscriptable-object
         InvitationData
-    ]  # pylint: disable=unsubscriptable-object
+    ]
 
     @validator("action", pre=True)
     @classmethod
