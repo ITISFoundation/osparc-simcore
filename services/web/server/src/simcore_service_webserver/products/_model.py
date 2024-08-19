@@ -1,6 +1,6 @@
 import logging
 import string
-from typing import Any, ClassVar, Pattern  # noqa: UP035
+from typing import Any, ClassVar, Pattern
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -20,6 +20,8 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
+from sqlalchemy import Column  # noqa: UP035
+from sqlalchemy.sql import ColumnElement
 
 from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
@@ -145,7 +147,10 @@ class Product(BaseModel):
                     **{
                         str(c.name): c.server_default.arg
                         for c in products.columns
-                        if c.server_default and isinstance(c.server_default.arg, str)
+                        if isinstance(c, Column)
+                        and c.server_default
+                        and isinstance(c.server_default, ColumnElement)
+                        and isinstance(c.server_default.arg, str)
                     },
                 },
                 # Example of data in the dabase with a url set with blanks

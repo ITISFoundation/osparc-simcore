@@ -4,7 +4,7 @@
 
 import logging
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
@@ -31,7 +31,7 @@ _logger = logging.getLogger(__name__)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
     _logger.info("Connecting to postgres with %s", f"{settings=}")
-    engine = await create_engine(
+    engine: Engine = await create_engine(
         settings.dsn,
         application_name=settings.POSTGRES_CLIENT_NAME,
         minsize=settings.POSTGRES_MINSIZE,
@@ -91,7 +91,7 @@ def get_engine_state(app: web.Application) -> dict[str, Any]:
 
 
 def get_database_engine(app: web.Application) -> Engine:
-    return app[APP_DB_ENGINE_KEY]
+    return cast(Engine, app[APP_DB_ENGINE_KEY])
 
 
 @app_module_setup(

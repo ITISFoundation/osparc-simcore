@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import ValidationError, parse_obj_as
@@ -204,11 +205,11 @@ async def get_user_name_and_email(
 class UserDisplayAndIdNamesTuple(NamedTuple):
     name: str
     email: str
-    first_name: str
-    last_name: str
+    first_name: IDStr
+    last_name: IDStr
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
 

@@ -155,7 +155,7 @@ class RedisResourceRegistry:
 
     async def is_key_alive(self, key: UserSessionDict) -> bool:
         hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
-        return await self.client.exists(hash_key) > 0
+        return bool(await self.client.exists(hash_key) > 0)
 
     async def remove_key(self, key: UserSessionDict) -> None:
         await self.client.delete(

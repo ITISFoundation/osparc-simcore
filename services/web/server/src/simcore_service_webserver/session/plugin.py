@@ -1,6 +1,7 @@
 """ user's session plugin
 
 """
+
 import logging
 
 import aiohttp_session
@@ -42,4 +43,5 @@ def setup_session(app: web.Application):
         samesite=settings.SESSION_COOKIE_SAMESITE,
     )
     aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
+    assert hasattr(app.middlewares[-1], "__middleware_name__")  # noseq
     app.middlewares[-1].__middleware_name__ = f"{__name__}.session"

@@ -6,6 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -111,8 +112,8 @@ class ProjectListParams(PageQueryParameters):
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="last_change_date", direction=OrderDirection.DESC),
+    order_by: Json[OrderBy] = Field(
+        default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "prj_owner", "direction": "desc"}',
         alias="order_by",
@@ -130,7 +131,8 @@ class ProjectListWithJsonStrParams(ProjectListParams):
             "creation_date",
             "last_change_date",
         }:
-            raise ValueError(f"We do not support ordering by provided field {v.field}")
+            msg = f"We do not support ordering by provided field {v.field}"
+            raise ValueError(msg)
         return v
 
     class Config:

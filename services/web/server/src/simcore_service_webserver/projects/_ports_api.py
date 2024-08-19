@@ -8,7 +8,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     TasksOutputs,
     TasksSelection,
 )
-from models_library.basic_types import KeyIDStr
+from models_library.basic_types import IDStr, KeyIDStr
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
@@ -226,7 +226,7 @@ async def get_project_outputs(
         if isinstance(v, _OutputPortInfo):
             assert v.port_node_id == port_node_id  # nosec
             outputs_map[port_node_id] = tasks_outputs[v.task_node_id].get(
-                v.task_output_name, v.task_output_in_workbench
+                IDStr(v.task_output_name), v.task_output_in_workbench
             )
 
     return outputs_map

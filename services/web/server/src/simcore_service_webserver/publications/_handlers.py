@@ -56,7 +56,9 @@ async def service_submission(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
+    assert user  # nosec
     user_email = user.get("email")
+    assert user_email  # nosec
 
     try:
         attachments = [
@@ -89,6 +91,6 @@ async def service_submission(request: web.Request):
         )
     except Exception as exc:
         _logger.exception("Error while sending the 'new service submission' mail.")
-        raise web.HTTPServiceUnavailable() from exc
+        raise web.HTTPServiceUnavailable from exc
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
