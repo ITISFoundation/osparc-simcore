@@ -34,6 +34,9 @@ describe('Calls after logging in', () => {
 
   test('Services', async () => {
     const responseEnv = await utils.fetchReq('catalog/services/-/latest');
+    console.log('Status Code:', responseEnv.status);
+    console.log('Response Data:', responseEnv.data);
+
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
     expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
