@@ -298,8 +298,8 @@ async def test_not_accessible_for_more_services(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
                 gids_with_access_rights={
-                    4: {"execute_access": True},
-                    5: {"execute_access": True},
+                    4: {"execute_access": True},  # <-- User is not part of this group
+                    5: {"execute_access": True},  # <-- User is not part of this group
                 },
             ),
             ServiceAccessRightsGet(
