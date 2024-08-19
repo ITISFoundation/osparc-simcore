@@ -31,6 +31,14 @@ body:
       value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
     validations:
       required: true
+  - type: input
+    id: release_date
+    attributes:
+      label: Planned date
+      description: Projected release date for this upcoming version
+      placeholder: ex. Friday, April 23, 1976
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: Did the commit CI suceeded?

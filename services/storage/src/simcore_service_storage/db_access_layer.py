@@ -45,6 +45,8 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import GroupID, UserID
+from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 
 logger = logging.getLogger(__name__)
@@ -112,6 +114,32 @@ def _aggregate_access_rights(
         return AccessRights.none()
 
 
+def assemble_array_groups(user_group_ids: list[GroupID]) -> str:
+    return (
+        "array[]::text[]"
+        if len(user_group_ids) == 0
+        else f"""array[{', '.join(f"'{group_id}'" for group_id in user_group_ids)}]"""
+    )
+
+
+access_rights_subquery = (
+    sa.select(
+        project_to_groups.c.project_uuid,
+        sa.func.jsonb_object_agg(
+            project_to_groups.c.gid,
+            sa.func.jsonb_build_object(
+                "read",
+                project_to_groups.c.read,
+                "write",
+                project_to_groups.c.write,
+                "delete",
+                project_to_groups.c.delete,
+            ),
+        ).label("access_rights"),
+    ).group_by(project_to_groups.c.project_uuid)
+).subquery("access_rights_subquery")
+
+
 async def list_projects_access_rights(
     conn: SAConnection, user_id: UserID
 ) -> dict[ProjectID, AccessRights]:
@@ -119,24 +147,25 @@ async def list_projects_access_rights(
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """
 
-    user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
+    user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
 
-    smt = sa.DDL(
-        f"""\
-    SELECT uuid, access_rights
-    FROM projects
-    WHERE (
-        prj_owner = {user_id}
-        OR jsonb_exists_any( access_rights, (
-               SELECT ARRAY( SELECT gid::TEXT FROM user_to_groups WHERE uid = {user_id} )
+    query = (
+        sa.select(
+            projects.c.uuid,
+            access_rights_subquery.c.access_rights,
+        )
+        .select_from(projects.join(access_rights_subquery, isouter=True))
+        .where(
+            (projects.c.prj_owner == user_id)
+            | sa.text(
+                f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
             )
         )
     )
-    """
-    )
+
     projects_access_rights = {}
 
-    async for row in conn.execute(smt):
+    async for row in conn.execute(query):
         assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
@@ -160,25 +189,26 @@ async def get_project_access_rights(
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
-    user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
+    user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
 
-    stmt = sa.DDL(
-        f"""\
-        SELECT prj_owner, access_rights
-        FROM projects
-        WHERE (
-            ( uuid = '{project_id}' ) AND (
-                prj_owner = {user_id}
-                OR jsonb_exists_any( access_rights, (
-                    SELECT ARRAY( SELECT gid::TEXT FROM user_to_groups WHERE uid = {user_id} )
-                    )
+    query = (
+        sa.select(
+            projects.c.prj_owner,
+            access_rights_subquery.c.access_rights,
+        )
+        .select_from(projects.join(access_rights_subquery, isouter=True))
+        .where(
+            (projects.c.uuid == f"{project_id}")
+            & (
+                (projects.c.prj_owner == user_id)
+                | sa.text(
+                    f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
                 )
             )
         )
-        """
     )
 
-    result: ResultProxy = await conn.execute(stmt)
+    result: ResultProxy = await conn.execute(query)
     row: RowProxy | None = await result.first()
 
     if not row:

@@ -5,16 +5,19 @@ import shutil
 import sys
 import time
 from collections import deque
+from collections.abc import Coroutine
 from contextlib import AsyncExitStack
 from enum import Enum
 from pathlib import Path
-from typing import Coroutine, Optional, cast
+from typing import cast
 
 import aiofiles.os
 import magic
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.services_types import ServicePortKey
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -24,8 +27,9 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_sdk.node_ports_v2 import Nodeports, Port
+from simcore_sdk.node_ports_v2 import Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
+from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
@@ -45,7 +49,7 @@ logger = logging.getLogger(__name__)
 # OUTPUTS section
 
 
-def _get_size_of_value(value: ItemConcreteValue | None) -> int:
+def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None]) -> int:
     if value is None:
         return 0
     if isinstance(value, Path):
@@ -89,7 +93,9 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    ports_values: dict[str, tuple[ItemConcreteValue | None, SetKWargs | None]] = {}
+    ports_values: dict[
+        ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
+    ] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set = [
         port_value
@@ -104,7 +110,7 @@ async def upload_outputs(
                     2 if is_file_type(port.property_type) else 1
                     for port in ports_to_set
                 ),
-                description="uploading outputs",
+                description=IDStr("uploading outputs"),
             )
         )
         for port in ports_to_set:
@@ -195,14 +201,15 @@ async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
 ) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
     async with progress_bar.sub_progress(
-        steps=2 if is_file_type(port.property_type) else 1, description="getting data"
+        steps=2 if is_file_type(port.property_type) else 1,
+        description=IDStr("getting data"),
     ) as sub_progress:
         with log_context(logger, logging.DEBUG, f"getting {port.key=}"):
             port_data = await port.get(sub_progress)
 
         if is_file_type(port.property_type):
             # if there are files, move them to the final destination
-            downloaded_file: Path | None = cast(Optional[Path], port_data)
+            downloaded_file: Path | None = cast(Path | None, port_data)
             final_path: Path = target_dir / port.key
 
             if not downloaded_file or not downloaded_file.exists():
@@ -278,7 +285,7 @@ async def download_target_ports(
         if (not port_keys) or (port_value.key in port_keys)
     ]
     async with progress_bar.sub_progress(
-        steps=len(ports_to_get), description="downloading"
+        steps=len(ports_to_get), description=IDStr("downloading")
     ) as sub_progress:
         results = await logged_gather(
             *[

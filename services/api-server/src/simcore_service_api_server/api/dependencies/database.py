@@ -1,5 +1,6 @@
 import logging
 from collections.abc import AsyncGenerator, Callable
+from typing import Annotated, cast
 
 from aiopg.sa import Engine
 from fastapi import Depends
@@ -11,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_db_engine(request: Request) -> Engine:
-    return request.app.state.engine
+    return cast(Engine, request.app.state.engine)
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:
     async def _get_repo(
-        engine: Engine = Depends(get_db_engine),
+        engine: Annotated[Engine, Depends(get_db_engine)],
     ) -> AsyncGenerator[BaseRepository, None]:
         # NOTE: 2 different ideas were tried here with not so good
         # 1st one was acquiring a connection per repository which lead to the following issue https://github.com/ITISFoundation/osparc-simcore/pull/1966

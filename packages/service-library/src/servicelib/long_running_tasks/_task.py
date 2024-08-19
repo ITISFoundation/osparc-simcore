@@ -9,7 +9,10 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.api_schemas_long_running_tasks.base import (
+    ProgressPercent,
+    TaskProgress,
+)
 from pydantic import PositiveFloat
 
 from ._errors import (
@@ -19,7 +22,7 @@ from ._errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, TrackedTask
+from ._models import TaskId, TaskName, TaskResult, TaskStatus, TrackedTask
 
 logger = logging.getLogger(__name__)
 
@@ -349,8 +352,7 @@ class TasksManager:
 
 
 class TaskProtocol(Protocol):
-    # NOTE: when using **kwargs pyright complains. this might be a bug that should be fixed soon
-    async def __call__(self, task_progress: TaskProgress, *task_kwargs: Any) -> Any:
+    async def __call__(self, progress: TaskProgress, *args: Any, **kwargs: Any) -> Any:
         ...
 
     @property
@@ -366,7 +368,7 @@ def start_task(
     task_context: TaskContext | None = None,
     task_name: str | None = None,
     fire_and_forget: bool = False,
-    **task_kwargs,
+    **task_kwargs: Any,
 ) -> TaskId:
     """
     Creates a background task from an async function.

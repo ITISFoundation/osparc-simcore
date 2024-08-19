@@ -293,7 +293,7 @@ endif
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	docker stack deploy --with-registry-auth -c $< ops
+	docker stack deploy --detach=true --with-registry-auth -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
@@ -337,7 +337,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -347,7 +347,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -357,7 +357,7 @@ up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production s
 ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
@@ -368,7 +368,7 @@ endif
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 

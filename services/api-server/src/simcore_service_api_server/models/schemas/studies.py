@@ -23,7 +23,7 @@ class Study(BaseModel):
 
 
 class StudyPort(solvers.SolverPort):
-    key: projects_nodes_io.NodeID = Field(
+    key: projects_nodes_io.NodeID = Field(  # type: ignore[assignment]
         ...,
         description="port identifier name."
         "Correponds to the UUID of the parameter/probe node in the study",

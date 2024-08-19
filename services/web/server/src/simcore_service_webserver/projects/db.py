@@ -57,6 +57,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..application_settings import ApplicationSettings
 from ..db.models import projects_to_wallet, study_tags
 from ..utils import now_str
 from ._comments_db import (
@@ -322,6 +323,7 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: PositiveInt,
         *,
         product_name: str,
+        settings: ApplicationSettings,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
@@ -358,17 +360,19 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
+            _join_query = projects.join(projects_to_products, isouter=True).join(
+                access_rights_subquery, isouter=True
+            )
+            if settings.WEBSERVER_FOLDERS:
+                _join_query = _join_query.join(folders_to_projects, isouter=True)
+
             query = (
                 sa.select(
                     *[col for col in projects.columns if col.name != "access_rights"],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                 )
-                .select_from(
-                    projects.join(projects_to_products, isouter=True)
-                    .join(access_rights_subquery, isouter=True)
-                    .join(folders_to_projects, isouter=True)
-                )
+                .select_from(_join_query)
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -396,13 +400,15 @@ class ProjectDBAPI(BaseProjectDB):
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
                     )
-                    & (
-                        (folders_to_projects.c.folder_id == f"{folder_id}")
-                        if folder_id
-                        else (folders_to_projects.c.folder_id.is_(None))
-                    )
                 )
             )
+            if settings.WEBSERVER_FOLDERS:
+                query = query.where(
+                    folders_to_projects.c.folder_id == f"{folder_id}"
+                    if folder_id
+                    else folders_to_projects.c.folder_id.is_(None)
+                )
+
             if search:
                 query = query.join(users, isouter=True)
                 query = query.where(

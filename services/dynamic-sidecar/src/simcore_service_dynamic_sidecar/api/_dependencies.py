@@ -2,7 +2,7 @@
 """
 
 from asyncio import Lock
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
@@ -19,65 +19,65 @@ from ..modules.prometheus_metrics import UserServicesMetrics
 
 
 def get_application(request: Request) -> FastAPI:
-    return request.app
+    return cast(FastAPI, request.app)
 
 
 def get_app_state(request: Request) -> State:
-    return request.app.state
+    return cast(State, request.app.state)
 
 
 def get_application_health(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> ApplicationHealth:
-    return app_state.application_health  # type: ignore
+    return cast(ApplicationHealth, app_state.application_health)
 
 
 def get_settings(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> ApplicationSettings:
-    return app_state.settings  # type: ignore
+    return cast(ApplicationSettings, app_state.settings)
 
 
 def get_shared_store(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> SharedStore:
-    return app_state.shared_store  # type: ignore
+    return cast(SharedStore, app_state.shared_store)
 
 
 def get_mounted_volumes(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> MountedVolumes:
-    return app_state.mounted_volumes  # type: ignore
+    return cast(MountedVolumes, app_state.mounted_volumes)
 
 
 def get_container_restart_lock(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> Lock:
-    return app_state.container_restart_lock  # type: ignore
+    return cast(Lock, app_state.container_restart_lock)
 
 
 def get_outputs_manager(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> OutputsManager:
-    return app_state.outputs_manager  # type: ignore
+    return cast(OutputsManager, app_state.outputs_manager)
 
 
 def get_outputs_context(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> OutputsContext:
-    return app_state.outputs_context  # type: ignore
+    return cast(OutputsContext, app_state.outputs_context)
 
 
 def get_inputs_state(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> InputsState:
-    return app_state.inputs_state  # type: ignore
+    return cast(InputsState, app_state.inputs_state)
 
 
 def get_user_services_metrics(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> UserServicesMetrics:
-    return app_state.user_service_metrics  # type: ignore
+    return cast(UserServicesMetrics, app_state.user_service_metrics)
 
 
 def get_rabbitmq_client(
