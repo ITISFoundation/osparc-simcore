@@ -2185,6 +2185,58 @@ async def test_folder_list_in_root_with_different_groups_avoids_duplicate_entrie
     assert len(entries_all_groups) == 3
 
 
+async def test_regression_list_folder_parent(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+):
+    #######
+    # SETUP
+    #######
+
+    (gid_user,) = get_unique_gids(1)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="f1",
+                gid=gid_user,
+                children={
+                    MkFolder(
+                        name="f2",
+                        gid=gid_user,
+                        children={
+                            MkFolder(name="f3", gid=gid_user),
+                        },
+                    )
+                },
+            ),
+        }
+    )
+
+    folder_id_f1 = folder_ids["f1"]
+    folder_id_f2 = folder_ids["f2"]
+    folder_id_f3 = folder_ids["f3"]
+
+    #######
+    # TESTS
+    #######
+
+    for folder_id in (None, folder_id_f1, folder_id_f2):
+        folder_content = await _list_folder_as(
+            connection, default_product_name, folder_id, {gid_user}
+        )
+        assert len(folder_content) == 1
+        assert folder_content[0]
+        assert folder_content[0].parent_folder == folder_id
+
+    f3_content = await _list_folder_as(
+        connection, default_product_name, folder_id_f3, {gid_user}
+    )
+    assert len(f3_content) == 0
+
+
 async def test_folder_get(
     connection: SAConnection,
     default_product_name: _ProductName,

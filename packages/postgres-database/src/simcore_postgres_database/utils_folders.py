@@ -1030,6 +1030,7 @@ _LIST_GROUP_BY_FIELDS: Final[tuple[Column, ...]] = (
     folders.c.name,
     folders.c.description,
     folders.c.created_by,
+    folders_access_rights.c.traversal_parent_id,
 )
 _LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
     *_LIST_GROUP_BY_FIELDS,
