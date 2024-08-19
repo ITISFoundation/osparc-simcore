@@ -20,6 +20,7 @@ from ._deferred_get_status import DeferredGetStatus
 
 _logger = logging.getLogger(__name__)
 
+_INTERVAL_BETWEEN_CHECKS: Final[timedelta] = timedelta(seconds=1)
 _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 
 
@@ -40,6 +41,12 @@ class Monitor:
         return self.status_worker_interval.total_seconds()
 
     async def _worker_start_get_status_requests(self) -> None:
+        """
+        Check if a service requires it's status to be polled.
+        Note that the interval at which the status is polled can vary.
+        This is a relatively low resoruce check.
+        """
+
         # NOTE: this worker runs on only once across all instances of the scheduler
 
         models: dict[
@@ -104,8 +111,8 @@ class Monitor:
         self.app.state.status_monitor_background_task = start_exclusive_periodic_task(
             get_redis_client(self.app, RedisDatabase.LOCKS),
             self._worker_start_get_status_requests,
-            task_period=timedelta(seconds=1),
-            retry_after=timedelta(seconds=1),
+            task_period=_INTERVAL_BETWEEN_CHECKS,
+            retry_after=_INTERVAL_BETWEEN_CHECKS,
             task_name="periodic_service_status_update",
         )
 
