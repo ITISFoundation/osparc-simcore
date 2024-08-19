@@ -30,6 +30,10 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     META_MODELING: "WEBSERVER_META_MODELING",
     CLUSTERS: "WEBSERVER_CLUSTERS",
 
+    isFoldersEnabled: function() {
+      return osparc.utils.Utils.isDevelopmentPlatform();
+    },
+
     isExportDisabled: function() {
       return this.__isPluginDisabled(this.EXPORT);
     },
