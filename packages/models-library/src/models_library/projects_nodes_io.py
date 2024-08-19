@@ -180,7 +180,6 @@ class SimCoreFileLink(BaseFileLink):
     dataset: str | None = Field(
         default=None,
         deprecated=True,
-        # TODO: Remove with storage refactoring
     )
 
     @validator("store", always=True)
