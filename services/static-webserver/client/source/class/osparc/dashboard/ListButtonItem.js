@@ -276,7 +276,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       if (this.isResourceType("study") && this.isMultiSelectionMode()) {
         const selected = this.getValue();
 
-        if (this.isLocked() && selected) {
+        if (this.isBlocked() && selected) {
           this.setValue(false);
         }
 

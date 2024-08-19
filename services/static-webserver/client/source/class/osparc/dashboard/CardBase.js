@@ -359,11 +359,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "_applyProjectState"
     },
 
-    locked: {
-      check: "Boolean",
+    blocked: {
+      check: [true, "UNKNOWN_SERVICES", "IN_USE", false],
       init: false,
       nullable: false,
-      apply: "_applyLocked"
+      apply: "__applyBlocked"
     },
 
     menu: {
@@ -609,7 +609,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (projectState) {
         this._applyProjectState(state["state"]);
       }
-      this.setLocked(locked);
+      this.setBlocked(locked ? "IN_USE" : false);
     },
 
     _applyProjectState: function(projectStatus) {
@@ -722,17 +722,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
+    __applyBlocked: function(blocked) {
+      this.__enableCard(blocked);
       this.getChildControl("lock-status").set({
         appearance: "form-button-outlined/disabled",
         textColor: "text-disabled",
         opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
+        visibility: blocked ? "visible" : "excluded"
       });
 
       this.set({
-        cursor: locked ? "not-allowed" : "pointer"
+        cursor: blocked ? "not-allowed" : "pointer"
       });
 
       [
@@ -742,7 +742,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled: !locked
+          enabled: !blocked
         });
       });
     },
