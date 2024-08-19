@@ -14,10 +14,12 @@ make config input="--LOCUST_HOST=https://api.osparc-master.speag.com
 --LOCUST_USERS=100 --LOCUST_RUN_TIME=0:10:00 --LOCUST_LOCUSTFILE=locust_files/platform_ping_test.py"
 ```
 This will validate your settings and you should be good to go once you see a the settings printed in your terminal.
+
 2. Add settings related to your locust file. E.g. if your file expects to find an environment variable `MYENVVAR` you add it to `.env`:
 ```bash
 echo "MYENVVAR=thisismyenvvar" >> .env
 ```
+
 3. Once you have all settings setup you uun your test script using the Make `test` recipe:
 ```bash
 make test
