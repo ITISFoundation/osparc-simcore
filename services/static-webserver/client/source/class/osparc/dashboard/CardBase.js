@@ -724,7 +724,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyBlocked: function(blocked) {
-      this.__enableCard(blocked);
+      if (!blocked) {
+        this.resetToolTipText();
+      }
+
+      this._getChildren().forEach(item => {
+        if (item) {
+          item.setOpacity(blocked ? 0.7 : 1.0);
+        }
+      });
+
+      if (this.getMenu() && this.getMenu().getChildren()) {
+        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+        if (openButton) {
+          openButton.setEnabled(!blocked);
+        }
+      }
+
       this.getChildControl("lock-status").set({
         appearance: "form-button-outlined/disabled",
         textColor: "text-disabled",
@@ -747,25 +763,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
           enabled: !blocked
         });
       });
-    },
-
-    __enableCard: function(enabled) {
-      if (enabled) {
-        this.resetToolTipText();
-      }
-
-      this._getChildren().forEach(item => {
-        if (item) {
-          item.setOpacity(enabled ? 1.0 : 0.7);
-        }
-      });
-
-      if (this.getMenu() && this.getMenu().getChildren()) {
-        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
-        if (openButton) {
-          openButton.setEnabled(enabled);
-        }
-      }
     },
 
     _applyFetching: function(value) {
