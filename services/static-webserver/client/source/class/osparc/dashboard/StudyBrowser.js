@@ -1136,6 +1136,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
       const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/file/12");
+      studyDataButton["studyFilesButton"] = true;
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
@@ -1177,12 +1178,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDuplicateMenuButton: function(studyData) {
       const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"), "@FontAwesome5Solid/copy/12");
+      duplicateButton["duplicateButton"] = true;
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
     },
 
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
+      exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
       exportButton.setVisibility(isDisabled ? "excluded" : "visible");
       exportButton.addListener("execute", () => this.__exportStudy(studyData), this);
@@ -1211,6 +1214,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDeleteStudyMenuButton: function(studyData) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      deleteButton["deleteButton"] = true;
       deleteButton.set({
         appearance: "menu-button"
       });

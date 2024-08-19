@@ -761,10 +761,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __evaluateMenuButtons: function() {
       if (this.getMenu() && this.getMenu().getChildren()) {
-        const enabled = !this.getBlocked();
-        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+        const blocked = this.getBlocked();
+        const enabled = !blocked;
+        const openButton = this.getMenu().getChildren().find(menuBtn => "openResourceButton" in menuBtn);
         if (openButton) {
           openButton.setEnabled(enabled);
+        }
+        const duplicateButton = this.getMenu().getChildren().find(menuBtn => "duplicateButton" in menuBtn);
+        if (duplicateButton) {
+          duplicateButton.setEnabled(enabled);
+        }
+        const exportCMISButton = this.getMenu().getChildren().find(menuBtn => "exportCMISButton" in menuBtn);
+        if (exportCMISButton) {
+          exportCMISButton.setEnabled(enabled);
+        }
+        const studyFilesButton = this.getMenu().getChildren().find(menuBtn => "studyFilesButton" in menuBtn);
+        if (studyFilesButton) {
+          studyFilesButton.setEnabled(enabled);
+        }
+        const deleteButton = this.getMenu().getChildren().find(menuBtn => "deleteButton" in menuBtn);
+        if (deleteButton) {
+          deleteButton.setEnabled(enabled);
         }
       }
     },
