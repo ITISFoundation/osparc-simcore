@@ -17,6 +17,8 @@ from models_library.function_services_catalog.api import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, OutputsDict
 from models_library.projects_nodes_io import NodeID, PortLink
+from models_library.services_io import ServiceInput, ServiceOutput
+from models_library.services_types import ServicePortKey
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,
     jsonschema_validate_data,
@@ -32,7 +34,7 @@ from .exceptions import InvalidInputValue
 class ProjectPortData:
     kind: Literal["input", "output"]
     node_id: NodeID
-    io_key: str
+    io_key: ServicePortKey
     node: Node
 
     @property
@@ -55,7 +57,9 @@ class ProjectPortData:
             return self._get_port_schema(output_meta)
         return None
 
-    def _get_port_schema(self, io_meta):
+    def _get_port_schema(
+        self, io_meta: ServiceInput | ServiceOutput
+    ) -> JsonSchemaDict | None:
         schema = get_service_io_json_schema(io_meta)
         if schema:
             # uses node label instead of service title
@@ -91,7 +95,12 @@ def iter_project_ports(
 
             for output_key in node.outputs:
                 yield ProjectPortData(
-                    kind="input", node_id=node_id, io_key=output_key, node=node
+                    kind="input",
+                    node_id=node_id,
+                    io_key=ServicePortKey(
+                        output_key
+                    ),  # NOTE: PC: ServicePortKey and KeyIDStr are the same why do we need both?
+                    node=node,
                 )
 
         # nodes representing OUTPUT ports: can read this node's input
@@ -101,7 +110,12 @@ def iter_project_ports(
 
             for inputs_key in node.inputs:
                 yield ProjectPortData(
-                    kind="output", node_id=node_id, io_key=inputs_key, node=node
+                    kind="output",
+                    node_id=node_id,
+                    io_key=ServicePortKey(
+                        inputs_key
+                    ),  # NOTE: PC: ServicePortKey and KeyIDStr are the same why do we need both?
+                    node=node,
                 )
 
 
@@ -110,7 +124,7 @@ def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     input_to_value = {}
     for port in iter_project_ports(workbench, "input"):
         input_to_value[port.node_id] = (
-            port.node.outputs["out_1"] if port.node.outputs else None
+            port.node.outputs[KeyIDStr("out_1")] if port.node.outputs else None
         )
     return input_to_value
 
@@ -131,7 +145,10 @@ def set_inputs_in_project(
             # validates value against jsonschema
             try:
                 port = ProjectPortData(
-                    kind="input", node_id=node_id, io_key="out_1", node=node
+                    kind="input",
+                    node_id=node_id,
+                    io_key=ServicePortKey("out_1"),
+                    node=node,
                 )
                 if schema := port.get_schema():
                     jsonschema_validate_data(value, schema)
@@ -159,7 +176,7 @@ class _OutputPortInfo(NamedTuple):
 
 def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Get the outputs values in the workbench associated to every output"""
-    output_to_value = {}
+    output_to_value: dict[NodeID, Any] = {}
     for port in iter_project_ports(workbench, "output"):
         if port.node.inputs:
             try:
@@ -171,7 +188,7 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
                 task_node_id = port_link.node_uuid
                 task_output_name = port_link.output
                 task_node = workbench[task_node_id]
-                value = _OutputPortInfo(
+                output_to_value[port.node_id] = _OutputPortInfo(
                     port_node_id=port.node_id,
                     task_node_id=task_node_id,
                     task_output_name=task_output_name,
@@ -185,11 +202,10 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
                 )
             except ValidationError:
                 # not a link
-                value = port.node.inputs[KeyIDStr("in_1")]
+                output_to_value[port.node_id] = port.node.inputs[KeyIDStr("in_1")]
         else:
-            value = None
+            output_to_value[port.node_id] = None
 
-        output_to_value[port.node_id] = value
     return output_to_value
 
 

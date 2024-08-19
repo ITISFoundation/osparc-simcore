@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
+from models_library.basic_types import IDStr
 from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,
@@ -70,12 +71,12 @@ ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id
 
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="started_at", direction=OrderDirection.DESC),
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need to update pydantic # pylint: disable=unsubscriptable-object
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
-    filters: (
+    filters: (  # type: ignore[type-arg] # need to update pydantic
         Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
         | None
     ) = Field(

@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
@@ -68,7 +69,7 @@ def _to_api_model(
 @log_decorator(_logger, level=logging.INFO)
 async def _fake_init_creation_of_wallet_payment_method(
     app, settings, user_id, wallet_id
-):
+) -> PaymentMethodInitiated:
     # NOTE: this will be removed as soon as dev payment gateway is available in master
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
@@ -96,7 +97,7 @@ async def _fake_init_creation_of_wallet_payment_method(
     return PaymentMethodInitiated(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
-        payment_method_form_url=f"{form_link}",
+        payment_method_form_url=parse_obj_as(HttpUrl, f"{form_link}"),
     )
 
 
@@ -192,7 +193,9 @@ async def _fake_list_wallet_payment_methods(
 
 
 @log_decorator(_logger, level=logging.INFO)
-async def _fake_get_wallet_payment_method(app, user_id, wallet_id, payment_method_id):
+async def _fake_get_wallet_payment_method(
+    app, user_id, wallet_id, payment_method_id
+) -> PaymentMethodGet:
     acked = await get_successful_payment_method(
         app,
         user_id=user_id,

@@ -16,7 +16,7 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import EmailStr, ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
@@ -204,13 +204,13 @@ async def get_user_name_and_email(
 
 class UserDisplayAndIdNamesTuple(NamedTuple):
     name: str
-    email: str
+    email: EmailStr
     first_name: IDStr
     last_name: IDStr
 
     @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+    def full_name(self) -> IDStr:
+        return IDStr.concatenate(self.first_name, self.last_name)
 
 
 async def get_user_display_and_id_names(
