@@ -29,6 +29,12 @@ qx.Class.define("osparc.store.Folders", {
     foldersCached: null,
 
     fetchFolders: function(folderId = null) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
       const params = {
         "url": {
           folderId
