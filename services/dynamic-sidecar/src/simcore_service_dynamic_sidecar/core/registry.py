@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
+from pydantic import NonNegativeInt
 from settings_library.docker_registry import RegistrySettings
 
 from ..modules.service_liveness import wait_for_service_liveness
@@ -12,6 +13,7 @@ from .utils import CommandResult, async_command
 _logger = logging.getLogger(__name__)
 
 DOCKER_CONFIG_JSON_PATH: Final[Path] = Path.home() / ".docker" / "config.json"
+DOCKER_LOGIN_TIMEOUT: Final[NonNegativeInt] = 5
 
 
 class _RegistryNotReachableError(Exception):
@@ -30,7 +32,7 @@ async def _login_registry(registry_settings: RegistrySettings) -> None:
             f"--username '{registry_settings.REGISTRY_USER}' "
             "--password-stdin"
         ),
-        timeout=5,
+        timeout=DOCKER_LOGIN_TIMEOUT,
     )
     if "Login Succeeded" not in command_result.message:
         _logger.error("Response: %s", command_result)
