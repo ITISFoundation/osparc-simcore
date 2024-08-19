@@ -11,6 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
+from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import BaseModel, Extra, Field, Json, root_validator, validator
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -103,6 +104,10 @@ class ProjectListParams(PageQueryParameters):
         if not v:
             return None
         return v
+
+    _null_or_none_str_to_none_validator = validator(
+        "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):

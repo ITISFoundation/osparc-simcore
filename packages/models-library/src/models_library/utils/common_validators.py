@@ -63,3 +63,9 @@ def ensure_unique_dict_values_validator(dict_data: dict) -> dict:
         msg = f"Dictionary values must be unique, provided: {dict_data}"
         raise ValueError(msg)
     return dict_data
+
+
+def null_or_none_str_to_none_validator(value: Any):
+    if isinstance(value, str) and value.lower() in ("null", "none"):
+        return None
+    return value

@@ -30,7 +30,6 @@ aiohttp-swagger[performance]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
-cachetools # caching for sync functions
 captcha
 cryptography # security
 faker # Only used in dev-mode for proof-of-concepts

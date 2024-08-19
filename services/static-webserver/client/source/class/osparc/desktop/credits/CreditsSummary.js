@@ -25,7 +25,8 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
 
     this.set({
       appearance: "floating-menu",
-      padding: 8
+      padding: 8,
+      maxWidth: this.self().WIDTH
     });
     osparc.utils.Utils.setIdToWidget(this, "creditsSummary");
 
@@ -103,7 +104,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           topLayout.add(control);
           break;
         }
-        case "time-range-sb":
+        case "time-range-sb": {
           control = new qx.ui.form.SelectBox().set({
             allowGrowX: false,
             alignX: "center",
@@ -113,8 +114,14 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);
           });
+          // default one week
+          const found = control.getSelectables().find(trItem => trItem.getModel() === 7);
+          if (found) {
+            control.setSelection([found]);
+          }
           this._add(control);
           break;
+        }
         case "services-consumption":
           control = new osparc.desktop.credits.CreditsPerService();
           this._add(control);
@@ -135,22 +142,21 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
       this.getChildControl("credits-indicator");
       this.getChildControl("billing-center-button");
       this.__buildConsumptionSummary();
-
-      this.set({
-        maxWidth: this.self().WIDTH
-      })
     },
 
     __buildConsumptionSummary: function() {
       const timeRangeSB = this.getChildControl("time-range-sb");
       const servicesConsumption = this.getChildControl("services-consumption");
 
-      timeRangeSB.addListener("changeSelection", e => {
-        const selection = e.getData();
+      const fetchData = () => {
+        const selection = timeRangeSB.getSelection();
         if (selection.length) {
           servicesConsumption.setDaysRange(selection[0].getModel());
         }
-      });
+      };
+
+      fetchData();
+      timeRangeSB.addListener("changeSelection", () => fetchData(), this);
     }
   }
 });

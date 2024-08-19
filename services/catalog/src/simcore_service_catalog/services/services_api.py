@@ -1,14 +1,10 @@
 import logging
 
-from models_library.api_schemas_catalog.services import (
-    ServiceGetV2,
-    ServiceGroupAccessRightsV2,
-    ServiceUpdate,
-)
+from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
-from models_library.services_enums import ServiceType
+from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -18,27 +14,19 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from simcore_service_catalog.models.services_db import (
+
+from ..db.repositories.services import ServicesRepository
+from ..models.services_db import (
     ServiceAccessRightsAtDB,
     ServiceMetaDataAtDB,
     ServiceWithHistoryFromDB,
 )
-from simcore_service_catalog.services import manifest
-from simcore_service_catalog.services.director import DirectorApi
-
-from ..db.repositories.services import ServicesRepository
+from ..services import manifest
+from ..services.director import DirectorApi
 from .compatibility import evaluate_service_compatibility_map
 from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
-
-
-def _deduce_service_type_from(key: str) -> ServiceType:
-    for e in ServiceType:
-        tag = e.value if e != ServiceType.COMPUTATIONAL else "comp"
-        if tag in key:
-            return e
-    raise ValueError(key)
 
 
 def _db_to_api_model(
@@ -48,9 +36,6 @@ def _db_to_api_model(
     compatibility_map: dict[ServiceVersion, Compatibility | None] | None = None,
 ) -> ServiceGetV2:
     compatibility_map = compatibility_map or {}
-    assert (  # nosec
-        _deduce_service_type_from(service_db.key) == service_manifest.service_type
-    )
 
     return ServiceGetV2(
         key=service_db.key,
@@ -219,7 +204,7 @@ async def update_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    update: ServiceUpdate,
+    update: ServiceUpdateV2,
 ) -> ServiceGetV2:
 
     if is_function_service(service_key):
@@ -273,8 +258,8 @@ async def update_service(
                 key=service_key,
                 version=service_version,
                 gid=gid,
-                execute_access=rights.execute_access,
-                write_access=rights.write_access,
+                execute_access=rights.execute,
+                write_access=rights.write,
                 product_name=product_name,
             )
             for gid, rights in update.access_rights.items()

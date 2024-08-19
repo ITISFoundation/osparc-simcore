@@ -68,7 +68,8 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     data: list[FileMetaData] = await dsm.list_files(
         user_id=query_params.user_id,
         expand_dirs=query_params.expand_dirs,
-        uuid_filter=query_params.uuid_filter,
+        uuid_filter=query_params.uuid_filter
+        or f"{query_params.project_id or ''}",  # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/1593
         project_id=query_params.project_id,
     )
     return web.json_response(
