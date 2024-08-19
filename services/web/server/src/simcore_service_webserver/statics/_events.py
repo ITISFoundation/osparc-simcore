@@ -1,7 +1,7 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from aiohttp.client import ClientSession
@@ -29,7 +29,7 @@ from .settings import (
     get_plugin_settings,
 )
 
-_RE_PRODUCTION_RELEASE_VERSION = r"^v\d+\.\d+\.\d+$"
+_RE_PRODUCTION_RELEASE_VERSION: Final[re.Pattern] = re.compile(r"^v\d+\.\d+\.\d+$")
 
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ _logger = logging.getLogger(__name__)
 # which might still not be ready.
 #
 #
-_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY: dict[str, Any] = {
+_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY: Final[dict[str, Any]] = {
     "stop": stop_after_attempt(5),
     "wait": wait_fixed(1.5),
     "before": before_log(_logger, logging.WARNING),
