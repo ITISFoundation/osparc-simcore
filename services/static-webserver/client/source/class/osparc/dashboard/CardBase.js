@@ -552,13 +552,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       // Block card
       const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
       if (unaccessibleServices.length) {
+        this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Service info missing");
         unaccessibleServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
         this.__showBlockedCard(image, toolTipText);
-        this.setBlocked("UNKNOWN_SERVICES");
       }
     },
 
@@ -602,14 +602,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
+      this.setBlocked(locked ? "IN_USE" : false);
       if (locked) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
+
+      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (projectState) {
         this._applyProjectState(state["state"]);
       }
-      this.setBlocked(locked ? "IN_USE" : false);
     },
 
     _applyProjectState: function(projectStatus) {
