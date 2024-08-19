@@ -110,5 +110,5 @@ class Monitor:
         )
 
     async def shutdown(self) -> None:
-        if self.app.state.status_monitor_background_task:
+        if getattr(self.app.state, "status_monitor_background_task", None):
             await stop_periodic_task(self.app.state.status_monitor_background_task)

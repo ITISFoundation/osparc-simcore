@@ -5,7 +5,6 @@ import json
 import re
 from collections.abc import AsyncIterable, Callable
 from copy import deepcopy
-from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -28,7 +27,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
-    _api,
     get_all_tracked,
     set_request_as_running,
     set_request_as_stopped,
@@ -271,10 +269,10 @@ def mocked_notify_frontend(mocker: MockerFixture) -> AsyncMock:
 
 
 @pytest.fixture
-def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
-    mocker.patch.object(_api, "_LOW_RATE_POLL_INTERVAL", timedelta(seconds=0.1))
-    mocker.patch.object(_api, "NORMAL_RATE_POLL_INTERVAL", timedelta(seconds=0.2))
-    mocker.patch.object(_monitor, "NORMAL_RATE_POLL_INTERVAL", timedelta(seconds=0.2))
+def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor.setup"
+    )
 
 
 @pytest.mark.parametrize(
@@ -354,7 +352,7 @@ def mock_poll_rate_intervals(mocker: MockerFixture) -> None:
     ],
 )
 async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arguments
-    mock_poll_rate_intervals: None,
+    disable_status_monitor_background_task: None,
     mocked_notify_frontend: AsyncMock,
     deferred_status_spies: dict[str, AsyncMock],
     remove_tracked_spy: AsyncMock,
