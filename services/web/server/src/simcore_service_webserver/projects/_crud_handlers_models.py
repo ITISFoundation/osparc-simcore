@@ -112,7 +112,7 @@ class ProjectListParams(PageQueryParameters):
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):
-    order_by: Json[OrderBy] = Field(
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need update to pydantic 1.10
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "prj_owner", "direction": "desc"}',

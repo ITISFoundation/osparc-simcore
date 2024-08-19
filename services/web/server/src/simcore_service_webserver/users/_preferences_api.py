@@ -130,6 +130,6 @@ async def set_frontend_user_preference(
     await _preferences_db.set_user_preference(
         app,
         user_id=user_id,
-        preference=parse_obj_as(preference_class, {"value": value}),
+        preference=parse_obj_as(preference_class, {"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious
         product_name=product_name,
     )

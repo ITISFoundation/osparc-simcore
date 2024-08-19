@@ -229,7 +229,7 @@ async def get_user_display_and_id_names(
         name=row.name,
         email=row.email,
         first_name=row.first_name or row.name.capitalize(),
-        last_name=row.last_name or "",
+        last_name=IDStr(row.last_name or ""),
     )
 
 
@@ -258,7 +258,7 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
         )
         return
 
-    await db.delete_user(user)
+    await db.delete_user(dict(user))
 
     # This user might be cached in the auth. If so, any request
     # with this user-id will get thru producing unexpected side-effects

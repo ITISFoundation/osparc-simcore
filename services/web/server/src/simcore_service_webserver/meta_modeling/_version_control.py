@@ -4,6 +4,7 @@
 
 import logging
 from types import SimpleNamespace
+from typing import cast
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
@@ -107,7 +108,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 .set_filter(name=tag_name)
                 .fetch()
             ):
-                return existing_tag.commit_id
+                return cast(CommitID, existing_tag.commit_id)
 
             # get workcopy for start_commit_id and update with 'project'
             repo = (
@@ -163,7 +164,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                         hidden=IS_INTERNAL_OPERATION,
                     )
 
-                return branch.head_commit_id
+                return cast(CommitID, branch.head_commit_id)
 
     async def get_children_tags(
         self, repo_id: int, commit_id: int
