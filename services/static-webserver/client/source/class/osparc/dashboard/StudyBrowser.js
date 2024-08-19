@@ -100,9 +100,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     initResources: function() {
       this._resourcesList = [];
       const promises = [
-        this.__getActiveStudy(),
-        osparc.store.Folders.getInstance().fetchFolders(null)
+        this.__getActiveStudy()
       ];
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        promises.push(osparc.store.Folders.getInstance().fetchFolders());
+      }
       Promise.all(promises)
         .then(() => {
           this.getChildControl("resources-layout");
@@ -182,11 +184,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // Most probably is a product-stranger user (it can also be that the catalog is down)
           const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
           if (nStudies === 0) {
-            Promise.all([
+            const promises = [
               osparc.store.Store.getInstance().getTemplates(),
               osparc.service.Store.getServicesLatest(),
-              osparc.store.Folders.getInstance().fetchFolders(),
-            ]).then(values => {
+            ];
+            if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+              promises.push(osparc.store.Folders.getInstance().fetchFolders());
+            }
+            Promise.all(promises).then(values => {
               const templates = values[0];
               const services = values[1];
               if (templates.length === 0 && Object.keys(services).length === 0) {
@@ -388,15 +393,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __applyCurrentFolderId: function(currentFolderId) {
-      osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-        .then(() => {
-          this._resourcesContainer.setResourcesToList([]);
-          this._resourcesList = [];
-          this.invalidateStudies();
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
+          .then(() => {
+            this._resourcesContainer.setResourcesToList([]);
+            this._resourcesList = [];
+            this.invalidateStudies();
 
-          this.__reloadResources();
-        })
-        .catch(console.error);
+            this.__reloadResources();
+          })
+          .catch(console.error);
+      }
     },
 
     _folderUpdated: function() {
