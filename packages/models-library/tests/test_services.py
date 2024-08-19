@@ -9,7 +9,7 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
-from models_library.basic_regex import VERSION_RE
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import BootOption, ServiceMetaDataPublished
 from models_library.services_base import ServiceBaseDisplay
 from models_library.services_regex import (
@@ -151,8 +151,8 @@ def test_SERVICE_KEY_RE(service_key: str, pattern: re.Pattern):
     "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
     [
         (SERVICE_KEY_RE, "project-v0.0.1-pydantic.json", ["key"]),
-        (VERSION_RE, "project-v0.0.1-pydantic.json", ["version"]),
-        (VERSION_RE, "node-meta-v0.0.1-pydantic.json", ["version"]),
+        (SIMPLE_VERSION_RE, "project-v0.0.1-pydantic.json", ["version"]),
+        (SIMPLE_VERSION_RE, "node-meta-v0.0.1-pydantic.json", ["version"]),
         (SERVICE_KEY_RE, "node-meta-v0.0.1-pydantic.json", ["key"]),
     ],
 )

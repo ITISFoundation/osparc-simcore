@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import NetworksWithAliases, ProjectsNetworks
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ....core.errors import ProjectNotFoundError
+from ....core.errors import ProjectNetworkNotFoundError
 from ..tables import projects_networks
 from ._base import BaseRepository
 
@@ -22,7 +22,7 @@ class ProjectsNetworksRepository(BaseRepository):
                 )
             ).first()
         if not row:
-            raise ProjectNotFoundError(project_id)
+            raise ProjectNetworkNotFoundError(project_id)
         return ProjectsNetworks.from_orm(row)
 
     async def upsert_projects_networks(

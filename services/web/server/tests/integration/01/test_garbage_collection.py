@@ -37,7 +37,7 @@ from simcore_service_webserver.garbage_collector.plugin import setup_garbage_col
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
@@ -249,7 +249,7 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups(client.app, user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"

@@ -31,7 +31,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
   construct: function(serializedDataCopy) {
     this.base(arguments);
 
-    this.setSerializedDataCopy(serializedDataCopy);
+    this.__serializedDataCopy = serializedDataCopy;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -70,10 +70,6 @@ qx.Class.define("osparc.share.AddCollaborators", {
           this._add(control);
       }
       return control || this.base(arguments, id);
-    },
-
-    setSerializedDataCopy: function(serializedDataCopy) {
-      this.__serializedDataCopy = serializedDataCopy;
     },
 
     __buildLayout: function() {

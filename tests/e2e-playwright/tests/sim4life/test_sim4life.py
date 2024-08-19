@@ -113,14 +113,19 @@ def test_sim4life(
     create_project_from_service_dashboard: Callable[
         [ServiceType, str, str | None], dict[str, Any]
     ],
+    create_project_from_new_button: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     service_key: str,
+    use_plus_button: bool,
     autoscaled: bool,
     check_videostreaming: bool,
 ):
-    project_data = create_project_from_service_dashboard(
-        ServiceType.DYNAMIC, service_key, None
-    )
+    if use_plus_button:
+        project_data = create_project_from_new_button(service_key)
+    else:
+        project_data = create_project_from_service_dashboard(
+            ServiceType.DYNAMIC, service_key, None
+        )
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
         project_data["workbench"], dict
@@ -128,7 +133,7 @@ def test_sim4life(
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-    with log_context(logging.INFO, "launch S4l") as ctx:
+    with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = _S4LWaitForWebsocket(logger=ctx.logger)
         with page.expect_websocket(
             predicate,

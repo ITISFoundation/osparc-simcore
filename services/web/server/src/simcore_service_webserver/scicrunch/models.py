@@ -35,14 +35,17 @@ rrid_capture_re = re.compile(RRID_TAG_PATTERN)
 def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
     try:
         # validate & parse
-        _, source_authority, identifier = rrid_capture_re.search(rrid_tag).groups()
+        matched = rrid_capture_re.search(rrid_tag)
+        assert matched  # nosec
+        _, source_authority, identifier = matched.groups()
         # format according to norm
         rrid = f"{source_authority}_{identifier}"
         if with_prefix:
             rrid = "RRID:" + rrid
         return rrid
     except AttributeError as err:
-        raise ValueError(f"'{rrid_tag}' does not match a RRID pattern") from err
+        msg = f"'{rrid_tag}' does not match a RRID pattern"
+        raise ValueError(msg) from err
 
 
 class ResourceHit(BaseModel):

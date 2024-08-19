@@ -92,6 +92,14 @@ class ProjectNotFoundError(DirectorError):
         self.project_id = project_id
 
 
+class ProjectNetworkNotFoundError(DirectorError):
+    """Project not found error"""
+
+    def __init__(self, project_id: ProjectID):
+        super().__init__(f"no networks forund for project {project_id}")
+        self.project_id = project_id
+
+
 class PricingPlanUnitNotFoundError(DirectorError):
     """Pricing plan unit not found error"""
 
@@ -195,11 +203,11 @@ class PortsValidationError(TaskSchedulingError):
         """Returns 'public errors': filters only value_error.port_validation errors for the client.
         The rest only shown as number
         """
-        value_errors = []
+        value_errors: list[ErrorDict] = []
         for error in self.errors:
             # NOTE: should I filter? if error["type"].startswith("value_error."):
 
-            loc_tail = []
+            loc_tail: list[str] = []
             if port_key := error.get("ctx", {}).get("port_key"):
                 loc_tail.append(f"{port_key}")
 
@@ -210,11 +218,7 @@ class PortsValidationError(TaskSchedulingError):
             # DO NOT remove project/node/port hiearchy
             value_errors.append(
                 {
-                    "loc": (
-                        f"{self.project_id}",
-                        f"{self.node_id}",
-                    )
-                    + tuple(loc_tail),
+                    "loc": (f"{self.project_id}", f"{self.node_id}", *tuple(loc_tail)),
                     "msg": error["msg"],
                     # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
                     "type": error["type"],

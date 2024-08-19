@@ -98,7 +98,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
         }
     )
-    terminated_instances: list[EC2InstanceData]
+    terminated_instances: list[NonAssociatedInstance]
 
     def can_scale_down(self) -> bool:
         return bool(
@@ -110,6 +110,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         )
 
     def total_number_of_machines(self) -> int:
+        """return the number of machines that are swtiched on"""
         return (
             len(self.active_nodes)
             + len(self.pending_nodes)
@@ -136,6 +137,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
+            f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)}, "
         )
 
 

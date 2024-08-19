@@ -6,10 +6,12 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
+from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
+from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import BaseModel, Extra, Field, Json, root_validator, validator
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -91,6 +93,10 @@ class ProjectListParams(PageQueryParameters):
         max_length=100,
         example="My Project",
     )
+    folder_id: FolderID | None = Field(
+        default=None,
+        description="Filter projects in specific folder. Default filtering is a root directory.",
+    )
 
     @validator("search", pre=True)
     @classmethod
@@ -98,6 +104,10 @@ class ProjectListParams(PageQueryParameters):
         if not v:
             return None
         return v
+
+    _null_or_none_str_to_none_validator = validator(
+        "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):

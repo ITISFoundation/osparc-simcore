@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
     PageRpcServicesGetV2,
     ServiceGetV2,
-    ServiceUpdate,
+    ServiceUpdateV2,
 )
 from models_library.products import ProductName
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
@@ -124,7 +124,7 @@ async def update_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    update: ServiceUpdate,
+    update: ServiceUpdateV2,
 ) -> ServiceGetV2:
     """Updates editable fields of a service"""
 

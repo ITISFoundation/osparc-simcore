@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import networkx as nx
 from models_library.projects import ProjectID
@@ -35,8 +35,11 @@ class CompPipelineAtDB(BaseModel):
         return {str(key): [str(n) for n in value] for key, value in v.items()}
 
     def get_graph(self) -> nx.DiGraph:
-        return nx.convert.from_dict_of_lists(
-            self.dag_adjacency_list, create_using=nx.DiGraph
+        return cast(
+            nx.DiGraph,
+            nx.convert.from_dict_of_lists(
+                self.dag_adjacency_list, create_using=nx.DiGraph  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+            ),
         )
 
     class Config:

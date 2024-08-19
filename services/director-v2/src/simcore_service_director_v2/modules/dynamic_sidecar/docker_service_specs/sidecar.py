@@ -19,7 +19,9 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
-from settings_library.node_ports import StorageAuthSettings
+from settings_library.aws_s3_cli import AwsS3CliSettings
+from settings_library.docker_registry import RegistrySettings
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -60,9 +62,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     password: str = "null"
     secure: str = "0"
 
-    storage_auth_settings: StorageAuthSettings = (
-        app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-    )
+    storage_auth_settings = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
 
     if storage_auth_settings and storage_auth_settings.auth_required:
         host = storage_auth_settings.STORAGE_HOST
@@ -91,11 +91,18 @@ def _get_environment_variables(
     metrics_collection_allowed: bool,
     telemetry_enabled: bool,
 ) -> dict[str, str]:
-    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
+    dy_sidecar_aws_s3_cli_settings = None
+    if (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
+        and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
+    ):
+        dy_sidecar_aws_s3_cli_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.json(
+            encoder=create_json_encoder_wo_secrets(AwsS3CliSettings),
+        )
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -113,7 +120,7 @@ def _get_environment_variables(
 
     storage_config = _get_storage_config(app_settings)
 
-    envs = {
+    envs: dict[str, str] = {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -130,6 +137,7 @@ def _get_environment_variables(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
+        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings or "null",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
@@ -148,12 +156,18 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
-        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
-        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
-        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
-        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
-        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
+            encoder=create_json_encoder_wo_secrets(RegistrySettings),
+            exclude={"resolved_registry_url", "api_url"},
+        ),
+        "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
+            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
+                encoder=create_json_encoder_wo_secrets(RegistrySettings),
+                exclude={"resolved_registry_url", "api_url"},
+            )
+            if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
+            else "null"
+        ),
         "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,

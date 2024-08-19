@@ -6,9 +6,10 @@
     See login/decorators.py
     Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
+
 import logging
 
-import aiohttp_security
+import aiohttp_security  # type: ignore[import-untyped]
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 

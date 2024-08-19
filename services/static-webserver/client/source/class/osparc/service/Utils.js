@@ -155,7 +155,9 @@ qx.Class.define("osparc.service.Utils", {
       const services = osparc.service.Store.servicesCached;
       if (key in services) {
         const versions = this.getVersions(key, true);
-        return services[key][versions[0]];
+        if (versions.length) {
+          return services[key][versions[0]];
+        }
       }
       return null;
     },
@@ -170,6 +172,11 @@ qx.Class.define("osparc.service.Utils", {
             key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
             version: canUpdateTo["version"]
           }
+        }
+        // the provided key/version itself is the latest compatible
+        return {
+          key,
+          version
         }
       }
       return null;
@@ -222,8 +229,8 @@ qx.Class.define("osparc.service.Utils", {
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
     isUpdatable: function(metadata) {
-      const latestCompatibleMetadata = this.getLatestCompatible(metadata["key"], metadata["version"]);
-      return latestCompatibleMetadata && (metadata["key"] !== latestCompatibleMetadata["key"] || metadata["version"] !== latestCompatibleMetadata["version"]);
+      const latestCompatible = this.getLatestCompatible(metadata["key"], metadata["version"]);
+      return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
     },
 
     isDeprecated: function(metadata) {

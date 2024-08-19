@@ -5,6 +5,7 @@ from models_library.utils.common_validators import (
     create_enums_pre_validator,
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
+    null_or_none_str_to_none_validator,
 )
 from pydantic import BaseModel, ValidationError, validator
 
@@ -59,3 +60,30 @@ def test_none_to_empty_str_pre_validator():
 
     model = Model.parse_obj({"message": ""})
     assert model == Model.parse_obj({"message": None})
+
+
+def test_null_or_none_str_to_none_validator():
+    class Model(BaseModel):
+        message: str | None
+
+        _null_or_none_str_to_none_validator = validator(
+            "message", allow_reuse=True, pre=True
+        )(null_or_none_str_to_none_validator)
+
+    model = Model.parse_obj({"message": "none"})
+    assert model == Model.parse_obj({"message": None})
+
+    model = Model.parse_obj({"message": "null"})
+    assert model == Model.parse_obj({"message": None})
+
+    model = Model.parse_obj({"message": "NoNe"})
+    assert model == Model.parse_obj({"message": None})
+
+    model = Model.parse_obj({"message": "NuLl"})
+    assert model == Model.parse_obj({"message": None})
+
+    model = Model.parse_obj({"message": None})
+    assert model == Model.parse_obj({"message": None})
+
+    model = Model.parse_obj({"message": ""})
+    assert model == Model.parse_obj({"message": ""})

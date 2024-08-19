@@ -48,6 +48,7 @@ from simcore_postgres_database.utils_folders import (
     folder_add_project,
     folder_create,
     folder_delete,
+    folder_get,
     folder_list,
     folder_move,
     folder_remove_project,
@@ -1632,9 +1633,10 @@ async def _list_folder_as(
     limit: NonNegativeInt = ALL_IN_ONE_PAGE_LIMIT,
 ) -> list[FolderEntry]:
 
-    return await folder_list(
+    total_count, folders_db = await folder_list(
         connection, default_product_name, folder_id, gid, offset=offset, limit=limit
     )
+    return folders_db
 
 
 async def test_folder_list(
@@ -2015,3 +2017,88 @@ async def test_folder_list_shared_with_different_permissions(
             ),
         },
     )
+
+
+async def test_folder_get(
+    connection: SAConnection,
+    default_product_name: _ProductName,
+    get_unique_gids: Callable[[int], tuple[_GroupID, ...]],
+    make_folders: Callable[[set[MkFolder]], Awaitable[dict[str, _FolderID]]],
+):
+    #######
+    # SETUP
+    #######
+    (
+        gid_owner,
+        gid_other_owner,
+        gid_not_shared,
+    ) = get_unique_gids(3)
+
+    folder_ids = await make_folders(
+        {
+            MkFolder(
+                name="owner_folder",
+                gid=gid_owner,
+                shared_with={
+                    gid_other_owner: FolderAccessRole.OWNER,
+                },
+                children={
+                    *{MkFolder(name=f"f{i}", gid=gid_owner) for i in range(1, 3)},
+                    MkFolder(
+                        name="f10",
+                        gid=gid_owner,
+                        children={
+                            MkFolder(name=f"sub_f{i}", gid=gid_owner)
+                            for i in range(1, 3)
+                        },
+                    ),
+                },
+            )
+        }
+    )
+
+    folder_id_owner_folder = folder_ids["owner_folder"]
+    folder_id_f1 = folder_ids["f1"]
+    folder_id_f2 = folder_ids["f2"]
+    folder_id_sub_f1 = folder_ids["sub_f1"]
+    folder_id_sub_f2 = folder_ids["sub_f2"]
+
+    #######
+    # TESTS
+    #######
+
+    # 1. query exsisting directories
+    for folder_id_to_list in (
+        None,
+        folder_id_owner_folder,
+        folder_id_f1,
+        folder_id_f2,
+        folder_id_sub_f1,
+        folder_id_sub_f2,
+    ):
+        folder_entries = await _list_folder_as(
+            connection, default_product_name, folder_id_to_list, gid_owner
+        )
+        for entry in folder_entries:
+            queried_folder = await folder_get(
+                connection, default_product_name, entry.id, entry.access_via_gid
+            )
+            assert entry == queried_folder
+
+    # 2. query via gid_not_shared
+    with pytest.raises(FolderNotSharedWithGidError):
+        await folder_get(
+            connection, default_product_name, folder_id_owner_folder, gid_not_shared
+        )
+
+    # 3. query with missing folder_id
+    missing_folder_id = 12312313123
+    for gid_to_test in (
+        gid_owner,
+        gid_other_owner,
+        gid_not_shared,
+    ):
+        with pytest.raises(FolderNotFoundError):
+            await folder_get(
+                connection, default_product_name, missing_folder_id, gid_to_test
+            )

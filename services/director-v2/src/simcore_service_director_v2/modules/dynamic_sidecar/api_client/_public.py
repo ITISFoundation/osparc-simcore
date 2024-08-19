@@ -15,6 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
+from models_library.services_types import ServicePortKey
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.http_client_thin import (
@@ -46,7 +47,7 @@ _STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
 
 async def _debug_progress_callback(
-    message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
 ) -> None:
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
@@ -162,7 +163,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             return container_name
         except UnexpectedStatusError as e:
             if (
-                e.response.status_code  # pylint: disable=no-member # type: ignore
+                e.response.status_code  # type: ignore[attr-defined] # pylint: disable=no-member # type: ignore
                 == status.HTTP_404_NOT_FOUND
             ):
                 raise EntrypointContainerNotFoundError from e
@@ -374,7 +375,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def pull_service_input_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: list[str] | None = None,
+        port_keys: list[ServicePortKey] | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
             dynamic_sidecar_endpoint, port_keys

@@ -10,6 +10,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
 from ..core.errors import ConfigurationError, Ec2NotConnectedError
+from .instrumentation import has_instrumentation, instrument_ec2_client_methods
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +24,13 @@ def setup(app: FastAPI) -> None:
             _logger.warning("EC2 client is de-activated in the settings")
             return
 
-        app.state.ec2_client = client = await SimcoreEC2API.create(settings)
+        if has_instrumentation(app):
+            client = instrument_ec2_client_methods(
+                app, await SimcoreEC2API.create(settings)
+            )
+        else:
+            client = await SimcoreEC2API.create(settings)
+        app.state.ec2_client = client
 
         async for attempt in AsyncRetrying(
             reraise=True,

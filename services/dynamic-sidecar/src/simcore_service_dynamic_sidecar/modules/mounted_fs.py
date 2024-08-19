@@ -4,7 +4,7 @@ from functools import cached_property
 from pathlib import Path
 
 from fastapi import FastAPI
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 

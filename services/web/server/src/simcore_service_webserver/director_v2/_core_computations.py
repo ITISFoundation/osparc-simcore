@@ -3,6 +3,7 @@
 Wraps interactions to the director-v2 service
 
 """
+
 import json
 import logging
 from typing import Any
@@ -29,7 +30,7 @@ from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
-from settings_library.utils_cli import create_json_encoder_wo_secrets
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ..products.api import get_product
 from ._api_utils import get_wallet_info
@@ -441,4 +442,5 @@ async def get_batch_tasks_outputs(
             )
         },
     )
+    assert isinstance(response_payload, dict)  # nosec
     return TasksOutputs(**response_payload)

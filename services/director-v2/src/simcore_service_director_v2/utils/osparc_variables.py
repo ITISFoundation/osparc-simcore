@@ -132,8 +132,8 @@ async def resolve_variables_from_context(
         *coros.values(),
         max_concurrency=0 if resolve_in_parallel else 1,
     )
-    for key, value in zip(coros.keys(), values, strict=True):
-        environs[key] = value
+    for handler_key, handler_value in zip(coros.keys(), values, strict=True):
+        environs[handler_key] = handler_value
 
     assert set(environs.keys()) == set(variables_getters.keys())  # nosec
     return environs

@@ -27,8 +27,9 @@ _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 router = APIRouter()
 

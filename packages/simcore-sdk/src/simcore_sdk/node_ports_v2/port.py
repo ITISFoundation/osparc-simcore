@@ -7,9 +7,9 @@ from pprint import pformat
 from typing import Any
 
 from models_library.api_schemas_storage import LinkType
-from models_library.basic_regex import PROPERTY_KEY_RE
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
+from models_library.services_types import ServicePortKey
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
@@ -68,7 +68,7 @@ class SetKWargs:
 
 
 class Port(BaseServiceIOModel):
-    key: str = Field(..., regex=PROPERTY_KEY_RE)
+    key: ServicePortKey
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
@@ -264,6 +264,7 @@ class Port(BaseServiceIOModel):
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     progress_bar=progress_bar,
+                    aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
                 )
 
             elif isinstance(self.value, DownloadLink):
@@ -339,6 +340,7 @@ class Port(BaseServiceIOModel):
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     file_base_path=base_path,
                     progress_bar=progress_bar,
+                    aws_s3_cli_settings=self._node_ports.aws_s3_cli_settings,
                 )
             else:
                 new_value = converted_value
