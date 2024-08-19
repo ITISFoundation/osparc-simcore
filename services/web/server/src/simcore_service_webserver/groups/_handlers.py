@@ -108,7 +108,7 @@ async def list_groups(request: web.Request):
 
 
 class _GroupPathParams(BaseModel):
-    group_id: GroupID
+    gid: GroupID
 
     class Config:
         extra = Extra.forbid
@@ -123,7 +123,7 @@ async def get_group(request: web.Request):
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
-    group = await api.get_user_group(request.app, req_ctx.user_id, path_params.group_id)
+    group = await api.get_user_group(request.app, req_ctx.user_id, path_params.gid)
     assert parse_obj_as(UsersGroup, group) is not None  # nosec
     return group
 
@@ -154,7 +154,7 @@ async def update_group(request: web.Request):
     new_group_values = await request.json()
 
     updated_group = await api.update_user_group(
-        request.app, req_ctx.user_id, path_params.group_id, new_group_values
+        request.app, req_ctx.user_id, path_params.gid, new_group_values
     )
     assert parse_obj_as(UsersGroup, updated_group) is not None  # nosec
     return envelope_json_response(updated_group)
@@ -168,7 +168,7 @@ async def delete_group(request: web.Request):
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
-    await api.delete_user_group(request.app, req_ctx.user_id, path_params.group_id)
+    await api.delete_user_group(request.app, req_ctx.user_id, path_params.gid)
     raise web.HTTPNoContent
 
 
@@ -181,7 +181,7 @@ async def get_group_users(request: web.Request):
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     group_user = await api.list_users_in_group(
-        request.app, req_ctx.user_id, path_params.group_id
+        request.app, req_ctx.user_id, path_params.gid
     )
     assert parse_obj_as(list[GroupUserGet], group_user) is not None  # nosec
     return envelope_json_response(group_user)
@@ -211,7 +211,7 @@ async def add_group_user(request: web.Request):
     await api.add_user_in_group(
         request.app,
         req_ctx.user_id,
-        path_params.group_id,
+        path_params.gid,
         new_user_id=new_user_id,
         new_user_email=new_user_email,
     )
@@ -219,8 +219,8 @@ async def add_group_user(request: web.Request):
 
 
 class _GroupUserPathParams(BaseModel):
-    group_id: GroupID
-    user_id: UserID
+    gid: GroupID
+    uid: UserID
 
     class Config:
         extra = Extra.forbid
@@ -237,7 +237,7 @@ async def get_group_user(request: web.Request):
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
     user = await api.get_user_in_group(
-        request.app, req_ctx.user_id, path_params.group_id, path_params.user_id
+        request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
     assert parse_obj_as(GroupUserGet, user) is not None  # nosec
     return envelope_json_response(user)
@@ -257,8 +257,8 @@ async def update_group_user(request: web.Request):
     user = await api.update_user_in_group(
         request.app,
         req_ctx.user_id,
-        path_params.group_id,
-        path_params.user_id,
+        path_params.gid,
+        path_params.uid,
         new_values_for_user_in_group,
     )
     assert parse_obj_as(GroupUserGet, user) is not None  # nosec
@@ -273,7 +273,7 @@ async def delete_group_user(request: web.Request):
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
     await api.delete_user_in_group(
-        request.app, req_ctx.user_id, path_params.group_id, path_params.user_id
+        request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
     raise web.HTTPNoContent
 
