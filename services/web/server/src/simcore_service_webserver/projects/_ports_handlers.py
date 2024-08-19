@@ -14,7 +14,8 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectOutputGet,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
@@ -41,7 +42,7 @@ from .models import ProjectDict
 log = logging.getLogger(__name__)
 
 
-def _web_json_response_enveloped(data: Any):
+def _web_json_response_enveloped(data: Any) -> web.Response:
     return web.json_response(
         {
             "data": jsonable_encoder(data),

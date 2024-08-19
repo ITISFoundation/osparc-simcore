@@ -8,14 +8,15 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     TasksOutputs,
     TasksSelection,
 )
+from models_library.basic_types import KeyIDStr
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
     is_probe_service,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
-from models_library.projects_nodes_io import PortLink
+from models_library.projects_nodes import Node, OutputsDict
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,
     jsonschema_validate_data,
@@ -124,7 +125,7 @@ def set_inputs_in_project(
     """
     modified = set()
     for node_id, value in update.items():
-        output = {"out_1": value}
+        output: OutputsDict = {KeyIDStr("out_1"): value}
 
         if (node := workbench[node_id]) and node.outputs != output:
             # validates value against jsonschema
@@ -163,7 +164,9 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
         if port.node.inputs:
             try:
                 # Every port is associated to the output of a task
-                port_link = _NonStrictPortLink.parse_obj(port.node.inputs["in_1"])
+                port_link = _NonStrictPortLink.parse_obj(
+                    port.node.inputs[KeyIDStr("in_1")]
+                )
                 # Here we resolve which task and which tasks' output is associated to this port?
                 task_node_id = port_link.node_uuid
                 task_output_name = port_link.output
@@ -182,7 +185,7 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
                 )
             except ValidationError:
                 # not a link
-                value = port.node.inputs["in_1"]
+                value = port.node.inputs[KeyIDStr("in_1")]
         else:
             value = None
 
@@ -197,7 +200,7 @@ async def _get_computation_tasks_outputs(
     batch: TasksOutputs = await get_batch_tasks_outputs(
         app, project_id=project_id, selection=selection
     )
-    return batch.nodes_outputs  # type: ignore[no-any-return]
+    return batch.nodes_outputs
 
 
 async def get_project_outputs(

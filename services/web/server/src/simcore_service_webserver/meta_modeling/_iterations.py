@@ -13,7 +13,8 @@ from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
+from models_library.projects_nodes import Node, OutputID, OutputTypes
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError

@@ -2,7 +2,6 @@
     Models Node as a central element in a project's pipeline
 """
 
-import re
 from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias, Union
 
@@ -18,8 +17,7 @@ from pydantic import (
     validator,
 )
 
-from .basic_regex import PROPERTY_KEY_RE
-from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
+from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -55,10 +53,6 @@ OutputTypes = Union[
     DownloadLink,
     list[Any] | dict[str, Any],  # arrays | object
 ]
-
-
-class KeyIDStr(ConstrainedStr):
-    regex = re.compile(PROPERTY_KEY_RE)
 
 
 InputID: TypeAlias = KeyIDStr
@@ -238,6 +232,7 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
         # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod

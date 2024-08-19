@@ -1,6 +1,7 @@
 """ Storage subsystem's API: responsible of communication with storage service
 
 """
+
 import asyncio
 import logging
 import urllib.parse
@@ -202,9 +203,10 @@ async def get_download_link(
 
     async with session.get(f"{url}") as response:
         response.raise_for_status()
-        download: PresignedLink = (
+        download: PresignedLink | None = (
             Envelope[PresignedLink].parse_obj(await response.json()).data
         )
+        assert download is not None  # nosec
         link: HttpUrl = parse_obj_as(HttpUrl, download.link)
         return link
 

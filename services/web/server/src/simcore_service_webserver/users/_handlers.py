@@ -30,8 +30,8 @@ routes = web.RouteTableDef()
 
 
 class UsersRequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -90,7 +90,9 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     assert req_ctx.product_name  # nosec
 
-    query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
+    query_params: _SearchQueryParams = parse_request_query_parameters_as(
+        _SearchQueryParams, request
+    )
 
     found = await _api.search_users(
         request.app, email_glob=query_params.email, include_products=True

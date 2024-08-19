@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 import asyncpg
 from aiohttp import web
@@ -48,11 +48,11 @@ class AsyncpgStorage:
     # CRUD user
     #
 
-    async def get_user(self, with_data) -> asyncpg.Record:
+    async def get_user(self, with_data: dict[str, Any]) -> asyncpg.Record | None:
         async with self.pool.acquire() as conn:
             return await _sql.find_one(conn, self.user_tbl, with_data)
 
-    async def create_user(self, data: dict) -> asyncpg.Record:
+    async def create_user(self, data: dict[str, Any]) -> asyncpg.Record:
         async with self.pool.acquire() as conn:
             user_id = await _sql.insert(conn, self.user_tbl, data)
             new_user = await _sql.find_one(conn, self.user_tbl, {"id": user_id})
@@ -136,6 +136,6 @@ class AsyncpgStorage:
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
-    storage: AsyncpgStorage = app.get(APP_LOGIN_STORAGE_KEY)
+    storage = cast(AsyncpgStorage, app.get(APP_LOGIN_STORAGE_KEY))
     assert storage, "login plugin was not initialized"  # nosec
     return storage
