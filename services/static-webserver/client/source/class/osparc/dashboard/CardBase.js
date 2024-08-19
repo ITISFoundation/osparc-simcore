@@ -552,7 +552,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       // Block card
       const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
       if (unaccessibleServices.length) {
-        this.__enableCard(false);
+        this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Service info missing");
         unaccessibleServices.forEach(unSrv => {
@@ -601,6 +601,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
+      // OM: remove this
+      if (this.getResourceType() === "study" && this.getResourceData()["uuid"][0] === "1") {
+        state["locked"] = {
+          "value": true,
+          "owner": {
+            "user_id": 3,
+            "first_name": "Odei",
+            "last_name": "Maiz"
+          },
+          "status": "OPENED"
+        }
+      }
+
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (locked) {

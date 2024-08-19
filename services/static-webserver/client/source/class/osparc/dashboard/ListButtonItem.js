@@ -273,16 +273,20 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     },
 
     __itemSelected: function() {
+      // It could be blocked by IN_USE or UNKNOWN_SERVICE
+      if (this.getBlocked() === true) {
+        this.setValue(false);
+        return;
+      }
+
       if (this.isResourceType("study") && this.isMultiSelectionMode()) {
         const selected = this.getValue();
 
-        if (this.getBlocked() && selected) {
-          this.setValue(false);
-        }
-
         const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
         const untick = this.getChildControl("tick-unselected");
-        this.getChildControl("menu-selection-stack").setSelection([selected ? tick : untick]);
+        untick.setVisibility(selected ? "excluded" : "visible");
       } else {
         this.__showMenuOnly();
       }
