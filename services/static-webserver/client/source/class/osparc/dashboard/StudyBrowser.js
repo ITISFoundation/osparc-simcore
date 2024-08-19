@@ -1075,6 +1075,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           menu.add(deleteButton);
         }
       }
+
+      card.evaluateMenuButtons();
     },
 
     __getRenameStudyMenuButton: function(studyData) {

@@ -280,6 +280,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         menu.setPosition("top-left");
         osparc.utils.Utils.prettifyMenu(menu);
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
+        this.evaluateMenuButtons();
       }
       menuButton.setVisibility(menu ? "visible" : "excluded");
     }

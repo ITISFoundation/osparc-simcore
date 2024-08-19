@@ -756,10 +756,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         child.setEnabled(enabled);
       });
 
-      this.__evaluateMenuButtons();
+      this.evaluateMenuButtons();
     },
 
-    __evaluateMenuButtons: function() {
+    evaluateMenuButtons: function() {
       if (this.getMenu()) {
         const menuButtons = this.getMenu().getChildren();
         const blocked = this.getBlocked();
@@ -777,7 +777,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
         const studyFilesButton = menuButtons.find(menuBtn => "studyFilesButton" in menuBtn);
         if (studyFilesButton) {
-          studyFilesButton.setEnabled([false].includes(blocked));
+          studyFilesButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
