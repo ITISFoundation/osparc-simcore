@@ -148,7 +148,7 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,
+        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -605,7 +605,7 @@ async def clone_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,
+        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments

@@ -377,7 +377,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_task,
+        _stop_dynamic_service_task,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
