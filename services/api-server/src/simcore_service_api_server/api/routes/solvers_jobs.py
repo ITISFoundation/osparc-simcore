@@ -63,8 +63,9 @@ METADATA_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Metadata not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
@@ -75,7 +76,8 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "description": "Job/wallet/pricing details not found",
         "model": ErrorGet,
     },
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 
 @router.post(

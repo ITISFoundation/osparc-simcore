@@ -41,9 +41,11 @@ class RelativeResourceName(ConstrainedStr):
 
 
 def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
-    match = RelativeResourceName.regex.match(resource_name)
-    last_quoted_part = match.group(1)
-    return urllib.parse.unquote_plus(last_quoted_part)
+    if match := RelativeResourceName.regex.match(resource_name):
+        last_quoted_part = match.group(1)
+        return urllib.parse.unquote_plus(last_quoted_part)
+    msg = f"Invalid '{resource_name=}' does not match RelativeResourceName"
+    raise ValueError(msg)
 
 
 def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
