@@ -83,7 +83,7 @@ class UUIDStr(ConstrainedStr):
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
-_ELIDE_CHAR: Final[str] = "..."
+_ELLIPSIS_CHAR: Final[str] = "..."
 
 
 class IDStr(ConstrainedStr):
@@ -97,12 +97,13 @@ class IDStr(ConstrainedStr):
         assert IDStr.min_length  # nosec
         assert IDStr.max_length  # nosec
         if len(result) > IDStr.max_length:
-            if IDStr.max_length > len(_ELIDE_CHAR):
+            if IDStr.max_length > len(_ELLIPSIS_CHAR):
                 result = (
-                    result[: IDStr.max_length - len(_ELIDE_CHAR)].rstrip() + _ELIDE_CHAR
+                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
+                    + _ELLIPSIS_CHAR
                 )
             else:
-                result = _ELIDE_CHAR[0] * IDStr.max_length
+                result = _ELLIPSIS_CHAR[0] * IDStr.max_length
         if len(result) < IDStr.min_length:
             msg = f"IDStr.concatenate: result is too short: {result}"
             raise ValueError(msg)
