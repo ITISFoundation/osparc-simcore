@@ -15,7 +15,7 @@ from unittest import mock
 
 import pytest
 import tenacity
-from aws_library.ec2.models import AWSTagKey, EC2InstanceBootSpecific
+from aws_library.ec2 import AWSTagKey, EC2InstanceBootSpecific
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder

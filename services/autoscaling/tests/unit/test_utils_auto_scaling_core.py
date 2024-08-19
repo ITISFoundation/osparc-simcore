@@ -12,7 +12,7 @@ from random import choice, shuffle
 
 import arrow
 import pytest
-from aws_library.ec2.models import EC2InstanceType
+from aws_library.ec2 import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode

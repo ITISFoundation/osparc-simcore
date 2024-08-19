@@ -19,7 +19,7 @@ from unittest import mock
 import arrow
 import distributed
 import pytest
-from aws_library.ec2.models import Resources
+from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import TypedDict
 
 import pytest
-from aws_library.ec2.models import EC2InstanceConfig, EC2InstanceType, Resources
+from aws_library.ec2 import EC2InstanceConfig, EC2InstanceType, Resources
 from faker import Faker
 from fastapi import FastAPI
 from prometheus_client.metrics import MetricWrapperBase

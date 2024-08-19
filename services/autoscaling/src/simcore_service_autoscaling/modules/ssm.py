@@ -2,6 +2,7 @@ import logging
 from typing import cast
 
 from aws_library.ssm import SimcoreSSMAPI
+from aws_library.ssm._errors import SSMNotConnectedError
 from fastapi import FastAPI
 from settings_library.ssm import SSMSettings
 from tenacity.asyncio import AsyncRetrying
@@ -9,7 +10,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
-from ..core.errors import ConfigurationError, SSMNotConnectedError
+from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
 
 _logger = logging.getLogger(__name__)
