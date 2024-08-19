@@ -750,7 +750,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       [
         "tick-selected",
         "tick-unselected",
-        "menu-button"
+        // "menu-button"
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.setEnabled(enabled);
