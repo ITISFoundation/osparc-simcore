@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from .basic_regex import (
+    PROPERTY_KEY_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     SIMPLE_VERSION_RE,
     UUID_RE,
