@@ -292,7 +292,7 @@ async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDi
         )
 
 
-async def get_user(app: web.Application, user_id: UserID) -> dict:
+async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError:
     """

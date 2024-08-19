@@ -15,7 +15,9 @@ from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
-from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
+from socketio.exceptions import (
+    ConnectionRefusedError as SocketIOConnectionError,  # type: ignore[import-untyped]
+)
 
 from ..groups.api import list_user_groups_with_read_access
 from ..login.decorators import login_required

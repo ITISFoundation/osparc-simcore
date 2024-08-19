@@ -14,12 +14,12 @@
 """
 
 import logging
-from collections.abc import Awaitable
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.basic_types import UUIDStr
+from servicelib.redis_utils import handle_redis_returns_union_types
 
 from ..redis import get_redis_resources_client
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
@@ -50,12 +50,6 @@ class ResourcesDict(TypedDict, total=False):
 
     project_id: UUIDStr
     socket_id: str
-
-
-async def _handle_redis_returns_union_types(result: Any | Awaitable[Any]) -> Any:
-    if isinstance(result, Awaitable):
-        return await result
-    return result
 
 
 class RedisResourceRegistry:
@@ -101,18 +95,18 @@ class RedisResourceRegistry:
     ) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
-        await _handle_redis_returns_union_types(
+        await handle_redis_returns_union_types(
             self.client.hset(hash_key, mapping={field: value})
         )
 
     async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
-        fields = await _handle_redis_returns_union_types(self.client.hgetall(hash_key))
+        fields = await handle_redis_returns_union_types(self.client.hgetall(hash_key))
         return ResourcesDict(**fields)
 
     async def remove_resource(self, key: UserSessionDict, resource_name: str) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
-        await _handle_redis_returns_union_types(
+        await handle_redis_returns_union_types(
             self.client.hdel(hash_key, resource_name)
         )
 
@@ -123,10 +117,10 @@ class RedisResourceRegistry:
         # the key might only be partialy complete
         partial_hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):
-            if await _handle_redis_returns_union_types(
+            if await handle_redis_returns_union_types(
                 self.client.hexists(scanned_key, resource_name)
             ):
-                key_value = await _handle_redis_returns_union_types(
+                key_value = await handle_redis_returns_union_types(
                     self.client.hget(scanned_key, resource_name)
                 )
                 if key_value is not None:
@@ -142,9 +136,7 @@ class RedisResourceRegistry:
             self._decode_hash_key(hash_key)
             async for hash_key in self.client.scan_iter(match=f"*:{_RESOURCE_SUFFIX}")
             if value
-            == await _handle_redis_returns_union_types(
-                self.client.hget(hash_key, field)
-            )
+            == await handle_redis_returns_union_types(self.client.hget(hash_key, field))
         ]
 
     async def set_key_alive(self, key: UserSessionDict, timeout: int) -> None:

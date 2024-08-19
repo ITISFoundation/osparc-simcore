@@ -1,6 +1,7 @@
 import functools
 
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
@@ -47,7 +48,7 @@ async def _auto_add_default_wallet(
                 user_id=user_id,
                 user_email=user.email,
                 osparc_credits=extra_credits_in_usd * product.credits_per_usd,
-                payment_id="INVITATION",  # TODO: invitation id???
+                payment_id=IDStr("INVITATION"),  # TODO: invitation id???
                 created_at=wallet.created,
             )
 
