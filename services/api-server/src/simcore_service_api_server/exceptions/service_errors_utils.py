@@ -1,9 +1,9 @@
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Coroutine, Mapping
 from contextlib import contextmanager
 from functools import wraps
 from inspect import signature
-from typing import Any, NamedTuple, TypeAlias, TypeVar
+from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
 
 import httpx
 from fastapi import HTTPException, status
@@ -89,6 +89,11 @@ def _get_http_exception_kwargs(
     return status_code, detail, headers
 
 
+Self = TypeVar("Self")
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
 @contextmanager
 def service_exception_handler(
     service_name: str,
@@ -125,14 +130,17 @@ def service_exception_handler(
 def service_exception_mapper(
     service_name: str,
     http_status_map: HttpStatusMap,
-):
-    def _decorator(func):
-        _assert_correct_kwargs(func=func, status_map=http_status_map)
+) -> Callable[
+    [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
+]:
+    def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
+        _assert_correct_kwargs(func=member_func, status_map=http_status_map)
 
-        @wraps(func)
-        async def _wrapper(*args, **kwargs):
+        @wraps(member_func)
+        async def _wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
             with service_exception_handler(service_name, http_status_map, **kwargs):
-                return await func(*args, **kwargs)
+                return await member_func(self, *args, **kwargs)
 
         return _wrapper
 
