@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, ClassVar, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
@@ -5,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
-from ..services_access import ServiceAccessRights
+from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsV2
 from ..services_authoring import Author
 from ..services_enums import ServiceType
 from ..services_history import ServiceRelease
@@ -108,6 +109,14 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
     "owner": "redpandas@wonderland.com",
 }
 
+_EXAMPLE_FILEPICKER_V2 = {
+    **_EXAMPLE_FILEPICKER,
+    "accessRights": {
+        "1": {"execute": True, "write": False},
+        "4": {"execute": True, "write": True},
+    },
+}
+
 
 _EXAMPLE_SLEEPER: dict[str, Any] = {
     "name": "sleeper",
@@ -115,7 +124,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "description": "A service which awaits for time to pass, two times.",
     "classifiers": [],
     "quality": {},
-    "accessRights": {"1": {"execute_access": True, "write_access": False}},
+    "accessRights": {"1": {"execute": True, "write": False}},
     "key": "simcore/services/comp/itis/sleeper",
     "version": "2.2.1",
     "version_display": "2 Xtreme",
@@ -204,15 +213,6 @@ class ServiceGet(
         }
 
 
-class ServiceGroupAccessRightsV2(BaseModel):
-    execute: bool = False
-    write: bool = False
-
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
-
-
 class ServiceGetV2(BaseModel):
     key: ServiceKey
     version: ServiceVersion
@@ -291,10 +291,10 @@ class ServiceGetV2(BaseModel):
                     ],
                 },
                 {
-                    **_EXAMPLE_FILEPICKER,
+                    **_EXAMPLE_FILEPICKER_V2,
                     "history": [
                         {
-                            "version": _EXAMPLE_FILEPICKER["version"],
+                            "version": _EXAMPLE_FILEPICKER_V2["version"],
                             "version_display": "Odei Release",
                             "released": "2025-03-25T00:00:00",
                         }
@@ -310,3 +310,28 @@ PageRpcServicesGetV2: TypeAlias = PageRpc[
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
+
+
+class ServiceUpdateV2(BaseModel):
+    name: str | None = None
+    thumbnail: HttpUrl | None = None
+
+    description: str | None = None
+    version_display: str | None = None
+
+    deprecated: datetime | None = None
+
+    classifiers: list[str] | None = None
+    quality: dict[str, Any] = {}
+
+    access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
+
+    class Config:
+        extra = Extra.forbid
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
+
+
+assert set(ServiceUpdateV2.__fields__.keys()) - set(  # nosec
+    ServiceGetV2.__fields__.keys()
+) == {"deprecated"}

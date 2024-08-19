@@ -3,6 +3,9 @@ from importlib.metadata import version
 
 import pytest
 
+# NOTE: this ensures that assertion printouts are nicely formated and complete see https://lorepirri.com/pytest-register-assert-rewrite.html
+pytest.register_assert_rewrite("pytest_simcore.helpers")
+
 __version__: str = version("pytest-simcore")
 
 

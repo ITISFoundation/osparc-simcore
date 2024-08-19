@@ -6,7 +6,7 @@ import logging
 from typing import Any, cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdate
+from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import (
@@ -54,7 +54,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
             user_id=user_id,
             limit=limit,
             offset=offset,
-            timeout_s=4 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            timeout_s=10 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
 
     result = await _call(
@@ -115,7 +115,7 @@ async def update_service(
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    update: ServiceUpdate,
+    update: ServiceUpdateV2,
 ) -> ServiceGetV2:
     """Updates editable fields of a service
 
@@ -131,7 +131,7 @@ async def update_service(
         user_id: UserID,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-        update: ServiceUpdate,
+        update: ServiceUpdateV2,
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,

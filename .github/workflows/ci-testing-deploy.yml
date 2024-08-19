@@ -267,6 +267,7 @@ jobs:
     # in PR calls this step is anyway skipped
     needs: changes
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1211,7 +1212,6 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
@@ -1463,7 +1463,6 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test

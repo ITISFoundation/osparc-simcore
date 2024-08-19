@@ -53,8 +53,9 @@ qx.Class.define("osparc.share.ShareePermissions", {
                 hBox.add(label);
                 osparc.service.Store.getService(inaccessibleService.key, inaccessibleService.version)
                   .then(metadata => {
-                    label.setValue(metadata + " : " + metadata)
+                    label.setValue(metadata["name"] + " : " + metadata["version"])
                     infoButton.addListener("execute", () => {
+                      metadata["resourceType"] = "service";
                       const resourceDetails = new osparc.dashboard.ResourceDetails(metadata);
                       osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                     }, this);
