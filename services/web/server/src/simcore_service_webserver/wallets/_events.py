@@ -48,7 +48,7 @@ async def _auto_add_default_wallet(
                 user_id=user_id,
                 user_email=user.email,
                 osparc_credits=extra_credits_in_usd * product.credits_per_usd,
-                payment_id=IDStr("INVITATION"),  # TODO: invitation id???
+                payment_id=IDStr("INVITATION"),
                 created_at=wallet.created,
             )
 
