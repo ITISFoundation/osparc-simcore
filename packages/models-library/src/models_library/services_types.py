@@ -4,7 +4,7 @@ from uuid import uuid4
 import arrow
 from pydantic import ConstrainedStr
 
-from .basic_regex import PROPERTY_KEY_RE, VERSION_RE
+from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
     COMPUTATIONAL_SERVICE_KEY_RE,
     DYNAMIC_SERVICE_KEY_RE,
@@ -51,7 +51,7 @@ class ComputationalServiceKey(ServiceKey):
 
 
 class ServiceVersion(ConstrainedStr):
-    regex = re.compile(VERSION_RE)
+    regex = re.compile(SIMPLE_VERSION_RE)
 
     class Config:
         frozen = True

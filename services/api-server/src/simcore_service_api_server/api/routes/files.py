@@ -17,8 +17,8 @@ from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
-    UploadableFileObject,
     UploadedFile,
     UploadedFolder,
     abort_upload,
@@ -59,8 +59,9 @@ _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "File not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 
 async def _get_file(
@@ -353,7 +354,7 @@ async def abort_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        sha256_checksum=client_file.sha256_checksum,
+        checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
@@ -382,7 +383,7 @@ async def complete_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        sha256_checksum=client_file.sha256_checksum,
+        checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     complete_link: URL = await storage_client.create_complete_upload_link(

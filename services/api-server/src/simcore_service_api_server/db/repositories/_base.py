@@ -9,4 +9,4 @@ class BaseRepository:
     Repositories are pulled at every request
     """
 
-    db_engine: Engine = None
+    db_engine: Engine
