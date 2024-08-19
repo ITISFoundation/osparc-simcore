@@ -60,7 +60,7 @@ tenacity==9.0.0
     # via osparc
 tqdm==4.66.5
     # via osparc
-typer==0.12.3
+typer==0.12.4
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.12.2
     # via

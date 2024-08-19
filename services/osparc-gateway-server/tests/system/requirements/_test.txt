@@ -1,8 +1,8 @@
 aiodocker==0.22.2
     # via -r requirements/_test.in
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.7
     # via aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.4
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   aiodocker
@@ -47,7 +47,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.2
     # via pytest
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via

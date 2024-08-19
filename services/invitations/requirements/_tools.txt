@@ -66,9 +66,9 @@ pyyaml==6.0.1
     #   -c requirements/_base.txt
     #   pre-commit
     #   watchdog
-ruff==0.5.7
+ruff==0.6.1
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==72.1.0
+setuptools==72.2.0
     # via pip-tools
 tomli==2.0.1
     # via
@@ -78,7 +78,7 @@ tomli==2.0.1
     #   mypy
     #   pip-tools
     #   pylint
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
 typing-extensions==4.10.0
     # via

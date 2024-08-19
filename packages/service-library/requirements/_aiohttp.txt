@@ -1,6 +1,6 @@
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.7
     # via aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -67,7 +67,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.19.2
+openapi-core==0.19.3
     # via -r requirements/_aiohttp.in
 openapi-schema-validator==0.6.2
     # via

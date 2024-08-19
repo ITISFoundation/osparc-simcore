@@ -49,7 +49,7 @@ exceptiongroup==1.2.2
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via

@@ -1,4 +1,4 @@
-aio-pika==9.4.2
+aio-pika==9.4.3
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
@@ -6,9 +6,9 @@ aiodocker==0.22.2
     # via -r requirements/_base.in
 aiofiles==24.1.0
     # via -r requirements/_base.in
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.7
     # via aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -45,7 +45,7 @@ exceptiongroup==1.2.2
     # via anyio
 fast-depends==2.4.8
     # via faststream
-faststream==0.5.17
+faststream==0.5.18
     # via -r requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -128,7 +128,7 @@ toolz==0.12.1
     # via -r requirements/_base.in
 tqdm==4.66.5
     # via -r requirements/_base.in
-typer==0.12.3
+typer==0.12.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   faststream

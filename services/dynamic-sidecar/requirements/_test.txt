@@ -51,7 +51,7 @@ exceptiongroup==1.2.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -141,6 +141,8 @@ tomli==2.0.1
 types-aiobotocore-s3==2.13.2
     # via -r requirements/_test.in
 types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
+types-psutil==6.0.0.20240621
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in

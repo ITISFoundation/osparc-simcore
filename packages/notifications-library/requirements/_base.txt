@@ -100,7 +100,7 @@ sqlalchemy==1.4.53
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-typer==0.12.3
+typer==0.12.4
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20240316
     # via arrow

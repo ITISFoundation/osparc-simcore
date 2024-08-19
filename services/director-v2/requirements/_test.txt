@@ -107,7 +107,7 @@ exceptiongroup==1.2.1
     #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==26.3.0
+faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -321,9 +321,9 @@ tornado==6.4
     #   distributed
 traitlets==5.14.3
     # via dask-gateway-server
-types-networkx==3.2.1.20240811
+types-networkx==3.2.1.20240813
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20240417
+types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
