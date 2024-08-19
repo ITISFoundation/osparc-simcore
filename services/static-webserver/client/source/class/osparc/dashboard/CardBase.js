@@ -724,20 +724,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyBlocked: function(blocked) {
-      if (!blocked) {
+      const enabled = !blocked;
+      if (enabled) {
         this.resetToolTipText();
       }
 
       this._getChildren().forEach(item => {
         if (item) {
-          item.setOpacity(blocked ? 0.7 : 1.0);
+          item.setOpacity(enabled ? 1.0 : 0.7);
         }
       });
 
       if (this.getMenu() && this.getMenu().getChildren()) {
         const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
         if (openButton) {
-          openButton.setEnabled(!blocked);
+          openButton.setEnabled(enabled);
         }
       }
 
@@ -759,9 +760,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         "menu-button"
       ].forEach(childName => {
         const child = this.getChildControl(childName);
-        child.set({
-          enabled: !blocked
-        });
+        child.setEnabled(enabled);
       });
     },
 
