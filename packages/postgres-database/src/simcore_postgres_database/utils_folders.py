@@ -1151,38 +1151,33 @@ async def folder_get(
         _BasePermissions.GET_FOLDER
     ),
 ) -> FolderEntry:
-    async with connection.begin():
-        resolved_access_rights: _ResolvedAccessRights = await _check_folder_and_access(
-            connection,
-            product_name,
-            folder_id=folder_id,
-            gids=gids,
-            permissions=required_permissions,
-            enforece_all_permissions=False,
-        )
-        permissions_gid: _GroupID = resolved_access_rights.gid
+    resolved_access_rights: _ResolvedAccessRights = await _check_folder_and_access(
+        connection,
+        product_name,
+        folder_id=folder_id,
+        gids=gids,
+        permissions=required_permissions,
+        enforece_all_permissions=False,
+    )
+    permissions_gid: _GroupID = resolved_access_rights.gid
 
-        query = (
-            sa.select(*_LIST_SELECT_FIELDS)
-            .join(
-                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
+    query = (
+        sa.select(*_LIST_SELECT_FIELDS)
+        .join(folders_access_rights, folders.c.id == folders_access_rights.c.folder_id)
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == permissions_gid)
+        .where(
+            _get_and_calsue_with_only_true_entries(
+                required_permissions, folders_access_rights
             )
-            .where(folders_access_rights.c.folder_id == folder_id)
-            .where(folders_access_rights.c.gid == permissions_gid)
-            .where(
-                _get_and_calsue_with_only_true_entries(
-                    required_permissions, folders_access_rights
-                )
-                if folder_id is None
-                else True
-            )
-            .where(folders.c.product_name == product_name)
-            .group_by(*_LIST_GROUP_BY_FIELDS)
+            if folder_id is None
+            else True
         )
+        .where(folders.c.product_name == product_name)
+        .group_by(*_LIST_GROUP_BY_FIELDS)
+    )
 
-        query_result: RowProxy | None = await (
-            await connection.execute(query)
-        ).fetchone()
+    query_result: RowProxy | None = await (await connection.execute(query)).fetchone()
 
     if query_result is None:
         raise FolderNotFoundError(
