@@ -241,7 +241,9 @@ async def test_not_accessible_for_one_service(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
                 gids_with_access_rights={
-                    2: {"execute_access": True},
+                    2: {
+                        "execute_access": True
+                    },  # <-- Access via Product group with Read=False,Write=False,Delete=False
                     4: {"execute_access": True},
                 },
             ),
@@ -277,10 +279,7 @@ async def test_not_accessible_for_one_service(
 
     assert data == {
         "gid": for_gid,
-        "accessible": False,
-        "inaccessible_services": [
-            {"key": "simcore/services/comp/itis/sleeper", "version": "2.1.4"}
-        ],
+        "accessible": True,
     }
 
 
@@ -299,7 +298,7 @@ async def test_not_accessible_for_more_services(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
                 gids_with_access_rights={
-                    2: {"execute_access": True},
+                    4: {"execute_access": True},
                     5: {"execute_access": True},
                 },
             ),
