@@ -317,6 +317,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         public_plugin_candidates: Final = {
             "WEBSERVER_CLUSTERS",
             "WEBSERVER_EXPORTER",
+            "WEBSERVER_FOLDERS",
             "WEBSERVER_META_MODELING",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
