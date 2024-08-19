@@ -54,7 +54,6 @@ qx.Class.define("osparc.share.PublishTemplate", {
         font: "text-14"
       });
       this._add(addCollaborators);
-      addCollaborators.setSerializedDataCopy(this.__potentialTemplateData);
 
       this._add(this.__selectedCollabs);
 

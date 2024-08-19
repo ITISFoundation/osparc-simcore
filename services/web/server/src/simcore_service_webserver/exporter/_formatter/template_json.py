@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import cast
 
 import aiofiles
 from models_library.utils.json_serialization import json_dumps
@@ -15,7 +14,7 @@ def get_content(project_data: ProjectDict) -> str:
         "name": project_data["name"],
         "description": project_data["description"],
     }
-    return cast(str, json_dumps(data))
+    return json_dumps(data)
 
 
 async def write_template_json(target_dir: Path, project_data: ProjectDict) -> None:

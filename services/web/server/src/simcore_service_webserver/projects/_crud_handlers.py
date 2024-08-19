@@ -191,6 +191,7 @@ async def list_projects(request: web.Request):
         offset=query_params.offset,
         search=query_params.search,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
+        folder_id=query_params.folder_id,
     )
 
     page = Page[ProjectDict].parse_obj(

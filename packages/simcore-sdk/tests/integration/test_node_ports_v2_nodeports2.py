@@ -28,6 +28,7 @@ from models_library.projects_nodes_io import (
     NodeIDStr,
     SimcoreS3FileID,
 )
+from models_library.services_types import ServicePortKey
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
@@ -36,7 +37,6 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue, PortLink
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
-from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -224,7 +224,7 @@ async def test_port_value_accessors(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
 ):  # pylint: disable=W0613, W0621
-    item_key = PortKey("some_key")
+    item_key = ServicePortKey("some_key")
     config_dict, _, _ = create_special_configuration(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
@@ -298,15 +298,15 @@ async def test_port_file_accessors(
     )
     await check_config_valid(PORTS, config_dict)
     assert (
-        await (await PORTS.outputs)[PortKey("out_34")].get() is None
+        await (await PORTS.outputs)[ServicePortKey("out_34")].get() is None
     )  # check emptyness
     with pytest.raises(exceptions.S3InvalidPathError):
-        await (await PORTS.inputs)[PortKey("in_1")].get()
+        await (await PORTS.inputs)[ServicePortKey("in_1")].get()
 
     # this triggers an upload to S3 + configuration change
-    await (await PORTS.outputs)[PortKey("out_34")].set(item_value)
+    await (await PORTS.outputs)[ServicePortKey("out_34")].set(item_value)
     # this is the link to S3 storage
-    value = (await PORTS.outputs)[PortKey("out_34")].value
+    value = (await PORTS.outputs)[ServicePortKey("out_34")].value
     assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
     received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
@@ -320,11 +320,13 @@ async def test_port_file_accessors(
     assert received_file_link["eTag"]
 
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
-    assert isinstance(await (await PORTS.outputs)[PortKey("out_34")].get(), item_pytype)
-    downloaded_file = await (await PORTS.outputs)[PortKey("out_34")].get()
+    assert isinstance(
+        await (await PORTS.outputs)[ServicePortKey("out_34")].get(), item_pytype
+    )
+    downloaded_file = await (await PORTS.outputs)[ServicePortKey("out_34")].get()
     assert isinstance(downloaded_file, Path)
     assert downloaded_file.exists()
-    assert str(await (await PORTS.outputs)[PortKey("out_34")].get()).startswith(
+    assert str(await (await PORTS.outputs)[ServicePortKey("out_34")].get()).startswith(
         str(
             Path(
                 tempfile.gettempdir(),
@@ -469,9 +471,9 @@ async def test_get_value_from_previous_node(
     )
 
     await check_config_valid(PORTS, config_dict)
-    input_value = await (await PORTS.inputs)[PortKey("in_15")].get()
+    input_value = await (await PORTS.inputs)[ServicePortKey("in_15")].get()
     assert isinstance(input_value, item_pytype)
-    assert await (await PORTS.inputs)[PortKey("in_15")].get() == item_value
+    assert await (await PORTS.inputs)[ServicePortKey("in_15")].get() == item_value
 
 
 @pytest.mark.parametrize(
@@ -512,7 +514,7 @@ async def test_get_file_from_previous_node(
         r_clone_settings=option_r_clone_settings,
     )
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[PortKey("in_15")].get()
+    file_path = await (await PORTS.inputs)[ServicePortKey("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -572,7 +574,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         postgres_db, project_id, this_node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[PortKey("in_15")].get()
+    file_path = await (await PORTS.inputs)[ServicePortKey("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -631,7 +633,7 @@ async def test_file_mapping(
         postgres_db, project_id, node_uuid, config_dict
     )  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[PortKey("in_1")].get()
+    file_path = await (await PORTS.inputs)[ServicePortKey("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -642,7 +644,7 @@ async def test_file_mapping(
     )
 
     # let's get it a second time to see if replacing works
-    file_path = await (await PORTS.inputs)[PortKey("in_1")].get()
+    file_path = await (await PORTS.inputs)[ServicePortKey("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -659,7 +661,7 @@ async def test_file_mapping(
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
     file_id = create_valid_file_uuid("out_1", file_path)
-    value = (await PORTS.outputs)[PortKey("out_1")].value
+    value = (await PORTS.outputs)[ServicePortKey("out_1")].value
     assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
     received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
@@ -714,13 +716,15 @@ async def test_regression_concurrent_port_update_fails(
 
     # when writing in serial these are expected to work
     for item_key, _, _ in outputs:
-        await (await PORTS.outputs)[PortKey(item_key)].set(int_item_value)
-        assert (await PORTS.outputs)[PortKey(item_key)].value == int_item_value
+        await (await PORTS.outputs)[ServicePortKey(item_key)].set(int_item_value)
+        assert (await PORTS.outputs)[ServicePortKey(item_key)].value == int_item_value
 
     # when writing in parallel and reading back,
     # they fail, with enough concurrency
     async def _upload_create_task(item_key: str) -> None:
-        await (await PORTS.outputs)[PortKey(item_key)].set(parallel_int_item_value)
+        await (await PORTS.outputs)[ServicePortKey(item_key)].set(
+            parallel_int_item_value
+        )
 
     # updating in parallel creates a race condition
     results = await gather(
@@ -733,7 +737,7 @@ async def test_regression_concurrent_port_update_fails(
     with pytest.raises(AssertionError) as exc_info:
         for item_key, _, _ in outputs:
             assert (await PORTS.outputs)[
-                PortKey(item_key)
+                ServicePortKey(item_key)
             ].value == parallel_int_item_value
 
     assert exc_info.value.args[0].startswith(
@@ -765,7 +769,7 @@ async def test_batch_update_inputs_outputs(
     async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await PORTS.set_multiple(
             {
-                PortKey(port.key): (k, None)
+                ServicePortKey(port.key): (k, None)
                 for k, port in enumerate((await PORTS.outputs).values())
             },
             progress_bar=progress_bar,
@@ -774,7 +778,7 @@ async def test_batch_update_inputs_outputs(
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
         await PORTS.set_multiple(
             {
-                PortKey(port.key): (k, None)
+                ServicePortKey(port.key): (k, None)
                 for k, port in enumerate((await PORTS.inputs).values(), start=1000)
             },
             progress_bar=progress_bar,
@@ -785,18 +789,18 @@ async def test_batch_update_inputs_outputs(
     ports_inputs = await PORTS.inputs
     for k, asd in enumerate(outputs):
         item_key, _, _ = asd
-        assert ports_outputs[PortKey(item_key)].value == k
-        assert await ports_outputs[PortKey(item_key)].get() == k
+        assert ports_outputs[ServicePortKey(item_key)].value == k
+        assert await ports_outputs[ServicePortKey(item_key)].get() == k
 
     for k, asd in enumerate(inputs, start=1000):
         item_key, _, _ = asd
-        assert ports_inputs[PortKey(item_key)].value == k
-        assert await ports_inputs[PortKey(item_key)].get() == k
+        assert ports_inputs[ServicePortKey(item_key)].value == k
+        assert await ports_inputs[ServicePortKey(item_key)].get() == k
 
     # test missing key raises error
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         with pytest.raises(UnboundPortError):
             await PORTS.set_multiple(
-                {PortKey("missing_key_in_both"): (123132, None)},
+                {ServicePortKey("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
             )

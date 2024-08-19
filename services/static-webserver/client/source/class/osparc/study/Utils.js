@@ -65,9 +65,7 @@ qx.Class.define("osparc.study.Utils", {
 
     isWorkbenchUpdatable: function(workbench) {
       const services = new Set(this.extractServices(workbench));
-      const isUpdatable = Array.from(services).some(srv => {
-        return osparc.service.Utils.getLatestCompatible(srv.key, srv.version) !== null;
-      });
+      const isUpdatable = Array.from(services).some(srv => osparc.service.Utils.isUpdatable(srv));
       return isUpdatable;
     },
 
@@ -109,9 +107,6 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
-        if (!version) {
-          version = osparc.service.Utils.getLatest(key);
-        }
         osparc.service.Store.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();

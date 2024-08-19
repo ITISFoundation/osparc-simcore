@@ -2,10 +2,10 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, Optional, cast, get_args
+from typing import Any, Final, NoReturn, Optional, ParamSpec, TypeVar, cast, get_args
 from uuid import uuid4
 
-import dask_gateway
+import dask_gateway  # type: ignore[import-untyped]
 import distributed
 from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.io import (
@@ -39,7 +39,6 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
-from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 from ..constants import UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
@@ -182,9 +181,7 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            await (await ports.outputs)[cast(PortKey, port_key)].set_value(
-                value_to_transfer
-            )
+            await (await ports.outputs)[port_key].set_value(value_to_transfer)
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
@@ -203,7 +200,7 @@ async def compute_input_data(
     :raises PortsValidationError: when inputs ports validation fail
     """
 
-    input_data = {}
+    input_data: dict[str, Any] = {}
 
     ports_errors = []
     port: Port
@@ -630,6 +627,10 @@ def check_if_cluster_is_able_to_run_pipeline(
         f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
         "TIP: Reduce service required resources or contact oSparc support",
     )
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 async def wrap_client_async_routine(

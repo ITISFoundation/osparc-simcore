@@ -190,8 +190,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
           req.addListenerOnce("fail", e => {
             this.__resetDataToModel();
-            const error = e.getTarget().getResponse().error;
-            const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
+            const msg = osparc.data.Resources.getErrorMsg(e.getTarget().getResponse()) || this.tr("Failed to update profile");
             osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           }, this);
 

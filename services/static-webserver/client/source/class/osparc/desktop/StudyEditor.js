@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
-          this.__studyDataInBackend = studyData;
+          this.__setStudyDataInBackend(studyData);
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -253,6 +253,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => this._hideLoadingPage());
 
       this.__updatingStudy = 0;
+    },
+
+    __setStudyDataInBackend: function(studyData) {
+      this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+
+      // remove the runHash, this.__studyDataInBackend is only used for diff comparison and the frontend doesn't keep it
+      Object.keys(this.__studyDataInBackend["workbench"]).forEach(nodeId => {
+        if ("runHash" in this.__studyDataInBackend["workbench"][nodeId]) {
+          delete this.__studyDataInBackend["workbench"][nodeId]["runHash"];
+        }
+      });
     },
 
     __attachSocketEventHandlers: function() {
@@ -758,9 +769,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         updatePromise = this.getStudy().updateStudy(newObj);
       }
       return updatePromise
-        .then(studyData => {
-          this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
-        })
+        .then(studyData => this.__setStudyDataInBackend(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
@@ -788,7 +797,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      osparc.data.Resources.fetch("studies", "close", params);
+      osparc.data.Resources.fetch("studies", "close", params)
+        .catch(err => console.error(err));
     },
 
     closeEditor: function() {

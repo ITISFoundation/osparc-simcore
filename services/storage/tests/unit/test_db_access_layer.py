@@ -1,11 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
-from typing import Iterable
-
-import pytest
 from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -16,13 +14,6 @@ from simcore_service_storage.db_access_layer import (
 )
 
 pytest_simcore_core_services_selection = ["postgres"]
-
-
-@pytest.fixture
-async def filemeta_id(
-    user_id: UserID, project_id: ProjectID, aiopg_engine: Engine
-) -> Iterable[str]:
-    raise NotImplementedError()
 
 
 async def test_access_rights_on_owned_project(

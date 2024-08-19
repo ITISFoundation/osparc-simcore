@@ -2,7 +2,7 @@ from typing import TypeAlias
 
 from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services_resources import (
     ResourceValue,

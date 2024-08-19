@@ -18,6 +18,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_DEPLOYMENT_REGISTRY_SETTINGS",
     "DY_DOCKER_HUB_REGISTRY_SETTINGS",
+    "DY_SIDECAR_AWS_S3_CLI_SETTINGS",
     "DY_SIDECAR_CALLBACKS_MAPPING",
     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
     "DY_SIDECAR_NODE_ID",

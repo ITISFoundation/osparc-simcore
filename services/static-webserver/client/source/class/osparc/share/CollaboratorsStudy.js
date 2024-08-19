@@ -35,8 +35,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     this._resourceType = studyData["resourceType"]; // study or template
     const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    osparc.data.Roles.createRolesStudyResourceInfo();
-
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
       initCollabs.push(this.self().getEveryoneProductObj(this._resourceType === "study"));
@@ -44,10 +42,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     }
 
     this.base(arguments, studyDataCopy, initCollabs);
-  },
-
-  events: {
-    "updateAccessRights": "qx.event.type.Data"
   },
 
   statics: {

@@ -6,7 +6,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Final, Union
 
-import dask_gateway
+import dask_gateway  # type: ignore[import-untyped]
 import distributed
 import httpx
 from aiohttp import ClientConnectionError, ClientResponseError
@@ -19,6 +19,7 @@ from models_library.clusters import (
     InternalClusterAuthentication,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
+    NoAuthentication,
     SimpleAuthentication,
     TLSAuthentication,
 )
@@ -167,7 +168,7 @@ async def _connect_with_gateway_and_create_cluster(
 
 
 def _is_dask_scheduler(authentication: ClusterAuthentication) -> bool:
-    return isinstance(authentication, InternalClusterAuthentication)
+    return isinstance(authentication, NoAuthentication | TLSAuthentication)
 
 
 async def create_internal_client_based_on_auth(
@@ -175,7 +176,7 @@ async def create_internal_client_based_on_auth(
 ) -> DaskSubSystem:
     if _is_dask_scheduler(authentication):
         # if no auth then we go for a standard scheduler connection
-        return await _connect_to_dask_scheduler(endpoint, authentication)
+        return await _connect_to_dask_scheduler(endpoint, authentication)  # type: ignore[arg-type] # _is_dask_scheduler checks already that it is a valid type
     # we do have some auth, so it is going through a gateway
     return await _connect_with_gateway_and_create_cluster(endpoint, authentication)
 

@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 from typing import Any, ClassVar
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID

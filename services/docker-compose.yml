@@ -272,6 +272,8 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
+
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
 
@@ -724,6 +726,7 @@ services:
       WEBSERVER_TAGS: ${WEBSERVER_TAGS}
       WEBSERVER_USERS: ${WEBSERVER_USERS}
       WEBSERVER_VERSION_CONTROL: ${WEBSERVER_VERSION_CONTROL}
+      WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
 
     deploy:
       labels:

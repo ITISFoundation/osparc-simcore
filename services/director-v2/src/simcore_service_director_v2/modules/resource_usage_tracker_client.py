@@ -105,6 +105,7 @@ class ResourceUsageTrackerClient:
             service_key=service_key,
             service_version=service_version,
         )
+        assert service_pricing_plan_get.pricing_units  # nosec
         for unit in service_pricing_plan_get.pricing_units:
             if unit.default:
                 return PricingAndHardwareInfoTuple(

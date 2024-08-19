@@ -711,17 +711,26 @@ qx.Class.define("osparc.data.model.Node", {
     setOutputData: function(outputs) {
       if (outputs) {
         let hasOutputs = false;
-        for (const outputKey in this.getOutputs()) {
-          if (!Object.prototype.hasOwnProperty.call(this.getOutputs(), outputKey)) {
-            this.getOutputs()[outputKey] = {};
-          }
-          if (Object.prototype.hasOwnProperty.call(outputs, outputKey)) {
-            this.getOutputs()[outputKey]["value"] = outputs[outputKey];
+        Object.keys(this.getOutputs()).forEach(outputKey => {
+          if (outputKey in outputs) {
+            this.setOutputs({
+              ...this.getOutputs(),
+              [outputKey]: {
+                ...this.getOutputs()[outputKey],
+                value: outputs[outputKey]
+              }
+            });
             hasOutputs = true;
           } else {
-            this.getOutputs()[outputKey]["value"] = "";
+            this.setOutputs({
+              ...this.getOutputs(),
+              [outputKey]: {
+                ...this.getOutputs()[outputKey],
+                value: ""
+              }
+            });
           }
-        }
+        })
         this.getStatus().setHasOutputs(hasOutputs);
 
         if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
@@ -1085,7 +1094,11 @@ qx.Class.define("osparc.data.model.Node", {
         };
         this.fireDataEvent("showInLogger", msgData);
 
-        this.getIframeHandler().startPolling();
+        if (this.getIframeHandler()) {
+          this.getIframeHandler().startPolling();
+        } else {
+          console.error(this.getLabel() + " iframe handler not ready");
+        }
       }
     },
 

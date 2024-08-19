@@ -3,6 +3,7 @@
 Wraps interactions to the director-v2 service
 
 """
+
 import json
 import logging
 from typing import Any
@@ -441,4 +442,5 @@ async def get_batch_tasks_outputs(
             )
         },
     )
+    assert isinstance(response_payload, dict)  # nosec
     return TasksOutputs(**response_payload)
