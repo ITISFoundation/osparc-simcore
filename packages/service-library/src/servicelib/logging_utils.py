@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict, TypeVar
+from typing import Any, Iterator, TypeAlias, TypedDict, TypeVar
 
 from .utils_secrets import mask_sensitive_data
 
@@ -184,7 +184,7 @@ def _log_return_value(
     func: Callable,
     result: Any,
     extra_args: dict[str, str],
-):
+) -> None:
     logger_obj.log(
         level,
         "%s:%s returned %r - End function",
@@ -230,7 +230,7 @@ def log_decorator(
 
 
 @contextmanager
-def log_catch(logger: logging.Logger, *, reraise: bool = True):
+def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]:
     try:
         yield
     except asyncio.CancelledError:
