@@ -1212,7 +1212,6 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
-        continue-on-error: true
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
