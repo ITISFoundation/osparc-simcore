@@ -760,28 +760,28 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __evaluateMenuButtons: function() {
-      if (this.getMenu() && this.getMenu().getChildren()) {
+      if (this.getMenu()) {
+        const menuButtons = this.getMenu().getChildren();
         const blocked = this.getBlocked();
-        const enabled = !blocked;
-        const openButton = this.getMenu().getChildren().find(menuBtn => "openResourceButton" in menuBtn);
+        const openButton = menuButtons.find(menuBtn => "openResourceButton" in menuBtn);
         if (openButton) {
-          openButton.setEnabled(enabled);
+          openButton.setEnabled([false].includes(blocked));
         }
-        const duplicateButton = this.getMenu().getChildren().find(menuBtn => "duplicateButton" in menuBtn);
+        const duplicateButton = menuButtons.find(menuBtn => "duplicateButton" in menuBtn);
         if (duplicateButton) {
-          duplicateButton.setEnabled(enabled);
+          duplicateButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
         }
-        const exportCMISButton = this.getMenu().getChildren().find(menuBtn => "exportCMISButton" in menuBtn);
+        const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
         if (exportCMISButton) {
-          exportCMISButton.setEnabled(enabled);
+          exportCMISButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
         }
-        const studyFilesButton = this.getMenu().getChildren().find(menuBtn => "studyFilesButton" in menuBtn);
+        const studyFilesButton = menuButtons.find(menuBtn => "studyFilesButton" in menuBtn);
         if (studyFilesButton) {
-          studyFilesButton.setEnabled(enabled);
+          studyFilesButton.setEnabled([false].includes(blocked));
         }
-        const deleteButton = this.getMenu().getChildren().find(menuBtn => "deleteButton" in menuBtn);
+        const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
-          deleteButton.setEnabled(enabled);
+          deleteButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
         }
       }
     },
