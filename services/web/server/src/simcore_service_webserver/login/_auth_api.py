@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -14,9 +15,10 @@ from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import validate_user_status
 
 
-async def get_user_by_email(app: web.Application, *, email: str) -> dict:
+async def get_user_by_email(app: web.Application, *, email: str) -> dict[str, Any]:
     db: AsyncpgStorage = get_plugin_storage(app)
-    return dict(await db.get_user({"email": email}))
+    user = await db.get_user({"email": email})
+    return dict(user) if user else {}
 
 
 async def create_user(
@@ -26,7 +28,7 @@ async def create_user(
     password: str,
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
-) -> dict:
+) -> dict[str, Any]:
 
     async with get_database_engine(app).acquire() as conn:
         user = await UsersRepo.new_user(
@@ -43,7 +45,7 @@ async def create_user(
 
 
 async def check_authorized_user_credentials_or_raise(
-    user: dict,
+    user: dict[str, Any],
     password: str,
     product: Product,
 ) -> dict:

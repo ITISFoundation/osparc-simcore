@@ -48,7 +48,7 @@ class AsyncpgStorage:
     # CRUD user
     #
 
-    async def get_user(self, with_data) -> asyncpg.Record:
+    async def get_user(self, with_data: dict[str, Any]) -> asyncpg.Record | None:
         async with self.pool.acquire() as conn:
             return await _sql.find_one(conn, self.user_tbl, with_data)
 
