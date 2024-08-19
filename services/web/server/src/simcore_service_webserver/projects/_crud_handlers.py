@@ -132,10 +132,10 @@ async def create_project(request: web.Request):
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = (
-            await parse_request_body_as(
-                ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
-            )
+        project_create: (
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel
+        ) = await parse_request_body_as(
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         )
         predefined_project = (
             project_create.dict(
