@@ -1,9 +1,9 @@
-aiohappyeyeballs==2.3.7
+aiohappyeyeballs==2.4.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.10.4
+aiohttp==3.10.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt

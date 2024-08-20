@@ -4,9 +4,9 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-boto3-stubs==1.35.0
+boto3-stubs==1.35.1
     # via types-boto3
-botocore-stubs==1.35.0
+botocore-stubs==1.35.1
     # via
     #   boto3-stubs
     #   types-botocore

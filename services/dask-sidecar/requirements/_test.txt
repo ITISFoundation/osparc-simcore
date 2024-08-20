@@ -223,7 +223,7 @@ rpds-py==0.18.1
     #   referencing
 s3transfer==0.10.2
     # via boto3
-setuptools==72.2.0
+setuptools==73.0.0
     # via moto
 six==1.16.0
     # via

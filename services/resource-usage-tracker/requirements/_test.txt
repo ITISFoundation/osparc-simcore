@@ -19,7 +19,7 @@ attrs==23.2.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-aws-sam-translator==1.90.0
+aws-sam-translator==1.91.0
     # via cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
@@ -278,7 +278,7 @@ s3transfer==0.10.1
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==72.2.0
+setuptools==73.0.0
     # via moto
 six==1.16.0
     # via
