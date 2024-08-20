@@ -485,7 +485,6 @@ async def _check_folder_access(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
     """
     folder_entry: int | None = await connection.scalar(
         sa.select(folders.c.id)
