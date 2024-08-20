@@ -72,11 +72,13 @@ def minimal_configuration(
     with_labelize_drain_nodes: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
     local_dask_scheduler_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
+    disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
 ) -> None:
     ...
