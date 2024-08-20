@@ -308,20 +308,16 @@ qx.Class.define("osparc.Application", {
         case "s4ldesktop":
         case "s4ldesktopacad":
           view = new osparc.auth.LoginPageS4L();
-          this.__loadView(view);
           break;
         case "tis":
           view = new osparc.auth.LoginPageTI();
-          this.__loadView(view);
           break;
         default: {
           view = new osparc.auth.LoginPageOsparc();
-          this.__loadView(view, {
-            top: "15%"
-          });
           break;
         }
       }
+      this.__loadView(view);
       view.addListener("done", () => this.__restart(), this);
     },
 
