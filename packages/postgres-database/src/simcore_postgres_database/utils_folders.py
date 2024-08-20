@@ -77,15 +77,15 @@ class FolderAccessError(FoldersError):
 
 
 class FolderNotFoundError(FolderAccessError):
-    msg_template = "no entry found for folder_id={folder_id}, gid={gid} and product_name={product_name}"
+    msg_template = "no entry found for folder_id={folder_id}, gids={gids} and product_name={product_name}"
 
 
 class FolderNotSharedWithGidError(FolderAccessError):
-    msg_template = "folder_id={folder_id} was not shared with gid={gid}"
+    msg_template = "folder_id={folder_id} was not shared with gids={gids}"
 
 
 class InsufficientPermissionsError(FolderAccessError):
-    msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
+    msg_template = "could not find a parent for folder_id={folder_id} and gids={gids}, with permissions={permissions}"
 
 
 class NoAccessForGroupsFoundError(FolderAccessError):
@@ -424,6 +424,7 @@ async def _check_and_get_folder_access_by_group(
     folder_id: _FolderID,
     gid: _GroupID,
     *,
+    error_reporting_gids: set[_GroupID],
     permissions: _FolderPermissions,
 ) -> _ResolvedAccessRights:
     """
@@ -439,7 +440,7 @@ async def _check_and_get_folder_access_by_group(
     )
     if not folder_entry:
         raise FolderNotFoundError(
-            folder_id=folder_id, gid=gid, product_name=product_name
+            folder_id=folder_id, gids=error_reporting_gids, product_name=product_name
         )
 
     # check if folder was shared
@@ -450,7 +451,9 @@ async def _check_and_get_folder_access_by_group(
         permissions=None,
     )
     if not resolved_access_rights_without_permissions:
-        raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
+        raise FolderNotSharedWithGidError(
+            folder_id=folder_id, gids=error_reporting_gids
+        )
 
     # check if there are permissions
     resolved_access_rights = await _get_resolved_access_rights(
@@ -462,7 +465,7 @@ async def _check_and_get_folder_access_by_group(
     if resolved_access_rights is None:
         raise InsufficientPermissionsError(
             folder_id=folder_id,
-            gid=gid,
+            gids=error_reporting_gids,
             permissions=_only_true_permissions(permissions),
         )
 
@@ -489,7 +492,12 @@ async def _check_and_get_folder_access(
     for gid in gids:
         try:
             return await _check_and_get_folder_access_by_group(
-                connection, product_name, folder_id, gid, permissions=permissions
+                connection,
+                product_name,
+                folder_id,
+                gid,
+                error_reporting_gids=gids,
+                permissions=permissions,
             )
         except FolderAccessError as e:  # noqa: PERF203
             folder_access_error = e
