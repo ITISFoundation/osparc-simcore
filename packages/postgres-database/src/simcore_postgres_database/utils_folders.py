@@ -50,7 +50,7 @@ FoldersError
         * FolderNotFoundError
         * FolderNotSharedWithGidError
         * InsufficientPermissionsError
-        * UnexpectedFolderAccessError
+        * NoAccessForGroupsFoundError
     * BaseCreateFolderError
         * FolderAlreadyExistsError
         * ParentFolderIsNotWritableError
@@ -88,8 +88,8 @@ class InsufficientPermissionsError(FolderAccessError):
     msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
 
 
-class UnexpectedFolderAccessError(FolderAccessError):
-    msg_template = "Could not detirmine folder access, please contact support."
+class NoAccessForGroupsFoundError(FolderAccessError):
+    msg_template = "No parent found for folder_id={folder_id} and gids={gids}, with permissions={permissions}"
 
 
 class BaseCreateFolderError(FoldersError):
@@ -482,38 +482,26 @@ async def _check_and_get_folder_access(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
-    resolved_access_rights: _ResolvedAccessRights | None = None
-    last_exception: Exception | None = None
+    folder_access_error: FolderAccessError | None = None
+
     for gid in gids:
         try:
-            resolved_access_rights = await _check_and_get_folder_access_by_group(
+            return await _check_and_get_folder_access_by_group(
                 connection, product_name, folder_id, gid, permissions=permissions
             )
-            break
-        except FolderAccessError as e:
-            last_exception = e
+        except FolderAccessError as e:  # noqa: PERF203
+            folder_access_error = e
 
-    if resolved_access_rights is None:
-        if last_exception:
-            raise last_exception
+    if folder_access_error:
+        raise folder_access_error
 
-        _logger.warning(
-            (
-                "Both resolved_access_rights=%s and last_exception=%s are None. "
-                "Function called with product_name=%s, folder_id=%s, gids=%s. "
-                "TIP: 'gids' being empty is not acceptable, please check."
-            ),
-            resolved_access_rights,
-            last_exception,
-            product_name,
-            folder_id,
-            gids,
-        )
-        raise UnexpectedFolderAccessError
-
-    return resolved_access_rights
+    raise NoAccessForGroupsFoundError(
+        folder_id=folder_id,
+        gids=gids,
+        permissions=_only_true_permissions(permissions),
+    )
 
 
 ###
@@ -537,7 +525,7 @@ async def folder_create(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
         FolderAlreadyExistsError
         CouldNotCreateFolderError
         GroupIdDoesNotExistError
@@ -643,7 +631,7 @@ async def folder_share_or_update_permissions(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
     # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
     async with connection.begin():
@@ -694,7 +682,7 @@ async def folder_update(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
     async with connection.begin():
         await _check_and_get_folder_access(
@@ -736,7 +724,7 @@ async def folder_delete(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
     childern_folder_ids: list[_FolderID] = []
 
@@ -788,7 +776,7 @@ async def folder_move(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
@@ -847,7 +835,7 @@ async def folder_add_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
         ProjectAlreadyExistsInFolderError
     """
     async with connection.begin():
@@ -985,7 +973,7 @@ async def folder_remove_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
     async with connection.begin():
         await _check_and_get_folder_access(
@@ -1067,7 +1055,7 @@ async def folder_list(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
-        UnexpectedFolderAccessError
+        NoAccessForGroupsFoundError
     """
     # NOTE: when `folder_id is None` list the root folder of the `gids`
 
