@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Final
 
 import arrow
-from aws_library.ec2.models import AWSTagKey, EC2InstanceData
+from aws_library.ec2 import AWSTagKey, EC2InstanceData
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID

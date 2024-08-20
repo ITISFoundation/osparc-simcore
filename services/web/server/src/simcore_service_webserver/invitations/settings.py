@@ -5,9 +5,10 @@ webserver should interact with this
 """
 
 from functools import cached_property
+from typing import Final
 
 from aiohttp import web
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -18,11 +19,13 @@ from settings_library.utils_service import (
 
 from .._constants import APP_SETTINGS_KEY
 
+_INVITATION_VTAG_V1: Final[VersionTag] = parse_obj_as(VersionTag, "v1")
+
 
 class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
     INVITATIONS_HOST: str = "invitations"
     INVITATIONS_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    INVITATIONS_VTAG: VersionTag = "v1"
+    INVITATIONS_VTAG: VersionTag = _INVITATION_VTAG_V1
 
     INVITATIONS_USERNAME: str = Field(
         ...,

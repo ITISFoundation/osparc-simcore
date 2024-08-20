@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
+from models_library.basic_types import IDStr
 from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,
@@ -61,8 +62,8 @@ def _handle_resource_usage_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending."
@@ -70,14 +71,15 @@ ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id
 
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="started_at", direction=OrderDirection.DESC),
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need to update pydantic # pylint: disable=unsubscriptable-object
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
-    filters: Json[  # pylint: disable=unsubscriptable-object
-        ServiceResourceUsagesFilters
-    ] | None = Field(
+    filters: (  # type: ignore[type-arg] # need to update pydantic
+        Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
+        | None
+    ) = Field(
         default=None,
         description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
@@ -154,8 +156,10 @@ routes = web.RouteTableDef()
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesResourceUsagesQueryParamsWithPagination, request
+    query_params: _ListServicesResourceUsagesQueryParamsWithPagination = (
+        parse_request_query_parameters_as(
+            _ListServicesResourceUsagesQueryParamsWithPagination, request
+        )
     )
 
     services: ServiceRunPage = await api.list_usage_services(
@@ -166,7 +170,7 @@ async def list_resource_usage_services(request: web.Request):
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
-        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),
+        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
 
     page = Page[dict[str, Any]].parse_obj(
@@ -193,8 +197,10 @@ async def list_resource_usage_services(request: web.Request):
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesAggregatedUsagesQueryParams, request
+    query_params: _ListServicesAggregatedUsagesQueryParams = (
+        parse_request_query_parameters_as(
+            _ListServicesAggregatedUsagesQueryParams, request
+        )
     )
 
     aggregated_services: OsparcCreditsAggregatedUsagesPage = (
@@ -231,15 +237,17 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
-        _ListServicesResourceUsagesQueryParams, request
+    query_params: _ListServicesResourceUsagesQueryParams = (
+        parse_request_query_parameters_as(
+            _ListServicesResourceUsagesQueryParams, request
+        )
     )
     download_url = await api.export_usage_services(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         wallet_id=query_params.wallet_id,
-        order_by=parse_obj_as(OrderBy | None, query_params.order_by),
-        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),
+        order_by=parse_obj_as(OrderBy | None, query_params.order_by),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
     raise web.HTTPFound(location=f"{download_url}")

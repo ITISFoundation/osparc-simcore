@@ -3,7 +3,7 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
-from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
+from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType

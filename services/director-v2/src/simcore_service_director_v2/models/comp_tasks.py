@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.basic_regex import VERSION_RE
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, OutputsDict
@@ -31,7 +31,7 @@ from ..utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 
 class Image(BaseModel):
     name: str = Field(..., regex=SERVICE_KEY_RE.pattern)
-    tag: str = Field(..., regex=VERSION_RE)
+    tag: str = Field(..., regex=SIMPLE_VERSION_RE)
 
     requires_gpu: bool | None = Field(
         default=None, deprecated=True, description="Use instead node_requirements"

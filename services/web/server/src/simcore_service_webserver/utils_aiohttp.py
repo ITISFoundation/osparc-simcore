@@ -21,8 +21,8 @@ _logger = logging.getLogger(__name__)
 
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
-    route: RouteDef
     for route in routes:
+        assert isinstance(route, RouteDef)  # nosec
         route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
 
 

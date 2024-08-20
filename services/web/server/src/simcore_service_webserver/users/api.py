@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 """
     This should be the interface other modules should use to get
     information from user module
@@ -12,9 +13,10 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import EmailStr, ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
@@ -202,13 +204,13 @@ async def get_user_name_and_email(
 
 class UserDisplayAndIdNamesTuple(NamedTuple):
     name: str
-    email: str
-    first_name: str
-    last_name: str
+    email: EmailStr
+    first_name: IDStr
+    last_name: IDStr
 
     @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+    def full_name(self) -> IDStr:
+        return IDStr.concatenate(self.first_name, self.last_name)
 
 
 async def get_user_display_and_id_names(
@@ -227,7 +229,7 @@ async def get_user_display_and_id_names(
         name=row.name,
         email=row.email,
         first_name=row.first_name or row.name.capitalize(),
-        last_name=row.last_name or "",
+        last_name=IDStr(row.last_name or ""),
     )
 
 
@@ -256,7 +258,7 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
         )
         return
 
-    await db.delete_user(user)
+    await db.delete_user(dict(user))
 
     # This user might be cached in the auth. If so, any request
     # with this user-id will get thru producing unexpected side-effects
@@ -290,7 +292,7 @@ async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDi
         )
 
 
-async def get_user(app: web.Application, user_id: UserID) -> dict:
+async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError:
     """

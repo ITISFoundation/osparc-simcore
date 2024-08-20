@@ -1,4 +1,4 @@
-import jsondiff
+import jsondiff  # type: ignore[import-untyped]
 from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
 

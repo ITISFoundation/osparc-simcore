@@ -40,7 +40,6 @@ async def _create_permalink(
     request: web.Request, project_id: ProjectID
 ) -> ProjectPermalink:
     create = _get_factory(request.app)
-    assert create  # nosec
 
     try:
         permalink: ProjectPermalink = await asyncio.wait_for(

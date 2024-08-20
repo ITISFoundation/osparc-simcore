@@ -13,7 +13,7 @@ from contextlib import suppress
 from pathlib import Path
 
 import pytest
-from models_library.basic_regex import VERSION_RE
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceInput, ServiceOutput, ServicePortKey
 from models_library.utils.json_schema import jsonschema_validate_schema
 from models_library.utils.services_io import get_service_io_json_schema
@@ -87,9 +87,9 @@ def test_against_service_metadata_configs(metadata_path: Path):
             jsonschema_validate_schema(schema)
 
 
-assert VERSION_RE[0] == "^"
-assert VERSION_RE[-1] == "$"
-_VERSION_SEARCH_RE = re.compile(VERSION_RE[1:-1])  # without $ and ^
+assert SIMPLE_VERSION_RE[0] == "^"
+assert SIMPLE_VERSION_RE[-1] == "$"
+_VERSION_SEARCH_RE = re.compile(SIMPLE_VERSION_RE[1:-1])  # without $ and ^
 
 
 def _iter_main_services() -> Iterable[Path]:
