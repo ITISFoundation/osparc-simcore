@@ -4,6 +4,7 @@
 should live in the catalog service in his final version
 
 """
+
 import asyncio
 import logging
 import urllib.parse
@@ -82,7 +83,9 @@ class ListServiceParams(PageQueryParameters):
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def dev_list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
-    query_params = parse_request_query_parameters_as(ListServiceParams, request)
+    query_params: ListServiceParams = parse_request_query_parameters_as(
+        ListServiceParams, request
+    )
 
     page_items, page_meta = await _api.dev_list_latest_services(
         request.app,
@@ -298,7 +301,9 @@ class _FromServiceOutputParams(BaseModel):
 async def get_compatible_inputs_given_source_output(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    query_params = parse_request_query_parameters_as(_FromServiceOutputParams, request)
+    query_params: _FromServiceOutputParams = parse_request_query_parameters_as(
+        _FromServiceOutputParams, request
+    )
 
     # Evaluate and return validated model
     data = await _api.get_compatible_inputs_given_source_output(
@@ -384,7 +389,9 @@ async def get_compatible_outputs_given_target_input(request: Request):
     """
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    query_params = parse_request_query_parameters_as(_ToServiceInputsParams, request)
+    query_params: _ToServiceInputsParams = parse_request_query_parameters_as(
+        _ToServiceInputsParams, request
+    )
 
     data = await _api.get_compatible_outputs_given_target_input(
         path_params.service_key,

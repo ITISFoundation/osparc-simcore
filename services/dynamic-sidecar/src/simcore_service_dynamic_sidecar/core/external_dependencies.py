@@ -4,7 +4,7 @@ from servicelib.utils import logged_gather
 
 from .postgres import wait_for_postgres_liveness
 from .rabbitmq import wait_for_rabbitmq_liveness
-from .registry import wait_for_registry_liveness
+from .registry import wait_for_registries_liveness
 from .storage import wait_for_storage_liveness
 
 
@@ -25,7 +25,7 @@ def setup_check_dependencies(app: FastAPI) -> None:
             *[
                 wait_for_postgres_liveness(app),
                 wait_for_rabbitmq_liveness(app),
-                wait_for_registry_liveness(app),
+                wait_for_registries_liveness(app),
                 wait_for_storage_liveness(app),
             ],
             reraise=False,

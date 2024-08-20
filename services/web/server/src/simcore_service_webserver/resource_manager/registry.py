@@ -94,7 +94,7 @@ class RedisResourceRegistry:
     ) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
-        await self.client.hset(hash_key, mapping={field: value})
+        await self.client.hset(hash_key, mapping={field: value})  # type: ignore[misc]
 
     async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"

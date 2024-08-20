@@ -14,6 +14,7 @@ import string
 from contextlib import suppress
 from datetime import datetime
 
+import asyncpg
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
@@ -111,7 +112,7 @@ async def create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    usr = {}
+    usr: asyncpg.Record | None = None
     try:
         async with redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
@@ -148,7 +149,7 @@ async def create_temporary_guest_user(request: web.Request):
         # stop creating GUEST users.
 
         # NOTE: here we cleanup but if any trace is left it will be deleted by gc
-        if usr.get("id"):
+        if usr is not None and usr.get("id"):
 
             async def _cleanup(draft_user):
                 with suppress(Exception):

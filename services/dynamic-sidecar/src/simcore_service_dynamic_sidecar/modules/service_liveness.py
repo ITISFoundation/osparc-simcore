@@ -73,7 +73,7 @@ async def wait_for_service_liveness(
     Arguments:
         async_handler -- handler to execute
         service_name -- service reference for whom investigates the logs
-        endpoint -- endpoint address for whom investigates the logs
+        endpoint -- endpoint address for whom investigates the logs (only used for logging)
 
     Keyword Arguments:
         check_interval -- interval at which service check is ran (default: {_DEFAULT_CHECK_INTERVAL})

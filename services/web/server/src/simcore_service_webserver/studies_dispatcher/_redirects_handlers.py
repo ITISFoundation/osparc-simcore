@@ -80,7 +80,7 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     )
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
-    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)  # type: ignore
+    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
 
 
 def _handle_errors_with_error_page(handler: Handler):

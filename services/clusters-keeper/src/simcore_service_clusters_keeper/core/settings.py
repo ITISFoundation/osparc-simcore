@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, Literal, cast
 
-from aws_library.ec2.models import EC2InstanceBootSpecific, EC2Tags
+from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,

@@ -1,6 +1,7 @@
 """ Configuration and utilities for service logging
 
 """
+
 import logging
 
 from aiodebug import log_slow_callbacks
@@ -31,7 +32,7 @@ def setup_logging(
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers(log_format_local_dev_enabled)
+    config_all_loggers(log_format_local_dev_enabled=log_format_local_dev_enabled)
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #

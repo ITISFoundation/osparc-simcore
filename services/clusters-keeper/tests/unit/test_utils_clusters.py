@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     AWSTagKey,
     AWSTagValue,
     EC2InstanceBootSpecific,

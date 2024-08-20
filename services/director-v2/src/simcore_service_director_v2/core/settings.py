@@ -208,7 +208,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
-    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(
+        auto_default_from_env=True,
+        description="settings for the private registry deployed with the platform",
+    )
+    DIRECTOR_V2_DOCKER_HUB_REGISTRY: RegistrySettings | None = Field(
+        description="public DockerHub registry settings"
+    )
 
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True,
