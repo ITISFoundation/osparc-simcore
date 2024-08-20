@@ -3,96 +3,109 @@
 # pylint: disable=unused-variable
 
 from asyncio import AbstractEventLoop
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from aiohttp import web
-from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
-from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import _collect_http_exceptions
 from servicelib.aiohttp.tracing import setup_tracing
 
-DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
 
-
-@pytest.fixture()
-def client(
+@pytest.mark.parametrize(
+    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    [
+        ("http://otel-collector", 4318),
+    ],
+)
+def test_valid_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
+    otel_collector_endpoint: str,
+    otel_collector_port: int,
 ) -> TestClient:
-    ports = [unused_tcp_port_factory() for _ in range(2)]
-
-    async def redirect(request: web.Request) -> web.Response:
-        return web.HTTPFound(location="/return/200")
-
-    async def return_response(request: web.Request) -> web.Response:
-        code = int(request.match_info["code"])
-        return web.Response(status=code)
-
-    async def raise_response(request: web.Request):
-        status_code = int(request.match_info["code"])
-        status_to_http_exception = _collect_http_exceptions()
-        http_exception_cls = status_to_http_exception[status_code]
-        raise http_exception_cls(
-            reason=f"raised from raised_error with code {status_code}"
-        )
-
-    async def skip(request: web.Request):
-        return web.HTTPServiceUnavailable(reason="should not happen")
-
     app = web.Application()
-    app.add_routes(
-        [
-            web.get("/redirect", redirect),
-            web.get("/return/{code}", return_response),
-            web.get("/raise/{code}", raise_response),
-            web.get("/skip", skip, name="skip"),
-        ]
-    )
-
-    print("Resources:")
-    for resource in app.router.resources():
-        print(resource)
-
-    # UNDER TEST ---
-    # SEE RoutesView to understand how resources can be iterated to get routes
-    resource = app.router["skip"]
-    routes_in_a_resource = list(resource)
-
-    setup_tracing(  # TODO DK
+    service_name = "simcore_service_webserver"
+    setup_tracing(
         app,
-        service_name=f"{__name__}.client",
-        host="127.0.0.1",
-        port=ports[0],
-        jaeger_base_url=DEFAULT_JAEGER_BASE_URL,
-        skip_routes=routes_in_a_resource,
-    )
-
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": ports[0]})
+        service_name=service_name,
+        otel_collector_endpoint=otel_collector_endpoint,
+        otel_collector_port=otel_collector_port,
     )
 
 
-async def test_setup_tracing(client: TestClient):
-    res: ClientResponse
+@pytest.mark.parametrize(
+    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    [
+        ("http://otel-collector", 80),
+        ("otel-collector", 4318),
+        ("httsdasp://ot@##el-collector", 4318),
+    ],
+)
+def test_invalid_tracing_settings(
+    event_loop: AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
+    otel_collector_endpoint: str,
+    otel_collector_port: int,
+) -> TestClient:
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    setup_tracing(
+        app,
+        service_name=service_name,
+        otel_collector_endpoint=otel_collector_endpoint,
+        otel_collector_port=otel_collector_port,
+    )
+    # assert idempotency
+    setup_tracing(
+        app,
+        service_name=service_name,
+        otel_collector_endpoint=otel_collector_endpoint,
+        otel_collector_port=otel_collector_port,
+    )
 
-    # on error
-    for code in (status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST):
-        res = await client.get(f"/return/{code}")
 
-        assert res.status == code, await res.text()
-        res = await client.get(f"/raise/{code}")
-        assert res.status == code, await res.text()
+@pytest.mark.parametrize(
+    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    [("", None), (None, None)],
+)
+def test_missing_tracing_settings(
+    event_loop: AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
+    otel_collector_endpoint: str,
+    otel_collector_port: int,
+    caplog,
+) -> TestClient:
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    # setup_tracing in this case should no nothing
+    setup_tracing(
+        app,
+        service_name=service_name,
+        otel_collector_endpoint=otel_collector_endpoint,
+        otel_collector_port=otel_collector_port,
+    )
 
-    res = await client.get("/redirect")
-    # TODO: check it was redirected
-    assert res.status == 200, await res.text()
 
-    res = await client.get("/skip")
-    assert res.status == status.HTTP_503_SERVICE_UNAVAILABLE
-
-    # using POST instead of GET ->  HTTPMethodNotAllowed
-    res = await client.post("/skip")
-    assert res.status == status.HTTP_405_METHOD_NOT_ALLOWED, "GET and not POST"
+@pytest.mark.parametrize(
+    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    [("http://otel-collector", None), (None, 4318)],
+)
+def test_incomplete_tracing_settings(
+    event_loop: AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
+    otel_collector_endpoint: str,
+    otel_collector_port: int,
+) -> TestClient:
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    with pytest.raises(RuntimeError):
+        setup_tracing(
+            app,
+            service_name=service_name,
+            otel_collector_endpoint=otel_collector_endpoint,
+            otel_collector_port=otel_collector_port,
+        )

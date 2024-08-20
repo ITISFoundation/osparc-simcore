@@ -30,6 +30,13 @@ def setup_tracing(
     """
     Sets up this service for a distributed tracing system (opentelemetry)
     """
+    if not otel_collector_endpoint and not otel_collector_port:
+        log.info("Skipping opentelemetry tracing setup")
+        return
+    if not otel_collector_endpoint or not otel_collector_port:
+        raise RuntimeError(
+            "Variable otel_collector_endpoint [{otel_collector_endpoint}] or otel_collector_port [{otel_collector_port}] unset. Tracing options incomplete."
+        )
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider = trace.get_tracer_provider()
