@@ -273,7 +273,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "but a docker node label named osparc-services-ready is attached",
     )
     AUTOSCALING_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemtry tracing"
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     @cached_property

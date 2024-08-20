@@ -9,7 +9,7 @@ from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
+from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
@@ -66,7 +66,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
     if app.state.settings.CATALOG_TRACING:
-        setup_opentelemtry_instrumentation(
+        setup_opentelemetry_instrumentation(
             app, app.state.settings.CATALOG_TRACING, "simcore_service_catalog"
         )
 

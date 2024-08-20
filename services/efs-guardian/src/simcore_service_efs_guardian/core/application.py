@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI
-from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
+from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
 
 from .._meta import (
     API_VERSION,
@@ -36,7 +36,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
     if app.state.settings.EFS_GUARDIAN_TRACING:
-        setup_opentelemtry_instrumentation(
+        setup_opentelemetry_instrumentation(
             app, app.state.settings.EFS_GUARDIAN_TRACING, "simcore_service_efs_guardian"
         )
 

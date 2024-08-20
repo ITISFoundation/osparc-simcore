@@ -1,4 +1,4 @@
-""" Adds fastapi middleware for tracing using opentelemtry instrumentation.
+""" Adds fastapi middleware for tracing using opentelemetry instrumentation.
 
 """
 import logging
@@ -17,7 +17,7 @@ from settings_library.tracing import TracingSettings
 log = logging.getLogger(__name__)
 
 
-def setup_opentelemtry_instrumentation(
+def setup_opentelemetry_instrumentation(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> FastAPIInstrumentor:
     if (

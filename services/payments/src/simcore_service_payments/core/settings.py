@@ -115,7 +115,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     )
 
     PAYMENTS_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemtry tracing"
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     PAYMENTS_POSTGRES: PostgresSettings = Field(
