@@ -169,70 +169,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
 
-          this.__attachSocketEventHandlers();
-
-          study.initStudy();
-
-          if (osparc.product.Utils.hasIdlingTrackerEnabled()) {
-            this.__startIdlingTracker();
-          }
-
-          // Count dynamic services.
-          // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-          const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
-          const dontCheck = study.getDisableServiceAutoStart();
-          if (maxNumber && !dontCheck) {
-            const nodes = study.getWorkbench().getNodes();
-            const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
-            if (nDynamics > maxNumber) {
-              let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
-              msg += "<br>";
-              msg += this.tr("Please start them manually.");
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-            }
-          }
-
-          osparc.data.Resources.get("organizations")
-            .then(() => {
-              if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
-                this.__startAutoSaveTimer();
-              } else {
-                const msg = this.self().READ_ONLY_TEXT;
-                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          // wait until the workbench is deserialized to move to the next step
+          if (study.getWorkbench().isDeserialized()) {
+            this.__initStudy(study);
+          } else {
+            study.getWorkbench().addListener("changeDeserialized", e => {
+              if (e.getData()) {
+                this.__initStudy(study);
               }
-            });
-
-          const pageContext = study.getUi().getMode();
-          switch (pageContext) {
-            case "guided":
-            case "app":
-              this.__slideshowView.startSlides();
-              break;
-            default:
-              this.__workbenchView.openFirstNode();
-              break;
+            }, this);
           }
-          this.addListener("changePageContext", e => {
-            const pageCxt = e.getData();
-            study.getUi().setMode(pageCxt);
-          });
-          this.setPageContext(pageContext);
-
-          const workbench = study.getWorkbench();
-          workbench.addListener("retrieveInputs", e => {
-            const data = e.getData();
-            const node = data["node"];
-            const portKey = data["portKey"];
-            this.__updatePipelineAndRetrieve(node, portKey);
-          }, this);
-
-          workbench.addListener("openNode", e => {
-            const nodeId = e.getData();
-            this.nodeSelected(nodeId);
-          }, this);
-
-          workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
-          workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
           console.error(err);
@@ -253,6 +199,73 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => this._hideLoadingPage());
 
       this.__updatingStudy = 0;
+    },
+
+    __initStudy: function(study) {
+      this.__attachSocketEventHandlers();
+
+      study.initStudy();
+
+      if (osparc.product.Utils.hasIdlingTrackerEnabled()) {
+        this.__startIdlingTracker();
+      }
+
+      // Count dynamic services.
+      // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
+      const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+      const dontCheck = study.getDisableServiceAutoStart();
+      if (maxNumber && !dontCheck) {
+        const nodes = study.getWorkbench().getNodes();
+        const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
+        if (nDynamics > maxNumber) {
+          let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
+          msg += "<br>";
+          msg += this.tr("Please start them manually.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        }
+      }
+
+      osparc.data.Resources.get("organizations")
+        .then(() => {
+          if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
+            this.__startAutoSaveTimer();
+          } else {
+            const msg = this.self().READ_ONLY_TEXT;
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          }
+        });
+
+      const pageContext = study.getUi().getMode();
+      switch (pageContext) {
+        case "guided":
+        case "app":
+          this.__slideshowView.startSlides();
+          break;
+        default:
+          this.__workbenchView.openFirstNode();
+          break;
+      }
+      this.addListener("changePageContext", e => {
+        const pageCxt = e.getData();
+        study.getUi().setMode(pageCxt);
+      });
+      this.setPageContext(pageContext);
+
+      const workbench = study.getWorkbench();
+      workbench.addListener("retrieveInputs", e => {
+        const data = e.getData();
+        const node = data["node"];
+        const portKey = data["portKey"];
+        this.__updatePipelineAndRetrieve(node, portKey);
+      }, this);
+
+      workbench.addListener("openNode", e => {
+        const nodeId = e.getData();
+        this.nodeSelected(nodeId);
+      }, this);
+
+      workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+      workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
     },
 
     __setStudyDataInBackend: function(studyData) {
@@ -759,16 +772,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       this.__updatingStudy++;
-      let updatePromise = null;
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        // For now, master deployment only
-        const studyDiffs = this.__getStudyDiffs();
-        updatePromise = this.getStudy().patchStudyDelayed(studyDiffs)
-      } else {
-        const newObj = this.getStudy().serialize();
-        updatePromise = this.getStudy().updateStudy(newObj);
-      }
-      return updatePromise
+      const studyDiffs = this.__getStudyDiffs();
+      return this.getStudy().patchStudyDelayed(studyDiffs)
         .then(studyData => this.__setStudyDataInBackend(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {

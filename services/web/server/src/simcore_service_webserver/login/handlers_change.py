@@ -77,7 +77,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        validate_user_status(user=user, support_email=product.support_email)
+        validate_user_status(user=dict(user), support_email=product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == request_body.email  # nosec
@@ -209,7 +209,8 @@ async def change_password(request: web.Request):
         )  # 422
 
     await db.update_user(
-        user, {"password_hash": encrypt_password(passwords.new.get_secret_value())}
+        dict(user),
+        {"password_hash": encrypt_password(passwords.new.get_secret_value())},
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)
