@@ -1,6 +1,6 @@
 
-ARG LOCUST_VERSION
-FROM locustio/locust:${LOCUST_VERSION:-2.29.1}
+ARG LOCUST_VERSION=latest
+FROM locustio/locust:${LOCUST_VERSION}
 
 
 RUN pip3 --version && \
