@@ -59,6 +59,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       switch (osparc.product.Utils.getProductName()) {
         case "s4l":
         case "tis":
+        case "osparc":
           this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
         case "s4lacad":
@@ -83,6 +84,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         case "tis":
           this._form.add(organization, this.tr("Organization"), null, "organization");
+          break;
+        case "osparc":
+          this._form.add(organization, this.tr("Research Group/Organization"), null, "organization");
           break;
       }
 
@@ -127,64 +131,109 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._form.add(country, this.tr("Country"), null, "country");
 
 
-      if (
-        osparc.product.Utils.isProduct("s4l") ||
-        osparc.product.Utils.isProduct("s4lacad") ||
-        osparc.product.Utils.isProduct("s4ldesktopacad")
-      ) {
-        const application = new qx.ui.form.SelectBox();
-        [{
-          id: "Antenna_Design_for_Wireless_Communication",
-          label: "Antenna Design for Wireless Communication"
-        }, {
-          id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
-          label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
-        }, {
-          id: "Safety_and_Efficacy_Assessment",
-          label: "Safety & Efficacy Assessment"
-        }, {
-          id: "Exposure_and_Compliance",
-          label: "Exposure & Compliance"
-        }, {
-          id: "Focused_Ultrasound",
-          label: "Focused Ultrasound"
-        }, {
-          id: "In_Silico_Trials",
-          label: "In <i>Silico</i> Trials"
-        }, {
-          id: "Implant_Design",
-          label: "Implant Design"
-        }, {
-          id: "Magnetic_Resonance_Imaging",
-          label: "Magnetic Resonance Imaging"
-        }, {
-          id: "Neurostimulation",
-          label: "Neurostimulation"
-        }, {
-          id: "Personalized_Medicine",
-          label: "Personalized Medicine"
-        }, {
-          id: "Thermal_Therapies",
-          label: "Thermal Therapies"
-        }, {
-          id: "Wireless_Power_Transfer_Systems",
-          label: "Wireless Power Transfer Systems"
-        }, {
-          id: "Vascular_Flow_and_Perfusion",
-          label: "Vascular Flow & Perfusion"
-        }].forEach(appData => {
-          const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
-            rich: true
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+        case "s4lacad":
+        case "s4ldesktopacad": {
+          const application = new qx.ui.form.SelectBox();
+          [{
+            id: "Antenna_Design_for_Wireless_Communication",
+            label: "Antenna Design for Wireless Communication"
+          }, {
+            id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
+            label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
+          }, {
+            id: "Safety_and_Efficacy_Assessment",
+            label: "Safety & Efficacy Assessment"
+          }, {
+            id: "Exposure_and_Compliance",
+            label: "Exposure & Compliance"
+          }, {
+            id: "Focused_Ultrasound",
+            label: "Focused Ultrasound"
+          }, {
+            id: "In_Silico_Trials",
+            label: "In <i>Silico</i> Trials"
+          }, {
+            id: "Implant_Design",
+            label: "Implant Design"
+          }, {
+            id: "Magnetic_Resonance_Imaging",
+            label: "Magnetic Resonance Imaging"
+          }, {
+            id: "Neurostimulation",
+            label: "Neurostimulation"
+          }, {
+            id: "Personalized_Medicine",
+            label: "Personalized Medicine"
+          }, {
+            id: "Thermal_Therapies",
+            label: "Thermal Therapies"
+          }, {
+            id: "Wireless_Power_Transfer_Systems",
+            label: "Wireless Power Transfer Systems"
+          }, {
+            id: "Vascular_Flow_and_Perfusion",
+            label: "Vascular Flow & Perfusion"
+          }].forEach(appData => {
+            const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+              rich: true
+            });
+            application.add(lItem);
           });
-          application.add(lItem);
-        });
-        doubleSpaced.push(application);
-        this._form.add(application, this.tr("Application"), null, "application");
+          doubleSpaced.push(application);
+          this._form.add(application, this.tr("Application"), null, "application");
 
-
-        const description = new qx.ui.form.TextField();
-        doubleSpaced.push(description);
-        this._form.add(description, this.tr("Description"), null, "description");
+          const description = new qx.ui.form.TextField();
+          doubleSpaced.push(description);
+          this._form.add(description, this.tr("Description"), null, "description");
+          break;
+        }
+        case "osparc": {
+          const application = new qx.ui.form.SelectBox();
+          [{
+            id: "other",
+            label: "Other"
+          }, {
+            id: "Reuse_Existing_Services_And_Models",
+            label: "Reuse Existing Services And Models"
+          }, {
+            id: "Data_Analysis",
+            label: "Data Analysis"
+          }, {
+            id: "Personalized_Medicine",
+            label: "Personalized Medicine"
+          }, {
+            id: "Neurostimulation",
+            label: "Neurostimulation"
+          }, {
+            id: "Safety_And_Efficacy_Assessment",
+            label: "Safety & Efficacy Assessment"
+          }, {
+            id: "Device_Design_And_Optimization",
+            label: "Device Design & Optimization"
+          }, {
+            id: "Magnetic_Resonance_Imaging",
+            label: "Magnetic Resonance Imaging"
+          }, {
+            id: "Bioelectromagnetics",
+            label: "Bioelectromagnetics"
+          }, {
+            id: "In_Silico_Trials",
+            label: "In Silico Trials"
+          }, {
+            id: "Image_based_Modeling",
+            label: "Image-based Modeling"
+          }].forEach(appData => {
+            const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+              rich: true
+            });
+            application.add(lItem);
+          });
+          doubleSpaced.push(application);
+          this._form.add(application, this.tr("Application"), null, "application");
+          break;
+        }
       }
 
 
