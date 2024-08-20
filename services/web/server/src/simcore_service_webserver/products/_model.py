@@ -20,8 +20,7 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
-from sqlalchemy import Column  # noqa: UP035
-from sqlalchemy.sql import ColumnElement
+from sqlalchemy import Column, FetchedValue  # noqa: UP035
 
 from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
@@ -145,12 +144,11 @@ class Product(BaseModel):
                     },
                     # defaults from sqlalchemy table
                     **{
-                        str(c.name): c.server_default.arg
+                        str(c.name): c.server_default.arg  # type: ignore[union-attr]
                         for c in products.columns
                         if isinstance(c, Column)
                         and c.server_default
-                        and isinstance(c.server_default, ColumnElement)
-                        and isinstance(c.server_default.arg, str)
+                        and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                     },
                 },
                 # Example of data in the dabase with a url set with blanks
