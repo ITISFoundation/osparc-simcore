@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       win.open();
       win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
-          this._openPage(this.__servicesUpdatePage);
+          this.openUpdateServices();
         } else {
           this.__openResource();
         }
