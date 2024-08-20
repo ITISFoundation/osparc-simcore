@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 from collections.abc import Iterable
@@ -28,6 +29,8 @@ from sqlalchemy.sql.elements import ColumnElement, Label
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
 from .utils_ordering import OrderDirection
+
+_logger = logging.getLogger(__name__)
 
 _ProductName: TypeAlias = str
 _ProjectID: TypeAlias = uuid.UUID
@@ -86,10 +89,7 @@ class InsufficientPermissionsError(FolderAccessError):
 
 
 class UnexpectedFolderAccessError(FolderAccessError):
-    msg_template = (
-        "Unexpected None value for resolved_access_rights={resolved_access_rights} and last_exception={last_exception}."
-        "Called with: product_name={product_name}, folder_id={folder_id}, gids={gids}"
-    )
+    msg_template = "Could not detirmine folder access, please contact support."
 
 
 class BaseCreateFolderError(FoldersError):
@@ -454,13 +454,20 @@ async def _check_folder_and_access(
         if last_exception:
             raise last_exception
 
-        raise UnexpectedFolderAccessError(
-            resolved_access_rights=resolved_access_rights,
-            last_exception=last_exception,
-            product_name=product_name,
-            folder_id=folder_id,
-            gids=gids,
+        _logger.warning(
+            (
+                "Both resolved_access_rights=%s and last_exception=%s are None. "
+                "Function called with product_name=%s, folder_id=%s, gids=%s, enforece_all_permissions=%s. "
+                "TIP: 'gids' being empty is not acceptable, please check."
+            ),
+            resolved_access_rights,
+            last_exception,
+            product_name,
+            folder_id,
+            gids,
+            enforece_all_permissions,
         )
+        raise UnexpectedFolderAccessError
 
     return resolved_access_rights
 
