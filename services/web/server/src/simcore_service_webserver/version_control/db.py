@@ -1,7 +1,7 @@
 import json
 import logging
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -141,7 +141,7 @@ class VersionControlRepository(BaseRepository):
 
         repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
         assert repo  # nosec
-        return repo.project_uuid
+        return cast(ProjectIDStr, repo.project_uuid)
 
     async def _update_state(
         self, repo_id: int, conn: SAConnection
