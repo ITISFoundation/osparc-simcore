@@ -97,7 +97,7 @@ class BaseCreateFolderError(FoldersError):
 
 
 class FolderAlreadyExistsError(BaseCreateFolderError):
-    msg_template = "A folder='{folder}' with parent='{parent}' for gids='{gids}' in product_name={product_name} already exists"
+    msg_template = "A folder='{folder}' with parent='{parent}' in product_name={product_name} already exists"
 
 
 class ParentFolderIsNotWritableError(BaseCreateFolderError):
@@ -548,13 +548,13 @@ async def folder_create(
         )
         if entry_exists:
             raise FolderAlreadyExistsError(
-                product_name=product_name, folder=name, parent=parent, gids=gids
+                product_name=product_name, folder=name, parent=parent
             )
 
-        # `permissions_gid` is compted as follows:
+        # `permissions_gid` is computed as follows:
         # - `folder has a parent?` taken from the resolved access rights of the parent folder
         # - `is root folder, a.k.a. no parent?` taken from the user's primary group
-        permissions_gid: _GroupID | None = None
+        permissions_gid = None
         if parent:
             resolved_access_rights = await _check_and_get_folder_access(
                 connection,
@@ -575,7 +575,7 @@ async def folder_create(
             if not groups_results:
                 raise NoGroupIDFoundError(gids=gids)
 
-            primary_gid: _GroupID | None = None
+            primary_gid = None
             for group in groups_results:
                 if group["type"] == GroupType.PRIMARY:
                     primary_gid = group["gid"]
