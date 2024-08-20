@@ -238,22 +238,48 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
 
       const hear = new qx.ui.form.SelectBox();
-      const hearOptions = [{
-        id: "Search_Engine",
-        label: "Search Engine"
-      }, {
-        id: "Conference",
-        label: "Conference"
-      }, {
-        id: "Publication",
-        label: "Publication"
-      }, {
-        id: "Social_Media",
-        label: "Social Media"
-      }, {
-        id: "Other",
-        label: "Other"
-      }]
+      let hearOptions = [];
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          hearOptions = [{
+            id: "Other",
+            label: "Other"
+          }, {
+            id: "SPARC_Portal_Or_Event",
+            label: "SPARC Portal Or Event"
+          }, {
+            id: "Search_Engine",
+            label: "Search Engine"
+          }, {
+            id: "Conference",
+            label: "Conference"
+          }, {
+            id: "Publication",
+            label: "Publication"
+          }, {
+            id: "Social_Media",
+            label: "Social Media"
+          }];
+          break;
+        default:
+          hearOptions = [{
+            id: "Search_Engine",
+            label: "Search Engine"
+          }, {
+            id: "Conference",
+            label: "Conference"
+          }, {
+            id: "Publication",
+            label: "Publication"
+          }, {
+            id: "Social_Media",
+            label: "Social Media"
+          }, {
+            id: "Other",
+            label: "Other"
+          }];
+          break;
+      }
       hearOptions.forEach(hearData => {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
@@ -264,11 +290,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // accept links
       // Privacy Policy link
-      let ppLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("our privacy policy");
-      if (osparc.product.Utils.isProduct("tis")) {
-        ppLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("our privacy policy");
+      let ppLink = "";
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+        case "tis":
+          ppLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("our privacy policy");
+          break;
+        default:
+          ppLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("our privacy policy");
+          break;
       }
-      const ppText = this.tr("I acknowledge that data will be processed in accordance with ") + ppLink;
+      const ppText = this.tr("I acknowledge that data will be processed in accordance to ") + ppLink;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
@@ -277,14 +309,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
       // Eula link
-      const eulaLink = osparc.CookiePolicy.getZMTEULALink("end users license agreement (EULA)");
-      const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
-      const eula = new qx.ui.form.CheckBox().set({
-        required: true,
-        value: false
-      });
-      doubleSpaced.push(eula);
-      this._form.add(eula, eulaText, null, "eula");
+      if (osparc.product.Utils.getProductName() !== "osparc") {
+        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end users license agreement (EULA)");
+        const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
+        const eula = new qx.ui.form.CheckBox().set({
+          required: true,
+          value: false
+        });
+        doubleSpaced.push(eula);
+        this._form.add(eula, eulaText, null, "eula");
+      }
+
 
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
