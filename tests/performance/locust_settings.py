@@ -43,6 +43,10 @@ class LocustSettings(BaseSettings):
     LOCUST_PRINT_STATS: bool = Field(default=True)
     LOCUST_RUN_TIME: timedelta
     LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
+
+    # Options for Timescale + Grafana Dashboards
+    # SEE https://github.com/SvenskaSpel/locust-plugins/blob/master/locust_plugins/timescale/
+    #
     LOCUST_TIMESCALE: NonNegativeInt = Field(
         default=1,
         ge=0,
@@ -50,7 +54,8 @@ class LocustSettings(BaseSettings):
         description="Send locust data to Timescale db for reading in Grafana dashboards",
     )
     LOCUST_USERS: PositiveInt = Field(
-        default=..., description="Number of locust users you want to spawn"
+        default=...,
+        description="Number of locust users you want to spawn",
     )
 
     PGHOST: str = Field(default="postgres")
