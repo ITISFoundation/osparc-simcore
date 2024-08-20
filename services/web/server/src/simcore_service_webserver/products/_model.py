@@ -1,6 +1,7 @@
 import logging
 import string
-from typing import Any, ClassVar, Pattern
+from re import Pattern
+from typing import Any, ClassVar
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -20,7 +21,7 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
-from sqlalchemy import Column, FetchedValue  # noqa: UP035
+from sqlalchemy import Column
 
 from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
