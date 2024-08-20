@@ -418,7 +418,7 @@ async def _get_resolved_access_rights(
     )
 
 
-async def _check_folder_access(
+async def _check_and_get_folder_access_by_group(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
@@ -469,7 +469,7 @@ async def _check_folder_access(
     return resolved_access_rights
 
 
-async def _check_folder_and_access(
+async def _check_and_get_folder_access(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
@@ -488,7 +488,7 @@ async def _check_folder_and_access(
     last_exception: Exception | None = None
     for gid in gids:
         try:
-            resolved_access_rights = await _check_folder_access(
+            resolved_access_rights = await _check_and_get_folder_access_by_group(
                 connection, product_name, folder_id, gid, permissions=permissions
             )
             break
@@ -568,7 +568,7 @@ async def folder_create(
         # - `is root folder, a.k.a. no parent?` taken from the user's primary group
         permissions_gid: _GroupID | None = None
         if parent:
-            resolved_access_rights = await _check_folder_and_access(
+            resolved_access_rights = await _check_and_get_folder_access(
                 connection,
                 product_name,
                 folder_id=parent,
@@ -647,7 +647,7 @@ async def folder_share_or_update_permissions(
     """
     # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -697,7 +697,7 @@ async def folder_update(
         UnexpectedFolderAccessError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -741,7 +741,7 @@ async def folder_delete(
     childern_folder_ids: list[_FolderID] = []
 
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -792,7 +792,7 @@ async def folder_move(
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
-        source_access_entry = await _check_folder_and_access(
+        source_access_entry = await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=source_folder_id,
@@ -810,7 +810,7 @@ async def folder_move(
                 group_type=group_type, gid=source_access_gid
             )
         if destination_folder_id:
-            await _check_folder_and_access(
+            await _check_and_get_folder_access(
                 connection,
                 product_name,
                 folder_id=destination_folder_id,
@@ -851,7 +851,7 @@ async def folder_add_project(
         ProjectAlreadyExistsInFolderError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -903,7 +903,7 @@ async def folder_move_project(
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=source_folder_id,
@@ -923,7 +923,7 @@ async def folder_move_project(
         return
 
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=destination_folder_id,
@@ -988,7 +988,7 @@ async def folder_remove_project(
         UnexpectedFolderAccessError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -1072,7 +1072,7 @@ async def folder_list(
     # NOTE: when `folder_id is None` list the root folder of the `gids`
 
     if folder_id is not None:
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
@@ -1129,7 +1129,7 @@ async def folder_get(
         _BasePermissions.GET_FOLDER
     ),
 ) -> FolderEntry:
-    resolved_access_rights: _ResolvedAccessRights = await _check_folder_and_access(
+    resolved_access_rights: _ResolvedAccessRights = await _check_and_get_folder_access(
         connection,
         product_name,
         folder_id=folder_id,
