@@ -762,26 +762,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
     evaluateMenuButtons: function() {
       if (this.getMenu()) {
         const menuButtons = this.getMenu().getChildren();
-        const blocked = this.getBlocked();
+        const resourceData = this.getResourceData();
+
         const openButton = menuButtons.find(menuBtn => "openResourceButton" in menuBtn);
         if (openButton) {
-          openButton.setEnabled([false].includes(blocked));
+          openButton.setEnabled(osparc.study.Utils.canBeOpened(resourceData));
         }
         const duplicateButton = menuButtons.find(menuBtn => "duplicateButton" in menuBtn);
         if (duplicateButton) {
-          duplicateButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
+          duplicateButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
         }
         const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
         if (exportCMISButton) {
-          exportCMISButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
+          exportCMISButton.setEnabled(osparc.study.Utils.canBeExported(resourceData));
         }
         const studyFilesButton = menuButtons.find(menuBtn => "studyFilesButton" in menuBtn);
         if (studyFilesButton) {
-          studyFilesButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
+          studyFilesButton.setEnabled(osparc.study.Utils.canCheckFiles(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
-          deleteButton.setEnabled(["UNKNOWN_SERVICES", false].includes(blocked));
+          deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
         }
       }
     },

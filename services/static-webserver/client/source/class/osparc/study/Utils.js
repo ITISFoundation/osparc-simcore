@@ -245,23 +245,28 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     canBeOpened: function(studyData) {
-
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
     },
 
     canBeDuplicated: function(studyData) {
-
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canBeExported: function(studyData) {
-
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canCheckFiles: function(studyData) {
-
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canBeDeleted: function(studyData) {
-
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     mustache: {
