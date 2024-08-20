@@ -16,5 +16,5 @@ async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
         owner_id = await connection.scalar(stmt)
         if owner_id is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
-        assert isinstance(owner_id, UserID)
+        assert isinstance(owner_id, int)
         return owner_id
