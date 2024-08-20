@@ -638,53 +638,6 @@ qx.Class.define("osparc.data.model.Study", {
           const studyData = this.serialize();
           return studyData;
         });
-    },
-
-    updateStudy: function(params) {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "put", {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: {
-            ...this.serialize(),
-            ...params
-          }
-        })
-          .then(data => {
-            this.__updateModel(data);
-            qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-            resolve(data);
-          })
-          .catch(err => reject(err));
-      });
-    },
-
-    __updateModel: function(data) {
-      if ("dev" in data) {
-        delete data["dev"];
-      }
-      Object.keys(data).forEach(key => {
-        if (this.self().IgnoreModelizationProps.includes(key)) {
-          delete data[key];
-        }
-      });
-
-      this.set({
-        ...data,
-        creationDate: new Date(data.creationDate),
-        lastChangeDate: new Date(data.lastChangeDate),
-        workbench: this.getWorkbench(),
-        ui: this.getUi()
-      });
-
-      const nodes = this.getWorkbench().getNodes();
-      Object.values(nodes).forEach(node => {
-        const nodeId = node.getNodeId();
-        if (nodeId in data.workbench) {
-          node.populateStates(data.workbench[nodeId]);
-        }
-      });
     }
   }
 });

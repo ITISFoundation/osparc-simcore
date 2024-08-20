@@ -191,10 +191,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
           },
-          put: {
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}"
-          },
           delete: {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}"
