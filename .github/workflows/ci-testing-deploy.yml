@@ -332,7 +332,6 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/webserver.bash typecheck
-        continue-on-error: true
       - name: test isolated
         if: always()
         run: ./ci/github/unit-testing/webserver.bash test_isolated

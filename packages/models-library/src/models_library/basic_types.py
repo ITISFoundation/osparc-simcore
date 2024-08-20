@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
 from pydantic import (
     ConstrainedDecimal,
@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from .basic_regex import (
+    PROPERTY_KEY_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     SIMPLE_VERSION_RE,
     UUID_RE,
@@ -82,10 +83,31 @@ class UUIDStr(ConstrainedStr):
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
+_ELLIPSIS_CHAR: Final[str] = "..."
+
+
 class IDStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
     max_length = 100
+
+    @staticmethod
+    def concatenate(*args: "IDStr", link_char: str = " ") -> "IDStr":
+        result = link_char.join(args).strip()
+        assert IDStr.min_length  # nosec
+        assert IDStr.max_length  # nosec
+        if len(result) > IDStr.max_length:
+            if IDStr.max_length > len(_ELLIPSIS_CHAR):
+                result = (
+                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
+                    + _ELLIPSIS_CHAR
+                )
+            else:
+                result = _ELLIPSIS_CHAR[0] * IDStr.max_length
+        if len(result) < IDStr.min_length:
+            msg = f"IDStr.concatenate: result is too short: {result}"
+            raise ValueError(msg)
+        return IDStr(result)
 
 
 class ShortTruncatedStr(ConstrainedStr):
@@ -155,3 +177,7 @@ class BuildTargetEnum(str, Enum):
     CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
+
+
+class KeyIDStr(ConstrainedStr):
+    regex = re.compile(PROPERTY_KEY_RE)

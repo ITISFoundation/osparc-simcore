@@ -5,6 +5,7 @@
 
 import functools
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from aiohttp import web
@@ -13,8 +14,10 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
     ProjectOutputGet,
 )
+from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
@@ -41,7 +44,7 @@ from .models import ProjectDict
 log = logging.getLogger(__name__)
 
 
-def _web_json_response_enveloped(data: Any):
+def _web_json_response_enveloped(data: Any) -> web.Response:
     return web.json_response(
         {
             "data": jsonable_encoder(data),
@@ -50,7 +53,9 @@ def _web_json_response_enveloped(data: Any):
     )
 
 
-def _handle_project_exceptions(handler):
+def _handle_project_exceptions(
+    handler: Callable[[web.Request], Awaitable[web.Response]]
+) -> Callable[[web.Request], Awaitable[web.Response]]:
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.Response:
         try:
@@ -141,7 +146,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
 
-        workbench[node_id].outputs = {"out_1": input_update.value}
+        workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].dict(
             include={"outputs"}, exclude_unset=True
         )

@@ -11,7 +11,7 @@ from typing import cast
 import aioboto3
 import pytest
 from aiobotocore.session import ClientCreatorContext
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2 import EC2InstanceData, Resources
 from faker import Faker
 from pydantic import ByteSize
 from settings_library.ec2 import EC2Settings

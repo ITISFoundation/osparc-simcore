@@ -71,7 +71,8 @@ def _parse_extra_credits_in_usd_or_none(
     confirmation: ConfirmationTokenDict,
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
-        invitation = InvitationData.parse_raw(confirmation.get("data", "EMPTY"))
+        confirmation_data = confirmation.get("data", "EMPTY") or "EMPTY"
+        invitation = InvitationData.parse_raw(confirmation_data)
         return invitation.extra_credits_in_usd
     return None
 
@@ -234,7 +235,8 @@ async def phone_confirmation(request: web.Request):
         # updates confirmed phone number
         try:
             user = await db.get_user({"email": request_body.email})
-            await db.update_user(user, {"phone": request_body.phone})
+            assert user is not None  # nosec
+            await db.update_user(dict(user), {"phone": request_body.phone})
 
         except UniqueViolation as err:
             raise web.HTTPUnauthorized(
@@ -242,7 +244,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        return await login_granted_response(request, user=user)
+        return await login_granted_response(request, user=dict(user))
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
@@ -281,7 +283,7 @@ async def reset_password(request: web.Request):
         assert user  # nosec
 
         await db.update_user(
-            user,
+            dict(user),
             {
                 "password_hash": encrypt_password(
                     request_body.password.get_secret_value()

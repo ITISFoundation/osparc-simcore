@@ -56,8 +56,8 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 #

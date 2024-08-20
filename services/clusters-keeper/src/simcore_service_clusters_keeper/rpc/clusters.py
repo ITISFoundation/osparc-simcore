@@ -1,11 +1,11 @@
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2 import EC2InstanceData
+from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
-from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import get_application_settings
 from ..modules import clusters
 from ..modules.dask import ping_scheduler
@@ -38,7 +38,7 @@ async def get_or_create_cluster(
             ec2_instance = await clusters.get_cluster(
                 app, user_id=user_id, wallet_id=wallet_id
             )
-        except Ec2InstanceNotFoundError:
+        except EC2InstanceNotFoundError:
             new_ec2_instances = await clusters.create_cluster(
                 app, user_id=user_id, wallet_id=wallet_id
             )

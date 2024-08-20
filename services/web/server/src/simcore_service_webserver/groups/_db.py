@@ -51,14 +51,16 @@ async def _get_user_group(
     group = await result.fetchone()
     if not group:
         raise GroupNotFoundError(gid)
+    assert isinstance(group, RowProxy)  # nosec
     return group
 
 
 async def get_user_from_email(conn: SAConnection, email: str) -> RowProxy:
     result = await conn.execute(sa.select(users).where(users.c.email == email))
-    user: RowProxy = await result.fetchone()
+    user = await result.fetchone()
     if not user:
         raise UserNotFoundError(email=email)
+    assert isinstance(user, RowProxy)  # nosec
     return user
 
 

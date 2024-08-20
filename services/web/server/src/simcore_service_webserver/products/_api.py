@@ -1,5 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import aiofiles
 from aiohttp import web
@@ -48,7 +49,10 @@ async def get_current_product_credit_price_info(
     """
     current_product_name = get_product_name(request)
     repo = ProductRepository.create_from_request(request)
-    return await repo.get_product_latest_price_info_or_none(current_product_name)
+    return cast(  # mypy: not sure why
+        ProductPriceInfo | None,
+        await repo.get_product_latest_price_info_or_none(current_product_name),
+    )
 
 
 async def get_credit_amount(
@@ -99,7 +103,7 @@ async def get_product_stripe_info(
     ):
         msg = f"Missing product stripe for product {product_name}"
         raise ValueError(msg)
-    return product_stripe_info
+    return cast(ProductStripeInfoGet, product_stripe_info)  # mypy: not sure why
 
 
 #

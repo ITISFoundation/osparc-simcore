@@ -4,12 +4,12 @@
 
 
 import pytest
-from aws_library.ec2.models import EC2InstanceType, Resources
+from aws_library.ec2 import EC2InstanceType, Resources
 from faker import Faker
 from pydantic import ByteSize
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
-    Ec2InstanceNotFoundError,
+    TaskBestFittingInstanceNotFoundError,
 )
 from simcore_service_autoscaling.utils.utils_ec2 import (
     closest_instance_policy,
@@ -30,7 +30,7 @@ async def test_find_best_fitting_ec2_instance_with_no_instances_raises():
 async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_raises(
     random_fake_available_instances: list[EC2InstanceType],
 ):
-    with pytest.raises(Ec2InstanceNotFoundError):
+    with pytest.raises(TaskBestFittingInstanceNotFoundError):
         find_best_fitting_ec2_instance(
             allowed_ec2_instances=random_fake_available_instances,
             resources=Resources(cpus=0, ram=ByteSize(0)),

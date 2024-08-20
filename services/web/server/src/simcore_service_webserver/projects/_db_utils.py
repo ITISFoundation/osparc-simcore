@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -54,7 +54,7 @@ class ProjectAccessRights(Enum):
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
-    user_groups: list[dict[str, Any]],
+    user_groups: list[dict[str, Any]] | list[RowProxy],
     permission: str,
 ) -> None:
     """
@@ -195,13 +195,15 @@ class BaseProjectDB:
         result = await conn.execute(
             sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
-        return await result.first()
+        row = await result.first()
+        assert row is not None  # nosec
+        return cast(RowProxy, row)  # mypy: not sure why this cast is necessary
 
     @classmethod
     async def _list_user_groups(
         cls, conn: SAConnection, user_id: int
     ) -> list[RowProxy]:
-        user_groups: list[RowProxy] = []
+        user_groups = []
 
         if user_id == ANY_USER_ID_SENTINEL:
             everyone_group = await cls._get_everyone_group(conn)
@@ -213,7 +215,7 @@ class BaseProjectDB:
                 .select_from(groups.join(user_to_groups))
                 .where(user_to_groups.c.uid == user_id)
             )
-            user_groups = await result.fetchall()
+            user_groups = await result.fetchall() or []
         return user_groups
 
     @staticmethod
@@ -268,6 +270,7 @@ class BaseProjectDB:
         db_projects: list[dict] = []  # DB model-compatible projects
         project_types: list[ProjectType] = []
         async for row in conn.execute(select_projects_query):
+            assert isinstance(row, RowProxy)  # nosec
             try:
                 check_project_permissions(row, user_id, user_groups, "read")
 

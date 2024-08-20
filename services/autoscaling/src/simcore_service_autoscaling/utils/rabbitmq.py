@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from aws_library.ec2.models import Resources
+from aws_library.ec2 import Resources
 from fastapi import FastAPI
 from models_library.docker import StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Task

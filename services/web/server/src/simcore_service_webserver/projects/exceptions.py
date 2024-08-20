@@ -4,7 +4,6 @@ from typing import Any
 
 import redis.exceptions
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 
 from ..errors import WebServerBaseError
@@ -168,7 +167,7 @@ class ProjectNodeConnectionsMissingError(ProjectNodeRequiredInputsNotSetError):
         self,
         *,
         unset_required_inputs: list[str],
-        node_with_required_inputs: NodeID,
+        node_with_required_inputs: str,
         **ctx,
     ):
         super().__init__(

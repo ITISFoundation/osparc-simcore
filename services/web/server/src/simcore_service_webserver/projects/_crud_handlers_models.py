@@ -6,6 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -25,18 +26,18 @@ from .models import ProjectTypeAPI
 
 class ProjectCreateHeaders(BaseModel):
 
-    simcore_user_agent: str = Field(  # type: ignore[pydantic-alias]
+    simcore_user_agent: str = Field(
         default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         description="Optional simcore user agent",
         alias=X_SIMCORE_USER_AGENT,
     )
 
-    parent_project_uuid: ProjectID | None = Field(  # type: ignore[pydantic-alias]
+    parent_project_uuid: ProjectID | None = Field(
         default=None,
         description="Optional parent project UUID",
         alias=X_SIMCORE_PARENT_PROJECT_UUID,
     )
-    parent_node_id: NodeID | None = Field(  # type: ignore[pydantic-alias]
+    parent_node_id: NodeID | None = Field(
         default=None,
         description="Optional parent node ID",
         alias=X_SIMCORE_PARENT_NODE_ID,
@@ -111,8 +112,8 @@ class ProjectListParams(PageQueryParameters):
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="last_change_date", direction=OrderDirection.DESC),
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need update to pydantic 1.10 # pylint: disable=unsubscriptable-object
+        default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "prj_owner", "direction": "desc"}',
         alias="order_by",
@@ -130,7 +131,8 @@ class ProjectListWithJsonStrParams(ProjectListParams):
             "creation_date",
             "last_change_date",
         }:
-            raise ValueError(f"We do not support ordering by provided field {v.field}")
+            msg = f"We do not support ordering by provided field {v.field}"
+            raise ValueError(msg)
         return v
 
     class Config:

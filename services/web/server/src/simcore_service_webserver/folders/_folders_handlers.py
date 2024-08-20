@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.folders import (
     FolderGetPage,
     PutFolderBodyParams,
 )
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -70,8 +71,9 @@ class FoldersPathParams(StrictRequestParams):
 
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="modified", direction=OrderDirection.DESC),
+    # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg]
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',
         alias="order_by",
@@ -89,7 +91,8 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
             "name",
             "description",
         }:
-            raise ValueError(f"We do not support ordering by provided field {v.field}")
+            msg = f"We do not support ordering by provided field {v.field}"
+            raise ValueError(msg)
         if v.field == "modified_at":
             v.field = "modified"
         return v
@@ -129,7 +132,7 @@ async def create_folder(request: web.Request):
 @handle_folders_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
+    query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
         FolderListWithJsonStrQueryParams, request
     )
 
