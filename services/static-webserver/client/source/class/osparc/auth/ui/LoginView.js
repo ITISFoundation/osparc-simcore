@@ -96,13 +96,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
         if (config["invitation_required"]) {
-          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            if (osparc.utils.Utils.isDevelopmentPlatform()) {
-              this.fireEvent("toRegister");
-            } else {
-              this.fireEvent("toRequestAccount");
-            }
+          if (osparc.utils.Utils.isDevelopmentPlatform()) {
+            this.fireEvent("toRegister");
+          } else if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+            this.fireEvent("toRequestAccount");
           } else {
+            // OM: "osparc" would still fall here
             osparc.store.Support.openInvitationRequiredDialog();
           }
         } else {
