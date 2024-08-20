@@ -82,6 +82,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   members: {
     __resourceData: null,
     __resourceModel: null,
+    __infoPage: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -194,6 +195,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.fireDataEvent("openService", this.__resourceData);
           break;
       }
+    },
+
+    __openInfo: function() {
+      this._openPage(this.__dataPage);
     },
 
     openData: function() {
@@ -314,7 +319,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const id = "Information";
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/info/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__infoPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
