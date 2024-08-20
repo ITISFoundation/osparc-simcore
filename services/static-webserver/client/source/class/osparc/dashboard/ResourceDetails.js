@@ -198,7 +198,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __openInfo: function() {
-      this._openPage(this.__dataPage);
+      this._openPage(this.__infoPage);
     },
 
     openData: function() {
