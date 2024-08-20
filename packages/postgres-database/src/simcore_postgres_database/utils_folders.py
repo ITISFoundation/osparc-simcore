@@ -488,7 +488,7 @@ async def _check_folder_access(
         UnexpectedFolderAccessError
     """
     folder_entry: int | None = await connection.scalar(
-        sa.select([folders.c.id])
+        sa.select(folders.c.id)
         .where(folders.c.id == folder_id)
         .where(folders.c.product_name == product_name)
     )
@@ -557,7 +557,7 @@ async def folder_create(
 
     async with connection.begin():
         entry_exists: int | None = await connection.scalar(
-            sa.select([folders.c.id])
+            sa.select(folders.c.id)
             .select_from(
                 folders.join(
                     folders_access_rights,
@@ -591,9 +591,7 @@ async def folder_create(
         if permissions_gid is None:
             groups_results: list[RowProxy] | None = await (
                 await connection.execute(
-                    sa.select([groups.c.gid, groups.c.type]).where(
-                        groups.c.gid.in_(gids)
-                    )
+                    sa.select(groups.c.gid, groups.c.type).where(groups.c.gid.in_(gids))
                 )
             ).fetchall()
 
@@ -819,7 +817,7 @@ async def folder_move(
 
         source_access_gid = source_access_entry.gid
         group_type: GroupType | None = await connection.scalar(
-            sa.select([groups.c.type]).where(groups.c.gid == source_access_gid)
+            sa.select(groups.c.type).where(groups.c.gid == source_access_gid)
         )
         # Might drop primary check
         if group_type is None or group_type != GroupType.PRIMARY:

@@ -260,7 +260,7 @@ async def _assert_folder_permissions(
     role: FolderAccessRole,
 ) -> None:
     result = await connection.execute(
-        sa.select([folders_access_rights.c.folder_id])
+        sa.select(folders_access_rights.c.folder_id)
         .where(folders_access_rights.c.folder_id == folder_id)
         .where(folders_access_rights.c.gid == gid)
         .where(
@@ -282,7 +282,7 @@ async def _assert_name_and_description(
     description: str,
 ):
     async with connection.execute(
-        sa.select([folders.c.name, folders.c.description]).where(
+        sa.select(folders.c.name, folders.c.description).where(
             folders.c.id == folder_id
         )
     ) as result_proxy:
@@ -476,7 +476,7 @@ async def test_folder_create_shared_via_groups(
         await create_fake_group(connection, type=GroupType.PRIMARY)
     ).gid
     gid_everyone: _GroupID | None = await connection.scalar(
-        sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
+        sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
     )
     assert gid_everyone
     gid_z43: _GroupID = (
@@ -1267,7 +1267,7 @@ async def test_folder_move(
             parent_folder: _FolderID,
         ) -> None:
             result = await connection.execute(
-                sa.select([folders_access_rights.c.folder_id])
+                sa.select(folders_access_rights.c.folder_id)
                 .where(folders_access_rights.c.folder_id == folder_id)
                 .where(folders_access_rights.c.gid == gid)
                 .where(folders_access_rights.c.traversal_parent_id == parent_folder)
@@ -1525,7 +1525,7 @@ async def test_move_group_non_standard_groups_raise_error(
         await create_fake_group(connection, type=GroupType.PRIMARY)
     ).gid
     gid_everyone: _GroupID | None = await connection.scalar(
-        sa.select([groups.c.gid]).where(groups.c.type == GroupType.EVERYONE)
+        sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
     )
     assert gid_everyone
     gid_standard: _GroupID = (
