@@ -30,7 +30,7 @@ __check_defined = \
 
 .PHONY: build
 build: ## builds distributed osparc locust docker image
-	docker --debug \
+	docker \
 		buildx build \
 		--load  \
 		--build-arg LOCUST_VERSION=$(LOCUST_VERSION) \
