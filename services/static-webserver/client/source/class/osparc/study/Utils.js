@@ -231,6 +231,39 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
+    __getBlockedState: function(studyData) {
+      if (studyData["workbench"]) {
+        const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
+        if (unaccessibleServices.length) {
+          return "UNKNOWN_SERVICES";
+        }
+      }
+      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+        return "IN_USE";
+      }
+      return false;
+    },
+
+    canBeOpened: function(studyData) {
+
+    },
+
+    canBeDuplicated: function(studyData) {
+
+    },
+
+    canBeExported: function(studyData) {
+
+    },
+
+    canCheckFiles: function(studyData) {
+
+    },
+
+    canBeDeleted: function(studyData) {
+
+    },
+
     mustache: {
       mustacheRegEx: function() {
         return /{{([^{}]*)}}/g;
