@@ -36,7 +36,9 @@ certifi==2024.2.2
     #   httpx
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -154,7 +156,9 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.21.1
     # via -r requirements/_test.in
 rpds-py==0.18.0
@@ -199,6 +203,7 @@ typing-extensions==4.10.0
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   docker
     #   requests
 yarl==1.9.4
