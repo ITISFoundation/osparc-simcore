@@ -16,7 +16,7 @@ from unittest import mock
 import aiodocker
 import arrow
 import pytest
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2 import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,

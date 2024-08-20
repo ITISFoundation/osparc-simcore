@@ -1,4 +1,4 @@
-from aws_library.ec2.utils import compose_user_data
+from aws_library.ec2._utils import compose_user_data
 from faker import Faker
 
 

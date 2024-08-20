@@ -7,13 +7,14 @@ import logging
 from typing import Final, cast
 
 import arrow
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
     EC2Tags,
     Resources,
 )
+from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
@@ -21,10 +22,10 @@ from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
-    Ec2InstanceInvalidError,
-    Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
-    Ec2TooManyInstancesError,
+    TaskBestFittingInstanceNotFoundError,
+    TaskRequirementsAboveRequiredEC2InstanceTypeError,
+    TaskRequiresUnauthorizedEC2InstanceTypeError,
 )
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..models import (
@@ -497,13 +498,12 @@ async def _find_needed_instances(
                             - task_required_resources,
                         )
                     )
-            except Ec2InstanceNotFoundError:
-                _logger.exception(
-                    "Task %s needs more resources than any EC2 instance "
-                    "can provide with the current configuration. Please check!",
-                    f"{task}",
-                )
-            except Ec2InstanceInvalidError:
+            except TaskBestFittingInstanceNotFoundError:
+                _logger.exception("Task %s needs more resources: ", f"{task}")
+            except (
+                TaskRequirementsAboveRequiredEC2InstanceTypeError,
+                TaskRequiresUnauthorizedEC2InstanceTypeError,
+            ):
                 _logger.exception("Unexpected error:")
 
     _logger.info(
@@ -568,7 +568,7 @@ async def _cap_needed_instances(
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     ):
         # ok that is already too much
-        raise Ec2TooManyInstancesError(
+        raise EC2TooManyInstancesError(
             num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         )
 
@@ -626,7 +626,7 @@ async def _start_instances(
         capped_needed_machines = await _cap_needed_instances(
             app, needed_instances, new_instance_tags
         )
-    except Ec2TooManyInstancesError:
+    except EC2TooManyInstancesError:
         await auto_scaling_mode.log_message_from_tasks(
             app,
             tasks,
@@ -668,7 +668,7 @@ async def _start_instances(
     last_issue = ""
     new_pending_instances: list[EC2InstanceData] = []
     for r in results:
-        if isinstance(r, Ec2TooManyInstancesError):
+        if isinstance(r, EC2TooManyInstancesError):
             await auto_scaling_mode.log_message_from_tasks(
                 app,
                 tasks,

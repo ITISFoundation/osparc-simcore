@@ -41,38 +41,39 @@ async def _do_send_mail(
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
         try:
-            smtp = _create_smtp_client(settings)
+            smtp_on_587_port = _create_smtp_client(settings)
 
             if settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS:
                 _logger.info("Unencrypted connection attempt to mailserver ...")
-                await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
+                await smtp_on_587_port.connect(use_tls=False, port=settings.SMTP_PORT)
                 _logger.info("Starting STARTTLS ...")
-                await smtp.starttls()
+                await smtp_on_587_port.starttls()
 
             elif settings.SMTP_PROTOCOL == EmailProtocol.TLS:
-                await smtp.connect(use_tls=True, port=settings.SMTP_PORT)
+                await smtp_on_587_port.connect(use_tls=True, port=settings.SMTP_PORT)
 
             elif settings.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
                 _logger.info("Unencrypted connection attempt to mailserver ...")
-                await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
+                await smtp_on_587_port.connect(use_tls=False, port=settings.SMTP_PORT)
 
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Attempting a login into the email server ...")
-                await smtp.login(
+                await smtp_on_587_port.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
 
-            await smtp.send_message(message)
+            await smtp_on_587_port.send_message(message)
         finally:
-            await smtp.quit()
+            await smtp_on_587_port.quit()
     else:
-        async with _create_smtp_client(settings) as smtp:
+        smtp_client = _create_smtp_client(settings)
+        async with smtp_client:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Login email server ...")
-                await smtp.login(
+                await smtp_client.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
-            await smtp.send_message(message)
+            await smtp_client.send_message(message)
 
 
 MIMEMessage = Union[MIMEText, MIMEMultipart]
@@ -107,6 +108,9 @@ class SMTPServerInfo(TypedDict):
 async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServerInfo:
     """Raises SMTPException if cannot connect otherwise settings"""
     async with _create_smtp_client(settings) as smtp:
+        assert smtp.hostname  # nosec
+        assert smtp.port  # nosec
+        assert smtp.timeout  # nosec
         return SMTPServerInfo(
             hostname=smtp.hostname,
             port=smtp.port,

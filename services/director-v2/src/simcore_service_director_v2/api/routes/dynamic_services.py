@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Annotated, Final, cast
+from typing import Annotated, Final
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -92,10 +92,7 @@ async def list_tracked_dynamic_services(
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
     dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuse_tasks)
 
-    return cast(
-        list[DynamicServiceGet],
-        legacy_running_services + dynamic_sidecar_running_services,
-    )  # mypy
+    return legacy_running_services + dynamic_sidecar_running_services
 
 
 @router.post(

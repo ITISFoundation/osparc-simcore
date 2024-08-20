@@ -195,7 +195,9 @@ class BaseProjectDB:
         result = await conn.execute(
             sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
-        return await result.first()
+        row = await result.first()
+        assert row is not None  # nosec
+        return row
 
     @classmethod
     async def _list_user_groups(

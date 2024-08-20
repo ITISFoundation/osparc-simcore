@@ -21,7 +21,7 @@ import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
     EC2InstanceType,

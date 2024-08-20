@@ -1,7 +1,7 @@
 from textwrap import dedent
 from typing import Final
 
-from aws_library.ec2.models import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as

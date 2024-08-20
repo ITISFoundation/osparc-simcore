@@ -32,13 +32,14 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
+from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
+from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, OutputsDict
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
-    Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
@@ -472,7 +473,7 @@ async def _check_project_node_has_all_required_inputs(
     unset_required_inputs: list[str] = []
     unset_outputs_in_upstream: list[tuple[str, str]] = []
 
-    def _check_required_input(required_input_key: str) -> None:
+    def _check_required_input(required_input_key: KeyIDStr) -> None:
         input_entry: PortLink | None = None
         if node.inputs:
             input_entry = node.inputs.get(required_input_key, None)

@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Final
+from typing import Any, Final
 
 from aiocache import cached
 from models_library.api_schemas_webserver.catalog import (
@@ -11,6 +12,7 @@ from models_library.api_schemas_webserver.catalog import (
 )
 from models_library.services import BaseServiceIOModel
 from pint import PintError, UnitRegistry
+from pint.quantity import Quantity
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ def get_html_formatted_unit(
         if unit_name is None:
             return None
 
-        q = ureg.Quantity(unit_name)
+        q: Quantity = ureg.Quantity(unit_name)
         return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
     except (PintError, NotImplementedError):
         return None
