@@ -68,7 +68,11 @@ def test_invalid_tracing_settings(
 
 @pytest.mark.parametrize(
     "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
-    [("", None), (None, None)],
+    [
+        ("", ""),
+        (None, None),
+        ("", None),
+    ],
 )
 def test_missing_tracing_settings(
     event_loop: AbstractEventLoop,
