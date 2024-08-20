@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
-            alignY: "bottom",
+            alignY: "middle",
             padding: [0, 5]
           });
           layout = this.getChildControl("footer");
