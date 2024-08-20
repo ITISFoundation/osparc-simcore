@@ -29,6 +29,7 @@ _NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
     "botocore",
+    "werkzeug",
 )
 
 logger = logging.getLogger(__name__)
