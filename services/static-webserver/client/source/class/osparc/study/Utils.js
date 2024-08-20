@@ -261,7 +261,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canCheckFiles: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
+      return [false].includes(blocked);
     },
 
     canBeDeleted: function(studyData) {
