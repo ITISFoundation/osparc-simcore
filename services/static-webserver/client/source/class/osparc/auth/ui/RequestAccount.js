@@ -238,7 +238,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
 
       const hear = new qx.ui.form.SelectBox();
-      [{
+      const hearOptions = [{
         id: "Search_Engine",
         label: "Search Engine"
       }, {
@@ -253,7 +253,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       }, {
         id: "Other",
         label: "Other"
-      }].forEach(hearData => {
+      }]
+      hearOptions.forEach(hearData => {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
       });
