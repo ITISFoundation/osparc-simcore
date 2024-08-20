@@ -1,7 +1,10 @@
 import logging
 import string
-from re import Pattern
-from typing import Any, ClassVar
+from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
+    Any,
+    ClassVar,
+    Pattern,
+)
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
