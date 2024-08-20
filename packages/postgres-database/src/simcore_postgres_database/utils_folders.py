@@ -339,7 +339,7 @@ async def _get_resolved_access_rights(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
-    enforce_all_permissions: bool,
+    enforce_all_permissions: bool = False,
 ) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
@@ -425,7 +425,6 @@ async def _check_folder_and_access(
     gids: set[_GroupID],
     *,
     permissions: _FolderPermissions,
-    enforce_all_permissions: bool,
 ) -> _ResolvedAccessRights:
     """
     Raises:
@@ -439,12 +438,7 @@ async def _check_folder_and_access(
     for gid in gids:
         try:
             resolved_access_rights = await _check_folder_access(
-                connection,
-                product_name,
-                folder_id,
-                gid,
-                permissions=permissions,
-                enforce_all_permissions=enforce_all_permissions,
+                connection, product_name, folder_id, gid, permissions=permissions
             )
             break
         except FolderAccessError as e:
@@ -457,7 +451,7 @@ async def _check_folder_and_access(
         _logger.warning(
             (
                 "Both resolved_access_rights=%s and last_exception=%s are None. "
-                "Function called with product_name=%s, folder_id=%s, gids=%s, enforce_all_permissions=%s. "
+                "Function called with product_name=%s, folder_id=%s, gids=%s. "
                 "TIP: 'gids' being empty is not acceptable, please check."
             ),
             resolved_access_rights,
@@ -465,7 +459,6 @@ async def _check_folder_and_access(
             product_name,
             folder_id,
             gids,
-            enforce_all_permissions,
         )
         raise UnexpectedFolderAccessError
 
@@ -479,7 +472,6 @@ async def _check_folder_access(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions,
-    enforce_all_permissions: bool,
 ) -> _ResolvedAccessRights:
     """
     Raises:
@@ -503,7 +495,6 @@ async def _check_folder_access(
         folder_id,
         gid,
         permissions=None,
-        enforce_all_permissions=False,
     )
     if not resolved_access_rights_without_permissions:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
@@ -514,7 +505,6 @@ async def _check_folder_access(
         folder_id,
         gid,
         permissions=permissions,
-        enforce_all_permissions=enforce_all_permissions,
     )
     if resolved_access_rights is None:
         raise InsufficientPermissionsError(
@@ -584,7 +574,6 @@ async def folder_create(
                 folder_id=parent,
                 gids=gids,
                 permissions=_required_permissions,
-                enforce_all_permissions=False,
             )
             permissions_gid = resolved_access_rights.gid
 
@@ -664,7 +653,6 @@ async def folder_share_or_update_permissions(
             folder_id=folder_id,
             gids=sharing_gids,
             permissions=required_permissions,
-            enforce_all_permissions=False,
         )
 
         # update or create permissions entry
@@ -715,7 +703,6 @@ async def folder_update(
             folder_id=folder_id,
             gids=gids,
             permissions=_required_permissions,
-            enforce_all_permissions=False,
         )
 
         # do not update if nothing changed
@@ -760,7 +747,6 @@ async def folder_delete(
             folder_id=folder_id,
             gids=gids,
             permissions=_required_permissions,
-            enforce_all_permissions=False,
         )
 
         # list all children then delete
@@ -812,7 +798,6 @@ async def folder_move(
             folder_id=source_folder_id,
             gids=gids,
             permissions=required_permissions_source,
-            enforce_all_permissions=False,
         )
 
         source_access_gid = source_access_entry.gid
@@ -831,7 +816,6 @@ async def folder_move(
                 folder_id=destination_folder_id,
                 gids=gids,
                 permissions=required_permissions_destination,
-                enforce_all_permissions=False,
             )
 
         # set new traversa_parent_id on the source_folder_id which is equal to destination_folder_id
@@ -873,7 +857,6 @@ async def folder_add_project(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforce_all_permissions=False,
         )
 
         # check if already added in folder
@@ -926,7 +909,6 @@ async def folder_move_project(
             folder_id=source_folder_id,
             gids=gids,
             permissions=_required_permissions_source,
-            enforce_all_permissions=False,
         )
 
     if destination_folder_id is None:
@@ -947,7 +929,6 @@ async def folder_move_project(
             folder_id=destination_folder_id,
             gids=gids,
             permissions=_required_permissions_destination,
-            enforce_all_permissions=False,
         )
 
         await connection.execute(
@@ -1013,7 +994,6 @@ async def folder_remove_project(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforce_all_permissions=False,
         )
 
         await connection.execute(
@@ -1098,7 +1078,6 @@ async def folder_list(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforce_all_permissions=False,
         )
 
     results: list[FolderEntry] = []
@@ -1156,7 +1135,6 @@ async def folder_get(
         folder_id=folder_id,
         gids=gids,
         permissions=required_permissions,
-        enforce_all_permissions=False,
     )
     permissions_gid: _GroupID = resolved_access_rights.gid
 

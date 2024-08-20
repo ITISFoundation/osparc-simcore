@@ -612,7 +612,7 @@ async def test__get_resolved_access_rights(
             permissions=permissions,
             # NOTE: this is the more restricitve case
             # and we test against exact user roles,
-            # the APIs use only a subset of the permissions ususally set to True
+            # the APIs use only a subset of the permissions set to False
             enforce_all_permissions=True,
         )
         assert resolved_parent
