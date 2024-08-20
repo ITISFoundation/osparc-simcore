@@ -418,53 +418,6 @@ async def _get_resolved_access_rights(
     )
 
 
-async def _check_folder_and_access(
-    connection: SAConnection,
-    product_name: _ProductName,
-    folder_id: _FolderID,
-    gids: set[_GroupID],
-    *,
-    permissions: _FolderPermissions,
-) -> _ResolvedAccessRights:
-    """
-    Raises:
-        FolderNotFoundError
-        FolderNotSharedWithGidError
-        InsufficientPermissionsError
-        UnexpectedFolderAccessError
-    """
-    resolved_access_rights: _ResolvedAccessRights | None = None
-    last_exception: Exception | None = None
-    for gid in gids:
-        try:
-            resolved_access_rights = await _check_folder_access(
-                connection, product_name, folder_id, gid, permissions=permissions
-            )
-            break
-        except FolderAccessError as e:
-            last_exception = e
-
-    if resolved_access_rights is None:
-        if last_exception:
-            raise last_exception
-
-        _logger.warning(
-            (
-                "Both resolved_access_rights=%s and last_exception=%s are None. "
-                "Function called with product_name=%s, folder_id=%s, gids=%s. "
-                "TIP: 'gids' being empty is not acceptable, please check."
-            ),
-            resolved_access_rights,
-            last_exception,
-            product_name,
-            folder_id,
-            gids,
-        )
-        raise UnexpectedFolderAccessError
-
-    return resolved_access_rights
-
-
 async def _check_folder_access(
     connection: SAConnection,
     product_name: _ProductName,
@@ -512,6 +465,53 @@ async def _check_folder_access(
             gid=gid,
             permissions=_only_true_permissions(permissions),
         )
+
+    return resolved_access_rights
+
+
+async def _check_folder_and_access(
+    connection: SAConnection,
+    product_name: _ProductName,
+    folder_id: _FolderID,
+    gids: set[_GroupID],
+    *,
+    permissions: _FolderPermissions,
+) -> _ResolvedAccessRights:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        UnexpectedFolderAccessError
+    """
+    resolved_access_rights: _ResolvedAccessRights | None = None
+    last_exception: Exception | None = None
+    for gid in gids:
+        try:
+            resolved_access_rights = await _check_folder_access(
+                connection, product_name, folder_id, gid, permissions=permissions
+            )
+            break
+        except FolderAccessError as e:
+            last_exception = e
+
+    if resolved_access_rights is None:
+        if last_exception:
+            raise last_exception
+
+        _logger.warning(
+            (
+                "Both resolved_access_rights=%s and last_exception=%s are None. "
+                "Function called with product_name=%s, folder_id=%s, gids=%s. "
+                "TIP: 'gids' being empty is not acceptable, please check."
+            ),
+            resolved_access_rights,
+            last_exception,
+            product_name,
+            folder_id,
+            gids,
+        )
+        raise UnexpectedFolderAccessError
 
     return resolved_access_rights
 
