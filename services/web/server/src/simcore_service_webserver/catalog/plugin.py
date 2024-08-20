@@ -1,6 +1,7 @@
 """ Subsystem to communicate with catalog service
 
 """
+
 import logging
 
 from aiohttp import web
@@ -22,7 +23,7 @@ _logger = logging.getLogger(__name__)
 def setup_catalog(app: web.Application):
     # ensures routes are names that corresponds to function names
     assert all(  # nosec
-        route_def.kwargs["name"] == route_def.handler.__name__
+        route_def.kwargs["name"] == route_def.handler.__name__  # type: ignore[attr-defined] # route_def is a RouteDef not an Abstract
         for route_def in _handlers.routes
     )
 

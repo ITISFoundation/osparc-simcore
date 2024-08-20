@@ -1,6 +1,6 @@
 import re
 
-from models_library.basic_regex import VERSION_RE
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceMetaDataPublished
 from packaging import version
 from pydantic import BaseModel, ByteSize, Extra, Field, validator
@@ -71,7 +71,7 @@ class ImageLabels(BaseModel):
         default=str(LEGACY_INTEGRATION_VERSION),
         alias="integration-version",
         description="integration version number",
-        regex=VERSION_RE,
+        regex=SIMPLE_VERSION_RE,
         examples=["1.0.0"],
     )
     progress_regexp: str = Field(

@@ -100,7 +100,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
     """
     app_settings: ApplicationSettings = app.state.settings
-    registry_settings = app_settings.REGISTRY_SETTINGS
+    registry_settings = app_settings.DY_DEPLOYMENT_REGISTRY_SETTINGS
     list_of_images = get_docker_service_images(compose_spec_yaml)
 
     async def _progress_cb(report: ProgressReport) -> None:

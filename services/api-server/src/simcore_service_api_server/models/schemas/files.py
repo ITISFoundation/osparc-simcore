@@ -92,7 +92,7 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(sha256check, path.name),
             filename=path.name,
-            sha256_checksum=SHA256Str(sha256check),
+            checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -116,7 +116,7 @@ class File(BaseModel):
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
             filename=file.filename or "Undefined",
             content_type=file.content_type,
-            sha256_checksum=SHA256Str(sha256check),
+            checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -128,16 +128,16 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(client_file.filesize, client_file.filename, created_at),
             filename=client_file.filename,
-            sha256_checksum=client_file.sha256_checksum,
+            checksum=client_file.sha256_checksum,
         )
 
     @classmethod
     async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
         storage_file_id: StorageFileID = parse_obj_as(
-            StorageFileID, _unquote(quoted_storage_id)
+            StorageFileID, _unquote(quoted_storage_id)  # type: ignore[arg-type]
         )
         _, fid, fname = Path(storage_file_id).parts
-        return cls(id=UUID(fid), filename=fname, sha256_checksum=None)
+        return cls(id=UUID(fid), filename=fname, checksum=None)
 
     @classmethod
     def create_id(cls, *keys) -> UUID:
@@ -146,7 +146,9 @@ class File(BaseModel):
     @property
     def storage_file_id(self) -> StorageFileID:
         """Get the StorageFileId associated with this file"""
-        return parse_obj_as(StorageFileID, f"api/{self.id}/{self.filename}")
+        return parse_obj_as(
+            StorageFileID, f"api/{self.id}/{self.filename}"  # type: ignore[arg-type]
+        )
 
     @property
     def quoted_storage_file_id(self) -> str:

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import web
 from aiohttp.web import Request
@@ -319,8 +319,11 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    return await ServiceOutputGetFactory.from_catalog_service_api_model(
-        service=service, output_key=output_key
+    return cast(  # mypy -> aiocache is not typed.
+        ServiceOutputGet,
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key
+        ),
     )
 
 

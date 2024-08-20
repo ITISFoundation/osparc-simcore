@@ -7,7 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Final
 
-from models_library.basic_types import VersionTag
+from models_library.basic_types import VersionStr, VersionTag
 from packaging.version import Version
 from pydantic import parse_obj_as
 
@@ -16,7 +16,7 @@ __version__: str = version("simcore-service-clusters-keeper")
 
 
 APP_NAME: Final[str] = _current_distribution.metadata["Name"]
-API_VERSION: Final[str] = __version__
+API_VERSION: Final[VersionStr] = parse_obj_as(VersionStr, __version__)
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 RPC_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
