@@ -345,24 +345,6 @@ async def _get_resolved_access_rights(
     # Define the anchor CTE
     access_rights_cte = (
         sa.select(
-            [
-                folders_access_rights.c.folder_id,
-                folders_access_rights.c.gid,
-                folders_access_rights.c.traversal_parent_id,
-                folders_access_rights.c.original_parent_id,
-                folders_access_rights.c.read,
-                folders_access_rights.c.write,
-                folders_access_rights.c.delete,
-                sa.literal_column("0").label("level"),
-            ]
-        )
-        .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
-        .cte(name="access_rights_cte", recursive=True)
-    )
-
-    # Define the recursive part of the CTE
-    recursive = sa.select(
-        [
             folders_access_rights.c.folder_id,
             folders_access_rights.c.gid,
             folders_access_rights.c.traversal_parent_id,
@@ -370,8 +352,22 @@ async def _get_resolved_access_rights(
             folders_access_rights.c.read,
             folders_access_rights.c.write,
             folders_access_rights.c.delete,
-            sa.literal_column("access_rights_cte.level + 1").label("level"),
-        ]
+            sa.literal_column("0").label("level"),
+        )
+        .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
+        .cte(name="access_rights_cte", recursive=True)
+    )
+
+    # Define the recursive part of the CTE
+    recursive = sa.select(
+        folders_access_rights.c.folder_id,
+        folders_access_rights.c.gid,
+        folders_access_rights.c.traversal_parent_id,
+        folders_access_rights.c.original_parent_id,
+        folders_access_rights.c.read,
+        folders_access_rights.c.write,
+        folders_access_rights.c.delete,
+        sa.literal_column("access_rights_cte.level + 1").label("level"),
     ).select_from(
         folders_access_rights.join(
             access_rights_cte,
@@ -398,16 +394,14 @@ async def _get_resolved_access_rights(
     # Final query to filter and order results
     query = (
         sa.select(
-            [
-                folder_hierarchy.c.folder_id,
-                folder_hierarchy.c.gid,
-                folder_hierarchy.c.traversal_parent_id,
-                folder_hierarchy.c.original_parent_id,
-                folder_hierarchy.c.read,
-                folder_hierarchy.c.write,
-                folder_hierarchy.c.delete,
-                folder_hierarchy.c.level,
-            ]
+            folder_hierarchy.c.folder_id,
+            folder_hierarchy.c.gid,
+            folder_hierarchy.c.traversal_parent_id,
+            folder_hierarchy.c.original_parent_id,
+            folder_hierarchy.c.read,
+            folder_hierarchy.c.write,
+            folder_hierarchy.c.delete,
+            folder_hierarchy.c.level,
         )
         .where(_get_permissions_where_clause())
         .where(folder_hierarchy.c.original_parent_id.is_(None))
