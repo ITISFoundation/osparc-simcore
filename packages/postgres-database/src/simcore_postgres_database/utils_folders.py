@@ -85,7 +85,7 @@ class InsufficientPermissionsError(FolderAccessError):
     msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
 
 
-class UnexpectedFolderAccessError(FoldersError):
+class UnexpectedFolderAccessError(FolderAccessError):
     msg_template = (
         "Unexpected None value for resolved_access_rights={resolved_access_rights} and last_exception={last_exception}."
         "Called with: product_name={product_name}, folder_id={folder_id}, gids={gids}"
