@@ -201,6 +201,9 @@ def app_environment(
             "AUTOSCALING_EC2_ACCESS_KEY_ID": faker.pystr(),
             "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "AUTOSCALING_EC2_INSTANCES": "{}",
+            "AUTOSCALING_SSM_ACCESS": "{}",
+            "SSM_ACCESS_KEY_ID": faker.pystr(),
+            "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -337,6 +340,11 @@ def disabled_rabbitmq(
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTOSCALING_EC2_ACCESS", "null")
+
+
+@pytest.fixture
+def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTOSCALING_SSM_ACCESS", "null")
 
 
 @pytest.fixture
