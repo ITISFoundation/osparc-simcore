@@ -108,14 +108,14 @@ class CouldNotCreateFolderError(BaseCreateFolderError):
     msg_template = "Could not create folder='{folder}' and parent='{parent}'"
 
 
-class GroupIDsDoNotExistError(BaseCreateFolderError):
-    msg_template = "Any of the folloing gids='{gids}' do not exist"
+class NoGroupIDFoundError(BaseCreateFolderError):
+    msg_template = "None of the provided gids='{gids}' was found"
 
 
 class RootFolderRequiresAtLeastOnePrimaryGroupError(BaseCreateFolderError):
     msg_template = (
-        "parent={parent} is None (please check) and gids={gids} did not contain a PRIMARY group. "
-        "Cannot create a folder isnide the 'root' directory."
+        "No parent={parent} defined and groupIDs={gids} did not contain a PRIMARY group. "
+        "Cannot create a folder isnide the 'root' wihtout using the user's group."
     )
 
 
@@ -339,7 +339,7 @@ async def _get_resolved_access_rights(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
-    enforece_all_permissions: bool,
+    enforce_all_permissions: bool,
 ) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
@@ -387,7 +387,7 @@ async def _get_resolved_access_rights(
                 folder_hierarchy.c.write.is_(permissions.write),
                 folder_hierarchy.c.delete.is_(permissions.delete),
             )
-            if enforece_all_permissions
+            if enforce_all_permissions
             else _get_and_calsue_with_only_true_entries(permissions, folder_hierarchy)
         )
 
@@ -425,7 +425,7 @@ async def _check_folder_and_access(
     gids: set[_GroupID],
     *,
     permissions: _FolderPermissions,
-    enforece_all_permissions: bool,
+    enforce_all_permissions: bool,
 ) -> _ResolvedAccessRights:
     """
     Raises:
@@ -444,7 +444,7 @@ async def _check_folder_and_access(
                 folder_id,
                 gid,
                 permissions=permissions,
-                enforece_all_permissions=enforece_all_permissions,
+                enforce_all_permissions=enforce_all_permissions,
             )
             break
         except FolderAccessError as e:
@@ -457,7 +457,7 @@ async def _check_folder_and_access(
         _logger.warning(
             (
                 "Both resolved_access_rights=%s and last_exception=%s are None. "
-                "Function called with product_name=%s, folder_id=%s, gids=%s, enforece_all_permissions=%s. "
+                "Function called with product_name=%s, folder_id=%s, gids=%s, enforce_all_permissions=%s. "
                 "TIP: 'gids' being empty is not acceptable, please check."
             ),
             resolved_access_rights,
@@ -465,7 +465,7 @@ async def _check_folder_and_access(
             product_name,
             folder_id,
             gids,
-            enforece_all_permissions,
+            enforce_all_permissions,
         )
         raise UnexpectedFolderAccessError
 
@@ -479,7 +479,7 @@ async def _check_folder_access(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions,
-    enforece_all_permissions: bool,
+    enforce_all_permissions: bool,
 ) -> _ResolvedAccessRights:
     """
     Raises:
@@ -503,7 +503,7 @@ async def _check_folder_access(
         folder_id,
         gid,
         permissions=None,
-        enforece_all_permissions=False,
+        enforce_all_permissions=False,
     )
     if not resolved_access_rights_without_permissions:
         raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
@@ -514,7 +514,7 @@ async def _check_folder_access(
         folder_id,
         gid,
         permissions=permissions,
-        enforece_all_permissions=enforece_all_permissions,
+        enforce_all_permissions=enforce_all_permissions,
     )
     if resolved_access_rights is None:
         raise InsufficientPermissionsError(
@@ -584,7 +584,7 @@ async def folder_create(
                 folder_id=parent,
                 gids=gids,
                 permissions=_required_permissions,
-                enforece_all_permissions=False,
+                enforce_all_permissions=False,
             )
             permissions_gid = resolved_access_rights.gid
 
@@ -596,7 +596,7 @@ async def folder_create(
             ).fetchall()
 
             if not groups_results:
-                raise GroupIDsDoNotExistError(gids=gids)
+                raise NoGroupIDFoundError(gids=gids)
 
             primary_gid: _GroupID | None = None
             for group in groups_results:
@@ -664,7 +664,7 @@ async def folder_share_or_update_permissions(
             folder_id=folder_id,
             gids=sharing_gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         # update or create permissions entry
@@ -715,7 +715,7 @@ async def folder_update(
             folder_id=folder_id,
             gids=gids,
             permissions=_required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         # do not update if nothing changed
@@ -760,7 +760,7 @@ async def folder_delete(
             folder_id=folder_id,
             gids=gids,
             permissions=_required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         # list all children then delete
@@ -812,7 +812,7 @@ async def folder_move(
             folder_id=source_folder_id,
             gids=gids,
             permissions=required_permissions_source,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         source_access_gid = source_access_entry.gid
@@ -831,7 +831,7 @@ async def folder_move(
                 folder_id=destination_folder_id,
                 gids=gids,
                 permissions=required_permissions_destination,
-                enforece_all_permissions=False,
+                enforce_all_permissions=False,
             )
 
         # set new traversa_parent_id on the source_folder_id which is equal to destination_folder_id
@@ -873,7 +873,7 @@ async def folder_add_project(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         # check if already added in folder
@@ -926,7 +926,7 @@ async def folder_move_project(
             folder_id=source_folder_id,
             gids=gids,
             permissions=_required_permissions_source,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
     if destination_folder_id is None:
@@ -947,7 +947,7 @@ async def folder_move_project(
             folder_id=destination_folder_id,
             gids=gids,
             permissions=_required_permissions_destination,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         await connection.execute(
@@ -1013,7 +1013,7 @@ async def folder_remove_project(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
         await connection.execute(
@@ -1098,7 +1098,7 @@ async def folder_list(
             folder_id=folder_id,
             gids=gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
+            enforce_all_permissions=False,
         )
 
     results: list[FolderEntry] = []
@@ -1156,7 +1156,7 @@ async def folder_get(
         folder_id=folder_id,
         gids=gids,
         permissions=required_permissions,
-        enforece_all_permissions=False,
+        enforce_all_permissions=False,
     )
     permissions_gid: _GroupID = resolved_access_rights.gid
 

@@ -32,9 +32,9 @@ from simcore_postgres_database.utils_folders import (
     FolderEntry,
     FolderNotFoundError,
     FolderNotSharedWithGidError,
-    GroupIDsDoNotExistError,
     InsufficientPermissionsError,
     InvalidFolderNameError,
+    NoGroupIDFoundError,
     RootFolderRequiresAtLeastOnePrimaryGroupError,
     _FolderID,
     _FolderPermissions,
@@ -439,7 +439,7 @@ async def test_folder_create(
         # 1. when GID is missing no entries should be present
         missing_gid = 10202023302
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
-        with pytest.raises(GroupIDsDoNotExistError):
+        with pytest.raises(NoGroupIDFoundError):
             await folder_create(connection, product_name, "f1", {missing_gid})
         await _assert_folder_entires(connection, folder_count=expected_folder_count)
 
@@ -613,7 +613,7 @@ async def test__get_resolved_access_rights(
             # NOTE: this is the more restricitve case
             # and we test against exact user roles,
             # the APIs use only a subset of the permissions ususally set to True
-            enforece_all_permissions=True,
+            enforce_all_permissions=True,
         )
         assert resolved_parent
         assert resolved_parent.folder_id == expected_folder_id
