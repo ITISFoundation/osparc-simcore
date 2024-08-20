@@ -467,27 +467,27 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * SERVICES DEV
+       * SERVICES V2 (web-api >=0.42.0)
        */
-      "servicesDev": {
+      "servicesV2": {
         useCache: false, // handled in osparc.service.Store
         idField: ["key", "version"],
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/-/latest"
+            url: statics.API + "/catalog/services/-/latest"
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/-/latest?offset={offset}&limit={limit}"
+            url: statics.API + "/catalog/services/-/latest?offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/{key}/{version}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/dev/catalog/services/{key}/{version}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           }
         }
       },
