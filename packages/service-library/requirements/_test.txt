@@ -40,6 +40,7 @@ certifi==2024.7.4
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_fastapi.txt
     #   requests
 coverage==7.6.0
     # via
@@ -209,6 +210,7 @@ referencing==0.29.3
 requests==2.32.3
     # via
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_fastapi.txt
     #   docker
     #   jsonschema-path
 respx==0.21.1
@@ -258,6 +260,7 @@ types-tqdm==4.66.0.20240417
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
+    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   anyio
@@ -267,6 +270,7 @@ urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_fastapi.txt
     #   docker
     #   requests
 yarl==1.9.4
