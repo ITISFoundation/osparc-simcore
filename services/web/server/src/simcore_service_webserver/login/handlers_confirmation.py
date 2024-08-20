@@ -236,7 +236,7 @@ async def phone_confirmation(request: web.Request):
         try:
             user = await db.get_user({"email": request_body.email})
             assert user is not None  # nosec
-            await db.update_user(user, {"phone": request_body.phone})
+            await db.update_user(dict(user), {"phone": request_body.phone})
 
         except UniqueViolation as err:
             raise web.HTTPUnauthorized(
@@ -283,7 +283,7 @@ async def reset_password(request: web.Request):
         assert user  # nosec
 
         await db.update_user(
-            user,
+            dict(user),
             {
                 "password_hash": encrypt_password(
                     request_body.password.get_secret_value()

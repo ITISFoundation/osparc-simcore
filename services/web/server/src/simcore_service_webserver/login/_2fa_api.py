@@ -17,8 +17,8 @@ from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import LogExtra, get_log_record_extra, log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
-from twilio.base.exceptions import TwilioException
-from twilio.rest import Client
+from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
+from twilio.rest import Client  # type: ignore[import-untyped]
 
 from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
 from ..products.api import Product

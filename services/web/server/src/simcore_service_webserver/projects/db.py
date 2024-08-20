@@ -1189,7 +1189,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
             row = await result.first()
             if row:
-                return row[projects.c.type]
+                return ProjectType(row[projects.c.type])
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
     #
