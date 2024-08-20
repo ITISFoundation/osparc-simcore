@@ -104,5 +104,5 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     INVITATIONS_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        auto_default_from_env=True, description="settings for opentelemtry tracing"
     )

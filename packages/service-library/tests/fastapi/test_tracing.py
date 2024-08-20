@@ -8,7 +8,7 @@ from asyncio import AbstractEventLoop
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 from settings_library.tracing import TracingSettings
 
 mock_app = FastAPI(title="Opentelemetry example")
@@ -45,12 +45,12 @@ def test_valid_tracing_settings(
 ):
     app = mock_app
     tracing_settings = TracingSettings()
-    setup_opentelemetry_instrumentation(
+    setup_opentelemtry_instrumentation(
         app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
-    setup_opentelemetry_instrumentation(
+    setup_opentelemtry_instrumentation(
         app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
@@ -76,7 +76,7 @@ def test_invalid_tracing_settings(
     app = mock_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        setup_opentelemetry_instrumentation(
+        setup_opentelemtry_instrumentation(
             app,
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
@@ -95,7 +95,7 @@ def test_missing_tracing_settings(
 ):
     app = mock_app
     tracing_settings = TracingSettings()
-    setup_opentelemetry_instrumentation(
+    setup_opentelemtry_instrumentation(
         app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",

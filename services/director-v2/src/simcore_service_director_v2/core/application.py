@@ -10,7 +10,7 @@ from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 from servicelib.logging_utils import config_all_loggers
 
 from ..api.entrypoints import api_router
@@ -194,7 +194,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if settings.DIRECTOR_V2_TRACING:
-        setup_opentelemetry_instrumentation(
+        setup_opentelemtry_instrumentation(
             app, app.state.settings.DIRECTOR_V2_TRACING, "simcore_service_director-v2"
         )
 
