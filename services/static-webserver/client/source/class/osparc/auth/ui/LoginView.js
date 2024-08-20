@@ -97,7 +97,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         createAccountBtn.setEnabled(false);
         if (config["invitation_required"]) {
           if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            this.fireEvent("toRequestAccount");
+            if (osparc.utils.Utils.isDevelopmentPlatform()) {
+              this.fireEvent("toRegister");
+            } else {
+              this.fireEvent("toRequestAccount");
+            }
           } else {
             osparc.store.Support.openInvitationRequiredDialog();
           }
