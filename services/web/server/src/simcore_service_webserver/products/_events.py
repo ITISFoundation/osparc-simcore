@@ -6,6 +6,7 @@ from typing import cast
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
+from aiopg.sa.result import RowProxy
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products import (
@@ -78,8 +79,9 @@ async def load_products_on_startup(app: web.Application):
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
+            assert isinstance(row, RowProxy)  # nosec
             try:
-                name = row.name  # type: ignore[attr-defined] # sqlalchemy
+                name = row.name
 
                 payments = await get_product_payment_fields(
                     connection, product_name=name

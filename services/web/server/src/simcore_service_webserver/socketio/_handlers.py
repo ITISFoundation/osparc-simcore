@@ -7,6 +7,7 @@
 import logging
 from typing import Any
 
+import socketio.exceptions  # type: ignore[import-untyped]
 from aiohttp import web
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
@@ -15,7 +16,6 @@ from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
-from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..groups.api import list_user_groups_with_read_access
 from ..login.decorators import login_required
@@ -117,8 +117,8 @@ async def connect(
         environ -- the WSGI environ, among other contains the original request
 
     Raises:
-        SocketIOConnectionError: HTTPUnauthorized
-        SocketIOConnectionError: Unexpected error
+        SIoConnectionRefusedError: HTTPUnauthorized
+        SIoConnectionRefusedError: Unexpected error
 
     Returns:
         True if socket.io connection accepted
@@ -153,10 +153,10 @@ async def connect(
 
     except web.HTTPUnauthorized as exc:
         msg = "authentification failed"
-        raise SocketIOConnectionError(msg) from exc
+        raise socketio.exceptions.ConnectionRefusedError(msg) from exc
     except Exception as exc:  # pylint: disable=broad-except
         msg = f"Unexpected error: {exc}"
-        raise SocketIOConnectionError(msg) from exc
+        raise socketio.exceptions.ConnectionRefusedError(msg) from exc
 
     return True
 
