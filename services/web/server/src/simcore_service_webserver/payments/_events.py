@@ -26,6 +26,9 @@ async def validate_prices_in_product_settings_on_startup(app: web.Application):
                     amount_usd=payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
                     min_payment_amount_usd=product.min_payment_amount_usd,
                 )
+            assert (  # nosec
+                payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT is not None
+            )
             if (
                 product.min_payment_amount_usd
                 > payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT

@@ -5,10 +5,11 @@
  MIME: Multipurpose Internet Mail Extensions
 
 """
+
 import logging
 
 import aiohttp_jinja2
-import jinja_app_loader
+import jinja_app_loader  # type: ignore[import-untyped]
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 

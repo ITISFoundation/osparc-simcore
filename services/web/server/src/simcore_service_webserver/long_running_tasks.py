@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import Field
-from servicelib.aiohttp.long_running_tasks._server import (
+from servicelib.aiohttp.long_running_tasks._constants import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
 from servicelib.aiohttp.long_running_tasks.server import setup

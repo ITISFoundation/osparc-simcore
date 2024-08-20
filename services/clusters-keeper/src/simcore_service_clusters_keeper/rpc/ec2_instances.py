@@ -1,4 +1,4 @@
-from aws_library.ec2.models import EC2InstanceType
+from aws_library.ec2 import EC2InstanceType
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from servicelib.rabbitmq import RPCRouter

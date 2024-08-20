@@ -16,7 +16,7 @@ import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2 import EC2InstanceBootSpecific
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI

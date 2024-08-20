@@ -10,7 +10,7 @@ from typing import Any, Final
 import distributed
 import pytest
 from arrow import utcnow
-from aws_library.ec2.models import Resources
+from aws_library.ec2 import Resources
 from faker import Faker
 from models_library.clusters import (
     InternalClusterAuthentication,

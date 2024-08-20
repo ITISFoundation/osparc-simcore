@@ -1,93 +1,63 @@
-import asyncio
-import base64
-import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
-import httpx
+
 from fastapi import FastAPI
+from pydantic import NonNegativeInt
 from settings_library.docker_registry import RegistrySettings
-from starlette import status
 
 from ..modules.service_liveness import wait_for_service_liveness
+from .settings import ApplicationSettings
+from .utils import CommandResult, async_command
 
 _logger = logging.getLogger(__name__)
+
+DOCKER_CONFIG_JSON_PATH: Final[Path] = Path.home() / ".docker" / "config.json"
+DOCKER_LOGIN_TIMEOUT: Final[NonNegativeInt] = 5
 
 
 class _RegistryNotReachableError(Exception):
     pass
 
 
-def _get_registry_url(registry_settings: RegistrySettings) -> str:
-    protocol = "https" if registry_settings.REGISTRY_SSL else "http"
-    return f"{protocol}://{registry_settings.api_url}/"
-
-
-async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
-    async with httpx.AsyncClient(timeout=5) as client:
-        params: dict[str, Any] = {}
-        if registry_settings.REGISTRY_AUTH:
-            params["auth"] = (
-                registry_settings.REGISTRY_USER,
-                registry_settings.REGISTRY_PW.get_secret_value(),
-            )
-
-        url = _get_registry_url(registry_settings)
-
-        _logger.info("Registry test url ='%s'", url)
-        response = await client.get(url, **params)
-        reachable = response.status_code == status.HTTP_200_OK and response.json() == {}
-        if not reachable:
-            _logger.error("Response: %s", response)
-            error_message = (
-                f"Could not reach registry {registry_settings.api_url} "
-                f"auth={registry_settings.REGISTRY_AUTH}"
-            )
-            raise _RegistryNotReachableError(error_message)
-
-
-async def wait_for_registry_liveness(app: FastAPI) -> None:
-    registry_settings: RegistrySettings = app.state.settings.REGISTRY_SETTINGS
-
-    await wait_for_service_liveness(
-        _is_registry_reachable,
-        service_name="Registry",
-        endpoint=_get_registry_url(registry_settings),
-        registry_settings=registry_settings,
-    )
+def _get_login_url(registry_settings: RegistrySettings) -> str:
+    return registry_settings.resolved_registry_url
 
 
 async def _login_registry(registry_settings: RegistrySettings) -> None:
-    """
-    Creates ~/.docker/config.json and adds docker registry credentials
-    """
+    command_result: CommandResult = await async_command(
+        (
+            f"echo '{registry_settings.REGISTRY_PW.get_secret_value()}' | "
+            f"docker login {_get_login_url(registry_settings)} "
+            f"--username '{registry_settings.REGISTRY_USER}' "
+            "--password-stdin"
+        ),
+        timeout=DOCKER_LOGIN_TIMEOUT,
+    )
+    if "Login Succeeded" not in command_result.message:
+        _logger.error("Response: %s", command_result)
+        error_message = f"Could not contact registry with the following credentials {registry_settings}"
+        raise _RegistryNotReachableError(error_message)
 
-    def create_docker_config_file(registry_settings: RegistrySettings) -> None:
-        user = registry_settings.REGISTRY_USER
-        password = registry_settings.REGISTRY_PW.get_secret_value()
-        docker_config = {
-            "auths": {
-                f"{registry_settings.resolved_registry_url}": {
-                    "auth": base64.b64encode(f"{user}:{password}".encode()).decode(
-                        "utf-8"
-                    )
-                }
-            }
-        }
-        conf_file = Path.home() / ".docker" / "config.json"
-        conf_file.parent.mkdir(exist_ok=True, parents=True)
-        conf_file.write_text(json.dumps(docker_config))
+    _logger.debug("Logged into registry: %s", registry_settings)
 
-    if registry_settings.REGISTRY_AUTH:
-        await asyncio.get_event_loop().run_in_executor(
-            None, create_docker_config_file, registry_settings
+
+async def wait_for_registries_liveness(app: FastAPI) -> None:
+    # NOTE: also logins to the registries when the health check is enforced
+    settings: ApplicationSettings = app.state.settings
+
+    await wait_for_service_liveness(
+        _login_registry,
+        service_name="Internal Registry",
+        endpoint=_get_login_url(settings.DY_DEPLOYMENT_REGISTRY_SETTINGS),
+        registry_settings=settings.DY_DEPLOYMENT_REGISTRY_SETTINGS,
+    )
+
+    if settings.DY_DOCKER_HUB_REGISTRY_SETTINGS:
+        await wait_for_service_liveness(
+            _login_registry,
+            service_name="DockerHub Registry",
+            endpoint=_get_login_url(settings.DY_DOCKER_HUB_REGISTRY_SETTINGS),
+            registry_settings=settings.DY_DOCKER_HUB_REGISTRY_SETTINGS,
         )
-
-
-def setup_registry(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        registry_settings: RegistrySettings = app.state.settings.REGISTRY_SETTINGS
-        await _login_registry(registry_settings)
-
-    app.add_event_handler("startup", on_startup)

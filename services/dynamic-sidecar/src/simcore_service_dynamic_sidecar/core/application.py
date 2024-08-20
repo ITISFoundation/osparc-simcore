@@ -30,7 +30,6 @@ from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
-from .registry import setup_registry
 from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
@@ -114,7 +113,9 @@ def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers(settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    config_all_loggers(
+        log_format_local_dev_enabled=settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED
+    )
 
 
 def create_base_app() -> FastAPI:
@@ -180,8 +181,6 @@ def create_app():
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
-
-    setup_registry(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
