@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
-from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
+from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
 from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
@@ -74,7 +74,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
     if app.state.settings.API_SERVER_TRACING:
-        setup_opentelemtry_instrumentation(
+        setup_opentelemetry_instrumentation(
             app, app.state.settings.API_SERVER_TRACING, "simcore_service_apiserver"
         )
 

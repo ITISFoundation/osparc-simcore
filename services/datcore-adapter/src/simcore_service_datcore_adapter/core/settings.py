@@ -42,7 +42,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemtry tracing"
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     @cached_property

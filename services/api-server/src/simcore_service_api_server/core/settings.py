@@ -88,7 +88,7 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
     API_SERVER_PROFILING: bool = False
     API_SERVER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemtry tracing"
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     @cached_property

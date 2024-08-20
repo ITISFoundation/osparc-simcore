@@ -80,5 +80,5 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     DYNAMIC_SCHEDULER_PROFILING: bool = False
     DYNAMIC_SCHEDULER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemtry tracing"
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
