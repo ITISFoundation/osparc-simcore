@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Final
-
+from typing import Final
 
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
