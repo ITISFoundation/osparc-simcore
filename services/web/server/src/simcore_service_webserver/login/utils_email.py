@@ -20,6 +20,7 @@ async def get_template_path(request: web.Request, filename: str) -> Path:
 
 
 # prevents auto-removal by pycln
+# mypy: disable-error-code=truthy-function
 assert AttachmentTuple  # nosec
 assert send_email_from_template  # nosec
 

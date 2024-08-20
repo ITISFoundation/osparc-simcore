@@ -129,7 +129,7 @@ async def create_folder(request: web.Request):
 @handle_folders_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
+    query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
         FolderListWithJsonStrQueryParams, request
     )
 

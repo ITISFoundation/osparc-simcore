@@ -1,6 +1,6 @@
 from typing import Final
 
-from aws_library.ec2.models import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from fastapi import FastAPI
 from pydantic import parse_obj_as
 

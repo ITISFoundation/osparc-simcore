@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 """
     This should be the interface other modules should use to get
     information from user module

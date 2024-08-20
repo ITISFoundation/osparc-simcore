@@ -7,7 +7,7 @@ from typing import Any, Final
 
 import arrow
 import yaml
-from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
+from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,

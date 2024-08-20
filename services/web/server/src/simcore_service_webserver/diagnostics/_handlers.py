@@ -1,6 +1,7 @@
 """ Handler functions and routing for diagnostics
 
 """
+
 import asyncio
 import logging
 from contextlib import suppress
@@ -53,7 +54,7 @@ async def get_app_diagnostics(request: web.Request):
     }
 
     # allocated memory
-    query_params = parse_request_query_parameters_as(
+    query_params: StatusDiagnosticsQueryParam = parse_request_query_parameters_as(
         StatusDiagnosticsQueryParam, request
     )
     if query_params.top_tracemalloc is not None:

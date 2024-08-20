@@ -2,6 +2,7 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
+
 import urllib.parse
 import uuid
 from collections.abc import Callable
@@ -10,7 +11,8 @@ from functools import lru_cache
 
 import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
-from models_library.projects_nodes import InputID, KeyIDStr
+from models_library.basic_types import KeyIDStr
+from models_library.projects_nodes import InputID
 from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr

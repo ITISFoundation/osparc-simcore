@@ -6,7 +6,7 @@ from ..errors import WebServerBaseError
 class GroupsError(WebServerBaseError):
     msg_template = "{msg}"
 
-    def __init__(self, msg: str = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg=msg or "Unexpected error occured in projects subpackage")
 
 

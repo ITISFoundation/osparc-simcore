@@ -13,7 +13,7 @@ from typing import Any
 import aiodocker
 import arrow
 import pytest
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import (

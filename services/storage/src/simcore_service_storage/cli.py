@@ -25,7 +25,9 @@ def run():
 
     logging.basicConfig(level=settings_obj.log_level)
     logging.root.setLevel(settings_obj.log_level)
-    config_all_loggers(settings_obj.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    config_all_loggers(
+        log_format_local_dev_enabled=settings_obj.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED
+    )
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
