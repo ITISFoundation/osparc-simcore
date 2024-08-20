@@ -484,7 +484,7 @@ async def _check_and_get_folder_access(
         InsufficientPermissionsError
         NoAccessForGroupsFoundError
     """
-    folder_access_error: FolderAccessError | None = None
+    folder_access_error = None
 
     for gid in gids:
         try:
