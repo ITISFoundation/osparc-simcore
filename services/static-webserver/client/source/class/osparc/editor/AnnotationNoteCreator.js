@@ -47,7 +47,6 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
 
   events: {
     "addNote": "qx.event.type.Event",
-    "saveNote": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
@@ -133,13 +132,6 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
           const buttons = this.getChildControl("buttonsLayout");
           control = new qx.ui.form.Button(this.tr("Add"));
           control.addListener("execute", () => this.fireEvent("addNote"), this);
-          buttons.addAt(control, 0);
-          break;
-        }
-        case "save": {
-          const buttons = this.getChildControl("buttonsLayout");
-          control = new qx.ui.form.Button(this.tr("Save"));
-          control.addListener("execute", () => this.fireEvent("saveNote"), this);
           buttons.addAt(control, 0);
           break;
         }
