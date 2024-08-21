@@ -249,6 +249,11 @@ qx.Class.define("osparc.study.Utils", {
       return [false].includes(blocked);
     },
 
+    canShowBillingOptions: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
     canShowServiceUpdates: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return [false].includes(blocked);
