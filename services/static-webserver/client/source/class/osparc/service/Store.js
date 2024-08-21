@@ -65,7 +65,8 @@ qx.Class.define("osparc.service.Store", {
             this.__addExtraTypeInfo(service);
             this.__addToCache(service)
             resolve(service);
-          });
+          })
+          .catch(console.error);
       });
     },
 
