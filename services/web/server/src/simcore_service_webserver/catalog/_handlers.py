@@ -8,14 +8,13 @@ should live in the catalog service in his final version
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Final
+from typing import Final
 
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
-    ServiceGet,
     ServiceInputKey,
     ServiceOutputKey,
 )
@@ -27,7 +26,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from models_library.utils.json_serialization import json_loads
 from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -75,19 +73,19 @@ class ListServiceParams(PageQueryParameters):
 
 
 @routes.get(
-    f"{VTAG_DEV}/catalog/services/-/latest",
-    name="dev_list_services_latest",
+    f"{VTAG}/catalog/services/-/latest",
+    name="list_services_latest",
 )
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
-async def dev_list_services_latest(request: Request):
+async def list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     query_params: ListServiceParams = parse_request_query_parameters_as(
         ListServiceParams, request
     )
 
-    page_items, page_meta = await _api.dev_list_latest_services(
+    page_items, page_meta = await _api.list_latest_services(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -113,20 +111,20 @@ async def dev_list_services_latest(request: Request):
 
 
 @routes.get(
-    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
-    name="dev_get_service",
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
+    name="get_service",
 )
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
-async def dev_get_service(request: Request):
+async def get_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     assert request_ctx  # nosec
     assert path_params  # nosec
 
-    service = await _api.dev_get_service(
+    service = await _api.get_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -139,13 +137,13 @@ async def dev_get_service(request: Request):
 
 
 @routes.patch(
-    f"{VTAG_DEV}/catalog/services/{{service_key}}/{{service_version}}",
-    name="dev_update_service",
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
+    name="update_service",
 )
 @login_required
 @permission_required("services.catalog.*")
 @_handlers_errors.reraise_catalog_exceptions_as_http_errors
-async def dev_update_service(request: Request):
+async def update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update: CatalogServiceUpdate = await parse_request_body_as(
@@ -156,7 +154,7 @@ async def dev_update_service(request: Request):
     assert path_params  # nosec
     assert update  # nosec
 
-    updated = await _api.dev_update_service(
+    updated = await _api.update_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -167,74 +165,6 @@ async def dev_update_service(request: Request):
     )
 
     return envelope_json_response(CatalogServiceGet.parse_obj(updated))
-
-
-@routes.get(f"{VTAG}/catalog/services", name="list_services")
-@login_required
-@permission_required("services.catalog.*")
-async def list_services(request: Request):
-    req_ctx = CatalogRequestContext.create(request)
-
-    data_array = await _api.list_services(
-        request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        unit_registry=req_ctx.unit_registry,
-    )
-
-    # NOTE: this is too heave in devel-mode. Temporary removed
-    # assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
-    #
-
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data_array
-    )
-
-
-@routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
-    name="get_service",
-)
-@login_required
-@permission_required("services.catalog.*")
-async def get_service(request: Request):
-    ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(ServicePathParams, request)
-
-    data = await _api.get_service(
-        path_params.service_key, path_params.service_version, ctx
-    )
-    assert parse_obj_as(ServiceGet, data) is not None  # nosec
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
-
-
-@routes.patch(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
-    name="update_service",
-)
-@login_required
-@permission_required("services.catalog.*")
-async def update_service(request: Request):
-    ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    update_data: dict[str, Any] = await request.json(loads=json_loads)
-
-    assert parse_obj_as(CatalogServiceUpdate, update_data) is not None  # nosec
-
-    # Evaluate and return validated model
-    data = await _api.update_service(
-        path_params.service_key,
-        path_params.service_version,
-        update_data,
-        ctx,
-    )
-
-    assert parse_obj_as(ServiceGet, data) is not None  # nosec
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
 
 
 @routes.get(
