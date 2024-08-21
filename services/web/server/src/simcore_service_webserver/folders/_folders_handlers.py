@@ -27,6 +27,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.utils_folders import FoldersError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -50,6 +51,9 @@ def handle_folders_exceptions(handler: Handler):
 
         except FolderAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
+
+        except FoldersError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
     return wrapper
 
