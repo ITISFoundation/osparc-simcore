@@ -271,7 +271,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["IN_USE", "UNKNOWN_SERVICES", false].includes(blocked);
+      return [false].includes(blocked);
     },
 
     canBeDeleted: function(studyData) {
@@ -281,33 +281,12 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeDuplicated: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
+      return [false].includes(blocked);
     },
 
     canBeExported: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
-    },
-
-    mustache: {
-      mustacheRegEx: function() {
-        return /{{([^{}]*)}}/g;
-      },
-
-      mustache2Var: function(mustached) {
-        return mustached.replace("{{", "").replace("}}", "");
-      },
-
-      getVariables: function(obj) {
-        const variables = new Set();
-        const secondaryStudyDataStr = JSON.stringify(obj);
-        const mustaches = secondaryStudyDataStr.match(this.self().mustache.mustacheRegEx()) || [];
-        mustaches.forEach(mustache => {
-          const variable = this.self().mustache.mustache2Var(mustache);
-          variables.add(variable);
-        });
-        return Array.from(variables);
-      }
     }
   }
 });
