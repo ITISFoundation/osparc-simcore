@@ -777,7 +777,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
         const studyFilesButton = menuButtons.find(menuBtn => "studyFilesButton" in menuBtn);
         if (studyFilesButton) {
-          studyFilesButton.setEnabled(osparc.study.Utils.canCheckFiles(resourceData));
+          studyFilesButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {

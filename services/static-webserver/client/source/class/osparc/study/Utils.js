@@ -249,22 +249,37 @@ qx.Class.define("osparc.study.Utils", {
       return [false].includes(blocked);
     },
 
+    canShowServiceUpdates: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowServiceBootOptions: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowStudyData: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowPreview: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return ["IN_USE", "UNKNOWN_SERVICES", false].includes(blocked);
+    },
+
+    canBeDeleted: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
+    },
+
     canBeDuplicated: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canBeExported: function(studyData) {
-      const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
-    },
-
-    canCheckFiles: function(studyData) {
-      const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
-    },
-
-    canBeDeleted: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
