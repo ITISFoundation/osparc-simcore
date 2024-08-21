@@ -70,7 +70,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
 
       const newCollaborators = {};
       gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
-      osparc.store.Folders.getInstance().addCollaborators(this.__folder.getId(), newCollaborators)
+      osparc.store.Folders.getInstance().addCollaborators(this.__folder.getFolderId(), newCollaborators)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           const text = this.tr("User(s) successfully added.");
@@ -88,7 +88,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
         item.setEnabled(false);
       }
 
-      osparc.store.Folders.getInstance().removeCollaborator(this.__folder.getId(), collaborator["gid"])
+      osparc.store.Folders.getInstance().removeCollaborator(this.__folder.getFolderId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -108,7 +108,7 @@ qx.Class.define("osparc.share.CollaboratorsFolder", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.Folders.getInstance().updateCollaborator(this.__folder.getId(), collaboratorGId, newAccessRights)
+      osparc.store.Folders.getInstance().updateCollaborator(this.__folder.getFolderId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__folder.serialize());
           osparc.FlashMessenger.getInstance().logAs(successMsg);

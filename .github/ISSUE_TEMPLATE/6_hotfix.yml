@@ -31,6 +31,14 @@ body:
       value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<version>
     validations:
       required: true
+  - type: input
+    id: hotfix_date
+    attributes:
+      label: Planned date
+      description: Projected release date for this upcoming version
+      placeholder: ex. Friday, April 23, 1976
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Motivation

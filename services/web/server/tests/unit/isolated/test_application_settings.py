@@ -216,6 +216,9 @@ def test_settings_to_client_statics_plugins(
     monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
     disable_plugins.add("WEBSERVER_VERSION_CONTROL")
 
+    monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
+    disable_plugins.add("WEBSERVER_FOLDERS")
+
     settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()
 

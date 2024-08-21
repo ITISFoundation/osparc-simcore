@@ -13,7 +13,7 @@ from ._base import InputSchema, OutputSchema
 
 class WalletGet(OutputSchema):
     wallet_id: WalletID
-    name: str
+    name: IDStr
     description: str | None
     owner: GroupID
     thumbnail: str | None

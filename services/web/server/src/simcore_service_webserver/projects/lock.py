@@ -8,7 +8,8 @@ from typing import Final
 import redis
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
+from models_library.projects_access import Owner
+from models_library.projects_state import ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
 from servicelib.background_task import periodic_task
 from servicelib.logging_utils import log_context

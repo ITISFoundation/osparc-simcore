@@ -314,12 +314,14 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             ) from exc
 
     # COPY
+    assert user  # nosec
     try:
         _logger.debug(
             "Granted access to study name='%s' for user email='%s'. Copying study over ...",
             template_project.get("name"),
             user.get("email"),
         )
+
         copied_project_id = await copy_study_to_account(request, template_project, user)
 
         _logger.debug("Study %s copied", copied_project_id)

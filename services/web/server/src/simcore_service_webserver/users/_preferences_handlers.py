@@ -29,8 +29,8 @@ routes = web.RouteTableDef()
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 def _handle_users_exceptions(handler: Handler):

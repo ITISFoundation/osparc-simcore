@@ -3,15 +3,15 @@ import logging
 import re
 from typing import Final
 
-from aws_library.ec2.models import (
-    EC2InstanceBootSpecific,
-    EC2InstanceData,
-    EC2InstanceType,
-)
+from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2InstanceType
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
+from ..core.errors import (
+    Ec2InvalidDnsNameError,
+    TaskRequirementsAboveRequiredEC2InstanceTypeError,
+    TaskRequiresUnauthorizedEC2InstanceTypeError,
+)
 from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
@@ -146,11 +146,9 @@ def find_selected_instance_type_for_task(
         )
     )
     if not filtered_instances:
-        msg = (
-            f"Task {task} requires an unauthorized EC2 instance type."
-            f"Asked for {instance_type_name}, authorized are {available_ec2_types}. Please check!"
+        raise TaskRequiresUnauthorizedEC2InstanceTypeError(
+            task=task, instance_type=instance_type_name
         )
-        raise Ec2InstanceInvalidError(msg=msg)
 
     assert len(filtered_instances) == 1  # nosec
     selected_instance = filtered_instances[0]
@@ -160,11 +158,11 @@ def find_selected_instance_type_for_task(
         auto_scaling_mode.get_task_required_resources(task)
         > selected_instance.resources
     ):
-        msg = (
-            f"Task {task} requires more resources than the selected instance provides."
-            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_task_required_resources(task)}. Please check!"
+        raise TaskRequirementsAboveRequiredEC2InstanceTypeError(
+            task=task,
+            instance_type=selected_instance,
+            resources=auto_scaling_mode.get_task_required_resources(task),
         )
-        raise Ec2InstanceInvalidError(msg=msg)
 
     return selected_instance
 

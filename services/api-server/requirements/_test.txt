@@ -323,6 +323,8 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
+types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
 types-awscrt==0.21.2
     # via botocore-stubs
 types-boto3==1.0.2
