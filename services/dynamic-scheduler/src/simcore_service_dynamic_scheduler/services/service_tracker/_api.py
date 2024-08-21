@@ -31,18 +31,7 @@ async def set_request_as_running(
     dynamic_service_start: DynamicServiceStart,
 ) -> None:
     """Stores intention to `start` request"""
-    tracker = get_tracker(app)
-
-    model: TrackedServiceModel | None = await tracker.load(
-        dynamic_service_start.node_uuid
-    )
-    if model is not None:
-        model.dynamic_service_start = dynamic_service_start
-        model.requested_state = UserRequestedState.RUNNING
-        model.project_id = dynamic_service_start.project_id
-        model.user_id = dynamic_service_start.user_id
-
-    await tracker.save(
+    await get_tracker(app).save(
         dynamic_service_start.node_uuid,
         TrackedServiceModel(
             dynamic_service_start=dynamic_service_start,
