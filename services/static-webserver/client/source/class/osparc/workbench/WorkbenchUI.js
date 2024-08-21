@@ -493,7 +493,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __addNodeListeners: function(nodeUI) {
       nodeUI.addListener("updateNodeDecorator", () => this.__updateNodeUIPos(nodeUI), this);
 
-      nodeUI.addListener("nodeMovingStart", () => this.__itemStartedMoving(), this);
+      nodeUI.addListener("nodeMovingStart", () => {
+        this.__selectNode(nodeUI);
+        this.__itemStartedMoving();
+      }, this);
+
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
@@ -524,6 +528,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__selectAnnotation(annotation);
         this.__itemStartedMoving();
       }, this);
+
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
           const reprPos = annotation.getRepresentationPosition();
@@ -532,6 +537,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           this.__itemMoving(annotation.getId(), xDiff, yDiff);
         }
       }, this);
+
       annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       annotation.addListener("annotationClicked", e => this.__selectAnnotation(annotation, e.getData()), this);
