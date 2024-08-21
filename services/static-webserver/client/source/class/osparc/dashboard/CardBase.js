@@ -349,7 +349,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     state: {
       check: "Object",
       nullable: false,
-      apply: "_applyState"
+      apply: "__applyState"
     },
 
     projectState: {
@@ -359,11 +359,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "_applyProjectState"
     },
 
-    locked: {
-      check: "Boolean",
+    blocked: {
+      check: [true, "UNKNOWN_SERVICES", "IN_USE", false],
       init: false,
       nullable: false,
-      apply: "_applyLocked"
+      apply: "__applyBlocked"
     },
 
     menu: {
@@ -515,7 +515,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         uiModeIcon.set({
           source,
           toolTipText,
-          alignY: "bottom"
         });
       }
     },
@@ -552,7 +551,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       // Block card
       const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
       if (unaccessibleServices.length) {
-        this.__enableCard(false);
+        this.setBlocked("UNKNOWN_SERVICES");
         const image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Service info missing");
         unaccessibleServices.forEach(unSrv => {
@@ -600,16 +599,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyState: function(state) {
+    __applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
+      this.setBlocked(locked ? "IN_USE" : false);
       if (locked) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
+
+      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (projectState) {
         this._applyProjectState(state["state"]);
       }
-      this.setLocked(locked);
     },
 
     _applyProjectState: function(projectStatus) {
@@ -722,32 +722,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyLocked: function(locked) {
-      this.__enableCard(!locked);
-      this.getChildControl("lock-status").set({
-        appearance: "form-button-outlined/disabled",
-        textColor: "text-disabled",
-        opacity: 1.0,
-        visibility: locked ? "visible" : "excluded"
-      });
-
-      this.set({
-        cursor: locked ? "not-allowed" : "pointer"
-      });
-
-      [
-        "tick-selected",
-        "tick-unselected",
-        "menu-button"
-      ].forEach(childName => {
-        const child = this.getChildControl(childName);
-        child.set({
-          enabled: !locked
-        });
-      });
-    },
-
-    __enableCard: function(enabled) {
+    __applyBlocked: function(blocked) {
+      const enabled = !blocked;
       if (enabled) {
         this.resetToolTipText();
       }
@@ -758,10 +734,58 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       });
 
-      if (this.getMenu() && this.getMenu().getChildren()) {
-        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+      this.getChildControl("lock-status").set({
+        appearance: "form-button-outlined/disabled",
+        textColor: "text-disabled",
+        opacity: 1.0,
+        visibility: enabled ? "excluded" : "visible"
+      });
+
+      // let the "pointer" cursor for IN_USE or UNKNOWN_SERVICE
+      this.set({
+        cursor: blocked === true ? "not-allowed" : "pointer"
+      });
+
+      [
+        "tick-selected",
+        "tick-unselected",
+        // "menu-button"
+      ].forEach(childName => {
+        const child = this.getChildControl(childName);
+        child.setEnabled(enabled);
+      });
+
+      this.evaluateMenuButtons();
+    },
+
+    evaluateMenuButtons: function() {
+      if (this.getMenu()) {
+        const menuButtons = this.getMenu().getChildren();
+        const resourceData = this.getResourceData();
+
+        const openButton = menuButtons.find(menuBtn => "openResourceButton" in menuBtn);
         if (openButton) {
-          openButton.setEnabled(enabled);
+          openButton.setEnabled(osparc.study.Utils.canBeOpened(resourceData));
+        }
+        const duplicateButton = menuButtons.find(menuBtn => "duplicateButton" in menuBtn);
+        if (duplicateButton) {
+          duplicateButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
+        }
+        const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
+        if (exportCMISButton) {
+          exportCMISButton.setEnabled(osparc.study.Utils.canBeExported(resourceData));
+        }
+        const studyDataButton = menuButtons.find(menuBtn => "studyDataButton" in menuBtn);
+        if (studyDataButton) {
+          studyDataButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
+        }
+        const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
+        if (moveToFolderButton) {
+          moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
+        }
+        const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
+        if (deleteButton) {
+          deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
         }
       }
     },
