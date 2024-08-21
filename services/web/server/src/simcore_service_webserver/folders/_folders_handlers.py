@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.folders import (
     FolderGetPage,
     PutFolderBodyParams,
 )
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -26,6 +27,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.utils_folders import FoldersError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -50,6 +52,9 @@ def handle_folders_exceptions(handler: Handler):
         except FolderAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
+        except FoldersError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+
     return wrapper
 
 
@@ -70,8 +75,9 @@ class FoldersPathParams(StrictRequestParams):
 
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field="modified", direction=OrderDirection.DESC),
+    # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg]
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',
         alias="order_by",
@@ -89,7 +95,8 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
             "name",
             "description",
         }:
-            raise ValueError(f"We do not support ordering by provided field {v.field}")
+            msg = f"We do not support ordering by provided field {v.field}"
+            raise ValueError(msg)
         if v.field == "modified_at":
             v.field = "modified"
         return v
@@ -129,7 +136,7 @@ async def create_folder(request: web.Request):
 @handle_folders_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
+    query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
         FolderListWithJsonStrQueryParams, request
     )
 

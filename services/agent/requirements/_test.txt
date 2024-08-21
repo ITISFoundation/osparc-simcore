@@ -26,7 +26,7 @@ attrs==21.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-aws-sam-translator==1.90.0
+aws-sam-translator==1.91.0
     # via cfn-lint
 aws-xray-sdk==2.14.0
     # via moto

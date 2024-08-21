@@ -1,14 +1,13 @@
 import logging
-from collections.abc import AsyncIterator
 from decimal import Decimal
-from typing import NamedTuple
+from typing import AsyncIterator, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.products import ProductName, ProductStripeInfoGet
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
-from simcore_postgres_database.models.products import jinja2_templates
+from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
     ProductPriceInfo,
     get_product_latest_price_info_or_none,

@@ -178,9 +178,7 @@ def monkeypatch_setenv_from_app_config(
             "  - convert_to_environ_vars(app_cfg)=\n",
             json_dumps(envs, indent=1, sort_keys=True),
         )
-        setenvs_from_dict(monkeypatch, envs)
-
-        return envs
+        return setenvs_from_dict(monkeypatch, envs)
 
     return _patch
 

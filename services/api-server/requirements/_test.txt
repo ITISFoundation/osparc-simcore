@@ -37,19 +37,19 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
-boto3==1.35.0
+boto3==1.35.1
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.35.0
+boto3-stubs==1.35.1
     # via types-boto3
-botocore==1.35.0
+botocore==1.35.1
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.35.0
+botocore-stubs==1.35.1
     # via boto3-stubs
 certifi==2024.2.2
     # via
@@ -323,6 +323,8 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
+types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
 types-awscrt==0.21.2
     # via botocore-stubs
 types-boto3==1.0.2

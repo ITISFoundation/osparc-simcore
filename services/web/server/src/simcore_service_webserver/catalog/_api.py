@@ -1,6 +1,7 @@
 import logging
+import warnings
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import web
 from aiohttp.web import Request
@@ -87,7 +88,7 @@ async def _safe_replace_service_input_outputs(
 # IMPLEMENTATION --------------------------------------------------------------------------------
 
 
-async def dev_list_latest_services(
+async def list_latest_services(
     app: web.Application,
     *,
     user_id: UserID,
@@ -112,7 +113,7 @@ async def dev_list_latest_services(
     return page_data, page.meta
 
 
-async def dev_get_service(
+async def get_service_v2(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -139,7 +140,7 @@ async def dev_get_service(
     return data
 
 
-async def dev_update_service(
+async def update_service_v2(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -187,6 +188,13 @@ async def list_services(
 async def get_service(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> dict[str, Any]:
+
+    warnings.warn(
+        "`get_service` is deprecated, use `get_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
@@ -204,6 +212,12 @@ async def update_service(
     update_data: dict[str, Any],
     ctx: CatalogRequestContext,
 ):
+    warnings.warn(
+        "`update_service_v2` is deprecated, use `update_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.update_service(
         ctx.app,
         ctx.user_id,
@@ -319,8 +333,11 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    return await ServiceOutputGetFactory.from_catalog_service_api_model(
-        service=service, output_key=output_key
+    return cast(  # mypy -> aiocache is not typed.
+        ServiceOutputGet,
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key
+        ),
     )
 
 

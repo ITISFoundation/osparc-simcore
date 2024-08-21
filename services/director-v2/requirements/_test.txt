@@ -321,7 +321,7 @@ tornado==6.4
     #   distributed
 traitlets==5.14.3
     # via dask-gateway-server
-types-networkx==3.2.1.20240813
+types-networkx==3.2.1.20240820
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in

@@ -4,6 +4,7 @@
 
 import logging
 from types import SimpleNamespace
+from typing import cast
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
@@ -100,13 +101,14 @@ class VersionControlForMetaModeling(VersionControlRepository):
         # SEE https://fastapi.tiangolo.com/tutorial/encoder/
         project = jsonable_encoder(project, sqlalchemy_safe=True)
 
-        commit_id: CommitID
-
         async with self.engine.acquire() as conn:
             # existance check prevents errors later
-            if tag := await self.TagsOrm(conn).set_filter(name=tag_name).fetch():
-                commit_id = tag.commit_id
-                return commit_id
+            if (
+                existing_tag := await self.TagsOrm(conn)
+                .set_filter(name=tag_name)
+                .fetch()
+            ):
+                return cast(CommitID, existing_tag.commit_id)
 
             # get workcopy for start_commit_id and update with 'project'
             repo = (
@@ -162,8 +164,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                         hidden=IS_INTERNAL_OPERATION,
                     )
 
-                commit_id = branch.head_commit_id
-                return commit_id
+                return cast(CommitID, branch.head_commit_id)
 
     async def get_children_tags(
         self, repo_id: int, commit_id: int

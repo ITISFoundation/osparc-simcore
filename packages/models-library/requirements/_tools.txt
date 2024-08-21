@@ -74,7 +74,7 @@ rich==13.7.1
     # via typer
 ruff==0.6.1
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==72.2.0
+setuptools==73.0.0
     # via pip-tools
 shellingham==1.5.4
     # via typer

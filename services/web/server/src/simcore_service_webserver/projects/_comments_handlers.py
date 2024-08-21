@@ -130,7 +130,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
 async def list_project_comments(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
-    query_params = parse_request_query_parameters_as(
+    query_params: _ListProjectCommentsQueryParams = parse_request_query_parameters_as(
         _ListProjectCommentsQueryParams, request
     )
 

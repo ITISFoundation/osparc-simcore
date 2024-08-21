@@ -32,7 +32,7 @@ from models_library.clusters import (
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.utils_cli import create_json_encoder_wo_secrets
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from starlette import status
 

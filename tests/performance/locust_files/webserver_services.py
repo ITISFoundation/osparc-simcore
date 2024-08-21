@@ -3,10 +3,12 @@
 #
 
 import logging
+import urllib
+import urllib.parse
 
 import faker
+import locust
 from dotenv import load_dotenv
-from locust import task
 from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
@@ -22,28 +24,45 @@ class WebApiUser(FastHttpUser):
 
         self.email = fake.email()
 
-    # @task
-    # def health_check(self):
-    #     self.client.get("/v0/health")
+    @locust.task
+    def list_latest_services(self):
+        base_url = "/v0/catalog/services/-/latest"
+        params = {"offset": 20, "limit": 20}
 
-    @task(weight=5)
-    def get_services(self):
-        self.client.get(
-            "/v0/catalog/services",
-        )
+        while True:
+            response = self.client.get(base_url, params=params)
+            response.raise_for_status()
+
+            page = response.json()
+
+            # Process the current page data here
+            next_link = page["_links"].get("next")
+            if not next_link:
+                break
+
+            # Update base_url and params for the next request
+            parsed_next = urllib.parse.urlparse(next_link)
+            base_url = parsed_next.path
+            params = dict(urllib.parse.parse_qsl(parsed_next.query))
 
     def on_start(self):
         print("Created User ", self.email)
+        password = "testtesttest"  # noqa: S105
+
         self.client.post(
             "/v0/auth/register",
             json={
                 "email": self.email,
-                "password": "my secret",
-                "confirm": "my secret",
+                "password": password,
+                "confirm": password,
             },
         )
         self.client.post(
-            "/v0/auth/login", json={"email": self.email, "password": "my secret"}
+            "/v0/auth/login",
+            json={
+                "email": self.email,
+                "password": password,
+            },
         )
 
     def on_stop(self):

@@ -1,5 +1,5 @@
 
-ARG LOCUST_VERSION
+ARG LOCUST_VERSION=latest
 FROM locustio/locust:${LOCUST_VERSION}
 
 
