@@ -265,14 +265,11 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.begin() as conn:
             result = await conn.execute(stmt_update)
-            row = result.first()
-            assert row  # nosec
-
-        return (
-            cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
-            if returning
-            else None
-        )
+            if returning:
+                row = result.first()
+                assert row  # nosec
+                return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+        return None
 
     async def can_get_service(
         self,

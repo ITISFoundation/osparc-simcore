@@ -12,6 +12,8 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.services_access import ServiceGroupAccessRightsV2
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
 from pytest_simcore.helpers.faker_factories import random_user
@@ -37,7 +39,9 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "postgres",
 ]
-pytest_simcore_ops_services_selection = []
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 @pytest.fixture
@@ -257,34 +261,50 @@ async def test_rpc_get_service_access_rights(
     mocked_director_service_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
+    user: dict[str, Any],
     user_id: UserID,
     other_user: dict[str, Any],
     app: FastAPI,
+    create_fake_service_data: Callable,
+    target_product: ProductName,
 ):
     assert app
+    assert user["id"] == user_id
 
-    service_key = "simcore/services/comp/test-api-rpc-service-0"
-    service_version = "0.0.0"
-    other_user_id = other_user["id"]
+    # user_id owns a service (created in background_sync_task_mocked)
+    service_key = ServiceKey("simcore/services/comp/test-api-rpc-service-0")
+    service_version = ServiceVersion("0.0.0")
 
-    # other_user does not have READ access
-    with pytest.raises(CatalogForbiddenError, match="accesss"):
+    service = await get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    assert service
+    assert service.access_rights
+    assert service.access_rights[user["primary_gid"]].write
+    assert service.access_rights[user["primary_gid"]].execute
+
+    assert other_user["primary_gid"] not in service.access_rights
+
+    # other_user does not have EXECUTE access
+    with pytest.raises(CatalogForbiddenError, match="access"):
         await get_service(
             rpc_client,
             product_name=product_name,
-            user_id=other_user_id,
+            user_id=other_user["id"],
             service_key=service_key,
             service_version=service_version,
         )
 
-    # TODO:  user_id gives read access to other_user
-
-    # REMOVE write access
-    with pytest.raises(CatalogForbiddenError, match="accesss"):
+    # other_user does not have WRITE access
+    with pytest.raises(CatalogForbiddenError, match="access"):
         await update_service(
             rpc_client,
             product_name=product_name,
-            user_id=other_user_id,
+            user_id=other_user["id"],
             service_key=service_key,
             service_version=service_version,
             update={
@@ -292,3 +312,44 @@ async def test_rpc_get_service_access_rights(
                 "description": "bar",
             },
         )
+
+    # user_id gives "xw access" to other_user
+    assert service.access_rights is not None
+    updated_access_rights = {
+        **service.access_rights,
+        other_user["primary_gid"]: ServiceGroupAccessRightsV2(execute=True, write=True),
+    }
+    await update_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        update={"access_rights": updated_access_rights},
+    )
+
+    # other user can now update
+    await update_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=other_user["id"],
+        service_key=service_key,
+        service_version=service_version,
+        update={
+            "name": "foo",
+            "description": "bar",
+        },
+    )
+
+    # other_user can now get
+    updated_service = await get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=other_user["id"],
+        service_key=service_key,
+        service_version=service_version,
+    )
+    assert updated_service.dict(include={"name", "description"}) == {
+        "name": "foo",
+        "description": "bar",
+    }
