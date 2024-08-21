@@ -75,7 +75,7 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-docker==7.1.0.20240806
+types-docker==7.1.0.20240821
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in

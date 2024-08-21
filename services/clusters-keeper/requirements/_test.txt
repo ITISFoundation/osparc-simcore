@@ -283,7 +283,7 @@ s3transfer==0.10.1
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==73.0.0
+setuptools==73.0.1
     # via moto
 six==1.16.0
     # via
