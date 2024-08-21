@@ -5,6 +5,11 @@ from typing import Any
 
 
 class auto_str(enum.auto):  # noqa: N801
+    """
+    To be used in place of `auto()` when inheriting form `StrAutoEnum`
+    Makes typechecking play nice.
+    """
+
     value: str = enum._auto_null  # pylint:disable=protected-access # noqa: SLF001
 
 
