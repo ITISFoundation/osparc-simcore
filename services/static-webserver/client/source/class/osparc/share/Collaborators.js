@@ -233,7 +233,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
-      // pass resourceType, so that, it it's a template testers can share it with product everyone
+      // pass resourceType, so that, if it's a template testers can share it with product everyone
       serializedDataCopy["resourceType"] = this._resourceType;
       const addCollaborators = new osparc.share.AddCollaborators(serializedDataCopy);
       addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
@@ -367,7 +367,7 @@ qx.Class.define("osparc.share.Collaborators", {
       // reload "Share with..." list
       if (this.__addCollaborators) {
         const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
-        // pass resourceType, so that, it it's a template testers can share it with product everyone
+        // pass resourceType, so that, if it's a template testers can share it with product everyone
         serializedDataCopy["resourceType"] = this._resourceType;
         this.__addCollaborators.setSerializedData(serializedDataCopy);
       }
