@@ -598,6 +598,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         }
       } else {
         this.__setSelectedNodes([activeNodeUI]);
+        this.__setSelectedAnnotations([]);
         this.__setSelectedItem(activeNodeUI.getNodeId());
       }
 
@@ -618,6 +619,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           }
         }
       } else {
+        this.__setSelectedNodes([]);
         this.__setSelectedAnnotations([annotation]);
         this.__setSelectedItem(annotation.getId());
       }
