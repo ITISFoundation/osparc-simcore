@@ -115,10 +115,10 @@ async def test_services_tracer_workflow(
 @pytest.mark.parametrize(
     "status",
     [
-        *[NodeGet.parse_obj(x) for x in NodeGet.Config.schema_extra["examples"]],
+        *[NodeGet.parse_obj(o) for o in NodeGet.Config.schema_extra["examples"]],
         *[
-            DynamicServiceGet.parse_obj(x)
-            for x in DynamicServiceGet.Config.schema_extra["examples"]
+            DynamicServiceGet.parse_obj(o)
+            for o in DynamicServiceGet.Config.schema_extra["examples"]
         ],
         NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
     ],
@@ -166,8 +166,8 @@ async def test_set_service_status_task_uid(
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
-            (DynamicServiceGet.parse_obj(x), NORMAL_RATE_POLL_INTERVAL)
-            for x in DynamicServiceGet.Config.schema_extra["examples"]
+            (DynamicServiceGet.parse_obj(o), NORMAL_RATE_POLL_INTERVAL)
+            for o in DynamicServiceGet.Config.schema_extra["examples"]
         ],
         (
             NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
