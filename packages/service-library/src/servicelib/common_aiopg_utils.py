@@ -8,7 +8,7 @@ import logging
 from dataclasses import asdict, dataclass
 
 import sqlalchemy as sa
-from aiopg.sa import create_engine
+from aiopg.sa import create_engine  # type: ignore[import-not-found]
 
 from .logging_utils import log_catch, log_context
 

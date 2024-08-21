@@ -9,9 +9,12 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Final, Iterator
 
-import tqdm
+import tqdm  # type: ignore[import-untyped]
 from models_library.basic_types import IDStr
-from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
+from tqdm.contrib.logging import (  # type: ignore[import-untyped]
+    logging_redirect_tqdm,
+    tqdm_logging_redirect,
+)
 
 from .file_utils import remove_directory
 from .logging_utils import log_catch

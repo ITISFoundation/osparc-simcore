@@ -8,10 +8,18 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
-from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor
-from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.aiohttp_client import (
+    AioHttpClientInstrumentor,  # type: ignore[import-not-found]
+)
+from opentelemetry.instrumentation.aiohttp_server import (
+    AioHttpServerInstrumentor,  # type: ignore[import-not-found]
+)
+from opentelemetry.instrumentation.aiopg import (
+    AiopgInstrumentor,  # type: ignore[import-not-found]
+)
+from opentelemetry.instrumentation.requests import (
+    RequestsInstrumentor,  # type: ignore[import-not-found]
+)
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -39,7 +47,7 @@ def setup_tracing(
         )
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
-    tracer_provider = trace.get_tracer_provider()
+    tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
     tracing_destination: str = (
         f"{otel_collector_endpoint}:{otel_collector_port}/v1/traces"
     )
@@ -54,8 +62,8 @@ def setup_tracing(
     )
 
     # Add the span processor to the tracer provider
-    span_processor = BatchSpanProcessor(otlp_exporter)
-    tracer_provider.add_span_processor(span_processor)
+    # Mypy bug --> https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined]
     # Instrument aiohttp server and client
     AioHttpServerInstrumentor().instrument()
     AioHttpClientInstrumentor().instrument()

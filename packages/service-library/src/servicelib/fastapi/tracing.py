@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 def setup_opentelemetry_instrumentation(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
-) -> FastAPIInstrumentor:
+) -> FastAPIInstrumentor | None:
     if (
         not tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT
         and not tracing_settings.TRACING_OTEL_COLLECTOR_PORT
@@ -44,6 +44,7 @@ def setup_opentelemetry_instrumentation(
     # Configure OTLP exporter to send spans to the collector
     otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
     span_processor = BatchSpanProcessor(otlp_exporter)
-    tracer_provider.add_span_processor(span_processor)
+    # Mypy bug --> https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    tracer_provider.add_span_processor(span_processor)  # type: ignore[attr-defined]
     # Instrument FastAPI
-    return FastAPIInstrumentor().instrument_app(app)
+    return FastAPIInstrumentor().instrument_app(app)  # type: ignore[no-any-return]

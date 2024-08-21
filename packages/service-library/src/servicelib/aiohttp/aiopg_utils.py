@@ -18,7 +18,7 @@ import logging
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa import Engine
+from aiopg.sa import Engine  # type: ignore[import-not-found]
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
 from tenacity import RetryCallState
