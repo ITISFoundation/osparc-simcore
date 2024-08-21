@@ -2,7 +2,7 @@ import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any
 
 import packaging.version
 import sqlalchemy as sa
@@ -268,7 +268,7 @@ class ServicesRepository(BaseRepository):
             if returning:
                 row = result.first()
                 assert row  # nosec
-                return cast(ServiceMetaDataAtDB, ServiceMetaDataAtDB.from_orm(row))
+                return ServiceMetaDataAtDB.from_orm(row)
         return None
 
     async def can_get_service(
