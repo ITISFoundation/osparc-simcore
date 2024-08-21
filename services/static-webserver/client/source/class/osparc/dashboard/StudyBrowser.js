@@ -1138,7 +1138,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
       const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/file/12");
-      studyDataButton["studyFilesButton"] = true;
+      studyDataButton["studyDataButton"] = true;
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
@@ -1152,8 +1152,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getMoveToFolderMenuButton: function(studyData) {
       const text = osparc.utils.Utils.capitalize(this.tr("Move to Folder..."));
-      const studyBillingSettingsButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
-      studyBillingSettingsButton.addListener("tap", () => {
+      const moveToFolderButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
+      moveToFolderButton["moveToFolderButton"] = true;
+      moveToFolderButton.addListener("tap", () => {
         if (Object.keys(studyData["accessRights"]).length > 1) {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Shared projects can't be moved yet"), "WARNING");
         } else {
@@ -1175,7 +1176,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           moveStudyToFolder.addListener("cancel", () => win.close());
         }
       }, this);
-      return studyBillingSettingsButton;
+      return moveToFolderButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {

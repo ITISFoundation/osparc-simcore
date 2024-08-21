@@ -775,9 +775,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (exportCMISButton) {
           exportCMISButton.setEnabled(osparc.study.Utils.canBeExported(resourceData));
         }
-        const studyFilesButton = menuButtons.find(menuBtn => "studyFilesButton" in menuBtn);
-        if (studyFilesButton) {
-          studyFilesButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
+        const studyDataButton = menuButtons.find(menuBtn => "studyDataButton" in menuBtn);
+        if (studyDataButton) {
+          studyDataButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
+        }
+        const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
+        if (moveToFolderButton) {
+          moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
