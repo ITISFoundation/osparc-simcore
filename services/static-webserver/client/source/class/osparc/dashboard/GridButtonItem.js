@@ -187,7 +187,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     __itemSelected: function() {
-      if (this.isLocked()) {
+      // It could be blocked by IN_USE or UNKNOWN_SERVICE
+      if (this.getBlocked() === true) {
         this.setValue(false);
         return;
       }
@@ -279,6 +280,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         menu.setPosition("top-left");
         osparc.utils.Utils.prettifyMenu(menu);
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
+        this.evaluateMenuButtons();
       }
       menuButton.setVisibility(menu ? "visible" : "excluded");
     }

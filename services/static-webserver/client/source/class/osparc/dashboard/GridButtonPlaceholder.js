@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
       });
     },
 
-    isLocked: function() {
+    getBlocked: function() {
       return true;
     },
 
