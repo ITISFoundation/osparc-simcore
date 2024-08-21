@@ -35,8 +35,8 @@ def _handle_resource_usage_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 #
@@ -77,7 +77,7 @@ async def get_pricing_plan_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,
+        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
     )

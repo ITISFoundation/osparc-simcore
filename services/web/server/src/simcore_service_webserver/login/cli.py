@@ -19,7 +19,7 @@ def invitations(
 ):
     """Generates a list of invitation links for registration"""
 
-    invitation = InvitationData(issuer=issuer_email, trial_account_days=trial_days)
+    invitation = InvitationData(issuer=issuer_email, trial_account_days=trial_days)  # type: ignore[call-arg] # guest field is deprecated
 
     codes = [generate_password(code_length) for _ in range(num_codes)]
 

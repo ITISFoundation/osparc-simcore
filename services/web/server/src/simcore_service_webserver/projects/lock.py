@@ -53,7 +53,7 @@ async def lock_project(
             blocking=False,
             token=ProjectLocked(
                 value=True,
-                owner=Owner(user_id=user_id, **user_fullname),
+                owner=Owner(user_id=user_id, **user_fullname),  # type: ignore[arg-type]
                 status=status,
             ).json(),
         ):
