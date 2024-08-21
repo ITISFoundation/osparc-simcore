@@ -243,7 +243,7 @@ class ServicesRepository(BaseRepository):
         return created_service
 
     async def update_service(
-        self, patched_service: ServiceMetaDataAtDB, *, returning: bool = True
+        self, patched_service: ServiceMetaDataAtDB, *, returning: bool = False
     ) -> ServiceMetaDataAtDB | None:
 
         stmt_update = (

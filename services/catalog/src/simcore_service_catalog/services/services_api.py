@@ -249,8 +249,7 @@ async def update_service(
             key=service_key,
             version=service_version,
             **update.dict(exclude_unset=True),
-        ),
-        returning=None,
+        )
     )
 
     # Updates service_access_rights (they can be added/removed/modified)
