@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    app: web.Application,
+    app: web.Application,  # pylint: disable=unused-argument
     *,
     service_name: str,
     otel_collector_endpoint: AnyUrl | str | None,
@@ -53,7 +53,9 @@ def setup_tracing(
     )
 
     log.info(
-        f"Trying to connect service {service_name} to tracing collector at {tracing_destination}."
+        "Trying to connect service %s to tracing collector at %s.",
+        service_name,
+        tracing_destination,
     )
 
     # Configure the OTLP exporter

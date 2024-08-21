@@ -8,7 +8,9 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.fastapi import (
+    FastAPIInstrumentor,  # pylint: disable=no-name-in-module
+)
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -39,7 +41,9 @@ def setup_opentelemetry_instrumentation(
     tracer_provider = trace.get_tracer_provider()
     tracing_destination: str = f"{tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OTEL_COLLECTOR_PORT}/v1/traces"
     log.info(
-        f"Trying to connect service {service_name} to tracing collector at {tracing_destination}."
+        "Trying to connect service %s to tracing collector at %s.",
+        service_name,
+        tracing_destination,
     )
     # Configure OTLP exporter to send spans to the collector
     otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
