@@ -17,7 +17,6 @@ from servicelib.deferred_tasks import TaskUID
 
 from ._models import SchedulerServiceState, TrackedServiceModel, UserRequestedState
 from ._setup import get_tracker
-from ._tracker import Tracker
 
 _logger = logging.getLogger(__name__)
 
@@ -31,12 +30,12 @@ async def set_request_as_running(
     app: FastAPI,
     dynamic_service_start: DynamicServiceStart,
 ) -> None:
-    """Stores the intention fo the user: ``start`` requested"""
-    tracker: Tracker = get_tracker(app)
+    """Stores intention to `start` request"""
+    tracker = get_tracker(app)
 
-    node_id: NodeID = dynamic_service_start.node_uuid
-
-    model: TrackedServiceModel | None = await tracker.load(node_id)
+    model: TrackedServiceModel | None = await tracker.load(
+        dynamic_service_start.node_uuid
+    )
     if model is not None:
         model.dynamic_service_start = dynamic_service_start
         model.requested_state = UserRequestedState.RUNNING
@@ -44,7 +43,7 @@ async def set_request_as_running(
         model.user_id = dynamic_service_start.user_id
 
     await tracker.save(
-        node_id,
+        dynamic_service_start.node_uuid,
         TrackedServiceModel(
             dynamic_service_start=dynamic_service_start,
             requested_state=UserRequestedState.RUNNING,
@@ -57,8 +56,8 @@ async def set_request_as_running(
 async def set_request_as_stopped(
     app: FastAPI, dynamic_service_stop: DynamicServiceStop
 ) -> None:
-    """Stores the intention of the user: ``stop`` requested"""
-    tracker: Tracker = get_tracker(app)
+    """Stores intention to `stop` request"""
+    tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(dynamic_service_stop.node_id)
 
     if model is None:
@@ -135,7 +134,7 @@ async def set_if_status_changed(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> bool:
     """returns ``True`` if the tracker detected a status change"""
-    tracker: Tracker = get_tracker(app)
+    tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
@@ -169,7 +168,7 @@ async def can_notify_frontend(
     The frontend will be notified at regular intervals and on changes
     Avoids sending too many updates.
     """
-    tracker: Tracker = get_tracker(app)
+    tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
 
     if model is None:
@@ -191,7 +190,7 @@ async def can_notify_frontend(
 async def set_scheduled_to_run(
     app: FastAPI, node_id: NodeID, delay_from_now: timedelta
 ) -> None:
-    tracker: Tracker = get_tracker(app)
+    tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
@@ -209,7 +208,7 @@ async def set_scheduled_to_run(
 async def set_service_status_task_uid(
     app: FastAPI, node_id: NodeID, task_uid: TaskUID
 ) -> None:
-    tracker: Tracker = get_tracker(app)
+    tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
         _logger.info(
@@ -226,24 +225,20 @@ async def set_service_status_task_uid(
 async def remove_tracked(app: FastAPI, node_id: NodeID) -> None:
     """Removes the service from tracking (usually after stop completes)"""
     # NOTE: does not raise if node_id is not found
-    tracker: Tracker = get_tracker(app)
-    await tracker.delete(node_id)
+    await get_tracker(app).delete(node_id)
 
 
 async def get_tracked(app: FastAPI, node_id: NodeID) -> TrackedServiceModel | None:
     """Returns information about the tracked service"""
-    tracker: Tracker = get_tracker(app)
-    return await tracker.load(node_id)
+    return await get_tracker(app).load(node_id)
 
 
 async def get_all_tracked(app: FastAPI) -> dict[NodeID, TrackedServiceModel]:
     """Returns all tracked services"""
-    tracker: Tracker = get_tracker(app)
-    return await tracker.all()
+    return await get_tracker(app).all()
 
 
 async def get_user_id(app: FastAPI, node_id: NodeID) -> UserID | None:
     """returns user_id for the user"""
-    tracker: Tracker = get_tracker(app)
-    model: TrackedServiceModel | None = await tracker.load(node_id)
+    model: TrackedServiceModel | None = await get_tracker(app).load(node_id)
     return model.user_id if model else None
