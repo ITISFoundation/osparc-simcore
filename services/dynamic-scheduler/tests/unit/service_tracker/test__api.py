@@ -59,11 +59,6 @@ def app_environment(
     return app_environment
 
 
-@pytest.fixture
-def node_id() -> NodeID:
-    return uuid4()
-
-
 async def test_services_tracer_set_as_running_set_as_stopped(
     app: FastAPI,
     node_id: NodeID,
