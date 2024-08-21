@@ -30,7 +30,7 @@ async def _list_all_files_in_folder(
         bucket, prefix, items_per_page=max_files_to_list
     ):
         # NOTE: stop immediately after listing after `max_files_to_list`
-        return s3_objects
+        return s3_objects  # type: ignore[no-any-return]
     return []
 
 

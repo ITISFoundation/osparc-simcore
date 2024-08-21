@@ -23,7 +23,7 @@ from opentelemetry.instrumentation.requests import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from yarl import URL
+from pydantic import AnyUrl
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +32,8 @@ def setup_tracing(
     app: web.Application,
     *,
     service_name: str,
-    otel_collector_endpoint: URL | str,
-    otel_collector_port: int,
+    otel_collector_endpoint: AnyUrl | str | None,
+    otel_collector_port: int | None,
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
