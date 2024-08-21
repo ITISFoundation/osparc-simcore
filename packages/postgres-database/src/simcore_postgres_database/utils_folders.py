@@ -25,6 +25,7 @@ from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql.elements import ColumnElement, Label
+from sqlalchemy.sql.selectable import CTE
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
@@ -275,8 +276,8 @@ def _requires(*permissions: _FolderPermissions) -> _FolderPermissions:
     return _or_dicts_list(permissions)
 
 
-def _get_and_calsue_with_only_true_entries(
-    permissions: _FolderPermissions, table
+def _get_filter_for_enabled_permissions(
+    permissions: _FolderPermissions, table: sa.Table | CTE
 ) -> ColumnElement | bool:
     clauses: list[ColumnElement] = []
 
@@ -339,7 +340,7 @@ async def _get_resolved_access_rights(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
-    enforce_all_permissions: bool = False,
+    only_enabled_permissions: bool = True,
 ) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
@@ -378,17 +379,17 @@ async def _get_resolved_access_rights(
     # Combine anchor and recursive CTE
     folder_hierarchy = access_rights_cte.union_all(recursive)
 
-    def _get_permissions_where_clause() -> ColumnElement | bool:
+    def _get_permissions_filter() -> ColumnElement | bool:
         if not permissions:
             return True
         return (
-            sa.and_(
+            _get_filter_for_enabled_permissions(permissions, folder_hierarchy)
+            if only_enabled_permissions
+            else sa.and_(
                 folder_hierarchy.c.read.is_(permissions.read),
                 folder_hierarchy.c.write.is_(permissions.write),
                 folder_hierarchy.c.delete.is_(permissions.delete),
             )
-            if enforce_all_permissions
-            else _get_and_calsue_with_only_true_entries(permissions, folder_hierarchy)
         )
 
     # Final query to filter and order results
@@ -403,7 +404,7 @@ async def _get_resolved_access_rights(
             folder_hierarchy.c.delete,
             folder_hierarchy.c.level,
         )
-        .where(_get_permissions_where_clause())
+        .where(_get_permissions_filter())
         .where(folder_hierarchy.c.original_parent_id.is_(None))
         .where(folder_hierarchy.c.gid == gid)
         .order_by(folder_hierarchy.c.level.asc())
@@ -1089,7 +1090,7 @@ async def folder_list(
         )
         .where(folders_access_rights.c.gid.in_(gids))
         .where(
-            _get_and_calsue_with_only_true_entries(
+            _get_filter_for_enabled_permissions(
                 required_permissions, folders_access_rights
             )
         )
@@ -1140,7 +1141,7 @@ async def folder_get(
         .where(folders_access_rights.c.folder_id == folder_id)
         .where(folders_access_rights.c.gid == permissions_gid)
         .where(
-            _get_and_calsue_with_only_true_entries(
+            _get_filter_for_enabled_permissions(
                 required_permissions, folders_access_rights
             )
             if folder_id is None
