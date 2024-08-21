@@ -64,7 +64,7 @@ class InMemoryLists:
         return f"in_memory_lists::{queue_name}.{self.port}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
-        await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
+        await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)
 
     async def get_all_from(self, queue_name: str) -> list:
         return await self.redis_sdk.redis.lrange(
