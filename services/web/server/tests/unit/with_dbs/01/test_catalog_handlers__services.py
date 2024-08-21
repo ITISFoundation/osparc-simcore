@@ -130,7 +130,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
     "user_role",
     [UserRole.USER],
 )
-async def test_dev_list_latest_services(
+async def test_list_services_latest(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_rpc_catalog_service_api: dict[str, MagicMock],
@@ -138,14 +138,14 @@ async def test_dev_list_latest_services(
     assert client.app
     assert client.app.router
 
-    # LIST latest
-    url = client.app.router["dev_list_services_latest"].url_for()
+    url = client.app.router["list_services_latest"].url_for()
     assert url.path.endswith("/catalog/services/-/latest")
 
     response = await client.get(f"{url}", params={"offset": "0", "limit": "1"})
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert error is None
+
     model = parse_obj_as(Page[CatalogServiceGet], data)
     assert model
     assert model.data
@@ -158,7 +158,7 @@ async def test_dev_list_latest_services(
     "user_role",
     [UserRole.USER],
 )
-async def test_dev_get_and_patch_service(
+async def test_get_and_patch_service(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_rpc_catalog_service_api: dict[str, MagicMock],
@@ -169,7 +169,7 @@ async def test_dev_get_and_patch_service(
     service_key = "simcore/services/dynamic/someservice"
     service_version = "3.4.5"
 
-    url = client.app.router["dev_get_service"].url_for(
+    url = client.app.router["get_service"].url_for(
         service_key=urllib.parse.quote(service_key, safe=""),
         service_version=service_version,
     )
@@ -203,6 +203,7 @@ async def test_dev_get_and_patch_service(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert error is None
+
     model = parse_obj_as(CatalogServiceGet, data)
     assert model.key == service_key
     assert model.version == service_version
