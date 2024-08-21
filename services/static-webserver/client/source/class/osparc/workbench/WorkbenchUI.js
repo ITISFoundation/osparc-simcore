@@ -1903,7 +1903,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
       if (type === "note") {
         const noteEditor = new osparc.editor.AnnotationNoteCreator();
-        const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor, true);
+        const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
         noteEditor.addListener("addNote", () => {
           const gid = noteEditor.getRecipientGid();
           osparc.store.Store.getInstance().getGroup(gid)
@@ -1917,6 +1917,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
             })
             .finally(() => win.close());
         }, this);
+        noteEditor.addListener("cancel", win.close());
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {

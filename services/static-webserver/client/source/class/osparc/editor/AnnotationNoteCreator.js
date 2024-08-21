@@ -52,8 +52,8 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
   },
 
   statics: {
-    popUpInWindow: function(noteEditor, newNote = true) {
-      const title = newNote ? qx.locale.Manager.tr("Add Note") : qx.locale.Manager.tr("Edit Note");
+    popUpInWindow: function(noteEditor) {
+      const title = qx.locale.Manager.tr("Add Note");
       const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 256);
       win.center();
       win.open();
