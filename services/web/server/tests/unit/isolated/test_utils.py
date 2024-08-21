@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import time
 import timeit
+import urllib.parse
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -13,6 +14,31 @@ from simcore_service_webserver.utils import (
     now_str,
     to_datetime,
 )
+from yarl import URL
+
+
+def test_yarl_new_url_generation():
+    api_endpoint = URL("http://director:8001/v0")
+    service_key = "simcore/services/dynamic/smash"
+    service_version = "1.0.3"
+
+    quoted_service_key = urllib.parse.quote(service_key, safe="")
+
+    # Since 1.6.x composition using '/' creates URLs with auto-encoding enabled by default
+    assert (
+        (str(api_endpoint / "services" / quoted_service_key / service_version))
+        == "http://director:8001/v0/services/simcore%252Fservices%252Fdynamic%252Fsmash/1.0.3"
+    )
+
+    # Passing encoded=True parameter prevents URL auto-encoding, user is responsible about URL correctness
+    url = URL(
+        f"http://director:8001/v0/services/{quoted_service_key}/1.0.3", encoded=True
+    )
+
+    assert (
+        (str(url))
+        == "http://director:8001/v0/services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
+    )
 
 
 def test_time_utils():
