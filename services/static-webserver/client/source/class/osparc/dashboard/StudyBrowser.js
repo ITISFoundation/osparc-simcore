@@ -420,7 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => {
-          if (card.isLocked()) {
+          if (card.getBlocked() === true) {
             card.setValue(false);
           } else {
             this.__itemClicked(card, e.getNativeEvent().shiftKey);
@@ -1075,6 +1075,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           menu.add(deleteButton);
         }
       }
+
+      card.evaluateMenuButtons();
     },
 
     __getRenameStudyMenuButton: function(studyData) {
@@ -1136,6 +1138,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
       const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/file/12");
+      studyDataButton["studyDataButton"] = true;
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
@@ -1149,8 +1152,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getMoveToFolderMenuButton: function(studyData) {
       const text = osparc.utils.Utils.capitalize(this.tr("Move to Folder..."));
-      const studyBillingSettingsButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
-      studyBillingSettingsButton.addListener("tap", () => {
+      const moveToFolderButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
+      moveToFolderButton["moveToFolderButton"] = true;
+      moveToFolderButton.addListener("tap", () => {
         if (Object.keys(studyData["accessRights"]).length > 1) {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Shared projects can't be moved yet"), "WARNING");
         } else {
@@ -1172,17 +1176,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           moveStudyToFolder.addListener("cancel", () => win.close());
         }
       }, this);
-      return studyBillingSettingsButton;
+      return moveToFolderButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
       const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"), "@FontAwesome5Solid/copy/12");
+      duplicateButton["duplicateButton"] = true;
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
     },
 
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
+      exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
       exportButton.setVisibility(isDisabled ? "excluded" : "visible");
       exportButton.addListener("execute", () => this.__exportStudy(studyData), this);
@@ -1211,6 +1217,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDeleteStudyMenuButton: function(studyData) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      deleteButton["deleteButton"] = true;
       deleteButton.set({
         appearance: "menu-button"
       });
