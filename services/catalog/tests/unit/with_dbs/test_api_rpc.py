@@ -12,7 +12,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
@@ -39,9 +38,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "postgres",
 ]
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
+pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
@@ -289,8 +286,8 @@ async def test_rpc_get_service_access_rights(
 
     assert other_user["primary_gid"] not in service.access_rights
 
-    # other_user does not have EXECUTE access
-    with pytest.raises(CatalogForbiddenError, match="access"):
+    # other_user does not have EXECUTE access -----------------
+    with pytest.raises(CatalogForbiddenError, match=service_key):
         await get_service(
             rpc_client,
             product_name=product_name,
@@ -300,7 +297,7 @@ async def test_rpc_get_service_access_rights(
         )
 
     # other_user does not have WRITE access
-    with pytest.raises(CatalogForbiddenError, match="access"):
+    with pytest.raises(CatalogForbiddenError, match=service_key):
         await update_service(
             rpc_client,
             product_name=product_name,
@@ -313,22 +310,67 @@ async def test_rpc_get_service_access_rights(
             },
         )
 
-    # user_id gives "xw access" to other_user
+    # user_id gives "x access" to other_user ------------
     assert service.access_rights is not None
-    updated_access_rights = {
-        **service.access_rights,
-        other_user["primary_gid"]: ServiceGroupAccessRightsV2(execute=True, write=True),
-    }
     await update_service(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update={"access_rights": updated_access_rights},
+        update={
+            "access_rights": {
+                **service.access_rights,
+                other_user["primary_gid"]: {
+                    "execute": True,
+                    "write": False,
+                },
+            }
+        },
     )
 
-    # other user can now update
+    # other user can now GET but NOT UPDATE
+    await get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=other_user["id"],
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    with pytest.raises(CatalogForbiddenError, match=service_key):
+        await update_service(
+            rpc_client,
+            product_name=product_name,
+            user_id=other_user["id"],
+            service_key=service_key,
+            service_version=service_version,
+            update={
+                "name": "foo",
+                "description": "bar",
+            },
+        )
+
+    # user_id gives "xw access" to other_user ------------------
+    assert service.access_rights is not None
+    await update_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        update={
+            "access_rights": {
+                **service.access_rights,
+                other_user["primary_gid"]: {
+                    "execute": True,
+                    "write": True,
+                },
+            }
+        },
+    )
+
+    # other_user can now update and get
     await update_service(
         rpc_client,
         product_name=product_name,
@@ -340,8 +382,6 @@ async def test_rpc_get_service_access_rights(
             "description": "bar",
         },
     )
-
-    # other_user can now get
     updated_service = await get_service(
         rpc_client,
         product_name=product_name,
