@@ -25,7 +25,7 @@ def client_session_id_factory() -> Callable[[], str]:
 
 
 @pytest.fixture
-def socketio_url_factory(client) -> Callable[[TestClient | None], str]:
+def socketio_url_factory(client: TestClient) -> Callable[[TestClient | None], str]:
     def _create(client_override: TestClient | None = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
