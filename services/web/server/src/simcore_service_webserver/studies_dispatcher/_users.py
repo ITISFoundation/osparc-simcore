@@ -48,7 +48,7 @@ _logger = logging.getLogger(__name__)
 class UserInfo(BaseModel):
     id: int
     name: str
-    email: str
+    email: LowerCaseEmailStr
     primary_gid: int
     needs_login: bool = False
     is_guest: bool = True
@@ -111,7 +111,7 @@ async def create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    usr = {}
+    usr = None
     try:
         async with redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
@@ -128,7 +128,7 @@ async def create_temporary_guest_user(request: web.Request):
                     "expires_at": expires_at,
                 }
             )
-            user: dict = await get_user(request.app, usr["id"])
+            user = await get_user(request.app, usr["id"])
             await auto_add_user_to_product_group(
                 request.app, user_id=user["id"], product_name=product_name
             )
@@ -148,7 +148,7 @@ async def create_temporary_guest_user(request: web.Request):
         # stop creating GUEST users.
 
         # NOTE: here we cleanup but if any trace is left it will be deleted by gc
-        if usr.get("id"):
+        if usr is not None and usr.get("id"):
 
             async def _cleanup(draft_user):
                 with suppress(Exception):

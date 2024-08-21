@@ -4,7 +4,9 @@
 
 from importlib.metadata import distribution
 
+from models_library.basic_types import VersionStr
 from packaging.version import Version
+from pydantic import parse_obj_as
 
 
 class PackageInfo:
@@ -13,7 +15,7 @@ class PackageInfo:
     Usage example:
 
         info: Final = PackageMetaInfo(package_name="simcore-service-library")
-        __version__: Final[str] = info.__version__
+        __version__: Final[VersionStr] = info.__version__
 
         PROJECT_NAME: Final[str] = info.project_name
         VERSION: Final[Version] = info.version
@@ -37,8 +39,8 @@ class PackageInfo:
         return Version(self._distribution.version)
 
     @property
-    def __version__(self) -> str:
-        return self._distribution.version
+    def __version__(self) -> VersionStr:
+        return parse_obj_as(VersionStr, self._distribution.version)
 
     @property
     def api_prefix_path_tag(self) -> str:

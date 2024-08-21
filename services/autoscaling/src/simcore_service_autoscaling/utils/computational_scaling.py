@@ -1,7 +1,7 @@
 import logging
 from typing import Final
 
-from aws_library.ec2.models import Resources
+from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
     get_ec2_instance_type_from_resources,
 )

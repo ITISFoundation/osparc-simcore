@@ -119,19 +119,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getPage: {
+          getPageFolder: {
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
           },
-          getPageFilterSearch: {
+          getPageFolderSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&search={text}"
           },
-          getPageSortBySearch: {
+          getPageFolderSortBy: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -189,10 +189,6 @@ qx.Class.define("osparc.data.Resources", {
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/projects/{studyId}"
-          },
-          put: {
-            method: "PUT",
             url: statics.API + "/projects/{studyId}"
           },
           delete: {
@@ -276,6 +272,10 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/inactivity"
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/folders/{folderId}"
           }
         }
       },
@@ -290,6 +290,32 @@ qx.Class.define("osparc.data.Resources", {
           addComment: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/comments"
+          }
+        }
+      },
+      "folders": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/folders/{folderId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/folders"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/folders/{folderId}"
           }
         }
       },
@@ -441,27 +467,27 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * SERVICES DEV
+       * SERVICES V2 (web-api >=0.42.0)
        */
-      "servicesDev": {
+      "servicesV2": {
         useCache: false, // handled in osparc.service.Store
         idField: ["key", "version"],
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/-/latest"
+            url: statics.API + "/catalog/services/-/latest"
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/-/latest?offset={offset}&limit={limit}"
+            url: statics.API + "/catalog/services/-/latest?offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/dev/catalog/services/{key}/{version}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/dev/catalog/services/{key}/{version}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           }
         }
       },

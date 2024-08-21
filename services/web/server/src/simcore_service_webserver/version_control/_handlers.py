@@ -69,7 +69,9 @@ async def _list_repos_handler(request: web.Request):
     url_for = create_url_for_function(request)
     vc_repo = VersionControlRepository.create_from_request(request)
 
-    query_params = parse_request_query_parameters_as(PageQueryParameters, request)
+    query_params: PageQueryParameters = parse_request_query_parameters_as(
+        PageQueryParameters, request
+    )
 
     repos_rows, total_number_of_repos = await list_repos(
         vc_repo, offset=query_params.offset, limit=query_params.limit
@@ -146,7 +148,9 @@ async def _list_checkpoints_handler(request: web.Request):
     vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_ProjectPathParam, request)
-    query_params = parse_request_query_parameters_as(PageQueryParameters, request)
+    query_params: PageQueryParameters = parse_request_query_parameters_as(
+        PageQueryParameters, request
+    )
 
     checkpoints: list[Checkpoint]
 

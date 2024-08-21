@@ -52,7 +52,7 @@ async def replace_project_folder(
                 connection,
                 product_name=product_name,
                 folder_id=folder_id,
-                gid=user["primary_gid"],
+                gids={user["primary_gid"]},
                 project_uuid=project_id,
             )
             return
@@ -62,7 +62,7 @@ async def replace_project_folder(
             connection,
             product_name=product_name,
             source_folder_id=_source_folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
             project_uuid=project_id,
             destination_folder_id=folder_id,
         )

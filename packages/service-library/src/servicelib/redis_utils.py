@@ -3,6 +3,7 @@ import functools
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
+from typing import Any
 
 import arrow
 
@@ -100,3 +101,10 @@ def start_exclusive_periodic_task(
         usr_tsk_task_name=task_name,
         **kwargs,
     )
+
+
+async def handle_redis_returns_union_types(result: Any | Awaitable[Any]) -> Any:
+    """Used to handle mypy issues with redis 5.x return types"""
+    if isinstance(result, Awaitable):
+        return await result
+    return result

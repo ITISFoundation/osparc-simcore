@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import umsgpack
+import umsgpack  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import PreferenceName

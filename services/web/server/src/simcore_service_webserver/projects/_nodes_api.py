@@ -8,9 +8,10 @@ from typing import Final, NamedTuple
 from aiohttp import web
 from aiohttp.client import ClientError
 from models_library.api_schemas_storage import FileMetaDataGet
+from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
-from models_library.projects_nodes_io import SimCoreFileLink
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
@@ -227,12 +228,12 @@ async def get_node_screenshots(
 
             assert node.outputs is not None  # nosec
 
-            filelink = parse_obj_as(SimCoreFileLink, node.outputs["outFile"])
+            filelink = parse_obj_as(SimCoreFileLink, node.outputs[KeyIDStr("outFile")])
 
             file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
                     file_url=file_url,
                 )
             )
