@@ -61,7 +61,7 @@ async def set_request_as_stopped(
     await tracker.save(dynamic_service_stop.node_id, model)
 
 
-def __get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
+def _get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
     # Attributes where to find the state
     # NodeGet -> service_state
     # DynamicServiceGet -> state
@@ -74,7 +74,7 @@ def __get_state_str(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> str:
 
 
 def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
-    if __get_state_str(status) != "running":
+    if _get_state_str(status) != "running":
         return _LOW_RATE_POLL_INTERVAL
 
     return NORMAL_RATE_POLL_INTERVAL
@@ -92,7 +92,7 @@ def _get_current_state(
     if isinstance(status, NodeGetIdle):
         return SchedulerServiceState.IDLE
 
-    service_state: ServiceState = ServiceState(__get_state_str(status))
+    service_state: ServiceState = ServiceState(_get_state_str(status))
 
     if requested_sate == UserRequestedState.RUNNING:
         if service_state == ServiceState.RUNNING:
