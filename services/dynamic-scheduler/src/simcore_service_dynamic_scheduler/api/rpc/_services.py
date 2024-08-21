@@ -61,5 +61,5 @@ async def stop_dynamic_service(
             timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
     )
-    await set_request_as_stopped(app, dynamic_service_stop=dynamic_service_stop)
+    await set_request_as_stopped(app, dynamic_service_stop)
     return response
