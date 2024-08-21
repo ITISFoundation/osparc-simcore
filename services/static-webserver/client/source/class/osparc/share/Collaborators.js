@@ -156,7 +156,7 @@ qx.Class.define("osparc.share.Collaborators", {
   members: {
     _serializedDataCopy: null,
     _resourceType: null,
-    __organizationsAndMembers: null,
+    __addCollaborators: null,
     __collaboratorsModel: null,
     __collaborators: null,
 
@@ -224,7 +224,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __buildLayout: function() {
       if (this.__amIOwner()) {
-        this._createChildControlImpl("add-collaborator");
+        this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
@@ -364,6 +364,15 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     _reloadCollaboratorsList: function() {
+      // reload "Share with..." list
+      if (this.__addCollaborators) {
+        const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
+        // pass resourceType, so that, it it's a template testers can share it with product everyone
+        serializedDataCopy["resourceType"] = this._resourceType;
+        this.__addCollaborators.setSerializedData(serializedDataCopy);
+      }
+
+      // reload list
       this.__collaboratorsModel.removeAll();
 
       const store = osparc.store.Store.getInstance();
