@@ -234,7 +234,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       deleteItemButton.addListener("execute", () => {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
+          this.resetSelection();
         }
       }, this);
 
@@ -1190,8 +1190,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         annotationEditor.makeItModal();
         annotationEditor.addListener("deleteAnnotation", () => {
           annotationEditor.exclude();
-          this.__selectedItemChanged(null);
           this.__removeAnnotation(annotation.getId());
+          this.resetSelection();
         }, this);
         annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
       } else {
@@ -1703,7 +1703,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               this.fireDataEvent("removeNodes", selectedNodeIDs);
             } else if (this.__isSelectedItemAnEdge()) {
               this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-              this.__selectedItemChanged(null);
+              this.resetSelection();
             }
             break;
           case "Escape":
