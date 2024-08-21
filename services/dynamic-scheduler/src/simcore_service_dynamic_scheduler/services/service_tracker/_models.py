@@ -67,11 +67,11 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
         default_factory=lambda: arrow.utcnow().timestamp()
     )
 
-    def set_check_status_after_to(self, delay_from_now: timedelta) -> None:
-        self.check_status_after = (arrow.utcnow() + delay_from_now).timestamp()
-
     # used to determine when was the last time the status was notified
     last_status_notification: float = 0
+
+    def set_check_status_after_to(self, delay_from_now: timedelta) -> None:
+        self.check_status_after = (arrow.utcnow() + delay_from_now).timestamp()
 
     def set_last_status_notification_to_now(self) -> None:
         self.last_status_notification = arrow.utcnow().timestamp()
