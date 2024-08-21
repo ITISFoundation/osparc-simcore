@@ -226,7 +226,6 @@ qx.Class.define("osparc.share.Collaborators", {
       if (this.__amIOwner()) {
         this._createChildControlImpl("add-collaborator");
       }
-      this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
       this._createChildControlImpl("template-link");
