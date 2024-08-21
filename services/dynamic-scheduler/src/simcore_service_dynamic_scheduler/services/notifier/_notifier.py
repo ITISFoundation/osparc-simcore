@@ -11,9 +11,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
-    get_dict_from_status,
-)
+from servicelib.services_utils import get_status_as_dict
 
 
 class Notifier(SingletonInAppStateMixin):
@@ -27,7 +25,7 @@ class Notifier(SingletonInAppStateMixin):
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_STATUS_EVENT,
-            data=jsonable_encoder(get_dict_from_status(status)),
+            data=jsonable_encoder(get_status_as_dict(status)),
             room=SocketIORoomStr.from_user_id(user_id),
         )
 

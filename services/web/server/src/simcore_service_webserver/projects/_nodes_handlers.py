@@ -57,9 +57,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
-from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
-    get_dict_from_status,
-)
+from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
@@ -211,7 +209,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
     )
 
-    return envelope_json_response(get_dict_from_status(service_data))
+    return envelope_json_response(get_status_as_dict(service_data))
 
 
 @routes.patch(
