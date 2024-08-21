@@ -120,7 +120,7 @@ async def test_services_tracer_workflow(
 @pytest.mark.parametrize(
     "status",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+        *[NodeGet.parse_obj(x) for x in NodeGet.Config.schema_extra["examples"]],
         *[
             DynamicServiceGet.parse_obj(x)
             for x in DynamicServiceGet.Config.schema_extra["examples"]
@@ -167,7 +167,7 @@ async def test_set_service_status_task_uid(
     "status, expected_poll_interval",
     [
         (
-            NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+            NodeGet.parse_obj(NodeGet.Config.schema_extra["examples"][1]),
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
@@ -187,7 +187,7 @@ def test__get_poll_interval(
 
 
 def _get_node_get_from(service_state: ServiceState) -> NodeGet:
-    dict_data = NodeGet.Config.schema_extra["example"]
+    dict_data = NodeGet.Config.schema_extra["examples"][1]
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
     return NodeGet.parse_obj(dict_data)

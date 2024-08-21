@@ -68,7 +68,7 @@ def _add_to_dict(dict_data: dict, entries: list[tuple[str, Any]]) -> None:
 
 
 def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGet:
-    dict_data = deepcopy(NodeGet.Config.schema_extra["example"])
+    dict_data = deepcopy(NodeGet.Config.schema_extra["examples"][1])
     _add_to_dict(
         dict_data,
         [

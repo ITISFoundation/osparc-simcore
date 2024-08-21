@@ -55,7 +55,7 @@ def dynamic_service_start() -> DynamicServiceStart:
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+        *[NodeGet.parse_obj(x) for x in NodeGet.Config.schema_extra["examples"]],
         NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
         DynamicServiceGet.parse_obj(
             DynamicServiceGet.Config.schema_extra["examples"][0]
@@ -98,7 +98,7 @@ async def test_get_service_status_raises_rpc_server_error(
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+        *[NodeGet.parse_obj(x) for x in NodeGet.Config.schema_extra["examples"]],
         DynamicServiceGet.parse_obj(
             DynamicServiceGet.Config.schema_extra["examples"][0]
         ),
