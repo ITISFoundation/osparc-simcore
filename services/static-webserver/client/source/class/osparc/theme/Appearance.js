@@ -1124,8 +1124,8 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: [5, 10],
         // showTimeout is themeable so it can be tuned
         // it was defaulted to 700 which was too short
-        showTimeout: 3000,
-        hideTimeout: 6000,
+        showTimeout: 2000,
+        hideTimeout: 5000,
       })
     },
 
