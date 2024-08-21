@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pydantic import BaseModel, Field, NonNegativeInt, ValidationError
+from pydantic import BaseModel, Field, NonNegativeInt
 from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.models.folders import (
     folders,
@@ -191,7 +191,7 @@ async def default_product_name(
     ],
 )
 async def test_folder_create_wrong_folder_name(invalid_name: str):
-    with pytest.raises((InvalidFolderNameError, ValidationError)):
+    with pytest.raises(InvalidFolderNameError):
         await folder_create(Mock(), "mock_product", invalid_name, Mock())
 
 

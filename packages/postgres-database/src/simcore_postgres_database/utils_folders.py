@@ -1,4 +1,3 @@
-import logging
 import re
 import uuid
 from collections.abc import Iterable
@@ -17,6 +16,7 @@ from pydantic import (
     Field,
     NonNegativeInt,
     PositiveInt,
+    ValidationError,
     parse_obj_as,
 )
 from pydantic.errors import PydanticErrorMixin
@@ -30,8 +30,6 @@ from sqlalchemy.sql.selectable import CTE
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
 from .utils_ordering import OrderDirection
-
-_logger = logging.getLogger(__name__)
 
 _ProductName: TypeAlias = str
 _ProjectID: TypeAlias = uuid.UUID
@@ -530,7 +528,10 @@ async def folder_create(
         GroupIdDoesNotExistError
         RootFolderRequiresAtLeastOnePrimaryGroupError
     """
-    parse_obj_as(FolderName, name)
+    try:
+        parse_obj_as(FolderName, name)
+    except ValidationError as exc:
+        raise InvalidFolderNameError(name=name, reason=f"{exc}") from exc
 
     async with connection.begin():
         entry_exists: int | None = await connection.scalar(
