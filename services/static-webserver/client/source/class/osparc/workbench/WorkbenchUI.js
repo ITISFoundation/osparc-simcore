@@ -560,7 +560,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     resetSelection: function() {
       this.__setSelectedNodes([]);
       this.__setSelectedAnnotations([]);
-      this.__selectedItemChanged(null);
+      this.__setSelectedItem(null);
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
@@ -594,11 +594,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         } else {
           activeNodeUI.addState("selected");
           this.getSelectedNodeUIs().push(activeNodeUI);
-          this.__selectedItemChanged(activeNodeUI.getNodeId());
+          this.__setSelectedItem(activeNodeUI.getNodeId());
         }
       } else {
         this.__setSelectedNodes([activeNodeUI]);
-        this.__selectedItemChanged(activeNodeUI.getNodeId());
+        this.__setSelectedItem(activeNodeUI.getNodeId());
       }
 
       qx.event.message.Bus.dispatchByName("changeNodeSelection", this.getSelectedNodes());
@@ -614,12 +614,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           annotation.setSelected(true);
           this.getSelectedAnnotations().push(annotation);
           if (this.__selectedItemId === null) {
-            this.__selectedItemChanged(annotation.getId());
+            this.__setSelectedItem(annotation.getId());
           }
         }
       } else {
         this.__setSelectedAnnotations([annotation]);
-        this.__selectedItemChanged(annotation.getId());
+        this.__setSelectedItem(annotation.getId());
       }
     },
 
@@ -791,7 +791,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         ].forEach(svgEl => {
           svgEl.addEventListener("click", e => {
             // this is needed to get out of the context of svg
-            that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+            that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
             e.stopPropagation();
           }, this);
 
@@ -1166,7 +1166,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __selectedItemChanged: function(newID) {
+    __setSelectedItem: function(newID) {
       const oldId = this.__selectedItemId;
       if (oldId) {
         if (this.__isSelectedItemAnEdge()) {
