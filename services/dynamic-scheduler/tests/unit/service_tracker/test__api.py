@@ -20,7 +20,7 @@ from models_library.services_enums import ServiceState
 from pydantic import NonNegativeInt
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.deferred_tasks import TaskUID
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     get_all_tracked,
@@ -102,12 +102,12 @@ async def test_services_tracer_workflow(
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
     # ensure more than one service can be tracked
-    await logged_gather(
+    await limited_gather(
         *[
             set_request_as_stopped(app, get_dynamic_service_stop(uuid4()))
             for _ in range(item_count)
         ],
-        max_concurrency=100,
+        limit=100,
     )
     assert len(await get_all_tracked(app)) == item_count
 
@@ -189,7 +189,7 @@ def _get_node_get_from(service_state: ServiceState) -> NodeGet:
 
 
 def _get_dynamic_service_get_from(
-    service_state: DynamicServiceGet,
+    service_state: ServiceState,
 ) -> DynamicServiceGet:
     dict_data = DynamicServiceGet.Config.schema_extra["examples"][1]
     assert "state" in dict_data
@@ -297,13 +297,10 @@ _EXPECTED_TEST_CASES: list[list[tuple]] = [
 ]
 _FLAT_EXPECTED_TEST_CASES = __get_flat_list(_EXPECTED_TEST_CASES)
 # ensure enum changes do not break above rules
-_IDLE_ITEM_COUNT: Final[int] = 1
 _NODE_STATUS_FORMATS_COUNT: Final[int] = 2
 assert (
     len(_FLAT_EXPECTED_TEST_CASES)
-    == (len(ServiceState) + _IDLE_ITEM_COUNT)
-    * len(UserRequestedState)
-    * _NODE_STATUS_FORMATS_COUNT
+    == (len(ServiceState)) * len(UserRequestedState) * _NODE_STATUS_FORMATS_COUNT
 )
 
 

@@ -21,6 +21,7 @@ class ServiceState(Enum):
     STOPPING = "stopping"
 
     COMPLETE = "complete"
+    IDLE = "idle"
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -42,6 +43,7 @@ class ServiceState(Enum):
             ServiceState.RUNNING: 4,
             ServiceState.STOPPING: 5,
             ServiceState.COMPLETE: 6,
+            ServiceState.IDLE: 7,
         }
 
 
