@@ -8,9 +8,7 @@ from asyncio import AbstractEventLoop
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
-from servicelib.fastapi.tracing import (
-    setup_opentelemtry_instrumentation,  # pylint: disable=no-name-in-module
-)
+from servicelib.fastapi.tracing import setup_opentelemtry_instrumentation
 from settings_library.tracing import TracingSettings
 
 mock_app = FastAPI(title="Opentelemetry example")
