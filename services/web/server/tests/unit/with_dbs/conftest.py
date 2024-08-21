@@ -40,11 +40,11 @@ from models_library.products import ProductName
 from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-from pytest_simcore.helpers.utils_projects import NewProject
-from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
@@ -63,7 +63,7 @@ from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy import exc as sql_exceptions
@@ -87,12 +87,14 @@ def disable_swagger_doc_generation(
 @pytest.fixture(scope="session")
 def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
-
+    redis_cfg = default_app_cfg["resource_manager"]["redis"]
     # docker-compose reads these environs
     with pytest.MonkeyPatch().context() as patcher:
         patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
         patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
         patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
+        # Redis
+        patcher.setenv("TEST_REDIS_PASSWORD", redis_cfg["password"])
         yield patcher
 
 
@@ -531,21 +533,25 @@ async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
+def _is_redis_responsive(host: str, port: int, password: str) -> bool:
+    # username via https://stackoverflow.com/a/78236235
+    r = redis.Redis(host=host, username="default", port=port, password=password)
     return r.ping() is True
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip) -> RedisSettings:
+def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
-    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port)
+    password = default_app_cfg["resource_manager"]["redis"]["password"]
+    redis_settings = RedisSettings(
+        REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password
+    )
 
     docker_services.wait_until_responsive(
-        check=lambda: _is_redis_responsive(host, port),
+        check=lambda: _is_redis_responsive(host, port, password),
         timeout=30.0,
         pause=0.1,
     )
@@ -562,7 +568,7 @@ async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.R
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
 
 @pytest.fixture
@@ -579,7 +585,7 @@ async def redis_locks_client(
     yield client
 
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 # SOCKETS FIXTURES  --------------------------------------------------------
@@ -595,7 +601,9 @@ async def primary_group(
     logged_user: UserInfoDict,
 ) -> dict[str, Any]:
     assert client.app
-    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    primary_group, _, _ = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return primary_group
 
 
@@ -652,7 +660,9 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        _, std_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        _, std_groups, _ = await list_user_groups_with_read_access(
+            client.app, logged_user["id"]
+        )
 
         yield std_groups
 
@@ -667,7 +677,9 @@ async def all_group(
     logged_user: UserInfoDict,
 ) -> dict[str, str]:
     assert client.app
-    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return all_group
 
 

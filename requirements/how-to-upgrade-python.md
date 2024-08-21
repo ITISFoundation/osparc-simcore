@@ -15,7 +15,7 @@ Both python and pip version are specified:
 -  in the services/scripts ``Dockerfile``:
   ```Dockerfile
     ARG PYTHON_VERSION="3.9.12"
-    FROM python:${PYTHON_VERSION}-slim-buster as base
+    FROM python:${PYTHON_VERSION}-slim-bookworm as base
   ```
 - in the CI ``.github/workflows/ci-testing-deploy.yml``
   ```yaml

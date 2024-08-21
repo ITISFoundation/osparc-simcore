@@ -15,9 +15,9 @@ from typing import TypeAlias, TypeVar, Union
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
-from servicelib.aiohttp import status
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from . import status
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
@@ -171,6 +171,21 @@ def parse_request_query_parameters_as(
             return parameters_schema_cls.parse_obj(data)
         model: ModelClass = parse_obj_as(parameters_schema_cls, data)
         return model
+
+
+def parse_request_headers_as(
+    parameters_schema_cls: type[ModelClass],
+    request: web.Request,
+    *,
+    use_enveloped_error_v1: bool = True,
+) -> ModelClass:
+    with handle_validation_as_http_error(
+        error_msg_template="Invalid parameter/s '{failed}' in request headers",
+        resource_name=request.rel_url.path,
+        use_error_v1=use_enveloped_error_v1,
+    ):
+        data = dict(request.headers)
+        return parameters_schema_cls.parse_obj(data)
 
 
 async def parse_request_body_as(

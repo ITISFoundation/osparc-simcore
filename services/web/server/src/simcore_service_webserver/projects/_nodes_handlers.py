@@ -11,6 +11,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -23,8 +26,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
 from models_library.projects import Project, ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
@@ -47,6 +49,10 @@ from servicelib.common_headers import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -57,7 +63,7 @@ from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..groups.api import get_group_from_gid, list_user_groups
+from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -74,6 +80,7 @@ from .exceptions import (
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectInvalidRightsError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -95,6 +102,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             UserDefaultWalletNotFoundError,
             DefaultPricingUnitNotFoundError,
             GroupNotFoundError,
+            CatalogItemNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
@@ -105,6 +113,10 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPConflict(reason=f"{exc}") from exc
         except ClustersKeeperNotAvailableError as exc:
             raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+        except ProjectNodeRequiredInputsNotSetError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+        except CatalogForbiddenError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -166,6 +178,7 @@ async def create_node(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
+# NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -282,7 +295,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
     node_outputs = await parse_request_body_as(NodeOutputs, request)
 
     ui_changed_keys = set()
-    ui_changed_keys.add(path_params.node_id)
+    ui_changed_keys.add(f"{path_params.node_id}")
     await nodes_utils.update_node_outputs(
         app=request.app,
         user_id=req_ctx.user_id,
@@ -323,17 +336,12 @@ async def _stop_dynamic_service_task(
     _task_progress: TaskProgress,
     *,
     app: web.Application,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    dynamic_service_stop: DynamicServiceStop,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_api.stop_dynamic_service(
-            app,
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            save_state=save_state,
+            app, dynamic_service_stop=dynamic_service_stop
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -369,15 +377,19 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_task,
+        _stop_dynamic_service_task,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
-        node_id=path_params.node_id,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        dynamic_service_stop=DynamicServiceStop(
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
+            save_state=save_state,
         ),
-        save_state=save_state,
         fire_and_forget=True,
     )
 
@@ -508,7 +520,9 @@ async def get_project_services_access_for_gid(
 ) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params = parse_request_query_parameters_as(_ServicesAccessQuery, request)
+    query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
+        _ServicesAccessQuery, request
+    )
 
     project = await projects_api.get_project_for_user(
         request.app,
@@ -551,8 +565,8 @@ async def get_project_services_access_for_gid(
         _user_id = await get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
-        _, _user_groups, _ = await list_user_groups(app=request.app, user_id=_user_id)
-        groups_to_compare.update({int(item.get("gid")) for item in _user_groups})
+        _user_groups = await list_all_user_groups(app=request.app, user_id=_user_id)
+        groups_to_compare.update({group.gid for group in _user_groups})
         groups_to_compare.add(query_params.for_gid)
     elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
         groups_to_compare = {query_params.for_gid}

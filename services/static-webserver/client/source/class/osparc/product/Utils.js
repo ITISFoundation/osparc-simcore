@@ -184,6 +184,17 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
+    forceNullCreditsColor: function(wallet) {
+      // TIP is a product that can be used for free, so allow making 0 credits scenario more friendly.
+      if (osparc.product.Utils.isProduct("tis")) {
+        // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
+        // Note: Since we can't fetch payments per wallet, for now rely on the available credits.
+        const credits = wallet.getCreditsAvailable();
+        return credits === 0;
+      }
+      return false;
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
@@ -236,10 +247,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.getProductName().includes("s4l")) {
-        return false;
+      if (this.isProduct("osparc")) {
+        return true;
       }
-      return true;
+      return false;
     },
 
     showClassifiers: function() {

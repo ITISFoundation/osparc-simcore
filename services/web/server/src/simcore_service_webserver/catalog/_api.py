@@ -1,16 +1,19 @@
-import asyncio
 import logging
+import warnings
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import web
 from aiohttp.web import Request
+from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
     ServiceOutputGet,
     ServiceOutputKey,
 )
+from models_library.products import ProductName
+from models_library.rest_pagination import PageMetaInfoLimitOffset, PageQueryParameters
 from models_library.services import (
     ServiceInput,
     ServiceKey,
@@ -18,12 +21,15 @@ from models_library.services import (
     ServiceVersion,
 )
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ..rabbitmq import get_rabbitmq_rpc_client
 from . import client
 from ._api_units import can_connect, replace_service_input_outputs
 from ._models import ServiceInputGetFactory, ServiceOutputGetFactory
@@ -56,7 +62,111 @@ class CatalogRequestContext(BaseModel):
             )
 
 
+async def _safe_replace_service_input_outputs(
+    service: dict[str, Any], unit_registry: UnitRegistry
+):
+    try:
+        await replace_service_input_outputs(
+            service,
+            unit_registry=unit_registry,
+            **RESPONSE_MODEL_POLICY,
+        )
+    except KeyError:  # noqa: PERF203
+        # This will limit the effect of a any error in the formatting of
+        # service metadata (mostly in label annotations). Otherwise it would
+        # completely break all the listing operation. At this moment,
+        # a limitation on schema's $ref produced an error that made faiing
+        # the full service listing.
+        _logger.exception(
+            "Failed while processing this %s. "
+            "Skipping service from listing. "
+            "TIP: check formatting of docker label annotations for inputs/outputs.",
+            f"{service=}",
+        )
+
+
 # IMPLEMENTATION --------------------------------------------------------------------------------
+
+
+async def list_latest_services(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    unit_registry: UnitRegistry,
+    page_params: PageQueryParameters,
+) -> tuple[list, PageMetaInfoLimitOffset]:
+    # NOTE: will replace list_services
+
+    page = await catalog_rpc.list_services_paginated(
+        get_rabbitmq_rpc_client(app),
+        product_name=product_name,
+        user_id=user_id,
+        limit=page_params.limit,
+        offset=page_params.offset,
+    )
+
+    page_data = jsonable_encoder(page.data, exclude_unset=True)
+    for data in page_data:
+        await _safe_replace_service_input_outputs(data, unit_registry)
+
+    return page_data, page.meta
+
+
+async def get_service_v2(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    unit_registry: UnitRegistry,
+):
+    # NOTE: will replace get_service
+    service = await catalog_rpc.get_service(
+        get_rabbitmq_rpc_client(app),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+    data = jsonable_encoder(service, exclude_unset=True)
+    await replace_service_input_outputs(
+        data,
+        unit_registry=unit_registry,
+        **RESPONSE_MODEL_POLICY,
+    )
+    return data
+
+
+async def update_service_v2(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    update_data: dict[str, Any],
+    unit_registry: UnitRegistry,
+):
+    # NOTE: will replace update_service
+    service = await catalog_rpc.update_service(
+        get_rabbitmq_rpc_client(app),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        update=ServiceUpdateV2.parse_obj(update_data),
+    )
+
+    data = jsonable_encoder(service, exclude_unset=True)
+    await replace_service_input_outputs(
+        data,
+        unit_registry=unit_registry,
+        **RESPONSE_MODEL_POLICY,
+    )
+    return data
 
 
 async def list_services(
@@ -70,36 +180,25 @@ async def list_services(
         app, user_id, product_name, only_key_versions=False
     )
     for service in services:
-        try:
-            await asyncio.to_thread(
-                replace_service_input_outputs,
-                service,
-                unit_registry=unit_registry,
-                **RESPONSE_MODEL_POLICY,
-            )
-        except KeyError:  # noqa: PERF203
-            # This will limit the effect of a any error in the formatting of
-            # service metadata (mostly in label annotations). Otherwise it would
-            # completely break all the listing operation. At this moment,
-            # a limitation on schema's $ref produced an error that made faiing
-            # the full service listing.
-            _logger.exception(
-                "Failed while processing this %s. "
-                "Skipping service from listing. "
-                "TIP: check formatting of docker label annotations for inputs/outputs.",
-                f"{service=}",
-            )
+        await _safe_replace_service_input_outputs(service, unit_registry)
+
     return services
 
 
 async def get_service(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> dict[str, Any]:
+
+    warnings.warn(
+        "`get_service` is deprecated, use `get_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         service,
         unit_registry=ctx.unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -113,6 +212,12 @@ async def update_service(
     update_data: dict[str, Any],
     ctx: CatalogRequestContext,
 ):
+    warnings.warn(
+        "`update_service_v2` is deprecated, use `update_service_v2` instead",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     service = await client.update_service(
         ctx.app,
         ctx.user_id,
@@ -121,8 +226,7 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    await asyncio.to_thread(
-        replace_service_input_outputs,
+    await replace_service_input_outputs(
         service,
         unit_registry=ctx.unit_registry,
         **RESPONSE_MODEL_POLICY,
@@ -136,13 +240,12 @@ async def list_service_inputs(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    inputs = []
-    for input_key in service["inputs"]:
-        service_input: ServiceInputGet = (
-            ServiceInputGetFactory.from_catalog_service_api_model(service, input_key)
+    return [
+        await ServiceInputGetFactory.from_catalog_service_api_model(
+            service=service, input_key=input_key
         )
-        inputs.append(service_input)
-    return inputs
+        for input_key in service["inputs"]
+    ]
 
 
 async def get_service_input(
@@ -155,7 +258,9 @@ async def get_service_input(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     service_input: ServiceInputGet = (
-        ServiceInputGetFactory.from_catalog_service_api_model(service, input_key)
+        await ServiceInputGetFactory.from_catalog_service_api_model(
+            service=service, input_key=input_key
+        )
     )
 
     return service_input
@@ -211,14 +316,12 @@ async def list_service_outputs(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-
-    outputs = []
-    for output_key in service["outputs"]:
-        service_output = ServiceOutputGetFactory.from_catalog_service_api_model(
-            service, output_key, None
+    return [
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key, ureg=None
         )
-        outputs.append(service_output)
-    return outputs
+        for output_key in service["outputs"]
+    ]
 
 
 async def get_service_output(
@@ -230,11 +333,12 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output: ServiceOutputGet = (
-        ServiceOutputGetFactory.from_catalog_service_api_model(service, output_key)
+    return cast(  # mypy -> aiocache is not typed.
+        ServiceOutputGet,
+        await ServiceOutputGetFactory.from_catalog_service_api_model(
+            service=service, output_key=output_key
+        ),
     )
-
-    return service_output
 
 
 async def get_compatible_outputs_given_target_input(

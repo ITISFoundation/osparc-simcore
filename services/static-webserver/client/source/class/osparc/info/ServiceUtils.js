@@ -33,7 +33,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createNodeId: function(instanceUuid) {
-      const label = osparc.info.Utils.createId();
+      const label = osparc.info.Utils.createLabel();
       label.set({
         value: instanceUuid
       });
@@ -44,7 +44,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceKey {String} Service key
       */
     createKey: function(serviceKey) {
-      const key = osparc.info.Utils.createId();
+      const key = osparc.info.Utils.createLabel();
       key.set({
         value: serviceKey,
         toolTipText: serviceKey
@@ -56,24 +56,43 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceVersion {String} Service version
       */
     createVersion: function(serviceVersion) {
-      const version = osparc.info.Utils.createId();
+      const version = osparc.info.Utils.createLabel();
       version.set({
         value: serviceVersion
       });
-      osparc.utils.Utils.setIdToWidget(version, "serviceVersion");
       return version;
+    },
+
+    createVersionDisplay: function(key, version) {
+      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      const label = new qx.ui.basic.Label(versionDisplay);
+      osparc.utils.Utils.setIdToWidget(label, "serviceVersion");
+      return label;
+    },
+
+    createReleasedDate: function(key, version) {
+      const releasedDate = osparc.service.Utils.getReleasedDate(key, version);
+      if (releasedDate) {
+        const label = new qx.ui.basic.Label();
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(new Date(releasedDate)),
+        });
+        return label;
+      }
+      return null;
     },
 
     /**
       * @param serviceData {Object} Serialized Service Object
       */
     createContact: function(serviceData) {
-      const owner = new qx.ui.basic.Label();
-      owner.set({
-        value: osparc.utils.Utils.getNameFromEmail(serviceData["contact"]),
-        toolTipText: serviceData["contact"]
+      const contact = new qx.ui.basic.Label();
+      contact.set({
+        value: osparc.store.Support.mailToText(serviceData["contact"], (serviceData["name"] + ":" + serviceData["version"])),
+        selectable: true,
+        rich: true
       });
-      return owner;
+      return contact;
     },
 
     /**
@@ -102,9 +121,9 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const myGID = osparc.auth.Data.getInstance().getGroupId();
       const ar = serviceData["accessRights"];
       if (myGID in ar) {
-        if (ar[myGID]["write_access"]) {
+        if (ar[myGID]["write"]) {
           permissions = qx.locale.Manager.tr("Write");
-        } else if (ar[myGID]["execute_access"]) {
+        } else if (ar[myGID]["execute"]) {
           permissions = qx.locale.Manager.tr("Execute");
         }
       } else {
@@ -147,19 +166,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
       };
       addStars(serviceData);
       return tsrLayout;
-    },
-
-    /**
-      * @param serviceData {Object} Serialized Service Object
-      * @param maxWidth {Number} thumbnail's maxWidth
-      * @param maxHeight {Number} thumbnail's maxHeight
-      */
-    createThumbnail: function(serviceData, maxWidth, maxHeight) {
-      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
-      thumbnail.set({
-        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_ICON
-      });
-      return thumbnail;
     },
 
     /**
@@ -292,22 +298,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const title = serviceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
-    },
-
-    patchServiceData: function(serviceData, fieldKey, value) {
-      const patchData = {};
-      patchData[fieldKey] = value;
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          serviceData["key"],
-          serviceData["version"]
-        ),
-        data: patchData
-      };
-      return osparc.data.Resources.fetch("services", "patch", params)
-        .then(() => {
-          serviceData[fieldKey] = value;
-        });
     }
   }
 });

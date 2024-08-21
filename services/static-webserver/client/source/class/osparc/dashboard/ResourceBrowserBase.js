@@ -33,6 +33,47 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getInstance().getDisplayName());
 
+    const padding = osparc.dashboard.Dashboard.PADDING;
+    const leftColumnWidth = this.self().SIDE_SPACER_WIDTH;
+    const emptyColumnMinWidth = 50;
+    const spacing = 20;
+    const mainLayoutsScroll = 8;
+
+    const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
+    this._addToMainLayout(mainLayoutWithSideSpacers);
+
+    this.__leftLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      width: leftColumnWidth
+    });
+    mainLayoutWithSideSpacers.add(this.__leftLayout);
+
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    mainLayoutWithSideSpacers.add(this.__centerLayout);
+
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    mainLayoutWithSideSpacers.add(rightColum, {
+      flex: 1
+    });
+
+    const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
+    this.__centerLayout.setMinWidth(this.self().MIN_GRID_CARDS_PER_ROW * itemWidth + mainLayoutsScroll);
+    const fitResourceCards = () => {
+      const w = document.documentElement.clientWidth;
+      const nStudies = Math.floor((w - 2*padding - 2*spacing - leftColumnWidth - emptyColumnMinWidth) / itemWidth);
+      const newWidth = nStudies * itemWidth + 8;
+      if (newWidth > this.__centerLayout.getMinWidth()) {
+        this.__centerLayout.setWidth(newWidth);
+      } else {
+        this.__centerLayout.setWidth(this.__centerLayout.getMinWidth());
+      }
+
+      const compactVersion = w < this.__centerLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
+      this.__leftLayout.setVisibility(compactVersion ? "excluded" : "visible");
+      rightColum.setVisibility(compactVersion ? "excluded" : "visible");
+    };
+    fitResourceCards();
+    window.addEventListener("resize", () => fitResourceCards());
+
     this.addListener("appear", () => this._moreResourcesRequired());
   },
 
@@ -42,6 +83,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   statics: {
     PAGINATED_STUDIES: 10,
+    MIN_GRID_CARDS_PER_ROW: 4,
+    SIDE_SPACER_WIDTH: 180,
 
     checkLoggedIn: function() {
       const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
@@ -112,28 +155,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    sortStudyList: function(studyList, sortValue) {
-      const sortByProperty = function(prop) {
-        return function(a, b) {
-          const x = a.toString().toLowerCase();
-          const y = b.toString().toLowerCase();
-          if (prop === "lastChangeDate") {
-            return new Date(y[prop]) - new Date(x[prop]);
-          }
-          if (typeof x[prop] == "number") {
-            return x[prop] - y[prop];
-          }
-          if (x[prop] < y[prop]) {
-            return -1;
-          } else if (x[prop] > y[prop]) {
-            return 1;
-          }
-          return 0;
-        };
-      };
-      studyList.sort(sortByProperty(sortValue || "name"));
-    },
-
     isCardNewItem: function(card) {
       return (card instanceof osparc.dashboard.GridButtonNew || card instanceof osparc.dashboard.ListButtonNew);
     },
@@ -165,6 +186,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
+    __leftLayout: null,
+    __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
     _topBar: null,
@@ -182,13 +205,17 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           scroll.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
           control = this._createLayout();
           scroll.add(control);
-          this._addToMainLayout(scroll, {
+          this._addToLayout(scroll, {
             flex: 1
           });
           break;
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    _addToLayout: function(widget, props = {}) {
+      this.__centerLayout.add(widget, props)
     },
 
     initResources: function() {
@@ -205,7 +232,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _createResourcesLayout: function() {
       const topBar = this.__createTopBar();
-      this._addToMainLayout(topBar);
+      this._addToLayout(topBar);
 
       const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
@@ -213,7 +240,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         paddingRight: 8,
         alignY: "middle"
       });
-      this._addToMainLayout(toolbar);
+      this._addToLayout(toolbar);
 
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
@@ -224,7 +251,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
-      this._addToMainLayout(resourcesContainer);
+      resourcesContainer.addListener("folderSelected", e => this._folderSelected(e.getData()));
+      resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
+      resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
+      this._addToLayout(resourcesContainer);
     },
 
     __createTopBar: function() {
@@ -318,6 +348,36 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._toolbar.add(viewModeLayout);
     },
 
+    _addResourceFilter: function() {
+      const resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
+        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10, // aligned with toolbar buttons: search bar + spacing
+        maxWidth: this.self().SIDE_SPACER_WIDTH,
+        width: this.self().SIDE_SPACER_WIDTH
+      });
+
+      resourceFilter.addListener("changeSharedWith", e => {
+        const sharedWith = e.getData();
+        this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
+      }, this);
+
+      resourceFilter.addListener("changeSelectedTags", e => {
+        const selectedTagIds = e.getData();
+        this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
+      }, this);
+
+      resourceFilter.addListener("changeServiceType", e => {
+        const serviceType = e.getData();
+        this._searchBarFilter.setServiceTypeActiveFilter(serviceType.id, serviceType.label);
+      }, this);
+
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        resourceFilter.filterChanged(filterData);
+      });
+
+      this.__leftLayout.add(resourceFilter);
+    },
+
     /**
      * Function that resets the selected item
      */
@@ -390,11 +450,23 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createStudyFromService: async function() {
+    _createStudyFromService: function() {
       throw new Error("Abstract method called!");
     },
 
     _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _folderSelected: function(folderId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _folderUpdated: function(folderId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _deleteFolderRequested: function(folderId) {
       throw new Error("Abstract method called!");
     },
 
@@ -455,7 +527,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
     },
@@ -467,7 +539,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."));
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesome5Solid/tags/12");
       tagsButton.addListener("tap", () => card.openTags(), this);
       return tagsButton;
     }

@@ -5,8 +5,8 @@
 
 
 import pytest
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.application import BaseApplicationSettings
 
 
@@ -17,7 +17,7 @@ def envs_from_docker_inspect() -> EnvVarsDict:
         "PATH=/home/scu/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
         "LANG=C.UTF-8",
         "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
-        "PYTHON_VERSION=3.10.10",
+        "PYTHON_VERSION=3.10.14",
         "PYTHON_PIP_VERSION=22.3.1",
         "PYTHON_SETUPTOOLS_VERSION=65.5.1",
         "PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/d5cb0afaf23b8520f1bbcfed521017b4a95f5c01/public/get-pip.py",

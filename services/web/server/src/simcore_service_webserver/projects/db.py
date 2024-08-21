@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any
+from typing import Any, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
@@ -33,6 +34,9 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.folders import folders_to_projects
+from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
@@ -46,12 +50,14 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import func, literal_column
+from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..application_settings import ApplicationSettings
 from ..db.models import projects_to_wallet, study_tags
 from ..utils import now_str
 from ._comments_db import (
@@ -93,13 +99,13 @@ ANY_USER = ANY_USER_ID_SENTINEL
 
 
 class ProjectDBAPI(BaseProjectDB):
-    def __init__(self, app: web.Application):
+    def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._engine = app.get(APP_DB_ENGINE_KEY)
+        self._engine = cast(Engine, app.get(APP_DB_ENGINE_KEY))
 
-    def _init_engine(self):
+    def _init_engine(self) -> None:
         # Delays creation of engine because it setup_db does it on_startup
-        self._engine = self._app.get(APP_DB_ENGINE_KEY)
+        self._engine = cast(Engine, self._app.get(APP_DB_ENGINE_KEY))
         if self._engine is None:
             msg = "Database subsystem was not initialized"
             raise ValueError(msg)
@@ -317,6 +323,7 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: PositiveInt,
         *,
         product_name: str,
+        settings: ApplicationSettings,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
@@ -327,6 +334,7 @@ class ProjectDBAPI(BaseProjectDB):
         order_by: OrderBy = OrderBy(
             field="last_change_date", direction=OrderDirection.DESC
         ),
+        folder_id: FolderID | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         assert (
             order_by.field in projects.columns
@@ -335,9 +343,36 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
+            access_rights_subquery = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    ).label("access_rights"),
+                ).group_by(project_to_groups.c.project_uuid)
+            ).subquery("access_rights_subquery")
+
+            _join_query = projects.join(projects_to_products, isouter=True).join(
+                access_rights_subquery, isouter=True
+            )
+            if settings.WEBSERVER_FOLDERS:
+                _join_query = _join_query.join(folders_to_projects, isouter=True)
+
             query = (
-                sa.select(projects, projects_to_products.c.product_name)
-                .select_from(projects.join(projects_to_products, isouter=True))
+                sa.select(
+                    *[col for col in projects.columns if col.name != "access_rights"],
+                    access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                )
+                .select_from(_join_query)
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -357,7 +392,7 @@ class ProjectDBAPI(BaseProjectDB):
                     & (
                         (projects.c.prj_owner == user_id)
                         | sa.text(
-                            f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
+                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                         )
                     )
                     & (
@@ -367,6 +402,13 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                 )
             )
+            if settings.WEBSERVER_FOLDERS:
+                query = query.where(
+                    folders_to_projects.c.folder_id == f"{folder_id}"
+                    if folder_id
+                    else folders_to_projects.c.folder_id.is_(None)
+                )
+
             if search:
                 query = query.join(users, isouter=True)
                 query = query.where(
@@ -484,26 +526,36 @@ class ProjectDBAPI(BaseProjectDB):
         """
         User project access rights. Aggregated across all his groups.
         """
-        # NOTE: MD: I didn't manage to write this query in sqlalchemy, but
-        # when we migrate project access rights to its own table, this will
-        # be not needed and we can use something similar to "list_wallets_for_user"
-        raw_sql = sa.text(
-            f"""
-                select uid, max(read) as read, max(write) as write, max(delete) as delete
-                from user_to_groups utg
-                join
-                    (
-                        SELECT cast(key as int) AS id, value ->>'read' as read, value ->>'write' as write, value ->>'delete' as delete
-                        FROM projects, jsonb_each(access_rights)
-                        where "uuid" = '{project_uuid}'
-                    ) prj_access_rights on utg.gid = prj_access_rights.id
-                where utg.uid = {user_id}
-                group by uid
-            """  # noqa: S608
+        _SELECTION_ARGS = (
+            user_to_groups.c.uid,
+            func.max(project_to_groups.c.read.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("read"),
+            func.max(project_to_groups.c.write.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("write"),
+            func.max(project_to_groups.c.delete.cast(INTEGER))
+            .cast(BOOLEAN)
+            .label("delete"),
+        )
+
+        _JOIN_TABLES = user_to_groups.join(
+            project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid
+        )
+
+        stmt = (
+            sa.select(*_SELECTION_ARGS)
+            .select_from(_JOIN_TABLES)
+            .where(
+                (user_to_groups.c.uid == user_id)
+                & (project_to_groups.c.project_uuid == f"{project_uuid}")
+                & (project_to_groups.c.read == "true")
+            )
+            .group_by(user_to_groups.c.uid)
         )
 
         async with self.engine.acquire() as conn:
-            result = await conn.execute(raw_sql)
+            result = await conn.execute(stmt)
             row = await result.fetchone()
             if row is None:
                 raise ProjectInvalidRightsError(
@@ -550,9 +602,7 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups: list[RowProxy] = await self._list_user_groups(
-                db_connection, user_id
-            )
+            user_groups = await self._list_user_groups(db_connection, user_id)
             check_project_permissions(current_project, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
@@ -838,7 +888,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
 
-    async def get_project_node(
+    async def get_project_node(  # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
         self, project_id: ProjectID, node_id: NodeID
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
@@ -874,7 +924,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            return await project_nodes_repo.list(conn)  # type: ignore[no-any-return]
+            return await project_nodes_repo.list(conn)
 
     async def node_id_exists(self, node_id: NodeID) -> bool:
         """Returns True if the node id exists in any of the available projects"""
@@ -1139,7 +1189,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
             row = await result.first()
             if row:
-                return row[projects.c.type]
+                return ProjectType(row[projects.c.type])
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
     #

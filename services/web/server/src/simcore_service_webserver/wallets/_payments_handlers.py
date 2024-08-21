@@ -114,7 +114,9 @@ async def _list_all_payments(request: web.Request):
     """
 
     req_ctx = WalletsRequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(PageQueryParameters, request)
+    query_params: PageQueryParameters = parse_request_query_parameters_as(
+        PageQueryParameters, request
+    )
 
     payments, total_number_of_items = await list_user_payments_page(
         request.app,

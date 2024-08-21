@@ -22,13 +22,11 @@ def _validate_signature(handler: _HandlerWithRequestArg):
     try:
         p = next(iter(inspect.signature(handler).parameters.values()))
         if p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD or p.annotation != Request:
-            raise TypeError(
-                f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {p.annotation}"
-            )
+            msg = f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got {p.annotation}"
+            raise TypeError(msg)
     except StopIteration as e:
-        raise TypeError(
-            f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got none"
-        ) from e
+        msg = f"Invalid handler {handler.__name__} signature: first parameter must be a Request, got none"
+        raise TypeError(msg) from e
 
 
 #

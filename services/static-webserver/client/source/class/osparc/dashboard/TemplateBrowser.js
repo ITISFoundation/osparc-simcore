@@ -39,21 +39,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      const preResourcePromises = [];
-      const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getAllServices());
-      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
-      }
-
-      Promise.all(preResourcePromises)
-        .then(() => {
-          this.getChildControl("resources-layout");
-          this.reloadResources();
-          this.__attachEventHandlers();
-          this._hideLoadingPage();
-        })
-        .catch(err => console.error(err));
+      this.getChildControl("resources-layout");
+      this.reloadResources();
+      this.__attachEventHandlers();
+      this._hideLoadingPage();
     },
 
     reloadResources: function() {
@@ -190,13 +179,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._addGroupByButton();
       this._addViewModeButton();
 
+      this._addResourceFilter();
+
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
       return this._resourcesContainer;
     },
 
     __createUpdateAllButton: function() {
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"));
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all")).set({
+        appearance: "form-button-outlined"
+      });
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
         const templatesText = osparc.product.Utils.getTemplateAlias({plural: true});
@@ -251,9 +244,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
         const templatePromises = [];
         for (const nodeId in studyData["workbench"]) {
-          const newVersion = osparc.metadata.ServicesInStudyUpdate.getLatestVersion(studyData, nodeId)
-          if (newVersion) {
-            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, "version", newVersion));
+          const node = studyData["workbench"][nodeId];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          if (latestCompatible && (node["key"] !== latestCompatible["key"] || node["version"] !== latestCompatible["version"])) {
+            const patchData = {};
+            if (node["key"] !== latestCompatible["key"]) {
+              patchData["key"] = latestCompatible["key"];
+            }
+            if (node["version"] !== latestCompatible["version"]) {
+              patchData["version"] = latestCompatible["version"];
+            }
+            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)
@@ -343,7 +344,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });

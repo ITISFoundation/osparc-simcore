@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Annotated, Final, cast
+from typing import Annotated, Final
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -14,7 +14,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -27,7 +27,7 @@ from servicelib.utils import logged_gather
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -92,10 +92,7 @@ async def list_tracked_dynamic_services(
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
     dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuse_tasks)
 
-    return cast(
-        list[DynamicServiceGet],
-        legacy_running_services + dynamic_sidecar_running_services,
-    )  # mypy
+    return legacy_running_services + dynamic_sidecar_running_services
 
 
 @router.post(
@@ -333,6 +330,7 @@ async def update_projects_networks(
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
 ) -> None:
+    # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,

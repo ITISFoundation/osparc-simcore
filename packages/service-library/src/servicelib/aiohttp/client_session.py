@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.utils.json_serialization import json_dumps
@@ -40,7 +41,7 @@ async def persistent_client_session(app: web.Application) -> AsyncGenerator[None
 def get_client_session(app: web.Application) -> ClientSession:
     """Refers to the one-and-only client in the app"""
     assert APP_CLIENT_SESSION_KEY in app  # nosec
-    return app[APP_CLIENT_SESSION_KEY]
+    return cast(ClientSession, app[APP_CLIENT_SESSION_KEY])
 
 
 __all__: tuple[str, ...] = (

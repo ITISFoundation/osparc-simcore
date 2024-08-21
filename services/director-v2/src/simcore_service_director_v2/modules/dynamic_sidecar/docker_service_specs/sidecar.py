@@ -16,8 +16,12 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
-from settings_library.node_ports import StorageAuthSettings
+from settings_library.aws_s3_cli import AwsS3CliSettings
+from settings_library.docker_registry import RegistrySettings
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -58,9 +62,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     password: str = "null"
     secure: str = "0"
 
-    storage_auth_settings: StorageAuthSettings = (
-        app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-    )
+    storage_auth_settings = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
 
     if storage_auth_settings and storage_auth_settings.auth_required:
         host = storage_auth_settings.STORAGE_HOST
@@ -89,11 +91,18 @@ def _get_environment_variables(
     metrics_collection_allowed: bool,
     telemetry_enabled: bool,
 ) -> dict[str, str]:
-    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
+    dy_sidecar_aws_s3_cli_settings = None
+    if (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
+        and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
+    ):
+        dy_sidecar_aws_s3_cli_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.json(
+            encoder=create_json_encoder_wo_secrets(AwsS3CliSettings),
+        )
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -111,7 +120,7 @@ def _get_environment_variables(
 
     storage_config = _get_storage_config(app_settings)
 
-    envs = {
+    envs: dict[str, str] = {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -128,6 +137,7 @@ def _get_environment_variables(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
+        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings or "null",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
@@ -146,12 +156,18 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
-        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
-        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
-        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
-        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
-        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
+            encoder=create_json_encoder_wo_secrets(RegistrySettings),
+            exclude={"resolved_registry_url", "api_url"},
+        ),
+        "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
+            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
+                encoder=create_json_encoder_wo_secrets(RegistrySettings),
+                exclude={"resolved_registry_url", "api_url"},
+            )
+            if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
+            else "null"
+        ),
         "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,
@@ -196,13 +212,14 @@ def get_prometheus_monitoring_networks(
     )
 
 
-def _get_mounts(
+async def _get_mounts(
     *,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     app_settings: AppSettings,
     has_quota_support: bool,
+    rpc_client: RabbitMQRPCClient,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -252,10 +269,44 @@ def _get_mounts(
                 volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
             )
         )
+
+    # We check whether user has access to EFS feature
+    use_efs = False
+    efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
+    if (
+        efs_settings
+        and scheduler_data.user_id in efs_settings.EFS_ONLY_ENABLED_FOR_USERIDS
+    ):
+        use_efs = True
+
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
+        if use_efs:
+            assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
+
+            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
+                path_to_mount
+            ).strip("_")
+            await efs_manager.create_project_specific_data_dir(
+                rpc_client,
+                project_id=scheduler_data.project_id,
+                node_id=scheduler_data.node_uuid,
+                storage_directory_name=_storage_directory_name,
+            )
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_efs(
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.run_id,
+                    project_id=scheduler_data.project_id,
+                    user_id=scheduler_data.user_id,
+                    efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
+                    storage_directory_name=_storage_directory_name,
+                )
+            )
         # for now only enable this with dev features enabled
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
@@ -351,7 +402,7 @@ def _get_ports(
     return ports
 
 
-def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
+async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -364,6 +415,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
     telemetry_enabled: bool,
+    rpc_client: RabbitMQRPCClient,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -375,12 +427,13 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
-    mounts = _get_mounts(
+    mounts = await _get_mounts(
         scheduler_data=scheduler_data,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         app_settings=app_settings,
         has_quota_support=has_quota_support,
+        rpc_client=rpc_client,
     )
 
     ports = _get_ports(

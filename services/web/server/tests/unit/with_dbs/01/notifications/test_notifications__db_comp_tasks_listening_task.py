@@ -16,7 +16,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB, ProjectID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -24,7 +24,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
     create_comp_tasks_listening_task,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

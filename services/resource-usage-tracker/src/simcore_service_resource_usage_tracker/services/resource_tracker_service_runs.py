@@ -1,14 +1,20 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import shortuuid
-from aws_library.s3.client import SimcoreS3API
+from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    OsparcCreditsAggregatedByServiceGet,
+    OsparcCreditsAggregatedUsagesPage,
     ServiceRunGet,
     ServiceRunPage,
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.resource_tracker import (
+    ServiceResourceUsagesFilters,
+    ServicesAggregatedUsagesTimePeriod,
+    ServicesAggregatedUsagesType,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -40,7 +46,7 @@ async def list_service_runs(
         started_from = filters.started_at.from_
         started_until = filters.started_at.until
 
-    # Situation when we want to see all usage of a specific user
+    # Situation when we want to see all usage of a specific user (ex. for Non billable product)
     if wallet_id is None and access_all_wallet_usage is False:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
             product_name,
@@ -118,12 +124,13 @@ async def list_service_runs(
                 user_email=service.user_email,
                 project_id=service.project_id,
                 project_name=service.project_name,
+                root_parent_project_id=service.root_parent_project_id,
+                root_parent_project_name=service.root_parent_project_name,
                 node_id=service.node_id,
                 node_name=service.node_name,
                 service_key=service.service_key,
                 service_version=service.service_version,
                 service_type=service.service_type,
-                service_resources=service.service_resources,
                 started_at=service.started_at,
                 stopped_at=service.stopped_at,
                 service_run_status=service.service_run_status,
@@ -171,8 +178,48 @@ async def export_service_runs(
 
     # Create presigned S3 link
     generated_url: AnyUrl = await s3_client.create_single_presigned_download_link(
-        bucket_name=s3_bucket_name,
+        bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
     )
     return generated_url
+
+
+async def get_osparc_credits_aggregated_usages_page(
+    user_id: UserID,
+    product_name: ProductName,
+    resource_tracker_repo: ResourceTrackerRepository,
+    aggregated_by: ServicesAggregatedUsagesType,
+    time_period: ServicesAggregatedUsagesTimePeriod,
+    wallet_id: WalletID,
+    access_all_wallet_usage: bool = False,
+    limit: int = 20,
+    offset: int = 0,
+) -> OsparcCreditsAggregatedUsagesPage:
+    current_datetime = datetime.now(tz=timezone.utc)
+    started_from = current_datetime - timedelta(days=time_period.value)
+
+    assert aggregated_by == ServicesAggregatedUsagesType.services  # nosec
+
+    (
+        count_output_list_db,
+        output_list_db,
+    ) = await resource_tracker_repo.get_osparc_credits_aggregated_by_service(
+        product_name=product_name,
+        user_id=user_id if access_all_wallet_usage is False else None,
+        wallet_id=wallet_id,
+        offset=offset,
+        limit=limit,
+        started_from=started_from,
+        started_until=None,
+    )
+    output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
+    for item in output_list_db:
+        output_api_model.append(
+            OsparcCreditsAggregatedByServiceGet.construct(
+                osparc_credits=item.osparc_credits,
+                service_key=item.service_key,
+            )
+        )
+
+    return OsparcCreditsAggregatedUsagesPage(output_api_model, count_output_list_db)

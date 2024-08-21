@@ -244,7 +244,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
+      const studyData = this.getStudy().serialize();
+      studyData["resourceType"] = this.__isTemplate ? "template" : "study";
+      const permissionsView = osparc.info.StudyUtils.openAccessRights(studyData);
       permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
@@ -291,17 +293,20 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openThumbnailEditor: function() {
-      const title = this.tr("Edit Thumbnail");
-      const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
-      thumbnailEditor.addListener("updateThumbnail", e => {
-        win.close();
-        const validUrl = e.getData();
-        this.__patchStudy("thumbnail", validUrl);
-      }, this);
-      thumbnailEditor.addListener("cancel", () => win.close());
+      osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy())
+        .then(suggestions => {
+          const title = this.tr("Edit Thumbnail");
+          const oldThumbnail = this.getStudy().getThumbnail();
+          const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+          const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
+          thumbnailEditor.addListener("updateThumbnail", e => {
+            win.close();
+            const validUrl = e.getData();
+            this.__patchStudy("thumbnail", validUrl);
+          }, this);
+          thumbnailEditor.addListener("cancel", () => win.close());
+        })
+        .catch(err => console.error(err));
     },
 
     __openDescriptionEditor: function() {
@@ -320,7 +325,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __patchStudy: function(fieldKey, value) {
-      this.getStudy().patchStudy(fieldKey, value)
+      this.getStudy().patchStudy({[fieldKey]: value})
         .then(studyData => {
           studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
@@ -328,7 +333,8 @@ qx.Class.define("osparc.info.StudyLarge", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

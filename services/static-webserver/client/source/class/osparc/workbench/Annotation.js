@@ -33,10 +33,14 @@ qx.Class.define("osparc.workbench.Annotation", {
     if (id === undefined) {
       id = osparc.utils.Utils.uuidV4();
     }
+    let color = "color" in data ? data.color : this.getColor();
+    if (color && color[0] !== "#") {
+      color = osparc.utils.Utils.namedColorToHex(color);
+    }
     this.set({
       id,
       type: data.type,
-      color: "color" in data ? data.color : this.getColor(),
+      color,
       attributes: data.attributes
     });
   },
@@ -130,7 +134,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       }
     },
 
-    getRepresenationPosition: function() {
+    getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
         const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
@@ -183,15 +187,20 @@ qx.Class.define("osparc.workbench.Annotation", {
     setSelected: function(selected) {
       const representation = this.getRepresentation();
       if (representation) {
-        const selectedColor = qx.theme.manager.Color.getInstance().resolve("busy-orange");
         switch (this.getType()) {
           case "rect":
-            osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
+          case "text": {
+            if (selected) {
+              if (!("bBox" in representation.node)) {
+                const bBox = this.__svgLayer.drawBoundingBox(this);
+                representation.node["bBox"] = bBox;
+              }
+            } else if ("bBox" in representation.node) {
+              osparc.wrapper.Svg.removeItem(representation.node["bBox"]);
+              delete representation.node["bBox"];
+            }
             break;
-          case "note":
-          case "text":
-            osparc.wrapper.Svg.updateTextColor(representation, selected ? selectedColor : this.getColor());
-            break;
+          }
         }
       }
     },

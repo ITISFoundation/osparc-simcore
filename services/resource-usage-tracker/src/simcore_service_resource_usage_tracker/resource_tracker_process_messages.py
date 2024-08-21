@@ -45,7 +45,9 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
+    rabbit_message: RabbitResourceTrackingMessages = parse_raw_as(
+        RabbitResourceTrackingMessages, data  # type: ignore[arg-type]
+    )
     _logger.info(
         "Process %s msg service_run_id: %s",
         rabbit_message.message_type,
@@ -109,6 +111,11 @@ async def _process_start_event(
         project_name=msg.project_name,
         node_id=msg.node_id,
         node_name=msg.node_name,
+        parent_project_id=msg.parent_project_id,
+        root_parent_project_id=msg.root_parent_project_id,
+        root_parent_project_name=msg.root_parent_project_name,
+        parent_node_id=msg.parent_node_id,
+        root_parent_node_id=msg.root_parent_node_id,
         service_key=msg.service_key,
         service_version=msg.service_version,
         service_type=service_type,
@@ -274,9 +281,11 @@ async def _process_stop_event(
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
             osparc_credits=make_negative(computed_credits),
-            transaction_status=CreditTransactionStatus.BILLED
-            if msg.simcore_platform_status == SimcorePlatformStatus.OK
-            else CreditTransactionStatus.NOT_BILLED,
+            transaction_status=(
+                CreditTransactionStatus.BILLED
+                if msg.simcore_platform_status == SimcorePlatformStatus.OK
+                else CreditTransactionStatus.NOT_BILLED
+            ),
         )
         await resource_tracker_repo.update_credit_transaction_credits_and_status(
             update_credit_transaction

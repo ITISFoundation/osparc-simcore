@@ -8,16 +8,10 @@ from collections import OrderedDict
 from collections.abc import Callable
 from textwrap import dedent
 
-from aws_library.ec2.models import (
-    AWSTagKey,
-    AWSTagValue,
-    EC2InstanceType,
-    EC2Tags,
-    Resources,
-)
+from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 
 from .._meta import VERSION
-from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
+from ..core.errors import ConfigurationError, TaskBestFittingInstanceNotFoundError
 from ..core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -42,7 +36,7 @@ def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
         AWSTagKey("Name"): AWSTagValue(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
-    }
+    } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
 
 
 def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
@@ -57,7 +51,7 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
         AWSTagKey("Name"): AWSTagValue(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
-    }
+    } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
 
 
 def compose_user_data(docker_join_bash_command: str) -> str:
@@ -110,7 +104,6 @@ def find_best_fitting_ec2_instance(
 
     score, instance = next(iter(score_to_ec2_candidate.items()))
     if score == 0:
-        raise Ec2InstanceNotFoundError(
-            needed_resources=resources, msg="no adequate EC2 instance found!"
-        )
+        raise TaskBestFittingInstanceNotFoundError(needed_resources=resources)
+
     return instance

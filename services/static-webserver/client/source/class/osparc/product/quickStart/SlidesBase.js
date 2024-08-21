@@ -24,10 +24,10 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
 
     this.set({
       layout: new qx.ui.layout.VBox(20),
-      contentPadding: 15,
       modal: true,
-      width: 700,
+      width: this.self().WINDOW_WIDTH,
       height: 700,
+      contentPadding: this.self().CONTENT_PADDING,
       showMaximize: false,
       showMinimize: false
     });
@@ -47,6 +47,12 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
     this.add(footer);
 
     this.__setSlideIdx(0);
+  },
+
+  statics: {
+    WINDOW_WIDTH: 700,
+    CONTENT_PADDING: 20,
+    CONTENT_WIDTH: 660
   },
 
   members: {
@@ -102,8 +108,13 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
       if (idx > -1 && idx < selectables.length) {
         this.__currentIdx = idx;
         this.__stack.setSelection([selectables[idx]]);
-        this.__prevBtn.setEnabled(idx !== 0);
-        this.__nextBtn.setEnabled(idx !== selectables.length-1);
+        const firstSlide = (idx === 0);
+        const lastSlide = (idx === selectables.length-1);
+        this.__prevBtn.setEnabled(!firstSlide);
+        this.__nextBtn.setEnabled(!lastSlide);
+        this.set({
+          showClose: lastSlide
+        });
       }
       this.__slideCounter.removeAll();
       for (let i=0; i<selectables.length; i++) {

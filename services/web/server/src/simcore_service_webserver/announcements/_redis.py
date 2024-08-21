@@ -2,6 +2,7 @@
 """
 
 import logging
+from typing import Awaitable, Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -12,7 +13,7 @@ from ._models import Announcement
 
 _logger = logging.getLogger(__name__)
 
-_PUBLIC_ANNOUNCEMENTS_REDIS_KEY = "public"
+_PUBLIC_ANNOUNCEMENTS_REDIS_KEY: Final[str] = "public"
 #
 # At this moment `announcements` are manually stored in redis db 6  w/o guarantees
 # Here we validate them and log a big-fat error if there is something wrong
@@ -26,7 +27,11 @@ async def list_announcements(
 ) -> list[Announcement]:
     # get-all
     redis_client: aioredis.Redis = get_redis_announcements_client(app)
-    items: list[str] = await redis_client.lrange(_PUBLIC_ANNOUNCEMENTS_REDIS_KEY, 0, -1)
+    result: Awaitable[list] | list = redis_client.lrange(
+        _PUBLIC_ANNOUNCEMENTS_REDIS_KEY, 0, -1
+    )
+    assert isinstance(result, Awaitable)  # nosec
+    items: list[str] = await result
 
     # validate
     announcements = []

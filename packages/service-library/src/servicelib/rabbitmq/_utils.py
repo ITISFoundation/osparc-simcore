@@ -1,5 +1,4 @@
 import logging
-import os
 import socket
 from typing import Any, Final
 
@@ -27,7 +26,7 @@ class RabbitMQRetryPolicyUponInitialization:
     def __init__(self, logger: logging.Logger | None = None) -> None:
         logger = logger or _logger
 
-        self.kwargs = {
+        self.kwargs: dict[str, Any] = {
             "wait": wait_fixed(2),
             "stop": stop_after_delay(3 * _MINUTE),
             "before_sleep": before_sleep_log(logger, logging.WARNING),
@@ -52,7 +51,7 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{socket.gethostname()}_{os.getpid()}"
+    return f"{base_name}_{socket.gethostname()}"
 
 
 async def declare_queue(
@@ -67,7 +66,7 @@ async def declare_queue(
     default_arguments = {"x-message-ttl": message_ttl}
     if arguments is not None:
         default_arguments.update(arguments)
-    queue_parameters = {
+    queue_parameters: dict[str, Any] = {
         "durable": True,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,

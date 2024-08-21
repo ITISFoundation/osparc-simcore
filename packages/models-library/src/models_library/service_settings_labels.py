@@ -329,7 +329,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     )
 
     callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        default_factory=CallbacksMapping,
+        default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
         alias="simcore.service.callbacks-mapping",
         description="exposes callbacks from user services to the sidecar",
     )
@@ -395,7 +395,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("callbacks_mapping")
     @classmethod
-    def ensure_callbacks_mapping_container_names_defined_in_compose_spec(
+    def _ensure_callbacks_mapping_container_names_defined_in_compose_spec(
         cls, v: CallbacksMapping, values
     ):
         if v is None:
@@ -423,12 +423,12 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("user_preferences_path", pre=True)
     @classmethod
-    def deserialize_from_json(cls, v):
+    def _deserialize_from_json(cls, v):
         return f"{v}".removeprefix('"').removesuffix('"')
 
     @validator("user_preferences_path")
     @classmethod
-    def user_preferences_path_no_included_in_other_volumes(
+    def _user_preferences_path_no_included_in_other_volumes(
         cls, v: CallbacksMapping, values
     ):
         paths_mapping: PathMappingsLabel | None = values.get("paths_mapping", None)
@@ -447,7 +447,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @root_validator
     @classmethod
-    def not_allowed_in_both_specs(cls, values):
+    def _not_allowed_in_both_specs(cls, values):
         match_keys = {
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",
@@ -503,7 +503,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     spec will be generated before starting the service.
     """
 
-    settings: Json[SimcoreServiceSettingsLabel] = Field(  # type: ignore
+    settings: Json[SimcoreServiceSettingsLabel] = Field(
         default_factory=dict,
         alias="simcore.service.settings",
         description=(

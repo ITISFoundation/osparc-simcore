@@ -1,3 +1,4 @@
+# mypy: disable-error-code=truthy-function
 """
     Factory to build catalog of i/o metadata for functions implemented in the front-end
 
@@ -8,7 +9,7 @@
 
 from collections.abc import Iterator
 
-from ..services import ServiceDockerData
+from ..services import ServiceMetaDataPublished
 from ._key_labels import is_function_service, is_iterator_service
 from ._registry import catalog
 from .services.parameters import is_parameter_service
@@ -20,7 +21,7 @@ assert is_parameter_service  # nosec
 assert is_probe_service  # nosec
 
 
-def iter_service_docker_data() -> Iterator[ServiceDockerData]:
+def iter_service_docker_data() -> Iterator[ServiceMetaDataPublished]:
     for meta_obj in catalog.iter_metadata():
         # NOTE: the originals are this way not modified from outside
         copied_meta_obj = meta_obj.copy(deep=True)

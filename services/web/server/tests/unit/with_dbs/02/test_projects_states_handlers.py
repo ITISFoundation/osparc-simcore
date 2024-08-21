@@ -22,7 +22,8 @@ from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
@@ -40,14 +41,14 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
-from pytest_simcore.helpers.utils_projects import assert_get_same_project
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
@@ -370,7 +371,7 @@ async def test_open_project(
             calls.append(
                 call(
                     app=client.app,
-                    rpc_dynamic_service_create=RPCDynamicServiceCreate(
+                    dynamic_service_start=DynamicServiceStart(
                         project_id=user_project["uuid"],
                         service_key=service["key"],
                         service_uuid=service_uuid,
@@ -449,7 +450,7 @@ async def test_open_template_project_for_edition(
             calls.append(
                 call(
                     app=client.app,
-                    rpc_dynamic_service_create=RPCDynamicServiceCreate(
+                    dynamic_service_start=DynamicServiceStart(
                         project_id=template_project["uuid"],
                         service_key=service["key"],
                         service_uuid=service_uuid,
@@ -798,6 +799,8 @@ async def test_close_project(
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
+    user_id = logged_user["id"]
+
     assert client.app
     # open project
     client_id = client_session_id_factory()
@@ -809,7 +812,7 @@ async def test_close_project(
             client.app, ProjectID(user_project["uuid"])
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
-            client.app, logged_user["id"], user_project["uuid"]
+            client.app, user_id, user_project["uuid"]
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
     else:
@@ -830,7 +833,7 @@ async def test_close_project(
         calls = [
             call(
                 client.app,
-                user_id=logged_user["id"],
+                user_id=user_id,
                 project_id=user_project["uuid"],
             ),
         ]
@@ -841,9 +844,13 @@ async def test_close_project(
         calls = [
             call(
                 app=client.app,
-                node_id=service.node_uuid,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                save_state=True,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=user_id,
+                    project_id=service.project_id,
+                    node_id=service.node_uuid,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    save_state=True,
+                ),
                 progress=mock.ANY,
             )
             for service in fake_dynamic_services

@@ -114,8 +114,13 @@ qx.Class.define("osparc.node.LifeCycleView", {
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node.getKey(), node.getVersion());
-        node.setVersion(latestCompatibleMetadata["version"]);
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(node.getKey(), node.getVersion());
+        if (node.getKey() !== latestCompatible["key"]) {
+          node.setKey(latestCompatible["key"]);
+        }
+        if (node.getVersion() !== latestCompatible["version"]) {
+          node.setVersion(latestCompatible["version"]);
+        }
         node.fireEvent("updateStudyDocument");
         setTimeout(() => {
           updateButton.setFetching(false);

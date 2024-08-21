@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -15,6 +15,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -53,7 +54,7 @@ class ProjectAccessRights(Enum):
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
-    user_groups: list[dict[str, Any]],
+    user_groups: list[dict[str, Any]] | list[RowProxy],
     permission: str,
 ) -> None:
     """
@@ -194,13 +195,15 @@ class BaseProjectDB:
         result = await conn.execute(
             sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
-        return await result.first()
+        row = await result.first()
+        assert row is not None  # nosec
+        return cast(RowProxy, row)  # mypy: not sure why this cast is necessary
 
     @classmethod
     async def _list_user_groups(
         cls, conn: SAConnection, user_id: int
     ) -> list[RowProxy]:
-        user_groups: list[RowProxy] = []
+        user_groups = []
 
         if user_id == ANY_USER_ID_SENTINEL:
             everyone_group = await cls._get_everyone_group(conn)
@@ -212,7 +215,7 @@ class BaseProjectDB:
                 .select_from(groups.join(user_to_groups))
                 .where(user_to_groups.c.uid == user_id)
             )
-            user_groups = await result.fetchall()
+            user_groups = await result.fetchall() or []
         return user_groups
 
     @staticmethod
@@ -267,6 +270,7 @@ class BaseProjectDB:
         db_projects: list[dict] = []  # DB model-compatible projects
         project_types: list[ProjectType] = []
         async for row in conn.execute(select_projects_query):
+            assert isinstance(row, RowProxy)  # nosec
             try:
                 check_project_permissions(row, user_id, user_groups, "read")
 
@@ -335,26 +339,51 @@ class BaseProjectDB:
         # this retrieves the projects where user is owner
         user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
-        # NOTE: ChatGPT helped in producing this entry
-        conditions = sa.and_(
-            projects.c.uuid == f"{project_uuid}",
-            projects.c.type == f"{ProjectType.TEMPLATE.value}"
-            if only_templates
-            else True,
-            sa.or_(
-                projects.c.prj_owner == user_id,
-                sa.text(
-                    f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
-                ),
-            ),
+        access_rights_subquery = (
+            select(
+                project_to_groups.c.project_uuid,
+                sa.func.jsonb_object_agg(
+                    project_to_groups.c.gid,
+                    sa.func.jsonb_build_object(
+                        "read",
+                        project_to_groups.c.read,
+                        "write",
+                        project_to_groups.c.write,
+                        "delete",
+                        project_to_groups.c.delete,
+                    ),
+                ).label("access_rights"),
+            )
+            .where(project_to_groups.c.project_uuid == f"{project_uuid}")
+            .group_by(project_to_groups.c.project_uuid)
+        ).subquery("access_rights_subquery")
+
+        query = (
+            sa.select(
+                *[col for col in projects.columns if col.name != "access_rights"],
+                access_rights_subquery.c.access_rights,
+            )
+            .select_from(projects.join(access_rights_subquery, isouter=True))
+            .where(
+                (projects.c.uuid == f"{project_uuid}")
+                & (
+                    projects.c.type == f"{ProjectType.TEMPLATE.value}"
+                    if only_templates
+                    else True
+                )
+            )
         )
 
         if only_published:
-            conditions &= projects.c.published == "true"
+            query = query.where(projects.c.published == "true")
 
-        query = select(projects).where(conditions)
         if for_update:
-            query = query.with_for_update()
+            # NOTE: It seems that blocking this row in the database is necessary; otherwise, there are some concurrency issues.
+            # As the WITH FOR UPDATE clause cannot be used with the GROUP BY clause, I have added a separate query for that.
+            blocking_query = (
+                sa.select(projects).where(projects.c.uuid == f"{project_uuid}")
+            ).with_for_update()
+            await connection.execute(blocking_query)
 
         result = await connection.execute(query)
         project_row = await result.first()

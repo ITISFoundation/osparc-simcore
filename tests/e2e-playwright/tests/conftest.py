@@ -1,10 +1,11 @@
+# pylint: disable=no-name-in-module
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=no-name-in-module
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
+import datetime
 import json
 import logging
 import os
@@ -12,15 +13,17 @@ import random
 import re
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
-from typing import Final
+from typing import Any, Final
 
+import arrow
 import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
-from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import (
+from pytest import Item
+from pytest_simcore.helpers.logging_tools import log_context
+from pytest_simcore.helpers.playwright import (
     MINUTE,
     AutoRegisteredUser,
     RunningState,
@@ -72,6 +75,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Whether product is billable or not",
     )
     group.addoption(
+        "--autoscaled",
+        action="store_true",
+        default=False,
+        help="Whether test runs against autoscaled  deployment or not",
+    )
+    group.addoption(
         "--service-test-id",
         action="store",
         type=str,
@@ -92,6 +101,74 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="e2e-playwright",
         help="defines a specific user agent osparc header",
     )
+
+
+# Dictionary to store start times of tests
+_test_start_times = {}
+
+
+def pytest_runtest_setup(item):
+    """
+    Hook to capture the start time of each test.
+    """
+    _test_start_times[item.name] = arrow.now().datetime
+
+
+_FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+
+def _construct_graylog_url(
+    product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime
+) -> str:
+    # Deduce monitoring url
+    if product_url:
+        scheme, tail = product_url.split("://", 1)
+    else:
+        scheme, tail = "https", "<UNDEFINED>"
+    monitoring_url = f"{scheme}://monitoring.{tail}"
+
+    # build graylog URL
+    query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
+    return f"{monitoring_url}/graylog/search?{query}"
+
+
+def pytest_runtest_makereport(item: Item, call):
+    """
+    Hook to add extra information when a test fails.
+    """
+
+    # Check if the test failed
+    if call.when == "call" and call.excinfo is not None:
+        test_name = item.name
+        test_location = item.location
+        product_url = f"{item.config.getoption('--product-url', default=None)}"
+
+        diagnostics = {
+            "test_name": test_name,
+            "test_location": test_location,
+            "product_url": product_url,
+        }
+
+        # Get the start and end times of the test
+        start_time = _test_start_times.get(test_name)
+        end_time = arrow.now().datetime
+
+        if start_time:
+            diagnostics["graylog_url"] = _construct_graylog_url(
+                product_url, start_time, end_time
+            )
+            diagnostics["duration"] = str(end_time - start_time)
+
+        # Print the diagnostics report
+        print(f"\nDiagnostics repoort for {test_name} ---")
+        print(json.dumps(diagnostics, indent=2))
+        print("---")
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    config.pluginmanager.register(pytest_runtest_setup, "osparc_test_times_plugin")
+    config.pluginmanager.register(pytest_runtest_makereport, "osparc_makereport_plugin")
 
 
 @pytest.fixture(autouse=True)
@@ -142,11 +219,9 @@ def product_billable(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def service_test_id(request: pytest.FixtureRequest) -> str:
-    if test_id := request.config.getoption("--service-test-id"):
-        assert isinstance(test_id, str)
-        return test_id
-    return os.environ["SERVICE_TEST_ID"]
+def autoscaled(request: pytest.FixtureRequest) -> bool:
+    autoscaled = request.config.getoption("--autoscaled")
+    return TypeAdapter(bool).validate_python(autoscaled)
 
 
 @pytest.fixture(scope="session")
@@ -188,7 +263,7 @@ def register(
     def _do() -> AutoRegisteredUser:
         with log_context(
             logging.INFO,
-            f"------> Registering in {product_url=} using {user_name=}/{user_password=}",
+            f"Register in {product_url=} using {user_name=}/{user_password=}",
         ):
             response = page.goto(f"{product_url}")
             assert response
@@ -220,7 +295,7 @@ def log_in_and_out(
 ) -> Iterator[WebSocket]:
     with log_context(
         logging.INFO,
-        f"Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -236,13 +311,19 @@ def log_in_and_out(
         if newReleaseCloseBtnLocator.is_visible():
             newReleaseCloseBtnLocator.click()
 
-    with page.expect_websocket() as ws_info:
+    with (
+        log_context(
+            logging.INFO,
+            f"Log in {product_url} using {user_name=}/{user_password=}/{auto_register=}",
+        ),
+        page.expect_websocket() as ws_info,
+    ):
         if auto_register:
             register()
         else:
             with log_context(
                 logging.INFO,
-                f"Logging in {product_url=} using {user_name=}/{user_password=}",
+                f"Log in {product_url=} using {user_name=}/{user_password=}",
             ):
                 _user_email_box = page.get_by_test_id("loginUserEmailFld")
                 _user_email_box.click()
@@ -268,21 +349,14 @@ def log_in_and_out(
     quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
-    print(
-        f"------> Successfully logged in {product_url=} using {user_name=}/{user_password=}"
-    )
 
     yield ws
 
     with log_context(
         logging.INFO,
-        f"Logging out of {product_url=} using {user_name=}/{user_password=}",
+        f"Log out of {product_url=} using {user_name=}/{user_password=}",
     ):
-        # click anywher to remove modal windows
-        page.click(
-            "body",
-            position={"x": 0, "y": 0},
-        )
+        page.keyboard.press("Escape")
         page.get_by_test_id("userMenuBtn").click()
         with page.expect_response(re.compile(r"/auth/logout")) as response_info:
             page.get_by_test_id("userMenuLogoutBtn").click()
@@ -298,7 +372,7 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[tuple[RunningState]], str]]:
+) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -306,22 +380,25 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-    ) -> str:
+        press_open: bool = True,
+    ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"Opening project in {product_url=} as {product_billable=}",
+            f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            with log_in_and_out.expect_event(
-                "framereceived", waiter
-            ), page.expect_response(
-                re.compile(r"/projects/[^:]+:open")
-            ) as response_info:
+            with (
+                log_in_and_out.expect_event("framereceived", waiter),
+                page.expect_response(
+                    re.compile(r"/projects/[^:]+:open")
+                ) as response_info,
+            ):
                 # Project detail view pop-ups shows
-                page.get_by_test_id("openResource").click()
+                if press_open:
+                    page.get_by_test_id("openResource").click()
                 if product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
@@ -335,25 +412,25 @@ def create_new_project_and_delete(
             )
 
             created_project_uuids.append(project_uuid)
-            return project_uuid
+            return project_data["data"]
 
     yield _
 
     # go back to dashboard and wait for project to close
     with ExitStack() as stack:
         for project_uuid in created_project_uuids:
-            stack.enter_context(
-                log_context(logging.INFO, f"Waiting for closed project {project_uuid=}")
+            ctx = stack.enter_context(
+                log_context(logging.INFO, f"Wait for closed project {project_uuid=}")
             )
             stack.enter_context(
                 log_in_and_out.expect_event(
                     "framereceived",
-                    SocketIOProjectClosedWaiter(),
+                    SocketIOProjectClosedWaiter(ctx.logger),
                     timeout=_PROJECT_CLOSING_TIMEOUT,
                 )
             )
         if created_project_uuids:
-            with log_context(logging.INFO, "Going back to dashboard"):
+            with log_context(logging.INFO, "Go back to dashboard"):
                 page.get_by_test_id("dashboardBtn").click()
                 page.get_by_test_id("confirmDashboardBtn").click()
                 page.get_by_test_id("studiesTabBtn").click()
@@ -361,9 +438,8 @@ def create_new_project_and_delete(
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"Delete project with {project_uuid=} in {product_url=} as {product_billable=}",
         ):
-
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
@@ -378,7 +454,20 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
-def find_service_in_dashboard(
+def start_study_from_plus_button(
+    page: Page,
+) -> Callable[[str], None]:
+    def _(plus_button_test_id: str) -> None:
+        with log_context(
+            logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
+        ):
+            page.get_by_test_id(plus_button_test_id).click()
+
+    return _
+
+
+@pytest.fixture
+def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
     def _(
@@ -399,14 +488,31 @@ def find_service_in_dashboard(
 
 
 @pytest.fixture
+def create_project_from_new_button(
+    start_study_from_plus_button: Callable[[str], None],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool], dict[str, Any]
+    ],
+) -> Callable[[str], dict[str, Any]]:
+    def _(plus_button_test_id: str) -> dict[str, Any]:
+        start_study_from_plus_button(plus_button_test_id)
+        expected_states = (RunningState.UNKNOWN,)
+        return create_new_project_and_delete(expected_states, False)
+
+    return _
+
+
+@pytest.fixture
 def create_project_from_service_dashboard(
-    find_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], str],
-) -> Callable[[ServiceType, str, str | None], str]:
+    find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
     def _(
         service_type: ServiceType, service_name: str, service_key_prefix: str | None
-    ) -> str:
-        find_service_in_dashboard(service_type, service_name, service_key_prefix)
+    ) -> dict[str, Any]:
+        find_and_start_service_in_dashboard(
+            service_type, service_name, service_key_prefix
+        )
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
@@ -427,7 +533,7 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"------> Starting computation in {product_url=}...",
+            f"Start computation in {product_url=}...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(
@@ -441,15 +547,18 @@ def start_and_stop_pipeline(
 
             # NOTE: Keep expect_request as an inner context. In case of timeout, we want
             # to know whether the POST was requested or not.
-            with log_in_and_out.expect_event(
-                "framereceived",
-                waiter,
-                timeout=_OUTER_CONTEXT_TIMEOUT_MS,
-            ) as event, page.expect_request(
-                lambda r: re.search(r"/computations", r.url)
-                and r.method.upper() == "POST",  # type: ignore
-                timeout=_INNER_CONTEXT_TIMEOUT_MS,
-            ) as request_info:
+            with (
+                log_in_and_out.expect_event(
+                    "framereceived",
+                    waiter,
+                    timeout=_OUTER_CONTEXT_TIMEOUT_MS,
+                ) as event,
+                page.expect_request(
+                    lambda r: re.search(r"/computations", r.url)
+                    and r.method.upper() == "POST",  # type: ignore
+                    timeout=_INNER_CONTEXT_TIMEOUT_MS,
+                ) as request_info,
+            ):
                 page.get_by_test_id("runStudyBtn").click()
 
             response = request_info.value.response()
@@ -463,7 +572,7 @@ def start_and_stop_pipeline(
             started_pipeline_ids.append(pipeline_id)
 
             ctx.messages.done = (
-                f"------> Started computation with {pipeline_id=} in {product_url=}..."
+                f"Started computation with {pipeline_id=} in {product_url=}..."
             )
 
             return decode_socketio_42_message(event.value)
@@ -473,11 +582,6 @@ def start_and_stop_pipeline(
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:
         with log_context(
-            logging.INFO,
-            (
-                "<------ Stopping computation with %s",
-                "<------ Stopped computation with %s",
-            ),
-            f"{pipeline_id=} in {product_url=}...",
+            logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"
         ):
             api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")

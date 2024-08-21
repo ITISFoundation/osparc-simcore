@@ -2,12 +2,12 @@
 
 import logging
 import urllib.parse
-from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Mapping
 from uuid import UUID
 
+import httpx
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -36,7 +36,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -45,15 +44,34 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.common_headers import (
+    X_SIMCORE_PARENT_NODE_ID,
+    X_SIMCORE_PARENT_PROJECT_UUID,
+)
+from simcore_service_api_server.exceptions.backend_errors import (
+    ConfigurationError,
+    ForbiddenWalletError,
+    ListJobsError,
+    PaymentRequiredError,
+    PricingPlanNotFoundError,
+    PricingUnitNotFoundError,
+    ProductPriceNotFoundError,
+    ProfileNotFoundError,
+    ProjectAlreadyStartedError,
+    ProjectMetadataNotFoundError,
+    ProjectPortsNotFoundError,
+    SolverOutputNotFoundError,
+    WalletNotFoundError,
+)
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
+from ..exceptions.backend_errors import ClusterNotFoundError, JobNotFoundError
 from ..exceptions.service_errors_utils import (
-    ToApiTuple,
     service_exception_handler,
     service_exception_mapper,
 )
@@ -69,25 +87,25 @@ _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
-_JOB_STATUS_MAP: Mapping = {
-    status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
-    status.HTTP_404_NOT_FOUND: (
-        status.HTTP_404_NOT_FOUND,
-        lambda kwargs: f"The job/study {kwargs['project_id']} could not be found",
-    ),
+_JOB_STATUS_MAP = {
+    status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
+    status.HTTP_404_NOT_FOUND: JobNotFoundError,
 }
 
-_PROFILE_STATUS_MAP: Mapping = {
-    status.HTTP_404_NOT_FOUND: (
-        status.HTTP_404_NOT_FOUND,
-        lambda kwargs: "Could not find profile",
-    )
+_PROFILE_STATUS_MAP = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
+
+_WALLET_STATUS_MAP = {
+    status.HTTP_404_NOT_FOUND: WalletNotFoundError,
+    status.HTTP_403_FORBIDDEN: ForbiddenWalletError,
 }
 
-_WALLET_STATUS_MAP: Mapping = {
-    status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
-    status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
-}
+
+def _get_lrt_urls(lrt_response: httpx.Response):
+    # WARNING: this function is patched in patch_lrt_response_urls fixture
+    data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+    assert data is not None  # nosec
+
+    return data.status_href, data.result_href
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -127,16 +145,19 @@ class AuthSession:
         cls,
         app: FastAPI,
         session_cookies: dict,
-        product_header: dict[str, str],
+        product_extra_headers: Mapping[str, str],
     ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
-        api.client.headers = product_header
+
+        api.client.headers = product_extra_headers  # type: ignore[assignment]
         long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
+
         assert long_running_tasks_client  # nosec
         assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
-        long_running_tasks_client.client.headers = product_header
+
+        long_running_tasks_client.client.headers = product_extra_headers  # type: ignore[assignment]
         return cls(
             _api=api,
             _long_running_task_client=long_running_tasks_client,
@@ -161,7 +182,7 @@ class AuthSession:
         offset: int,
         show_hidden: bool,
         search: str | None = None,
-    ):
+    ) -> Page[ProjectGet]:
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
 
@@ -171,11 +192,7 @@ class AuthSession:
 
         with service_exception_handler(
             service_name="Webserver",
-            http_status_map={
-                status.HTTP_404_NOT_FOUND: ToApiTuple(
-                    status.HTTP_404_NOT_FOUND, "Could not list jobs"
-                )
-            },
+            http_status_map={status.HTTP_404_NOT_FOUND: ListJobsError},
         ):
             resp = await self.client.get(
                 "/projects",
@@ -192,9 +209,8 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(self, data: TaskGet):
-        status_url = data.status_href
-        result_url = data.result_href
+    async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
+        status_url, result_url = _get_lrt_urls(lrt_response)
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
@@ -231,7 +247,7 @@ class AuthSession:
         return profile
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
-    async def update_me(self, profile_update: ProfileUpdate) -> Profile:
+    async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
             json=profile_update.dict(exclude_none=True),
@@ -245,37 +261,56 @@ class AuthSession:
 
     @_exception_mapper({})
     async def create_project(
-        self, project: ProjectCreateNew, *, is_hidden: bool
+        self,
+        project: ProjectCreateNew,
+        *,
+        is_hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
         response = await self.client.post(
             "/projects",
             params={"hidden": is_hidden},
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
+    async def clone_project(
+        self,
+        *,
+        project_id: UUID,
+        hidden: bool,
+        parent_project_uuid: ProjectID | None,
+        parent_node_id: NodeID | None,
+    ) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
+        _headers = {
+            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
+            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+        }
+
         response = await self.client.post(
-            "/projects", cookies=self.session_cookies, params=query
+            "/projects",
+            cookies=self.session_cookies,
+            params=query,
+            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
         )
         response.raise_for_status()
-        data = Envelope[TaskGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(response)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def get_project(self, project_id: UUID) -> ProjectGet:
+    async def get_project(self, *, project_id: UUID) -> ProjectGet:
         response = await self.client.get(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
@@ -286,7 +321,7 @@ class AuthSession:
         return data
 
     async def get_projects_w_solver_page(
-        self, solver_name: str, limit: int, offset: int
+        self, *, solver_name: str, limit: int, offset: int
     ) -> Page[ProjectGet]:
         return await self._page_projects(
             limit=limit,
@@ -297,7 +332,7 @@ class AuthSession:
             search=urllib.parse.quote(solver_name, safe=""),
         )
 
-    async def get_projects_page(self, limit: int, offset: int):
+    async def get_projects_page(self, *, limit: int, offset: int):
         return await self._page_projects(
             limit=limit,
             offset=offset,
@@ -305,23 +340,16 @@ class AuthSession:
         )
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def delete_project(self, project_id: ProjectID) -> None:
+    async def delete_project(self, *, project_id: ProjectID) -> None:
         response = await self.client.delete(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The ports for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError})
     async def get_project_metadata_ports(
-        self, project_id: ProjectID
+        self, *, project_id: ProjectID
     ) -> list[StudyPort]:
         """
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
@@ -337,15 +365,10 @@ class AuthSession:
         assert isinstance(data, list)  # nosec
         return data
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
-    async def get_project_metadata(self, project_id: ProjectID) -> ProjectMetadataGet:
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    async def get_project_metadata(
+        self, *, project_id: ProjectID
+    ) -> ProjectMetadataGet:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
             cookies=self.session_cookies,
@@ -364,16 +387,9 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(
-        {
-            status.HTTP_404_NOT_FOUND: (
-                status.HTTP_404_NOT_FOUND,
-                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
-            )
-        }
-    )
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
     async def update_project_metadata(
-        self, project_id: ProjectID, metadata: dict[str, MetaValueType]
+        self, *, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
         response = await self.client.patch(
             f"/projects/{project_id}/metadata",
@@ -385,9 +401,9 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
-        self, project_id: UUID, node_id: UUID
+        self, *, project_id: UUID, node_id: UUID
     ) -> PricingUnitGet | None:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
@@ -399,9 +415,10 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def connect_pricing_unit_to_project_node(
         self,
+        *,
         project_id: UUID,
         node_id: UUID,
         pricing_plan: PositiveInt,
@@ -413,9 +430,16 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(_JOB_STATUS_MAP)
+    @_exception_mapper(
+        _JOB_STATUS_MAP
+        | {
+            status.HTTP_409_CONFLICT: ProjectAlreadyStartedError,
+            status.HTTP_406_NOT_ACCEPTABLE: ClusterNotFoundError,
+            status.HTTP_422_UNPROCESSABLE_ENTITY: ConfigurationError,
+        }
+    )
     async def start_project(
-        self, project_id: UUID, cluster_id: ClusterID | None = None
+        self, *, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
         body_input: dict[str, Any] = {}
         if cluster_id:
@@ -431,6 +455,7 @@ class AuthSession:
     @_exception_mapper({})
     async def update_project_inputs(
         self,
+        *,
         project_id: ProjectID,
         new_inputs: list[ProjectInputUpdate],
     ) -> dict[NodeID, ProjectInputGet]:
@@ -448,7 +473,7 @@ class AuthSession:
 
     @_exception_mapper({})
     async def get_project_inputs(
-        self, project_id: ProjectID
+        self, *, project_id: ProjectID
     ) -> dict[NodeID, ProjectInputGet]:
         response = await self.client.get(
             f"/projects/{project_id}/inputs",
@@ -463,9 +488,9 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError})
     async def get_project_outputs(
-        self, project_id: ProjectID
+        self, *, project_id: ProjectID
     ) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
@@ -482,7 +507,7 @@ class AuthSession:
 
     @_exception_mapper({})
     async def update_node_outputs(
-        self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
+        self, *, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
     ) -> None:
         response = await self.client.patch(
             f"/projects/{project_id}/nodes/{node_id}/outputs",
@@ -505,7 +530,7 @@ class AuthSession:
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
+    async def get_wallet(self, *, wallet_id: int) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
             cookies=self.session_cookies,
@@ -516,7 +541,7 @@ class AuthSession:
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
+    async def get_project_wallet(self, *, project_id: ProjectID) -> WalletGet | None:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
             cookies=self.session_cookies,
@@ -528,8 +553,8 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
-    async def get_product_price(self) -> NonNegativeDecimal | None:
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
+    async def get_product_price(self) -> GetCreditPrice:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
@@ -537,13 +562,13 @@ class AuthSession:
         response.raise_for_status()
         data = Envelope[GetCreditPrice].parse_raw(response.text).data
         assert data is not None  # nosec
-        return data.usd_per_credit
+        return data
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError})
     async def get_service_pricing_plan(
-        self, solver_key: SolverKeyId, version: VersionStr
+        self, *, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
         service_key = urllib.parse.quote_plus(solver_key)
 

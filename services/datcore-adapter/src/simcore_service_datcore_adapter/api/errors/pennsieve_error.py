@@ -1,9 +1,8 @@
+from botocore.exceptions import ClientError
 from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_500_INTERNAL_SERVER_ERROR
-
-from botocore.exceptions import ClientError
 
 
 async def botocore_exceptions_handler(

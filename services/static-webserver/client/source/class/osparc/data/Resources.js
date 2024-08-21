@@ -119,19 +119,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getPage: {
+          getPageFolder: {
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
           },
-          getPageFilterSearch: {
+          getPageFolderSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&search={text}"
           },
-          getPageSortBySearch: {
+          getPageFolderSortBy: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -191,10 +191,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
           },
-          put: {
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}"
-          },
           delete: {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}"
@@ -247,6 +243,21 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
           },
+          postAccessRights: {
+            useCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          deleteAccessRights: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
+          putAccessRights: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/groups/{gId}"
+          },
           addTag: {
             useCache: false,
             method: "PUT",
@@ -261,6 +272,10 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/inactivity"
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/folders/{folderId}"
           }
         }
       },
@@ -278,13 +293,29 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "studyPreviews": {
+      "folders": {
         useCache: true,
         idField: "uuid",
         endpoints: {
-          getPreviews: {
+          getPage: {
             method: "GET",
-            url: statics.API + "/projects/{studyId}/nodes/-/preview"
+            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/folders/{folderId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/folders"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/folders/{folderId}"
           }
         }
       },
@@ -302,6 +333,10 @@ qx.Class.define("osparc.data.Resources", {
           getWithWallet2: {
             method: "GET",
             url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
+          },
+          getUsagePerService: {
+            method: "GET",
+            url: statics.API + "/services/-/aggregated-usages?wallet_id={walletId}&aggregated_by=services&time_period={timePeriod}"
           }
         }
       },
@@ -321,15 +356,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "serviceResources": {
-        idField: ["key", "version"],
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/resources"
-          }
-        }
-      },
+
       /*
        * SNAPSHOTS
        */
@@ -423,6 +450,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+
       /*
        * SERVICES
        */
@@ -430,9 +458,28 @@ qx.Class.define("osparc.data.Resources", {
         useCache: true,
         idField: ["key", "version"],
         endpoints: {
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+          }
+        }
+      },
+
+      /*
+       * SERVICES V2 (web-api >=0.42.0)
+       */
+      "servicesV2": {
+        useCache: false, // handled in osparc.service.Store
+        idField: ["key", "version"],
+        endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/catalog/services"
+            url: statics.API + "/catalog/services/-/latest"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/catalog/services/-/latest?offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -441,11 +488,39 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
-          },
-          pricingPlans: {
-            useCache: false,
+          }
+        }
+      },
+
+      /*
+       * PORTS COMPATIBILITY
+       */
+      "portsCompatibility": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
             method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
+          },
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
+          }
+        }
+      },
+
+      /*
+       * SERVICE RESOURCES
+       */
+      "serviceResources": {
+        idField: ["key", "version"],
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/resources"
           }
         }
       },
@@ -513,46 +588,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
 
-      /*
-       * PORT COMPATIBILITY
-       */
-      "portsCompatibility": {
-        useCache: false, // It has its own cache handler
-        endpoints: {
-          matchInputs: {
-            // get_compatible_inputs_given_source_output_handler
-            method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
-          },
-          matchOutputs: {
-            useCache: false,
-            // get_compatible_outputs_given_target_input_handler
-            method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
-          }
-        }
-      },
-      /*
-       * GROUPS/DAGS
-       */
-      "dags": {
-        useCache: true,
-        idField: "key",
-        endpoints: {
-          post: {
-            method: "POST",
-            url: statics.API + "/catalog/dags"
-          },
-          get: {
-            method: "GET",
-            url: statics.API + "/catalog/dags"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/catalog/dags/{dagId}"
-          }
-        }
-      },
       /*
        * SCHEDULED MAINTENANCE
        * Example: {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
@@ -1259,15 +1294,16 @@ qx.Class.define("osparc.data.Resources", {
           params["url"] = {};
         }
         params["url"]["offset"] = offset;
-        params["url"]["limit"] = 40;
+        params["url"]["limit"] = 20;
         const endpoint = "getPage";
         const options = {
           resolveWResponse: true
         };
         this.fetch(resource, endpoint, params, null, options)
           .then(resp => {
-            const data = resp["data"];
-            const meta = resp["_meta"];
+            // sometimes there is a kind of a double "data"
+            const meta = ("_meta" in resp["data"]) ? resp["data"]["_meta"] : resp["_meta"];
+            const data = ("_meta" in resp["data"]) ? resp["data"]["data"] : resp["data"];
             resources = [...resources, ...data];
             const allRequests = [];
             for (let i=offset+meta.limit; i<meta.total; i+=meta.limit) {
@@ -1276,7 +1312,14 @@ qx.Class.define("osparc.data.Resources", {
             }
             Promise.all(allRequests)
               .then(resps => {
-                resps.forEach(respData => resources = [...resources, ...respData]);
+                // sometimes there is a kind of a double "data"
+                resps.forEach(respData => {
+                  if ("data" in respData) {
+                    resources = [...resources, ...respData["data"]]
+                  } else {
+                    resources = [...resources, ...respData]
+                  }
+                });
                 resolve(resources);
               })
               .catch(err => {

@@ -6,14 +6,15 @@
 from typing import Final
 
 import dask
+from models_library.basic_types import VersionStr
 from servicelib.utils_meta import PackageInfo
 
 info: Final = PackageInfo(package_name="simcore_service_dask_sidecar")
-__version__: Final[str] = info.__version__
+__version__: Final[VersionStr] = info.__version__
 
 
 PROJECT_NAME: Final[str] = info.project_name
-API_VERSION: Final[str] = info.__version__
+API_VERSION: Final[VersionStr] = info.__version__
 
 # https://patorjk.com/software/taag/#p=display&f=Standard&t=dask%20sidecar
 DASK_SIDECAR_APP_STARTED_BANNER_MSG = rf"""

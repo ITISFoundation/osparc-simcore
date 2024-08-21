@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
@@ -6,24 +6,26 @@ from models_library.groups import GroupAtDB
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 
-from ..errors import RepositoryError
+from ...exceptions.errors import UninitializedGroupError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
 
 class GroupsRepository(BaseRepository):
     async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
-        groups_in_db = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
-                sa.select(groups)
-                .select_from(
-                    user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+            return [
+                GroupAtDB.from_orm(row)
+                async for row in await conn.stream(
+                    sa.select(groups)
+                    .select_from(
+                        user_to_groups.join(
+                            groups, user_to_groups.c.gid == groups.c.gid
+                        ),
+                    )
+                    .where(user_to_groups.c.uid == user_id)
                 )
-                .where(user_to_groups.c.uid == user_id)
-            ):
-                groups_in_db.append(GroupAtDB.from_orm(row))
-        return groups_in_db
+            ]
 
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:
@@ -32,7 +34,9 @@ class GroupsRepository(BaseRepository):
             )
             row = result.first()
         if not row:
-            raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
+            raise UninitializedGroupError(
+                group=GroupType.EVERYONE, repo_cls=GroupsRepository
+            )
         return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
@@ -40,7 +44,7 @@ class GroupsRepository(BaseRepository):
     ) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(users.c.primary_gid).where(users.c.email == user_email)
                 ),
@@ -49,7 +53,7 @@ class GroupsRepository(BaseRepository):
     async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(groups.c.gid).where(groups.c.name == affiliation)
                 ),

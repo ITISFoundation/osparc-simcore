@@ -27,7 +27,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this._serializedDataCopy = serializedDataCopy;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       padding: 5
@@ -40,6 +40,10 @@ qx.Class.define("osparc.share.Collaborators", {
       this.__collaborators[initCollab["gid"]] = initCollab;
     });
     this.__getCollaborators();
+  },
+
+  events: {
+    "updateAccessRights": "qx.event.type.Data"
   },
 
   statics: {
@@ -63,12 +67,12 @@ qx.Class.define("osparc.share.Collaborators", {
       if ("delete" in aAccessRights) {
         // studies
         sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
-      } else if ("write_access" in aAccessRights) {
+      } else if ("execute" in aAccessRights) {
         // services
-        if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
-          sorted = bAccessRights["write_access"] - aAccessRights["write_access"];
-        } else if (aAccessRights["read_access"] !== bAccessRights["read_access"]) {
-          sorted = bAccessRights["read_access"] - aAccessRights["read_access"];
+        if (aAccessRights["write"] !== bAccessRights["write"]) {
+          sorted = bAccessRights["write"] - aAccessRights["write"];
+        } else if (aAccessRights["execute"] !== bAccessRights["execute"]) {
+          sorted = bAccessRights["execute"] - aAccessRights["execute"];
         }
       }
       return sorted;
@@ -146,16 +150,6 @@ qx.Class.define("osparc.share.Collaborators", {
       }
 
       return vBox;
-    },
-
-    getEveryoneObj: function() {
-      return {
-        "gid": 1,
-        "label": qx.locale.Manager.tr("Public"),
-        "description": "",
-        "thumbnail": null,
-        "collabType": 0
-      }
     }
   },
 
@@ -172,18 +166,6 @@ qx.Class.define("osparc.share.Collaborators", {
         case "add-collaborator":
           control = this.__createAddCollaboratorSection();
           this._add(control);
-          break;
-        case "open-organizations-btn":
-          control = new qx.ui.form.Button(this.tr("Organizations...")).set({
-            appearance: "form-button-outlined",
-            allowGrowY: false,
-            allowGrowX: false,
-            icon: osparc.dashboard.CardBase.SHARED_ORGS
-          });
-          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this._add(control, {
-            flex: 1
-          });
           break;
         case "collaborators-list":
           control = this.__createCollaboratorsListSection();
@@ -207,8 +189,43 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
+    __amIOwner: function() {
+      let fullOptions = false;
+      switch (this._resourceType) {
+        case "study":
+        case "template":
+          fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
+          break;
+        case "service":
+          fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
+        case "folder":
+          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["myAccessRights"]);
+          break;
+      }
+      return fullOptions;
+    },
+
+    __createRolesLayout: function() {
+      let rolesLayout = null;
+      switch (this._resourceType) {
+        case "service":
+          rolesLayout = osparc.data.Roles.createRolesServicesInfo();
+          break;
+        case "folder":
+          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+          break;
+        default:
+          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+          break;
+      }
+      return rolesLayout;
+    },
+
     __buildLayout: function() {
-      this._createChildControlImpl("add-collaborator");
+      if (this.__amIOwner()) {
+        this._createChildControlImpl("add-collaborator");
+      }
       this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
@@ -216,47 +233,32 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __createAddCollaboratorSection: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      if (this._resourceType === "service") {
-        // service
-        vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
-      } else {
-        // study or template
-        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
-      }
-
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      vBox.add(label);
-
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Share with...")).set({
-        appearance: "form-button",
-        alignX: "left",
-        allowGrowX: false
-      });
-      addCollaboratorBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedDataCopy);
-        collaboratorsManager.addListener("addCollaborators", e => {
-          const cb = () => collaboratorsManager.close();
-          this._addEditors(e.getData(), cb);
-        }, this);
-      }, this);
-      vBox.add(addCollaboratorBtn);
-
-      return vBox;
+      const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
+      // pass resourceType, so that, it it's a template testers can share it with product everyone
+      serializedDataCopy["resourceType"] = this._resourceType;
+      const addCollaborators = new osparc.share.AddCollaborators(serializedDataCopy);
+      addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
+      return addCollaborators;
     },
 
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      vBox.add(label);
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
-      const rolesLayout = osparc.data.Roles.createRolesStudyResourceInfo();
+      const label = new qx.ui.basic.Label(this.tr("Shared with"));
+      label.set({allowGrowX: true});
+      header.add(label, {
+        flex: 1
+      });
+
+      const rolesLayout = this.__createRolesLayout();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
       }
-      vBox.add(rolesLayout);
+      header.add(rolesLayout);
+      vBox.add(header);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
@@ -365,14 +367,21 @@ qx.Class.define("osparc.share.Collaborators", {
     _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
+      const store = osparc.store.Store.getInstance();
+      const everyoneGIds = [
+        store.getEveryoneProductGroup()["gid"],
+        store.getEveryoneGroup()["gid"]
+      ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
+      const showOptions = this.__amIOwner();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
           // Do not override collaborator object
           const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
+            // user
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(
               `${"first_name" in collaborator && collaborator["first_name"] != null ?
@@ -380,23 +389,20 @@ qx.Class.define("osparc.share.Collaborators", {
               `${"last_name" in collaborator && collaborator["last_name"] ?
                 collaborator["last_name"] : ""}`
             );
+          } else if (everyoneGIds.includes(parseInt(gid))) {
+            // everyone product or everyone
+            if (collaborator["thumbnail"] === null) {
+              collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            }
           }
           collaborator["accessRights"] = accessRights[gid];
-          collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
+          collaborator["showOptions"] = showOptions;
           collaborator["resourceType"] = this._resourceType;
           collaboratorsList.push(collaborator);
         }
       });
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
-    },
-
-    _canIDelete: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _canIWrite: function() {
-      throw new Error("Abstract method called!");
     },
 
     _addEditors: function(gids) {

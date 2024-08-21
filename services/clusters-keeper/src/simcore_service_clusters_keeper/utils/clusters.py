@@ -3,11 +3,11 @@ import datetime
 import functools
 import json
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final
 
 import arrow
 import yaml
-from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
+from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -94,7 +94,7 @@ def _prepare_environment_variables(
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
         f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
-        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",  # type: ignore[arg-type]
         f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
         f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
@@ -172,7 +172,7 @@ def _create_eta(
     estimated_time_to_running = instance_launch_time + max_cluster_start_time - now
     if dask_scheduler_ready is True:
         estimated_time_to_running = datetime.timedelta(seconds=0)
-    return cast(datetime.timedelta, estimated_time_to_running)  # mypy
+    return estimated_time_to_running
 
 
 def create_cluster_from_ec2_instance(

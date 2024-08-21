@@ -27,8 +27,9 @@ _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 router = APIRouter()
 
@@ -139,7 +140,7 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await catalog_client.get_latest_release(
-            user_id, solver_key, product_name=product_name
+            user_id=user_id, solver_key=solver_key, product_name=product_name
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -277,4 +278,6 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    return await webserver_api.get_service_pricing_plan(solver_key, version)
+    return await webserver_api.get_service_pricing_plan(
+        solver_key=solver_key, version=version
+    )

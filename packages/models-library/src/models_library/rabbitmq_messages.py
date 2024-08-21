@@ -60,7 +60,7 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
-    node_id: NodeID | None
+    node_id: NodeID | None  # type: ignore[assignment]
     messages: list[LogMessageStr]
     log_level: LogLevelInt = logging.INFO
 
@@ -217,6 +217,13 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
     node_id: NodeID
     node_name: str
 
+    parent_project_id: ProjectID
+    root_parent_project_id: ProjectID
+    root_parent_project_name: str
+
+    parent_node_id: NodeID
+    root_parent_node_id: NodeID
+
     service_key: ServiceKey
     service_version: ServiceVersion
     service_type: ServiceType
@@ -248,7 +255,7 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
     )
 
 
-RabbitResourceTrackingMessages = (
+RabbitResourceTrackingMessages: TypeAlias = (
     RabbitResourceTrackingStartedMessage
     | RabbitResourceTrackingStoppedMessage
     | RabbitResourceTrackingHeartbeatMessage

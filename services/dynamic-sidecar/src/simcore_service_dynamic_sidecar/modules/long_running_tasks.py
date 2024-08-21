@@ -6,11 +6,15 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.api_schemas_long_running_tasks.base import (
+    ProgressPercent,
+    TaskProgress,
+)
+from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -335,6 +339,7 @@ async def _restore_state_folder(
         ),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
+        aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
     )
 
 
@@ -368,7 +373,7 @@ async def task_restore_state(
             app,
             ProgressType.SERVICE_STATE_PULLING,
         ),
-        description="pulling states",
+        description=IDStr("pulling states"),
     ) as root_progress:
         await logged_gather(
             *(
@@ -406,6 +411,7 @@ async def _save_state_folder(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
         progress_bar=progress_bar,
+        aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
     )
 
 
@@ -429,7 +435,7 @@ async def task_save_state(
             app,
             ProgressType.SERVICE_STATE_PUSHING,
         ),
-        description="pushing state",
+        description=IDStr("pushing state"),
     ) as root_progress:
         await logged_gather(
             *[
@@ -474,17 +480,20 @@ async def task_ports_inputs_pull(
             app,
             ProgressType.SERVICE_INPUTS_PULLING,
         ),
-        description="pulling inputs",
+        description=IDStr("pulling inputs"),
     ) as root_progress:
-        transferred_bytes = await nodeports.download_target_ports(
-            nodeports.PortTypeName.INPUTS,
-            mounted_volumes.disk_inputs_path,
-            port_keys=port_keys,
-            io_log_redirect_cb=functools.partial(
-                post_sidecar_log_message, app, log_level=logging.INFO
-            ),
-            progress_bar=root_progress,
-        )
+        with log_directory_changes(
+            mounted_volumes.disk_inputs_path, _logger, logging.INFO
+        ):
+            transferred_bytes = await nodeports.download_target_ports(
+                nodeports.PortTypeName.INPUTS,
+                mounted_volumes.disk_inputs_path,
+                port_keys=port_keys,
+                io_log_redirect_cb=functools.partial(
+                    post_sidecar_log_message, app, log_level=logging.INFO
+                ),
+                progress_bar=root_progress,
+            )
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
     )
@@ -510,7 +519,7 @@ async def task_ports_outputs_pull(
             app,
             ProgressType.SERVICE_OUTPUTS_PULLING,
         ),
-        description="pulling outputs",
+        description=IDStr("pulling outputs"),
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.OUTPUTS,

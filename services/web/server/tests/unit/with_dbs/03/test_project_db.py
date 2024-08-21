@@ -20,22 +20,27 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
+from pytest_simcore.helpers.dict_tools import copy_from_dict_ex
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
+    ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_api import (
+    _check_project_node_has_all_required_inputs,
+)
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
@@ -88,7 +93,11 @@ def _assert_added_project(
     original_prj = deepcopy(exp_project)
     added_prj = deepcopy(added_project)
     # no user so the project owner has a pre-defined value
-    _DIFFERENT_KEYS = ["creationDate", "lastChangeDate"]
+    _DIFFERENT_KEYS = [
+        "creationDate",
+        "lastChangeDate",
+        "accessRights",  # NOTE: access rights were moved away from the projects table
+    ]
     assert {k: v for k, v in original_prj.items() if k in _DIFFERENT_KEYS} != {
         k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS
     }
@@ -150,7 +159,6 @@ def _assert_project_db_row(
         "prj_owner": None,
         "workbench": project["workbench"],
         "published": False,
-        "access_rights": {},
         "dev": project["dev"],
         "classifiers": project["classifiers"],
         "ui": project["ui"],
@@ -170,6 +178,7 @@ async def insert_project_in_db(
     aiopg_engine: aiopg.sa.engine.Engine,
     db_api: ProjectDBAPI,
     osparc_product_name: str,
+    client: TestClient,
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     inserted_projects = []
 
@@ -183,6 +192,18 @@ async def insert_project_in_db(
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
+        if _access_rights := default_config["project"].get(
+            "access_rights", {}
+        ) | default_config["project"].get("accessRights", {}):
+            for group_id, permissions in _access_rights.items():
+                await update_or_insert_project_group(
+                    client.app,
+                    new_project["uuid"],
+                    group_id=int(group_id),
+                    read=permissions["read"],
+                    write=permissions["write"],
+                    delete=permissions["delete"],
+                )
 
         inserted_projects.append(new_project["uuid"])
         return new_project
@@ -249,18 +270,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -278,18 +293,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         type=ProjectType.TEMPLATE,
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
@@ -323,18 +332,12 @@ async def test_insert_project_to_db(
         exp_overrides={
             "uuid": new_project["uuid"],
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -486,18 +489,12 @@ async def test_patch_user_project_workbench_concurrently(
         new_project,
         exp_overrides={
             "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
         },
     )
     _assert_project_db_row(
         postgres_db,
         new_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
     )
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
@@ -545,9 +542,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
@@ -578,9 +572,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
@@ -611,9 +602,6 @@ async def test_patch_user_project_workbench_concurrently(
         postgres_db,
         expected_project,
         prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
@@ -829,3 +817,116 @@ async def test_has_permission(
             await db_api.has_permission(second_user["id"], project_id, permission)
             is access_rights[permission]
         ), f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
+
+
+def _fake_output_data() -> dict:
+    return {
+        "store": 0,
+        "path": "9f8207e6-144a-11ef-831f-0242ac140027/98b68cbe-9e22-4eb5-a91b-2708ad5317b7/outputs/output_2/output_2.zip",
+        "eTag": "ec3bc734d85359b660aab400147cd1ea",
+    }
+
+
+def _fake_connect_to(output_number: int) -> dict:
+    return {
+        "nodeUuid": "98b68cbe-9e22-4eb5-a91b-2708ad5317b7",
+        "output": f"output_{output_number}",
+    }
+
+
+@pytest.fixture
+async def inserted_project(
+    logged_user: dict[str, Any],
+    insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
+    fake_project: dict[str, Any],
+    downstream_inputs: dict,
+    downstream_required_inputs: list[str],
+    upstream_outputs: dict,
+) -> dict:
+    fake_project["workbench"] = {
+        "98b68cbe-9e22-4eb5-a91b-2708ad5317b7": {
+            "key": "simcore/services/dynamic/jupyter-math",
+            "version": "2.0.10",
+            "label": "upstream",
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "thumbnail": "",
+            "outputs": upstream_outputs,
+            "runHash": "c6ae58f36a2e0f65f443441ecda023a451cb1b8051d01412d79aa03653e1a6b3",
+        },
+        "324d6ef2-a82c-414d-9001-dc84da1cbea3": {
+            "key": "simcore/services/dynamic/jupyter-math",
+            "version": "2.0.10",
+            "label": "downstream",
+            "inputs": downstream_inputs,
+            "inputsUnits": {},
+            "inputNodes": ["98b68cbe-9e22-4eb5-a91b-2708ad5317b7"],
+            "thumbnail": "",
+            "inputsRequired": downstream_required_inputs,
+        },
+    }
+
+    return await insert_project_in_db(fake_project, user_id=logged_user["id"])
+
+
+@pytest.mark.parametrize(
+    "downstream_inputs,downstream_required_inputs,upstream_outputs,expected_error",
+    [
+        pytest.param(
+            {"input_1": _fake_connect_to(1)},
+            ["input_1", "input_2"],
+            {},
+            "Missing 'input_2' connection(s) to 'downstream'",
+            id="missing_connection_on_input_2",
+        ),
+        pytest.param(
+            {"input_1": _fake_connect_to(1), "input_2": _fake_connect_to(2)},
+            ["input_1", "input_2"],
+            {"output_2": _fake_output_data()},
+            "Missing: 'output_1' of 'upstream'",
+            id="output_1_has_not_file",
+        ),
+    ],
+)
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_check_project_node_has_all_required_inputs_raises(
+    logged_user: dict[str, Any],
+    db_api: ProjectDBAPI,
+    inserted_project: dict,
+    expected_error: str,
+):
+
+    with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
+        await _check_project_node_has_all_required_inputs(
+            db_api,
+            user_id=logged_user["id"],
+            project_uuid=UUID(inserted_project["uuid"]),
+            node_id=UUID("324d6ef2-a82c-414d-9001-dc84da1cbea3"),
+        )
+    assert f"{exc.value}" == expected_error
+
+
+@pytest.mark.parametrize(
+    "downstream_inputs,downstream_required_inputs,upstream_outputs",
+    [
+        pytest.param(
+            {"input_1": _fake_connect_to(1), "input_2": _fake_connect_to(2)},
+            ["input_1", "input_2"],
+            {"output_1": _fake_output_data(), "output_2": _fake_output_data()},
+            id="with_required_inputs_present",
+        ),
+    ],
+)
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_check_project_node_has_all_required_inputs_ok(
+    logged_user: dict[str, Any],
+    db_api: ProjectDBAPI,
+    inserted_project: dict,
+):
+    await _check_project_node_has_all_required_inputs(
+        db_api,
+        user_id=logged_user["id"],
+        project_uuid=UUID(inserted_project["uuid"]),
+        node_id=UUID("324d6ef2-a82c-414d-9001-dc84da1cbea3"),
+    )

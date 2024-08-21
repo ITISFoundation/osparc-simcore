@@ -3,30 +3,29 @@ import collections
 import dataclasses
 import datetime
 import itertools
-import json
 import logging
 from typing import Final, cast
 
 import arrow
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
     EC2Tags,
     Resources,
 )
+from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
-    Ec2InstanceInvalidError,
-    Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
-    Ec2TooManyInstancesError,
+    TaskBestFittingInstanceNotFoundError,
+    TaskRequirementsAboveRequiredEC2InstanceTypeError,
+    TaskRequiresUnauthorizedEC2InstanceTypeError,
 )
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..models import (
@@ -44,6 +43,7 @@ from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
 )
+from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
 from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -79,6 +79,12 @@ async def _analyze_current_cluster(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
+    )
+
+    buffer_ec2_instances = await get_ec2_client(app).get_instances(
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        state_names=["stopped"],
     )
 
     attached_ec2s, pending_ec2s = await associate_ec2_instances_with_nodes(
@@ -136,26 +142,16 @@ async def _analyze_current_cluster(
         reserve_drained_nodes=reserve_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
+        buffer_ec2s=[
+            NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
+        ],
         terminating_nodes=terminating_nodes,
-        terminated_instances=terminated_ec2_instances,
+        terminated_instances=[
+            NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
+        ],
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    cluster_state = jsonable_encoder(
-        cluster,
-        include={
-            "active_nodes": True,
-            "pending_nodes": True,
-            "drained_nodes": "available_resources",
-            "reserve_drained_nodes": True,
-            "pending_ec2s": "ec2_instance",
-            "broken_ec2s": "ec2_instance",
-            "terminating_nodes": "ec2_instance",
-        },
-    )
-    _logger.info(
-        "current state: %s",
-        f"{json.dumps(cluster_state, indent=2)}",
-    )
+    _logger.info("current state: %s", f"{cluster!r}")
     return cluster
 
 
@@ -185,15 +181,11 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
             _logger, logging.WARNING, msg="terminate broken EC2 instances"
         ):
             await get_ec2_client(app).terminate_instances(broken_instances)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for i in cluster.broken_ec2s:
-                    instrumentation.instance_terminated(i.ec2_instance.type)
 
     return dataclasses.replace(
         cluster,
         broken_ec2s=[],
-        terminated_instances=cluster.terminated_instances + broken_instances,
+        terminated_instances=cluster.terminated_instances + cluster.broken_ec2s,
     )
 
 
@@ -261,7 +253,7 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(  # type: ignore
+        cast(
             set[InstanceTypeType],
             set(
                 app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
@@ -506,13 +498,12 @@ async def _find_needed_instances(
                             - task_required_resources,
                         )
                     )
-            except Ec2InstanceNotFoundError:
-                _logger.exception(
-                    "Task %s needs more resources than any EC2 instance "
-                    "can provide with the current configuration. Please check!",
-                    f"{task}",
-                )
-            except Ec2InstanceInvalidError:
+            except TaskBestFittingInstanceNotFoundError:
+                _logger.exception("Task %s needs more resources: ", f"{task}")
+            except (
+                TaskRequirementsAboveRequiredEC2InstanceTypeError,
+                TaskRequiresUnauthorizedEC2InstanceTypeError,
+            ):
                 _logger.exception("Unexpected error:")
 
     _logger.info(
@@ -577,7 +568,7 @@ async def _cap_needed_instances(
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     ):
         # ok that is already too much
-        raise Ec2TooManyInstancesError(
+        raise EC2TooManyInstancesError(
             num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         )
 
@@ -629,16 +620,13 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    new_instance_tags = (
-        auto_scaling_mode.get_ec2_tags(app)
-        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
-    )
+    new_instance_tags = auto_scaling_mode.get_ec2_tags(app)
     capped_needed_machines = {}
     try:
         capped_needed_machines = await _cap_needed_instances(
             app, needed_instances, new_instance_tags
         )
-    except Ec2TooManyInstancesError:
+    except EC2TooManyInstancesError:
         await auto_scaling_mode.log_message_from_tasks(
             app,
             tasks,
@@ -650,7 +638,7 @@ async def _start_instances(
 
     results = await asyncio.gather(
         *[
-            ec2_client.start_aws_instance(
+            ec2_client.launch_instances(
                 EC2InstanceConfig(
                     type=instance_type,
                     tags=new_instance_tags,
@@ -666,7 +654,7 @@ async def _start_instances(
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
                     subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
-                    iam_instance_profile="",
+                    iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
                 number_of_instances=instance_num,
@@ -680,7 +668,7 @@ async def _start_instances(
     last_issue = ""
     new_pending_instances: list[EC2InstanceData] = []
     for r in results:
-        if isinstance(r, Ec2TooManyInstancesError):
+        if isinstance(r, EC2TooManyInstancesError):
             await auto_scaling_mode.log_message_from_tasks(
                 app,
                 tasks,
@@ -692,15 +680,8 @@ async def _start_instances(
             last_issue = f"{r}"
         elif isinstance(r, list):
             new_pending_instances.extend(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                for instance_data in r:
-                    instrumentation.instance_started(instance_data.type)
         else:
             new_pending_instances.append(r)
-            if has_instrumentation(app):
-                instrumentation = get_instrumentation(app)
-                instrumentation.instance_started(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -900,7 +881,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     instances_to_terminate = [
         i
         for i in cluster.terminating_nodes
-        if (now - utils_docker.get_node_termination_started_since(i.node))
+        if (now - (utils_docker.get_node_termination_started_since(i.node) or now))
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION
     ]
     terminated_instance_ids = []
@@ -914,12 +895,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
                 [i.ec2_instance for i in instances_to_terminate]
             )
 
-        if has_instrumentation(app):
-            instrumentation = get_instrumentation(app)
-            for i in instances_to_terminate:
-                instrumentation.instance_terminated(i.ec2_instance.type)
         # since these nodes are being terminated, remove them from the swarm
-
         await utils_docker.remove_nodes(
             get_docker_client(app),
             nodes=[i.node for i in instances_to_terminate],
@@ -937,7 +913,10 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         drained_nodes=still_drained_nodes,
         terminating_nodes=cluster.terminating_nodes + new_terminating_instances,
         terminated_instances=cluster.terminated_instances
-        + [i.ec2_instance for i in instances_to_terminate],
+        + [
+            NonAssociatedInstance(ec2_instance=i.ec2_instance)
+            for i in instances_to_terminate
+        ],
     )
 
 
@@ -1048,7 +1027,7 @@ async def _autoscale_cluster(
 async def _notify_autoscaling_status(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> None:
-    # inform on rabbit about status
+
     monitored_instances = list(
         itertools.chain(
             cluster.active_nodes, cluster.drained_nodes, cluster.reserve_drained_nodes
@@ -1066,9 +1045,11 @@ async def _notify_autoscaling_status(
                 ),
             )
         )
+        # inform on rabbitMQ about status
         await post_autoscaling_status_message(
             app, cluster, total_resources, used_resources
         )
+        # prometheus instrumentation
         if has_instrumentation(app):
             get_instrumentation(app).update_from_cluster(cluster)
 

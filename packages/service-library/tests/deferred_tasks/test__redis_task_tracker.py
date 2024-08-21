@@ -9,7 +9,7 @@ from pydantic import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskScheduleModel, TaskState
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
 
 pytest_simcore_core_services_selection = [
@@ -33,7 +33,7 @@ def task_schedule() -> TaskScheduleModel:
 
 
 async def test_task_tracker_workflow(
-    redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
+    redis_client_sdk_deferred_tasks: RedisClientSDK,
     task_schedule: TaskScheduleModel,
 ):
     task_tracker = RedisTaskTracker(redis_client_sdk_deferred_tasks)
@@ -51,7 +51,7 @@ async def test_task_tracker_workflow(
 
 @pytest.mark.parametrize("count", [0, 1, 10, 100])
 async def test_task_tracker_list_all_entries(
-    redis_client_sdk_deferred_tasks: RedisClientSDKHealthChecked,
+    redis_client_sdk_deferred_tasks: RedisClientSDK,
     task_schedule: TaskScheduleModel,
     count: int,
 ):

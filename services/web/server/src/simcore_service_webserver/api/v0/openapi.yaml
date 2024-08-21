@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.3
+  version: 0.42.0
 servers:
 - url: ''
   description: webserver
@@ -485,19 +485,38 @@ paths:
             application/json:
               schema: {}
             image/png: {}
-  /v0/catalog/services:
+  /v0/catalog/services/-/latest:
     get:
       tags:
       - catalog
-      summary: List Services
-      operationId: list_services
+      summary: List Services Latest
+      operationId: list_services_latest
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.catalog.ServiceGet__'
+                $ref: '#/components/schemas/Page_CatalogServiceGet_'
   /v0/catalog/services/{service_key}/{service_version}:
     get:
       tags:
@@ -525,7 +544,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ServiceGet_'
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
     patch:
       tags:
       - catalog
@@ -550,7 +569,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServiceUpdate'
+              $ref: '#/components/schemas/CatalogServiceUpdate'
         required: true
       responses:
         '200':
@@ -558,7 +577,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ServiceGet_'
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
   /v0/catalog/services/{service_key}/{service_version}/inputs:
     get:
       tags:
@@ -670,7 +689,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs:
     get:
       tags:
@@ -698,7 +717,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/outputs/{output_key}:
     get:
       tags:
@@ -782,7 +801,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.services.ServicePortKey__'
+                $ref: '#/components/schemas/Envelope_list_models_library.services_types.ServicePortKey__'
   /v0/catalog/services/{service_key}/{service_version}/resources:
     get:
       tags:
@@ -1040,6 +1059,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ComputationStarted_'
+        '402':
+          description: Insufficient credits to run computation
+        '404':
+          description: Project/wallet/pricing details were not found
+        '406':
+          description: Cluster not found
+        '409':
+          description: Project already started
+        '422':
+          description: Configuration error
+        '503':
+          description: Service not available
   /v0/computations/{project_id}:stop:
     post:
       tags:
@@ -1184,6 +1215,251 @@ paths:
       responses:
         '200':
           description: Successful Response
+  /v0/folders:
+    get:
+      tags:
+      - folders
+      summary: List Folders
+      operationId: list_folders
+      parameters:
+      - description: Order by field (modified_at|name|description) and direction (asc|desc).
+          The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (modified_at|name|description) and direction
+            (asc|desc). The default sorting order is ascending.
+          default: '{"field": "modified_at", "direction": "desc"}'
+        example: '{"field": "name", "direction": "desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
+    post:
+      tags:
+      - folders
+      summary: Create Folder
+      operationId: create_folder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFolderBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+  /v0/folders/{folder_id}:
+    get:
+      tags:
+      - folders
+      summary: Get Folder
+      operationId: get_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+    put:
+      tags:
+      - folders
+      summary: Replace Folder
+      operationId: replace_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutFolderBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder
+      operationId: delete_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/folders/{folder_id}/groups/{group_id}:
+    put:
+      tags:
+      - folders
+      summary: Replace Folder Group
+      operationId: replace_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    post:
+      tags:
+      - folders
+      summary: Create Folder Group
+      operationId: create_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
+    delete:
+      tags:
+      - folders
+      summary: Delete Folder Group
+      operationId: delete_folder_group
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/folders/{folder_id}/groups:
+    get:
+      tags:
+      - folders
+      summary: List Folder Groups
+      operationId: list_folder_groups
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__'
   /v0/groups:
     get:
       tags:
@@ -2182,6 +2458,14 @@ paths:
           type: string
         name: search
         in: query
+      - required: false
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -2223,6 +2507,35 @@ paths:
           default: false
         name: hidden
         in: query
+      - required: false
+        schema:
+          title: X-Simcore-User-Agent
+          type: string
+          default: undefined
+        name: x-simcore-user-agent
+        in: header
+      - description: Optionally sets a parent project UUID (both project and node
+          must be set)
+        required: false
+        schema:
+          title: X-Simcore-Parent-Project-Uuid
+          type: string
+          description: Optionally sets a parent project UUID (both project and node
+            must be set)
+          format: uuid
+        name: x-simcore-parent-project-uuid
+        in: header
+      - description: Optionally sets a parent node ID (both project and node must
+          be set)
+        required: false
+        schema:
+          title: X-Simcore-Parent-Node-Id
+          type: string
+          description: Optionally sets a parent node ID (both project and node must
+            be set)
+          format: uuid
+        name: x-simcore-parent-node-id
+        in: header
       requestBody:
         content:
           application/json:
@@ -2387,6 +2700,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+  /v0/projects/{project_id}/groups/{group_id}:
+    put:
+      tags:
+      - projects
+      summary: Replace Project Group
+      operationId: replace_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    post:
+      tags:
+      - projects
+      summary: Create Project Group
+      operationId: create_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+    delete:
+      tags:
+      - projects
+      summary: Delete Project Group
+      operationId: delete_project_group
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/groups:
+    get:
+      tags:
+      - projects
+      summary: List Project Groups
+      operationId: list_project_groups
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
+  /v0/projects/{project_id}/folders/{folder_id}:
+    put:
+      tags:
+      - projects
+      - folders
+      summary: Move project to the folder
+      operationId: replace_project_folder
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -3173,6 +3626,55 @@ paths:
         name: filters
         in: query
       - required: false
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          type: integer
+          default: 20
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/services/-/aggregated-usages:
+    get:
+      tags:
+      - usage
+      summary: Used credits based on aggregate by type, currently supported `services`.
+        (user and product are taken from context, optionally wallet_id parameter might
+        be provided).
+      operationId: list_osparc_credits_aggregated_usages
+      parameters:
+      - required: true
+        schema:
+          $ref: '#/components/schemas/ServicesAggregatedUsagesType'
+        name: aggregated_by
+        in: query
+      - required: true
+        schema:
+          $ref: '#/components/schemas/ServicesAggregatedUsagesTimePeriod'
+        name: time_period
+        in: query
+      - required: true
         schema:
           title: Wallet Id
           exclusiveMinimum: true
@@ -5238,7 +5740,6 @@ components:
           title: Name
           type: string
           description: Name of the author
-          example: Jim Knopf
         email:
           title: Email
           type: string
@@ -5247,35 +5748,6 @@ components:
         affiliation:
           title: Affiliation
           type: string
-          description: Affiliation of the author
-      additionalProperties: false
-    Badge:
-      title: Badge
-      required:
-      - name
-      - image
-      - url
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-          description: Name of the subject
-        image:
-          title: Image
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Url to the badge
-          format: uri
-        url:
-          title: Url
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Link to the status
-          format: uri
-      additionalProperties: false
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -5331,6 +5803,198 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
+    CatalogServiceGet:
+      title: CatalogServiceGet
+      required:
+      - key
+      - version
+      - name
+      - description
+      - type
+      - authors
+      - inputs
+      - outputs
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name:
+          title: Name
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        description:
+          title: Description
+          type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        contact:
+          title: Contact
+          type: string
+          format: email
+        authors:
+          title: Authors
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+        owner:
+          title: Owner
+          type: string
+          format: email
+        inputs:
+          title: Inputs
+          type: object
+          description: inputs with extended information
+        outputs:
+          title: Outputs
+          type: object
+          description: outputs with extended information
+        bootOptions:
+          title: Bootoptions
+          type: object
+        minVisibleInputs:
+          title: Minvisibleinputs
+          minimum: 0
+          type: integer
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+          default: []
+        quality:
+          title: Quality
+          type: object
+          default: {}
+        history:
+          title: History
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceRelease'
+          description: history of releases for this service at this point in time,
+            starting from the newest to the oldest. It includes current release.
+          default: []
+      example:
+        name: sleeper
+        description: A service which awaits for time to pass, two times.
+        classifiers: []
+        quality: {}
+        accessRights:
+          '1':
+            execute: true
+            write: false
+        key: simcore/services/comp/itis/sleeper
+        version: 2.2.1
+        version_display: 2 Xtreme
+        type: computational
+        authors:
+        - name: Author Bar
+          email: author@acme.com
+          affiliation: ACME
+        contact: contact@acme.com
+        inputs:
+          input0:
+            label: Acceleration
+            description: acceleration with units
+            type: ref_contentSchema
+            contentSchema:
+              title: Acceleration
+              type: number
+              x_unit: m/s**2
+            keyId: input_1
+            unitLong: meter/second<sup>3</sup>
+            unitShort: m/s<sup>3</sup>
+        outputs:
+          outFile:
+            displayOrder: 2
+            label: Time Slept
+            description: Time the service waited before completion
+            type: number
+            unit: second
+            unitLong: seconds
+            unitShort: sec
+            keyId: output_2
+        owner: owner@acme.com
+        history:
+        - version: 2.2.1
+          version_display: Summer Release
+          released: '2024-07-20T15:00:00'
+        - version: 2.0.0
+          compatibility:
+            canUpdateTo:
+              version: 2.2.1
+        - version: 0.9.11
+        - version: 0.9.10
+        - version: 0.9.8
+          compatibility:
+            canUpdateTo:
+              version: 0.9.11
+        - version: 0.9.1
+          versionDisplay: Matterhorn
+          released: '2024-01-20T18:49:17'
+          compatibility:
+            can_update_to:
+              version: 0.9.11
+        - version: 0.9.0
+          retired: '2024-07-20T15:00:00'
+        - version: 0.8.0
+        - version: 0.1.0
+    CatalogServiceUpdate:
+      title: CatalogServiceUpdate
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        description:
+          title: Description
+          type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+        deprecated:
+          title: Deprecated
+          type: string
+          format: date-time
+        classifiers:
+          title: Classifiers
+          type: array
+          items:
+            type: string
+        quality:
+          title: Quality
+          type: object
+          default: {}
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -5653,6 +6317,33 @@ components:
         next_url:
           title: Next Url
           type: string
+    Compatibility:
+      title: Compatibility
+      required:
+      - canUpdateTo
+      type: object
+      properties:
+        canUpdateTo:
+          title: Canupdateto
+          allOf:
+          - $ref: '#/components/schemas/CompatibleService'
+          description: Latest compatible service at this moment
+    CompatibleService:
+      title: CompatibleService
+      required:
+      - version
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: If None, it refer to current service. Used only for inter-service
+            compatibility
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
     ComputationStart:
       title: ComputationStart
       type: object
@@ -5709,6 +6400,27 @@ components:
         alpha2:
           title: Alpha2
           type: string
+    CreateFolderBodyParams:
+      title: CreateFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+      additionalProperties: false
     CreatePricingPlanBodyParams:
       title: CreatePricingPlanBodyParams
       required:
@@ -5931,6 +6643,14 @@ components:
           $ref: '#/components/schemas/AppStatusCheck'
         error:
           title: Error
+    Envelope_CatalogServiceGet_:
+      title: Envelope[CatalogServiceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CatalogServiceGet'
+        error:
+          title: Error
     Envelope_CheckpointApiModel_:
       title: Envelope[CheckpointApiModel]
       type: object
@@ -6009,6 +6729,22 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadSchema'
+        error:
+          title: Error
+    Envelope_FolderGet_:
+      title: Envelope[FolderGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
+    Envelope_FolderGroupGet_:
+      title: Envelope[FolderGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_GetCreditPrice_:
@@ -6179,6 +6915,14 @@ components:
           $ref: '#/components/schemas/ProjectGet'
         error:
           title: Error
+    Envelope_ProjectGroupGet_:
+      title: Envelope[ProjectGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectGroupGet'
+        error:
+          title: Error
     Envelope_ProjectMetadataGet_:
       title: Envelope[ProjectMetadataGet]
       type: object
@@ -6217,14 +6961,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ResearchResource'
-        error:
-          title: Error
-    Envelope_ServiceGet_:
-      title: Envelope[ServiceGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/models_library__api_schemas_webserver__catalog__ServiceGet'
         error:
           title: Error
     Envelope_ServiceInputGet_:
@@ -6498,17 +7234,6 @@ components:
             $ref: '#/components/schemas/FileMetaDataGet'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_webserver.catalog.ServiceGet__:
-      title: Envelope[list[models_library.api_schemas_webserver.catalog.ServiceGet]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/models_library__api_schemas_webserver__catalog__ServiceGet'
-        error:
-          title: Error
     Envelope_list_models_library.api_schemas_webserver.catalog.ServiceInputGet__:
       title: Envelope[list[models_library.api_schemas_webserver.catalog.ServiceInputGet]]
       type: object
@@ -6540,6 +7265,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClusterGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
@@ -6619,8 +7355,8 @@ components:
             $ref: '#/components/schemas/ProjectsCommentsAPI'
         error:
           title: Error
-    Envelope_list_models_library.services.ServicePortKey__:
-      title: Envelope[list[models_library.services.ServicePortKey]]
+    Envelope_list_models_library.services_types.ServicePortKey__:
+      title: Envelope[list[models_library.services_types.ServicePortKey]]
       type: object
       properties:
         data:
@@ -6640,6 +7376,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__:
+      title: Envelope[list[simcore_service_webserver.folders._groups_api.FolderGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FolderGroupGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
+      title: Envelope[list[simcore_service_webserver.projects._groups_api.ProjectGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
@@ -6694,7 +7452,7 @@ components:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/simcore_service_webserver__studies_dispatcher___rest_handlers__ServiceGet'
+            $ref: '#/components/schemas/ServiceGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__:
@@ -7084,6 +7842,88 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderGet:
+      title: FolderGet
+      required:
+      - folderId
+      - name
+      - description
+      - createdAt
+      - modifiedAt
+      - owner
+      - myAccessRights
+      - accessRights
+      type: object
+      properties:
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        modifiedAt:
+          title: Modifiedat
+          type: string
+          format: date-time
+        owner:
+          title: Owner
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/AccessRights'
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
+    FolderGroupGet:
+      title: FolderGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -7667,6 +8507,13 @@ components:
           title: Inputs
           type: object
           description: values of input properties
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
+          description: Defines inputs that are required in order to run the service
         inputsUnits:
           title: Inputsunits
           type: object
@@ -7895,6 +8742,10 @@ components:
       title: NodePatch
       type: object
       properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
         version:
           title: Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
@@ -7905,6 +8756,12 @@ components:
         inputs:
           title: Inputs
           type: object
+        inputsRequired:
+          title: Inputsrequired
+          type: array
+          items:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
         inputNodes:
           title: Inputnodes
           type: array
@@ -7918,6 +8775,9 @@ components:
           type: number
         bootOptions:
           title: Bootoptions
+          type: object
+        outputs:
+          title: Outputs
           type: object
     NodeRetrieve:
       title: NodeRetrieve
@@ -8031,42 +8891,18 @@ components:
       additionalProperties: false
     PageLinks:
       title: PageLinks
-      required:
-      - self
-      - first
-      - last
       type: object
       properties:
         self:
           title: Self
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         first:
           title: First
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         prev:
           title: Prev
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         next:
           title: Next
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         last:
           title: Last
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
       additionalProperties: false
     PageMetaInfoLimitOffset:
       title: PageMetaInfoLimitOffset
@@ -8095,6 +8931,25 @@ components:
           minimum: 0
           type: integer
       additionalProperties: false
+    Page_CatalogServiceGet_:
+      title: Page[CatalogServiceGet]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogServiceGet'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     Page_CheckpointApiModel_:
       title: Page[CheckpointApiModel]
       required:
@@ -8860,6 +9715,39 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+    ProjectGroupGet:
+      title: ProjectGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     ProjectInputGet:
       title: ProjectInputGet
       required:
@@ -9160,13 +10048,9 @@ components:
       properties:
         name:
           title: Name
-          maxLength: 100
-          minLength: 1
           type: string
         description:
           title: Description
-          maxLength: 100
-          minLength: 1
           type: string
         thumbnail:
           title: Thumbnail
@@ -9358,6 +10242,22 @@ components:
           type: string
           description: Timestamp with last update
           format: date-time
+      additionalProperties: false
+    PutFolderBodyParams:
+      title: PutFolderBodyParams
+      required:
+      - name
+      - description
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
       additionalProperties: false
     PutWalletBodyParams:
       title: PutWalletBodyParams
@@ -9735,20 +10635,71 @@ components:
       - V2
       type: string
       description: An enumeration.
-    ServiceGroupAccessRights:
-      title: ServiceGroupAccessRights
+    ServiceGet:
+      title: ServiceGet
+      required:
+      - key
+      - title
+      - description
+      - thumbnail
+      - view_url
       type: object
       properties:
-        execute_access:
-          title: Execute Access
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: Service key ID
+        title:
+          title: Title
+          type: string
+          description: Service name for display
+        description:
+          title: Description
+          type: string
+          description: Long description of the service
+        thumbnail:
+          title: Thumbnail
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Url to service thumbnail
+          format: uri
+        file_extensions:
+          title: File Extensions
+          type: array
+          items:
+            type: string
+          description: File extensions that this service can process
+        view_url:
+          title: View Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Redirection to open a service in osparc (see /view)
+          format: uri
+      example:
+        key: simcore/services/dynamic/sim4life
+        title: Sim4Life Mattermost
+        description: It is also sim4life for the web
+        thumbnail: https://via.placeholder.com/170x120.png
+        file_extensions:
+        - smash
+        - h5
+        view_url: https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3
+    ServiceGroupAccessRightsV2:
+      title: ServiceGroupAccessRightsV2
+      type: object
+      properties:
+        execute:
+          title: Execute
           type: boolean
-          description: defines whether the group can execute the service
           default: false
-        write_access:
-          title: Write Access
+        write:
+          title: Write
           type: boolean
-          description: defines whether the group can modify the service
           default: false
+      additionalProperties: false
     ServiceInputGet:
       title: ServiceInputGet
       required:
@@ -9800,6 +10751,7 @@ components:
           title: Unit
           type: string
           description: Units, when it refers to a physical quantity
+          deprecated: true
         defaultValue:
           title: Defaultvalue
           anyOf:
@@ -9807,6 +10759,7 @@ components:
           - type: integer
           - type: number
           - type: string
+          deprecated: true
         widget:
           title: Widget
           allOf:
@@ -9852,7 +10805,7 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: service version number
-      description: This pair uniquely identifies a services
+      description: Service `key-version` pair uniquely identifies a service
     ServiceOutputGet:
       title: ServiceOutputGet
       required:
@@ -9904,6 +10857,7 @@ components:
           title: Unit
           type: string
           description: Units, when it refers to a physical quantity
+          deprecated: true
         widget:
           title: Widget
           allOf:
@@ -9964,6 +10918,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PricingUnitGet'
+    ServiceRelease:
+      title: ServiceRelease
+      required:
+      - version
+      type: object
+      properties:
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        versionDisplay:
+          title: Versiondisplay
+          type: string
+          description: If None, then display `version`
+        released:
+          title: Released
+          type: string
+          description: When provided, it indicates the release timestamp
+          format: date-time
+        retired:
+          title: Retired
+          type: string
+          description: 'whether this service is planned to be retired. If None, the
+            service is still active. If now<retired then the service is deprecated.
+            If retired<now then the service is retired and should not be used. '
+          format: date-time
+        compatibility:
+          title: Compatibility
+          allOf:
+          - $ref: '#/components/schemas/Compatibility'
+          description: Compatibility with other releases at this moment
     ServiceRunGet:
       title: ServiceRunGet
       required:
@@ -9973,10 +10958,11 @@ components:
       - project_name
       - node_id
       - node_name
+      - root_parent_project_id
+      - root_parent_project_name
       - service_key
       - service_version
       - service_type
-      - service_resources
       - started_at
       - service_run_status
       type: object
@@ -10011,6 +10997,13 @@ components:
         node_name:
           title: Node Name
           type: string
+        root_parent_project_id:
+          title: Root Parent Project Id
+          type: string
+          format: uuid
+        root_parent_project_name:
+          title: Root Parent Project Name
+          type: string
         service_key:
           title: Service Key
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -10022,9 +11015,6 @@ components:
         service_type:
           title: Service Type
           type: string
-        service_resources:
-          title: Service Resources
-          type: object
         started_at:
           title: Started At
           type: string
@@ -10063,100 +11053,20 @@ components:
       - backend
       type: string
       description: An enumeration.
-    ServiceUpdate:
-      title: ServiceUpdate
-      type: object
-      properties:
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceGroupAccessRights'
-          description: service access rights per group id
-        name:
-          title: Name
-          type: string
-        thumbnail:
-          title: Thumbnail
-          maxLength: 2083
-          minLength: 1
-          type: string
-          format: uri
-        description:
-          title: Description
-          type: string
-        deprecated:
-          title: Deprecated
-          type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
-          format: date-time
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-        quality:
-          title: Quality
-          type: object
-          default: {}
-      example:
-        accessRights:
-          1:
-            execute_access: false
-            write_access: false
-          2:
-            execute_access: true
-            write_access: true
-          44:
-            execute_access: false
-            write_access: false
-        name: My Human Readable Service Name
-        description: An interesting service that does something
-        classifiers:
-        - RRID:SCR_018997
-        - RRID:SCR_019001
-        quality:
-          tsr:
-            r01:
-              level: 3
-              references: ''
-            r02:
-              level: 2
-              references: ''
-            r03:
-              level: 0
-              references: ''
-            r04:
-              level: 0
-              references: ''
-            r05:
-              level: 2
-              references: ''
-            r06:
-              level: 0
-              references: ''
-            r07:
-              level: 0
-              references: ''
-            r08:
-              level: 1
-              references: ''
-            r09:
-              level: 0
-              references: ''
-            r10:
-              level: 0
-              references: ''
-          enabled: true
-          annotations:
-            vandv: ''
-            purpose: ''
-            standards: ''
-            limitations: ''
-            documentation: ''
-            certificationLink: ''
-            certificationStatus: Uncertified
+    ServicesAggregatedUsagesTimePeriod:
+      title: ServicesAggregatedUsagesTimePeriod
+      enum:
+      - 1
+      - 7
+      - 30
+      type: integer
+      description: An enumeration.
+    ServicesAggregatedUsagesType:
+      title: ServicesAggregatedUsagesType
+      enum:
+      - services
+      type: string
+      description: An enumeration.
     SimCoreFileLink:
       title: SimCoreFileLink
       required:
@@ -11302,6 +12212,24 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
+    _FoldersGroupsBodyParams:
+      title: _FoldersGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -11361,6 +12289,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeScreenshot'
+    _ProjectsGroupsBodyParams:
+      title: _ProjectsGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _WalletsGroupsBodyParams:
       title: _WalletsGroupsBodyParams
       required:
@@ -11379,215 +12325,3 @@ components:
           title: Delete
           type: boolean
       additionalProperties: false
-    models_library__api_schemas_webserver__catalog__ServiceGet:
-      title: ServiceGet
-      required:
-      - name
-      - description
-      - key
-      - version
-      - type
-      - authors
-      - contact
-      - inputs
-      - outputs
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-          description: short, human readable name for the node
-          example: Fast Counter
-        thumbnail:
-          title: Thumbnail
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: url to the thumbnail
-          format: uri
-        description:
-          title: Description
-          type: string
-          description: human readable description of the purpose of the node
-        deprecated:
-          title: Deprecated
-          type: string
-          description: If filled with a date, then the service is to be deprecated
-            at that date (e.g. cannot start anymore)
-          format: date-time
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-        quality:
-          title: Quality
-          type: object
-          default: {}
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ServiceGroupAccessRights'
-          description: service access rights per group id
-        key:
-          title: Key
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          type: string
-          description: distinctive name for the node based on the docker registry
-            path
-        version:
-          title: Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-          description: service version number
-        integration-version:
-          title: Integration-Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-          description: integration version number
-        progress_regexp:
-          title: Progress Regexp
-          type: string
-          description: regexp pattern for detecting computational service's progress
-        type:
-          allOf:
-          - $ref: '#/components/schemas/ServiceType'
-          description: service type
-        badges:
-          title: Badges
-          type: array
-          items:
-            $ref: '#/components/schemas/Badge'
-        authors:
-          title: Authors
-          minItems: 1
-          type: array
-          items:
-            $ref: '#/components/schemas/Author'
-        contact:
-          title: Contact
-          type: string
-          description: email to correspond to the authors about the node
-          format: email
-        inputs:
-          title: Inputs
-          type: object
-          description: inputs with extended information
-        outputs:
-          title: Outputs
-          type: object
-          description: outputs with extended information
-        boot-options:
-          title: Boot-Options
-          type: object
-          description: Service defined boot options. These get injected in the service
-            as env variables.
-        min-visible-inputs:
-          title: Min-Visible-Inputs
-          minimum: 0
-          type: integer
-          description: The number of 'data type inputs' displayed by default in the
-            UI. When None all 'data type inputs' are displayed.
-        owner:
-          title: Owner
-          type: string
-          format: email
-      description: 'Static metadata for a service injected in the image labels
-
-
-        This is one to one with node-meta-v0.0.1.json'
-      example:
-        name: File Picker
-        description: description
-        classifiers: []
-        quality: {}
-        accessRights:
-          '1':
-            execute_access: true
-            write_access: false
-          '4':
-            execute_access: true
-            write_access: true
-        key: simcore/services/frontend/file-picker
-        version: 1.0.0
-        type: dynamic
-        authors:
-        - name: Red Pandas
-          email: redpandas@wonderland.com
-        contact: redpandas@wonderland.com
-        inputs:
-          input0:
-            label: Acceleration
-            description: acceleration with units
-            type: ref_contentSchema
-            contentSchema:
-              title: Acceleration
-              type: number
-              x_unit: m/s**2
-            keyId: input_1
-            unitLong: meter/second<sup>3</sup>
-            unitShort: m/s<sup>3</sup>
-        outputs:
-          outFile:
-            displayOrder: 2
-            label: Time Slept
-            description: Time the service waited before completion
-            type: number
-            unit: second
-            unitLong: seconds
-            unitShort: sec
-            keyId: output_2
-        owner: redpandas@wonderland.com
-    simcore_service_webserver__studies_dispatcher___rest_handlers__ServiceGet:
-      title: ServiceGet
-      required:
-      - key
-      - title
-      - description
-      - thumbnail
-      - view_url
-      type: object
-      properties:
-        key:
-          title: Key
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          type: string
-          description: Service key ID
-        title:
-          title: Title
-          type: string
-          description: Service name for display
-        description:
-          title: Description
-          type: string
-          description: Long description of the service
-        thumbnail:
-          title: Thumbnail
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Url to service thumbnail
-          format: uri
-        file_extensions:
-          title: File Extensions
-          type: array
-          items:
-            type: string
-          description: File extensions that this service can process
-        view_url:
-          title: View Url
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Redirection to open a service in osparc (see /view)
-          format: uri
-      example:
-        key: simcore/services/dynamic/sim4life
-        title: Sim4Life Mattermost
-        description: It is also sim4life for the web
-        thumbnail: https://via.placeholder.com/170x120.png
-        file_extensions:
-        - smash
-        - h5
-        view_url: https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3

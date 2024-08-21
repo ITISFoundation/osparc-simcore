@@ -16,14 +16,14 @@ import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2 import EC2InstanceBootSpecific
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
@@ -39,7 +39,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 pytest_plugins = [
     "pytest_simcore.aws_ec2_service",
     "pytest_simcore.aws_server",
-    "pytest_simcore.container_pause",
+    "pytest_simcore.docker",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
@@ -48,7 +48,6 @@ pytest_plugins = [
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -85,6 +84,11 @@ def mocked_ec2_server_envs(
         for k, v in mocked_ec2_server_settings.dict().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
+def ec2_settings(mocked_ec2_server_settings: EC2Settings) -> EC2Settings:
+    return mocked_ec2_server_settings
 
 
 @pytest.fixture
@@ -167,7 +171,6 @@ def mocked_primary_ec2_instances_envs(
                 [aws_security_group_id]
             ),
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "PRIMARY_EC2_INSTANCES_AMI_ID": aws_ami_id,
         },
     )
     return app_environment | envs

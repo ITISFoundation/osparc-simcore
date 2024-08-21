@@ -17,8 +17,8 @@ from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
-    UploadableFileObject,
     UploadedFile,
     UploadedFolder,
     abort_upload,
@@ -59,8 +59,9 @@ _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "File not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 
 async def _get_file(
@@ -106,7 +107,9 @@ async def list_files(
     SEE get_files_page for a paginated version of this function
     """
 
-    stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
+    stored_files: list[StorageFileMetaData] = await storage_client.list_files(
+        user_id=user_id
+    )
 
     # Adapts storage API model to API model
     all_files: list[File] = []
@@ -351,11 +354,11 @@ async def abort_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        sha256_checksum=client_file.sha256_checksum,
+        checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query={"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -380,11 +383,11 @@ async def complete_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        sha256_checksum=client_file.sha256_checksum,
+        checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, {"user_id": str(user_id)}
+        file=file, query={"user_id": str(user_id)}
     )
 
     e_tag: ETag = await complete_file_upload(

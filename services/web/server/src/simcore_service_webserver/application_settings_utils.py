@@ -75,6 +75,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
+                "password": getattr(
+                    app_settings.WEBSERVER_REDIS, "REDIS_PASSWORD", None
+                ),
             },
         },
         # added to support legacy ----
@@ -177,6 +180,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "users": {"enabled": app_settings.WEBSERVER_USERS is not None},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
+        "folders": {"enabled": app_settings.WEBSERVER_FOLDERS},
     }
 
 
@@ -242,6 +246,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
             _set_if_disabled("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")
+            envs["REDIS_PASSWORD"] = section2.get("password")
 
     if section := cfg.get("garbage_collector"):
         _set_if_disabled("WEBSERVER_GARBAGE_COLLECTOR", section)
@@ -319,6 +324,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         "WEBSERVER_USERS",
         "WEBSERVER_VERSION_CONTROL",
         "WEBSERVER_WALLETS",
+        "WEBSERVER_FOLDERS",
     ):
         section_name = settings_name.replace("WEBSERVER_", "").lower()
         if section := cfg.get(section_name):

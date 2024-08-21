@@ -18,10 +18,10 @@ from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
@@ -74,18 +74,24 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.fixture
-def mocked_send_email(mocker: MockerFixture, app_environment: EnvVarsDict) -> MagicMock:
-    # Overrides services/web/server/tests/unit/with_dbs/conftest.py::mocked_send_email
+async def mocked_aiosmtplib(mocker: MockerFixture) -> MagicMock:
+    mocked_lib = mocker.patch("aiosmtplib.SMTP", autospec=True)
     settings = SMTPSettings.create_from_envs()
+    mocked_lib.return_value.__aenter__.return_value.hostname = settings.SMTP_HOST
+    mocked_lib.return_value.__aenter__.return_value.port = settings.SMTP_PORT
+    mocked_lib.return_value.__aenter__.return_value.timeout = 100
+    mocked_lib.return_value.__aenter__.return_value.use_tls = (
+        settings.SMTP_PROTOCOL == EmailProtocol.TLS
+    )
+    return mocked_lib
 
-    mock = mocker.patch("aiosmtplib.SMTP")
-    smtp_instance = mock.return_value.__aenter__.return_value
-    smtp_instance.hostname = settings.SMTP_HOST
-    smtp_instance.port = settings.SMTP_PORT
-    smtp_instance.timeout = 100
-    smtp_instance.use_tls = settings.SMTP_PROTOCOL == EmailProtocol.TLS
 
-    return smtp_instance
+@pytest.fixture
+async def mocked_send_email(
+    mocked_aiosmtplib: MagicMock, mocker: MockerFixture, app_environment: EnvVarsDict
+) -> MagicMock:
+    # Overrides services/web/server/tests/unit/with_dbs/conftest.py::mocked_send_email
+    return mocked_aiosmtplib.return_value
 
 
 @pytest.mark.parametrize(
@@ -104,6 +110,7 @@ async def test_email_handlers(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected_response_cls: type[web.Response],
+    mocked_aiosmtplib: MagicMock,
     mocked_send_email: MagicMock,
 ):
     assert logged_user["role"] == user_role.name

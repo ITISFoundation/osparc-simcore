@@ -22,8 +22,8 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
-from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
+from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -37,10 +37,11 @@ from simcore_service_webserver.garbage_collector.plugin import setup_garbage_col
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -87,7 +88,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
         decode_responses=True,
     )
     await client.flushall()
-    await client.close(close_connection_pool=True)
+    await client.aclose(close_connection_pool=True)
 
 
 @pytest.fixture(scope="session")
@@ -148,7 +149,6 @@ def client(
     assert cfg["rest"]["enabled"]
 
     cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
     cfg["resource_manager"].update(
         {
             "garbage_collection_interval_seconds": GARBAGE_COLLECTOR_INTERVAL,  # increase speed of garbage collection
@@ -219,13 +219,25 @@ async def new_project(
         project_data["accessRights"] = access_rights
 
     assert client.app
-    return await create_project(
+    project = await create_project(
         client.app,
         project_data,
         user["id"],
         product_name=product_name,
         default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
     )
+
+    if access_rights:
+        for group_id, permissions in access_rights.items():
+            await update_or_insert_project_group(
+                client.app,
+                project["uuid"],
+                group_id=int(group_id),
+                read=permissions["read"],
+                write=permissions["write"],
+                delete=permissions["delete"],
+            )
+    return project
 
 
 async def get_template_project(
@@ -237,7 +249,7 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups(client.app, user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"

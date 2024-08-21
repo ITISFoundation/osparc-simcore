@@ -10,6 +10,7 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    CreditClassification,
     CreditTransactionId,
     CreditTransactionStatus,
     PricingPlanCreate,
@@ -48,9 +49,6 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit_costs import (
-    PricingUnitCostsDB,
-)
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from ....models.resource_tracker_credit_transactions import (
@@ -63,8 +61,10 @@ from ....models.resource_tracker_pricing_plans import (
     PricingPlansWithServiceDefaultPlanDB,
     PricingPlanToServiceDB,
 )
+from ....models.resource_tracker_pricing_unit_costs import PricingUnitCostsDB
 from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
+    OsparcCreditsAggregatedByServiceKeyDB,
     ServiceRunCreate,
     ServiceRunDB,
     ServiceRunForCheckDB,
@@ -104,6 +104,11 @@ class ResourceTrackerRepository(
                     project_name=data.project_name,
                     node_id=f"{data.node_id}",
                     node_name=data.node_name,
+                    parent_project_id=f"{data.parent_project_id}",
+                    root_parent_project_id=f"{data.root_parent_project_id}",
+                    root_parent_project_name=data.root_parent_project_name,
+                    parent_node_id=f"{data.parent_node_id}",
+                    root_parent_node_id=f"{data.root_parent_node_id}",
                     service_key=data.service_key,
                     service_version=data.service_version,
                     service_type=data.service_type,
@@ -123,7 +128,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Service was not created: {data}"
             )
-        return row[0]
+        return cast(ServiceRunId, row[0])
 
     async def update_service_run_last_heartbeat(
         self, data: ServiceRunLastHeartbeatUpdate
@@ -231,6 +236,11 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.project_name,
                     resource_tracker_service_runs.c.node_id,
                     resource_tracker_service_runs.c.node_name,
+                    resource_tracker_service_runs.c.parent_project_id,
+                    resource_tracker_service_runs.c.root_parent_project_id,
+                    resource_tracker_service_runs.c.root_parent_project_name,
+                    resource_tracker_service_runs.c.parent_node_id,
+                    resource_tracker_service_runs.c.root_parent_node_id,
                     resource_tracker_service_runs.c.service_key,
                     resource_tracker_service_runs.c.service_version,
                     resource_tracker_service_runs.c.service_type,
@@ -300,6 +310,89 @@ class ResourceTrackerRepository(
             result = await conn.execute(query)
 
         return [ServiceRunWithCreditsDB.from_orm(row) for row in result.fetchall()]
+
+    async def get_osparc_credits_aggregated_by_service(
+        self,
+        product_name: ProductName,
+        *,
+        user_id: UserID | None,
+        wallet_id: WalletID,
+        offset: int,
+        limit: int,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+    ) -> tuple[int, list[OsparcCreditsAggregatedByServiceKeyDB]]:
+        async with self.db_engine.begin() as conn:
+            base_query = (
+                sa.select(
+                    resource_tracker_service_runs.c.service_key,
+                    sa.func.SUM(
+                        resource_tracker_credit_transactions.c.osparc_credits
+                    ).label("osparc_credits"),
+                )
+                .select_from(
+                    resource_tracker_service_runs.join(
+                        resource_tracker_credit_transactions,
+                        (
+                            resource_tracker_service_runs.c.product_name
+                            == resource_tracker_credit_transactions.c.product_name
+                        )
+                        & (
+                            resource_tracker_service_runs.c.service_run_id
+                            == resource_tracker_credit_transactions.c.service_run_id
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(
+                    (resource_tracker_service_runs.c.product_name == product_name)
+                    & (
+                        resource_tracker_credit_transactions.c.transaction_status
+                        == CreditTransactionStatus.BILLED
+                    )
+                    & (
+                        resource_tracker_credit_transactions.c.transaction_classification
+                        == CreditClassification.DEDUCT_SERVICE_RUN
+                    )
+                    & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
+                )
+                .group_by(resource_tracker_service_runs.c.service_key)
+            )
+
+            if user_id:
+                base_query = base_query.where(
+                    resource_tracker_service_runs.c.user_id == user_id
+                )
+            if started_from:
+                base_query = base_query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                base_query = base_query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            subquery = base_query.subquery()
+            count_query = sa.select(sa.func.count()).select_from(subquery)
+            count_result = await conn.execute(count_query)
+
+            # Default ordering and pagination
+            list_query = (
+                base_query.order_by(resource_tracker_service_runs.c.service_key.asc())
+                .offset(offset)
+                .limit(limit)
+            )
+            list_result = await conn.execute(list_query)
+
+        return (
+            cast(int, count_result.scalar()),
+            [
+                OsparcCreditsAggregatedByServiceKeyDB.from_orm(row)
+                for row in list_result.fetchall()
+            ],
+        )
 
     async def export_service_runs_table_to_s3(
         self,
@@ -549,7 +642,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Transaction was not created: {data}"
             )
-        return row[0]
+        return cast(CreditTransactionId, row[0])
 
     async def update_credit_transaction_credits(
         self, data: CreditTransactionCreditsUpdate
@@ -582,7 +675,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return row[0]
+        return cast(CreditTransactionId | None, row[0])
 
     async def update_credit_transaction_credits_and_status(
         self, data: CreditTransactionCreditsAndStatusUpdate
@@ -611,7 +704,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return row[0]
+        return cast(CreditTransactionId | None, row[0])
 
     async def sum_credit_transactions_by_product_and_wallet(
         self, product_name: ProductName, wallet_id: WalletID

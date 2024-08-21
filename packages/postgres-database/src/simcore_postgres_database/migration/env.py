@@ -1,9 +1,8 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
-
 from simcore_postgres_database.settings import target_metadatas
+from sqlalchemy import engine_from_config, pool
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,6 +14,7 @@ config = context.config
 if __name__ == "__main__":
     # swallows up all log messages from tests
     # only enable it during cli invocation
+    assert config.config_file_name is not None  # nosec
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here

@@ -9,19 +9,23 @@ import random
 from collections import UserDict
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_projects import create_project
-from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_projects import create_project
+from simcore_postgres_database.models.folders import folders, folders_to_projects
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -360,3 +364,118 @@ async def test_list_projects_with_order_by_parameter(
     assert [
         item["description"][0] for item in data["data"]
     ] == _alphabetically_ordered_list
+
+
+@pytest.fixture()
+def setup_folders_db(
+    postgres_db: sa.engine.Engine,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+) -> Iterator[FolderID]:
+    with postgres_db.connect() as con:
+        output = []
+        result = con.execute(
+            folders.insert()
+            .values(
+                name="My Folder 1",
+                description="My Folder Decription",
+                product_name="osparc",
+                created_by=logged_user["primary_gid"],
+            )
+            .returning(folders.c.id)
+        )
+        _folder_id = result.fetchone()[0]
+
+        con.execute(
+            folders_to_projects.insert().values(
+                folder_id=_folder_id, project_uuid=user_project["uuid"]
+            )
+        )
+
+        yield FolderID(_folder_id)
+
+        con.execute(folders_to_projects.delete())
+        con.execute(folders.delete())
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_projects_for_specific_folder_id(
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner,
+    mock_catalog_api_get_services_for_user_in_product,
+    setup_folders_db,
+):
+    projects_info = [
+        _ProjectInfo(
+            uuid="d4d0eca3-d210-4db6-84f9-63670b07176b",
+            name="Name 1",
+            description="Description 1",
+        ),
+        _ProjectInfo(
+            uuid="2f3ef868-fe1b-11ed-b038-cdb13a78a6f3",
+            name="Name 2",
+            description="Description 2",
+        ),
+        _ProjectInfo(
+            uuid="9cd66c12-fe1b-11ed-b038-cdb13a78a6f3",
+            name="Name 3",
+            description="Description 3",
+        ),
+    ]
+
+    user_projects = []
+    for project_ in projects_info:
+        project_data = deepcopy(fake_project)
+        project_data["name"] = project_.name
+        project_data["uuid"] = project_.uuid
+        project_data["description"] = project_.description
+
+        user_projects.append(
+            await _new_project(
+                client,
+                logged_user["id"],
+                osparc_product_name,
+                tests_data_dir,
+                project_data,
+            )
+        )
+
+    # Now we will test listing of the root directory
+    base_url = client.app.router["list_projects"].url_for()
+    assert f"{base_url}" == f"/{api_version_prefix}/projects"
+
+    resp = await client.get(base_url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(data, 3, 0, 3, "/v0/projects?offset=0&limit=20", 3)
+
+    # Now we will test listing of the root directory with provided folder id query
+    query_parameters = {"folder_id": "null"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data, 3, 0, 3, "/v0/projects?folder_id=null&offset=0&limit=20", 3
+    )
+
+    # Now we will test listing for specific folder
+    query_parameters = {"folder_id": f"{setup_folders_db}"}
+    url = base_url.with_query(**query_parameters)
+    assert f"{url}" == f"/{api_version_prefix}/projects?folder_id={setup_folders_db}"
+
+    resp = await client.get(url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data, 1, 0, 1, f"/v0/projects?folder_id={setup_folders_db}&offset=0&limit=20", 1
+    )

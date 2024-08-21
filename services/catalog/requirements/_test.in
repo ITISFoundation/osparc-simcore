@@ -12,8 +12,8 @@
 --constraint _base.txt
 
 
-
 alembic # migration due to pytest_simcore.postgres_service
+asgi_lifespan
 click
 docker
 Faker
@@ -28,3 +28,5 @@ pytest-mock
 pytest-runner
 respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
+types-psycopg2
+types-PyYAML

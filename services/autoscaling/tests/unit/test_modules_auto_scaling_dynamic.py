@@ -6,7 +6,6 @@
 # pylint: disable=too-many-statements
 
 import asyncio
-import base64
 import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -17,7 +16,7 @@ from unittest import mock
 import aiodocker
 import arrow
 import pytest
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2 import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
@@ -35,7 +34,8 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
@@ -59,7 +59,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
 )
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import InstanceTypeDef
 
 
 @pytest.fixture
@@ -71,13 +70,13 @@ def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
-def mock_start_aws_instance(
+def mock_launch_instances(
     mocker: MockerFixture,
     aws_instance_private_dns: str,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.start_aws_instance",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.launch_instances",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
@@ -212,14 +211,14 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    mock_start_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    mock_start_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
@@ -227,7 +226,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
 
 
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
-    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
@@ -239,6 +238,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
     ec2_client: EC2Client,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -248,14 +248,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=mock_machines_buffer,
-        instance_type=next(
+        expected_num_reservations=1,
+        expected_num_instances=mock_machines_buffer,
+        expected_instance_type=next(
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
-        instance_state="running",
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -268,14 +269,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=mock_machines_buffer,
-        instance_type=next(
+        expected_num_reservations=1,
+        expected_num_instances=mock_machines_buffer,
+        expected_instance_type=next(
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
-        instance_state="running",
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     assert fake_node.Description
     assert fake_node.Description.Resources
@@ -301,14 +303,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=mock_machines_buffer,
-        instance_type=next(
+        expected_num_reservations=1,
+        expected_num_instances=mock_machines_buffer,
+        expected_instance_type=next(
             iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
         ),
-        instance_state="running",
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
 
@@ -322,7 +325,7 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
-    mock_start_aws_instance: mock.Mock,
+    mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
@@ -338,95 +341,26 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    mock_start_aws_instance.assert_not_called()
+    mock_launch_instances.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
 
 
-async def _assert_ec2_instances(
-    ec2_client: EC2Client,
+@dataclass(frozen=True)
+class _ScaleUpParams:
+    imposed_instance_type: str | None
+    service_resources: Resources
+    num_services: int
+    expected_instance_type: InstanceTypeType
+    expected_num_instances: int
+
+
+async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     *,
-    num_reservations: int,
-    num_instances: int,
-    instance_type: str,
-    instance_state: str,
-) -> list[InstanceTypeDef]:
-    list_instances: list[InstanceTypeDef] = []
-    all_instances = await ec2_client.describe_instances()
-    assert len(all_instances["Reservations"]) == num_reservations
-    for reservation in all_instances["Reservations"]:
-        assert "Instances" in reservation
-        assert (
-            len(reservation["Instances"]) == num_instances
-        ), f"expected {num_instances}, found {len(reservation['Instances'])}"
-        for instance in reservation["Instances"]:
-            assert "InstanceType" in instance
-            assert instance["InstanceType"] == instance_type
-            assert "Tags" in instance
-            assert instance["Tags"]
-            expected_tag_keys = [
-                "io.simcore.autoscaling.version",
-                "io.simcore.autoscaling.monitored_nodes_labels",
-                "io.simcore.autoscaling.monitored_services_labels",
-                "Name",
-                "user_id",
-                "wallet_id",
-                "osparc-tag",
-            ]
-            for tag_dict in instance["Tags"]:
-                assert "Key" in tag_dict
-                assert "Value" in tag_dict
-
-                assert tag_dict["Key"] in expected_tag_keys
-            assert "PrivateDnsName" in instance
-            instance_private_dns_name = instance["PrivateDnsName"]
-            assert instance_private_dns_name.endswith(".ec2.internal")
-            assert "State" in instance
-            state = instance["State"]
-            assert "Name" in state
-            assert state["Name"] == instance_state
-
-            assert "InstanceId" in instance
-            user_data = await ec2_client.describe_instance_attribute(
-                Attribute="userData", InstanceId=instance["InstanceId"]
-            )
-            assert "UserData" in user_data
-            assert "Value" in user_data["UserData"]
-            user_data = base64.b64decode(user_data["UserData"]["Value"]).decode()
-            assert user_data.count("docker swarm join") == 1
-            list_instances.append(instance)
-    return list_instances
-
-
-@pytest.mark.acceptance_test()
-@pytest.mark.parametrize(
-    "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
-    [
-        pytest.param(
-            None,
-            parse_obj_as(ByteSize, "128Gib"),
-            "r5n.4xlarge",
-            id="No explicit instance defined",
-        ),
-        pytest.param(
-            "t2.xlarge",
-            parse_obj_as(ByteSize, "4Gib"),
-            "t2.xlarge",
-            id="Explicitely ask for t2.xlarge",
-        ),
-        pytest.param(
-            "r5n.8xlarge",
-            parse_obj_as(ByteSize, "128Gib"),
-            "r5n.8xlarge",
-            id="Explicitely ask for r5n.8xlarge",
-        ),
-    ],
-)
-async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
-    minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
@@ -442,28 +376,41 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_set_node_availability: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mocker: MockerFixture,
-    docker_service_imposed_ec2_type: InstanceTypeType | None,
-    docker_service_ram: ByteSize,
-    expected_ec2_type: InstanceTypeType,
     async_docker_client: aiodocker.Docker,
     with_drain_nodes_labelled: bool,
+    ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    # create a service
-    docker_service = await create_service(
-        task_template | create_task_reservations(4, docker_service_ram),
-        service_monitored_labels,
-        "pending",
-        (
-            [
-                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ docker_service_imposed_ec2_type}"
-            ]
-            if docker_service_imposed_ec2_type
-            else []
-        ),
+    assert (
+        scale_up_params.expected_num_instances == 1
+    ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
+
+    # create the service(s)
+    created_docker_services = await asyncio.gather(
+        *(
+            create_service(
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params.service_resources.cpus),
+                    scale_up_params.service_resources.ram,
+                ),
+                service_monitored_labels
+                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+                "pending",
+                (
+                    [
+                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
+                    ]
+                    if scale_up_params.imposed_instance_type
+                    else []
+                ),
+            )
+            for _ in range(scale_up_params.num_services)
+        )
     )
 
     # this should trigger a scaling up as we have no nodes
@@ -472,12 +419,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # check the instance was started and we have exactly 1
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -491,7 +439,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         app_settings,
         initialized_app,
         instances_running=0,
-        instances_pending=1,
+        instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -513,7 +461,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
         )
-    } | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type}
+    } | {
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
+    }
     fake_attached_node.Spec.Labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
@@ -580,14 +530,15 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_set_node_availability.assert_not_called()
 
     # check the number of instances did not change and is still running
-    instances: list[InstanceTypeDef] = await _assert_ec2_instances(
+    instances = await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
-    assert len(instances) == 1
+    assert len(instances) == scale_up_params.expected_num_instances
     assert "PrivateDnsName" in instances[0]
     internal_dns_name = instances[0]["PrivateDnsName"].removesuffix(".ec2.internal")
 
@@ -599,8 +550,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=1,
-        nodes_active=1,
+        nodes_total=scale_up_params.expected_num_instances,
+        nodes_active=scale_up_params.expected_num_instances,
         cluster_total_resources={
             "cpus": fake_attached_node.Description.Resources.NanoCPUs / 1e9,
             "ram": fake_attached_node.Description.Resources.MemoryBytes,
@@ -609,7 +560,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
             "cpus": float(0),
             "ram": 0,
         },
-        instances_running=1,
+        instances_running=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -642,12 +593,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_not_called()
     mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # check rabbit messages were sent
@@ -658,17 +610,23 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     #
     # 4. now scaling down by removing the docker service
     #
-    assert docker_service.ID
-    await async_docker_client.services.delete(docker_service.ID)
-    #
+    await asyncio.gather(
+        *(
+            async_docker_client.services.delete(d.ID)
+            for d in created_docker_services
+            if d.ID
+        )
+    )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     # check the number of instances did not change and is still running
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     # the node shall be waiting before draining
     mock_docker_set_node_availability.assert_not_called()
@@ -732,12 +690,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
 
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # we artifically set the node to drain
@@ -761,12 +720,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_not_called()
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # now changing the last update timepoint will trigger the node removal process
@@ -778,12 +738,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # first making sure the node is drained, then terminate it after a delay to let it drain
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_not_called()
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
@@ -810,22 +771,101 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mocked_docker_remove_node.assert_called_once_with(
         mock.ANY, nodes=[fake_attached_node], force=True
     )
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="terminated",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="terminated",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
 
-@dataclass(frozen=True)
-class _ScaleUpParams:
-    imposed_instance_type: str | None
-    service_resources: Resources
-    num_services: int
-    expected_instance_type: str
-    expected_num_instances: int
+@pytest.mark.acceptance_test()
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined",
+        ),
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="t2.xlarge",
+                service_resources=Resources(cpus=4, ram=parse_obj_as(ByteSize, "4Gib")),
+                num_services=1,
+                expected_instance_type="t2.xlarge",
+                expected_num_instances=1,
+            ),
+            id="Explicitely ask for t2.xlarge",
+        ),
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                service_resources=Resources(
+                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="Explicitely ask for r5n.8xlarge",
+        ),
+    ],
+)
+async def test_cluster_scaling_up_and_down(
+    minimal_configuration: None,
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    ec2_client: EC2Client,
+    mock_docker_tag_node: mock.Mock,
+    fake_node: Node,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    mocker: MockerFixture,
+    async_docker_client: aiodocker.Docker,
+    with_drain_nodes_labelled: bool,
+    ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
+):
+    await _test_cluster_scaling_up_and_down(
+        service_monitored_labels=service_monitored_labels,
+        osparc_docker_label_keys=osparc_docker_label_keys,
+        app_settings=app_settings,
+        initialized_app=initialized_app,
+        create_service=create_service,
+        task_template=task_template,
+        create_task_reservations=create_task_reservations,
+        ec2_client=ec2_client,
+        mock_docker_tag_node=mock_docker_tag_node,
+        fake_node=fake_node,
+        mock_rabbitmq_post_message=mock_rabbitmq_post_message,
+        mock_find_node_with_name_returns_fake_node=mock_find_node_with_name_returns_fake_node,
+        mock_docker_set_node_availability=mock_docker_set_node_availability,
+        mock_compute_node_used_resources=mock_compute_node_used_resources,
+        mocker=mocker,
+        async_docker_client=async_docker_client,
+        with_drain_nodes_labelled=with_drain_nodes_labelled,
+        ec2_instance_custom_tags=ec2_instance_custom_tags,
+        scale_up_params=scale_up_params,
+    )
 
 
 @pytest.mark.parametrize(
@@ -858,7 +898,7 @@ class _ScaleUpParams:
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
@@ -875,6 +915,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_docker_set_node_availability: mock.Mock,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -910,12 +951,13 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     )
 
     # check the instances were started
-    await _assert_ec2_instances(
+    await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=scale_up_params.expected_num_instances,
-        instance_type=scale_up_params.expected_instance_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -962,6 +1004,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     short_ec2_instance_max_start_time: datetime.timedelta,
+    ec2_instance_custom_tags: dict[str, str],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -990,12 +1033,13 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
     # check the instance was started and we have exactly 1
-    instances = await _assert_ec2_instances(
+    instances = await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
+        expected_num_reservations=1,
+        expected_num_instances=1,
+        expected_instance_type=expected_ec2_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -1031,12 +1075,13 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
         # there should be no scaling up, since there is already a pending instance
-        instances = await _assert_ec2_instances(
+        instances = await assert_autoscaled_dynamic_ec2_instances(
             ec2_client,
-            num_reservations=1,
-            num_instances=1,
-            instance_type=expected_ec2_type,
-            instance_state="running",
+            expected_num_reservations=1,
+            expected_num_instances=1,
+            expected_instance_type=expected_ec2_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
         )
         assert mock_find_node_with_name_returns_none.call_count == i + 1
         mock_docker_tag_node.assert_not_called()

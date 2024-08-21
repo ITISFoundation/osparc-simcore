@@ -12,11 +12,11 @@ describe('Calls after logging in', () => {
     await auto.register(page, user, pass);
     await page.waitFor(1000);
   }, ourTimeout);
-  
+
   afterAll(async () => {
     await auto.logOut(page);
   }, ourTimeout);
-  
+
   test('Profile', async () => {
     const responseEnv = await utils.fetchReq('me');
     expect(responseEnv.data["login"]).toBe(user);
@@ -33,9 +33,10 @@ describe('Calls after logging in', () => {
   }, ourTimeout);
 
   test('Services', async () => {
-    const responseEnv = await utils.fetchReq('catalog/services');
-    expect(Array.isArray(responseEnv.data)).toBeTruthy();
-    expect(responseEnv.data.length).toBeGreaterThan(0);
+    const responseEnv = await utils.fetchReq('catalog/services/-/latest');
+    expect(responseEnv.data._meta.total).toBeGreaterThan(0);
+    expect(Array.isArray(responseEnv.data.data)).toBeTruthy();
+    expect(responseEnv.data.data.length).toBeGreaterThan(0);
   }, ourTimeout);
 
   test('Locations', async () => {

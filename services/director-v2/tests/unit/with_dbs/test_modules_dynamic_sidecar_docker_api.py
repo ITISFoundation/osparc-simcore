@@ -22,7 +22,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
@@ -56,7 +56,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     GenericDockerError,
 )
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 

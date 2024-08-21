@@ -10,7 +10,7 @@ from types import ModuleType
 from typing import Any
 
 import pytest
-from pytest_simcore.helpers.utils_environs import eval_service_environ
+from pytest_simcore.helpers.deprecated_environs import eval_service_environ
 from servicelib.aiohttp.application_setup import is_setup_function
 
 
@@ -63,11 +63,10 @@ def app_submodules_with_setup_funs(package_dir: Path) -> set[ModuleType]:
             name = ".".join(path.relative_to(package_dir).parts).replace(".py", "")
             module = importlib.import_module("." + name, package_dir.name)
             # NOTE: application import ALL
-            if module.__name__ != "simcore_service_webserver.application":
-                if "director" in name:
-                    print(name)
-                if any(inspect.getmembers(module, is_setup_function)):
-                    modules.add(module)
+            if module.__name__ != "simcore_service_webserver.application" and any(
+                inspect.getmembers(module, is_setup_function)
+            ):
+                modules.add(module)
 
     assert modules, "Expected subsystem setup modules"
     return modules

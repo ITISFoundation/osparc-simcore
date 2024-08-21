@@ -21,7 +21,7 @@ from ..wallets.errors import WalletAccessForbiddenError
 from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from .exceptions import ProjectNotFoundError
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def _handle_project_wallet_exceptions(handler: Handler):
         except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except WalletAccessForbiddenError as exc:
+        except (WalletAccessForbiddenError, ProjectInvalidRightsError) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper

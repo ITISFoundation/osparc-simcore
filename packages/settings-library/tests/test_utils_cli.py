@@ -12,16 +12,16 @@ import pytest
 import typer
 from dotenv import dotenv_values
 from pydantic import Field, SecretStr
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
-    create_json_encoder_wo_secrets,
     create_settings_command,
     create_version_callback,
     print_as_envfile,
     print_as_json,
 )
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)

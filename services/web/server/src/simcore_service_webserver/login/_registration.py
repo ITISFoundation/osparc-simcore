@@ -74,7 +74,9 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: ConfirmationAction
-    data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
+    data: Json[  # type: ignore[type-arg] # pydantic upgrade to 1.10 needed # pylint: disable=unsubscriptable-object
+        InvitationData
+    ]
 
     @validator("action", pre=True)
     @classmethod
@@ -136,10 +138,10 @@ async def check_other_registrations(
                 )
                 if drop_previous_registration:
                     if not _confirmation:
-                        await db.delete_user(user=user)
+                        await db.delete_user(user=dict(user))
                     else:
                         await db.delete_confirmation_and_user(
-                            user=user, confirmation=_confirmation
+                            user=dict(user), confirmation=_confirmation
                         )
 
                     _logger.warning(
@@ -276,7 +278,7 @@ async def check_and_consume_invitation(
     # database-type invitations
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation_data: InvitationData = _InvitationValidator.parse_obj(
+            invitation_data: InvitationData = _InvitationValidator.parse_obj(  # type: ignore[assignment] # need to update pydantic
                 confirmation_token
             ).data
             return invitation_data

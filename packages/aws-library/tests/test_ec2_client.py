@@ -3,18 +3,21 @@
 # pylint:disable=redefined-outer-name
 
 
+import random
 from collections.abc import AsyncIterator, Callable
+from dataclasses import fields
 from typing import cast, get_args
 
 import botocore.exceptions
 import pytest
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.errors import (
+from aws_library.ec2._client import SimcoreEC2API
+from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2TooManyInstancesError,
 )
-from aws_library.ec2.models import (
+from aws_library.ec2._models import (
+    AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -135,7 +138,9 @@ async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
     faker: Faker,
 ):
     with pytest.raises(EC2InstanceTypeInvalidError):
-        await simcore_ec2_api.get_ec2_instance_capabilities(set(faker.pystr()))
+        await simcore_ec2_api.get_ec2_instance_capabilities(
+            faker.pyset(allowed_types=(str,))
+        )
 
 
 @pytest.fixture(params=_ec2_allowed_types())
@@ -183,7 +188,7 @@ async def _assert_instances_in_ec2(
             assert instance["State"]["Name"] == expected_state
 
 
-async def test_start_aws_instance(
+async def test_launch_instances(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     ec2_instance_config: EC2InstanceConfig,
@@ -193,7 +198,7 @@ async def test_start_aws_instance(
     number_of_instances = 1
 
     # let's create a first reservation and check that it is correctly created in EC2
-    await simcore_ec2_api.start_aws_instance(
+    await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=number_of_instances,
         number_of_instances=number_of_instances,
@@ -208,7 +213,7 @@ async def test_start_aws_instance(
     )
 
     # create a second reservation
-    await simcore_ec2_api.start_aws_instance(
+    await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=number_of_instances,
         number_of_instances=number_of_instances,
@@ -224,7 +229,7 @@ async def test_start_aws_instance(
 
 
 @pytest.mark.parametrize("max_num_instances", [13])
-async def test_start_aws_instance_is_limited_in_number_of_instances(
+async def test_launch_instances_is_limited_in_number_of_instances(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     ec2_instance_config: EC2InstanceConfig,
@@ -234,7 +239,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
 
     # create many instances in one go shall fail
     with pytest.raises(EC2TooManyInstancesError):
-        await simcore_ec2_api.start_aws_instance(
+        await simcore_ec2_api.launch_instances(
             ec2_instance_config,
             min_number_of_instances=max_num_instances + 1,
             number_of_instances=max_num_instances + 1,
@@ -244,7 +249,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
 
     # create instances 1 by 1
     for _ in range(max_num_instances):
-        await simcore_ec2_api.start_aws_instance(
+        await simcore_ec2_api.launch_instances(
             ec2_instance_config,
             min_number_of_instances=1,
             number_of_instances=1,
@@ -261,7 +266,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
 
     # now creating one more shall fail
     with pytest.raises(EC2TooManyInstancesError):
-        await simcore_ec2_api.start_aws_instance(
+        await simcore_ec2_api.launch_instances(
             ec2_instance_config,
             min_number_of_instances=1,
             number_of_instances=1,
@@ -295,7 +300,7 @@ async def test_get_instances(
     # create some instance
     _MAX_NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_MAX_NUM_INSTANCES)
-    created_instances = await simcore_ec2_api.start_aws_instance(
+    created_instances = await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=num_instances,
         number_of_instances=num_instances,
@@ -341,6 +346,72 @@ async def test_get_instances(
             assert not instance_received
 
 
+async def test_stop_start_instances(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    ec2_instance_config: EC2InstanceConfig,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    _NUM_INSTANCES = 10
+    num_instances = faker.pyint(min_value=1, max_value=_NUM_INSTANCES)
+    created_instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # stop the instances
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+    # stop again is ok
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+    # start the instances now
+    started_instances = await simcore_ec2_api.start_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # the public IPs change when the instances are stopped and started
+    for s, c in zip(started_instances, created_instances, strict=True):
+        # the rest shall be the same
+        for f in fields(EC2InstanceData):
+            if f.name == "aws_public_ip":
+                assert getattr(s, f.name) != getattr(c, f.name)
+            else:
+                assert getattr(s, f.name) == getattr(c, f.name)
+
+
 async def test_terminate_instance(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
@@ -352,7 +423,7 @@ async def test_terminate_instance(
     # create some instance
     _NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_NUM_INSTANCES)
-    created_instances = await simcore_ec2_api.start_aws_instance(
+    created_instances = await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=num_instances,
         number_of_instances=num_instances,
@@ -388,6 +459,26 @@ async def test_terminate_instance(
     )
 
 
+async def test_start_instance_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.start_instances([fake_ec2_instance_data()])
+
+
+async def test_stop_instance_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.stop_instances([fake_ec2_instance_data()])
+
+
 async def test_terminate_instance_not_existing_raises(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
@@ -408,7 +499,7 @@ async def test_set_instance_tags(
     # create some instance
     _MAX_NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_MAX_NUM_INSTANCES)
-    created_instances = await simcore_ec2_api.start_aws_instance(
+    created_instances = await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=num_instances,
         number_of_instances=num_instances,
@@ -433,6 +524,33 @@ async def test_set_instance_tags(
         expected_state="running",
     )
 
+    # now remove some, this should do nothing
+    await simcore_ec2_api.remove_instances_tags(
+        created_instances, tag_keys=[AWSTagKey("whatever_i_dont_exist")]
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags | new_tags,
+        expected_state="running",
+    )
+    # now remove some real ones
+    tag_key_to_remove = random.choice(list(new_tags))  # noqa: S311
+    await simcore_ec2_api.remove_instances_tags(
+        created_instances, tag_keys=[tag_key_to_remove]
+    )
+    new_tags.pop(tag_key_to_remove)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags | new_tags,
+        expected_state="running",
+    )
+
 
 async def test_set_instance_tags_not_existing_raises(
     simcore_ec2_api: SimcoreEC2API,
@@ -442,3 +560,15 @@ async def test_set_instance_tags_not_existing_raises(
     await _assert_no_instances_in_ec2(ec2_client)
     with pytest.raises(EC2InstanceNotFoundError):
         await simcore_ec2_api.set_instances_tags([fake_ec2_instance_data()], tags={})
+
+
+async def test_remove_instance_tags_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.remove_instances_tags(
+            [fake_ec2_instance_data()], tag_keys=[]
+        )

@@ -2,14 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB
-from models_library.services import ServiceDockerData, ServiceVersion
-from models_library.services_db import ServiceAccessRightsAtDB
+from models_library.products import ProductName
+from models_library.services import ServiceMetaDataPublished, ServiceVersion
 from pydantic import parse_obj_as
 from simcore_service_catalog.db.repositories.services import ServicesRepository
+from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
 from simcore_service_catalog.services.access_rights import (
     evaluate_auto_upgrade_policy,
     evaluate_default_policy,
@@ -83,13 +84,13 @@ def test_reduce_access_rights():
 async def test_auto_upgrade_policy(
     sqlalchemy_async_engine: AsyncEngine,
     user_groups_ids: list[int],
-    products_names: list[str],
+    target_product: ProductName,
+    other_product: ProductName,
     services_db_tables_injector: Callable,
-    service_catalog_faker: Callable,
+    create_fake_service_data: Callable,
     mocker,
 ):
     everyone_gid, user_gid, team_gid = user_groups_ids
-    target_product = products_names[0]
 
     # Avoids calls to director API
     mocker.patch(
@@ -110,22 +111,22 @@ async def test_auto_upgrade_policy(
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
-    new_service_metadata = ServiceDockerData.parse_obj(
-        ServiceDockerData.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
+    new_service_metadata = ServiceMetaDataPublished.parse_obj(
+        ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = parse_obj_as(ServiceVersion, "1.0.11")
 
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
         [
-            service_catalog_faker(
+            create_fake_service_data(
                 new_service_metadata.key,
                 "1.0.1",
                 team_access=None,
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 new_service_metadata.key,
                 "1.0.9",
                 team_access=None,
@@ -134,19 +135,19 @@ async def test_auto_upgrade_policy(
             ),
             # new release is a patch on released 1.0.X
             # which were released in two different product
-            service_catalog_faker(
+            create_fake_service_data(
                 new_service_metadata.key,
                 "1.0.10",
                 team_access="x",
                 everyone_access=None,
                 product=target_product,
             ),
-            service_catalog_faker(
+            create_fake_service_data(
                 new_service_metadata.key,
                 "1.0.10",
                 team_access="x",
                 everyone_access=None,
-                product=products_names[-1],
+                product=other_product,
             ),
         ]
     )
@@ -185,7 +186,7 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in inherited_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in inherited_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }
 
     # ALL
@@ -196,5 +197,5 @@ async def test_auto_upgrade_policy(
     assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in service_access_rights} == {
         target_product,
-        products_names[-1],
+        other_product,
     }

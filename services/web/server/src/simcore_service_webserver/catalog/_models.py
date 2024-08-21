@@ -1,7 +1,9 @@
+import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final
 
-import cachetools
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -10,6 +12,9 @@ from models_library.api_schemas_webserver.catalog import (
 )
 from models_library.services import BaseServiceIOModel
 from pint import PintError, UnitRegistry
+from pint.quantity import Quantity
+
+_logger = logging.getLogger(__name__)
 
 
 def get_unit_name(port: BaseServiceIOModel) -> str | None:
@@ -41,7 +46,7 @@ def get_html_formatted_unit(
         if unit_name is None:
             return None
 
-        q = ureg.Quantity(unit_name)
+        q: Quantity = ureg.Quantity(unit_name)
         return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
     except (PintError, NotImplementedError):
         return None
@@ -50,33 +55,28 @@ def get_html_formatted_unit(
 #
 # Transforms from catalog api models -> webserver api models
 #
-
-
-# Caching:  https://cachetools.readthedocs.io/en/latest/index.html#cachetools.TTLCache
-# - the least recently used items will be discarded first to make space when necessary.
+# Uses aiocache (async) instead of cachetools (sync) in order to handle concurrency better
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/6169
 #
-
-_CACHE_MAXSIZE: Final = (
-    100  # number of items  i.e. ServiceInputGet/ServiceOutputGet insteances
-)
-_CACHE_TTL: Final = 60  # secs
+_SECOND = 1  # in seconds
+_MINUTE = 60 * _SECOND
+_CACHE_TTL: Final = 1 * _MINUTE
 
 
-def _hash_inputs(
-    service: dict[str, Any],
-    input_key: str,
-    *args,  # noqa: ARG001 # pylint: disable=unused-argument
-    **kwargs,  # noqa: ARG001 # pylint: disable=unused-argument
-):
-    return f"{service['key']}/{service['version']}/{input_key}"
+def _hash_inputs(_f: Callable[..., Any], *_args, **kw):
+    assert not _args  # nosec
+    service: dict[str, Any] = kw["service"]
+    return f"ServiceInputGetFactory_{service['key']}_{service['version']}_{kw['input_key']}"
 
 
 class ServiceInputGetFactory:
     @staticmethod
-    @cachetools.cached(
-        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_inputs
+    @cached(
+        ttl=_CACHE_TTL,
+        key_builder=_hash_inputs,
     )
-    def from_catalog_service_api_model(
+    async def from_catalog_service_api_model(
+        *,
         service: dict[str, Any],
         input_key: ServiceInputKey,
         ureg: UnitRegistry | None = None,
@@ -96,29 +96,27 @@ class ServiceInputGetFactory:
         return port
 
 
-def _hash_outputs(
-    service: dict[str, Any],
-    output_key: str,
-    *args,  # noqa: ARG001 # pylint: disable=unused-argument
-    **kwargs,  # noqa: ARG001 # pylint: disable=unused-argument
-):
-    return f"{service['key']}/{service['version']}/{output_key}"
+def _hash_outputs(_f: Callable[..., Any], *_args, **kw):
+    assert not _args  # nosec
+    service: dict[str, Any] = kw["service"]
+    return f"ServiceOutputGetFactory_{service['key']}/{service['version']}/{kw['output_key']}"
 
 
 class ServiceOutputGetFactory:
     @staticmethod
-    @cachetools.cached(
-        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_outputs
+    @cached(
+        ttl=_CACHE_TTL,
+        key_builder=_hash_outputs,
     )
-    def from_catalog_service_api_model(
+    async def from_catalog_service_api_model(
+        *,
         service: dict[str, Any],
         output_key: ServiceOutputKey,
         ureg: UnitRegistry | None = None,
     ) -> ServiceOutputGet:
         data = service["outputs"][output_key]
         # NOTE: prunes invalid field that might have remained in database
-        if "defaultValue" in data:
-            data.pop("defaultValue")
+        data.pop("defaultValue", None)
 
         # NOTE: this call must be validated if port property type is "ref_contentSchema"
         port = ServiceOutputGet(key_id=output_key, **data)

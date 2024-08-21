@@ -31,7 +31,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _comments_api, projects_api
 from ._common_models import RequestContext
-from .exceptions import ProjectNotFoundError
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +44,8 @@ def _handle_project_comments_exceptions(handler: Handler):
 
         except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -128,7 +130,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
 async def list_project_comments(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
-    query_params = parse_request_query_parameters_as(
+    query_params: _ListProjectCommentsQueryParams = parse_request_query_parameters_as(
         _ListProjectCommentsQueryParams, request
     )
 

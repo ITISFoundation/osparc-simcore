@@ -39,6 +39,7 @@ from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
     PipelineNotFoundError,
+    ProjectNetworkNotFoundError,
     ProjectNotFoundError,
 )
 from .events import on_shutdown, on_startup
@@ -55,6 +56,12 @@ def _set_exception_handlers(app: FastAPI):
         ProjectNotFoundError,
         make_http_error_handler_for_exception(
             status.HTTP_404_NOT_FOUND, ProjectNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        ProjectNetworkNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, ProjectNetworkNotFoundError
         ),
     )
     app.add_exception_handler(
@@ -106,7 +113,9 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers(settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    config_all_loggers(
+        log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED
+    )
     _logger.debug(settings.json(indent=2))
 
     # keep mostly quiet noisy loggers
@@ -152,7 +161,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
+        dynamic_services.setup(app)
 
     dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER

@@ -48,9 +48,9 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -79,7 +79,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import storage as dv2_modules_storage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import TryAgain
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
@@ -678,6 +678,7 @@ async def _fetch_data_via_data_manager(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            aws_s3_cli_settings=None,
         )
 
     return save_to
@@ -893,6 +894,7 @@ async def test_nodeports_integration(
     projects_networks_db: None,
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
+    mock_osparc_variables_api_auth_rpc: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,

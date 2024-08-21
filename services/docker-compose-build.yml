@@ -9,7 +9,6 @@
 #
 # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 #
-version: "3.8"
 services:
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
@@ -260,6 +259,22 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
+
+  efs-guardian:
+    image: local/efs-guardian:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/efs-guardian/Dockerfile
+      cache_from:
+        - local/efs-guardian:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"

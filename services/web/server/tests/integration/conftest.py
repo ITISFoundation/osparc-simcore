@@ -25,14 +25,14 @@ import pytest
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_docker import get_service_published_port
-from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.docker import get_service_published_port
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     delete_user_group,
-    list_user_groups,
+    list_user_groups_with_read_access,
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -47,10 +47,10 @@ def webserver_environ(
     request, docker_stack: dict, simcore_docker_compose: dict
 ) -> dict[str, str]:
     """
-    Started already swarm with integration stack (via dependency with 'docker_stack')
+    This assumes that a swarm was already started with the services' stack that the integration tests need (via dependency with 'docker_stack')
 
-    Environment variable expected for the web-server application in
-    an test-integration context, i.e. web-server runs in host and the
+    Environment variable are expected for the web-server in
+    an test-integration context: i.e. the web-server runs directly on the host and the
     remaining services (defined in variable 'core_services') are deployed
     in containers
     """
@@ -72,7 +72,7 @@ def webserver_environ(
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    EXCLUDED_SERVICES = ["dask-scheduler"]
+    EXCLUDED_SERVICES = ["dask-scheduler", "director"]
     services_with_published_ports = [
         name
         for name in core_services
@@ -181,7 +181,9 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture
 async def primary_group(client, logged_user: UserInfoDict) -> dict[str, str]:
-    primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
+    primary_group, _, _ = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return primary_group
 
 
@@ -222,7 +224,9 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+        _, standard_groups, _ = await list_user_groups_with_read_access(
+            client.app, logged_user["id"]
+        )
 
         yield standard_groups
 
@@ -235,7 +239,9 @@ async def standard_groups(
 
 @pytest.fixture
 async def all_group(client, logged_user) -> dict[str, str]:
-    _, _, all_group = await list_user_groups(client.app, logged_user["id"])
+    _, _, all_group = await list_user_groups_with_read_access(
+        client.app, logged_user["id"]
+    )
     return all_group
 
 

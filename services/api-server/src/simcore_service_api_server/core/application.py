@@ -42,7 +42,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    config_all_loggers(
+        log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED
+    )
     _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # Labeling
@@ -59,7 +61,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         version=version,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
-        redoc_url=None,  # default disabled, see below
+        redoc_url="/doc",
     )
     override_openapi_method(app)
     add_pagination(app)

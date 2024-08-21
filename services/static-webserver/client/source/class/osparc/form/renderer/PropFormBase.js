@@ -120,13 +120,23 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
 
       // add the items
+      let firstLabel = null;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        if (firstLabel === null) {
+          firstLabel = label;
+        }
         label.set({
-          rich: false, // override, required for showing the vut off ellipses
+          // override ``rich``: to false, it is required for showing the cut off ellipsis.
+          // rich: false,
           toolTipText: names[i]
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        label.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap"
         });
         label.setBuddy(item);
         this._add(label, {
@@ -155,6 +165,39 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
         this._connectVisibility(item, label);
       }
+
+      this.addListener("appear", () => this.__makeLabelsResponsive(), this);
+      this.addListener("resize", () => this.__makeLabelsResponsive(), this);
+    },
+
+    __makeLabelsResponsive: function() {
+      const grid = this.getLayout()
+      const firstColumnWidth = osparc.utils.Utils.getGridsFirstColumnWidth(grid);
+      if (firstColumnWidth === null) {
+        // not rendered yet
+        setTimeout(() => this.__makeLabelsResponsive(), 100);
+        return;
+      }
+      const extendedVersion = firstColumnWidth > 300;
+
+      const inputs = this.getNode().getInputs();
+      Object.keys(inputs).forEach((portId, idx) => {
+        if (inputs[portId].description) {
+          this._getLabelFieldChild(portId).child.set({
+            value: extendedVersion ? inputs[portId].label + ". " + inputs[portId].description + ":" : inputs[portId].label,
+            toolTipText: extendedVersion ? inputs[portId].label + "<br>" + inputs[portId].description : inputs[portId].label
+          });
+
+          if (grid.getRowHeight(idx) === 0) {
+            // the port might be hidden
+            this._getInfoFieldChild(portId).child.setVisibility("hidden");
+          } else {
+            this._getInfoFieldChild(portId).child.setVisibility(extendedVersion ? "hidden" : "visible");
+          }
+
+          grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, extendedVersion ? 150 : 50);
+        }
+      });
     },
 
     getValues: function() {
@@ -189,6 +232,38 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         filteredData[portId] = osparc.utils.Units.convertValue(filteredData[portId], ctrl.unitPrefix, unitPrefix);
       });
       return filteredData;
+    },
+
+    evalFieldRequired: function(portId) {
+      const label = this._getLabelFieldChild(portId).child;
+      const inputsRequired = this.getNode().getInputsRequired();
+
+      // add star (*) to the label
+      const requiredSuffix = " *";
+      let newLabel = label.getValue();
+      newLabel = newLabel.replace(requiredSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newLabel += requiredSuffix;
+      }
+      label.setValue(newLabel);
+
+      // add "required" text to the label's tooltip
+      const toolTipSuffix = "<br>" + this.tr("Required input: without it, the service will not start/run.");
+      let newToolTip = label.getToolTipText();
+      newToolTip = newToolTip.replace(toolTipSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newToolTip += toolTipSuffix;
+      }
+      label.setToolTipText(newToolTip);
+
+      // add "required" text to the description
+      const infoButton = this._getInfoFieldChild(portId).child;
+      let newHintText = infoButton.getHintText();
+      newHintText = newHintText.replace(toolTipSuffix, "");
+      if (inputsRequired.includes(portId)) {
+        newHintText += toolTipSuffix;
+      }
+      infoButton.setHintText(newHintText);
     },
 
     getChangedXUnits: function() {

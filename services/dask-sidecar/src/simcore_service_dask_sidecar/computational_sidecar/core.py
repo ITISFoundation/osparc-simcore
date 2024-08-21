@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
+from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from packaging import version
 from pydantic import ValidationError
@@ -92,7 +93,9 @@ class ComputationalSidecar:
                 )
             else:
                 local_input_data_file[input_key] = input_params
-        await asyncio.gather(*download_tasks)
+        # NOTE: temporary solution until new version is created
+        for task in download_tasks:
+            await task
         input_data_file.write_text(json.dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
@@ -176,7 +179,7 @@ class ComputationalSidecar:
             num_steps=3,
             step_weights=[5 / 100, 90 / 100, 5 / 100],
             progress_report_cb=self.task_publishers.publish_progress,
-            description="running",
+            description=IDStr("running"),
         ) as progress_bar:
             # PRE-PROCESSING
             await pull_image(
@@ -217,7 +220,7 @@ class ComputationalSidecar:
                 config,
                 name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
             ) as container, progress_bar.sub_progress(
-                100, description="processing"
+                100, description=IDStr("processing")
             ) as processing_progress_bar, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),

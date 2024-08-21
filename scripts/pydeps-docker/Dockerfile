@@ -8,8 +8,8 @@
 #   - Can be installed with pyenv (SEE pyenv install --list )
 #
 #
-ARG PYTHON_VERSION="3.10.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+ARG PYTHON_VERSION="3.10.14"
+FROM python:${PYTHON_VERSION}-slim-bookworm as base
 
 
 RUN apt-get update \

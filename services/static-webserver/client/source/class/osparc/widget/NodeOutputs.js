@@ -45,9 +45,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     grid.setColumnFlex(this.self().POS.PROBE, 0);
     grid.setColumnMinWidth(this.self().POS.VALUE, 50);
     Object.keys(this.self().POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
-    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid).set({
-      allowGrowX: false
-    });
+    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
     this._add(gridLayout);
 
     this.set({
@@ -56,6 +54,9 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     });
 
     node.addListener("changeOutputs", () => this.__populateGrid(), this);
+
+    this.addListener("appear", () => this.__makeLabelsResponsive(), this);
+    this.addListener("resize", () => this.__makeLabelsResponsive(), this);
   },
 
   properties: {
@@ -97,14 +98,22 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     __populateGrid: function() {
       this.__gridLayout.removeAll();
 
+      const outputs = this.getNode().getOutputs();
       const ports = this.getPorts();
       const portKeys = Object.keys(ports);
       for (let i=0; i<portKeys.length; i++) {
         const portKey = portKeys[i];
         const port = ports[portKey];
 
-        const label = new qx.ui.basic.Label(port.label + " :").set({
+        const label = new qx.ui.basic.Label().set({
+          rich: true,
+          value: port.label + " :",
           toolTipText: port.label
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        label.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap"
         });
         this.__gridLayout.add(label, {
           row: i,
@@ -123,44 +132,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           column: this.self().POS.ICON
         });
 
-        const value = port.value || null;
-        if (value && typeof value === "object") {
-          const valueLink = new osparc.ui.basic.LinkLabel();
-          this.__gridLayout.add(valueLink, {
-            row: i,
-            column: this.self().POS.VALUE
-          });
-          if ("store" in value) {
-            // it's a file
-            const download = true;
-            const locationId = value.store;
-            const fileId = value.path;
-            const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
-            valueLink.setValue(filename);
-            osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
-              .then(presignedLinkData => {
-                if ("resp" in presignedLinkData && presignedLinkData.resp) {
-                  valueLink.setUrl(presignedLinkData.resp.link);
-                }
-              });
-          } else if ("downloadLink" in value) {
-            // it's a link
-            const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
-            valueLink.set({
-              value: filename,
-              url: value.downloadLink
-            });
-          }
-        } else {
-          const valueEntry = new qx.ui.basic.Label("-");
-          if (value) {
-            valueEntry.setValue(String(value));
-          }
-          this.__gridLayout.add(valueEntry, {
-            row: i,
-            column: this.self().POS.VALUE
-          });
-        }
+        const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
+        this.__valueToGrid(value, i);
 
         const unit = new qx.ui.basic.Label(port.unitShort || "");
         this.__gridLayout.add(unit, {
@@ -185,6 +158,74 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           row: i,
           column: this.self().POS.PROBE
         });
+
+        this.__gridLayout.getLayout().setRowHeight(i, 23);
+      }
+    },
+
+    __valueToGrid: function(value, i) {
+      if (value && typeof value === "object") {
+        const valueLink = new osparc.ui.basic.LinkLabel();
+        this.__gridLayout.add(valueLink, {
+          row: i,
+          column: this.self().POS.VALUE
+        });
+        if ("store" in value) {
+          // it's a file
+          const download = true;
+          const locationId = value.store;
+          const fileId = value.path;
+          const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
+          valueLink.setValue(filename);
+          osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+            .then(presignedLinkData => {
+              if ("resp" in presignedLinkData && presignedLinkData.resp) {
+                valueLink.setUrl(presignedLinkData.resp.link);
+              }
+            });
+        } else if ("downloadLink" in value) {
+          // it's a link
+          const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
+          valueLink.set({
+            value: filename,
+            url: value.downloadLink
+          });
+        }
+      } else {
+        const valueEntry = new qx.ui.basic.Label("-");
+        if (value) {
+          valueEntry.setValue(String(value));
+        }
+        this.__gridLayout.add(valueEntry, {
+          row: i,
+          column: this.self().POS.VALUE
+        });
+      }
+    },
+
+    __makeLabelsResponsive: function() {
+      const grid = this.__gridLayout.getLayout();
+      const firstColumnWidth = osparc.utils.Utils.getGridsFirstColumnWidth(grid);
+      if (firstColumnWidth === null) {
+        // not rendered yet
+        setTimeout(() => this.__makeLabelsResponsive(), 100);
+        return;
+      }
+      const extendedVersion = firstColumnWidth > 300;
+
+      const ports = this.getPorts();
+      const portKeys = Object.keys(ports);
+      for (let i=0; i<portKeys.length; i++) {
+        const portKey = portKeys[i];
+        const port = ports[portKey];
+        const label = grid.getCellWidget(i, this.self().POS.LABEL);
+        const infoButton = grid.getCellWidget(i, this.self().POS.INFO);
+        label.set({
+          value: (extendedVersion ? port.label + port.description : port.label) + " :",
+          toolTipText: extendedVersion ? port.label + "<br>" + port.description: port.label
+        });
+        infoButton.setVisibility(extendedVersion ? "hidden" : "visible");
+        grid.setColumnMinWidth(this.self().POS.VALUE, extendedVersion ? 150 : 50);
       }
     }
   }

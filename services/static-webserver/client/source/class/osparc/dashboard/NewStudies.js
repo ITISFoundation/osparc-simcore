@@ -18,10 +18,11 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudies) {
+  construct: function(newStudies, groups) {
     this.base(arguments);
 
     this.__newStudies = newStudies;
+    this.__groups = groups || [];
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -38,18 +39,11 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   properties: {
-    mode: {
-      check: ["grid", "list"],
-      init: "grid",
-      nullable: false,
-      event: "changeMode",
-      apply: "reloadCards"
-    },
-
     groupBy: {
       check: [null, "category"],
       init: null,
-      nullable: true
+      nullable: true,
+      apply: "reloadCards"
     }
   },
 
@@ -57,8 +51,13 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     "newStudyClicked": "qx.event.type.Data"
   },
 
+  statics: {
+    WIDTH: 600
+  },
+
   members: {
     __newStudies: null,
+    __groups: null,
     __flatList: null,
     __groupedContainers: null,
 
@@ -69,10 +68,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
 
-        const categories = new Set([]);
-        this.__newStudies.forEach(newStudy => newStudy.category && categories.add(newStudy.category));
-        Array.from(categories).forEach(category => {
-          const groupContainer = this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent");
+        Array.from(this.__groups).forEach(group => {
+          const groupContainer = this.__createGroupContainer(group.id, group.label, "transparent");
           this._add(groupContainer);
         });
       } else {
@@ -84,7 +81,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         ].forEach(signalName => {
           flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
         });
-        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+        const spacing = osparc.dashboard.GridButtonBase.SPACING;
         this.__flatList.getLayout().set({
           spacingX: spacing,
           spacingY: spacing
@@ -131,8 +128,12 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         headerColor,
         visibility: "excluded"
       });
+      osparc.utils.Utils.setIdToWidget(groupContainer, groupId.toString() + "Group");
       const atom = groupContainer.getChildControl("header");
-      atom.setFont("text-16");
+      atom.set({
+        font: "text-16",
+        maxWidth: this.self().WIDTH
+      });
       this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },
@@ -146,17 +147,14 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createCard: function(templateInfo) {
+      const newStudyClicked = () => this.fireDataEvent("newStudyClicked", templateInfo);
+
       const title = templateInfo.title;
       const desc = templateInfo.description;
-      const mode = this.getMode();
-      const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+      const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        newPlanButton.setWidth(width);
-      }
-      newPlanButton.addListener("execute", () => this.fireDataEvent("newStudyClicked", templateInfo))
+      newPlanButton.addListener("execute", () => newStudyClicked());
       return newPlanButton;
     },
 

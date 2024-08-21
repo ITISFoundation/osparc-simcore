@@ -8,8 +8,8 @@ import os
 import pytest
 from faker import Faker
 from models_library.products import ProductName
+from pytest_simcore.helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
 from simcore_service_invitations.cli import main
 from simcore_service_invitations.core.settings import ApplicationSettings

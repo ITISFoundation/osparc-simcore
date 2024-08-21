@@ -1,5 +1,5 @@
 from textwrap import dedent
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, FastAPI, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
@@ -83,7 +83,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             application_health=application_health,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -112,7 +112,7 @@ async def runs_docker_compose_down_task(
             settings=settings,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -141,7 +141,7 @@ async def state_restore_task(
             app=app,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -170,7 +170,7 @@ async def state_save_task(
             app=app,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -201,7 +201,7 @@ async def ports_inputs_pull_task(
             inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -230,7 +230,7 @@ async def ports_outputs_pull_task(
             app=app,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -257,7 +257,7 @@ async def ports_outputs_push_task(
             app=app,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(
@@ -286,4 +286,4 @@ async def containers_restart_task(
             shared_store=shared_store,
         )
     except TaskAlreadyRunningError as e:
-        return e.managed_task.task_id  # pylint: disable=no-member
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member

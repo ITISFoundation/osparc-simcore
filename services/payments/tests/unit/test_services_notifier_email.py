@@ -15,8 +15,8 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
@@ -37,12 +37,12 @@ from simcore_service_payments.services.notifier_email import (
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
-    docker_compose_service_payments_env_vars: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_env_vars,
+            **docker_compose_service_environment_dict,
             **external_envfile_dict,
         },
     )

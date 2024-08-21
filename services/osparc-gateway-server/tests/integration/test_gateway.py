@@ -7,7 +7,7 @@ import traitlets.config
 from dask_gateway_server.app import DaskGateway
 from faker import Faker
 from osparc_gateway_server.backend.osparc import OsparcBackend
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
 
 
 @pytest.fixture(

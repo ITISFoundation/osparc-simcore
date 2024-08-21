@@ -3,6 +3,7 @@
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
+
 import functools
 import json
 import logging
@@ -28,6 +29,7 @@ from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -51,6 +53,7 @@ from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
+    ProjectCreateHeaders,
     ProjectCreateParams,
     ProjectListWithJsonStrParams,
 )
@@ -112,7 +115,10 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
+    query_params: ProjectCreateParams = parse_request_query_parameters_as(
+        ProjectCreateParams, request
+    )
+    header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
         await check_user_permission(request, "project.template.create")
 
@@ -123,12 +129,13 @@ async def create_project(request: web.Request):
 
     if not request.can_read_body:
         # request w/o body
-        assert query_params.from_study  # nosec
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request
+        project_create: (
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel
+        ) = await parse_request_body_as(
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         )
         predefined_project = (
             project_create.dict(
@@ -141,7 +148,7 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,
+        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -152,10 +159,10 @@ async def create_project(request: web.Request):
         copy_data=query_params.copy_data,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=header_params.simcore_user_agent,
         predefined_project=predefined_project,
+        parent_project_uuid=header_params.parent_project_uuid,
+        parent_node_id=header_params.parent_node_id,
     )
 
 
@@ -174,7 +181,7 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(
+    query_params: ProjectListWithJsonStrParams = parse_request_query_parameters_as(
         ProjectListWithJsonStrParams, request
     )
 
@@ -188,6 +195,7 @@ async def list_projects(request: web.Request):
         offset=query_params.offset,
         search=query_params.search,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
+        folder_id=query_params.folder_id,
     )
 
     page = Page[ProjectDict].parse_obj(
@@ -222,7 +230,9 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPNotFound: If active project is not found
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectActiveParams, request)
+    query_params: ProjectActiveParams = parse_request_query_parameters_as(
+        ProjectActiveParams, request
+    )
 
     try:
         user_active_projects = []
@@ -487,6 +497,7 @@ async def patch_project(request: web.Request):
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         project_patch=project_patch,
+        product_name=req_ctx.product_name,
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
@@ -594,7 +605,7 @@ async def clone_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,
+        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -609,4 +620,6 @@ async def clone_project(request: web.Request):
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
         predefined_project=None,
+        parent_project_uuid=None,
+        parent_node_id=None,
     )

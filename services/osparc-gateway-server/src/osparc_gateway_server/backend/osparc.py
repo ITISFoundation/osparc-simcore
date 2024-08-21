@@ -7,8 +7,10 @@ from typing import Any
 import osparc_gateway_server
 from aiodocker import Docker
 from aiodocker.exceptions import DockerContainerError
-from dask_gateway_server.backends.base import PublicException
-from dask_gateway_server.backends.db_base import (
+from dask_gateway_server.backends.base import (  # type: ignore[import-untyped]
+    PublicException,
+)
+from dask_gateway_server.backends.db_base import (  # type: ignore[import-untyped]
     Cluster,
     DBBackendBase,
     JobStatus,
@@ -17,8 +19,8 @@ from dask_gateway_server.backends.db_base import (
     islice,
     timestamp,
 )
-from osparc_gateway_server.remote_debug import setup_remote_debugging
 
+from ..remote_debug import setup_remote_debugging
 from .errors import NoHostFoundError, NoServiceTasksError, TaskNotAssignedError
 from .settings import AppSettings, BootModeEnum
 from .utils import (
@@ -38,17 +40,15 @@ from .utils import (
 #
 # https://patorjk.com/software/taag/#p=display&v=0&f=Avatar&t=osparc-gateway-server
 #
-WELCOME_MSG = r"""
+WELCOME_MSG = rf"""
  ____  ____  ____  ____  ____  ____       ____  ____  ____  _  __      _____ ____  _____  _____ _      ____ ___  _      ____  _____ ____  _     _____ ____
 /  _ \/ ___\/  __\/  _ \/  __\/   _\     /  _ \/  _ \/ ___\/ |/ /     /  __//  _ \/__ __\/  __// \  /|/  _ \\  \//     / ___\/  __//  __\/ \ |\/  __//  __\
 | / \||    \|  \/|| / \||  \/||  / _____ | | \|| / \||    \|   /_____ | |  _| / \|  / \  |  \  | |  ||| / \| \  /_____ |    \|  \  |  \/|| | //|  \  |  \/|
 | \_/|\___ ||  __/| |-|||    /|  \_\____\| |_/|| |-||\___ ||   \\____\| |_//| |-||  | |  |  /_ | |/\||| |-|| / / \____\\___ ||  /_ |    /| \// |  /_ |    /
-\____/\____/\_/   \_/ \|\_/\_\\____/     \____/\_/ \|\____/\_|\_\     \____\\_/ \|  \_/  \____\\_/  \|\_/ \|/_/        \____/\____\\_/\_\\__/  \____\\_/\_\ {}
+\____/\____/\_/   \_/ \|\_/\_\\____/     \____/\_/ \|\____/\_|\_\     \____\\_/ \|  \_/  \____\\_/  \|\_/ \|/_/        \____/\____\\_/\_\\__/  \____\\_/\_\ {version(osparc_gateway_server.package_name)}
 
 
-""".format(
-    version(osparc_gateway_server.package_name)
-)
+"""
 
 
 class OsparcBackend(DBBackendBase):
@@ -63,7 +63,7 @@ class OsparcBackend(DBBackendBase):
     cluster_secrets: list[DockerSecret] = []
 
     async def do_setup(self) -> None:
-        self.settings = AppSettings()
+        self.settings = AppSettings()  # type: ignore[call-arg]
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.info(
             "osparc-gateway-server application settings:\n%s",
@@ -318,12 +318,11 @@ class OsparcBackend(DBBackendBase):
                     JobStatus.STOPPED if worker.close_expected else JobStatus.FAILED
                 )
                 target_updates.append((worker, {"target": target}))
+            elif worker.status == JobStatus.SUBMITTED:
+                submitted_workers.append(worker)
             else:
-                if worker.status == JobStatus.SUBMITTED:
-                    submitted_workers.append(worker)
-                else:
-                    assert worker.status == JobStatus.CREATED
-                    created_workers.append(worker)
+                assert worker.status == JobStatus.CREATED
+                created_workers.append(worker)
 
         n_pending = len(created_workers) + len(submitted_workers)
         n_to_stop = len(active_workers) + n_pending - count

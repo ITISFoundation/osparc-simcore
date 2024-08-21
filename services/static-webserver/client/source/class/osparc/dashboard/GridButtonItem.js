@@ -241,7 +241,16 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("subtitle-icon");
-        this._evaluateShareIcon(shareIcon, value);
+        shareIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this.openAccessRights();
+        }, this);
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
+
+        if (this.isResourceType("study")) {
+          this._setStudyPermissions(value);
+        }
       }
     },
 
@@ -252,8 +261,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
+          tagUI.set({
+            font: "text-12",
+            toolTipText: this.tr("Click to filter by this Tag")
+          });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
-          tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });
       }

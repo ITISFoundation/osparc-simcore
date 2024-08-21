@@ -1,6 +1,10 @@
 import logging
 import string
-from typing import Any, ClassVar, Pattern  # noqa: UP035
+from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
+    Any,
+    ClassVar,
+    Pattern,
+)
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -20,6 +24,7 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
+from sqlalchemy import Column
 
 from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
@@ -143,9 +148,11 @@ class Product(BaseModel):
                     },
                     # defaults from sqlalchemy table
                     **{
-                        str(c.name): c.server_default.arg
+                        str(c.name): c.server_default.arg  # type: ignore[union-attr]
                         for c in products.columns
-                        if c.server_default and isinstance(c.server_default.arg, str)
+                        if isinstance(c, Column)
+                        and c.server_default
+                        and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                     },
                 },
                 # Example of data in the dabase with a url set with blanks

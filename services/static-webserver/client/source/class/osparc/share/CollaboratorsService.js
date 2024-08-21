@@ -34,17 +34,11 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this._resourceType = "service";
     const serviceDataCopy = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    if (serviceData.resourceType === "service") {
-      osparc.data.Roles.createServicesRolesResourceInfo();
-    }
+    const initCollabs = [];
+    initCollabs.push(this.self().getEveryoneProductObj());
+    initCollabs.push(this.self().getEveryoneObj());
 
-    const initCollabs = this.self().getEveryoneObj();
-
-    this.base(arguments, serviceDataCopy, [initCollabs]);
-  },
-
-  events: {
-    "updateAccessRights": "qx.event.type.Data"
+    this.base(arguments, serviceDataCopy, initCollabs);
   },
 
   statics: {
@@ -52,38 +46,42 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       let canWrite = false;
       for (let i=0; i<gIds.length && !canWrite; i++) {
         const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["write_access"] : false;
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
       return canWrite;
     },
 
     getCollaboratorAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": false
+        "execute": true,
+        "write": false
       };
     },
 
     getOwnerAccessRight: function() {
       return {
-        "execute_access": true,
-        "write_access": true
+        "execute": true,
+        "write": true
       };
     },
 
+    getEveryoneProductObj: function() {
+      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
+      everyone["accessRights"] = this.getCollaboratorAccessRight();
+      return everyone;
+    },
+
     getEveryoneObj: function() {
-      const everyone = osparc.share.Collaborators.getEveryoneObj();
+      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
+      const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
       everyone["accessRights"] = this.getCollaboratorAccessRight();
       return everyone;
     }
   },
 
   members: {
-    _canIWrite: function() {
-      return osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
-    },
-
-    _addEditors: function(gids, cb) {
+    _addEditors: function(gids) {
       if (gids.length === 0) {
         return;
       }
@@ -92,7 +90,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       gids.forEach(gid => {
         newAccessRights[gid] = this.self().getCollaboratorAccessRight();
       });
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy)
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
@@ -103,9 +101,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
-        })
-        .finally(() => cb());
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding editor(s)"), "ERROR");
+        });
     },
 
     _deleteMember: function(collaborator, item) {
@@ -122,7 +119,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -142,7 +139,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.info.ServiceUtils.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);

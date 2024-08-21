@@ -11,7 +11,7 @@ from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange, RabbitRouter
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 
 from ._base_deferred_handler import (
@@ -116,7 +116,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
-        scheduler_redis_sdk: RedisClientSDKHealthChecked,
+        scheduler_redis_sdk: RedisClientSDK,
         *,
         globals_context: GlobalsContext,
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
@@ -139,7 +139,9 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         # NOTE: do not move this to a function, must remain in constructor
         # otherwise the calling_module will be this one instead of the actual one
-        calling_module_name = inspect.getmodule(inspect.stack()[1][0]).__name__
+        calling_module = inspect.getmodule(inspect.stack()[1][0])
+        assert calling_module  # nosec
+        calling_module_name = calling_module.__name__
 
         # NOTE: RabbitMQ queues and exchanges are prefix by this
         self._global_resources_prefix = f"{calling_module_name}"
@@ -217,9 +219,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                     logging.DEBUG,
                     f"Remove `start` patch for {class_unique_reference}",
                 ):
-                    subclass.start = (  # type: ignore
-                        subclass.start.original_start  # type: ignore
-                    )
+                    subclass.start = subclass.start.original_start
 
             if isinstance(subclass.cancel, _PatchCancelDeferred):
                 with log_context(

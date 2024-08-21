@@ -258,16 +258,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
-        view = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+        view = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
         const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);
       } else {
         if (node.isFilePicker()) {
-          view = new osparc.node.FilePickerSSView();
+          view = new osparc.node.slideshow.FilePickerView();
           view.getOutputsButton().hide();
         } else {
-          view = new osparc.node.NodeView();
+          view = new osparc.node.slideshow.NodeView();
         }
         view.setNode(node);
         if (node.isDynamic()) {
@@ -364,6 +364,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     startSlides: function() {
       // If the study is not initialized this will fail
       if (!this.isPropertyInitialized("study")) {
+        console.error("study is not initialized");
         return;
       }
       const study = this.getStudy();

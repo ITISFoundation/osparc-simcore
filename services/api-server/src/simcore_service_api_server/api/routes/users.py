@@ -18,8 +18,9 @@ _USER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "User not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 
 @router.get("", response_model=Profile, responses=_USER_STATUS_CODES)
@@ -37,5 +38,5 @@ async def update_my_profile(
         AuthSession, Security(get_webserver_session, scopes=["write"])
     ],
 ) -> Profile:
-    profile: Profile = await webserver_session.update_me(profile_update)
+    profile: Profile = await webserver_session.update_me(profile_update=profile_update)
     return profile

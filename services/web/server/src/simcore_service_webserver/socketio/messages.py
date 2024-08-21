@@ -11,7 +11,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.logging_utils import log_catch
-from socketio import AsyncServer
+from socketio import AsyncServer  # type: ignore[import-untyped]
 
 from ._utils import get_socket_server
 
@@ -51,6 +51,7 @@ async def _safe_emit(
             room=room,
             ignore_queue=ignore_queue,
         )
+        _logger.info("emitted socketio event '%s' to room '%s'", event, room)
 
 
 async def send_message_to_user(

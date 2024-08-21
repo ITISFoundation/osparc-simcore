@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, cast
 
 import aiodocker
 import yaml
@@ -59,7 +59,7 @@ async def _get_container(
     docker: aiodocker.Docker, container_name: str
 ) -> DockerContainer | None:
     try:
-        return await docker.containers.get(container_name)
+        return cast(DockerContainer, await docker.containers.get(container_name))
     except aiodocker.DockerError as e:
         if e.status == http_status.HTTP_404_NOT_FOUND:
             return None

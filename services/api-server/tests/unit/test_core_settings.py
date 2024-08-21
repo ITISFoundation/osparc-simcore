@@ -4,7 +4,7 @@
 
 
 import pytest
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     delenvs_from_dict,
     setenvs_from_dict,

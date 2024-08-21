@@ -2,10 +2,10 @@
 
 """
 
-from pydantic import BaseModel, Field
-from pydantic.types import PositiveInt
+from pydantic import BaseModel, Extra, Field
 
-GroupId = PositiveInt
+from .users import GroupID
+from .utils.change_case import snake_to_camel
 
 
 class ServiceGroupAccessRights(BaseModel):
@@ -18,8 +18,18 @@ class ServiceGroupAccessRights(BaseModel):
     )
 
 
+class ServiceGroupAccessRightsV2(BaseModel):
+    execute: bool = False
+    write: bool = False
+
+    class Config:
+        alias_generator = snake_to_camel
+        allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
 class ServiceAccessRights(BaseModel):
-    access_rights: dict[GroupId, ServiceGroupAccessRights] | None = Field(
+    access_rights: dict[GroupID, ServiceGroupAccessRights] | None = Field(
         None,
         alias="accessRights",
         description="service access rights per group id",

@@ -2,7 +2,6 @@
     Models Node as a central element in a project's pipeline
 """
 
-import re
 from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias, Union
 
@@ -18,7 +17,7 @@ from pydantic import (
     validator,
 )
 
-from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
+from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -29,15 +28,14 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import PROPERTY_KEY_RE, ServiceKey, ServiceVersion
-
-# NOTE: WARNING the order here matters
+from .services import ServiceKey, ServiceVersion
 
 InputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
+    Json,
     str,
     PortLink,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
@@ -45,19 +43,16 @@ InputTypes = Union[
     list[Any] | dict[str, Any],  # arrays | object
 ]
 OutputTypes = Union[
+    # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,  # TODO: remove when OM sends object/array instead of json-formatted strings
+    Json,
     str,
     SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
     DownloadLink,
     list[Any] | dict[str, Any],  # arrays | object
 ]
-
-
-class KeyIDStr(ConstrainedStr):
-    regex = re.compile(PROPERTY_KEY_RE)
 
 
 InputID: TypeAlias = KeyIDStr
@@ -237,6 +232,7 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
         # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod

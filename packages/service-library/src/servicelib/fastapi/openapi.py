@@ -64,7 +64,7 @@ _SKIP = (
     "examples",
     # SEE openapi-standard: https://swagger.io/docs/specification/adding-examples/
     # - exampleS are Dicts and not Lists
-    "patternProperties"
+    "patternProperties",
     # SEE Unsupported openapi-standard: https://swagger.io/docs/specification/data-models/keywords/?sbsearch=patternProperties
     # SEE https://github.com/OAI/OpenAPI-Specification/issues/687
     # SEE https://json-schema.org/understanding-json-schema/reference/object.html#pattern-properties
@@ -145,9 +145,11 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
 
 def override_fastapi_openapi_method(app: FastAPI):
     # pylint: disable=protected-access
-    app._original_openapi = types.MethodType(
-        copy_func(app.openapi), app
-    )  # noqa: SLF001
+    setattr(  # noqa: B010
+        app,
+        "_original_openapi",
+        types.MethodType(copy_func(app.openapi), app),
+    )
 
     def _custom_openapi_method(self: FastAPI) -> dict:
         """Overrides FastAPI.openapi member function
@@ -155,10 +157,12 @@ def override_fastapi_openapi_method(app: FastAPI):
         """
         # NOTE: see fastapi.applications.py:FastApi.openapi(self) implementation
         if not self.openapi_schema:
-            self.openapi_schema = self._original_openapi()
+            self.openapi_schema = self._original_openapi()  # type: ignore[attr-defined]
+            assert self.openapi_schema is not None  # nosec
             patch_openapi_specs(self.openapi_schema)
 
-        output: dict = self.openapi_schema
+        output = self.openapi_schema
+        assert self.openapi_schema is not None  # nosec
         return output
 
-    app.openapi = types.MethodType(_custom_openapi_method, app)
+    setattr(app, "openapi", types.MethodType(_custom_openapi_method, app))  # noqa: B010

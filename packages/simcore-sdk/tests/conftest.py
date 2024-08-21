@@ -10,8 +10,8 @@ from typing import Any
 
 import pytest
 import simcore_sdk
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -21,6 +21,7 @@ sys.path.append(str(current_dir / "helpers"))
 pytest_plugins = [
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
+    "pytest_simcore.disk_usage_monitoring",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",
@@ -31,7 +32,6 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 

@@ -1,12 +1,14 @@
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Coroutine, Mapping
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, NamedTuple, TypeAlias
+from inspect import signature
+from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
 
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
 from ..models.schemas.errors import ErrorGet
 
@@ -48,30 +50,23 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, ToApiTuple]
+E = TypeVar("E", bound=BaseBackEndError)
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, E]
 
 
 def _get_http_exception_kwargs(
     service_name: str,
     service_error: httpx.HTTPStatusError,
     http_status_map: HttpStatusMap,
-    **detail_kwargs: Any,
+    **exception_ctx: Any,
 ):
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if mapped := http_status_map.get(service_error.response.status_code):
-        in_api = ToApiTuple(*mapped)
-        status_code = in_api.status_code
-        if in_api.detail:
-            if callable(in_api.detail):
-                detail = f"{in_api.detail(detail_kwargs)}."
-            else:
-                detail = in_api.detail
-        else:
-            detail = f"{service_error}."
+    if exception_type := http_status_map.get(service_error.response.status_code):
+        raise exception_type(**exception_ctx)
 
-    elif service_error.response.status_code in {
+    if service_error.response.status_code in {
         status.HTTP_429_TOO_MANY_REQUESTS,
         status.HTTP_503_SERVICE_UNAVAILABLE,
         status.HTTP_504_GATEWAY_TIMEOUT,
@@ -94,13 +89,17 @@ def _get_http_exception_kwargs(
     return status_code, detail, headers
 
 
+Self = TypeVar("Self")
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
 @contextmanager
 def service_exception_handler(
     service_name: str,
     http_status_map: HttpStatusMap,
-    **endpoint_kwargs,
+    **context,
 ):
-    #
     status_code: int
     detail: str
     headers: dict[str, str] = {}
@@ -121,7 +120,7 @@ def service_exception_handler(
     except httpx.HTTPStatusError as exc:
 
         status_code, detail, headers = _get_http_exception_kwargs(
-            service_name, exc, http_status_map=http_status_map, **endpoint_kwargs
+            service_name, exc, http_status_map=http_status_map, **context
         )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
@@ -131,13 +130,31 @@ def service_exception_handler(
 def service_exception_mapper(
     service_name: str,
     http_status_map: HttpStatusMap,
-):
-    def _decorator(func):
-        @wraps(func)
-        async def _wrapper(*args, **kwargs):
+) -> Callable[
+    [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
+]:
+    def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
+        _assert_correct_kwargs(func=member_func, status_map=http_status_map)
+
+        @wraps(member_func)
+        async def _wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
             with service_exception_handler(service_name, http_status_map, **kwargs):
-                return await func(*args, **kwargs)
+                return await member_func(self, *args, **kwargs)
 
         return _wrapper
 
     return _decorator
+
+
+def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
+    _required_kwargs = {
+        name
+        for name, param in signature(func).parameters.items()
+        if param.kind == param.KEYWORD_ONLY
+    }
+    for exc_type in status_map.values():
+        _exception_inputs = exc_type.named_fields()
+        assert _exception_inputs.issubset(
+            _required_kwargs
+        ), f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"  # nosec

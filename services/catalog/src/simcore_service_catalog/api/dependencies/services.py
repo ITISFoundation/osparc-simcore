@@ -1,34 +1,39 @@
 import logging
-import urllib.parse
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Annotated, cast
 
-from fastapi import Depends, Header, HTTPException, status
-from fastapi.requests import Request
-from models_library.api_schemas_catalog.services import ServiceGet
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_resources import ResourcesDict
+from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
+from servicelib.fastapi.dependencies import get_app
 
 from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
+from ...services import manifest
 from ...services.director import DirectorApi
-from ...services.function_services import get_function_service, is_function_service
 from .database import get_repository
 from .director import get_director_api
 
+_logger = logging.getLogger(__name__)
 
-def get_default_service_resources(request: Request) -> ResourcesDict:
-    app_settings: ApplicationSettings = request.app.state.settings
+
+def get_default_service_resources(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> ResourcesDict:
+    app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_RESOURCES
 
 
-def get_default_service_specifications(request: Request) -> ServiceSpecifications:
-    app_settings: ApplicationSettings = request.app.state.settings
+def get_default_service_specifications(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> ServiceSpecifications:
+    app_settings: ApplicationSettings = app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
 
 
@@ -43,8 +48,12 @@ async def check_service_read_access(
     user_id: int,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
-    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    groups_repository: Annotated[
+        GroupsRepository, Depends(get_repository(GroupsRepository))
+    ],
+    services_repo: Annotated[
+        ServicesRepository, Depends(get_repository(ServicesRepository))
+    ],
     x_simcore_products_name: str = Header(None),
 ) -> AccessInfo:
     # get the user's groups
@@ -74,38 +83,26 @@ async def check_service_read_access(
     )
 
 
-logger = logging.getLogger(__name__)
-
-
-async def get_service_from_registry(
+async def get_service_from_manifest(
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    director_client: DirectorApi = Depends(get_director_api),
-) -> ServiceGet:
+    director_client: Annotated[DirectorApi, Depends(get_director_api)],
+) -> ServiceMetaDataPublished:
     """
     Retrieves service metadata from the docker registry via the director
     """
     try:
-        if is_function_service(service_key):
-            frontend_service: dict[str, Any] = get_function_service(
-                key=service_key, version=service_version
-            )
-            _service_data = frontend_service
-        else:
-            # NOTE: raises HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) on ANY failure
-            services_in_registry = cast(
-                list[Any],
-                await director_client.get(
-                    f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-                ),
-            )
-            _service_data = services_in_registry[0]
-
-        service: ServiceGet = ServiceGet.parse_obj(_service_data)
-        return service
+        return cast(
+            ServiceMetaDataPublished,
+            await manifest.get_service(
+                key=service_key,
+                version=service_version,
+                director_client=director_client,
+            ),
+        )
 
     except ValidationError as exc:
-        logger.warning(
+        _logger.warning(
             "Invalid service metadata in registry. Audit registry data for %s %s",
             f"{service_key=}",
             f"{service_version=}",

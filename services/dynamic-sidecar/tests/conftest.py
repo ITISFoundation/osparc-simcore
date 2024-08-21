@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 
+import json
 import logging
 import sys
 from collections.abc import AsyncIterable, Iterable, Iterator
@@ -21,7 +22,7 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import (
+from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     setenvs_from_dict,
     setenvs_from_envfile,
@@ -39,11 +40,10 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.pytest_socketio",
+    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -182,10 +182,6 @@ def base_mock_envs(
         "DYNAMIC_SIDECAR_SHARED_STORE_DIR": f"{shared_store_dir}",
         # envs on container
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-        "REGISTRY_AUTH": "false",
-        "REGISTRY_USER": "test",
-        "REGISTRY_PW": "test",
-        "REGISTRY_SSL": "false",
         "DY_SIDECAR_RUN_ID": f"{run_id}",
         "DY_SIDECAR_NODE_ID": f"{node_id}",
         "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
@@ -193,6 +189,14 @@ def base_mock_envs(
         "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": json.dumps(
+            {
+                "REGISTRY_AUTH": "false",
+                "REGISTRY_USER": "test",
+                "REGISTRY_PW": "test",
+                "REGISTRY_SSL": "false",
+            }
+        ),
     }
 
 
@@ -249,15 +253,19 @@ def mock_environment(
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "false",
             "RABBIT_USER": "test",
-            "REGISTRY_AUTH": "false",
-            "REGISTRY_PW": "test",
-            "REGISTRY_SSL": "false",
-            "REGISTRY_USER": "test",
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_BUCKET_NAME": faker.pystr(),
             "S3_ENDPOINT": faker.url(),
             "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": faker.pystr(),
+            "DY_DEPLOYMENT_REGISTRY_SETTINGS": json.dumps(
+                {
+                    "REGISTRY_AUTH": "false",
+                    "REGISTRY_USER": "test",
+                    "REGISTRY_PW": "test",
+                    "REGISTRY_SSL": "false",
+                }
+            ),
         },
     )
 
@@ -285,7 +293,7 @@ def caplog_info_debug(
 @pytest.fixture
 def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
-        "simcore_service_dynamic_sidecar.core.registry._is_registry_reachable",
+        "simcore_service_dynamic_sidecar.core.registry._login_registry",
         autospec=True,
     )
 

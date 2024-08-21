@@ -1,3 +1,4 @@
+import argparse
 import json
 import re
 from pathlib import Path
@@ -29,7 +30,23 @@ def anonymize_values(json_key, json_data):
 
 
 def main():
-    for path in Path.cwd().glob("*.json"):
+    parser = argparse.ArgumentParser(description="Anonymizes mocks/*.json files")
+
+    parser.add_argument(
+        "file", nargs="?", type=str, help="The file that will be sanitized"
+    )
+    args = parser.parse_args()
+
+    if args.file:
+        target = Path(args.file)
+        assert target.exists()
+        iter_paths = [
+            target,
+        ]
+    else:
+        iter_paths = Path.cwd().glob("*.json")
+
+    for path in iter_paths:
         print("Anonymizing", path, "...")
         json_data = anonymize_values(None, json.loads(path.read_text()))
         path.write_text(json.dumps(json_data, indent=1))

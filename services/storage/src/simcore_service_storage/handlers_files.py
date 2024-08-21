@@ -56,7 +56,9 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
     f"/{API_VTAG}/locations/{{location_id}}/files/metadata", name="get_files_metadata"
 )
 async def get_files_metadata(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(FilesMetadataQueryParams, request)
+    query_params: FilesMetadataQueryParams = parse_request_query_parameters_as(
+        FilesMetadataQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
         "received call to get_files_metadata with %s",
@@ -66,7 +68,8 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     data: list[FileMetaData] = await dsm.list_files(
         user_id=query_params.user_id,
         expand_dirs=query_params.expand_dirs,
-        uuid_filter=query_params.uuid_filter,
+        uuid_filter=query_params.uuid_filter
+        or f"{query_params.project_id or ''}",  # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/1593
         project_id=query_params.project_id,
     )
     return web.json_response(
@@ -80,7 +83,9 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     name="get_file_metadata",
 )
 async def get_file_metadata(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to get_files_metadata_dataset with %s",
@@ -130,14 +135,16 @@ async def get_file_metadata(request: web.Request) -> web.Response:
             dumps=json_dumps,
         )
 
-    return jsonable_encoder(FileMetaDataGet.from_orm(data))
+    return jsonable_encoder(FileMetaDataGet.from_orm(data))  # type: ignore[no-any-return] # middleware takes care of enveloping
 
 
 @routes.get(
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="download_file"
 )
 async def download_file(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(FileDownloadQueryParams, request)
+    query_params: FileDownloadQueryParams = parse_request_query_parameters_as(
+        FileDownloadQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to download_file with %s",
@@ -181,7 +188,9 @@ async def upload_file(request: web.Request) -> web.Response:
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
-    query_params = parse_request_query_parameters_as(FileUploadQueryParams, request)
+    query_params: FileUploadQueryParams = parse_request_query_parameters_as(
+        FileUploadQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to upload_file with %s",
@@ -221,7 +230,7 @@ async def upload_file(request: web.Request) -> web.Response:
         )
         .with_query(user_id=query_params.user_id)
     )
-    response = FileUploadSchema(
+    v2_response = FileUploadSchema(
         chunk_size=links.chunk_size,
         urls=links.urls,
         links=FileUploadLinks(
@@ -232,8 +241,8 @@ async def upload_file(request: web.Request) -> web.Response:
             ),
         ),
     )
-    log.debug("returning v2 response: %s", response)
-    return jsonable_encoder(response, by_alias=True)
+    log.debug("returning v2 response: %s", v2_response)
+    return jsonable_encoder(v2_response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
 
 
 @routes.post(
@@ -241,7 +250,9 @@ async def upload_file(request: web.Request) -> web.Response:
     name="abort_upload_file",
 )
 async def abort_upload_file(request: web.Request) -> NoReturn:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to abort_upload_file with %s",
@@ -258,7 +269,9 @@ async def abort_upload_file(request: web.Request) -> NoReturn:
     name="complete_upload_file",
 )
 async def complete_upload_file(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     body = await parse_request_body_as(FileUploadCompletionBody, request)
     log.debug(
@@ -278,6 +291,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         ),
     )
     request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
+    assert request.transport  # nosec
     ip_addr, port = request.transport.get_extra_info(
         "sockname"
     )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
@@ -308,7 +322,9 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     name="is_completed_upload_file",
 )
 async def is_completed_upload_file(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(
         FilePathIsUploadCompletedParams, request
     )
@@ -338,7 +354,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
             response = FileUploadCompleteFutureResponse(
                 state=FileUploadCompleteState.NOK
             )
-        return jsonable_encoder(response, by_alias=True)
+        return jsonable_encoder(response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
     # there is no task, either wrong call or storage was restarted
     # we try to get the file to see if it exists in S3
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
@@ -349,7 +365,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
         )
-        return jsonable_encoder(response, by_alias=True)
+        return jsonable_encoder(response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
     raise web.HTTPNotFound(
         reason="Not found. Upload could not be completed. Please try again and contact support if it fails again."
     )
@@ -359,7 +375,9 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
 )
 async def delete_file(request: web.Request) -> NoReturn:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to delete_file with %s",
@@ -373,7 +391,9 @@ async def delete_file(request: web.Request) -> NoReturn:
 
 @routes.post(f"/{API_VTAG}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")
 async def copy_as_soft_link(request: web.Request):
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
+        StorageQueryParamsBase, request
+    )
     path_params = parse_request_path_parameters_as(CopyAsSoftLinkParams, request)
     body = await parse_request_body_as(SoftCopyBody, request)
     log.debug(

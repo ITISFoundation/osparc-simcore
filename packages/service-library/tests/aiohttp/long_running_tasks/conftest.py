@@ -10,12 +10,12 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import BaseModel, parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.long_running_tasks._task import TaskContext
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

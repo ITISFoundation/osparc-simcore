@@ -2,21 +2,21 @@ import logging
 from collections.abc import Iterable
 
 import arrow
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     AWSTagKey,
     AWSTagValue,
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
+    SimcoreEC2API,
 )
+from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.logging_utils import log_context
 
-from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
@@ -88,7 +88,7 @@ async def create_cluster(
         subnet_id=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SUBNET_ID,
         iam_instance_profile=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE,
     )
-    new_ec2_instance_data: list[EC2InstanceData] = await ec2_client.start_aws_instance(
+    new_ec2_instance_data: list[EC2InstanceData] = await ec2_client.launch_instances(
         instance_config,
         min_number_of_instances=1,
         number_of_instances=1,
@@ -127,7 +127,7 @@ async def get_cluster(
     ):
         assert len(instances) == 1  # nosec
         return instances[0]
-    raise Ec2InstanceNotFoundError
+    raise EC2InstanceNotFoundError
 
 
 async def get_cluster_workers(
@@ -140,7 +140,9 @@ async def get_cluster_workers(
             app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
         ],
         tags={
-            "Name": f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            AWSTagKey("Name"): AWSTagValue(
+                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            )
         },
     )
     return ec2_instance_data

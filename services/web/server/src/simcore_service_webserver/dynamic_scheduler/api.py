@@ -5,13 +5,15 @@ from functools import partial
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    RPCDynamicServiceCreate,
+    DynamicServiceStart,
+    DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
     NodeGetIdle,
     NodeGetUnknown,
 )
+from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -42,20 +44,18 @@ async def get_dynamic_service(
 
 
 async def run_dynamic_service(
-    app: web.Application, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
+    app: web.Application, *, dynamic_service_start: DynamicServiceStart
 ) -> DynamicServiceGet | NodeGet:
     return await services.run_dynamic_service(
         get_rabbitmq_rpc_client(app),
-        rpc_dynamic_service_create=rpc_dynamic_service_create,
+        dynamic_service_start=dynamic_service_start,
     )
 
 
 async def stop_dynamic_service(
     app: web.Application,
     *,
-    node_id: NodeID,
-    simcore_user_agent: str,
-    save_state: bool,
+    dynamic_service_stop: DynamicServiceStop,
     progress: ProgressBarData | None = None,
 ) -> None:
     async with AsyncExitStack() as stack:
@@ -65,9 +65,7 @@ async def stop_dynamic_service(
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            save_state=save_state,
+            dynamic_service_stop=dynamic_service_stop,
             timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
 
@@ -111,18 +109,22 @@ async def stop_dynamic_services_in_project(
                     user_id,
                     project_id,
                 ),
-                description="stopping services",
+                description=IDStr("stopping services"),
             )
         )
 
         services_to_stop = [
             stop_dynamic_service(
                 app=app,
-                node_id=service.node_uuid,
-                simcore_user_agent=simcore_user_agent,
-                save_state=save_state,
+                dynamic_service_stop=DynamicServiceStop(
+                    user_id=user_id,
+                    project_id=service.project_id,
+                    node_id=service.node_uuid,
+                    simcore_user_agent=simcore_user_agent,
+                    save_state=save_state,
+                ),
                 progress=progress_bar.sub_progress(
-                    1, description=f"{service.node_uuid}"
+                    1, description=IDStr(f"{service.node_uuid}")
                 ),
             )
             for service in running_dynamic_services

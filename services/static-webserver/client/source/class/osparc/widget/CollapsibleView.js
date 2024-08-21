@@ -221,6 +221,10 @@ qx.Class.define("osparc.widget.CollapsibleView", {
       }
     },
 
+    getInnerContainer: function() {
+      return this._innerContainer;
+    },
+
     _applyCaretSize: function(size) {
       this.getChildControl("caret").setSource(this.__getCaretId(this.getCollapsed()));
     },

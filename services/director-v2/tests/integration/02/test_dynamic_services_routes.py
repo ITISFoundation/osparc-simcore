@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import json
@@ -24,9 +26,9 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -36,7 +38,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -184,6 +186,7 @@ async def director_v2_client(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
+            "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
@@ -302,6 +305,7 @@ async def test_start_status_stop(
     mock_projects_repository: None,
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
+    mock_osparc_variables_api_auth_rpc: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 

@@ -3,7 +3,8 @@ import logging
 from typing import Any
 
 from models_library.projects_state import RunningState
-from models_library.services import SERVICE_KEY_RE, ServiceKeyVersion
+from models_library.services import ServiceKeyVersion
+from models_library.services_regex import SERVICE_KEY_RE
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.utils import logged_gather
@@ -12,7 +13,7 @@ from ..models.comp_tasks import CompTaskAtDB
 from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
 _RUNNING_STATES = (RunningState.STARTED,)

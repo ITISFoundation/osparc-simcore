@@ -9,8 +9,11 @@ import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -78,7 +81,7 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         PYTHON_GET_PIP_SHA256=6123659241292b2147b58922b9ffe11dda66b39d52d8a6f3aa310bc1d60ea6f7
         PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/a1675ab6c2bd898ed82b1f58c486097f763c74a9/public/get-pip.py
         PYTHON_PIP_VERSION=21.1.3
-        PYTHON_VERSION=3.10.10
+        PYTHON_VERSION=3.10.14
         PYTHONDONTWRITEBYTECODE=1
         PYTHONOPTIMIZE=TRUE
         SC_BOOT_MODE=production
@@ -120,7 +123,6 @@ def mock_webserver_service_environment(
     #         - CATALOG_PORT=${CATALOG_PORT:-8000}
     #         - DIAGNOSTICS_MAX_AVG_LATENCY=10
     #         - DIAGNOSTICS_MAX_TASK_DELAY=30
-    #         - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
     #         - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
     #         - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
     #         - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
@@ -137,7 +139,6 @@ def mock_webserver_service_environment(
             "CATALOG_HOST": os.environ.get("CATALOG_HOST", "catalog"),
             "CATALOG_PORT": os.environ.get("CATALOG_PORT", "8000"),
             "DIAGNOSTICS_MAX_AVG_LATENCY": "30",
-            "DIRECTOR_HOST": os.environ.get("DIRECTOR_HOST", "director"),
             "DIRECTOR_PORT": os.environ.get("DIRECTOR_PORT", "8080"),
             "DIRECTOR_V2_HOST": os.environ.get("DIRECTOR_V2_HOST", "director-v2"),
             "DIRECTOR_V2_PORT": os.environ.get("DIRECTOR_V2_PORT", "8000"),
@@ -214,6 +215,9 @@ def test_settings_to_client_statics_plugins(
 
     monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
     disable_plugins.add("WEBSERVER_VERSION_CONTROL")
+
+    monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
+    disable_plugins.add("WEBSERVER_FOLDERS")
 
     settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()

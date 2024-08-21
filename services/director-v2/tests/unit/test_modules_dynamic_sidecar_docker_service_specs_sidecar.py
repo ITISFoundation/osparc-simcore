@@ -5,7 +5,7 @@
 from typing import Any, Final
 
 import pytest
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
@@ -16,6 +16,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
 
 # PLEASE keep alphabetical to simplify debugging
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
+    "DY_DEPLOYMENT_REGISTRY_SETTINGS",
+    "DY_DOCKER_HUB_REGISTRY_SETTINGS",
+    "DY_SIDECAR_AWS_S3_CLI_SETTINGS",
     "DY_SIDECAR_CALLBACKS_MAPPING",
     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
     "DY_SIDECAR_NODE_ID",
@@ -50,12 +53,6 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "RABBIT_PORT",
     "RABBIT_SECURE",
     "RABBIT_USER",
-    "REGISTRY_AUTH",
-    "REGISTRY_PATH",
-    "REGISTRY_PW",
-    "REGISTRY_SSL",
-    "REGISTRY_URL",
-    "REGISTRY_USER",
     "S3_ACCESS_KEY",
     "S3_BUCKET_NAME",
     "S3_ENDPOINT",

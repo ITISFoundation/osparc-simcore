@@ -179,7 +179,21 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __extraInfo: function() {
-      const extraInfo = [{
+      const extraInfo = [];
+
+      if (this.getNodeId()) {
+        extraInfo.push({
+          label: this.tr("SERVICE ID"),
+          view: this.__createNodeId(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyNodeIdToClipboard,
+            ctx: this
+          }
+        });
+      }
+
+      extraInfo.push({
         label: this.tr("KEY"),
         view: this.__createKey(),
         action: {
@@ -187,9 +201,27 @@ qx.Class.define("osparc.info.ServiceLarge", {
           callback: this.__copyKeyToClipboard,
           ctx: this
         }
-      }, {
+      });
+
+      if (osparc.data.Permissions.getInstance().isTester() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        extraInfo.push({
+          label: this.tr("INTEGRATION VERSION"),
+          view: this.__createIntegrationVersion(),
+          action: null
+        });
+      }
+
+      extraInfo.push({
         label: this.tr("VERSION"),
-        view: this.__createVersion(),
+        view: this.__createDisplayVersion(),
+        action: {
+          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
+          callback: this.__openVersionDisplayEditor,
+          ctx: this
+        }
+      }, {
+        label: this.tr("RELEASE DATE"),
+        view: this.__createReleasedDate(),
         action: null
       }, {
         label: this.tr("CONTACT"),
@@ -203,11 +235,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
         label: this.tr("ACCESS RIGHTS"),
         view: this.__createAccessRights(),
         action: {
-          button: osparc.utils.Utils.getEditButton(),
+          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
-      }];
+      });
 
       if (
         osparc.product.Utils.showClassifiers() &&
@@ -217,7 +249,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("CLASSIFIERS"),
           view: this.__createClassifiers(),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           }
@@ -230,23 +262,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
         osparc.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
         extraInfo.push({
-          label: this.tr("QUAILITY"),
+          label: this.tr("QUALITY"),
           view: this.__createQuality(),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
-            ctx: this
-          }
-        });
-      }
-
-      if (this.getNodeId()) {
-        extraInfo.splice(0, 0, {
-          label: this.tr("SERVICE ID"),
-          view: this.__createNodeId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyNodeIdToClipboard,
             ctx: this
           }
         });
@@ -270,8 +290,16 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return osparc.info.ServiceUtils.createKey(this.getService()["key"]);
     },
 
-    __createVersion: function() {
+    __createIntegrationVersion: function() {
       return osparc.info.ServiceUtils.createVersion(this.getService()["version"]);
+    },
+
+    __createDisplayVersion: function() {
+      return osparc.info.ServiceUtils.createVersionDisplay(this.getService()["key"], this.getService()["version"]);
+    },
+
+    __createReleasedDate: function() {
+      return osparc.info.ServiceUtils.createReleasedDate(this.getService()["key"], this.getService()["version"]);
     },
 
     __createContact: function() {
@@ -295,7 +323,23 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.info.ServiceUtils.createThumbnail(this.getService(), maxWidth, maxHeight);
+      const serviceData = this.getService();
+      const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
+      if (serviceData["thumbnail"]) {
+        thumbnail.set({
+          source: serviceData["thumbnail"]
+        });
+      } else {
+        const noThumbnail = "osparc/no_photography_black_24dp.svg";
+        thumbnail.set({
+          source: noThumbnail
+        });
+        thumbnail.getChildControl("image").set({
+          minWidth: Math.max(120, maxWidth),
+          minHeight: Math.max(139, maxHeight)
+        });
+      }
+      return thumbnail;
     },
 
     __createDescription: function() {
@@ -316,13 +360,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.getService()["key"],
-            this.getService()["version"]
-          )
-        };
-        promise = osparc.data.Resources.get("serviceResources", params);
+        promise = osparc.service.Store.getResources(this.getService()["key"], this.getService()["version"])
       }
       promise
         .then(serviceResources => {
@@ -357,6 +395,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __copyKeyToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.getService()["key"]);
+    },
+
+    __openVersionDisplayEditor: function() {
+      const title = this.tr("Edit Version Display");
+      const oldVersionDisplay = osparc.service.Utils.extractVersionDisplay(this.getService());
+      const versionDisplayEditor = new osparc.widget.Renamer(oldVersionDisplay, null, title);
+      versionDisplayEditor.addListener("labelChanged", e => {
+        versionDisplayEditor.close();
+        const newVersionDisplay = e.getData()["newLabel"];
+        this.__patchService("versionDisplay", newVersionDisplay);
+      }, this);
+      versionDisplayEditor.center();
+      versionDisplayEditor.open();
     },
 
     __openAccessRights: function() {
@@ -423,14 +474,15 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __patchService: function(key, value) {
       const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
-      osparc.info.ServiceUtils.patchServiceData(serviceDataCopy, key, value)
+      osparc.service.Store.patchServiceData(serviceDataCopy, key, value)
         .then(() => {
           this.setService(serviceDataCopy);
           this.fireDataEvent("updateService", this.getService());
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          const msg = err.message || this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     }
   }

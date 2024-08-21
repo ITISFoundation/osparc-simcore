@@ -2,7 +2,7 @@ import uuid
 from typing import cast
 from uuid import uuid5
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName

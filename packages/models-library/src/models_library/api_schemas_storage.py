@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 from enum import Enum
 from re import Pattern
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -36,7 +36,7 @@ from .projects_nodes_io import (
     StorageFileID,
 )
 
-ETag = str
+ETag: TypeAlias = str
 
 
 class S3BucketName(ConstrainedStr):
@@ -70,7 +70,7 @@ class FileLocation(BaseModel):
         }
 
 
-FileLocationArray = ListModel[FileLocation]
+FileLocationArray: TypeAlias = ListModel[FileLocation]
 
 
 # /locations/{location_id}/datasets

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   postgres:
     image: postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce

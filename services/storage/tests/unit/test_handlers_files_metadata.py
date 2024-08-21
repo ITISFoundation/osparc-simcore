@@ -5,8 +5,10 @@
 
 import urllib.parse
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from pathlib import Path
 from random import choice
+from typing import Protocol
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -15,17 +17,31 @@ from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+class CreateProjectAccessRightsCallable(Protocol):
+    async def __call__(
+        self,
+        project_id: ProjectID,
+        user_id: UserID,
+        read: bool,
+        write: bool,
+        delete: bool,
+    ) -> None:
+        ...
+
+
 async def test_get_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
     client: TestClient,
     user_id: UserID,
+    other_user_id: UserID,
     location_id: int,
     project_id: ProjectID,
     faker: Faker,
@@ -48,29 +64,52 @@ async def test_get_files_metadata(
     # now add some stuff there
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")
-    files_owned_by_us = []
-    for _ in range(NUM_FILES):
-        files_owned_by_us.append(await upload_file(file_size, faker.file_name()))
+    files_owned_by_us = [
+        await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
+    ]
+    assert files_owned_by_us
+
     # we should find these files now
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == NUM_FILES
+
+    # checks project_id filter!
+    await create_project_access_rights(
+        project_id=project_id,
+        user_id=other_user_id,
+        read=True,
+        write=True,
+        delete=True,
+    )
+    response = await client.get(
+        f"{url.update_query(project_id=str(project_id), user_id=other_user_id)}"
+    )
+    previous_data = deepcopy(data)
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    assert len(list_fmds) == (NUM_FILES)
+    assert previous_data == data
+
     # create some more files but with a base common name
     NUM_FILES = 10
     file_size = parse_obj_as(ByteSize, "15Mib")
-    files_with_common_name = []
-    for _ in range(NUM_FILES):
-        files_with_common_name.append(
-            await upload_file(file_size, f"common_name-{faker.file_name()}")
-        )
+    files_with_common_name = [
+        await upload_file(file_size, f"common_name-{faker.file_name()}")
+        for _ in range(NUM_FILES)
+    ]
+    assert files_with_common_name
+
     # we should find these files now
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == (2 * NUM_FILES)
+
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
     data, error = await assert_status(response, status.HTTP_200_OK)

@@ -31,11 +31,6 @@ db:
     password: ${POSTGRES_PASSWORD}
     port: ${POSTGRES_PORT}
     user: ${POSTGRES_USER}
-director:
-  enabled: true
-  host: ${DIRECTOR_HOST}
-  port: ${DIRECTOR_PORT}
-  version: v0
 director-v2:
   enabled: true
 exporter:
@@ -64,6 +59,7 @@ resource_manager:
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
   resource_deletion_timeout_seconds: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 rest:
   enabled: true

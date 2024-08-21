@@ -133,7 +133,6 @@ async def test_get_running_containers_count_from_names(
 
 
 COMPOSE_SPEC_SAMPLE = {
-    "version": "3.8",
     "services": {
         "my-test-container": {
             "environment": [

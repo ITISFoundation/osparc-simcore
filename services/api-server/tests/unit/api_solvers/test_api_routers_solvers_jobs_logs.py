@@ -7,7 +7,7 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import Iterable
 from pprint import pprint
 from typing import Final
 
@@ -15,12 +15,15 @@ import httpx
 import pytest
 from attr import dataclass
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.projects import ProjectGet
+from pydantic import ValidationError
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
 _logger = logging.getLogger(__name__)
@@ -37,9 +40,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
         _produced_logs: list[str] = []
         deregister_is_called: bool = False
 
-        async def register(
-            self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
-        ):
+        async def register(self, job_id: JobID, callback: asyncio.Queue[JobLog]):
             self._job_id = job_id
 
             async def produce_log():
@@ -52,7 +53,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
                         log_level=logging.INFO,
                         messages=[txt],
                     )
-                    await callback(msg)
+                    await callback.put(msg)
                     await asyncio.sleep(0.1)
 
             asyncio.create_task(produce_log())
@@ -106,7 +107,7 @@ async def test_log_streaming(
     collected_messages: list[str] = []
     async with client.stream(
         "GET",
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
         auth=auth,
     ) as response:
         response.raise_for_status()
@@ -122,3 +123,49 @@ async def test_log_streaming(
         collected_messages
         == fake_log_distributor._produced_logs[: len(collected_messages)]
     )
+
+
+@pytest.fixture
+async def mock_job_not_found(
+    mocked_directorv2_service_api_base: MockRouter,
+) -> MockRouter:
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
+
+    mocked_directorv2_service_api_base.get(
+        path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    ).mock(side_effect=_get_computation)
+    return mocked_directorv2_service_api_base
+
+
+async def test_logstreaming_job_not_found_exception(
+    app: FastAPI,
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    fake_log_distributor,
+    fake_project_for_streaming: ProjectGet,
+    mock_job_not_found: MockRouter,
+):
+
+    job_id: JobID = fake_project_for_streaming.uuid
+    _received_error = False
+
+    async with client.stream(
+        "GET",
+        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
+        auth=auth,
+    ) as response:
+        response.raise_for_status()
+        async for line in response.aiter_lines():
+            try:
+                job_log = JobLog.parse_raw(line)
+                pprint(job_log.json())
+            except ValidationError:
+                error = ErrorGet.parse_raw(line)
+                _received_error = True
+                print(error.json())
+
+    assert fake_log_distributor.deregister_is_called
+    assert _received_error

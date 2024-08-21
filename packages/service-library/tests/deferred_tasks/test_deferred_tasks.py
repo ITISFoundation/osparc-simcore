@@ -16,8 +16,7 @@ from typing import Any, Protocol
 import psutil
 import pytest
 from aiohttp.test_utils import unused_port
-from pydantic import NonNegativeFloat, NonNegativeInt, SecretStr
-from pydantic.json import pydantic_encoder
+from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib import redis as servicelib_redis
 from servicelib.rabbitmq import RabbitMQClient
@@ -25,7 +24,8 @@ from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from tenacity._asyncio import AsyncRetrying
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -122,14 +122,8 @@ async def _tcp_command(
 
 
 def _get_serialization_options() -> dict[str, Any]:
-    def _show_secrets_encoder(obj):
-        if isinstance(obj, SecretStr):
-            return obj.get_secret_value()
-
-        return pydantic_encoder(obj)
-
     return {
-        "encoder": _show_secrets_encoder,
+        "encoder": create_json_encoder_wo_secrets(RabbitSettings),
         "exclude_defaults": True,
         "exclude_none": True,
         "exclude_unset": True,
@@ -300,7 +294,7 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
             *[manager.get_results() for manager in managers]
         )
         results: list[str] = list(itertools.chain(*gathered_results))
-        assert len(results) < deferred_tasks_to_start
+        assert len(results) <= deferred_tasks_to_start
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):

@@ -41,6 +41,7 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
+	efs-guardian \
 	invitations \
   migration \
 	osparc-gateway-server \
@@ -86,7 +87,7 @@ export DOCKER_REGISTRY  ?= itisfoundation
 
 
 
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
@@ -123,11 +124,8 @@ __check_defined = \
 .PHONY: help
 
 help: ## help on rule's targets
-ifeq ($(IS_WIN),)
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-else
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
+	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
 	python ./scripts/test_python_version.py
@@ -295,7 +293,7 @@ endif
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	docker stack deploy --with-registry-auth -c $< ops
+	docker stack deploy --detach=true --with-registry-auth -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
@@ -318,7 +316,7 @@ printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&
 printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
-printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
+printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
@@ -338,7 +336,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -348,7 +346,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -358,7 +356,7 @@ up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production s
 ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
@@ -369,7 +367,7 @@ endif
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 
@@ -458,14 +456,13 @@ push-version: tag-version
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				printf "\033[31mError: 'uv' is not installed.\033[0m\n"; \
-				printf "To install 'uv', run the following command:\n"; \
-				printf "\033[34mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m\n"; \
-				exit 1; \
+				curl -LsSf https://astral.sh/uv/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
+		# upgrading uv
+		-@uv self --quiet update
 
 
 .venv: .check-uv-installed

@@ -21,7 +21,7 @@ import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
     EC2InstanceType,
@@ -45,13 +45,19 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_host import get_localhost_ip
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import (
+    EnvVarsDict,
+    delenvs_from_dict,
+    setenvs_from_dict,
+)
 from settings_library.rabbit import RabbitSettings
+from settings_library.ssm import SSMSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
+    AutoscalingEC2Settings,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import (
@@ -66,7 +72,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from tenacity import retry
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -75,13 +81,14 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 pytest_plugins = [
     "pytest_simcore.aws_server",
     "pytest_simcore.aws_ec2_service",
+    "pytest_simcore.aws_iam_service",
+    "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -99,12 +106,6 @@ def installed_package_dir() -> Path:
     dirpath = Path(simcore_service_autoscaling.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
-
-
-@pytest.fixture(scope="session")
-def ec2_instances() -> list[InstanceTypeType]:
-    # these are some examples
-    return ["t2.nano", "m5.12xlarge"]
 
 
 @pytest.fixture
@@ -144,14 +145,40 @@ def with_labelize_drain_nodes(
     )
 
 
+@pytest.fixture(scope="session")
+def fake_ssm_settings() -> SSMSettings:
+    return SSMSettings(**SSMSettings.Config.schema_extra["examples"][0])
+
+
+@pytest.fixture
+def ec2_settings() -> EC2Settings:
+    return AutoscalingEC2Settings.create_from_envs()
+
+
+@pytest.fixture
+def ec2_instance_custom_tags(
+    faker: Faker,
+    external_envfile_dict: EnvVarsDict,
+) -> dict[str, str]:
+    if external_envfile_dict:
+        return json.loads(external_envfile_dict["EC2_INSTANCES_CUSTOM_TAGS"])
+    return {"osparc-tag": faker.text(max_nb_chars=80), "pytest": faker.pystr()}
+
+
 @pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    ec2_instances: list[InstanceTypeType],
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+    ec2_instance_custom_tags: dict[str, str],
+    external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
+
+    if external_envfile_dict:
+        delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
+        return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
     envs = setenvs_from_dict(
         monkeypatch,
@@ -170,16 +197,11 @@ def app_environment(
                     ec2_type_name: random.choice(  # noqa: S311
                         EC2InstanceBootSpecific.Config.schema_extra["examples"]
                     )
-                    for ec2_type_name in ec2_instances
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
-            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
-                {
-                    "user_id": "32",
-                    "wallet_id": "3245",
-                    "osparc-tag": "some whatever value",
-                }
-            ),
+            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(ec2_instance_custom_tags),
+            "EC2_INSTANCES_ATTACHED_IAM_PROFILE": faker.pystr(),
         },
     )
     return mock_env_devel_environment | envs
@@ -193,6 +215,7 @@ def mocked_ec2_instances_envs(
     aws_subnet_id: str,
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+    aws_instance_profile: str,
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
@@ -200,7 +223,6 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_KEY_NAME": "osparc-pytest",
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps([aws_security_group_id]),
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "EC2_INSTANCES_AMI_ID": aws_ami_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
@@ -210,6 +232,7 @@ def mocked_ec2_instances_envs(
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
+            "EC2_INSTANCES_ATTACHED_IAM_PROFILE": aws_instance_profile,
         },
     )
     return app_environment | envs
@@ -229,8 +252,35 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_buffers_pool_background_task(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.stop_periodic_task",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def with_enabled_buffer_pools(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_SSM_ACCESS": "{}",
+        },
+    )
+
+
+@pytest.fixture
 def enabled_dynamic_mode(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -685,6 +735,7 @@ def cluster() -> Callable[..., Cluster]:
                 reserve_drained_nodes=[],
                 pending_ec2s=[],
                 broken_ec2s=[],
+                buffer_ec2s=[],
                 disconnected_nodes=[],
                 terminating_nodes=[],
                 terminated_instances=[],
@@ -760,21 +811,21 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def patch_ec2_client_start_aws_instances_min_number_of_instances(
+def patch_ec2_client_launch_instancess_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
     it difficult to test scaling to multiple of machines. this should help"""
-    original_fct = SimcoreEC2API.start_aws_instance
+    original_fct = SimcoreEC2API.launch_instances
 
     async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
         new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
-        print(f"patching start_aws_instance with: {new_kwargs}")
+        print(f"patching launch_instances with: {new_kwargs}")
         return await original_fct(*args, **new_kwargs)
 
     return mocker.patch.object(
         SimcoreEC2API,
-        "start_aws_instance",
+        "launch_instances",
         autospec=True,
         side_effect=_change_parameters,
     )

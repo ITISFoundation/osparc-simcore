@@ -14,11 +14,7 @@ help: ## help on rule's targets
 	# 💣 No postgres database version migration is performed at the moment. This migration **only works for **identical databases**: source and target.
 	# 🚨 If a file's or project's UUID already exist in the destination database (collision), this script will fail with an error.
 	# ✅ Supported S3 providers are `CEPH`, `AWS`, `MINIO`
-ifeq ($(IS_WIN),)
-	@awk 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-else
 	@awk 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
 
 .PHONY: build
 build: ## Builds docker container for the migration. Run this first.

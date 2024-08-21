@@ -9,7 +9,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.external_dependencies import (
     CouldNotReachExternalDependenciesError,
@@ -76,5 +76,5 @@ async def test_external_dependencies_are_not_reachable(app: FastAPI):
     failed = exe_info.value.failed
     assert len(failed) == 4
 
-    for entry in ["Postgres", "RabbitMQ", "Registry", "Storage"]:
+    for entry in ["Postgres", "RabbitMQ", "Internal Registry", "Storage"]:
         assert any(f"Could not contact service '{entry}'" in err for err in failed)

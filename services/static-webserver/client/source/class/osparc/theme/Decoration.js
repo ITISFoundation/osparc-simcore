@@ -35,7 +35,9 @@ qx.Theme.define("osparc.theme.Decoration", {
     "indicator-border": {
       include: "material-button",
       style: {
-        radius: 2
+        radius: 2,
+        width: 1,
+        color: "text"
       }
     },
 
@@ -236,6 +238,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "border-simple": {
+      include: "border",
+      style: {
+        radius: 4
+      }
+    },
+
     "no-border": {
       style: {
         radius: 4,
@@ -302,6 +311,30 @@ qx.Theme.define("osparc.theme.Decoration", {
     "chip": {
       style: {
         radius: 9
+      }
+    },
+
+    "chip-button": {
+      style: {
+        width: 1,
+        radius: 6,
+        color: "text",
+        backgroundColor: "transparent"
+      }
+    },
+
+    "filter-toggle-button": {
+      style: {
+        width: 1,
+        radius: 8,
+        color: "transparent"
+      }
+    },
+
+    "filter-toggle-button-selected": {
+      include: "filter-toggle-button",
+      style: {
+        color: "text"
       }
     },
 

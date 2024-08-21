@@ -177,6 +177,16 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "none": {},
 
+    "floating-menu": {
+      style: function() {
+        return {
+          backgroundColor: "background-main",
+          padding: 4,
+          decorator: "border-simple"
+        }
+      }
+    },
+
     /*
     ---------------------------------------------------------------------------
       WINDOW-SMALL-CAP CHOOSER
@@ -1014,7 +1024,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "window-popup-background",
+        backgroundColor: "hint-background",
         decorator: "hint",
         padding: 5
       })
@@ -1151,6 +1161,47 @@ qx.Theme.define("osparc.theme.Appearance", {
     "margined-layout": {
       style: () => ({
         margin: [7, 10]
+      })
+    },
+
+    "chip-button": {
+      include: "material-button",
+      style: () => ({
+        iconPosition: "right",
+        textColor: "text",
+        alignY: "middle",
+        paddingRight: 6,
+        paddingLeft: 6,
+        maxHeight: 26,
+        maxWidth: 260,
+        decorator: "chip-button"
+      })
+    },
+
+    "filter-toggle-button": {
+      include: "material-button",
+      alias: "material-button",
+      style: states => ({
+        font: "text-13",
+        textColor: "text",
+        padding: 6,
+        gap: 8,
+        decorator: (states.hovered || states.pressed || states.checked) ? "filter-toggle-button-selected" : "filter-toggle-button"
+      })
+    },
+
+    "filter-toggle-button/label": {
+      include: "material-button/label",
+      style: () => ({
+        textColor: "text"
+      })
+    },
+
+    "filter-toggle-button/icon": {
+      include: "material-button/icon",
+      style: () => ({
+        width: 25,
+        scale: true
       })
     },
 

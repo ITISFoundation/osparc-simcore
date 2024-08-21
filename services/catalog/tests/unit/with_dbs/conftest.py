@@ -1,27 +1,36 @@
 # pylint: disable=not-context-manager
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import itertools
-import random
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 
 import pytest
-import respx
 import sqlalchemy as sa
 from faker import Faker
-from fastapi import FastAPI
-from models_library.services import ServiceDockerData
+from fastapi.encoders import jsonable_encoder
+from models_library.products import ProductName
+from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pytest_mock.plugin import MockerFixture
+from pydantic import Extra, parse_obj_as
+from pytest_simcore.helpers.faker_factories import (
+    random_service_access_rights,
+    random_service_meta_data,
+)
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import (
+    PostgresTestConfig,
+    insert_and_get_row_lifespan,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_service_catalog.core.application import init_app
+from simcore_postgres_database.models.users import users
+from simcore_service_catalog.core.settings import ApplicationSettings
 from simcore_service_catalog.db.tables import (
     groups,
     services_access_rights,
@@ -30,81 +39,45 @@ from simcore_service_catalog.db.tables import (
 from sqlalchemy import tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
-from starlette.testclient import TestClient
-
-
-@pytest.fixture()
-async def products_names(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[list[str]]:
-    """Inits products db table and returns product names"""
-    data = [
-        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
-        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
-        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
-    ]
-
-    # pylint: disable=no-value-for-parameter
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-        for n, (name, regex) in enumerate(data):
-            stmt = products.insert().values(name=name, host_regex=regex, priority=n)
-            await conn.execute(stmt)
-
-    names = [
-        "osparc",
-    ] + [items[0] for items in data]
-
-    yield names
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(products.delete())
 
 
 @pytest.fixture
-def app(
+def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mocker: MockerFixture,
-    service_test_environ: EnvVarsDict,
+    app_environment: EnvVarsDict,
+    postgres_env_vars_dict: EnvVarsDict,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            **postgres_env_vars_dict,
+            "SC_BOOT_MODE": "local-development",
+            "POSTGRES_CLIENT_NAME": "pytest_client",
+        },
+    )
+
+
+@pytest.fixture
+async def app_settings(  # starts postgres service before app starts
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
-    products_names: list[str],
-) -> FastAPI:
+    app_settings: ApplicationSettings,
+) -> ApplicationSettings:
+    # Database is init BEFORE app
+    assert postgres_db
     print("database started:", postgres_host_config)
-    print("database w/products in table:", products_names)
 
     # Ensures both postgres service and app environs are the same!
-    assert service_test_environ["POSTGRES_USER"] == postgres_host_config["user"]
-    assert service_test_environ["POSTGRES_DB"] == postgres_host_config["database"]
-    assert service_test_environ["POSTGRES_PASSWORD"] == postgres_host_config["password"]
-
-    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
-    monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
-    app = init_app()
-
-    return app
-
-
-@pytest.fixture
-def client(app: FastAPI) -> Iterator[TestClient]:
-    with TestClient(app) as cli:
-        # Note: this way we ensure the events are run in the application
-        yield cli
-
-
-@pytest.fixture()
-def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
-    with respx.mock(
-        base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
-        respx_mock.get("/services", name="list_services").respond(
-            200, json={"data": []}
-        )
-        yield respx_mock
+    assert app_settings
+    assert app_settings.CATALOG_POSTGRES
+    assert postgres_host_config["user"] == app_settings.CATALOG_POSTGRES.POSTGRES_USER
+    assert postgres_host_config["database"] == app_settings.CATALOG_POSTGRES.POSTGRES_DB
+    assert (
+        app_settings.CATALOG_POSTGRES.POSTGRES_PASSWORD.get_secret_value()
+        == postgres_host_config["password"]
+    )
+    return app_settings
 
 
 # DATABASE tables fixtures -----------------------------------
@@ -126,35 +99,69 @@ def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
 #
 
 
-@pytest.fixture()
-def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
-    with postgres_db.connect() as con:
-        # removes all users before continuing
-        con.execute(users.delete())
-        con.execute(
-            users.insert()
-            .values(
-                id=user_id,
-                name="test user",
-                email="test@user.com",
-                password_hash="testhash",
-                status=UserStatus.ACTIVE,
-                role=UserRole.USER,
-            )
-            .returning(sa.literal_column("*"))
-        )
-        # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select(users).where(users.c.id == user_id))
-        user = result.first()
-        assert user
-        yield dict(user)
+@pytest.fixture
+async def product(
+    product: dict[str, Any],
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects product in db
+    """
+    # NOTE: this fixture ignores products' group-id but it is fine for this test context
+    assert product["group_id"] is None
+    async with insert_and_get_row_lifespan(
+        sqlalchemy_async_engine,
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+        pk_value=product["name"],
+    ) as row:
+        yield row
 
-        con.execute(users.delete().where(users.c.id == user_id))
+
+@pytest.fixture
+def target_product(product: dict[str, Any], product_name: ProductName) -> ProductName:
+    assert product_name == parse_obj_as(ProductName, product["name"])
+    return product_name
+
+
+@pytest.fixture
+def other_product(product: dict[str, Any]) -> ProductName:
+    other = parse_obj_as(ProductName, "osparc")
+    assert other != product["name"]
+    return other
+
+
+@pytest.fixture
+def products_names(
+    target_product: ProductName, other_product: ProductName
+) -> list[str]:
+    return [other_product, target_product]
+
+
+@pytest.fixture
+async def user(
+    user: dict[str, Any],
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects a user in db
+    """
+    assert user_id == user["id"]
+    async with insert_and_get_row_lifespan(
+        sqlalchemy_async_engine,
+        table=users,
+        values=user,
+        pk_col=users.c.id,
+        pk_value=user["id"],
+    ) as row:
+        yield row
 
 
 @pytest.fixture()
 async def user_groups_ids(
-    sqlalchemy_async_engine: AsyncEngine, user_db: dict[str, Any]
+    sqlalchemy_async_engine: AsyncEngine, user: dict[str, Any]
 ) -> AsyncIterator[list[int]]:
     """Inits groups table and returns group identifiers"""
 
@@ -173,9 +180,11 @@ async def user_groups_ids(
     async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            await conn.execute(groups.insert().values(**dict(zip(cols, row))))
+            await conn.execute(
+                groups.insert().values(**dict(zip(cols, row, strict=False)))
+            )
 
-    gids = [1, user_db["primary_gid"]] + [items[0] for items in data]
+    gids = [1, user["primary_gid"]] + [items[0] for items in data]
 
     yield gids
 
@@ -191,19 +200,19 @@ async def services_db_tables_injector(
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
-    Can use service_catalog_faker to generate inputs
+    Can use `create_fake_service_data` to generate inputs
 
     Example:
         await services_db_tables_injector(
             [
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.1",
                     team_access=None,
                     everyone_access=None,
                     product=target_product,
                 ),
-                service_catalog_faker(
+                create_fake_service_data(
                     "simcore/services/dynamic/jupyterlab",
                     "0.0.7",
                     team_access=None,
@@ -216,7 +225,7 @@ async def services_db_tables_injector(
     # pylint: disable=no-value-for-parameter
     inserted_services: set[tuple[str, str]] = set()
 
-    async def inject_in_db(fake_catalog: list[tuple]):
+    async def _inject_in_db(fake_catalog: list[tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
 
         async with sqlalchemy_async_engine.begin() as conn:
@@ -237,7 +246,7 @@ async def services_db_tables_injector(
                 stmt_access = services_access_rights.insert().values(access_rights)
                 await conn.execute(stmt_access)
 
-    yield inject_in_db
+    yield _inject_in_db
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
@@ -337,14 +346,16 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceDockerData.parse_obj(data), "Invalid fake data. Out of sync!"
+        assert ServiceMetaDataPublished.parse_obj(
+            data
+        ), "Invalid fake data. Out of sync!"
         return data
 
     return _fake_factory
 
 
 @pytest.fixture()
-async def service_catalog_faker(
+async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
@@ -354,7 +365,7 @@ async def service_catalog_faker(
 
 
     Example:
-        fake_service, *fake_access_rights = service_catalog_faker(
+        fake_service, *fake_access_rights = create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
                 team_access=None,
@@ -368,31 +379,19 @@ async def service_catalog_faker(
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
-        data = dict(
-            key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            version=".".join([str(faker.pyint()) for _ in range(3)]),
-            owner=user_gid,
-            name=faker.name(),
-            description=faker.sentence(),
-            thumbnail=random.choice([faker.image_url(), None]),
-            classifiers=[],
-            quality={},
-            deprecated=None,
+        return random_service_meta_data(
+            owner_primary_gid=user_gid,
+            fake=faker,
+            **overrides,
         )
-        data.update(overrides)
-        return data
 
     def _random_access(service, **overrides) -> dict[str, Any]:
-        data = dict(
+        return random_service_access_rights(
             key=service["key"],
             version=service["version"],
-            gid=random.choice(user_groups_ids),
-            execute_access=faker.pybool(),
-            write_access=faker.pybool(),
-            product_name=random.choice(products_names),
+            fake=faker,
+            **overrides,
         )
-        data.update(overrides)
-        return data
 
     def _fake_factory(
         key,
@@ -443,15 +442,36 @@ async def service_catalog_faker(
 
 
 @pytest.fixture
-def mock_catalog_background_task(mocker: MockerFixture) -> None:
-    """patch the setup of the background task so we can call it manually"""
-    mocker.patch(
-        "simcore_service_catalog.core.events.start_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_catalog.core.events.stop_registry_sync_task",
-        return_value=None,
-        autospec=True,
-    )
+def create_director_list_services_from() -> Callable[
+    [list[dict[str, Any]], list], list[dict[str, Any]]
+]:
+    """Convenience function to merge outputs of
+    - `create_fake_service_data` callable with those of
+    - `expected_director_list_services` fixture
+
+    to produce a new expected_director_list_services
+    """
+
+    class _Loader(ServiceMetaDataPublished):
+        class Config:
+            extra = Extra.ignore
+            allow_population_by_field_name = True
+
+    def _(
+        expected_director_list_services: list[dict[str, Any]],
+        fake_services_data: list,
+    ):
+        return [
+            jsonable_encoder(
+                _Loader.parse_obj(
+                    {
+                        **next(itertools.cycle(expected_director_list_services)),
+                        **data[0],  # service, **access_rights = data
+                    }
+                ),
+                exclude_unset=True,
+            )
+            for data in fake_services_data
+        ]
+
+    return _

@@ -5,19 +5,17 @@
 from pathlib import Path
 
 import yaml
-from models_library.services import ServiceDockerData, ServiceInput
+from models_library.services import ServiceInput, ServiceMetaDataPublished
 from pint import Unit, UnitRegistry
 
 
-def test_service_port_units(project_tests_dir: Path):
+def test_service_port_units(tests_data_dir: Path):
     ureg = UnitRegistry()
 
-    data = yaml.safe_load(
-        (project_tests_dir / "data" / "metadata-sleeper-2.0.2.yaml").read_text()
-    )
-    print(ServiceDockerData.schema_json(indent=2))
+    data = yaml.safe_load((tests_data_dir / "metadata-sleeper-2.0.2.yaml").read_text())
+    print(ServiceMetaDataPublished.schema_json(indent=2))
 
-    service_meta = ServiceDockerData.parse_obj(data)
+    service_meta = ServiceMetaDataPublished.parse_obj(data)
     assert service_meta.inputs
 
     for input_nameid, input_meta in service_meta.inputs.items():

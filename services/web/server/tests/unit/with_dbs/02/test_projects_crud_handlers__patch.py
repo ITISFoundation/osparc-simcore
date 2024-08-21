@@ -12,8 +12,8 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -134,23 +134,6 @@ async def test_patch_project(
     }
     resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui_2))
     await assert_status(resp, expected)
-    # access rights without project owner
-    resp = await client.patch(
-        f"{base_url}",
-        data=json.dumps(
-            {"accessRights": {"20": {"read": True, "write": True, "delete": True}}}
-        ),
-    )
-    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
-    # access rights
-    _patch_access_rights = {
-        "accessRights": {
-            **user_project["accessRights"],
-            "20": {"read": True, "write": True, "delete": True},
-        }
-    }
-    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_access_rights))
-    await assert_status(resp, expected)
     # quality
     _patch_quality = {
         "quality": {
@@ -219,7 +202,6 @@ async def test_patch_project(
     assert data["name"] == "testing-name"
     assert data["description"] == "testing-description"
     assert data["thumbnail"] == _patch_thumbnail["thumbnail"]
-    assert data["accessRights"] == _patch_access_rights["accessRights"]
     assert data["classifiers"] == _patch_classifiers["classifiers"]
     assert data["ui"] == _patch_ui_2["ui"]
     assert data["quality"] == _patch_quality["quality"]

@@ -42,10 +42,10 @@ qx.Class.define("osparc.node.BootOptionsView", {
 
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const nodeMetaData = node.getMetaData();
+      const nodeMetadata = node.getMetaData();
       const workbenchData = node.getWorkbench().serialize();
       const nodeId = node.getNodeId();
-      const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbenchData, nodeId);
+      const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetadata, workbenchData, nodeId);
       node.getStatus().bind("interactive", bootModeSB, "enabled", {
         converter: interactive => interactive === "idle"
       });

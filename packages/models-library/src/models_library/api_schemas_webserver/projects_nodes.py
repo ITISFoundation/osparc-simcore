@@ -1,10 +1,11 @@
+# mypy: disable-error-code=truthy-function
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from models_library.projects_nodes import InputID, InputsDict
 from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
+from ..projects_nodes import InputID, InputsDict
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
@@ -26,6 +27,7 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
+    service_key: ServiceKey = FieldNotRequired(alias="key")
     service_version: ServiceVersion = FieldNotRequired(alias="version")
     label: str = FieldNotRequired()
     inputs: InputsDict = FieldNotRequired()
@@ -35,6 +37,9 @@ class NodePatch(InputSchemaWithoutCamelCase):
         ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
     boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
+    outputs: dict[
+        str, Any
+    ] = FieldNotRequired()  # NOTE: it is used by frontend for File Picker
 
 
 class NodeCreated(OutputSchema):

@@ -65,13 +65,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
     canWrite: function(accessRights) {
       let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
-      canWrite = canWrite || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
+      canWrite = canWrite || (accessRights.getWriteAccess ? accessRights.getWriteAccess() : false);
       return canWrite;
     },
 
     canRead: function(accessRights) {
       let canRead = accessRights.getRead ? accessRights.getRead() : false;
-      canRead = canRead || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
+      canRead = canRead || (accessRights.getExecuteAccess ? accessRights.getExecuteAccess() : false);
       return canRead;
     }
   },
@@ -83,6 +83,8 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return osparc.data.Roles.STUDY[i];
       } else if (resource === "service") {
         return osparc.data.Roles.SERVICES[i];
+      } else if (resource === "folder") {
+        return osparc.data.Roles.FOLDERS[i];
       }
       return undefined;
     },

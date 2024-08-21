@@ -30,7 +30,7 @@ qx.Class.define("osparc.info.Utils", {
       return label;
     },
 
-    createId: function() {
+    createLabel: function() {
       const label = new qx.ui.basic.Label().set({
         maxWidth: 220
       });
@@ -50,6 +50,10 @@ qx.Class.define("osparc.info.Utils", {
 
       for (let i=0; i<extraInfos.length; i++) {
         const extraInfo = extraInfos[i];
+        if (!extraInfo.view) {
+          continue;
+        }
+
         moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
           font: "text-13"
         }), {
@@ -62,7 +66,7 @@ qx.Class.define("osparc.info.Utils", {
           column: 1
         });
 
-        if (extraInfo.action) {
+        if (extraInfo.action && extraInfo.action.button) {
           extraInfo.action.button.addListener("execute", () => {
             const cb = extraInfo.action.callback;
             if (typeof cb === "string") {

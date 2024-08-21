@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
-from pytest_simcore.helpers.utils_services import (
+from pytest_simcore.helpers.webserver_fake_services_data import (
     FAKE_FILE_CONSUMER_SERVICES,
     list_supported_filetypes,
 )

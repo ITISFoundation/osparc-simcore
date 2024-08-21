@@ -6,8 +6,10 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Coroutine
 from typing import Any, Final, TypeAlias
 
+import dask.typing
 import distributed
-from aws_library.ec2.models import EC2InstanceData, Resources
+import distributed.scheduler
+from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, parse_obj_as
@@ -123,6 +125,14 @@ async def is_worker_connected(
     return False
 
 
+def _dask_key_to_dask_task_id(key: dask.typing.Key) -> DaskTaskId:
+    if isinstance(key, bytes):
+        return key.decode("utf-8")
+    if isinstance(key, tuple):
+        return "(" + ", ".join(_dask_key_to_dask_task_id(k) for k in key) + ")"
+    return f"{key}"
+
+
 async def list_unrunnable_tasks(
     scheduler_url: AnyUrl,
     authentication: InternalClusterAuthentication,
@@ -134,18 +144,23 @@ async def list_unrunnable_tasks(
 
     def _list_tasks(
         dask_scheduler: distributed.Scheduler,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> dict[dask.typing.Key, dict[str, float]]:
+        # NOTE: task.key can be a byte, str, or a tuple
         return {
-            task.key: task.resource_restrictions for task in dask_scheduler.unrunnable
+            task.key: task.resource_restrictions or {}
+            for task in dask_scheduler.unrunnable
         }
 
     async with _scheduler_client(scheduler_url, authentication) as client:
         list_of_tasks: dict[
-            DaskTaskId, DaskTaskResources
+            dask.typing.Key, DaskTaskResources
         ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
         _logger.debug("found unrunnable tasks: %s", list_of_tasks)
         return [
-            DaskTask(task_id=task_id, required_resources=task_resources)
+            DaskTask(
+                task_id=_dask_key_to_dask_task_id(task_id),
+                required_resources=task_resources,
+            )
             for task_id, task_resources in list_of_tasks.items()
         ]
 
@@ -161,18 +176,18 @@ async def list_processing_tasks_per_worker(
 
     def _list_processing_tasks(
         dask_scheduler: distributed.Scheduler,
-    ) -> dict[str, list[tuple[DaskTaskId, DaskTaskResources]]]:
+    ) -> dict[str, list[tuple[dask.typing.Key, DaskTaskResources]]]:
         worker_to_processing_tasks = defaultdict(list)
         for task_key, task_state in dask_scheduler.tasks.items():
             if task_state.processing_on:
                 worker_to_processing_tasks[task_state.processing_on.address].append(
-                    (task_key, task_state.resource_restrictions)
+                    (task_key, task_state.resource_restrictions or {})
                 )
         return worker_to_processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
         worker_to_tasks: dict[
-            str, list[tuple[DaskTaskId, DaskTaskResources]]
+            str, list[tuple[dask.typing.Key, DaskTaskResources]]
         ] = await _wrap_client_async_routine(
             client.run_on_scheduler(_list_processing_tasks)
         )
@@ -181,7 +196,10 @@ async def list_processing_tasks_per_worker(
         for worker, tasks in worker_to_tasks.items():
             for task_id, required_resources in tasks:
                 tasks_per_worker[worker].append(
-                    DaskTask(task_id=task_id, required_resources=required_resources)
+                    DaskTask(
+                        task_id=_dask_key_to_dask_task_id(task_id),
+                        required_resources=required_resources,
+                    )
                 )
         return tasks_per_worker
 
@@ -220,13 +238,15 @@ async def get_worker_used_resources(
 
     def _list_processing_tasks_on_worker(
         dask_scheduler: distributed.Scheduler, *, worker_url: str
-    ) -> list[tuple[DaskTaskId, DaskTaskResources]]:
+    ) -> list[tuple[dask.typing.Key, DaskTaskResources]]:
         processing_tasks = []
         for task_key, task_state in dask_scheduler.tasks.items():
             if task_state.processing_on and (
                 task_state.processing_on.address == worker_url
             ):
-                processing_tasks.append((task_key, task_state.resource_restrictions))
+                processing_tasks.append(
+                    (task_key, task_state.resource_restrictions or {})
+                )
         return processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
@@ -236,7 +256,7 @@ async def get_worker_used_resources(
 
         # now get the used resources
         worker_processing_tasks: list[
-            tuple[DaskTaskId, DaskTaskResources]
+            tuple[dask.typing.Key, DaskTaskResources]
         ] = await _wrap_client_async_routine(
             client.run_on_scheduler(
                 _list_processing_tasks_on_worker, worker_url=worker_url

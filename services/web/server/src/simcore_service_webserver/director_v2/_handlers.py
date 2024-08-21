@@ -10,7 +10,11 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
+from servicelib.aiohttp.rest_responses import (
+    create_http_error,
+    exception_to_response,
+    get_http_error,
+)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -43,8 +47,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 class _ComputationStarted(BaseModel):
@@ -108,9 +112,9 @@ async def start_computation(request: web.Request) -> web.Response:
             "start_pipeline": True,
             "subgraph": list(subgraph),  # sets are not natively json serializable
             "force_restart": force_restart,
-            "cluster_id": None
-            if group_properties.use_on_demand_clusters
-            else cluster_id,
+            "cluster_id": (
+                None if group_properties.use_on_demand_clusters else cluster_id
+            ),
             "simcore_user_agent": simcore_user_agent,
             "use_on_demand_clusters": group_properties.use_on_demand_clusters,
             "wallet_info": wallet_info,
@@ -162,15 +166,21 @@ async def start_computation(request: web.Request) -> web.Response:
         return envelope_json_response(data, status_cls=web.HTTPCreated)
 
     except DirectorServiceError as exc:
-        return create_error_response(
-            exc,
-            reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+        return exception_to_response(
+            create_http_error(
+                exc,
+                reason=exc.reason,
+                http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            )
         )
     except UserDefaultWalletNotFoundError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPNotFound)
+        return exception_to_response(
+            create_http_error(exc, http_error_cls=web.HTTPNotFound)
+        )
     except WalletNotEnoughCreditsError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPPaymentRequired)
+        return exception_to_response(
+            create_http_error(exc, http_error_cls=web.HTTPPaymentRequired)
+        )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
@@ -203,7 +213,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except DirectorServiceError as exc:
-        return create_error_response(
+        return create_http_error(
             exc,
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
@@ -252,10 +262,10 @@ async def get_computation(request: web.Request) -> web.Response:
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:
-        return create_error_response(
+        return create_http_error(
             exc,
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
     except ValidationError as exc:
-        return create_error_response(exc, http_error_cls=web.HTTPInternalServerError)
+        return create_http_error(exc, http_error_cls=web.HTTPInternalServerError)

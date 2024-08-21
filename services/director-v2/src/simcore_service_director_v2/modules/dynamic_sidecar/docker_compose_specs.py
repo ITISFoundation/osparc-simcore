@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypedDict
+from typing import Any, Final, TypeAlias, TypedDict
 
 from fastapi.applications import FastAPI
 from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
@@ -28,6 +28,7 @@ from settings_library.docker_registry import RegistrySettings
 
 from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ..osparc_variables.substitutions import (
+    auto_inject_environments,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_model,
@@ -35,8 +36,8 @@ from ..osparc_variables.substitutions import (
 )
 from .docker_compose_egress_config import add_egress_configuration
 
-EnvKeyEqValueList = list[str]
-EnvVarsMap = dict[str, str | None]
+EnvKeyEqValueList: TypeAlias = list[str]
+EnvVarsMap: TypeAlias = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 
@@ -93,7 +94,10 @@ class _EnvironmentSection:
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [  # noqa: RUF005
+                    None
+                ]
+                assert key is not None  # nosec
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -280,9 +284,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: (
-        RegistrySettings
-    ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    docker_registry_settings: RegistrySettings = (
+        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    )
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
@@ -293,6 +297,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     )
 
     # when no compose yaml file was provided
+    container_name: str | None = None
     if compose_spec is None:
         service_spec: ComposeSpecLabelDict = {
             "version": docker_compose_version,
@@ -302,7 +307,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
                 }
             },
         }
-        container_name = DEFAULT_SINGLE_SERVICE_NAME
+        container_name = f"{DEFAULT_SINGLE_SERVICE_NAME}"
     else:
         service_spec = deepcopy(compose_spec)
         container_name = container_http_entry
@@ -363,6 +368,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         swarm_stack_name=swarm_stack_name,
         assigned_limits=assigned_limits,
     )
+
+    # resolve service-spec
+    service_spec = auto_inject_environments(service_spec)
 
     service_spec = await substitute_vendor_secrets_in_specs(
         app=app,

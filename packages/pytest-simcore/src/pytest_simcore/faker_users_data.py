@@ -16,7 +16,7 @@ from models_library.basic_types import IDStr
 from models_library.users import UserID
 from pydantic import EmailStr, parse_obj_as
 
-from .helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD, random_user
+from .helpers.faker_factories import DEFAULT_TEST_PASSWORD, random_user
 
 _MESSAGE = (
     "If set, it overrides the fake value of `{}` fixture."

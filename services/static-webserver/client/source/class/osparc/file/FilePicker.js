@@ -284,26 +284,17 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __buildLayout: function() {
       this._removeAll();
-      const isWorkbenchContext = this.getPageContext() === "workbench";
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
-      if (isWorkbenchContext) {
-        if (hasOutput) {
-          // WORKBENCH mode WITH output
-          this.__buildInfoLayout();
-        } else {
-          // WORKBENCH mode WITHOUT output
-          this.__addProgressBar();
-          this.__buildNoFileWBLayout();
-        }
+      if (hasOutput) {
+        this.__buildInfoLayout();
       } else {
-        this.setMargin(10);
-        if (hasOutput) {
-          // APP mode WITH output
-          this.__buildInfoLayout();
+        this.__addProgressBar();
+        const isWorkbenchContext = this.getPageContext() === "workbench";
+        if (isWorkbenchContext) {
+          this.__buildWorkbenchLayout();
         } else {
-          // APP mode WITHOUT output
-          this.__addProgressBar();
-          this.__buildNoFileAppLayout();
+          this.setMargin(10);
+          this.__buildAppModeLayout();
         }
       }
     },
@@ -312,6 +303,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const progressLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
+      progressLayout.alwaysEnabled = true;
 
       const progressBar = new qx.ui.indicator.ProgressBar();
       const nodeStatus = this.getNode().getStatus();
@@ -341,7 +333,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const uploading = (validProgress > 0 && validProgress < 100);
         progressLayout.setVisibility(uploading ? "visible" : "excluded");
         this._getChildren().forEach(child => {
-          if (child !== progressLayout) {
+          if (!child.alwaysEnabled) {
             child.setEnabled(!uploading);
           }
         });
@@ -388,19 +380,6 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       resetFileBtn.addListener("execute", () => this.__resetOutput());
       return resetFileBtn;
-    },
-
-    __buildNoFileWBLayout: function() {
-      const uploadFileSection = this.__getUploadFileSection();
-      this._add(uploadFileSection);
-
-      const fileDrop = this.__getFileDropSection();
-      this._add(fileDrop, {
-        flex: 1
-      });
-
-      const downloadLinkSection = this.__getDownloadLinkSection();
-      this._add(downloadLinkSection);
     },
 
     __getUploadFileSection: function() {
@@ -453,9 +432,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __getDownloadLinkSection: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       layout.add(new qx.ui.basic.Label(this.tr("Provide Link")));
 
@@ -473,32 +450,73 @@ qx.Class.define("osparc.file.FilePicker", {
       return layout;
     },
 
-    __buildNoFileAppLayout: function() {
-      let msg = this.tr("In order to Select a file you have three options:");
-      const options = [
-        this.tr("- Upload a file"),
-        this.tr("- Select a file from tree"),
-        this.tr("- Provide Link")
-      ];
-      for (let i=0; i<options.length; i++) {
-        msg += "<br>" + options[i];
-      }
+    __buildWorkbenchLayout: function() {
+      const uploadFileSection = this.__getUploadFileSection();
+      this._add(uploadFileSection);
+
+      const fileDrop = this.__getFileDropSection();
+      this._add(fileDrop, {
+        flex: 1
+      });
+
+      const downloadLinkSection = this.__getDownloadLinkSection();
+      this._add(downloadLinkSection);
+    },
+
+    __buildAppModeLayout: function() {
+      const msg = this.tr("In order to Select a File you have three options:");
       const intro = new qx.ui.basic.Label(msg).set({
         font: "text-16",
         rich: true
       });
       this._add(intro);
 
-      const uploadFileSection = this.__getUploadFileSection();
-      this._add(uploadFileSection);
+      const collapsibleViews = [];
+      const contentMargin = 10;
 
-      const fileBrowserLayout = this.__getFileBrowserLayout();
-      this._add(fileBrowserLayout, {
+      const newFileSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const uploadFileSection = this.__getUploadFileSection();
+      uploadFileSection.getButton().set({
+        appearance: "strong-button",
+        font: "text-14"
+      });
+      newFileSection.add(uploadFileSection);
+      const fileDrop = this.__getFileDropSection();
+      fileDrop.setDropHereMessage(this.tr("Drop file here"));
+      newFileSection.add(fileDrop, {
         flex: 1
       });
+      const newFilePView = new osparc.desktop.PanelView().set({
+        title: this.tr("Select New File"),
+        content: newFileSection
+      });
+      collapsibleViews.push(newFilePView);
 
       const downloadLinkSection = this.__getDownloadLinkSection();
-      this._add(downloadLinkSection);
+      const downloadLinkPView = new osparc.desktop.PanelView().set({
+        title: this.tr("Select Download Link"),
+        content: downloadLinkSection
+      });
+      collapsibleViews.push(downloadLinkPView);
+
+      const fileBrowserLayout = this.__getFileBrowserLayout();
+      const usedFilePView = new osparc.desktop.PanelView().set({
+        title: this.tr("Select File from other ") + osparc.product.Utils.getStudyAlias(),
+        content: fileBrowserLayout
+      });
+      collapsibleViews.push(usedFilePView);
+
+      const radioCollapsibleViews = new osparc.desktop.RadioCollapsibleViews();
+      collapsibleViews.forEach(cv => {
+        cv.getInnerContainer().set({
+          margin: contentMargin
+        });
+        this._add(cv, {
+          flex: 1
+        });
+        radioCollapsibleViews.addCollapsibleView(cv);
+      });
+      radioCollapsibleViews.openCollapsibleView(0);
     },
 
     __getFileBrowserLayout: function() {

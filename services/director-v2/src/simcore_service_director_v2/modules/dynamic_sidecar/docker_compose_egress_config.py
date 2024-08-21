@@ -212,7 +212,7 @@ def _get_egress_proxy_dns_port_rules(
 ) -> list[OrderedSet[_ProxyRule]]:
     """returns a list of sets of rules to be applied to each proxy"""
     # 1. map all ports to hostnames to compute overlapping ports per proxy
-    port_to_hostname: dict[PortInt, set[_HostData]] = {}
+    port_to_hostname: dict[PortInt, OrderedSet[_HostData]] = {}
 
     for host_permit_list_policy in all_host_permit_list_policies:
         for port in host_permit_list_policy.iter_tcp_ports():
@@ -244,7 +244,7 @@ def _get_egress_proxy_dns_port_rules(
 
         grouped_proxy_rules.append(proxy_rules)
 
-    return list(sorted(grouped_proxy_rules))
+    return sorted(grouped_proxy_rules)
 
 
 def _allow_outgoing_internet(

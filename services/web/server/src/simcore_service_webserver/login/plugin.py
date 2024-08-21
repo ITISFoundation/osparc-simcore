@@ -49,23 +49,15 @@ async def _setup_login_storage_ctx(app: web.Application):
     assert APP_LOGIN_STORAGE_KEY not in app  # nosec
     settings: PostgresSettings = get_db_plugin_settings(app)
 
-    pool: asyncpg.pool.Pool = await asyncpg.create_pool(
+    async with asyncpg.create_pool(
         dsn=settings.dsn_with_query,
         min_size=settings.POSTGRES_MINSIZE,
         max_size=settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),
-    )
-    app[APP_LOGIN_STORAGE_KEY] = storage = AsyncpgStorage(pool)
+    ) as pool:
+        app[APP_LOGIN_STORAGE_KEY] = AsyncpgStorage(pool)
 
-    yield  # ----------------
-
-    if storage.pool is not pool:
-        log.error("Somebody has changed the db pool")
-
-    try:
-        await asyncio.wait_for(pool.close(), timeout=MAX_TIME_TO_CLOSE_POOL_SECS)
-    except asyncio.TimeoutError:
-        log.exception("Failed to close login storage loop")
+        yield  # ----------------
 
 
 def setup_login_storage(app: web.Application):

@@ -22,7 +22,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     periodic_task_result,
     setup,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
@@ -60,7 +60,7 @@ async def _track_and_display(
         task = progress.add_task("...", total=1.0, visible=True)
 
         async def _debug_progress_callback(
-            message: ProgressMessage, percent: ProgressPercent, _: TaskId
+            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
             progress.update(task, completed=percent, description=message, visible=True)
 

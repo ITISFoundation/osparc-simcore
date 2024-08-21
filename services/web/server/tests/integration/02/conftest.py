@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.projects import ProjectID
-from pytest_simcore.helpers.utils_projects import NewProject
+from pytest_simcore.helpers.webserver_projects import NewProject
 
 
 @pytest.fixture(scope="session")
@@ -19,7 +19,7 @@ def fake_workbench_payload(tests_data_dir: Path) -> dict:
         return json.load(fp)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def fake_project(fake_data_dir: Path, fake_workbench_payload: dict) -> dict:
     project: dict = {}
     with (fake_data_dir / "fake-project.json").open() as fp:

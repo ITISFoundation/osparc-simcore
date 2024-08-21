@@ -6,6 +6,7 @@
 import json
 from collections.abc import Mapping
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 import respx
@@ -26,8 +27,8 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import WalletInfo
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
 from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -60,6 +61,7 @@ def mock_env(
     env_vars = mock_env.copy()
     env_vars.update(
         {
+            "AWS_S3_CLI_S3": '{"S3_ACCESS_KEY":"12345678","S3_BUCKET_NAME":"simcore","S3_ENDPOINT":"http://172.17.0.1:9001","S3_REGION":"us-east-1","S3_SECRET_KEY":"12345678"}',
             "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
             "LOG_LEVEL": "DEBUG",
             "POSTGRES_DB": "test",
@@ -238,6 +240,16 @@ def expected_dynamic_sidecar_spec(
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+                    "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
+                        '{"REGISTRY_AUTH": false, "REGISTRY_PATH": null, '
+                        '"REGISTRY_URL": "foo.bar.com", "REGISTRY_USER": '
+                        '"test", "REGISTRY_PW": "test", "REGISTRY_SSL": false}'
+                    ),
+                    "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
+                    "DY_SIDECAR_AWS_S3_CLI_SETTINGS": (
+                        '{"AWS_S3_CLI_S3": {"S3_ACCESS_KEY": "12345678", "S3_BUCKET_NAME": "simcore", '
+                        '"S3_ENDPOINT": "http://172.17.0.1:9001", "S3_REGION": "us-east-1", "S3_SECRET_KEY": "12345678"}}'
+                    ),
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
                         ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
@@ -259,12 +271,6 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
-                    "REGISTRY_AUTH": "False",
-                    "REGISTRY_PATH": "None",
-                    "REGISTRY_PW": "test",
-                    "REGISTRY_SSL": "False",
-                    "REGISTRY_URL": "foo.bar.com",
-                    "REGISTRY_USER": "test",
                     "R_CLONE_OPTION_BUFFER_SIZE": "0M",
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",
@@ -408,7 +414,7 @@ def expected_dynamic_sidecar_spec(
     }
 
 
-def test_get_dynamic_proxy_spec(
+async def test_get_dynamic_proxy_spec(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
@@ -436,7 +442,7 @@ def test_get_dynamic_proxy_spec(
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
 
-        dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+        dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -448,6 +454,7 @@ def test_get_dynamic_proxy_spec(
             allow_internet_access=False,
             metrics_collection_allowed=True,
             telemetry_enabled=True,
+            rpc_client=Mock(),
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -530,7 +537,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     hardware_info: HardwareInfo,
     fake_service_specifications: dict[str, Any],
 ):
-    dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+    dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -542,6 +549,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         allow_internet_access=False,
         metrics_collection_allowed=True,
         telemetry_enabled=True,
+        rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()

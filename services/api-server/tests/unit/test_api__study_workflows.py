@@ -88,7 +88,7 @@ class StudiesTestApi(_BaseTestApi):
     @_handle_http_status_error
     async def list_study_ports(self, study_id):
         resp = await self._client.get(
-            f"/v0/studies/{study_id}/ports",
+            f"/{API_VTAG}/studies/{study_id}/ports",
             **self._request_kwargs,
         )
         resp.raise_for_status()
@@ -116,7 +116,7 @@ class StudiesTestApi(_BaseTestApi):
     @_handle_http_status_error
     async def inspect_study_job(self, study_id, job_id) -> JobStatus:
         resp = await self._client.post(
-            f"/v0/studies/{study_id}/jobs/{job_id}:inspect",
+            f"/{API_VTAG}/studies/{study_id}/jobs/{job_id}:inspect",
             **self._request_kwargs,
         )
         resp.raise_for_status()

@@ -10,8 +10,8 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel, parse_obj_as
-from pydantic.types import NonNegativeFloat, PositiveInt
+from pydantic import BaseModel, NonNegativeInt, parse_obj_as
+from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
 
@@ -132,7 +132,7 @@ async def update_dynamic_service_networks_in_project(
 async def get_project_inactivity(
     app: web.Application,
     project_id: ProjectID,
-    max_inactivity_seconds: NonNegativeFloat,
+    max_inactivity_seconds: NonNegativeInt,
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (

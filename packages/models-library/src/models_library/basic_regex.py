@@ -24,7 +24,7 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 
 # python-like version
-VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+SIMPLE_VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 
 # Semantic version
 # SEE https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
@@ -75,3 +75,5 @@ DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
     r"(?::(?P<docker_tag>[\w][\w.-]{0,127}))?"
     r"(?P<docker_digest>\@sha256:[a-fA-F0-9]{32,64})?$"
 )
+
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)

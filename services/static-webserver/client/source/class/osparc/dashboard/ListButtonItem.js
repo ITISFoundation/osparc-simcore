@@ -231,7 +231,16 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("shared-icon");
-        this._evaluateShareIcon(shareIcon, value);
+        shareIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this.openAccessRights();
+        }, this);
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
+
+        if (this.isResourceType("study")) {
+          this._setStudyPermissions(value);
+        }
       }
     },
 
@@ -240,9 +249,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
         tags.forEach(tag => {
-          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter").set({
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
+          tagUI.set({
             alignY: "middle",
-            font: "text-12"
+            font: "text-12",
+            toolTipText: this.tr("Click to filter by this Tag")
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);

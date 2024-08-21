@@ -3,12 +3,13 @@
     Example:
 
     from pydantic import BaseModel, validator
+    from models_library.utils.common_validators import empty_str_to_none_pre_validator
 
     class MyModel(BaseModel):
        thumbnail: str | None
 
        _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-           empty_str_to_none
+           empty_str_to_none_pre_validator
        )
 
 SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
@@ -27,6 +28,12 @@ def empty_str_to_none_pre_validator(value: Any):
 def none_to_empty_str_pre_validator(value: Any):
     if value is None:
         return ""
+    return value
+
+
+def none_to_empty_list_pre_validator(value: Any):
+    if value is None:
+        return []
     return value
 
 
@@ -56,3 +63,9 @@ def ensure_unique_dict_values_validator(dict_data: dict) -> dict:
         msg = f"Dictionary values must be unique, provided: {dict_data}"
         raise ValueError(msg)
     return dict_data
+
+
+def null_or_none_str_to_none_validator(value: Any):
+    if isinstance(value, str) and value.lower() in ("null", "none"):
+        return None
+    return value

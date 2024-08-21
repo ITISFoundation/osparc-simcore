@@ -1,10 +1,11 @@
 import json
+import logging
 from typing import Any
 
 from fastapi import FastAPI
 from models_library.clusters import BaseCluster
 from models_library.projects_state import RunningState
-from settings_library.utils_cli import create_json_encoder_wo_secrets
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..api.dependencies.database import RepoType, get_base_repository
@@ -24,6 +25,8 @@ DB_TO_RUNNING_STATE = {
 RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
     RunningState.UNKNOWN: StateType.FAILED
 }
+
+_logger = logging.getLogger(__name__)
 
 
 def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:

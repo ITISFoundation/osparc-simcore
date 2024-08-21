@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from servicelib.redis import RedisClientSDKHealthChecked
+from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
 
@@ -8,15 +8,11 @@ def setup_redis(app: FastAPI) -> None:
 
     async def on_startup() -> None:
         redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
-        app.state.redis_client_sdk = client = RedisClientSDKHealthChecked(
-            redis_locks_dsn
-        )
+        app.state.redis_client_sdk = client = RedisClientSDK(redis_locks_dsn)
         await client.setup()
 
     async def on_shutdown() -> None:
-        redis_client_sdk: None | RedisClientSDKHealthChecked = (
-            app.state.redis_client_sdk
-        )
+        redis_client_sdk: None | RedisClientSDK = app.state.redis_client_sdk
         if redis_client_sdk:
             await redis_client_sdk.shutdown()
 
@@ -24,6 +20,6 @@ def setup_redis(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_redis_client(app: FastAPI) -> RedisClientSDKHealthChecked:
-    redis_client_sdk: RedisClientSDKHealthChecked = app.state.redis_client_sdk
+def get_redis_client(app: FastAPI) -> RedisClientSDK:
+    redis_client_sdk: RedisClientSDK = app.state.redis_client_sdk
     return redis_client_sdk
