@@ -61,7 +61,9 @@ async def set_request_as_stopped(
     await tracker.save(dynamic_service_stop.node_id, model)
 
 
-def _get_state(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> ServiceState:
+def _get_service_state(
+    status: NodeGet | DynamicServiceGet | NodeGetIdle,
+) -> ServiceState:
     # Attributes where to find the state
     # NodeGet -> service_state
     # DynamicServiceGet -> state
@@ -74,14 +76,14 @@ def _get_state(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> ServiceStat
 
 
 def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> timedelta:
-    if _get_state(status) != ServiceState.RUNNING:
+    if _get_service_state(status) != ServiceState.RUNNING:
         return _LOW_RATE_POLL_INTERVAL
 
     return NORMAL_RATE_POLL_INTERVAL
 
 
 def _get_current_state(
-    requested_sate: UserRequestedState,
+    requested_state: UserRequestedState,
     status: NodeGet | DynamicServiceGet | NodeGetIdle,
 ) -> SchedulerServiceState:
     """
@@ -92,9 +94,9 @@ def _get_current_state(
     if isinstance(status, NodeGetIdle):
         return SchedulerServiceState.IDLE
 
-    service_state: ServiceState = _get_state(status)
+    service_state: ServiceState = _get_service_state(status)
 
-    if requested_sate == UserRequestedState.RUNNING:
+    if requested_state == UserRequestedState.RUNNING:
         if service_state == ServiceState.RUNNING:
             return SchedulerServiceState.RUNNING
 
@@ -108,14 +110,14 @@ def _get_current_state(
         if service_state < ServiceState.PENDING or service_state > ServiceState.RUNNING:
             return SchedulerServiceState.UNEXPECTED_OUTCOME
 
-    if requested_sate == UserRequestedState.STOPPED:
+    if requested_state == UserRequestedState.STOPPED:
         if service_state >= ServiceState.RUNNING:  # type:ignore[operator]
             return SchedulerServiceState.STOPPING
 
         if service_state < ServiceState.RUNNING:
             return SchedulerServiceState.UNEXPECTED_OUTCOME
 
-    msg = f"Could not determine current_state from: '{requested_sate=}', '{status=}'"
+    msg = f"Could not determine current_state from: '{requested_state=}', '{status=}'"
     raise TypeError(msg)
 
 
