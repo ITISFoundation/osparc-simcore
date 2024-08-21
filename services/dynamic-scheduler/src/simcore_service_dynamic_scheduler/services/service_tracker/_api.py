@@ -216,8 +216,10 @@ async def set_service_status_task_uid(
 
 
 async def remove_tracked(app: FastAPI, node_id: NodeID) -> None:
-    """Removes the service from tracking (usually after stop completes)"""
+    """
+    Removes the service from tracking (usually after stop completes)
     # NOTE: does not raise if node_id is not found
+    """
     await get_tracker(app).delete(node_id)
 
 
