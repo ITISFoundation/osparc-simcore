@@ -13,6 +13,6 @@ async def redis_client_sdk_deferred_tasks(
     ]
 ) -> AsyncIterator[RedisClientSDK]:
     async with get_redis_client_sdk(
-        RedisDatabase.DEFERRED_TASKS, False  # noqa: FBT003
+        RedisDatabase.DEFERRED_TASKS, decode_response=False
     ) as client:
         yield client
