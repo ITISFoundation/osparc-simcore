@@ -1917,7 +1917,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
             })
             .finally(() => win.close());
         }, this);
-        noteEditor.addListener("cancel", win.close());
+        noteEditor.addListener("cancel", () => win.close());
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {
