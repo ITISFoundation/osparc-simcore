@@ -340,7 +340,6 @@ async def _get_resolved_access_rights(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
-    only_enabled_permissions: bool = True,
 ) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
@@ -377,20 +376,7 @@ async def _get_resolved_access_rights(
     )
 
     # Combine anchor and recursive CTE
-    folder_hierarchy = access_rights_cte.union_all(recursive)
-
-    def _get_permissions_filter() -> ColumnElement | bool:
-        if not permissions:
-            return True
-        return (
-            _get_filter_for_enabled_permissions(permissions, folder_hierarchy)
-            if only_enabled_permissions
-            else sa.and_(
-                folder_hierarchy.c.read.is_(permissions.read),
-                folder_hierarchy.c.write.is_(permissions.write),
-                folder_hierarchy.c.delete.is_(permissions.delete),
-            )
-        )
+    folder_hierarchy: CTE = access_rights_cte.union_all(recursive)
 
     # Final query to filter and order results
     query = (
@@ -404,7 +390,11 @@ async def _get_resolved_access_rights(
             folder_hierarchy.c.delete,
             folder_hierarchy.c.level,
         )
-        .where(_get_permissions_filter())
+        .where(
+            True
+            if not permissions
+            else _get_filter_for_enabled_permissions(permissions, folder_hierarchy)
+        )
         .where(folder_hierarchy.c.original_parent_id.is_(None))
         .where(folder_hierarchy.c.gid == gid)
         .order_by(folder_hierarchy.c.level.asc())

@@ -604,10 +604,6 @@ async def test__get_resolved_access_rights(
             target_folder_id,
             gid,
             permissions=permissions,
-            # NOTE: this is the more restricitve case
-            # and we test against exact user roles,
-            # the APIs use only a subset of the permissions set to True
-            only_enabled_permissions=False,
         )
         assert resolved_parent
         assert resolved_parent.folder_id == expected_folder_id
