@@ -37,7 +37,7 @@ async def create_folder(
             connection,
             product_name=product_name,
             name=folder_name,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
             description=description if description else "",
             parent=parent_folder_id,
         )
@@ -45,7 +45,7 @@ async def create_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -80,7 +80,7 @@ async def get_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -118,7 +118,7 @@ async def list_folders(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
             offset=offset,
             limit=limit,
             order_by=cast(folders_db.OrderByDict, order_by.dict()),
@@ -167,7 +167,7 @@ async def update_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
             name=name,
             description=description,
         )
@@ -175,7 +175,7 @@ async def update_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -210,5 +210,5 @@ async def delete_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gid=user["primary_gid"],
+            gids={user["primary_gid"]},
         )

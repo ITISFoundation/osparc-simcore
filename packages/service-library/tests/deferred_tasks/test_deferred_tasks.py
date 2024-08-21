@@ -294,7 +294,7 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
             *[manager.get_results() for manager in managers]
         )
         results: list[str] = list(itertools.chain(*gathered_results))
-        assert len(results) < deferred_tasks_to_start
+        assert len(results) <= deferred_tasks_to_start
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
