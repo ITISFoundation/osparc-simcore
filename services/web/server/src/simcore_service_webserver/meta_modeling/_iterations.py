@@ -10,7 +10,7 @@ from copy import deepcopy
 from typing import Any, Literal, Optional
 
 from aiohttp import web
-from models_library.basic_types import MD5Str, SHA1Str
+from models_library.basic_types import KeyIDStr, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, OutputID, OutputTypes
@@ -37,7 +37,7 @@ Parameters = tuple[NodeOutputsDict]
 _ParametersNodesPair = tuple[Parameters, NodesDict]
 
 
-def _compute_params_checksum(parameters: Parameters) -> MD5Str:
+def _compute_params_checksum(parameters: Parameters) -> SHA1Str:
     # NOTE: parameters are within a project's dataset which can
     # be considered small (based on test_compute_sh1_on_small_dataset)
     return compute_sha1_on_small_dataset(parameters)
@@ -72,7 +72,10 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
         assert node_def.inputs  # nosec
 
         node_call = _function_nodes.catalog.get_implementation(node.key, node.version)
-        g = node_call(**{name: node.inputs[name] for name in node_def.inputs})
+        assert node_call  # nosec
+        g = node_call(
+            **{f"{name}": node.inputs[KeyIDStr(name)] for name in node_def.inputs}
+        )
         assert isinstance(g, Iterator)  # nosec
         nodes_generators.append(g)
 
