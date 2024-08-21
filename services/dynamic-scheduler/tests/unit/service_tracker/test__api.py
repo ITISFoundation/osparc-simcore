@@ -3,7 +3,7 @@
 
 from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Final
+from typing import Any, Final, NamedTuple
 from uuid import uuid4
 
 import pytest
@@ -205,86 +205,92 @@ def __get_flat_list(nested_list: list[list[Any]]) -> list[Any]:
     return [item for sublist in nested_list for item in sublist]
 
 
-_EXPECTED_TEST_CASES: list[list[tuple]] = [
+class ServiceStatusToSchedulerState(NamedTuple):
+    requested: UserRequestedState
+    service_status: NodeGet | DynamicServiceGet | NodeGetIdle
+    expected: SchedulerServiceState
+
+
+_EXPECTED_TEST_CASES: list[list[ServiceStatusToSchedulerState]] = [
     [
         # UserRequestedState.RUNNING
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.PENDING),
             SchedulerServiceState.STARTING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.PULLING),
             SchedulerServiceState.STARTING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.STARTING),
             SchedulerServiceState.STARTING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.RUNNING),
             SchedulerServiceState.RUNNING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.COMPLETE),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.FAILED),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             status_generator(ServiceState.STOPPING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.RUNNING,
             _get_node_get_idle(),
             SchedulerServiceState.IDLE,
         ),
         # UserRequestedState.STOPPED
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.PENDING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.PULLING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.STARTING),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.RUNNING),
             SchedulerServiceState.STOPPING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.COMPLETE),
             SchedulerServiceState.STOPPING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.FAILED),
             SchedulerServiceState.UNEXPECTED_OUTCOME,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             status_generator(ServiceState.STOPPING),
             SchedulerServiceState.STOPPING,
         ),
-        (
+        ServiceStatusToSchedulerState(
             UserRequestedState.STOPPED,
             _get_node_get_idle(),
             SchedulerServiceState.IDLE,
@@ -295,19 +301,25 @@ _EXPECTED_TEST_CASES: list[list[tuple]] = [
         _get_dynamic_service_get_from,
     )
 ]
-_FLAT_EXPECTED_TEST_CASES = __get_flat_list(_EXPECTED_TEST_CASES)
+_FLAT_EXPECTED_TEST_CASES: list[ServiceStatusToSchedulerState] = __get_flat_list(
+    _EXPECTED_TEST_CASES
+)
 # ensure enum changes do not break above rules
 _NODE_STATUS_FORMATS_COUNT: Final[int] = 2
 assert (
     len(_FLAT_EXPECTED_TEST_CASES)
-    == (len(ServiceState)) * len(UserRequestedState) * _NODE_STATUS_FORMATS_COUNT
+    == len(ServiceState) * len(UserRequestedState) * _NODE_STATUS_FORMATS_COUNT
 )
 
 
-@pytest.mark.parametrize("requested_state, status, expected", _FLAT_EXPECTED_TEST_CASES)
-def test__get_current_state(
-    requested_state: UserRequestedState,
-    status: NodeGet | DynamicServiceGet | NodeGetIdle,
-    expected: SchedulerServiceState,
+@pytest.mark.parametrize("service_status_to_scheduler_state", _FLAT_EXPECTED_TEST_CASES)
+def test__get_current_scheduler_service_state(
+    service_status_to_scheduler_state: ServiceStatusToSchedulerState,
 ):
-    assert _get_current_scheduler_service_state(requested_state, status) == expected
+    assert (
+        _get_current_scheduler_service_state(
+            service_status_to_scheduler_state.requested,
+            service_status_to_scheduler_state.service_status,
+        )
+        == service_status_to_scheduler_state.expected
+    )
