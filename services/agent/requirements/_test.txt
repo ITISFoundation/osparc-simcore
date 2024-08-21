@@ -225,6 +225,7 @@ regex==2024.5.15
     # via cfn-lint
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
@@ -270,6 +271,7 @@ typing-extensions==4.4.0
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   botocore
     #   docker
     #   requests
@@ -280,6 +282,7 @@ werkzeug==3.0.3
     #   moto
 wrapt==1.16.0
     # via
+    #   -c requirements/_base.txt
     #   aiobotocore
     #   aws-xray-sdk
 xmltodict==0.13.0

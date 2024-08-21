@@ -18,7 +18,9 @@ certifi==2024.2.2
     #   httpx
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.6.0
     # via
     #   -r requirements/_test.in
@@ -96,7 +98,9 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   faker
 requests==2.32.3
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 respx==0.21.1
     # via -r requirements/_test.in
 six==1.16.0

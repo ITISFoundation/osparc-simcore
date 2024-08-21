@@ -42,7 +42,9 @@ certifi==2024.2.2
     #   -c requirements/_base.txt
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.6.0
     # via pytest-cov
 docker==7.1.0
@@ -114,6 +116,7 @@ python-dotenv==1.0.1
     # via -r requirements/_test.in
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 s3transfer==0.10.2
@@ -155,11 +158,14 @@ typing-extensions==4.11.0
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   botocore
     #   docker
     #   requests
 wrapt==1.16.0
-    # via aiobotocore
+    # via
+    #   -c requirements/_base.txt
+    #   aiobotocore
 yarl==1.9.4
     # via
     #   -c requirements/_base.txt
