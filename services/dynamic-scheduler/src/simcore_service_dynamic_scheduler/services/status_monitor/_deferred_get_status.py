@@ -68,7 +68,7 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         status_changed: bool = await service_tracker.set_if_status_changed(
             app, node_id, result
         )
-        if await service_tracker.can_notify_frontend(
+        if await service_tracker.should_notify_frontend(
             app, node_id, status_changed=status_changed
         ):
             user_id: UserID | None = await service_tracker.get_user_id(app, node_id)

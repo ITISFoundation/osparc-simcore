@@ -34,7 +34,7 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
 from simcore_service_dynamic_scheduler.services.service_tracker._api import (
     _LOW_RATE_POLL_INTERVAL,
     NORMAL_RATE_POLL_INTERVAL,
-    _get_current_state,
+    _get_current_scheduler_service_state,
     _get_poll_interval,
 )
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
@@ -318,4 +318,4 @@ def test__get_current_state(
     status: NodeGet | DynamicServiceGet | NodeGetIdle,
     expected: SchedulerServiceState,
 ):
-    assert _get_current_state(requested_state, status) == expected
+    assert _get_current_scheduler_service_state(requested_state, status) == expected

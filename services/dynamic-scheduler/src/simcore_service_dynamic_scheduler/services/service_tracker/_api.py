@@ -82,7 +82,7 @@ def _get_poll_interval(status: NodeGet | DynamicServiceGet | NodeGetIdle) -> tim
     return NORMAL_RATE_POLL_INTERVAL
 
 
-def _get_current_state(
+def _get_current_scheduler_service_state(
     requested_state: UserRequestedState,
     status: NodeGet | DynamicServiceGet | NodeGetIdle,
 ) -> SchedulerServiceState:
@@ -144,14 +144,16 @@ async def set_if_status_changed(
     json_status = status.json()
     if model.service_status != json_status:
         model.service_status = json_status
-        model.current_state = _get_current_state(model.requested_state, status)
+        model.current_state = _get_current_scheduler_service_state(
+            model.requested_state, status
+        )
         await tracker.save(node_id, model)
         return True
 
     return False
 
 
-async def can_notify_frontend(
+async def should_notify_frontend(
     app: FastAPI, node_id: NodeID, *, status_changed: bool
 ) -> bool:
     """
