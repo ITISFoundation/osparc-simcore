@@ -47,6 +47,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     });
     this._add(nonGroupedContainer);
 
+    const groupedContainersLayout = this.__groupedContainersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this._add(groupedContainersLayout);
     this.__groupedContainersList = [];
   },
 
@@ -108,6 +110,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __foldersContainer: null,
     __nonGroupedContainer: null,
     __groupedContainersList: null,
+    __groupedContainersLayout: null,
 
     addNonResourceCard: function(card) {
       if (card instanceof qx.ui.form.ToggleButton) {
@@ -255,6 +258,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this.__nonGroupedContainer.removeAll();
         this.__nonGroupedContainer = null;
       }
+      if (this.__groupedContainersLayout) {
+        this.__groupedContainersLayout.removeAll();
+      }
       this.__groupedContainersList.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
       this.__groupedContainersList = [];
       this._removeAll();
@@ -265,7 +271,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(this.__foldersLayout);
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
-        this._add(noGroupContainer);
+        this.__groupedContainersLayout.add(noGroupContainer);
+        this._add(this.__groupedContainersLayout);
       } else {
         const flatList = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
         osparc.utils.Utils.setIdToWidget(flatList, listId);
@@ -320,9 +327,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __moveNoGroupToLast: function() {
-      const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+      const idx = this.__groupedContainersLayout.getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
       if (idx > -1) {
-        this._getChildren().push(this._getChildren().splice(idx, 1)[0]);
+        this.__groupedContainersLayout.getChildren().push(this._getChildren().splice(idx, 1)[0]);
       }
     },
 
@@ -340,8 +347,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
-            this._add(groupContainer);
-            this._getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
+            this.__groupedContainersLayout.add(groupContainer);
+            this.__groupedContainersLayout.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
             this.__moveNoGroupToLast();
           }
           const card = this.__createCard(resourceData);
