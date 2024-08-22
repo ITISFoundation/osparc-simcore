@@ -21,6 +21,9 @@ _logger = logging.getLogger(__name__)
 _AWS_WAIT_MAX_DELAY: Final[int] = 5
 _AWS_WAIT_NUM_RETRIES: Final[int] = 3
 
+_CLOUD_INIT_STATUS_COMMAND: Final[str] = "cloud-init status"
+_CLOUD_INIT_STATUS_COMMAND_NAME: Final[str] = _CLOUD_INIT_STATUS_COMMAND
+
 
 @dataclass(frozen=True)
 class SSMCommand:
@@ -140,8 +143,8 @@ class SimcoreSSMAPI:
     ) -> bool:
         cloud_init_status_command = await self.send_command(
             (instance_id,),
-            command="cloud-init status",
-            command_name="cloud-init status",
+            command=_CLOUD_INIT_STATUS_COMMAND,
+            command_name=_CLOUD_INIT_STATUS_COMMAND_NAME,
         )
         # wait for command to complete
         waiter = self._client.get_waiter(  # pylint: disable=assignment-from-no-return
@@ -163,6 +166,10 @@ class SimcoreSSMAPI:
             CommandId=cloud_init_status_command.command_id, InstanceId=instance_id
         )
         if response["Status"] != "Success":
-            raise SSMCommandExecutionResultError(details=response["StatusDetails"])
+            raise SSMCommandExecutionResultError(
+                id=response["CommandId"],
+                name=_CLOUD_INIT_STATUS_COMMAND_NAME,
+                details=response["StatusDetails"],
+            )
         # check if cloud-init is done
         return bool("status: done" in response["StandardOutputContent"])

@@ -24,7 +24,7 @@ class SSMSendCommandInstancesNotReadyError(SSMAccessError):
 
 
 class SSMCommandExecutionResultError(SSMAccessError):
-    msg_template: str = "Command execution error: {details}"
+    msg_template: str = "Command {id}:{name} execution resulted in an error: {details}"
 
 
 class SSMCommandExecutionTimeoutError(SSMAccessError):
