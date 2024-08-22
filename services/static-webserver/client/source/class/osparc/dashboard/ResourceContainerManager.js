@@ -329,7 +329,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __moveNoGroupToLast: function() {
       const idx = this.__groupedContainersLayout.getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
       if (idx > -1) {
-        this.__groupedContainersLayout.getChildren().push(this._getChildren().splice(idx, 1)[0]);
+        this.__groupedContainersLayout.getChildren().push(this.__groupedContainersLayout.getChildren().splice(idx, 1)[0]);
       }
     },
 
