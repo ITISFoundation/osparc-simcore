@@ -180,7 +180,11 @@ async def test_wait_for_has_instance_completed_cloud_init(
         nonlocal call_count
         call_count += 1
         if call_count == 2:
-            return {"Status": "Failure", "StatusDetails": faker.text()}
+            return {
+                "CommandId": kwargs["CommandId"],
+                "Status": "Failure",
+                "StatusDetails": faker.text(),
+            }
         return await original_get_command_invocation(*args, **kwargs)
 
     mocked_command_invocation.side_effect = mock_wait_command_failed
