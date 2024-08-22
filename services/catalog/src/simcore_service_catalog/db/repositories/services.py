@@ -44,7 +44,7 @@ from ._services_sql import (
 _logger = logging.getLogger(__name__)
 
 
-def is_newer(
+def _is_newer(
     old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
 ) -> bool:
@@ -54,7 +54,7 @@ def is_newer(
     )
 
 
-def merge_specs(
+def _merge_specs(
     everyone_spec: ServiceSpecificationsAtDB | None,
     team_specs: dict[GroupID, ServiceSpecificationsAtDB],
     user_spec: ServiceSpecificationsAtDB | None,
@@ -600,16 +600,16 @@ class ServicesRepository(BaseRepository):
                         continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if (group.group_type == GroupTypeInModel.STANDARD) and is_newer(
+                    if (group.group_type == GroupTypeInModel.STANDARD) and _is_newer(
                         teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
                         teams_specs[db_service_spec.gid] = db_service_spec
-                    elif (group.group_type == GroupTypeInModel.EVERYONE) and is_newer(
+                    elif (group.group_type == GroupTypeInModel.EVERYONE) and _is_newer(
                         everyone_specs, db_service_spec
                     ):
                         everyone_specs = db_service_spec
-                    elif (group.group_type == GroupTypeInModel.PRIMARY) and is_newer(
+                    elif (group.group_type == GroupTypeInModel.PRIMARY) and _is_newer(
                         primary_specs, db_service_spec
                     ):
                         primary_specs = db_service_spec
@@ -621,7 +621,7 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        if merged_specifications := merge_specs(
+        if merged_specifications := _merge_specs(
             everyone_specs, teams_specs, primary_specs
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)
