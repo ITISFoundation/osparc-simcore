@@ -62,8 +62,8 @@ def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingStatusMessage:
 def rabbit_log_message(faker: Faker) -> LoggerRabbitMessage:
     return LoggerRabbitMessage(
         user_id=faker.pyint(min_value=1),
-        project_id=faker.uuid4(),
-        node_id=faker.uuid4(),
+        project_id=faker.uuid4(cast_to=None),  # type: ignore
+        node_id=faker.uuid4(cast_to=None),  # type: ignore
         messages=faker.pylist(allowed_types=(str,)),
     )
 
@@ -83,6 +83,7 @@ def rabbit_message(
 def test_rabbitmq_does_not_initialize_if_deactivated(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -95,6 +96,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 def test_rabbitmq_initializes(
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -107,6 +109,7 @@ async def test_post_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
@@ -136,6 +139,7 @@ async def test_post_message(
 async def test_post_message_with_disabled_rabbit_does_not_raise(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
@@ -174,6 +178,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
 async def test_post_message_when_rabbit_disconnected(
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_autoscaling_message: RabbitAutoscalingStatusMessage,

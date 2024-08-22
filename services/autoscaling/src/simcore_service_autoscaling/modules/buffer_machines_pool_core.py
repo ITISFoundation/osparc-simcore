@@ -26,6 +26,10 @@ from aws_library.ec2 import (
     EC2InstanceType,
     Resources,
 )
+from aws_library.ssm import (
+    SSMCommandExecutionResultError,
+    SSMCommandExecutionTimeoutError,
+)
 from fastapi import FastAPI
 from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import NonNegativeInt, parse_obj_as
@@ -35,7 +39,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
+from ..utils.buffer_machines_pool_core import get_deactivated_buffer_ec2_tags
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
@@ -55,6 +59,37 @@ _PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
 _logger = logging.getLogger(__name__)
 
 
+async def _analyze_running_instance_state(
+    app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
+):
+    ssm_client = get_ssm_client(app)
+
+    if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+        buffer_pool.pulling_instances.add(instance)
+    elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+        try:
+            if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
+                if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    instance.type
+                ].pre_pull_images:
+                    buffer_pool.waiting_to_pull_instances.add(instance)
+                else:
+                    buffer_pool.waiting_to_stop_instances.add(instance)
+            else:
+                buffer_pool.pending_instances.add(instance)
+        except (
+            SSMCommandExecutionResultError,
+            SSMCommandExecutionTimeoutError,
+        ):
+            _logger.exception(
+                "Unnexpected error when checking EC2 cloud initialization completion!. "
+                "The machine will be terminated. TIP: check the initialization phase for errors."
+            )
+            buffer_pool.broken_instances.add(instance)
+
+
 async def _analyse_current_state(
     app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
 ) -> BufferPoolManager:
@@ -64,7 +99,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
 
@@ -84,32 +119,12 @@ async def _analyse_current_state(
                     instance
                 )
             case "running":
-                if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
-                    buffers_manager.buffer_pools[instance.type].pulling_instances.add(
-                        instance
-                    )
+                await _analyze_running_instance_state(
+                    app,
+                    buffer_pool=buffers_manager.buffer_pools[instance.type],
+                    instance=instance,
+                )
 
-                elif await get_ssm_client(app).is_instance_connected_to_ssm_server(
-                    instance.id
-                ) and await get_ssm_client(
-                    app
-                ).wait_for_has_instance_completed_cloud_init(
-                    instance.id
-                ):
-                    if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance.type
-                    ].pre_pull_images:
-                        buffers_manager.buffer_pools[
-                            instance.type
-                        ].waiting_to_pull_instances.add(instance)
-                    else:
-                        buffers_manager.buffer_pools[
-                            instance.type
-                        ].waiting_to_stop_instances.add(instance)
-                else:
-                    buffers_manager.buffer_pools[instance.type].pending_instances.add(
-                        instance
-                    )
     _logger.info("Current buffer pools: %s", f"{buffers_manager}")
     return buffers_manager
 
@@ -178,6 +193,20 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
     return buffers_manager
 
 
+async def _terminate_broken_instances(
+    app: FastAPI, buffers_manager: BufferPoolManager
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    termineatable_instances = set()
+    for pool in buffers_manager.buffer_pools.values():
+        termineatable_instances.update(pool.broken_instances)
+    if termineatable_instances:
+        await ec2_client.terminate_instances(termineatable_instances)
+        for instance in termineatable_instances:
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    return buffers_manager
+
+
 async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: BufferPoolManager,
@@ -217,7 +246,7 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
@@ -368,6 +397,8 @@ async def monitor_buffer_machines(
     buffers_manager = await _terminate_instances_with_invalid_pre_pulled_images(
         app, buffers_manager
     )
+    # 3. terminate broken instances
+    buffers_manager = await _terminate_broken_instances(app, buffers_manager)
 
     # 3. add/remove buffer instances base on ec2 boot specific data
     buffers_manager = await _add_remove_buffer_instances(
