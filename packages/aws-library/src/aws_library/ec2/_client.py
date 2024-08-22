@@ -181,7 +181,7 @@ class SimcoreEC2API:
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
             await waiter.wait(InstanceIds=instance_ids)
-            _logger.info("instances %s exists now.", instance_ids)
+            _logger.debug("instances %s exists now.", instance_ids)
 
             # NOTE: waiting for pending ensure we get all the IPs back
             described_instances = await self.client.describe_instances(
@@ -193,8 +193,8 @@ class SimcoreEC2API:
                 for i in described_instances["Reservations"][0]["Instances"]
             ]
             _logger.info(
-                "%s is pending now, happy computing!!",
-                f"{instance_datas=}",
+                "%s are pending now",
+                f"{instance_ids=}",
             )
             return instance_datas
 
