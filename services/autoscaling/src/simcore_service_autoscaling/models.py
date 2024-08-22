@@ -158,6 +158,7 @@ class BufferPool:
     waiting_to_stop_instances: set[EC2InstanceData] = field(default_factory=set)
     pulling_instances: set[EC2InstanceData] = field(default_factory=set)
     stopping_instances: set[EC2InstanceData] = field(default_factory=set)
+    broken_instances: set[EC2InstanceData] = field(default_factory=set)
 
     def __repr__(self) -> str:
         return (
@@ -167,6 +168,7 @@ class BufferPool:
             f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
             f"pulling-count={len(self.pulling_instances)}, "
             f"stopping-count={len(self.stopping_instances)})"
+            f"broken-count={len(self.broken_instances)})"
         )
 
     def _sort_by_readyness(
@@ -179,6 +181,7 @@ class BufferPool:
             self.pulling_instances,
             self.waiting_to_pull_instances,
             self.pending_instances,
+            self.broken_instances,
         )
         if invert:
             yield from reversed(order)

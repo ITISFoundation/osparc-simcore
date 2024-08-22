@@ -1,5 +1,5 @@
 import base64
-from typing import Sequence
+from collections.abc import Sequence
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.json_serialization import json_dumps
@@ -41,6 +41,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
+    instance_filters: Sequence[FilterTypeDef] | None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -54,6 +55,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
             *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
+        instance_filters=instance_filters,
     )
 
 
@@ -141,7 +143,9 @@ async def assert_ec2_instances(
 
             assert "PrivateDnsName" in instance
             instance_private_dns_name = instance["PrivateDnsName"]
-            assert instance_private_dns_name.endswith(".ec2.internal")
+            if expected_instance_state not in ["terminated"]:
+                # NOTE: moto behaves here differently than AWS by still returning an IP which does not really make sense
+                assert instance_private_dns_name.endswith(".ec2.internal")
             assert "State" in instance
             state = instance["State"]
             assert "Name" in state

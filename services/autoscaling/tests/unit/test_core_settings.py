@@ -64,7 +64,7 @@ def test_settings(app_environment: EnvVarsDict):
 def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_ACCESS
-    assert settings.AUTOSCALING_SSM_ACCESS is None
+    assert settings.AUTOSCALING_SSM_ACCESS
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING
     assert settings.AUTOSCALING_DASK is None
@@ -75,9 +75,7 @@ def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
 def test_settings_computational_mode(enabled_computational_mode: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_ACCESS
-    assert (
-        settings.AUTOSCALING_SSM_ACCESS is None
-    )  # NOTE: this might change in the future
+    assert settings.AUTOSCALING_SSM_ACCESS
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING is None
     assert settings.AUTOSCALING_DASK

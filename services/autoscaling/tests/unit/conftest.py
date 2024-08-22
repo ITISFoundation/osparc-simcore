@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import datetime
 import json
+import logging
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -46,6 +47,7 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     delenvs_from_dict,
@@ -58,6 +60,7 @@ from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
     AutoscalingEC2Settings,
+    EC2InstancesSettings,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import (
@@ -71,8 +74,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
-from tenacity import retry
-from tenacity.asyncio import AsyncRetrying
+from tenacity import after_log, before_sleep_log, retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -166,6 +168,18 @@ def ec2_instance_custom_tags(
 
 
 @pytest.fixture
+def external_ec2_instances_allowed_types(
+    external_envfile_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None | dict[str, EC2InstanceBootSpecific]:
+    if not external_envfile_dict:
+        return None
+    with monkeypatch.context() as patch:
+        setenvs_from_dict(patch, {**external_envfile_dict})
+        settings = EC2InstancesSettings.create_from_envs()
+    return settings.EC2_INSTANCES_ALLOWED_TYPES
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -187,6 +201,9 @@ def app_environment(
             "AUTOSCALING_EC2_ACCESS_KEY_ID": faker.pystr(),
             "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "AUTOSCALING_EC2_INSTANCES": "{}",
+            "AUTOSCALING_SSM_ACCESS": "{}",
+            "SSM_ACCESS_KEY_ID": faker.pystr(),
+            "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -323,6 +340,11 @@ def disabled_rabbitmq(
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTOSCALING_EC2_ACCESS", "null")
+
+
+@pytest.fixture
+def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTOSCALING_SSM_ACCESS", "null")
 
 
 @pytest.fixture
@@ -535,17 +557,23 @@ async def create_service(
         if labels:
             task_labels |= labels
             base_labels |= labels
-        service = await async_docker_client.services.create(
-            task_template=task_template,
-            name=service_name,
-            labels=base_labels,  # type: ignore
-        )
-        assert service
-        service = parse_obj_as(
-            Service, await async_docker_client.services.inspect(service["ID"])
-        )
-        assert service.Spec
-        print(f"--> created docker service {service.ID} with {service.Spec.Name}")
+        with log_context(
+            logging.INFO, msg=f"create docker service {service_name}"
+        ) as ctx:
+            service = await async_docker_client.services.create(
+                task_template=task_template,
+                name=service_name,
+                labels=base_labels,  # type: ignore
+            )
+            assert service
+            service = parse_obj_as(
+                Service, await async_docker_client.services.inspect(service["ID"])
+            )
+            assert service.Spec
+            ctx.logger.info(
+                "%s",
+                f"service {service.ID} with {service.Spec.Name} created",
+            )
         assert service.Spec.Labels == base_labels
 
         created_services.append(service)
@@ -578,7 +606,7 @@ async def create_service(
         )
         assert not diff, f"{diff}"
         assert service.Spec.Labels == base_labels
-        await assert_for_service_state(
+        await _assert_wait_for_service_state(
             async_docker_client, service, [wait_for_service_state]
         )
         return service
@@ -599,37 +627,42 @@ async def create_service(
     )
     async def _check_service_task_gone(service: Service) -> None:
         assert service.Spec
-        print(
-            f"--> checking if service {service.ID}:{service.Spec.Name} is really gone..."
-        )
-        assert not await async_docker_client.containers.list(
-            all=True,
-            filters={
-                "label": [f"com.docker.swarm.service.id={service.ID}"],
-            },
-        )
-        print(f"<-- service {service.ID}:{service.Spec.Name} is gone.")
+        with log_context(
+            logging.INFO,
+            msg=f"check service {service.ID}:{service.Spec.Name} is really gone",
+        ):
+            assert not await async_docker_client.containers.list(
+                all=True,
+                filters={
+                    "label": [f"com.docker.swarm.service.id={service.ID}"],
+                },
+            )
 
     await asyncio.gather(*(_check_service_task_gone(s) for s in created_services))
     await asyncio.sleep(0)
 
 
-async def assert_for_service_state(
+SUCCESS_STABLE_TIME_S: Final[float] = 3
+WAIT_TIME: Final[float] = 0.5
+
+
+async def _assert_wait_for_service_state(
     async_docker_client: aiodocker.Docker, service: Service, expected_states: list[str]
 ) -> None:
-    SUCCESS_STABLE_TIME_S: Final[float] = 3
-    WAIT_TIME: Final[float] = 0.5
-    number_of_success = 0
-    async for attempt in AsyncRetrying(
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-        wait=wait_fixed(WAIT_TIME),
-        stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
-    ):
-        with attempt:
-            print(
-                f"--> waiting for service {service.ID} to become {expected_states}..."
-            )
+    with log_context(
+        logging.INFO, msg=f"wait for service {service.ID} to become {expected_states}"
+    ) as ctx:
+        number_of_success = {"count": 0}
+
+        @retry(
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+            wait=wait_fixed(WAIT_TIME),
+            stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
+            before_sleep=before_sleep_log(ctx.logger, logging.DEBUG),
+            after=after_log(ctx.logger, logging.DEBUG),
+        )
+        async def _() -> None:
             services = await async_docker_client.services.list(
                 filters={"id": service.ID}
             )
@@ -646,14 +679,18 @@ async def assert_for_service_state(
             assert (
                 service_task["Status"]["State"] in expected_states
             ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
-            print(
-                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
+            ctx.logger.info(
+                "%s",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success['count']}",
             )
-            number_of_success += 1
-            assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
-            print(
-                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
+            number_of_success["count"] += 1
+            assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
+            ctx.logger.info(
+                "%s",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds",
             )
+
+        await _()
 
 
 @pytest.fixture(scope="session")
