@@ -132,7 +132,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getManifestIconUrl: function(icon) {
-      const productName = this.isS4LProduct() ? "s4l" : osparc.product.Utils.getProductName();
+      const productName = this.isS4LProduct() || this.isProduct("s4llite") ? "s4l" : osparc.product.Utils.getProductName();
       const iconPath = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${productName}/icons/${icon}`;
       const fallbackIcon = `/resource/osparc/${productName}/favicon-96x96.png`;
       return this.__linkExists(iconPath)
