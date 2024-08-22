@@ -21,6 +21,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     enabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
 ) -> EnvVarsDict:
     return app_environment
@@ -35,7 +36,6 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
 
 async def test_status_no_rabbit(
     disabled_rabbitmq: None,
-    mocked_ssm_server_envs: EnvVarsDict,
     with_enabled_buffer_pools: EnvVarsDict,
     async_client: httpx.AsyncClient,
 ):
@@ -60,6 +60,7 @@ async def test_status_no_rabbit(
 
 async def test_status_no_ssm(
     disabled_rabbitmq: None,
+    disabled_ssm: None,
     async_client: httpx.AsyncClient,
 ):
     response = await async_client.get("/status")
