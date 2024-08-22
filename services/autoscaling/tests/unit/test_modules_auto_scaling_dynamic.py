@@ -35,12 +35,14 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
+from simcore_service_autoscaling.modules import auto_scaling_core
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _activate_drained_nodes,
     _find_terminateable_instances,
@@ -250,6 +252,11 @@ def instance_type_filters(
     ]
 
 
+@pytest.fixture
+async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
+    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+
+
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
@@ -395,6 +402,18 @@ class _ScaleUpParams:
     expected_num_instances: int
 
 
+def _assert_cluster_state(
+    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
+) -> None:
+    assert spied_cluster_analysis.call_count > 0
+
+    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
+    assert (
+        spied_cluster_analysis.spy_return.total_number_of_machines()
+        == expected_num_machines
+    )
+
+
 async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     *,
     service_monitored_labels: dict[DockerLabelKey, str],
@@ -420,6 +439,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     scale_up_params: _ScaleUpParams,
     instance_type_filters: Sequence[FilterTypeDef],
     run_against_moto: bool,
+    spied_cluster_analysis: MockType,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
@@ -456,6 +476,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    _assert_cluster_state(
+        spied_cluster_analysis, expected_calls=1, expected_num_machines=0
     )
 
     with log_context(logging.INFO, "wait for EC2 instances to be running") as ctx:
@@ -502,6 +525,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # 2. running this again should not scale again, but tag the node and make it available
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    _assert_cluster_state(
+        spied_cluster_analysis, expected_calls=1, expected_num_machines=1
     )
 
     fake_attached_node = deepcopy(fake_node)
@@ -935,6 +961,7 @@ async def test_cluster_scaling_up_and_down(
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
     scale_up_params: _ScaleUpParams,
+    spied_cluster_analysis: MockType,
 ):
     await _test_cluster_scaling_up_and_down(
         service_monitored_labels=service_monitored_labels,
@@ -958,6 +985,7 @@ async def test_cluster_scaling_up_and_down(
         scale_up_params=scale_up_params,
         instance_type_filters=instance_type_filters,
         run_against_moto=True,
+        spied_cluster_analysis=spied_cluster_analysis,
     )
 
 
@@ -1010,6 +1038,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
     scale_up_params: _ScaleUpParams,
+    spied_cluster_analysis: MockType,
 ):
     # ensure we run a test that makes sense
     assert external_ec2_instances_allowed_types
@@ -1041,6 +1070,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
         scale_up_params=scale_up_params,
         instance_type_filters=instance_type_filters,
         run_against_moto=False,
+        spied_cluster_analysis=spied_cluster_analysis,
     )
 
 
