@@ -2,7 +2,7 @@ import collections
 import logging
 from typing import cast
 
-from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
+from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.clusters import InternalClusterAuthentication
 from models_library.docker import (

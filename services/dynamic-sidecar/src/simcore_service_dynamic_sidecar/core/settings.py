@@ -8,7 +8,7 @@ from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
@@ -154,7 +154,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
     RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
 
-    REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
+    DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
+    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field()
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 

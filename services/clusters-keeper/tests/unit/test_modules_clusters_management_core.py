@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 import arrow
 import pytest
 from attr import dataclass
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2 import EC2InstanceData
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID

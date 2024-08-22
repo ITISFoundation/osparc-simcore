@@ -231,25 +231,67 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    mustache: {
-      mustacheRegEx: function() {
-        return /{{([^{}]*)}}/g;
-      },
-
-      mustache2Var: function(mustached) {
-        return mustached.replace("{{", "").replace("}}", "");
-      },
-
-      getVariables: function(obj) {
-        const variables = new Set();
-        const secondaryStudyDataStr = JSON.stringify(obj);
-        const mustaches = secondaryStudyDataStr.match(this.self().mustache.mustacheRegEx()) || [];
-        mustaches.forEach(mustache => {
-          const variable = this.self().mustache.mustache2Var(mustache);
-          variables.add(variable);
-        });
-        return Array.from(variables);
+    __getBlockedState: function(studyData) {
+      if (studyData["workbench"]) {
+        const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
+        if (unaccessibleServices.length) {
+          return "UNKNOWN_SERVICES";
+        }
       }
+      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+        return "IN_USE";
+      }
+      return false;
+    },
+
+    canBeOpened: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowBillingOptions: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowServiceUpdates: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowServiceBootOptions: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowStudyData: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canShowPreview: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canBeDeleted: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
+    },
+
+    canBeDuplicated: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return [false].includes(blocked);
+    },
+
+    canBeExported: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
+    },
+
+    canMoveToFolder: function(studyData) {
+      const blocked = this.__getBlockedState(studyData);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     }
   }
 });

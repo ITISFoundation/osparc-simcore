@@ -455,6 +455,18 @@ async def test_list_projects_for_specific_folder_id(
     assert resp.status == 200
     _assert_response_data(data, 3, 0, 3, "/v0/projects?offset=0&limit=20", 3)
 
+    # Now we will test listing of the root directory with provided folder id query
+    query_parameters = {"folder_id": "null"}
+    url = base_url.with_query(**query_parameters)
+
+    resp = await client.get(url)
+    data = await resp.json()
+
+    assert resp.status == 200
+    _assert_response_data(
+        data, 3, 0, 3, "/v0/projects?folder_id=null&offset=0&limit=20", 3
+    )
+
     # Now we will test listing for specific folder
     query_parameters = {"folder_id": f"{setup_folders_db}"}
     url = base_url.with_query(**query_parameters)

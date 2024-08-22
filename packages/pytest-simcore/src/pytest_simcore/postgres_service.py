@@ -124,7 +124,7 @@ def database_from_template_before_each_function(
         # drop database
         f"DROP DATABASE {postgres_dsn['database']};",
         # create from template database
-        f"CREATE DATABASE {postgres_dsn['database']} TEMPLATE template_simcore_db;",
+        f"CREATE DATABASE {postgres_dsn['database']} TEMPLATE {_TEMPLATE_DB_TO_RESTORE};",
     ]
 
     _execute_queries(drop_db_engine, queries)

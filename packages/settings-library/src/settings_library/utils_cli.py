@@ -1,18 +1,17 @@
 import logging
 import os
 from collections.abc import Callable
-from functools import partial
 from pprint import pformat
 from typing import Any
 
 import rich
 import typer
-from pydantic import BaseModel, SecretStr, ValidationError
+from pydantic import ValidationError
 from pydantic.env_settings import BaseSettings
-from pydantic.json import custom_pydantic_encoder
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings
+from .utils_encoders import create_json_encoder_wo_secrets
 
 
 def print_as_envfile(
@@ -66,17 +65,6 @@ def print_as_envfile(
 def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
     typer.echo(
         settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
-    )
-
-
-def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
-    current_encoders = getattr(model_cls.Config, "json_encoders", {})
-    return partial(
-        custom_pydantic_encoder,
-        {
-            SecretStr: lambda v: v.get_secret_value(),
-            **current_encoders,
-        },
     )
 
 

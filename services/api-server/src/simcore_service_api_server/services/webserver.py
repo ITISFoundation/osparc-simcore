@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Mapping
 from uuid import UUID
 
 import httpx
@@ -145,16 +145,19 @@ class AuthSession:
         cls,
         app: FastAPI,
         session_cookies: dict,
-        product_header: dict[str, str],
+        product_extra_headers: Mapping[str, str],
     ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
-        api.client.headers = product_header
+
+        api.client.headers = product_extra_headers  # type: ignore[assignment]
         long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
+
         assert long_running_tasks_client  # nosec
         assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
-        long_running_tasks_client.client.headers = product_header
+
+        long_running_tasks_client.client.headers = product_extra_headers  # type: ignore[assignment]
         return cls(
             _api=api,
             _long_running_task_client=long_running_tasks_client,
@@ -179,7 +182,7 @@ class AuthSession:
         offset: int,
         show_hidden: bool,
         search: str | None = None,
-    ):
+    ) -> Page[ProjectGet]:
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
 

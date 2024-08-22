@@ -262,6 +262,7 @@ async def login_2fa(request: web.Request):
         )
 
     user = await db.get_user({"email": login_2fa_.email})
+    assert user is not None  # nosec
 
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
@@ -269,7 +270,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
 
-    return await login_granted_response(request, user=user)
+    return await login_granted_response(request, user=dict(user))
 
 
 class LogoutBody(InputSchema):

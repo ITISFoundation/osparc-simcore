@@ -240,6 +240,12 @@ def expected_dynamic_sidecar_spec(
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+                    "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
+                        '{"REGISTRY_AUTH": false, "REGISTRY_PATH": null, '
+                        '"REGISTRY_URL": "foo.bar.com", "REGISTRY_USER": '
+                        '"test", "REGISTRY_PW": "test", "REGISTRY_SSL": false}'
+                    ),
+                    "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
                     "DY_SIDECAR_AWS_S3_CLI_SETTINGS": (
                         '{"AWS_S3_CLI_S3": {"S3_ACCESS_KEY": "12345678", "S3_BUCKET_NAME": "simcore", '
                         '"S3_ENDPOINT": "http://172.17.0.1:9001", "S3_REGION": "us-east-1", "S3_SECRET_KEY": "12345678"}}'
@@ -265,12 +271,6 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
-                    "REGISTRY_AUTH": "False",
-                    "REGISTRY_PATH": "None",
-                    "REGISTRY_PW": "test",
-                    "REGISTRY_SSL": "False",
-                    "REGISTRY_URL": "foo.bar.com",
-                    "REGISTRY_USER": "test",
                     "R_CLONE_OPTION_BUFFER_SIZE": "0M",
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",

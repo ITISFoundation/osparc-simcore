@@ -71,7 +71,8 @@ _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "description": "Job not found",
         "model": ErrorGet,
     },
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 _LOGFILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_200_OK: {
@@ -91,8 +92,9 @@ _PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Pricing unit not found",
         "model": ErrorGet,
-    }
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    },
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_200_OK: {
@@ -103,7 +105,8 @@ _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "description": "Conflict: Logs are already being streamed",
         "model": ErrorGet,
     },
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 router = APIRouter()
 

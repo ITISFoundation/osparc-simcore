@@ -4,18 +4,19 @@
 
 from typing import Final
 
+from models_library.basic_types import VersionStr
 from packaging.version import Version
 from pydantic import parse_obj_as
 from servicelib.utils_meta import PackageInfo
 from settings_library.basic_types import VersionTag
 
 info: Final = PackageInfo(package_name="simcore-service-resource-usage-tracker")
-__version__: Final[str] = info.__version__
+__version__: Final[VersionStr] = info.__version__
 
 
 PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
-API_VERSION: Final[str] = info.__version__
+API_VERSION: Final[VersionStr] = info.__version__
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, info.api_prefix_path_tag)
 SUMMARY: Final[str] = info.get_summary()
 

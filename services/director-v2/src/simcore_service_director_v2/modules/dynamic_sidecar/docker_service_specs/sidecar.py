@@ -20,7 +20,8 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
 from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.utils_cli import create_json_encoder_wo_secrets
+from settings_library.docker_registry import RegistrySettings
+from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -90,7 +91,6 @@ def _get_environment_variables(
     metrics_collection_allowed: bool,
     telemetry_enabled: bool,
 ) -> dict[str, str]:
-    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
@@ -156,12 +156,18 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
-        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
-        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
-        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
-        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
-        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
+            encoder=create_json_encoder_wo_secrets(RegistrySettings),
+            exclude={"resolved_registry_url", "api_url"},
+        ),
+        "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
+            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
+                encoder=create_json_encoder_wo_secrets(RegistrySettings),
+                exclude={"resolved_registry_url", "api_url"},
+            )
+            if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
+            else "null"
+        ),
         "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,

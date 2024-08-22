@@ -76,5 +76,5 @@ async def test_external_dependencies_are_not_reachable(app: FastAPI):
     failed = exe_info.value.failed
     assert len(failed) == 4
 
-    for entry in ["Postgres", "RabbitMQ", "Registry", "Storage"]:
+    for entry in ["Postgres", "RabbitMQ", "Internal Registry", "Storage"]:
         assert any(f"Could not contact service '{entry}'" in err for err in failed)

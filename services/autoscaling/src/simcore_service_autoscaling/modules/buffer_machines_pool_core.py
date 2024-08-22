@@ -18,7 +18,7 @@ import logging
 from collections import defaultdict
 from typing import Final, TypeAlias, cast
 
-from aws_library.ec2.models import (
+from aws_library.ec2 import (
     AWSTagKey,
     AWSTagValue,
     EC2InstanceConfig,

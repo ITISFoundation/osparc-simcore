@@ -22,7 +22,8 @@ WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "description": "Access to wallet is not allowed",
         "model": ErrorGet,
     },
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
 
 
 @router.get(

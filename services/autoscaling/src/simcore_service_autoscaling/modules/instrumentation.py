@@ -3,8 +3,7 @@ from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass, field
 from typing import Any, Final, ParamSpec, TypeVar, cast
 
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2 import EC2InstanceData, SimcoreEC2API
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Counter, Gauge
 from servicelib.fastapi.prometheus_instrumentation import (

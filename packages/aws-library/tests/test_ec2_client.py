@@ -5,17 +5,18 @@
 
 import random
 from collections.abc import AsyncIterator, Callable
+from dataclasses import fields
 from typing import cast, get_args
 
 import botocore.exceptions
 import pytest
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.errors import (
+from aws_library.ec2._client import SimcoreEC2API
+from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2TooManyInstancesError,
 )
-from aws_library.ec2.models import (
+from aws_library.ec2._models import (
     AWSTagKey,
     EC2InstanceConfig,
     EC2InstanceData,
@@ -129,7 +130,7 @@ async def test_get_ec2_instance_capabilities_empty_list_returns_all_options(
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities(set())
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
-    assert 700 < len(instance_types) < 800
+    assert 700 < len(instance_types) < 807
 
 
 async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
@@ -137,7 +138,9 @@ async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
     faker: Faker,
 ):
     with pytest.raises(EC2InstanceTypeInvalidError):
-        await simcore_ec2_api.get_ec2_instance_capabilities(set(faker.pystr()))
+        await simcore_ec2_api.get_ec2_instance_capabilities(
+            faker.pyset(allowed_types=(str,))
+        )
 
 
 @pytest.fixture(params=_ec2_allowed_types())
@@ -343,7 +346,7 @@ async def test_get_instances(
             assert not instance_received
 
 
-async def test_stop_instances(
+async def test_stop_start_instances(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
     faker: Faker,
@@ -388,6 +391,25 @@ async def test_stop_instances(
         expected_tags=ec2_instance_config.tags,
         expected_state="stopped",
     )
+
+    # start the instances now
+    started_instances = await simcore_ec2_api.start_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # the public IPs change when the instances are stopped and started
+    for s, c in zip(started_instances, created_instances, strict=True):
+        # the rest shall be the same
+        for f in fields(EC2InstanceData):
+            if f.name == "aws_public_ip":
+                assert getattr(s, f.name) != getattr(c, f.name)
+            else:
+                assert getattr(s, f.name) == getattr(c, f.name)
 
 
 async def test_terminate_instance(
@@ -435,6 +457,16 @@ async def test_terminate_instance(
         expected_tags=ec2_instance_config.tags,
         expected_state="terminated",
     )
+
+
+async def test_start_instance_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.start_instances([fake_ec2_instance_data()])
 
 
 async def test_stop_instance_not_existing_raises(

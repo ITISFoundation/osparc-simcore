@@ -30,7 +30,7 @@ qx.Class.define("osparc.service.Store", {
           return;
         }
 
-        osparc.data.Resources.getInstance().getAllPages("servicesDev")
+        osparc.data.Resources.getInstance().getAllPages("servicesV2")
           .then(servicesArray => {
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
@@ -58,14 +58,15 @@ qx.Class.define("osparc.service.Store", {
         const params = {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
-        osparc.data.Resources.getOne("servicesDev", params)
+        osparc.data.Resources.getOne("servicesV2", params)
           .then(service => {
             this.__addHit(service);
             this.__addTSRInfo(service);
             this.__addExtraTypeInfo(service);
             this.__addToCache(service)
             resolve(service);
-          });
+          })
+          .catch(console.error);
       });
     },
 
@@ -106,7 +107,7 @@ qx.Class.define("osparc.service.Store", {
         url: osparc.data.Resources.getServiceUrl(key, version),
         data: patchData
       };
-      return osparc.data.Resources.fetch("servicesDev", "patch", params)
+      return osparc.data.Resources.fetch("servicesV2", "patch", params)
         .then(() => {
           this.servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;

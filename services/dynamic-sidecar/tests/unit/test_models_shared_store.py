@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import json
-import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -122,14 +121,6 @@ async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
 
     # ensure object objects are compatible
     parsed_legacy_format = json.loads(disk_shared_store.json())
-    warnings.warn(
-        "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
-    )
-    # remove properties which have been added but did not exit
-    # when the legacy format was created
-    # NOTE this was already parsed so this check is a regression
-    # to check compatibility with very old formats
-    parsed_legacy_format.pop("original_to_container_names")
 
     assert parsed_legacy_format == json.loads(
         (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()

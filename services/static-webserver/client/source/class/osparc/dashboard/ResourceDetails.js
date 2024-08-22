@@ -82,13 +82,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   members: {
     __resourceData: null,
     __resourceModel: null,
+    __infoPage: null,
     __dataPage: null,
+    __servicesUpdatePage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __billingSettings: null,
     __classifiersPage: null,
     __qualityPage: null,
-    __servicesUpdatePage: null,
     __openButton: null,
 
     __createToolbar: function() {
@@ -126,6 +127,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
 
       openButton.addListener("execute", () => this.__openTapped());
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
+        openButton.setEnabled(canBeOpened);
+      }
 
       toolbar.add(openButton);
     },
@@ -175,7 +182,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       win.open();
       win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
-          this._openPage(this.__servicesUpdatePage);
+          this.openUpdateServices();
         } else {
           this.__openResource();
         }
@@ -196,8 +203,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
+    __openInfo: function() {
+      this._openPage(this.__infoPage);
+    },
+
     openData: function() {
       this._openPage(this.__dataPage);
+    },
+
+    openUpdateServices: function() {
+      this._openPage(this.__servicesUpdatePage);
     },
 
     openAccessRights: function() {
@@ -218,10 +233,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     openBillingSettings: function() {
       this._openPage(this.__billingSettings);
-    },
-
-    openUpdateServices: function() {
-      this._openPage(this.__servicesUpdatePage);
     },
 
     __createServiceVersionSelector: function() {
@@ -314,7 +325,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const id = "Information";
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/info/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__infoPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
@@ -364,6 +375,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         this.__addOpenButton(page);
 
+        if (this.__resourceData["resourceType"] === "study") {
+          const studyData = this.__resourceData;
+          const canBeOpened = osparc.study.Utils.canShowBillingOptions(studyData);
+          page.setEnabled(canBeOpened);
+        }
+
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
@@ -407,6 +424,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        const canBeOpened = osparc.study.Utils.canShowPreview(studyData);
+        page.setEnabled(canBeOpened);
+      }
 
       const lazyLoadContent = () => {
         const resourceModel = this.__resourceModel;
@@ -456,6 +479,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const iconSrc = "@FontAwesome5Solid/file/22";
       const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        const canBeOpened = osparc.study.Utils.canShowStudyData(studyData);
+        page.setEnabled(canBeOpened);
+      }
 
       const lazyLoadContent = () => {
         const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
@@ -624,6 +653,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
 
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        const canBeOpened = osparc.study.Utils.canShowServiceUpdates(studyData);
+        page.setEnabled(canBeOpened);
+      }
+
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
         servicesUpdate.addListener("updateService", e => {
@@ -652,6 +687,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const iconSrc = "@FontAwesome5Solid/play-circle/22";
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        const canBeOpened = osparc.study.Utils.canShowServiceBootOptions(studyData);
+        page.setEnabled(canBeOpened);
+      }
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
@@ -695,6 +736,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const iconSrc = "@FontAwesome5Solid/copy/22";
         const title = this.tr("Publish ") + osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+
+        if (this.__resourceData["resourceType"] === "study") {
+          const studyData = this.__resourceData;
+          const canBeOpened = osparc.study.Utils.canBeDuplicated(studyData);
+          page.setEnabled(canBeOpened);
+        }
 
         const lazyLoadContent = () => {
           const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData);

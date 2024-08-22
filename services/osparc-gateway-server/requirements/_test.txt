@@ -32,7 +32,7 @@ cloudpickle==3.0.0
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -43,7 +43,7 @@ dask==2024.5.1
     #   distributed
 dask-gateway==2024.1.0
     # via -r requirements/_test.in
-debugpy==1.8.2
+debugpy==1.8.5
     # via -r requirements/_test.in
 distributed==2024.5.1
     # via
@@ -53,7 +53,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.2
     # via pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -104,7 +104,7 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.10.1
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -127,7 +127,7 @@ psutil==5.9.8
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -136,7 +136,7 @@ pytest==8.2.2
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -178,7 +178,7 @@ tblib==3.0.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==8.5.0
+tenacity==9.0.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
