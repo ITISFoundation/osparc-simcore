@@ -269,6 +269,16 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
+      const logCellEvent = e => {
+        console.log("logCellEvent", e);
+        table.setRowHeight(60);
+        // check message's height
+        // set height of the entire row and its children
+        const growRow = e.getRow();
+        console.log(growRow);
+      }
+      table.addListener("cellTap", logCellEvent, this);
+
       this.__applyFilters();
 
       return table;
