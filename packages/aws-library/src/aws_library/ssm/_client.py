@@ -123,11 +123,9 @@ class SimcoreSSMAPI:
                 }
             ],
         )
-        if (
-            "InstanceInformationList"  # noqa: RUF019 # the key is actually NOT REQUIRED!
-            in response
-            and response["InstanceInformationList"]
-        ):
+        if response.get(
+            "InstanceInformationList"
+        ):  # NOTE: the key is actually NOT REQUIRED!
             assert len(response["InstanceInformationList"]) == 1  # nosec
             assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
             return bool(
