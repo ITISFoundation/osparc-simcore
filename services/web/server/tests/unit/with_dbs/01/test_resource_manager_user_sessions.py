@@ -190,8 +190,8 @@ async def test_redis_registry_key_will_always_expire(
     await redis_registry.set_key_alive(second_key, -3000)
 
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_attempt(15),
+        wait=wait_fixed(0.1),
+        stop=stop_after_attempt(5),
         reraise=True,
     ):
 
