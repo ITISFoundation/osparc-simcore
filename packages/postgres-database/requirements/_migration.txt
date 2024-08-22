@@ -31,12 +31,12 @@ markupsafe==2.1.5
     #   mako
 requests==2.32.3
     # via docker
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.5.0
+tenacity==9.0.0
     # via -r requirements/_migration.in
 typing-extensions==4.12.2
     # via
