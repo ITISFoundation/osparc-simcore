@@ -204,7 +204,9 @@ async def _make_pending_buffer_ec2s_join_cluster(
     ssm_client = get_ssm_client(app)
 
     if buffer_ec2s_pending := [
-        i.ec2_instance for i in cluster.pending_ec2s if is_buffer_machine(i.tags)
+        i.ec2_instance
+        for i in cluster.pending_ec2s
+        if is_buffer_machine(i.ec2_instance.tags)
     ]:
         buffer_ec2_connection_state = await limited_gather(
             *[
