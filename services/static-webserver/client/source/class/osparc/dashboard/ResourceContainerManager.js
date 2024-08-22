@@ -47,7 +47,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     });
     this._add(nonGroupedContainer);
 
-    this.__groupedContainers = [];
+    this.__groupedContainersList = [];
   },
 
   properties: {
@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __folderHeader: null,
     __foldersContainer: null,
     __nonGroupedContainer: null,
-    __groupedContainers: null,
+    __groupedContainersList: null,
 
     addNonResourceCard: function(card) {
       if (card instanceof qx.ui.form.ToggleButton) {
@@ -142,7 +142,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     removeCard: function(uuid) {
       if (this.getGroupBy()) {
-        this.__groupedContainers.forEach(groupedContainer => groupedContainer.removeCard(uuid));
+        this.__groupedContainersList.forEach(groupedContainer => groupedContainer.removeCard(uuid));
       } else {
         this.__nonGroupedContainer.removeCard(uuid);
       }
@@ -164,7 +164,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         headerColor,
         visibility: "excluded"
       });
-      this.__groupedContainers.push(groupContainer);
+      this.__groupedContainersList.push(groupContainer);
       return groupContainer;
     },
 
@@ -181,7 +181,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         return this.__nonGroupedContainer.getChildren();
       }
       const cards = [];
-      this.__groupedContainers.forEach(groupedContainer => cards.push(...groupedContainer.getCards()));
+      this.__groupedContainersList.forEach(groupedContainer => cards.push(...groupedContainer.getCards()));
       return cards;
     },
 
@@ -199,9 +199,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __getGroupContainer: function(gid) {
-      const idx = this.__groupedContainers.findIndex(groupContainer => groupContainer.getGroupId() === gid.toString());
+      const idx = this.__groupedContainersList.findIndex(groupContainer => groupContainer.getGroupId() === gid.toString());
       if (idx > -1) {
-        return this.__groupedContainers[idx];
+        return this.__groupedContainersList[idx];
       }
       return null;
     },
@@ -255,8 +255,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this.__nonGroupedContainer.removeAll();
         this.__nonGroupedContainer = null;
       }
-      this.__groupedContainers.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
-      this.__groupedContainers = [];
+      this.__groupedContainersList.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
+      this.__groupedContainersList = [];
       this._removeAll();
     },
 
