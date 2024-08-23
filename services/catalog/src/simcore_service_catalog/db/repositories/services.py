@@ -176,6 +176,7 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         product_name: str | None = None,
     ) -> ServiceMetaDataAtDB | None:
+
         query = sa.select(services_meta_data).where(
             (services_meta_data.c.key == key)
             & (services_meta_data.c.version == version)

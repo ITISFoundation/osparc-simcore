@@ -172,6 +172,7 @@ async def get_service(
         version=service_version,
     )
     if not service:
+        # no service found provided `access_rights`
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -216,11 +217,11 @@ async def update_service(
             product_name=product_name,
         )
 
-    current_access_rights = await repo.get_service_access_rights(
+    access_rights = await repo.get_service_access_rights(
         key=service_key, version=service_version, product_name=product_name
     )
 
-    if not current_access_rights:
+    if not access_rights:
         raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -256,7 +257,7 @@ async def update_service(
     if update.access_rights:
 
         # before
-        before_gids = [r.gid for r in current_access_rights]
+        previous_gids = [r.gid for r in access_rights]
 
         # new
         new_access_rights = [
@@ -273,17 +274,17 @@ async def update_service(
         await repo.upsert_service_access_rights(new_access_rights)
 
         # then delete the ones that were removed
-        remove_gids = [gid for gid in before_gids if gid not in update.access_rights]
-        delete_access_rights = [
+        rm_access_rights = [
             ServiceAccessRightsAtDB(
                 key=service_key,
                 version=service_version,
                 gid=gid,
                 product_name=product_name,
             )
-            for gid in remove_gids
+            for gid in previous_gids
+            if gid not in update.access_rights
         ]
-        await repo.delete_service_access_rights(delete_access_rights)
+        await repo.delete_service_access_rights(rm_access_rights)
 
     return await get_service(
         repo=repo,
