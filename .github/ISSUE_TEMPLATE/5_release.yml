@@ -156,7 +156,7 @@ body:
           - [ ] tip.science
         - [ ] Check testing endpoint ex. `https://testing.osparc.speag.com/`
         - [ ] Update status page
-        - [ ] Update Release notes (https://github.com/ITISFoundation/osparc-issues/blob/master/scripts/run_after_hotfix_to_prod.py)
+        - [ ] Update Release notes if hotfix (https://github.com/ITISFoundation/osparc-issues/blob/master/scripts/run_after_hotfix_to_prod.py)
         - [ ] Check e2e runs
         - [ ] Announce in mattermost
         ``` md
