@@ -51,7 +51,7 @@ class TagDict(TypedDict, total=True):
 
 @dataclass(frozen=True)
 class TagsRepo:
-    user_id: int
+    user_id: int  # Determines access-rights
 
     async def access_count(
         self,
