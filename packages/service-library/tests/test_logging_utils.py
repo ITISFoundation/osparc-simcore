@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+from contextlib import suppress
 from typing import Any
 
 import pytest
@@ -12,9 +13,22 @@ from servicelib.logging_utils import (
     guess_message_log_level,
     log_context,
     log_decorator,
+    log_exceptions,
 )
 
 _logger = logging.getLogger(__name__)
+_ALL_LOGGING_LEVELS = [
+    logging.CRITICAL,
+    logging.ERROR,
+    logging.WARNING,
+    logging.INFO,
+    logging.DEBUG,
+    logging.NOTSET,
+]
+
+
+def _to_level_name(lvl: int) -> str:
+    return logging.getLevelName(lvl)
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
@@ -45,12 +59,13 @@ async def test_error_regression_async_def(
         msg = "Raising as expected"
         raise RuntimeError(msg)
 
-    caplog.clear()
     argument1 = faker.pyint()
     argument2 = faker.pystr()
     key_argument1 = faker.pybool()
     key_argument2 = faker.pystr()
 
+    # run function under test: _not_raising_fct -----------------
+    caplog.clear()
     result = await _not_raising_fct(
         argument1, argument2, keyword_arg1=key_argument1, keyword_arg2=key_argument2
     )
@@ -70,6 +85,7 @@ async def test_error_regression_async_def(
         in return_record.message
     )
 
+    # run function under test: _raising_error -----------------
     caplog.clear()
     with pytest.raises(RuntimeError):
         await _raising_error(
@@ -84,7 +100,7 @@ async def test_error_regression_async_def(
         in info_record.message
     )
     error_record = caplog.records[1]
-    assert error_record.levelno == logging.ERROR
+    assert error_record.levelno == logging.INFO
     assert error_record.exc_text
     assert "Traceback" in error_record.exc_text
 
@@ -156,7 +172,7 @@ def test_error_regression_sync_def(
         in info_record.message
     )
     error_record = caplog.records[1]
-    assert error_record.levelno == logging.ERROR
+    assert error_record.levelno == logging.INFO
     assert error_record.exc_text
     assert "Traceback" in error_record.exc_text
 
@@ -195,6 +211,8 @@ def test_log_context_with_log_duration(
     with log_context(_logger, logging.ERROR, "test", log_duration=with_log_duration):
         ...
 
+    all(r.levelno == logging.ERROR for r in caplog.records)
+
     assert "Starting test ..." in caplog.text
     if with_log_duration:
         assert "Finished test in " in caplog.text
@@ -222,3 +240,85 @@ def test_log_context(
     with log_context(_logger, logging.ERROR, msg, *args, extra=extra):
         ...
     assert len(caplog.messages) == 2
+
+
+@pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)
+def test_logs_no_exceptions(caplog: pytest.LogCaptureFixture, level: int):
+    caplog.set_level(level)
+
+    with log_exceptions(_logger, level):
+        ...
+
+    assert not caplog.records
+
+
+@pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)
+def test_log_exceptions_and_suppress(caplog: pytest.LogCaptureFixture, level: int):
+    caplog.set_level(level)
+
+    exc_msg = "logs exceptions and suppresses"
+    with suppress(ValueError), log_exceptions(_logger, level, "CONTEXT", exc_info=True):
+        raise ValueError(exc_msg)
+
+    assert len(caplog.records) == (1 if level != logging.NOTSET else 0)
+
+    if caplog.records:
+        assert caplog.records[0].levelno == level
+        record = caplog.records[0]
+        # this is how it looks with exc_info=True
+        #
+        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: logs exceptions and suppresses
+        # Traceback (most recent call last):
+        # File "path/to/file.py", line 163, in log_exceptions
+        #     yield
+        # File "path/to/file2.py", line 262, in test_log_exceptions_and_suppress
+        #     raise ValueError(msg)
+        # ValueError: logs exceptions and suppresses
+        #
+
+        assert record.message == f"CONTEXT raised ValueError: {exc_msg}"
+        # since exc_info=True
+        assert record.exc_text
+        assert exc_msg in record.exc_text
+        assert "ValueError" in record.exc_text
+        assert "Traceback" in record.exc_text
+
+
+@pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)
+def test_log_exceptions_and_suppress_without_exc_info(
+    caplog: pytest.LogCaptureFixture, level: int
+):
+    caplog.set_level(level)
+
+    exc_msg = "logs exceptions and suppresses"
+    with suppress(ValueError), log_exceptions(
+        _logger, level, "CONTEXT", exc_info=False
+    ):
+        raise ValueError(exc_msg)
+
+    assert len(caplog.records) == (1 if level != logging.NOTSET else 0)
+
+    if caplog.records:
+        assert caplog.records[0].levelno == level
+        record = caplog.records[0]
+        # this is how it looks with exc_info=False
+        #
+        # CRITICAL tests.test_logging_utils:logging_utils.py:170 CONTEXT raised ValueError: logs exceptions and suppresses
+        #
+
+        assert record.message == f"CONTEXT raised ValueError: {exc_msg}"
+
+        # since exc_info=False
+        assert not record.exc_text
+
+
+@pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)
+def test_log_exceptions_and_reraise(caplog: pytest.LogCaptureFixture, level: int):
+    caplog.set_level(level)
+
+    msg = "logs exceptions and reraises"
+    with pytest.raises(ValueError, match=msg), log_exceptions(_logger, level):
+        raise ValueError(msg)
+
+    assert len(caplog.records) == (1 if level != logging.NOTSET else 0)
+    assert all(r.levelno == level for r in caplog.records)
