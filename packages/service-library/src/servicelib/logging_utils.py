@@ -159,7 +159,20 @@ def log_exceptions(
     stack_info: bool = False,
 ) -> Iterator[None]:
     """If an exception is raised, it gets logged with level.
+
     NOTE that this does NOT suppress exceptions
+
+    Example: logging exceptions raised a "section of code" for debugging purposes
+
+    # raises
+    with log_exceptions(logger, logging.DEBUG):
+        # ...
+        resp.raise_for_status()
+
+    # does NOT raises  (NOTE: use composition of context managers)
+    with suppress(Exception), log_exceptions(logger, logging.DEBUG):
+        # ...
+        resp.raise_for_status()
     """
     try:
         yield
@@ -239,7 +252,8 @@ def log_decorator(
     logger: logging.Logger | None,
     level: int = logging.DEBUG,
     *,
-    # NOTE: ANE wants full stack tracebacks on exceptions by default
+    # NOTE: default defined by legacy: ANE defined full stack tracebacks
+    # on exceptions
     exc_info: bool = True,
     exc_stack_info: bool = True,
 ) -> Callable[[F], F]:
