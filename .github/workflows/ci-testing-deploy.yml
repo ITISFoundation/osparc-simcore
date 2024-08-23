@@ -1314,7 +1314,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.11", "3.12"]
+        python: ["3.11"]
+        #python: ["3.11", "3.12"] TODO: re-enable it (GCR)
         os: [ubuntu-22.04]
       fail-fast: false
     steps:
