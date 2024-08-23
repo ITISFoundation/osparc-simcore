@@ -204,7 +204,7 @@ rich==13.4.2
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-setuptools==69.2.0
+setuptools==73.0.1
     # via
     #   jsonschema
     #   opentelemetry-instrumentation
@@ -232,7 +232,6 @@ typer==0.12.3
 typing-extensions==4.4.0
     # via
     #   aiodocker
-    #   asgiref
     #   opentelemetry-sdk
     #   pydantic
     #   typer

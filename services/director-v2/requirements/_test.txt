@@ -38,10 +38,6 @@ asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -102,11 +98,6 @@ distributed==2024.5.1
     #   dask
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==27.0.0
@@ -306,11 +297,6 @@ tblib==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 toolz==0.12.1
     # via
     #   -c requirements/_base.txt
@@ -334,7 +320,6 @@ typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 tzdata==2024.1

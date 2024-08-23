@@ -67,10 +67,8 @@ asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
 async-timeout==4.0.3
     # via
-    #   aiohttp
     #   aiopg
     #   asyncpg
-    #   redis
 asyncpg==0.29.0
     # via sqlalchemy
 attrs==23.2.0
@@ -133,8 +131,6 @@ email-validator==2.1.1
     # via
     #   fastapi
     #   pydantic
-exceptiongroup==1.2.0
-    # via anyio
 fast-depends==2.4.2
     # via faststream
 fastapi==0.99.1
@@ -461,7 +457,7 @@ rich==13.7.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-setuptools==69.2.0
+setuptools==73.0.1
     # via
     #   jsonschema
     #   opentelemetry-instrumentation
@@ -542,8 +538,6 @@ typing-extensions==4.10.0
     #   aiodebug
     #   aiodocker
     #   alembic
-    #   anyio
-    #   asgiref
     #   fastapi
     #   fastapi-pagination
     #   faststream
@@ -551,7 +545,6 @@ typing-extensions==4.10.0
     #   pint
     #   pydantic
     #   typer
-    #   uvicorn
 ujson==5.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
