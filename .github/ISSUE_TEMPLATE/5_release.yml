@@ -140,7 +140,7 @@ body:
         - mattermost channels
             - [ ] maintenance
             - [ ] power users
-        - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Publish draft [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Check release CI
   - type: textarea
     attributes:
