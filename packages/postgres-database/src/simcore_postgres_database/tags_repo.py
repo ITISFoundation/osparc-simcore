@@ -87,14 +87,12 @@ class TagsRepo:
         write: bool = True,
         delete: bool = True,
     ) -> TagDict:
-        values = {"name": name, "color": color}
+        values = {
+            "name": name,
+            "color": color,
+        }
         if description:
             values["description"] = description
-
-        if not read:
-            read = write or delete
-        if not write:
-            write = delete
 
         async with conn.begin():
             # insert new tag

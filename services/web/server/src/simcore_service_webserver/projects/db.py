@@ -58,6 +58,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..application_settings import ApplicationSettings
 from ..db.models import projects_tags, projects_to_wallet
 from ..utils import now_str
 from ._comments_db import (
