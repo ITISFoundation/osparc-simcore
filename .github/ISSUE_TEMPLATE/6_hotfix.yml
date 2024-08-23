@@ -98,12 +98,12 @@ body:
         - [ ] Draft [release notes](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀
         - [ ] No need for maintenance announcement?: Target update of ``<target_service>``
         - [ ] Deploy hot-fix.
-          - [ ] ``autodeployer`` OFF in aws-prod, dalco-prod, ti
           - [ ] [release](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀 !!!!
           - [ ] aws-prod (updated target service)
           - [ ] dalco-prod (updated target service)
           - [ ] ti (updated target service)
         - [ ] Test and Monitor. Revert back if needed!
+        - [ ] Update Release notes (https://github.com/ITISFoundation/osparc-issues/blob/master/scripts/run_after_hotfix_to_prod.py)
         - [ ] Announce hot-fix
         ``` md
         :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<version>
