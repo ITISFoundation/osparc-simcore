@@ -13,7 +13,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_tags import (
+from simcore_postgres_database.tags_repo import (
     TagDict,
     TagNotFoundError,
     TagOperationNotAllowedError,

@@ -13,6 +13,11 @@ from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
 from simcore_postgres_database.models.tags_access_rights import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
+from simcore_postgres_database.tags_repo import (
+    TagNotFoundError,
+    TagOperationNotAllowedError,
+    TagsRepo,
+)
 from simcore_postgres_database.tags_sql import (
     add_tag_to_project_stmt,
     create_tag_stmt,
@@ -24,11 +29,6 @@ from simcore_postgres_database.tags_sql import (
     update_tag_stmt,
 )
 from simcore_postgres_database.utils import as_postgres_sql_query_str
-from simcore_postgres_database.utils_tags import (
-    TagNotFoundError,
-    TagOperationNotAllowedError,
-    TagsRepo,
-)
 
 
 @pytest.fixture

@@ -91,7 +91,10 @@ class TagsRepo:
         if description:
             values["description"] = description
 
-        # TODO: validate read/write/delete combitations
+        if not read:
+            read = write or delete
+        if not write:
+            write = delete
 
         async with conn.begin():
             # insert new tag
