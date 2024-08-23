@@ -241,7 +241,7 @@ class LongRunningTaskWaiter:
     long_running_task_data: dict
     logger: logging.Logger
 
-    def __call__(self) -> bool:
+    def __call__(self) -> None:
         assert "status_href" in self.long_running_task_data
         assert "result_href" in self.long_running_task_data
         done = False
@@ -255,7 +255,10 @@ class LongRunningTaskWaiter:
                     status_info["task_progress"],
                 )
         with self.page.expect_response(self.long_running_task_data["result_href"]) as result_info:
-            return result_info
+            self.logger.info(
+                "task completed: %s",
+                result_info["data"],
+            )
 
 
 def wait_for_pipeline_state(
