@@ -202,6 +202,32 @@ async def test_cluster_scaling_with_no_tasks_does_nothing(
     )
 
 
+@pytest.mark.acceptance_test(
+    "Ensure this does not happen https://github.com/ITISFoundation/osparc-simcore/issues/6227"
+)
+async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
+    minimal_configuration: None,
+    disabled_ssm: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    dask_spec_local_cluster: distributed.SpecCluster,
+):
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
 async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
