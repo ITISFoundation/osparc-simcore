@@ -1036,7 +1036,7 @@ class ProjectDBAPI(BaseProjectDB):
             if tag_id not in project_tags:
                 await conn.execute(
                     projects_tags.insert().values(
-                        study_id=project["id"],
+                        project_id=project["id"],
                         tag_id=tag_id,
                     )
                 )
@@ -1053,7 +1053,7 @@ class ProjectDBAPI(BaseProjectDB):
             # pylint: disable=no-value-for-parameter
             query = projects_tags.delete().where(
                 and_(
-                    projects_tags.c.study_id == project["id"],
+                    projects_tags.c.project_id == project["id"],
                     projects_tags.c.tag_id == tag_id,
                 )
             )

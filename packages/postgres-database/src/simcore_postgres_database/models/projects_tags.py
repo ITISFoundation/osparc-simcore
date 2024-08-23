@@ -8,10 +8,10 @@ projects_tags = sa.Table(
     #
     # Tags associated to a project (many-to-many relation)
     #
-    "study_tags",
+    "projects_tags",
     metadata,
     sa.Column(
-        "study_id",
+        "project_id",
         sa.BigInteger,
         sa.ForeignKey(projects.c.id, onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
@@ -23,5 +23,5 @@ projects_tags = sa.Table(
         sa.ForeignKey(tags.c.id, onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
-    sa.UniqueConstraint("study_id", "tag_id"),
+    sa.UniqueConstraint("project_id", "tag_id"),
 )

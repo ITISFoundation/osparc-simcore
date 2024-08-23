@@ -239,7 +239,7 @@ class BaseProjectDB:
     @staticmethod
     async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
         query = sa.select(projects_tags.c.tag_id).where(
-            projects_tags.c.study_id == project_id
+            projects_tags.c.project_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
 
@@ -251,7 +251,7 @@ class BaseProjectDB:
             await conn.execute(
                 pg_insert(projects_tags)
                 .values(
-                    study_id=project_index_id,
+                    project_id=project_index_id,
                     tag_id=tag_id,
                 )
                 .on_conflict_do_nothing()
