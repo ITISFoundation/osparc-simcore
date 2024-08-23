@@ -467,6 +467,22 @@ def start_study_from_plus_button(
 
 
 @pytest.fixture
+def find_and_start_template_in_dashboard(
+    page: Page,
+) -> Callable[[str], None]:
+    def _(template_name: str) -> None:
+        with log_context(logging.INFO, f"Finding {template_name=} in dashboard"):
+            page.get_by_test_id("templatesTabBtn").click()
+            _textbox = page.get_by_test_id("searchBarFilter-textField-template")
+            _textbox.fill(template_name)
+            _textbox.press("Enter")
+            # OM: press first card
+            page.get_by_test_id(test_id).click()
+
+    return _
+
+
+@pytest.fixture
 def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
@@ -498,6 +514,21 @@ def create_project_from_new_button(
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
         return create_new_project_and_delete(expected_states, False)
+
+    return _
+
+
+@pytest.fixture
+def create_project_from_template_dashboard(
+    find_and_start_template_in_dashboard: Callable[[str], None],
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState]], dict[str, Any]
+    ],
+) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+    def _(template_name: str) -> dict[str, Any]:
+        find_and_start_template_in_dashboard(template_name)
+        expected_states = (RunningState.UNKNOWN,)
+        return create_new_project_and_delete(expected_states)
 
     return _
 
