@@ -142,13 +142,7 @@ typing-extensions==4.12.2
     #   opentelemetry-sdk
     #   pydantic
     #   uvicorn
-urllib3==2.2.2
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   requests
-uvicorn==0.30.1
+uvicorn==0.30.6
     # via -r requirements/_fastapi.in
 wrapt==1.16.0
     # via

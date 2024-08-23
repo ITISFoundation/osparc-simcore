@@ -29,8 +29,8 @@ routes = web.RouteTableDef()
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 def _handle_users_exceptions(handler: Handler):

@@ -1,4 +1,6 @@
-aiohttp==3.9.5
+aiohappyeyeballs==2.4.0
+    # via aiohttp
+aiohttp==3.10.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -12,7 +14,7 @@ async-timeout==4.0.3
     # via
     #   aiohttp
     #   aiopg
-attrs==23.2.0
+attrs==24.2.0
     # via
     #   -r requirements/_aiohttp.in
     #   aiohttp
@@ -70,13 +72,13 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 markupsafe==2.1.5
     # via werkzeug
-more-itertools==10.3.0
+more-itertools==10.4.0
     # via openapi-core
 multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.19.2
+openapi-core==0.19.3
     # via -r requirements/_aiohttp.in
 openapi-schema-validator==0.6.2
     # via
@@ -160,7 +162,7 @@ psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -178,7 +180,7 @@ requests==2.32.3
     #   opentelemetry-exporter-otlp-proto-http
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.19.0
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -188,7 +190,7 @@ six==1.16.0
     # via
     #   isodate
     #   rfc3339-validator
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt

@@ -86,7 +86,8 @@ qx.Class.define("osparc.pricing.ServicesList", {
         metadataPromises.push(osparc.service.Store.getService(key, version));
       });
       Promise.all(metadataPromises)
-        .then(() => {
+        .catch(err => console.error(err))
+        .finally(() => {
           const sList = [];
           services.forEach(service => {
             const key = service["serviceKey"];
@@ -96,11 +97,9 @@ qx.Class.define("osparc.pricing.ServicesList", {
               sList.push(new osparc.data.model.Service(serviceMetadata));
             }
           });
-
           const servicesList = this.getChildControl("services-list");
           servicesList.setModel(new qx.data.Array(sList));
         })
-        .catch(err => console.error(err));
     },
 
     __openAddServiceToPlan: function() {

@@ -22,7 +22,7 @@ pydantic==1.10.17
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-sqlalchemy==1.4.52
+sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in

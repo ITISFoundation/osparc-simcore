@@ -5,10 +5,8 @@ import timeit
 import urllib.parse
 from contextlib import contextmanager
 from datetime import datetime
-from urllib.parse import unquote_plus
 
 import pytest
-import yarl
 from simcore_service_webserver.utils import (
     DATETIME_FORMAT,
     compose_support_error_msg,
@@ -17,6 +15,30 @@ from simcore_service_webserver.utils import (
     to_datetime,
 )
 from yarl import URL
+
+
+def test_yarl_new_url_generation():
+    api_endpoint = URL("http://director:8001/v0")
+    service_key = "simcore/services/dynamic/smash"
+    service_version = "1.0.3"
+
+    quoted_service_key = urllib.parse.quote(service_key, safe="")
+
+    # Since 1.6.x composition using '/' creates URLs with auto-encoding enabled by default
+    assert (
+        (str(api_endpoint / "services" / quoted_service_key / service_version))
+        == "http://director:8001/v0/services/simcore%252Fservices%252Fdynamic%252Fsmash/1.0.3"
+    )
+
+    # Passing encoded=True parameter prevents URL auto-encoding, user is responsible about URL correctness
+    url = URL(
+        f"http://director:8001/v0/services/{quoted_service_key}/1.0.3", encoded=True
+    )
+
+    assert (
+        (str(url))
+        == "http://director:8001/v0/services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
+    )
 
 
 def test_time_utils():
@@ -33,45 +55,6 @@ def test_time_utils():
     now_time = datetime.utcnow()
     snapshot = now_time.strftime(DATETIME_FORMAT)
     assert now_time == datetime.strptime(snapshot, DATETIME_FORMAT)
-
-
-def test_yarl_url_compose_changed_with_latest_release():
-    # TODO: add tests and do this upgrade carefuly. Part of https://github.com/ITISFoundation/osparc-simcore/issues/2008
-    #
-    # With yarl=1.6.* failed tests/unit/isolated/test_director_api.py::test_director_workflow
-    #
-    # Actually is more consistent since
-    #   services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3  is decoposed as  [services, simcore%2Fservices%2Fdynamic%2Fsmash, 1.0.3]
-    #
-    api_endpoint = URL("http://director:8001/v0")
-    service_key = "simcore/services/dynamic/smash"
-    service_version = "1.0.3"
-
-    url = (
-        api_endpoint
-        / "services"
-        / urllib.parse.quote(service_key, safe="")
-        / service_version
-    )
-
-    assert (
-        "/",
-        "v0",
-        "services",
-        service_key,
-        service_version,
-    ) == url.parts, f"In yarl==1.5.1, this fails in {yarl.__version__}"
-
-    assert "simcore/services/dynamic/smash/1.0.3" == unquote_plus(
-        "simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
-    )
-    assert (
-        urllib.parse.quote(service_key, safe="")
-        == "simcore%2Fservices%2Fdynamic%2Fsmash"
-    )
-    assert (
-        urllib.parse.quote_plus(service_key) == "simcore%2Fservices%2Fdynamic%2Fsmash"
-    )
 
 
 @pytest.mark.skip(reason="DEV-demo")

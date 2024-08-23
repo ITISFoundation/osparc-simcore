@@ -1,6 +1,6 @@
 astroid==3.2.4
     # via pylint
-black==24.4.2
+black==24.8.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.2.1
     # via pip-tools
@@ -31,7 +31,7 @@ mccabe==0.7.0
     # via pylint
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.11.0
+mypy==1.11.1
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.0.0
     # via
@@ -46,7 +46,7 @@ packaging==24.1
     #   build
 pathspec==0.12.1
     # via black
-pip==24.1.2
+pip==24.2
     # via pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -55,7 +55,7 @@ platformdirs==4.2.2
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.7.1
+pre-commit==3.8.0
     # via -r requirements/../../../requirements/devenv.txt
 pygments==2.18.0
     # via rich
@@ -65,16 +65,16 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
 rich==13.7.1
     # via typer
-ruff==0.5.5
+ruff==0.6.1
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==71.1.0
+setuptools==73.0.1
     # via pip-tools
 shellingham==1.5.4
     # via typer
@@ -86,9 +86,9 @@ tomli==2.0.1
     #   mypy
     #   pip-tools
     #   pylint
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
-typer==0.12.3
+typer==0.12.4
     # via -r requirements/_tools.in
 typing-extensions==4.12.2
     # via
@@ -100,5 +100,5 @@ typing-extensions==4.12.2
     #   typer
 virtualenv==20.26.3
     # via pre-commit
-wheel==0.43.0
+wheel==0.44.0
     # via pip-tools

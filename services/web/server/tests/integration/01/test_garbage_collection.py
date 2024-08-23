@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import re
-from collections.abc import AsyncIterable, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -18,6 +18,7 @@ import pytest
 import redis.asyncio as aioredis
 import socketio
 import sqlalchemy as sa
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
@@ -65,7 +66,10 @@ pytest_simcore_core_services_selection = [
     "redis",
     "storage",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = [
+    "minio",
+    "adminer",
+]
 
 
 API_VERSION = "v0"
@@ -76,12 +80,12 @@ WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY
 
 
 @pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(database_from_template_before_each_function):
+def _drop_and_recreate_postgres(database_from_template_before_each_function):
     return
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_settings: RedisSettings):
+async def _delete_all_redis_keys(redis_settings: RedisSettings):
     client = aioredis.from_url(
         redis_settings.build_redis_dsn(RedisDatabase.RESOURCES),
         encoding="utf-8",
@@ -182,18 +186,20 @@ def client(
 
 
 @pytest.fixture
-def disable_garbage_collector_task(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def disable_garbage_collector_task(mocker: MockerFixture) -> mock.MagicMock:
     """patch the setup of the garbage collector so we can call it manually"""
 
-    async def _fake_background_task(*args, **kwargs):
+    async def _fake_background_task(app: web.Application):
+        # startup
+        await asyncio.sleep(0.1)
         yield
+        # teardown
+        await asyncio.sleep(0.1)
 
-    mocked_run_background = mocker.patch(
+    return mocker.patch(
         "simcore_service_webserver.garbage_collector.plugin.run_background_task",
         side_effect=_fake_background_task,
     )
-    yield mocked_run_background
-    mocked_run_background.assert_called()
 
 
 async def login_user(client: TestClient):

@@ -43,7 +43,7 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.6.0
+coverage==7.6.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
@@ -52,7 +52,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -107,7 +107,7 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.10.1
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -121,7 +121,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -132,7 +132,7 @@ pytest==8.2.2
     #   pytest-mock
 pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
@@ -189,9 +189,9 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-psycopg2==2.9.21.20240417
+types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240724
+types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
 typing-extensions==4.10.0
     # via

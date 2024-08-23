@@ -37,9 +37,7 @@ from simcore_service_webserver.groups.api import (
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# NOTE:
-
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")

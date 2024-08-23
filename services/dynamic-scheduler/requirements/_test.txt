@@ -12,10 +12,8 @@ certifi==2024.2.2
     #   httpx
     #   requests
 charset-normalizer==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   requests
-coverage==7.6.0
+    # via requests
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -26,7 +24,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -60,7 +58,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -68,7 +66,7 @@ pytest==8.2.2
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in

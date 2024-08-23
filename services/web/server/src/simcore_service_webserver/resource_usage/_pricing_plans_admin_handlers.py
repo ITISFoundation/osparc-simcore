@@ -56,8 +56,8 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 #
@@ -138,7 +138,7 @@ async def get_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
+                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -187,7 +187,7 @@ async def create_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
+                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -237,7 +237,7 @@ async def update_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
+                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -282,7 +282,7 @@ async def get_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,
+        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
@@ -321,7 +321,7 @@ async def create_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,
+        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
@@ -360,7 +360,7 @@ async def update_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,
+        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
