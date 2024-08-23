@@ -274,7 +274,7 @@ async def update_service(
         await repo.upsert_service_access_rights(new_access_rights)
 
         # then delete the ones that were removed
-        rm_access_rights = [
+        removed_access_rights = [
             ServiceAccessRightsAtDB(
                 key=service_key,
                 version=service_version,
@@ -284,7 +284,7 @@ async def update_service(
             for gid in previous_gids
             if gid not in update.access_rights
         ]
-        await repo.delete_service_access_rights(rm_access_rights)
+        await repo.delete_service_access_rights(removed_access_rights)
 
     return await get_service(
         repo=repo,
