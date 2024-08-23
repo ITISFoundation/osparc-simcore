@@ -21,7 +21,6 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     SOCKETIO_MESSAGE_PREFIX,
-    ServiceType,
     SocketIOEvent,
     decode_socketio_42_message,
     wait_for_service_running,
@@ -112,11 +111,11 @@ def test_template(
     page: Page,
     create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    template_name: str,
+    template_id: str,
     autoscaled: bool,
     check_videostreaming: bool,
 ):
-    project_data = create_project_from_template_dashboard(template_name)
+    project_data = create_project_from_template_dashboard(template_id)
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
         project_data["workbench"], dict
