@@ -28,7 +28,7 @@ from simcore_service_webserver.resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
-from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
 @pytest.fixture
@@ -191,7 +191,7 @@ async def test_redis_registry_key_will_always_expire(
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
-        stop=stop_after_attempt(5),
+        stop=stop_after_delay(5),
         reraise=True,
     ):
 
