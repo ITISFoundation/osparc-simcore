@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
-from simcore_postgres_database.models.tags_access_rights import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.tags_repo import (
     TagNotFoundError,
@@ -521,8 +521,8 @@ async def test_tags_repo_create(
     # assigned primary group
     assert (
         await conn.scalar(
-            sa.select(tags_to_groups.c.group_id).where(
-                tags_to_groups.c.tag_id == tag_1["id"]
+            sa.select(tags_access_rights.c.group_id).where(
+                tags_access_rights.c.tag_id == tag_1["id"]
             )
         )
         == user.primary_gid

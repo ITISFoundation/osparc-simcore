@@ -5,12 +5,12 @@ from .base import metadata
 from .groups import groups
 from .tags import tags
 
-tags_to_groups = sa.Table(
+tags_access_rights = sa.Table(
     #
     # Maps tags with groups to define the level of access rights
     # of a group (group_id) for the corresponding tag (tag_id)
     #
-    "tags_to_groups",
+    "tags_access_rights",
     metadata,
     sa.Column(
         "tag_id",

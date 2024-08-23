@@ -5,7 +5,7 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.services_tags import services_tags
 from simcore_postgres_database.models.tags import tags
-from simcore_postgres_database.models.tags_access_rights import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -17,9 +17,9 @@ _TAG_COLUMNS = [
 ]
 
 _ACCESS_RIGHTS_COLUMNS = [
-    tags_to_groups.c.read,
-    tags_to_groups.c.write,
-    tags_to_groups.c.delete,
+    tags_access_rights.c.read,
+    tags_access_rights.c.write,
+    tags_access_rights.c.delete,
 ]
 
 
@@ -28,11 +28,11 @@ _COLUMNS = _TAG_COLUMNS + _ACCESS_RIGHTS_COLUMNS
 
 def _join_user_groups_tag(*, access_condition, tag_id: int, user_id: int):
     return user_to_groups.join(
-        tags_to_groups,
+        tags_access_rights,
         (user_to_groups.c.uid == user_id)
-        & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+        & (user_to_groups.c.gid == tags_access_rights.c.group_id)
         & (access_condition)
-        & (tags_to_groups.c.tag_id == tag_id),
+        & (tags_access_rights.c.tag_id == tag_id),
     )
 
 
@@ -46,9 +46,9 @@ def _join_user_to_given_tag(*, access_condition, tag_id: int, user_id: int):
 
 def _join_user_to_tags(*, access_condition, user_id: int):
     return user_to_groups.join(
-        tags_to_groups,
+        tags_access_rights,
         (user_to_groups.c.uid == user_id)
-        & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+        & (user_to_groups.c.gid == tags_access_rights.c.group_id)
         & (access_condition),
     ).join(tags)
 
@@ -59,7 +59,7 @@ def get_tag_stmt(
 ):
     return sa.select(*_COLUMNS).select_from(
         _join_user_to_given_tag(
-            access_condition=tags_to_groups.c.read.is_(True),
+            access_condition=tags_access_rights.c.read.is_(True),
             tag_id=tag_id,
             user_id=user_id,
         )
@@ -71,7 +71,7 @@ def list_tags_stmt(*, user_id: int):
         sa.select(*_COLUMNS)
         .select_from(
             _join_user_to_tags(
-                access_condition=tags_to_groups.c.read.is_(True),
+                access_condition=tags_access_rights.c.read.is_(True),
                 user_id=user_id,
             )
         )
@@ -96,11 +96,11 @@ def count_users_with_access_rights_stmt(
     """
     access = []
     if read is not None:
-        access.append(tags_to_groups.c.read == read)
+        access.append(tags_access_rights.c.read == read)
     if write is not None:
-        access.append(tags_to_groups.c.write == write)
+        access.append(tags_access_rights.c.write == write)
     if delete is not None:
-        access.append(tags_to_groups.c.delete == delete)
+        access.append(tags_access_rights.c.delete == delete)
 
     if not access:
         msg = "Undefined access"
@@ -121,7 +121,7 @@ def set_tag_access_rights_stmt(
         sa.select(users.c.primary_gid).where(users.c.id == user_id).scalar_subquery()
     )
     return (
-        tags_to_groups.insert()
+        tags_access_rights.insert()
         .values(
             tag_id=tag_id,
             group_id=scalar_subq,
@@ -138,10 +138,11 @@ def update_tag_stmt(*, user_id: int, tag_id: int, **updates):
         tags.update()
         .where(tags.c.id == tag_id)
         .where(
-            (tags.c.id == tags_to_groups.c.tag_id) & (tags_to_groups.c.write.is_(True))
+            (tags.c.id == tags_access_rights.c.tag_id)
+            & (tags_access_rights.c.write.is_(True))
         )
         .where(
-            (tags_to_groups.c.group_id == user_to_groups.c.gid)
+            (tags_access_rights.c.group_id == user_to_groups.c.gid)
             & (user_to_groups.c.uid == user_id)
         )
         .values(**updates)
@@ -154,13 +155,14 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
         tags.delete()
         .where(tags.c.id == tag_id)
         .where(
-            (tags_to_groups.c.tag_id == tag_id) & (tags_to_groups.c.delete.is_(True))
+            (tags_access_rights.c.tag_id == tag_id)
+            & (tags_access_rights.c.delete.is_(True))
         )
         .where(
-            (tags_to_groups.c.group_id == user_to_groups.c.gid)
+            (tags_access_rights.c.group_id == user_to_groups.c.gid)
             & (user_to_groups.c.uid == user_id)
         )
-        .returning(tags_to_groups.c.delete)
+        .returning(tags_access_rights.c.delete)
     )
 
 
