@@ -5,7 +5,7 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.services_tags import services_tags
 from simcore_postgres_database.models.tags import tags
-from simcore_postgres_database.models.tags_to_groups import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_to_groups
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 

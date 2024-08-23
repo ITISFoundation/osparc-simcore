@@ -7,7 +7,7 @@
 import pytest
 import sqlalchemy as sa
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.models.tags_to_groups import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_to_groups
 from simcore_postgres_database.models.users import users
 
 

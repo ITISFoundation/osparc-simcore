@@ -6,7 +6,7 @@
 
 from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.tags import tags
-from simcore_postgres_database.models.tags_to_groups import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_to_groups
 
 
 async def create_tag_access(

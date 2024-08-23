@@ -6,8 +6,7 @@ from .tags import tags
 
 projects_tags = sa.Table(
     #
-    # Tags associated to a project
-    # Many-to-many association
+    # Tags associated to a project (many-to-many relation)
     #
     "study_tags",
     metadata,

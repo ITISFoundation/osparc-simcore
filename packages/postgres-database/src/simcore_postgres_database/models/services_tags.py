@@ -5,8 +5,7 @@ from .tags import tags
 
 services_tags = sa.Table(
     #
-    # - Tags assigned to a service
-    # - Many-to-many association
+    # Tags assigned to a service (many-to-many relation)
     #
     "services_tags",
     metadata,

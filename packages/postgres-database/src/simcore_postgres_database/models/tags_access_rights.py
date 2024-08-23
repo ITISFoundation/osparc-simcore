@@ -7,7 +7,7 @@ from .tags import tags
 
 tags_to_groups = sa.Table(
     #
-    # Maps tags with groups to define the level of access
+    # Maps tags with groups to define the level of access rights
     # of a group (group_id) for the corresponding tag (tag_id)
     #
     "tags_to_groups",
