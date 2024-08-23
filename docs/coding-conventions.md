@@ -136,3 +136,8 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 [mypy]:https://www.mypy-lang.org/
 [pep257]:https://peps.python.org/pep-0257/
 [pylint]:https://pylint.readthedocs.io/en/latest/
+
+# My first osparc-simcore PR: common pitfalls
+
+- Make sure to run mypy, as the python-linting github-action is required to pass. This is not reflectedin the unit tests.
+- If you include new dependencies in `requirements/*`, make sure to run `make touch && make reqs upgrade=NAME_OF_YOUR_NEW_DEPENDENCY`

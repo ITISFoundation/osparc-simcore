@@ -8,7 +8,7 @@ from typing import Final, Iterator, Protocol
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
-from aiofiles.os import remove  # type: ignore[import-untyped]
+from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, parse_obj_as
 

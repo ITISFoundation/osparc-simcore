@@ -8,18 +8,10 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from opentelemetry.instrumentation.aiohttp_client import (
-    AioHttpClientInstrumentor,  # type: ignore[import-not-found]
-)
-from opentelemetry.instrumentation.aiohttp_server import (
-    AioHttpServerInstrumentor,  # type: ignore[import-not-found]
-)
-from opentelemetry.instrumentation.aiopg import (
-    AiopgInstrumentor,  # type: ignore[import-not-found]
-)
-from opentelemetry.instrumentation.requests import (
-    RequestsInstrumentor,  # type: ignore[import-not-found]
-)
+from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
+from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor
+from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
