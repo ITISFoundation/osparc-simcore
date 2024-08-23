@@ -235,6 +235,29 @@ class SocketIONodeProgressCompleteWaiter:
         return False
 
 
+@dataclass
+class LongRunningTaskWaiter:
+    page: Page
+    long_running_task_data: dict
+    logger: logging.Logger
+
+    def __call__(self) -> bool:
+        assert "status_href" in self.long_running_task_data
+        assert "result_href" in self.long_running_task_data
+        done = False
+        while not done:
+            with self.page.expect_response(self.long_running_task_data["status_href"]) as status_info:
+                assert "done" in status_info
+                assert "task_progress" in status_info
+                done = status_info["done"]
+                self.logger.info(
+                    "task progress: %s",
+                    status_info["task_progress"],
+                )
+        with self.page.expect_response(self.long_running_task_data["result_href"]) as result_info:
+            return result_info
+
+
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
