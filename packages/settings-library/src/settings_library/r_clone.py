@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import Field, NonNegativeInt
 
@@ -6,7 +6,7 @@ from .base import BaseCustomSettings
 from .s3 import S3Settings
 
 
-class S3Provider(str, Enum):
+class S3Provider(StrEnum):
     AWS = "AWS"
     CEPH = "CEPH"
     MINIO = "MINIO"

@@ -47,7 +47,7 @@ def _handle_tags_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
 
 
 class _InputSchema(BaseModel):
@@ -108,7 +108,7 @@ class TagGet(_OutputSchema):
             name=tag["name"],
             description=tag["description"],
             color=tag["color"],
-            access_rights=TagAccessRights(
+            access_rights=TagAccessRights(  # type: ignore[call-arg]
                 read=tag["read"],
                 write=tag["write"],
                 delete=tag["delete"],

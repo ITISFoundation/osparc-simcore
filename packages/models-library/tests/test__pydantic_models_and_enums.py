@@ -1,4 +1,4 @@
-from enum import Enum, unique
+from enum import Enum, StrEnum, unique
 
 import pytest
 from models_library.utils.enums import are_equivalent_enums, enum_to_dict
@@ -36,12 +36,12 @@ def test_equivalent_enums_are_not_strictly_equal():
 
 
 @unique
-class ColorStrAndEnum1(str, Enum):
+class ColorStrAndEnum1(StrEnum):
     RED = "RED"
 
 
 @unique
-class ColorStrAndEnum2(str, Enum):
+class ColorStrAndEnum2(StrEnum):
     RED = "RED"
 
 
