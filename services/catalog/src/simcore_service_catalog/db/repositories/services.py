@@ -243,9 +243,7 @@ class ServicesRepository(BaseRepository):
                 await conn.execute(insert_stmt)
         return created_service
 
-    async def update_service(
-        self, patched_service: ServiceMetaDataAtDB, *, returning: bool = False
-    ) -> ServiceMetaDataAtDB | None:
+    async def update_service(self, patched_service: ServiceMetaDataAtDB) -> None:
 
         stmt_update = (
             services_meta_data.update()
@@ -261,16 +259,8 @@ class ServicesRepository(BaseRepository):
                 )
             )
         )
-        if returning:
-            stmt_update = stmt_update.returning(literal_column("*"))
-
         async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt_update)
-            if returning:
-                row = result.first()
-                assert row  # nosec
-                return ServiceMetaDataAtDB.from_orm(row)
-        return None
+            await conn.execute(stmt_update)
 
     async def can_get_service(
         self,
