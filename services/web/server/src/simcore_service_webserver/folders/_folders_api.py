@@ -15,7 +15,7 @@ from pydantic import NonNegativeInt, parse_obj_as
 from simcore_postgres_database import utils_folders as folders_db
 
 from .._constants import APP_DB_ENGINE_KEY
-from ..users.api import get_user
+from ..groups.api import list_all_user_groups
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,9 @@ async def create_folder(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
 ) -> FolderGet:
-    user = await get_user(app, user_id=user_id)
+    # user = await get_user(app, user_id=user_id)
+    user_groups = await list_all_user_groups(app, user_id=user_id)
+    user_gids = {group.gid for group in user_groups}
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
@@ -37,7 +39,7 @@ async def create_folder(
             connection,
             product_name=product_name,
             name=folder_name,
-            gids={user["primary_gid"]},
+            gids=user_gids,
             description=description if description else "",
             parent=parent_folder_id,
         )
@@ -45,7 +47,7 @@ async def create_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -71,7 +73,9 @@ async def get_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderGet:
-    user = await get_user(app, user_id=user_id)
+    # user = await get_user(app, user_id=user_id)
+    user_groups = await list_all_user_groups(app, user_id=user_id)
+    user_gids = {group.gid for group in user_groups}
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
@@ -80,7 +84,7 @@ async def get_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -109,7 +113,9 @@ async def list_folders(
     limit: int,
     order_by: OrderBy,
 ) -> FolderGetPage:
-    user = await get_user(app, user_id=user_id)
+    # user = await get_user(app, user_id=user_id)
+    user_groups = await list_all_user_groups(app, user_id=user_id)
+    user_gids = {group.gid for group in user_groups}
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
@@ -118,7 +124,7 @@ async def list_folders(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
             offset=offset,
             limit=limit,
             order_by=cast(folders_db.OrderByDict, order_by.dict()),
@@ -158,7 +164,9 @@ async def update_folder(
     description: str | None,
     product_name: ProductName,
 ) -> FolderGet:
-    user = await get_user(app, user_id=user_id)
+    # user = await get_user(app, user_id=user_id)
+    user_groups = await list_all_user_groups(app, user_id=user_id)
+    user_gids = {group.gid for group in user_groups}
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
@@ -167,7 +175,7 @@ async def update_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
             name=name,
             description=description,
         )
@@ -175,7 +183,7 @@ async def update_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
         )
     return FolderGet(
         folder_id=folder_db.id,
@@ -201,7 +209,9 @@ async def delete_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    user = await get_user(app, user_id=user_id)
+    # user = await get_user(app, user_id=user_id)
+    user_groups = await list_all_user_groups(app, user_id=user_id)
+    user_gids = {group.gid for group in user_groups}
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
@@ -210,5 +220,5 @@ async def delete_folder(
             connection,
             product_name=product_name,
             folder_id=folder_id,
-            gids={user["primary_gid"]},
+            gids=user_gids,
         )
