@@ -26,6 +26,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     AutoRegisteredUser,
+    LongRunningTaskWaiter,
     RunningState,
     ServiceType,
     SocketIOEvent,
@@ -381,6 +382,7 @@ def create_new_project_and_delete(
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
         press_open: bool = True,
+        template_id: str = None,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
@@ -398,7 +400,16 @@ def create_new_project_and_delete(
             ):
                 # Project detail view pop-ups shows
                 if press_open:
-                    page.get_by_test_id("openResource").click()
+                    open_button = page.get_by_test_id("openResource")
+                    if template_id:
+                        # wait until the template data is copied
+                        with page.expect_response(
+                            re.compile(r"/projects?from_study="+template_id)
+                        ) as long_running_task:
+                            open_button.click()
+                        waiterOM = LongRunningTaskWaiter(page=page, long_running_task_data=long_running_task, logger=ctx.logger)
+                    else:
+                        open_button.click()
                 if product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
@@ -467,7 +478,7 @@ def start_study_from_plus_button(
 
 
 @pytest.fixture
-def find_and_start_template_in_dashboard(
+def find_and_click_template_in_dashboard(
     page: Page,
 ) -> Callable[[str], None]:
     def _(template_id: str) -> None:
@@ -476,8 +487,8 @@ def find_and_start_template_in_dashboard(
             _textbox = page.get_by_test_id("searchBarFilter-textField-template")
             _textbox.fill(template_id)
             _textbox.press("Enter")
-            test_id = "templateBrowserListItem_" + template_id
-            # OM: use this: test_id = "studyBrowserListItem_" + template_id
+            # OM: use this: test_id = "templateBrowserListItem_" + template_id
+            test_id = "studyBrowserListItem_" + template_id
             page.get_by_test_id(test_id).click()
 
     return _
@@ -521,15 +532,15 @@ def create_project_from_new_button(
 
 @pytest.fixture
 def create_project_from_template_dashboard(
-    find_and_start_template_in_dashboard: Callable[[str], None],
+    find_and_click_template_in_dashboard: Callable[[str], None],
     create_new_project_and_delete: Callable[
         [tuple[RunningState]], dict[str, Any]
     ],
 ) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
     def _(template_id: str) -> dict[str, Any]:
-        find_and_start_template_in_dashboard(template_id)
+        find_and_click_template_in_dashboard(template_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, True, template_id)
 
     return _
 
@@ -548,7 +559,7 @@ def create_project_from_service_dashboard(
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, True)
 
     return _
 
