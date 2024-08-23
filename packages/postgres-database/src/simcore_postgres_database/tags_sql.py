@@ -16,14 +16,14 @@ _TAG_COLUMNS = [
     tags.c.color,
 ]
 
-_ACCESS_COLUMNS = [
+_ACCESS_RIGHTS_COLUMNS = [
     tags_to_groups.c.read,
     tags_to_groups.c.write,
     tags_to_groups.c.delete,
 ]
 
 
-_COLUMNS = _TAG_COLUMNS + _ACCESS_COLUMNS
+_COLUMNS = _TAG_COLUMNS + _ACCESS_RIGHTS_COLUMNS
 
 
 def _join_user_groups_tag(*, access_condition, tag_id: int, user_id: int):
@@ -129,7 +129,7 @@ def set_tag_access_rights_stmt(
             write=write,
             delete=delete,
         )
-        .returning(*_ACCESS_COLUMNS)
+        .returning(*_ACCESS_RIGHTS_COLUMNS)
     )
 
 

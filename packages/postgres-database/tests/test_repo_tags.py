@@ -570,7 +570,8 @@ def test_building_tags_sql_statements():
         update_tag_stmt,
         user_id=user_id,
         tag_id=tag_id,
-        update={"name": "foo"},
+        # updates
+        name="foo",
     )
 
     _check(
@@ -586,9 +587,8 @@ def test_building_tags_sql_statements():
 
     _check(
         get_tags_for_services_stmt,
-        service_key=service_key,
-        service_version=service_version,
-        tag_id=tag_id,
+        key=service_key,
+        version=service_version,
     )
 
     _check(
