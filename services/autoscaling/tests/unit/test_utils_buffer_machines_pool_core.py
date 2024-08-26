@@ -24,6 +24,7 @@ from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
     get_activated_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
     is_buffer_machine,
+    load_pre_pulled_images_from_tags,
 )
 
 
@@ -156,13 +157,15 @@ def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):
             },
             id="<256 characters jsonized number of images does not get chunked",
         ),
+        pytest.param(
+            [],
+            {PRE_PULLED_IMAGES_EC2_TAG_KEY: "[]"},
+            id="empty list",
+        ),
     ],
 )
-def test_dump_pre_pulled_images_as_tags(
+def test_dump_load_pre_pulled_images_as_tags(
     images: list[DockerGenericTag], expected_tags: EC2Tags
 ):
     assert dump_pre_pulled_images_as_tags(images) == expected_tags
-
-
-def test_load_pre_pulled_images_from_tags():
-    ...
+    assert load_pre_pulled_images_from_tags(expected_tags) == images

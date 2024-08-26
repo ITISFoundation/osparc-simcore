@@ -1,3 +1,4 @@
+import re
 from typing import Final
 
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
@@ -28,3 +29,6 @@ DEACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
 ACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
     BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "false")
 }
+PRE_PULLED_IMAGES_RE: Final[re.Pattern] = re.compile(
+    rf"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_\((\d+)\)"
+)

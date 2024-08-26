@@ -1,16 +1,18 @@
 from collections.abc import Iterable
+from operator import itemgetter
 
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
+from models_library.utils.json_serialization import json_dumps, json_loads
+from pydantic import parse_obj_as, parse_raw_as
 
 from ..constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     BUFFER_MACHINE_TAG_KEY,
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    PRE_PULLED_IMAGES_RE,
 )
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 
@@ -58,6 +60,24 @@ def dump_pre_pulled_images_as_tags(images: Iterable[DockerGenericTag]) -> EC2Tag
     }
 
 
-def load_pre_pulled_images_from_tags(tags: EC2Tags) -> tuple[DockerGenericTag]:
+def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     # AWS Tag values are limited to 256 characters so we chunk the images
-    ...
+    if PRE_PULLED_IMAGES_EC2_TAG_KEY in tags:
+        # read directly
+        return json_loads(tags[PRE_PULLED_IMAGES_EC2_TAG_KEY])
+
+    assembled_json = "".join(
+        map(
+            itemgetter(1),
+            sorted(
+                (
+                    (int(m.group(1)), value)
+                    for key, value in tags.items()
+                    if (m := PRE_PULLED_IMAGES_RE.match(key))
+                ),
+                key=itemgetter(0),
+            ),
+        )
+    )
+
+    return parse_raw_as(list[DockerGenericTag], assembled_json)
