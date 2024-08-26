@@ -26,7 +26,7 @@ module.exports = defineConfig({
     // baseURL: 'http://127.0.0.1:9081',
 
     /* Emulation Options */
-    // oSPARC min: HD 1280x720
+    // oSPARC min: 1180x720
     viewport: {
       width: 1180,
       height: 720
