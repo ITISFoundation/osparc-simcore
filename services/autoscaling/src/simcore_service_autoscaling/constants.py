@@ -1,6 +1,6 @@
 from typing import Final
 
-from aws_library.ec2._models import AWSTagKey
+from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
 from pydantic import parse_obj_as
 
 BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
@@ -18,3 +18,13 @@ DOCKER_PULL_COMMAND: Final[
 PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "io.simcore.autoscaling.pre_pulled_images"
 )
+
+BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "io.simcore.autoscaling.buffer_machine"
+)
+DEACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
+    BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "true")
+}
+ACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
+    BUFFER_MACHINE_TAG_KEY: parse_obj_as(AWSTagValue, "false")
+}
