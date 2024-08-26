@@ -20,6 +20,7 @@ from simcore_postgres_database.tags_repo import (
 )
 from simcore_postgres_database.tags_sql import (
     add_tag_to_project_stmt,
+    add_tag_to_services_stmt,
     create_tag_stmt,
     delete_tag_stmt,
     get_tag_stmt,
@@ -594,5 +595,12 @@ def test_building_tags_sql_statements():
     _check(
         add_tag_to_project_stmt,
         project_index=project_index,
+        tag_id=tag_id,
+    )
+
+    _check(
+        add_tag_to_services_stmt,
+        key=service_key,
+        version=service_version,
         tag_id=tag_id,
     )
