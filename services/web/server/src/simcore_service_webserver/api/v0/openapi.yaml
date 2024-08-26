@@ -3182,6 +3182,8 @@ paths:
             schema:
               title: ' New'
               type: object
+              additionalProperties:
+                $ref: '#/components/schemas/ImageResources'
         required: true
       responses:
         '200':
@@ -3415,7 +3417,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4447,7 +4449,9 @@ paths:
       - required: true
         schema:
           title: Tag Id
+          exclusiveMinimum: true
           type: integer
+          minimum: 0
         name: tag_id
         in: path
       responses:
@@ -4462,7 +4466,9 @@ paths:
       - required: true
         schema:
           title: Tag Id
+          exclusiveMinimum: true
           type: integer
+          minimum: 0
         name: tag_id
         in: path
       requestBody:
@@ -5858,14 +5864,20 @@ components:
         inputs:
           title: Inputs
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceInputGet'
           description: inputs with extended information
         outputs:
           title: Outputs
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceOutputGet'
           description: outputs with extended information
         bootOptions:
           title: Bootoptions
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/BootOption'
         minVisibleInputs:
           title: Minvisibleinputs
           minimum: 0
@@ -7168,6 +7180,8 @@ components:
         data:
           title: Data
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ImageResources'
         error:
           title: Error
     Envelope_dict_str__Any__:
@@ -7596,14 +7610,36 @@ components:
         progress:
           title: Progress
           type: object
+          additionalProperties:
+            maximum: 100
+            minimum: 0
+            type: integer
           description: Progress in each computational node
         labels:
           title: Labels
           type: object
+          additionalProperties:
+            type: string
           description: Maps captured node with a label
         values:
           title: Values
           type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              anyOf:
+              - type: boolean
+              - type: integer
+              - type: number
+              - type: string
+                format: json-string
+              - type: string
+              - $ref: '#/components/schemas/SimCoreFileLink'
+              - $ref: '#/components/schemas/DatCoreFileLink'
+              - $ref: '#/components/schemas/DownloadLink'
+              - type: array
+                items: {}
+              - type: object
           description: Captured outputs per node
       example:
         progress:
@@ -8506,6 +8542,21 @@ components:
         inputs:
           title: Inputs
           type: object
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+              format: json-string
+            - type: string
+            - $ref: '#/components/schemas/PortLink'
+            - $ref: '#/components/schemas/SimCoreFileLink'
+            - $ref: '#/components/schemas/DatCoreFileLink'
+            - $ref: '#/components/schemas/DownloadLink'
+            - type: array
+              items: {}
+            - type: object
           description: values of input properties
         inputsRequired:
           title: Inputsrequired
@@ -8517,10 +8568,14 @@ components:
         inputsUnits:
           title: Inputsunits
           type: object
+          additionalProperties:
+            type: string
           description: Overrides default unit (if any) defined in the service for
             each port
         inputAccess:
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessEnum'
           description: map with key - access level pairs
         inputNodes:
           title: Inputnodes
@@ -8532,6 +8587,20 @@ components:
         outputs:
           title: Outputs
           type: object
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+              format: json-string
+            - type: string
+            - $ref: '#/components/schemas/SimCoreFileLink'
+            - $ref: '#/components/schemas/DatCoreFileLink'
+            - $ref: '#/components/schemas/DownloadLink'
+            - type: array
+              items: {}
+            - type: object
           description: values of output properties
         outputNode:
           title: Outputnode
@@ -8564,6 +8633,8 @@ components:
         bootOptions:
           title: Bootoptions
           type: object
+          additionalProperties:
+            type: string
           description: Some services provide alternative parameters to be injected
             at boot time. The user selection should be stored here, and it will overwrite
             the services's defaults.
@@ -8756,6 +8827,21 @@ components:
         inputs:
           title: Inputs
           type: object
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+              format: json-string
+            - type: string
+            - $ref: '#/components/schemas/PortLink'
+            - $ref: '#/components/schemas/SimCoreFileLink'
+            - $ref: '#/components/schemas/DatCoreFileLink'
+            - $ref: '#/components/schemas/DownloadLink'
+            - type: array
+              items: {}
+            - type: object
         inputsRequired:
           title: Inputsrequired
           type: array
@@ -9616,6 +9702,8 @@ components:
         workbench:
           title: Workbench
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
         accessRights:
           title: Accessrights
           type: object
@@ -9679,6 +9767,8 @@ components:
         workbench:
           title: Workbench
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
         prjOwner:
           title: Prjowner
           type: string
@@ -9907,6 +9997,8 @@ components:
         workbench:
           title: Workbench
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
         prjOwner:
           title: Prjowner
           type: string
@@ -10131,6 +10223,8 @@ components:
         workbench:
           title: Workbench
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Node'
         accessRights:
           title: Accessrights
           type: object
@@ -10746,6 +10840,9 @@ components:
         fileToKeyMap:
           title: Filetokeymap
           type: object
+          additionalProperties:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
           description: Place the data associated with the named keys in files
         unit:
           title: Unit
@@ -10852,6 +10949,9 @@ components:
         fileToKeyMap:
           title: Filetokeymap
           type: object
+          additionalProperties:
+            pattern: ^[-_a-zA-Z0-9]+$
+            type: string
           description: Place the data associated with the named keys in files
         unit:
           title: Unit
@@ -11244,9 +11344,13 @@ components:
         workbench:
           title: Workbench
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/WorkbenchUI'
         slideshow:
           title: Slideshow
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Slideshow'
         currentNodeId:
           title: Currentnodeid
           type: string
@@ -11254,6 +11358,8 @@ components:
         annotations:
           title: Annotations
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Annotation'
     TLSAuthentication:
       title: TLSAuthentication
       required:
@@ -11332,7 +11438,6 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
-      additionalProperties: false
     TagGet:
       title: TagGet
       required:
@@ -11372,7 +11477,6 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
-      additionalProperties: false
     TaskCounts:
       title: TaskCounts
       type: object
@@ -11950,6 +12054,8 @@ components:
           minimum: 0
         name:
           title: Name
+          maxLength: 100
+          minLength: 1
           type: string
         description:
           title: Description
@@ -11991,6 +12097,8 @@ components:
           minimum: 0
         name:
           title: Name
+          maxLength: 100
+          minLength: 1
           type: string
         description:
           title: Description

@@ -55,7 +55,7 @@ class ColorStr(ConstrainedStr):
     regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
 
-class TagPathParams(InputSchema):
+class TagPathParams(BaseModel):
     tag_id: PositiveInt
 
 
@@ -137,7 +137,6 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-    # TODO paginate
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
 
@@ -156,13 +155,13 @@ async def list_tags(request: web.Request):
 async def update_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_path_parameters_as(TagPathParams, request)
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
         tag = await repo.update(
-            conn, query_params.tag_id, **tag_updates.dict(exclude_unset=True)
+            conn, path_params.tag_id, **tag_updates.dict(exclude_unset=True)
         )
         model = TagGet.from_db(tag)
         return envelope_json_response(model)
@@ -175,10 +174,10 @@ async def update_tag(request: web.Request):
 async def delete_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_path_parameters_as(TagPathParams, request)
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
-        await repo.delete(conn, tag_id=query_params.tag_id)
+        await repo.delete(conn, tag_id=path_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

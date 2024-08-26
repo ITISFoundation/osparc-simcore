@@ -4,10 +4,17 @@
 # pylint: disable=too-many-arguments
 
 
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.tags._handlers import TagCreate, TagGet, TagUpdate
+from simcore_service_webserver.tags._handlers import (
+    TagCreate,
+    TagGet,
+    TagPathParams,
+    TagUpdate,
+)
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
 
@@ -16,7 +23,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
     "/tags",
     response_model=Envelope[TagGet],
 )
-async def create_tag(create: TagCreate):
+async def create_tag(_body: TagCreate):
     ...
 
 
@@ -32,7 +39,9 @@ async def list_tags():
     "/tags/{tag_id}",
     response_model=Envelope[TagGet],
 )
-async def update_tag(tag_id: int, update: TagUpdate):
+async def update_tag(
+    _path_params: Annotated[TagPathParams, Depends()], _body: TagUpdate
+):
     ...
 
 
@@ -40,5 +49,5 @@ async def update_tag(tag_id: int, update: TagUpdate):
     "/tags/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_tag(tag_id: int):
+async def delete_tag(_path_params: Annotated[TagPathParams, Depends()]):
     ...
