@@ -195,6 +195,28 @@ qx.Class.define("osparc.product.Utils", {
       return false;
     },
 
+    /**
+     * @returns {String} ["REGISTER", "REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"]
+     */
+    getCreateAccountAction: function() {
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        // Allow registering in Development Platform
+        return "REGISTER";
+      }
+
+      const config = osparc.store.Store.getInstance().get("config");
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (config["invitation_required"]) {
+        if (vendor["invitation_form"]) {
+          // If invitation_required (login_settings) and invitation_form (vendor)
+          return "REQUEST_ACCOUNT_FORM";
+        }
+        // do not show request account form, pop up a dialog with instructions instead
+        return "REQUEST_ACCOUNT_INSTRUCTIONS";
+      }
+      return "REGISTER";
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
